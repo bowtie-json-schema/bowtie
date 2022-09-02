@@ -65,7 +65,7 @@ async def _run(implementations, cases, test_timeout):
                 bowtie(docker=docker, image=implementation),
             ): implementation for implementation in implementations
         }
-        log.msg("Connected", streams=sorted(streams.values()))
+        log.msg("Connected", implementations=sorted(streams.values()))
 
         responses = await send_all(streams=streams, cmd="start", version=1)
         log.msg("Ready", responses=responses)
@@ -98,9 +98,14 @@ async def _run(implementations, cases, test_timeout):
                 "tests": {k: dict(v) for k, v in tests.items()},
             }
             log.msg("Responded", result=result)
-        #
-        # responses = await send_all(streams=streams, cmd="run", case=case)
-        # log.msg("Responded", responses=responses)
+
+        responses = await send_all(
+            streams=streams,
+            cmd="run",
+            seq=seq,
+            case=case,
+        )
+        log.msg("Responded", responses=responses)
 
         log.msg("Stopping")
         await send_all(streams=streams, cmd="stop")
