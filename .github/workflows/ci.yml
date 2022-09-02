@@ -20,11 +20,7 @@ jobs:
     - uses: pre-commit/action@v3.0.0
 
   ci:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -34,12 +30,22 @@ jobs:
         sudo apt-get install -y libenchant-dev
       if: runner.os == 'Linux'
     - name: Install dependencies
-      run: brew install enchant
+      run: brew install enchant podman
       if: runner.os == 'macOS'
-    - name: "Set up nox"
+    - name: Build Fixtures
+      run: |
+        for each in {implementations/,tests/fauxmplementations/}*; do
+          (
+            cd $each
+            podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
+          )
+        done
+    - name: Set up nox
       uses: wntrblm/nox@2022.8.7
-    - name: "Run nox"
+    - name: Run nox
       run: nox
+      env:
+        REGISTRY_HTTP_ADDR: localhost
 
   packaging:
     needs: ci

@@ -9,7 +9,7 @@ BOWTIE = ROOT / "bowtie"
 
 @nox.session(python=["3.8", "3.9", "3.10"])
 def tests(session):
-    session.install(str(ROOT), "pytest")
+    session.install("-r", str(ROOT / "test-requirements.txt"))
     session.run("pytest")
 
 

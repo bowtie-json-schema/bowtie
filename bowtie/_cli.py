@@ -62,7 +62,7 @@ async def _run(implementations, cases, test_timeout):
         docker = await stack.enter_async_context(aiodocker.Docker())
         streams = {
             await stack.enter_async_context(
-                bowtie(docker=docker, image=implementation),
+                temporary_container(docker=docker, image=implementation),
             ): implementation for implementation in implementations
         }
         log.msg("Connected", implementations=sorted(streams.values()))
@@ -113,7 +113,7 @@ async def _run(implementations, cases, test_timeout):
 
 
 @asynccontextmanager
-async def bowtie(docker, image):
+async def temporary_container(docker, image):
     config = dict(Image=image, OpenStdin=True)
     container = await docker.containers.create(config=config)
 
