@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [project]
-name = "bowtie.py"
+name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
 requires-python = ">=3.8"
 readme = "README.rst"
@@ -46,9 +46,9 @@ dependencies = [
 bowtie = "bowtie._cli:main"
 
 [project.urls]
-Homepage = "https://github.com/python-jsonschema/bowtie.py"
-Issues = "https://github.com/python-jsonschema/bowtie.py/issues/"
-Source = "https://github.com/python-jsonschema/bowtie.py"
+Homepage = "https://github.com/python-jsonschema/bowtie"
+Issues = "https://github.com/python-jsonschema/bowtie/issues/"
+Source = "https://github.com/python-jsonschema/bowtie"
 
 [tool.isort]
 from_first = true

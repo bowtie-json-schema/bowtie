@@ -1,20 +1,20 @@
-=============
-``bowtie.py``
-=============
+======
+Bowtie
+======
 
 |PyPI| |Pythons| |CI|
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/bowtie.py.svg
+.. |PyPI| image:: https://img.shields.io/pypi/v/bowtie.svg
   :alt: PyPI version
-  :target: https://pypi.org/project/bowtie.py/
+  :target: https://pypi.org/project/bowtie-json-schema/
 
-.. |Pythons| image:: https://img.shields.io/pypi/pyversions/bowtie.py.svg
+.. |Pythons| image:: https://img.shields.io/pypi/pyversions/bowtie-json-schema.svg
   :alt: Supported Python versions
-  :target: https://pypi.org/project/bowtie.py/
+  :target: https://pypi.org/project/bowtie-json-schema/
 
-.. |CI| image:: https://github.com/python-jsonschema/bowtie.py/workflows/CI/badge.svg
+.. |CI| image:: https://github.com/python-jsonschema/bowtie/workflows/CI/badge.svg
   :alt: Build status
-  :target: https://github.com/python-jsonschema/bowtie.py/actions?query=workflow%3ACI
+  :target: https://github.com/python-jsonschema/bowtie/actions?query=workflow%3ACI
 
 
 Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-schema.org/>`_, by which we mean it coordinates executing *other* `validator implementations <https://json-schema.org/implementations.html>`_, collecting and reporting on their results.
