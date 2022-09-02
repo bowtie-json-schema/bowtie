@@ -4,7 +4,7 @@ Bowtie
 
 |PyPI| |Pythons| |CI|
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/bowtie.svg
+.. |PyPI| image:: https://img.shields.io/pypi/v/bowtie-json-schema.svg
   :alt: PyPI version
   :target: https://pypi.org/project/bowtie-json-schema/
 
