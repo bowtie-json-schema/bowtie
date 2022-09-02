@@ -23,6 +23,7 @@
             "cmd": { "const": "start" },
             "version": { "$ref": "#/$defs/version" }
           },
+          "required": ["version"],
           "$defs": {
             "response": {
               "properties": {
@@ -35,13 +36,31 @@
         "run": {
           "properties": {
             "cmd": { "const": "run" },
+            "seq": {
+                "description": "A sequence identifier for the test case. It must be passed along as-is in the response."
+            },
             "case": { "$ref": "#/$defs/case" }
           },
+          "required": ["seq", "case"],
           "$defs": {
             "response": {
               "properties": {
-                "valid": { "type": "boolean" }
-              }
+                "seq": {
+                    "description": "The unchanged sequence identifier originally provided in the request."
+                },
+                "tests": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "valid": { "type": "boolean" }
+                        },
+                        "required": ["valid"],
+                        "additionalProperties": false
+                    }
+                }
+              },
+              "required": ["seq", "tests"]
             }
           }
         },
