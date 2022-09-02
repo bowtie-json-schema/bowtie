@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/python-jsonschema/bowtie/1/io-schema.json",
+  "title": "Bowtie IO Protocol",
+  "description": "Input/output specification for Bowtie, a meta-validator for JSON Schema validator implementations",
+
+  "$defs": {
+    "version": { "type": "integer", "const": 1 },
+
+    "command": {
+      "type": "object",
+      "required": ["cmd"],
+      "unevaluatedProperties": false,
+      "oneOf": [
+        { "$ref": "#/$defs/command/$defs/start" },
+        { "$ref": "#/$defs/command/$defs/stop" },
+        { "$ref": "#/$defs/command/$defs/run" }
+      ],
+
+      "$defs": {
+        "start": {
+          "properties": {
+            "cmd": { "const": "start" },
+            "version": { "$ref": "#/$defs/version" }
+          },
+          "$defs": {
+            "response": {
+              "properties": {
+                "ready": { "type": "boolean" },
+                "version": { "$ref": "#/$defs/version" }
+              }
+            }
+          }
+        },
+        "run": {
+          "properties": {
+            "cmd": { "const": "run" },
+            "case": { "$ref": "#/$defs/case" }
+          },
+          "$defs": {
+            "response": {
+              "properties": {
+                "valid": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "stop": {
+          "properties": {
+            "cmd": { "const": "stop" }
+          },
+          "$defs": {
+            "response": {
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+
+    "case": {
+      "description": "An individual test case, consisting of a single schema and one or more instances to validate under it",
+      "type": "object",
+      "required": ["description", "schema", "tests"],
+      "properties": {
+        "description": {
+          "description": "A (human-readable) short description of this test case",
+          "type": "string"
+        },
+        "comment": {
+          "description": "Any additional comments about the test case",
+          "type": "string"
+        },
+        "schema": {
+          "description": "A valid JSON Schema.",
+          "$ref": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "tests": {
+          "description": "A set of related tests all using the same schema",
+          "type": "array",
+          "items": { "$ref": "#/$defs/test" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "test": {
+      "description": "A single test",
+
+      "type": "object",
+      "required": ["description", "instance"],
+      "properties": {
+        "description": {
+          "description": "The test description, briefly explaining which behavior it exercises",
+          "type": "string"
+        },
+        "comment": {
+          "description": "Any additional comments about the test",
+          "type": "string"
+        },
+        "instance": {
+          "description": "The instance which should be validated against the schema in \"schema\"."
+        },
+        "valid": {
+          "description": "Optionally, whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

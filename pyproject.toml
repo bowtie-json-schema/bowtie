@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[project]
+name = "bowtie.py"
+description = "A meta-validator for the JSON Schema specification."
+requires-python = ">=3.8"
+readme = "README.rst"
+license = {text = "MIT"}
+keywords = [
+    "validation",
+    "data validation",
+    "jsonschema",
+    "json",
+    "json schema",
+]
+authors = [
+  {email = "Julian+bowtie@GrayVines.com"},
+  {name = "Julian Berman"},
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dynamic = ["version"]
+
+dependencies = [
+  "aiodocker",
+  "click",
+  "structlog",
+]
+
+[project.scripts]
+bowtie = "bowtie._cli:main"
+
+[project.urls]
+Homepage = "https://github.com/python-jsonschema/bowtie.py"
+Issues = "https://github.com/python-jsonschema/bowtie.py/issues/"
+Source = "https://github.com/python-jsonschema/bowtie.py"
+
+[tool.isort]
+from_first = true
+include_trailing_comma = true
+multi_line_output = 3

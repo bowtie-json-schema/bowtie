@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+A bowtie runner which validates the requests and responses, before responding.
+"""
+from dataclasses import dataclass
+from pathlib import Path
+import io
+import json
+import os
+import sys
+
+import jsonschema.validators
+
+SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/io-schema.json"))
+SCHEMA = json.loads(SCHEMA_PATH.read_text())
+RESOLVER = jsonschema.validators.RefResolver.from_schema(SCHEMA)
+Validator = jsonschema.validators.validator_for(SCHEMA)
+REQUEST_VALIDATOR = Validator(
+    schema={"$ref": f"{SCHEMA['$id']}#/$defs/command"},
+    resolver=RESOLVER,
+)
+RESPONSE_VALIDATORS = {
+    k: Validator(
+        resolver=RESOLVER,
+        schema={
+            "$ref": f"{SCHEMA['$id']}#/$defs/command/$defs/{k}/$defs/response",
+        },
+    )
+    for k in SCHEMA["$defs"]["command"]["$defs"]
+}
+
+
+@dataclass
+class Runner:
+
+    _started: bool = False
+    _stdout: io.TextIOWrapper = sys.stdout
+    _stderr: io.TextIOWrapper = sys.stderr
+
+    def run(self, stdin=sys.stdin):
+        for line in stdin:
+            each = json.loads(line)
+            REQUEST_VALIDATOR.validate(each)
+            cmd = each.pop("cmd")
+            response = getattr(self, f"cmd_{cmd}")(**each)
+            RESPONSE_VALIDATORS[cmd].validate(response)
+            self._stdout.write(f"{json.dumps(response)}\n")
+            self._stdout.flush()
+
+    def cmd_start(self, version):
+        assert version == 1
+
+        self._started = True
+        return dict(ready=True, version=1)
+
+    def cmd_run(self, case, seq):
+        assert self._started, "Not started!"
+
+        return dict(
+            seq=seq,
+            tests=[
+                {"valid": test.get("valid", True)}
+                for test in case["tests"]
+            ],
+        )
+
+    def cmd_stop(self):
+        assert self._started, "Not started!"
+
+        sys.exit(0)
+
+
+Runner().run()

@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""
+A bowtie runner which always gets the right answer, slowly.
+"""
+from dataclasses import dataclass
+import io
+import json
+import sys
+import time
+
+SLEEP_SECS = 0.5
+
+
+@dataclass
+class Runner:
+
+    _started: bool = False
+    _stdout: io.TextIOWrapper = sys.stdout
+    _stderr: io.TextIOWrapper = sys.stderr
+
+    def run(self, stdin=sys.stdin):
+        for line in stdin:
+            each = json.loads(line)
+            cmd = each.pop("cmd")
+            response = getattr(self, f"cmd_{cmd}")
+            self._stdout.write(f"{json.dumps(response)}\n")
+            self._stdout.flush()
+
+    def cmd_start(self, version):
+        assert version == 1
+        self._started = True
+        return dict(ready=True, version=1)
+
+    def cmd_run(self, case, seq):
+        assert self._started, "Not started!"
+
+        time.sleep(SLEEP_SECS * len(case["tests"]))
+        return dict(
+            seq=seq,
+            tests=[
+                {"valid": not test.get("valid", True)}
+                for test in case["tests"]
+            ],
+        )
+
+    def cmd_stop(self):
+        assert self._started, "Not started!"
+
+        sys.exit(0)
+
+
+Runner().run()
