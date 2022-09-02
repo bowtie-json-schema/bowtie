@@ -3,6 +3,7 @@ from pathlib import Path
 import nox
 
 ROOT = Path(__file__).parent
+DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
 
 
@@ -38,3 +39,23 @@ def style(session):
         "flake8-tidy-imports",
     )
     session.run("python", "-m", "flake8", str(BOWTIE))
+
+
+@nox.session
+def docs(session):
+    session.install("-r", str(DOCS / "requirements.txt"))
+    tmpdir = session.create_tmp()
+    session.run(
+        "python", "-m", "sphinx", "-b", "dirhtml",
+        str(DOCS), tmpdir, "-n", "-q", "-T", "-W",
+    )
+
+
+@nox.session
+def docs_style(session):
+    session.install(
+        "doc8",
+        "pygments",
+        "pygments-github-lexers",
+    )
+    session.run("python", "-m", "doc8", str(DOCS))
