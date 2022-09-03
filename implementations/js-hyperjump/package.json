@@ -1,0 +1,7 @@
+{
+  "name": "bowtie-hyperjump",
+  "version": "1.0.0",
+  "dependencies": {
+    "@hyperjump/json-schema": "^0.23.2"
+  }
+}
