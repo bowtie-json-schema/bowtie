@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
@@ -35,24 +36,29 @@ async def lintsonschema(docker):
     await docker.images.delete(name=tag)
 
 
-@pytest.mark.asyncio
-async def test_lint(lintsonschema):
-
+@asynccontextmanager
+async def bowtie(*args):
     proc = await asyncio.create_subprocess_exec(
-        sys.executable, "-m", "bowtie", "run",
-        "-i", lintsonschema,
+        sys.executable, "-m", "bowtie", "run", *args,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
 
-    stdout, stderr = await proc.communicate(
-        dedent(
+    async def _send(stdin):
+        result = await proc.communicate(dedent(stdin).lstrip("\n").encode())
+        return proc.returncode, *result
+    yield _send
+
+
+@pytest.mark.asyncio
+async def test_lint(lintsonschema):
+    async with bowtie("-i", lintsonschema) as send:
+        returncode, stdout, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
             """
-        ).lstrip("\n").encode("utf-8")
-    )
+        )
 
     assert stderr.decode() == ""
-    assert proc.returncode == 0
+    assert returncode == 0
