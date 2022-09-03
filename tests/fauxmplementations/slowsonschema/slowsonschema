@@ -5,10 +5,11 @@ A bowtie runner which always gets the right answer, slowly.
 from dataclasses import dataclass
 import io
 import json
+import os
 import sys
 import time
 
-SLEEP_SECS = 0.5
+SLEEP_SECS = int(os.environ.get("SLOWSONSCHEMA_DELAY_SECS", "1"))
 
 
 @dataclass
