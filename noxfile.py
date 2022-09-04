@@ -20,7 +20,7 @@ def build(session):
     session.run("python", "-m", "build", str(ROOT), "--outdir", tmpdir)
 
 
-@nox.session
+@nox.session(tags=["style"])
 def readme(session):
     session.install("build", "twine")
     tmpdir = session.create_tmp()
@@ -28,7 +28,7 @@ def readme(session):
     session.run("python", "-m", "twine", "check", tmpdir + "/*")
 
 
-@nox.session
+@nox.session(tags=["style"])
 def style(session):
     session.install(
         "flake8",
@@ -41,17 +41,27 @@ def style(session):
     session.run("python", "-m", "flake8", str(BOWTIE))
 
 
-@nox.session
-def docs(session):
+@nox.session(tags=["docs"])
+@nox.parametrize(
+    "builder", [
+        nox.param(name, id=name) for name in [
+            "dirhtml", "doctest", "linkcheck", "spelling"
+        ]
+    ],
+)
+def docs(session, builder):
     session.install("-r", str(DOCS / "requirements.txt"))
-    tmpdir = session.create_tmp()
+    tmpdir = Path(session.create_tmp())
+    argv = ["-n", "-T", "-W"]
+    if builder != "spelling":
+        argv += ["-q"]
     session.run(
-        "python", "-m", "sphinx", "-b", "dirhtml",
-        str(DOCS), tmpdir, "-n", "-q", "-T", "-W",
+        "python", "-m", "sphinx", "-b", builder,
+        str(DOCS), str(tmpdir / builder), *argv,
     )
 
 
-@nox.session
+@nox.session(tags=["docs", "style"], name="docs(style)")
 def docs_style(session):
     session.install(
         "doc8",
