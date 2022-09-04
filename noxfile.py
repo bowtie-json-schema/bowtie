@@ -5,6 +5,7 @@ import nox
 ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
+TESTS = ROOT / "tests"
 
 
 @nox.session(python=["3.8", "3.9", "3.10"])
@@ -38,7 +39,7 @@ def style(session):
         "flake8-quotes",
         "flake8-tidy-imports",
     )
-    session.run("python", "-m", "flake8", str(BOWTIE))
+    session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS))
 
 
 @nox.session(tags=["docs"])
