@@ -10,7 +10,7 @@ import structlog
 
 from bowtie._core import Implementation
 
-log = structlog.get_logger()
+_log = structlog.get_logger()
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
@@ -37,18 +37,21 @@ def run(**kwargs):
 
 
 async def _run(implementations, cases):
+    _log.debug("Starting", implementations=implementations)
+
     async with AsyncExitStack() as stack:
-        log.debug("Starting", implementations=implementations)
         docker = await stack.enter_async_context(aiodocker.Docker())
         streams = [
             await stack.enter_async_context(
                 Implementation.start(docker=docker, image_name=each),
             ) for each in implementations
         ]
-        log.debug("Ready", implementations=streams)
+        _log.debug("Ready", implementations=streams)
 
         for seq, case in enumerate(cases, 1):
-            log.debug("Running", seq=seq, case=case["description"])
+            log = _log.bind(seq=seq, description=case["description"])
+            log.debug("Running")
+
             responses = await asyncio.gather(
                 *(each.run_case(seq=seq, case=case) for each in streams),
             )
@@ -68,10 +71,6 @@ async def _run(implementations, cases):
                 k: dict(v) if len(v) > 1 else next(iter(v))
                 for k, v in tests.items()
             }
-            log.msg(
-                "Responded",
-                seq=seq,
-                description=case["description"],
-                results=results,
-            )
-        log.msg("Finished", count=seq)
+            log.msg("Responded", results=results)
+
+    _log.msg("Finished", count=seq)
