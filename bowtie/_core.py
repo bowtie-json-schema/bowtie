@@ -43,7 +43,7 @@ class Implementation:
         if not response["succeeded"]:
             raise StartError(
                 f"{self._name} failed on startup. Stderr contained:\n\n"
-                f"{indent(response['response']['stderr'].decode(), '  ')}"
+                f"{indent(response['response']['stderr'].decode(), '  ')}",
             )
         if not response["response"].get("ready"):
             raise StartError(f"{self._name} is not ready!")
