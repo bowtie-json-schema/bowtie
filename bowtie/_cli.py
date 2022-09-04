@@ -1,6 +1,5 @@
 from collections import defaultdict
 from contextlib import AsyncExitStack, asynccontextmanager
-from textwrap import indent
 from time import monotonic_ns
 import asyncio
 import json
@@ -16,15 +15,6 @@ log = structlog.get_logger()
 
 class StartError(Exception):
     pass
-
-
-class ImplementationError(Exception):
-    def __init__(self, stderr):
-        super().__init__(stderr)
-        self.stderr = stderr
-
-    def __str__(self):
-        return "\n\n" + indent(self.stderr.decode(), " " * 2)
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
