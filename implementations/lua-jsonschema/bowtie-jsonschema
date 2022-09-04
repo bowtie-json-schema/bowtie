@@ -1,0 +1,36 @@
+#!/usr/bin/env luajit
+local jsonschema = require 'jsonschema'
+local json = require 'json'
+
+STARTED = false
+
+io.stdout:setvbuf 'no'
+
+local cmds = {
+  start = function(request)
+    assert(request.version == 1, "Wrong version!")
+    STARTED = true
+    return { ready = true, version = 1 }
+  end,
+  run = function(request)
+    assert(STARTED, "Not started!")
+
+    local validate = jsonschema.generate_validator(request.case.schema)
+    local results = {}
+    for _, test in ipairs(request.case.tests) do
+      table.insert(results, { valid = validate(test.instance) })
+    end
+    return { seq = request.seq, tests = results }
+  end,
+  stop = function(_)
+    assert(STARTED, "Not started!")
+    os.exit(0)
+  end,
+}
+
+local request, response
+for line in io.lines() do
+  request = json.decode(line)
+  response = cmds[request.cmd](request)
+  io.write(json.encode(response) .. '\n')
+end
