@@ -101,7 +101,7 @@ class Implementation:
                 if message is None:
                     break
                 data.append(message.data)
-            response = {"stderr": b"".join(data)}
+            response = {"stderr": b"".join(data), "implementation": self._name}
         else:
             succeeded, response = True, json.loads(message.data)
 
@@ -126,12 +126,17 @@ async def _run(implementations, cases):
 
         for seq, case in enumerate(cases):
             log.msg("Running", case=case["description"])
-            responses = await send_all(streams=streams, seq=seq, case=case)
+            responses = await run_case(streams=streams, seq=seq, case=case)
             tests = defaultdict(lambda: defaultdict(list))
             for each in responses:
                 if not each["succeeded"]:
-                    log.msg("ERROR", stderr=each.get("stderr"))
+                    log.msg(
+                        "ERROR",
+                        stderr=each.get("stderr"),
+                        implementation=each["implementation"],
+                    )
                     continue
+
                 results = each["response"]["tests"]
                 for test, got in zip(case["tests"], results):
                     tests[test["description"]][got["valid"]].append(
@@ -141,17 +146,16 @@ async def _run(implementations, cases):
             result = {
                 "description": case["description"],
                 "schema": case["schema"],
-                "tests": {k: dict(v) for k, v in tests.items()},
+                "tests": {
+                    k: dict(v) if len(v) > 1 else next(iter(v))
+                    for k, v in tests.items()
+                },
             }
             log.msg("Responded", result=result)
 
-        responses = await send_all(
-            streams=streams,
-            seq=seq,
-            case=case,
-        )
-        log.msg("Responded", responses=responses)
+        responses = await run_case(streams=streams, seq=seq, case=case)
+        log.msg("Last", responses=responses)
 
 
-async def send_all(streams, **kwargs):
+async def run_case(streams, **kwargs):
     return await asyncio.gather(*(each.run_case(**kwargs) for each in streams))
