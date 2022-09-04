@@ -19,7 +19,7 @@ class Runner:
         for line in stdin:
             each = json.loads(line)
             cmd = each.pop("cmd")
-            response = getattr(self, f"cmd_{cmd}")
+            response = getattr(self, f"cmd_{cmd}")(**each)
             self._stdout.write(f"{json.dumps(response)}\n")
             self._stdout.flush()
 

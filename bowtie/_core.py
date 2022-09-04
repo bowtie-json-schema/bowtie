@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from textwrap import indent
 from time import monotonic_ns
 import asyncio
 import json
@@ -39,6 +40,11 @@ class Implementation:
 
     async def _start(self):
         response = await self._send(cmd="start", version=1)
+        if not response["succeeded"]:
+            raise StartError(
+                f"{self._name} failed on startup. Stderr contained:\n\n"
+                f"{indent(response['response']['stderr'].decode(), '  ')}"
+            )
         if not response["response"].get("ready"):
             raise StartError(f"{self._name} is not ready!")
         elif response["response"].get("version") != 1:
