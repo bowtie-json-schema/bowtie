@@ -60,6 +60,6 @@ Of course one isn't limited to just the test cases in the test suite, as ``bowti
 Adding an Implementation
 ------------------------
 
-Add a ``Dockerfile`` which runs as its entrypoint a bowtie-compatible process to the ``implementations/`` directory in the root of this repository.
+Add a ``Dockerfile`` which runs as its entry point a bowtie-compatible process to the ``implementations/`` directory in the root of this repository.
 
-Name your directory ``<(ascii-compatible-name-of-)language-your-implementation-is-written-in>-<language-specific-package-identifier>``, so if your implementation is written in B++ and called "flooblekins", name the directory ``bpp-flooblekins``.
+Name your directory ``<(ascii-compatible-name-of-)language-your-implementation-is-written-in>-<language-specific-package-identifier>``, so if your implementation is written in B++ and called ``flooblekins``, name the directory ``bpp-flooblekins``.
