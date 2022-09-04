@@ -6,6 +6,7 @@ import asyncio
 import json
 import sys
 
+from attrs import define, field
 import aiodocker
 import click
 import structlog
@@ -38,11 +39,6 @@ def main():
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
-@click.option(
-    "--test-timeout", "-T", "test_timeout",
-    help="The maximum amount of seconds to wait for an individual test.",
-    default=0.5,
-)
 def run(**kwargs):
     """
     Run a sequence of cases provided on standard input.
@@ -52,45 +48,95 @@ def run(**kwargs):
     asyncio.run(_run(**kwargs, cases=cases))
 
 
-async def _run(implementations, cases, test_timeout):
-    async with AsyncExitStack() as stack:
-        log.msg(
-            "Starting",
-            implementations=implementations,
-            test_timeout=test_timeout,
+@define(hash=True)
+class Implementation:
+    """
+    A running implementation under test.
+    """
+
+    _name: str
+    _stream: aiodocker.stream.Stream = field(repr=False)
+
+    @classmethod
+    @asynccontextmanager
+    async def start(cls, docker, image_name):
+        container = await docker.containers.create(
+            config=dict(Image=image_name, OpenStdin=True)
         )
-        docker = await stack.enter_async_context(aiodocker.Docker())
-        streams = {
-            await stack.enter_async_context(
-                temporary_container(docker=docker, image=implementation),
-            ): implementation for implementation in implementations
+        try:
+            await container.start()
+            stream = container.attach(stdin=True, stdout=True, stderr=True)
+            self = cls(name=image_name, stream=stream)
+            await self._start()
+            yield self
+            await self._stop()
+        finally:
+            await container.delete(force=True)
+
+    async def _start(self):
+        response = await self._send(cmd="start", version=1)
+        if not response["response"].get("ready"):
+            raise StartError(f"{self._name} is not ready!")
+        elif response["response"].get("version") != 1:
+            raise StartError(f"{self._name} did not speak version 1!")
+
+    async def run_case(self, seq, case):
+        return await self._send(cmd="run", seq=seq, case=case)
+
+    async def _stop(self):
+        await self._send(cmd="stop")
+
+    async def _send(self, **kwargs):
+        started = monotonic_ns()
+        cmd = f"{json.dumps(kwargs)}\n"
+        await self._stream.write_in(cmd.encode("utf-8"))
+
+        message = await self._stream.read_out()
+        if message is None:
+            succeeded, response = None, {}
+        elif message.stream == 2:
+            succeeded, data = False, [message.data]
+            while message.stream == 2:
+                message = await self._stream.read_out()
+                if message is None:
+                    break
+                data.append(message.data)
+            response = {"stderr": b"".join(data)}
+        else:
+            succeeded, response = True, json.loads(message.data)
+
+        return {
+            "succeeded": succeeded,
+            "took_ns": monotonic_ns() - started,
+            "response": response,
+            "implementation": self._name,
         }
-        log.msg("Connected", implementations=sorted(streams.values()))
 
-        responses = await send_all(streams=streams, cmd="start", version=1)
-        log.msg("Ready", responses=responses)
 
-        for response in responses:
-            if not response.get("ready"):
-                raise StartError("Not ready!")
-            elif response.get("version") != 1:
-                raise StartError("Wrong version!")
+async def _run(implementations, cases):
+    async with AsyncExitStack() as stack:
+        log.msg("Starting", implementations=implementations)
+        docker = await stack.enter_async_context(aiodocker.Docker())
+        streams = [
+            await stack.enter_async_context(
+                Implementation.start(docker=docker, image_name=each)
+            ) for each in implementations
+        ]
+        log.msg("Ready", implementations=streams)
 
         for seq, case in enumerate(cases):
             log.msg("Running", case=case["description"])
-            responses = await send_all(
-                streams=streams,
-                cmd="run",
-                seq=seq,
-                case=case,
-            )
+            responses = await send_all(streams=streams, seq=seq, case=case)
             tests = defaultdict(lambda: defaultdict(list))
-            for response in responses:
-                if response.get("error"):
-                    log.msg("ERROR", stderr=response["stderr"])
-                else:
-                    for test, each in zip(case["tests"], response["tests"]):
-                        tests[test["description"]][each["valid"]].append("")
+            for each in responses:
+                if not each["succeeded"]:
+                    log.msg("ERROR", stderr=each.get("stderr"))
+                    continue
+                results = each["response"]["tests"]
+                for test, got in zip(case["tests"], results):
+                    tests[test["description"]][got["valid"]].append(
+                        each["implementation"],
+                    )
 
             result = {
                 "description": case["description"],
@@ -101,62 +147,11 @@ async def _run(implementations, cases, test_timeout):
 
         responses = await send_all(
             streams=streams,
-            cmd="run",
             seq=seq,
             case=case,
         )
         log.msg("Responded", responses=responses)
 
-        log.msg("Stopping")
-        await send_all(streams=streams, cmd="stop")
-        log.msg("Stopped")
-
-
-@asynccontextmanager
-async def temporary_container(docker, image):
-    config = dict(Image=image, OpenStdin=True)
-    container = await docker.containers.create(config=config)
-
-    try:
-        await container.start()
-        yield container.attach(stdin=True, stdout=True, stderr=True)
-    finally:
-        await container.delete(force=True)
-
 
 async def send_all(streams, **kwargs):
-    return await asyncio.gather(
-        *(send(stream, **kwargs) for stream in streams),
-    )
-
-
-async def receive_all(streams):
-    return await asyncio.gather(*(receive(stream) for stream in streams))
-
-
-async def send(stream, cmd, **kwargs):
-    kwargs["cmd"] = cmd
-    cmd = json.dumps(kwargs).encode("utf-8")
-    await stream.write_in(cmd)
-    started = monotonic_ns()
-    await stream.write_in(b"\n")
-    response = await receive(stream) or {}
-    response["took_ns"] = monotonic_ns() - started
-    return response
-
-
-async def receive(stream):
-    message = await stream.read_out()
-    if message is None:
-        return
-
-    data = [message.data]
-    if message.stream == 2:
-        while message.stream == 2:
-            message = await stream.read_out()
-            if message is None:
-                break
-            data.append(message.data)
-        return {"error": True, "stderr": b"".join(data)}
-
-    return json.loads(message.data)
+    return await asyncio.gather(*(each.run_case(**kwargs) for each in streams))

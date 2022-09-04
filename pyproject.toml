@@ -38,6 +38,7 @@ dynamic = ["version"]
 
 dependencies = [
   "aiodocker",
+  "attrs",
   "click",
   "structlog",
 ]
