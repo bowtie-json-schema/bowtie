@@ -61,7 +61,7 @@ class Implementation:
     @asynccontextmanager
     async def start(cls, docker, image_name):
         container = await docker.containers.create(
-            config=dict(Image=image_name, OpenStdin=True)
+            config=dict(Image=image_name, OpenStdin=True),
         )
         try:
             await container.start()
@@ -119,7 +119,7 @@ async def _run(implementations, cases):
         docker = await stack.enter_async_context(aiodocker.Docker())
         streams = [
             await stack.enter_async_context(
-                Implementation.start(docker=docker, image_name=each)
+                Implementation.start(docker=docker, image_name=each),
             ) for each in implementations
         ]
         log.msg("Ready", implementations=streams)
