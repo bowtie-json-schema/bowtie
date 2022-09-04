@@ -14,11 +14,29 @@ def tests(session):
     session.run("pytest")
 
 
-@nox.session
+@nox.session(tags=["build"])
 def build(session):
     session.install("build")
     tmpdir = session.create_tmp()
     session.run("python", "-m", "build", str(ROOT), "--outdir", tmpdir)
+
+
+@nox.session(tags=["build"])
+def shiv(session):
+    session.install("shiv")
+    if session.posargs:
+        out = session.posargs[0]
+    else:
+        tmpdir = Path(session.create_tmp())
+        out = tmpdir / "bowtie"
+    session.run(
+        "python", "-m", "shiv",
+        "--reproducible",
+        "-c", "bowtie",
+        str(ROOT),
+        "-o", str(out),
+    )
+    print(f"Outputted a shiv to {out}.")
 
 
 @nox.session(tags=["style"])
