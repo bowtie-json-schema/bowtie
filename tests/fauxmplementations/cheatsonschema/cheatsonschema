@@ -31,13 +31,10 @@ class Runner:
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
 
-        return dict(
-            seq=seq,
-            tests=[
-                {"valid": test.get("valid", True)}
-                for test in case["tests"]
-            ],
-        )
+        results = [
+            {"valid": test.get("valid", True)} for test in case["tests"]
+        ]
+        return dict(seq=seq, results=results)
 
     def cmd_stop(self):
         assert self._started, "Not started!"

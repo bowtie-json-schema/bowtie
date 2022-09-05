@@ -61,11 +61,13 @@ async def _run(implementations, cases):
                     log.error("ERROR", **each)
                     continue
 
-                results = each["response"]["tests"]
+                results = each["response"]["results"]
                 for test, got in zip(case["tests"], results):
-                    tests[test["description"]][got["valid"]].append(
-                        each["implementation"],
-                    )
+                    if got.get("skipped"):
+                        bucket = tests[test["description"]]["skipped"]
+                    else:
+                        bucket = tests[test["description"]][got["valid"]]
+                    bucket.append(each["implementation"])
 
             results = {
                 k: dict(v) if len(v) > 1 else next(iter(v))

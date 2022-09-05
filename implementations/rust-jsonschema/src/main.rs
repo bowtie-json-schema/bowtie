@@ -29,7 +29,7 @@ fn main() -> Result<()> {
                     .iter()
                     .map(|test| json!({"valid": compiled.is_valid(&test["instance"])}))
                     .collect();
-                let response = json!({"seq": &request["seq"], "tests": &results});
+                let response = json!({"seq": &request["seq"], "results": &results});
                 println!("{}", response.to_string());
             }
             "stop" => {

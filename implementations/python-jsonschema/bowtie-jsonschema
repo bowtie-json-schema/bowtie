@@ -31,13 +31,11 @@ class Runner:
         schema = case["schema"]
         validator = jsonschema.validators.validator_for(schema)(schema)
 
-        return dict(
-            seq=seq,
-            tests=[
-                {"valid": validator.is_valid(test["instance"])}
-                for test in case["tests"]
-            ],
-        )
+        results = [
+            {"valid": validator.is_valid(test["instance"])}
+            for test in case["tests"]
+        ]
+        return dict(seq=seq, results=results)
 
     def cmd_stop(self):
         assert self._started, "Not started!"

@@ -34,8 +34,8 @@ const cmds = {
     const promises = testCase.tests.map(
       (test) => ({ valid: validate(test.instance).valid })
     );
-    const tests = await Promise.all(promises);
-    return { seq: args.seq, tests: tests }
+    const results = await Promise.all(promises);
+    return { seq: args.seq, results: results }
   },
 
   stop: async (_) => {

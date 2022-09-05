@@ -28,7 +28,7 @@ const cmds = {
     const validate = ajv.compile(testCase.schema);
     return {
       seq: args.seq,
-      tests: testCase.tests.map((test) => ({ valid: validate(test.instance) }))
+      results: testCase.tests.map((test) => ({ valid: validate(test.instance) }))
     }
   },
 

@@ -31,17 +31,17 @@ class Runner:
         schema = case["schema"]
         validate = fastjsonschema.compile(schema)
 
-        tests = []
+        results = []
 
         for test in case["tests"]:
             try:
                 validate(test["instance"])
             except fastjsonschema.JsonSchemaException:
-                tests.append({"valid": False})
+                results.append({"valid": False})
             else:
-                tests.append({"valid": True})
+                results.append({"valid": True})
 
-        return dict(seq=seq, tests=tests)
+        return dict(seq=seq, results=results)
 
     def cmd_stop(self):
         assert self._started, "Not started!"

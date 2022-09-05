@@ -53,7 +53,7 @@ while ((line = Console.In.ReadLine()) != null && line != "") {
                 JsonObject result = new JsonObject
                 {
                     ["seq"] = root.GetProperty("seq").GetInt64(),
-                    ["tests"] = results,
+                    ["results"] = results,
                 };
                 Console.Out.WriteLine(result);
                 break;

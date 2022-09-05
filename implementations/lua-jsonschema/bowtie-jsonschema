@@ -20,7 +20,7 @@ local cmds = {
     for _, test in ipairs(request.case.tests) do
       table.insert(results, { valid = validate(test.instance) })
     end
-    return { seq = request.seq, tests = results }
+    return { seq = request.seq, results = results }
   end,
   stop = function(_)
     assert(STARTED, "Not started!")
