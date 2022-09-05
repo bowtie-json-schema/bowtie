@@ -57,14 +57,14 @@ def style(session):
         "flake8-quotes",
         "flake8-tidy-imports",
     )
-    session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS))
+    session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS), __file__)
 
 
 @nox.session(tags=["docs"])
 @nox.parametrize(
     "builder", [
         nox.param(name, id=name) for name in [
-            "dirhtml", "doctest", "linkcheck", "spelling"
+            "dirhtml", "doctest", "linkcheck", "spelling",
         ]
     ],
 )
@@ -87,4 +87,4 @@ def docs_style(session):
         "pygments",
         "pygments-github-lexers",
     )
-    session.run("python", "-m", "doc8", str(DOCS))
+    session.run("python", "-m", "doc8", "--max-line-length", "1000", str(DOCS))
