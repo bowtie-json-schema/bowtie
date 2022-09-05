@@ -1,5 +1,9 @@
+from pathlib import Path
 import importlib.metadata
 import re
+
+DOCS = Path(__file__).parent
+STATIC = DOCS / "_static"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -26,6 +30,8 @@ pygments_style = "lovelace"
 pygments_dark_style = "one-dark"
 
 html_theme = "furo"
+html_logo = str(STATIC / "dreamed.png")
+html_static_path = [str(STATIC)]
 
 # -- Extension configuration -------------------------------------------------
 
