@@ -1,5 +1,9 @@
 .. _bowtie:
 
+======
+Bowtie
+======
+
 Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-schema.org/>`_, by which we mean it coordinates executing *other* `validator implementations <https://json-schema.org/implementations.html>`_, collecting and reporting on their results.
 
 To do so it defines a simple input/output protocol (specified in `this JSON Schema <https://github.com/python-jsonschema/bowtie/blob/main/io-schema.json>`_ which validator implementations can implement, and it provides a CLI which can execute supported implementations.
