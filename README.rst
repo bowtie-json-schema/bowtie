@@ -2,7 +2,7 @@
 Bowtie
 ======
 
-.. image:: ./docs/_static/dreamed.png
+.. image:: docs/_static/dreamed.png
   :alt: Bowtie
   :target: https://pypi.org/project/bowtie-json-schema/
   :align: center
