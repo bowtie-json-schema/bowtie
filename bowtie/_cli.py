@@ -60,22 +60,21 @@ async def _run(implementations, cases):
             log = _log.bind(seq=seq, description=case["description"])
             log.debug("Running")
 
-            responses = await asyncio.gather(
-                *(each.run_case(seq=seq, case=case) for each in streams),
-            )
             tests = defaultdict(lambda: defaultdict(list))
-            for each in responses:
-                if not each["succeeded"]:
-                    log.error("ERROR", **each)
+            responses = [each.run_case(seq=seq, case=case) for each in streams]
+            for each in asyncio.as_completed(responses):
+                result = await each
+                if not result["succeeded"]:
+                    log.error("ERROR", **result)
                     continue
 
-                results = each["response"]["results"]
+                results = result["response"]["results"]
                 for test, got in zip(case["tests"], results):
                     if got.get("skipped"):
                         bucket = tests[test["description"]]["skipped"]
                     else:
                         bucket = tests[test["description"]][got["valid"]]
-                    bucket.append(each["implementation"])
+                    bucket.append(result["implementation"])
 
             results = {
                 k: dict(v) if len(v) > 1 else next(iter(v))
