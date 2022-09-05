@@ -2,6 +2,7 @@ from collections import defaultdict
 from contextlib import AsyncExitStack
 import asyncio
 import json
+import os
 import sys
 
 import aiodocker
@@ -22,18 +23,24 @@ def main():
 
 
 @main.command()
+@click.pass_context
 @click.option(
     "--implementation", "-i", "implementations",
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
-def run(**kwargs):
+def run(context, **kwargs):
     """
     Run a sequence of cases provided on standard input.
     """
 
     cases = (json.loads(line) for line in sys.stdin.buffer)
-    asyncio.run(_run(**kwargs, cases=cases))
+    count = asyncio.run(_run(**kwargs, cases=cases))
+    if not count:
+        _log.error("No test cases ran.")
+        context.exit(os.EX_DATAERR)
+    else:
+        _log.msg("Finished", count=count)
 
 
 async def _run(implementations, cases):
@@ -48,6 +55,7 @@ async def _run(implementations, cases):
         ]
         _log.debug("Ready", implementations=streams)
 
+        seq = 0
         for seq, case in enumerate(cases, 1):
             log = _log.bind(seq=seq, description=case["description"])
             log.debug("Running")
@@ -74,5 +82,4 @@ async def _run(implementations, cases):
                 for k, v in tests.items()
             }
             log.msg("Responded", results=results)
-
-    _log.msg("Finished", count=seq)
+    return seq

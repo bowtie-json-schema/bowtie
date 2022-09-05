@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
 import asyncio
+import os
 import sys
 import tarfile
 
@@ -23,7 +24,7 @@ def tar_from_directory(directory):
     return fileobj
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="module")
 async def lintsonschema(docker):
     tag = "bowtie-integration-tests/lintsonschema"
     await docker.images.build(
@@ -61,3 +62,12 @@ async def test_lint(lintsonschema):
 
     assert stderr.decode() == ""
     assert returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_no_tests_run(lintsonschema):
+    async with bowtie("-i", lintsonschema) as send:
+        returncode, stdout, stderr = await send("")
+
+    assert stderr.decode() == ""
+    assert returncode == os.EX_DATAERR
