@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""
+A bowtie runner which always gets the right answer, slowly.
+"""
+from dataclasses import dataclass
+import io
+import json
+import os
+import shlex
+import sys
+import time
+
+
+class Crash(Exception):
+    """
+    Self-immolation.
+    """
+
+
+_VALID = {"1": {"valid": True}, "0": {"valid": False}}
+
+
+@dataclass
+class Runner:
+
+    _started: bool = False
+    _stdout: io.TextIOWrapper = sys.stdout
+    _hang_on_stop = False
+
+    def run(self, stdin=sys.stdin):
+        for line in stdin:
+            each = json.loads(line)
+            cmd = each.pop("cmd")
+            response = getattr(self, f"cmd_{cmd}")(**each)
+            self._stdout.write(f"{json.dumps(response)}\n")
+            self._stdout.flush()
+
+    def do_minilanguage(self, description):
+        words = shlex.split(description)
+        result = {"valid": False}
+
+        for word in words:
+            instruction, colon, arg = word.partition(":")
+            if not colon:
+                continue
+
+            if instruction == "crash":
+                raise Crash()
+            elif instruction == "sleep":
+                time.sleep(float(arg))
+            elif instruction == "hang":
+                self._hang_on_stop = True
+            elif instruction == "valid":
+                result = _VALID.get(arg, {"valid": arg})
+            elif instruction == "skip":
+                result = dict(each.split("=", 1) for each in arg.split(","))
+                result.update(skipped=True)
+
+        return result
+
+    def cmd_start(self, version):
+        if os.environ.get("ENVSONSCHEMA_CRASH") == "1":
+            raise Crash()
+
+        assert version == 1
+        self._started = True
+        return dict(ready=True, version=1)
+
+    def cmd_run(self, case, seq):
+        assert self._started, "Not started!"
+
+        result = self.do_minilanguage(case["description"])
+        if result.get("skipped"):
+            result["seq"] = seq
+            return result
+
+        results = [
+            self.do_minilanguage(test["description"]) for test in case["tests"]
+        ]
+        return dict(seq=seq, results=results)
+
+    def cmd_stop(self):
+        assert self._started, "Not started!"
+        if self._hang_on_stop:
+            return
+        sys.exit(0)
+
+
+Runner().run()
