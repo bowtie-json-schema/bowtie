@@ -21,7 +21,9 @@ class Implementation:
     """
 
     _name: str
-    _stream: aiodocker.stream.Stream = field(repr=False)
+    _container: aiodocker.containers.DockerContainer = field(repr=False)
+    _stream: aiodocker.stream.Stream = None
+    _reattaches: int = 3 + 1
 
     @classmethod
     @asynccontextmanager
@@ -31,12 +33,20 @@ class Implementation:
         )
         try:
             await container.start()
-            stream = container.attach(stdin=True, stdout=True, stderr=True)
-            self = cls(name=image_name, stream=stream)
+            self = cls(name=image_name, container=container)
+            self._attach()
             yield await self._start()
             await self._stop()
         finally:
             await container.delete(force=True)
+
+    def _attach(self):
+        self._reattaches -= 1
+        self._stream = self._container.attach(
+            stdin=True,
+            stdout=True,
+            stderr=True,
+        )
 
     async def _start(self):
         response = await self._send(cmd="start", version=1)
@@ -58,9 +68,18 @@ class Implementation:
         await self._send(cmd="stop")
 
     async def _send(self, **kwargs):
+        if self._reattaches <= 0:
+            return dict(succeeded=False, implementation=self._name)
+
         started = monotonic_ns()
         cmd = f"{json.dumps(kwargs)}\n"
-        await self._stream.write_in(cmd.encode("utf-8"))
+        try:
+            await self._stream.write_in(cmd.encode("utf-8"))
+        except AttributeError:
+            # FIXME: aiodocker doesn't appear to properly report when its
+            # stream is closed
+            self._attach()
+            await self._stream.write_in(cmd.encode("utf-8"))
         succeeded, response = await self._recv()
         return {
             "succeeded": succeeded,

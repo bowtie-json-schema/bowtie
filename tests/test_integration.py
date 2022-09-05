@@ -24,16 +24,22 @@ def tar_from_directory(directory):
     return fileobj
 
 
-@pytest_asyncio.fixture(scope="module")
-async def lintsonschema(docker):
-    tag = "bowtie-integration-tests/lintsonschema"
-    await docker.images.build(
-        fileobj=tar_from_directory(FAUXMPLEMENTATIONS / "lintsonschema"),
-        encoding="utf-8",
-        tag=tag,
-    )
-    yield tag
-    await docker.images.delete(name=tag)
+def image(name):
+    @pytest_asyncio.fixture(scope="module")
+    async def _image(docker):
+        tag = f"bowtie-integration-tests/{name}"
+        await docker.images.build(
+            fileobj=tar_from_directory(FAUXMPLEMENTATIONS / name),
+            encoding="utf-8",
+            tag=tag,
+        )
+        yield tag
+        await docker.images.delete(name=tag)
+    return _image
+
+
+lintsonschema = image("lintsonschema")
+envsonschema = image("envsonschema")
 
 
 @asynccontextmanager
@@ -71,3 +77,19 @@ async def test_no_tests_run(lintsonschema):
 
     assert stderr.decode() == ""
     assert returncode == os.EX_DATAERR
+
+
+@pytest.mark.asyncio
+async def test_restarts_crashed_implementations(envsonschema):
+    async with bowtie("-i", envsonschema) as send:
+        returncode, stdout, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
+            {"description": "4", "schema": {}, "tests": [{"description": "b", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert stderr.decode() == ""
+    assert returncode == 0
