@@ -4,8 +4,9 @@ from time import monotonic_ns
 import asyncio
 import json
 
-from attrs import define
+from attrs import define, field
 import aiodocker
+import structlog
 
 
 class StartError(Exception):
@@ -139,3 +140,46 @@ class Implementation:
             self._stream.read_out(),
             timeout=self._read_timeout_sec,
         )
+
+
+@define
+class Reporter:
+
+    _log: structlog.BoundLogger = field(factory=structlog.get_logger)
+
+    def run_starting(self, implementations):
+        self._log.info("Starting", implementations=implementations)
+
+    def ready(self, implementations):
+        self._log.debug("Ready", implementations=implementations)
+
+    def finished(self, count):
+        if not count:
+            self._log.error("No test cases ran.")
+        else:
+            self._log.msg("Finished", count=count)
+
+    def case_started(self, seq, case):
+        return _CaseReporter.case_started(
+            log=self._log.bind(seq=seq, case=case),
+        )
+
+
+@define
+class _CaseReporter:
+
+    _log: structlog.BoundLogger
+
+    @classmethod
+    def case_started(cls, log):
+        log.info("Starting")
+        return cls(log=log)
+
+    def case_finished(self, results):
+        self._log.msg("Responded", results=results)
+
+    def backoff(self, result):
+        self._log.warn("Backing off!", **result)
+
+    def errored(self, result):
+        self._log.error("ERROR", **result)

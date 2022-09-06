@@ -7,11 +7,8 @@ import sys
 
 import aiodocker
 import click
-import structlog
 
-from bowtie._core import Implementation
-
-_log = structlog.get_logger()
+from bowtie._core import Implementation, Reporter
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
@@ -35,16 +32,15 @@ def run(context, **kwargs):
     """
 
     cases = (json.loads(line) for line in sys.stdin.buffer)
-    count = asyncio.run(_run(**kwargs, cases=cases))
+    reporter = Reporter()
+    count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
+    reporter.finished(count=count)
     if not count:
-        _log.error("No test cases ran.")
         context.exit(os.EX_DATAERR)
-    else:
-        _log.msg("Finished", count=count)
 
 
-async def _run(implementations, cases):
-    _log.debug("Starting", implementations=implementations)
+async def _run(implementations, reporter, cases):
+    reporter.run_starting(implementations=implementations)
 
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
@@ -53,12 +49,11 @@ async def _run(implementations, cases):
                 Implementation.start(docker=docker, image_name=each),
             ) for each in implementations
         ]
-        _log.debug("Ready", implementations=streams)
+        reporter.ready(implementations=streams)
 
         seq = 0
         for seq, case in enumerate(cases, 1):
-            log = _log.bind(seq=seq, description=case["description"])
-            log.debug("Running")
+            case_reporter = reporter.case_started(seq=seq, case=case)
 
             tests = defaultdict(lambda: defaultdict(list))
             responses = [each.run_case(seq=seq, case=case) for each in streams]
@@ -66,9 +61,9 @@ async def _run(implementations, cases):
                 result = await each
                 if not result["succeeded"]:
                     if result.get("backoff"):
-                        log.warn("Backing off", **result)
+                        case_reporter.backoff(result)
                     else:
-                        log.error("ERROR", **result)
+                        case_reporter.errored(result)
                     continue
 
                 results = result["response"]["results"]
@@ -83,5 +78,5 @@ async def _run(implementations, cases):
                 k: dict(v) if len(v) > 1 else next(iter(v))
                 for k, v in tests.items()
             }
-            log.msg("Responded", results=results)
+            case_reporter.case_finished(results=results)
     return seq
