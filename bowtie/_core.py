@@ -22,7 +22,7 @@ class Implementation:
 
     _name: str
     _docker: aiodocker.Docker
-    _restarts: int = 2 + 1
+    _restarts: int = 20 + 1
     _read_timeout_sec: float = 2.0
 
     _container: aiodocker.containers.DockerContainer = None
@@ -44,6 +44,7 @@ class Implementation:
 
     async def _restart_container(self):
         self._restarts -= 1
+
         if self._container is not None:
             await self._container.delete(force=True)
         self._container = await self._docker.containers.create(
@@ -71,15 +72,17 @@ class Implementation:
         return self
 
     async def run_case(self, seq, case):
+        if self._restarts <= 0:
+            return dict(
+                succeeded=False, backoff=True, implementation=self._name,
+            )
         return await self._send(cmd="run", seq=seq, case=case)
 
     async def _stop(self):
-        await self._send(cmd="stop")
+        if self._restarts > 0:
+            await self._send(cmd="stop")
 
     async def _send(self, **kwargs):
-        if self._restarts <= 0:
-            return dict(succeeded=False, implementation=self._name)
-
         started = monotonic_ns()
         cmd = f"{json.dumps(kwargs)}\n"
         try:

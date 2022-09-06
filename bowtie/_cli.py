@@ -65,7 +65,10 @@ async def _run(implementations, cases):
             for each in asyncio.as_completed(responses):
                 result = await each
                 if not result["succeeded"]:
-                    log.error("ERROR", **result)
+                    if result.get("backoff"):
+                        log.warn("Backing off", **result)
+                    else:
+                        log.error("ERROR", **result)
                     continue
 
                 results = result["response"]["results"]
