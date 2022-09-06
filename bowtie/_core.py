@@ -22,12 +22,14 @@ class Implementation:
     """
 
     _name: str
-    _docker: aiodocker.Docker
-    _restarts: int = 20 + 1
-    _read_timeout_sec: float = 2.0
+    _docker: aiodocker.Docker = field(repr=False)
+    _restarts: int = field(default=20 + 1, repr=False)
+    _read_timeout_sec: float = field(default=2.0, repr=False)
 
-    _container: aiodocker.containers.DockerContainer = None
-    _stream: aiodocker.stream.Stream = None
+    _container: aiodocker.containers.DockerContainer = field(
+        default=None, repr=False,
+    )
+    _stream: aiodocker.stream.Stream = field(default=None, repr=False)
 
     @classmethod
     @asynccontextmanager
