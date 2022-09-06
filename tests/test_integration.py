@@ -86,7 +86,7 @@ async def test_restarts_crashed_implementations(envsonschema):
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
-            {"description": "3", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "sleep:8", "instance": {}}] }
             {"description": "4", "schema": {}, "tests": [{"description": "b", "instance": {}}] }
             """,  # noqa: E501
         )

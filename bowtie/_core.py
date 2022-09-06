@@ -4,7 +4,7 @@ from time import monotonic_ns
 import asyncio
 import json
 
-from attrs import define, field
+from attrs import define
 import aiodocker
 
 
@@ -21,32 +21,38 @@ class Implementation:
     """
 
     _name: str
-    _container: aiodocker.containers.DockerContainer = field(repr=False)
+    _docker: aiodocker.Docker
+    _restarts: int = 2 + 1
+    _read_timeout_sec: float = 2.0
+
+    _container: aiodocker.containers.DockerContainer = None
     _stream: aiodocker.stream.Stream = None
-    _reattaches: int = 3 + 1
 
     @classmethod
     @asynccontextmanager
     async def start(cls, docker, image_name):
-        container = await docker.containers.create(
-            config=dict(Image=image_name, OpenStdin=True),
-        )
         try:
-            await container.start()
-            self = cls(name=image_name, container=container)
-            self._attach()
-            yield await self._start()
+            self = cls(name=image_name, docker=docker)
+            await self._restart_container()
+            yield self
             await self._stop()
         finally:
-            await container.delete(force=True)
+            await self._container.delete(force=True)
 
-    def _attach(self):
-        self._reattaches -= 1
+    async def _restart_container(self):
+        self._restarts -= 1
+        if self._container is not None:
+            await self._container.delete(force=True)
+        self._container = await self._docker.containers.create(
+            config=dict(Image=self._name, OpenStdin=True),
+        )
+        await self._container.start()
         self._stream = self._container.attach(
             stdin=True,
             stdout=True,
             stderr=True,
         )
+        await self._start()
 
     async def _start(self):
         response = await self._send(cmd="start", version=1)
@@ -68,7 +74,7 @@ class Implementation:
         await self._send(cmd="stop")
 
     async def _send(self, **kwargs):
-        if self._reattaches <= 0:
+        if self._restarts <= 0:
             return dict(succeeded=False, implementation=self._name)
 
         started = monotonic_ns()
@@ -78,7 +84,9 @@ class Implementation:
         except AttributeError:
             # FIXME: aiodocker doesn't appear to properly report when its
             # stream is closed
-            self._attach()
+            info = await self._container.show()
+            assert not info["State"]["Running"], info
+            await self._restart_container()
             await self._stream.write_in(cmd.encode("utf-8"))
         succeeded, response = await self._recv()
         return {
@@ -90,16 +98,18 @@ class Implementation:
 
     async def _recv(self, retry=3):
         for _ in range(retry):
-            message = await self._stream.read_out()
-            if message is None:
-                await asyncio.sleep(0)
+            try:
+                message = await self._read_with_timeout()
+                if message is None:
+                    continue
+            except asyncio.exceptions.TimeoutError:
                 continue
 
             if message.stream == 2:
                 data = []
                 while message is not None and message.stream == 2:
                     data.append(message.data)
-                    message = await self._stream.read_out()
+                    message = await self._read_with_timeout()
                 return False, {
                     "stderr": b"".join(data),
                     "implementation": self._name,
@@ -107,3 +117,9 @@ class Implementation:
             else:
                 return True, json.loads(message.data)
         return False, {}
+
+    def _read_with_timeout(self):
+        return asyncio.wait_for(
+            self._stream.read_out(),
+            timeout=self._read_timeout_sec,
+        )
