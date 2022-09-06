@@ -37,7 +37,10 @@ class Implementation:
             yield self
             await self._stop()
         finally:
-            await self._container.delete(force=True)
+            try:
+                await self._container.delete(force=True)
+            except aiodocker.exceptions.DockerError:
+                pass
 
     async def _restart_container(self):
         self._restarts -= 1
@@ -115,7 +118,17 @@ class Implementation:
                     "implementation": self._name,
                 }
             else:
-                return True, json.loads(message.data)
+                if message.data.endswith(b"\n"):
+                    return True, json.loads(message.data)
+
+                data = [message.data]
+                while message is not None:
+                    try:
+                        message = await self._read_with_timeout()
+                    except asyncio.exceptions.TimeoutError:
+                        break
+                    data.append(message.data)
+                return True, json.loads(b"".join(data))
         return False, {}
 
     def _read_with_timeout(self):

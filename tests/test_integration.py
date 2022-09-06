@@ -93,3 +93,16 @@ async def test_restarts_crashed_implementations(envsonschema):
 
     assert stderr.decode() == ""
     assert returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_it_handles_split_messages(envsonschema):
+    async with bowtie("-i", envsonschema) as send:
+        returncode, stdout, stderr = await send(
+            """
+            {"description": "split:1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}, {"description": "2 valid:0", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert stderr.decode() == ""
+    assert returncode == 0
