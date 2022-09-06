@@ -31,32 +31,11 @@ class Runner:
         for line in stdin:
             each = json.loads(line)
             cmd = each.pop("cmd")
-            response = getattr(self, f"cmd_{cmd}")(**each)
-            self._stdout.write(f"{json.dumps(response)}\n")
-            self._stdout.flush()
+            getattr(self, f"cmd_{cmd}")(**each)
 
-    def do_minilanguage(self, description):
-        words = shlex.split(description)
-        result = {"valid": False}
-
-        for word in words:
-            instruction, colon, arg = word.partition(":")
-            if not colon:
-                continue
-
-            if instruction == "crash":
-                raise Crash()
-            elif instruction == "sleep":
-                time.sleep(float(arg))
-            elif instruction == "hang":
-                self._hang_on_stop = True
-            elif instruction == "valid":
-                result = _VALID.get(arg, {"valid": arg})
-            elif instruction == "skip":
-                result = dict(each.split("=", 1) for each in arg.split(","))
-                result.update(skipped=True)
-
-        return result
+    def send(self, **response):
+        self._stdout.write(f"{json.dumps(response)}\n")
+        self._stdout.flush()
 
     def cmd_start(self, version):
         if os.environ.get("ENVSONSCHEMA_CRASH") == "1":
@@ -64,26 +43,68 @@ class Runner:
 
         assert version == 1
         self._started = True
-        return dict(ready=True, version=1)
+        self.send(ready=True, version=1)
 
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
 
-        result = self.do_minilanguage(case["description"])
-        if result.get("skipped"):
-            result["seq"] = seq
-            return result
+        send = self.send
+        for instruction, arg in instructions(case["description"]):
+            if instruction == "crash":
+                raise Crash()
+            elif instruction == "sleep":
+                time.sleep(float(arg))
+            elif instruction == "hang":
+                self._hang_on_stop = True
+            elif instruction == "skip":
+                result = dict(
+                    (each.split("=", 1) for each in arg.split(",")),
+                    skipped=True,
+                    seq=seq,
+                )
+                return self.send(**result)
+            elif instruction == "split":
+                def send(**response):
+                    dumped = json.dumps(response)
+                    size = len(dumped) // 2
+                    self._stdout.write(dumped[:size])
+                    self._stdout.flush()
+                    time.sleep(0.1)
+                    self._stdout.write(dumped[size:])
+                    self._stdout.flush()
+                    time.sleep(0.1)
+                    self._stdout.write("\n")
+                    self._stdout.flush()
 
-        results = [
-            self.do_minilanguage(test["description"]) for test in case["tests"]
-        ]
-        return dict(seq=seq, results=results)
+        results = {"results": []}
+        for test in case["tests"]:
+            result = {"valid": False}
+
+            for instruction, arg in instructions(test["description"]):
+                if instruction == "crash":
+                    raise Crash()
+                elif instruction == "sleep":
+                    time.sleep(float(arg))
+
+                if instruction == "valid":
+                    result = _VALID.get(arg, {"valid": arg})
+                elif instruction == "skip":
+                    result = dict(each.split("=", 1) for each in arg.split(","))
+                    result.update(skipped=True)
+
+            results["results"].append(result)
+
+        send(seq=seq, **results)
 
     def cmd_stop(self):
         assert self._started, "Not started!"
-        if self._hang_on_stop:
-            return
-        sys.exit(0)
+        if not self._hang_on_stop:
+            sys.exit(0)
+
+
+def instructions(description):
+    words = (word.partition(":") for word in shlex.split(description))
+    return ((instruction, arg) for instruction, colon, arg in words if colon)
 
 
 Runner().run()
