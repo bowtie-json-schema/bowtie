@@ -34,7 +34,6 @@ def run(context, **kwargs):
     cases = (json.loads(line) for line in sys.stdin.buffer)
     reporter = Reporter()
     count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
-    reporter.finished(count=count)
     if not count:
         context.exit(os.EX_DATAERR)
 
@@ -52,9 +51,7 @@ async def _run(implementations, reporter, cases):
         reporter.ready(implementations=streams)
 
         seq = 0
-        for seq, case in enumerate(cases, 1):
-            case_reporter = reporter.case_started(seq=seq, case=case)
-
+        for seq, case, case_reporter in sequenced(cases, reporter):
             tests = defaultdict(lambda: defaultdict(list))
             responses = [each.run_case(seq=seq, case=case) for each in streams]
             for each in asyncio.as_completed(responses):
@@ -79,4 +76,10 @@ async def _run(implementations, reporter, cases):
                 for k, v in tests.items()
             }
             case_reporter.case_finished(results=results)
+        reporter.finished(count=seq)
     return seq
+
+
+def sequenced(cases, reporter):
+    for seq, case in enumerate(cases, 1):
+        yield seq, case, reporter.case_started(seq=seq, case=case)
