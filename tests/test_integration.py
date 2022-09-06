@@ -34,7 +34,7 @@ def image(name):
             tag=tag,
         )
         yield tag
-        await docker.images.delete(name=tag)
+        await docker.images.delete(name=tag, force=True)
     return _image
 
 
