@@ -67,13 +67,14 @@ class Implementation:
 
     async def _start(self):
         got = await self._send(cmd="start", version=1)
+        response = got["response"]
+
         if not got["succeeded"]:
             raise StartError(
                 f"{self.name} failed on startup. Stderr contained:\n\n"
-                f"{indent(response['response']['stderr'].decode(), '  ')}",
+                f"{indent(got['response']['stderr'].decode(), '  ')}",
             )
 
-        response = got["response"]
         if not response.get("ready"):
             raise StartError(f"{self.name} is not ready!")
         elif response.get("version") != 1:
