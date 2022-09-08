@@ -56,6 +56,10 @@ async def bowtie(*args):
         input = dedent(stdin).lstrip("\n").encode()
         stdout, stderr = await proc.communicate(input)
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
+
+        metadata = next(lines)
+        assert metadata.keys() == {"implementations"}
+
         results = sorted(lines, key=lambda line: line["implementation"])
         return proc.returncode, results, stderr
     yield _send

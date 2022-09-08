@@ -22,7 +22,8 @@ class Implementation:
     A running implementation under test.
     """
 
-    _name: str
+    name: str
+
     _docker: aiodocker.Docker = field(repr=False)
     _restarts: int = field(default=20 + 1, repr=False)
     _read_timeout_sec: float = field(default=2.0, repr=False)
@@ -31,6 +32,8 @@ class Implementation:
         default=None, repr=False,
     )
     _stream: aiodocker.stream.Stream = field(default=None, repr=False)
+
+    metadata: dict = {}
 
     @classmethod
     @asynccontextmanager
@@ -52,7 +55,7 @@ class Implementation:
         if self._container is not None:
             await self._container.delete(force=True)
         self._container = await self._docker.containers.create(
-            config=dict(Image=self._name, OpenStdin=True),
+            config=dict(Image=self.name, OpenStdin=True),
         )
         await self._container.start()
         self._stream = self._container.attach(
@@ -60,25 +63,28 @@ class Implementation:
             stdout=True,
             stderr=True,
         )
-        await self._start()
+        self.metadata = await self._start()
 
     async def _start(self):
-        response = await self._send(cmd="start", version=1)
-        if not response["succeeded"]:
+        got = await self._send(cmd="start", version=1)
+        if not got["succeeded"]:
             raise StartError(
-                f"{self._name} failed on startup. Stderr contained:\n\n"
+                f"{self.name} failed on startup. Stderr contained:\n\n"
                 f"{indent(response['response']['stderr'].decode(), '  ')}",
             )
-        if not response["response"].get("ready"):
-            raise StartError(f"{self._name} is not ready!")
-        elif response["response"].get("version") != 1:
-            raise StartError(f"{self._name} did not speak version 1!")
-        return self
+
+        response = got["response"]
+        if not response.get("ready"):
+            raise StartError(f"{self.name} is not ready!")
+        elif response.get("version") != 1:
+            raise StartError(f"{self.name} did not speak version 1!")
+
+        return response.get("implementation", {})
 
     async def run_case(self, seq, case):
         if self._restarts <= 0:
             return dict(
-                succeeded=False, backoff=True, implementation=self._name,
+                succeeded=False, backoff=True, implementation=self.name,
             )
         return await self._send(cmd="run", seq=seq, case=case)
 
@@ -103,7 +109,7 @@ class Implementation:
             "succeeded": succeeded,
             "took_ns": monotonic_ns() - started,
             "response": response,
-            "implementation": self._name,
+            "implementation": self.name,
         }
 
     async def _recv(self, retry=3):
@@ -122,7 +128,7 @@ class Implementation:
                     message = await self._read_with_timeout()
                 return False, {
                     "stderr": b"".join(data),
-                    "implementation": self._name,
+                    "implementation": self.name,
                 }
             else:
                 data = message.data
@@ -157,7 +163,12 @@ class Reporter:
         self._log.info("Starting", implementations=implementations)
 
     def ready(self, implementations):
-        self._log.debug("Ready", implementations=implementations)
+        metadata = {
+            implementation.name: implementation.metadata
+            for implementation in implementations
+        }
+        self._write({"implementations": metadata})
+        self._log.debug("Ready", implementations=metadata)
 
     def finished(self, count):
         if not count:
