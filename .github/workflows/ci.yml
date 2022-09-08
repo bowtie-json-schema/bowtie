@@ -44,8 +44,6 @@ jobs:
         uses: wntrblm/nox@2022.8.7
       - name: Run nox
         run: nox
-        env:
-          REGISTRY_HTTP_ADDR: localhost
 
   packaging:
     needs: ci
@@ -61,6 +59,10 @@ jobs:
         run: python -m pip install build
       - name: Create packages
         run: python -m build .
+      - name: Set up nox
+        uses: wntrblm/nox@2022.8.7
+      - name: Create shiv
+        run: nox -s shiv -- dist/bowtie
       - uses: actions/upload-artifact@v3
         with:
           name: dist
