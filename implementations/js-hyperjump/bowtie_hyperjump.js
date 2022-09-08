@@ -1,11 +1,11 @@
-const readline = require('readline/promises');
+const readline = require("readline/promises");
 
 const JsonSchema = require("@hyperjump/json-schema");
 
 const stdio = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: false
+  terminal: false,
 });
 
 function send(data) {
@@ -22,10 +22,10 @@ const cmds = {
       ready: true,
       version: 1,
       implementation: {
-        language: 'javascript',
-        name: 'hyperjump-jsv',
+        language: "javascript",
+        name: "hyperjump-jsv",
       },
-    }
+    };
   },
 
   run: async (args) => {
@@ -33,23 +33,27 @@ const cmds = {
 
     const testCase = args.case;
 
-    const schemaId = 'http://example.com/schema/' + args.seq.toString();
-    JsonSchema.add(testCase.schema, schemaId, "https://json-schema.org/draft/2020-12/schema");
+    const schemaId = "http://example.com/schema/" + args.seq.toString();
+    JsonSchema.add(
+      testCase.schema,
+      schemaId,
+      "https://json-schema.org/draft/2020-12/schema"
+    );
     const schema = JsonSchema.get(schemaId);
 
     const validate = await JsonSchema.validate(schema);
-    const promises = testCase.tests.map(
-      (test) => ({ valid: validate(test.instance).valid })
-    );
+    const promises = testCase.tests.map((test) => ({
+      valid: validate(test.instance).valid,
+    }));
     const results = await Promise.all(promises);
-    return { seq: args.seq, results: results }
+    return { seq: args.seq, results: results };
   },
 
   stop: async (_) => {
-      console.assert(started, "Not started!");
-      process.exit(0);
-  }
-}
+    console.assert(started, "Not started!");
+    process.exit(0);
+  },
+};
 
 async function main() {
   for await (const line of stdio) {

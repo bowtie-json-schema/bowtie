@@ -1,11 +1,11 @@
-const readline = require('readline');
+const readline = require("readline");
 
-const Ajv = require("ajv")
+const Ajv = require("ajv");
 
 const stdio = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: false
+  terminal: false,
 });
 
 function send(data) {
@@ -22,10 +22,10 @@ const cmds = {
       ready: true,
       version: 1,
       implementation: {
-        language: 'javascript',
-        name: 'ajv',
+        language: "javascript",
+        name: "ajv",
       },
-    }
+    };
   },
 
   run: (args) => {
@@ -35,20 +35,22 @@ const cmds = {
     const validate = ajv.compile(testCase.schema);
     return {
       seq: args.seq,
-      results: testCase.tests.map((test) => ({ valid: validate(test.instance) }))
-    }
+      results: testCase.tests.map((test) => ({
+        valid: validate(test.instance),
+      })),
+    };
   },
 
   stop: (_) => {
-      console.assert(started, "Not started!");
-      process.exit(0);
-  }
-}
+    console.assert(started, "Not started!");
+    process.exit(0);
+  },
+};
 
 const ajv = new Ajv();
 
-stdio.on('line', (line) => {
+stdio.on("line", (line) => {
   const request = JSON.parse(line);
   const response = cmds[request.cmd](request);
   send(response);
-})
+});

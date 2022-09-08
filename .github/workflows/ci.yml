@@ -7,77 +7,77 @@ on:
     types: [published]
   schedule:
     # Daily at 5:12
-    - cron: '12 5 * * *'
+    - cron: "12 5 * * *"
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-    - uses: pre-commit/action@v3.0.0
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: pre-commit/action@v3.0.0
 
   ci:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies
-      run: >
-        sudo apt-get update &&
-        sudo apt-get install -y libenchant-dev
-      if: runner.os == 'Linux'
-    - name: Install dependencies
-      run: brew install enchant podman
-      if: runner.os == 'macOS'
-    - name: Build Fixtures
-      run: |
-        for each in {implementations/,tests/fauxmplementations/}*; do
-          (
-            cd $each
-            podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
-          )
-        done
-    - name: Set up nox
-      uses: wntrblm/nox@2022.8.7
-    - name: Run nox
-      run: nox
-      env:
-        REGISTRY_HTTP_ADDR: localhost
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y libenchant-dev
+        if: runner.os == 'Linux'
+      - name: Install dependencies
+        run: brew install enchant podman
+        if: runner.os == 'macOS'
+      - name: Build Fixtures
+        run: |
+          for each in {implementations/,tests/fauxmplementations/}*; do
+            (
+              cd $each
+              podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
+            )
+          done
+      - name: Set up nox
+        uses: wntrblm/nox@2022.8.7
+      - name: Run nox
+        run: nox
+        env:
+          REGISTRY_HTTP_ADDR: localhost
 
   packaging:
     needs: ci
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: python -m pip install build
-    - name: Create packages
-      run: python -m build .
-    - uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist
-    - name: Publish package
-      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
-    - name: Create Release Notes
-      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          await github.request(`POST /repos/${{ github.repository }}/releases`, {
-            tag_name: "${{ github.ref }}",
-            generate_release_notes: true
-          });
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install build
+      - name: Create packages
+        run: python -m build .
+      - uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+      - name: Publish package
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
+      - name: Create Release Notes
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.request(`POST /repos/${{ github.repository }}/releases`, {
+              tag_name: "${{ github.ref }}",
+              generate_release_notes: true
+            });
