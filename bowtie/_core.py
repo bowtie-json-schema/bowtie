@@ -2,7 +2,9 @@ from contextlib import asynccontextmanager
 from textwrap import indent
 from time import monotonic_ns
 import asyncio
+import io
 import json
+import sys
 
 from attrs import define, field
 import aiodocker
@@ -124,17 +126,15 @@ class Implementation:
                     "implementation": self._name,
                 }
             else:
-                if message.data.endswith(b"\n"):
-                    return True, json.loads(message.data)
-
-                data = [message.data]
-                while message is not None:
+                data = message.data
+                assert b"\n" not in message[:-1]
+                while not data.endswith(b"\n"):
                     try:
                         message = await self._read_with_timeout()
                     except asyncio.exceptions.TimeoutError:
-                        break
-                    data.append(message.data)
-                return True, json.loads(b"".join(data))
+                        return False, {"data": data}
+                    data += message.data
+                return True, json.loads(data)
         return False, {}
 
     def _read_with_timeout(self):
@@ -144,10 +144,17 @@ class Implementation:
         )
 
 
+def writer(file=sys.stdout):
+    return lambda result: file.write(f"{json.dumps(result)}\n")
+
+
 @define
 class Reporter:
 
-    _log: structlog.BoundLogger = field(factory=structlog.get_logger)
+    _write = field(default=writer())
+    _log: structlog.BoundLogger = field(
+        factory=structlog.get_logger
+    )
 
     def run_starting(self, implementations):
         self._log.info("Starting", implementations=implementations)
@@ -163,6 +170,7 @@ class Reporter:
 
     def case_started(self, seq, case):
         return _CaseReporter.case_started(
+            write=self._write,
             log=self._log.bind(seq=seq, case=case),
         )
 
@@ -170,14 +178,15 @@ class Reporter:
 @define
 class _CaseReporter:
 
+    _write: callable
     _log: structlog.BoundLogger
 
     @classmethod
-    def case_started(cls, log):
-        return cls(log=log)
+    def case_started(cls, log, write):
+        return cls(log=log, write=write)
 
-    def case_finished(self, results):
-        self._log.msg("Responded", results=results)
+    def got_results(self, results, implementation):
+        self._write(dict(implementation=implementation, results=results))
 
     def backoff(self, result):
         self._log.warn("Backing off!", **result)

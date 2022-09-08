@@ -58,43 +58,39 @@ async def _run(implementations, reporter, cases):
 
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
-        streams = [
+        runners = [
             await stack.enter_async_context(
                 Implementation.start(docker=docker, image_name=each),
             ) for each in implementations
         ]
-        reporter.ready(implementations=streams)
+        reporter.ready(implementations=runners)
 
         seq = 0
         for seq, case, case_reporter in sequenced(cases, reporter):
-            tests = defaultdict(lambda: defaultdict(list))
-            responses = [each.run_case(seq=seq, case=case) for each in streams]
+            responses = [each.run_case(seq=seq, case=case) for each in runners]
             for each in asyncio.as_completed(responses):
-                result = await each
-                if not result["succeeded"]:
-                    if result.get("backoff"):
-                        case_reporter.backoff(result)
+                response = await each
+                if not response["succeeded"]:
+                    if response.get("backoff"):
+                        case_reporter.backoff(response)
                     else:
-                        case_reporter.errored_uncaught(result)
+                        case_reporter.errored_uncaught(response)
                     continue
 
-                if result["response"].get("errored"):
-                    case_reporter.errored(result)
+                if response["response"].get("errored"):
+                    case_reporter.errored(response)
                     continue
 
-                results = result["response"]["results"]
-                for test, got in zip(case["tests"], results):
-                    if got.get("skipped"):
-                        bucket = tests[test["description"]]["skipped"]
-                    else:
-                        bucket = tests[test["description"]][got["valid"]]
-                    bucket.append(result["implementation"])
-
-            results = {
-                k: dict(v) if len(v) > 1 else next(iter(v))
-                for k, v in tests.items()
-            }
-            case_reporter.case_finished(results=results)
+                case_reporter.got_results(
+                    implementation=response["implementation"],
+                    results=[
+                        dict(test=test, result=result)
+                        for test, result in zip(
+                            case["tests"],
+                            response["response"]["results"],
+                        )
+                    ],
+                )
         reporter.finished(count=seq)
     return seq
 

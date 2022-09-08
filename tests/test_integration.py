@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
 import asyncio
+import json
 import os
 import sys
 import tarfile
@@ -52,37 +53,44 @@ async def bowtie(*args):
     )
 
     async def _send(stdin):
-        result = await proc.communicate(dedent(stdin).lstrip("\n").encode())
-        return proc.returncode, *result
+        input = dedent(stdin).lstrip("\n").encode()
+        stdout, stderr = await proc.communicate(input)
+        lines = (json.loads(line.decode()) for line in stdout.splitlines())
+        results = sorted(lines, key=lambda line: line["implementation"])
+        return proc.returncode, results, stderr
     yield _send
 
 
 @pytest.mark.asyncio
 async def test_lint(lintsonschema):
     async with bowtie("-i", lintsonschema) as send:
-        returncode, stdout, stderr = await send(
+        returncode, results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert stderr.decode() == ""
+    got = [
+        [test["result"] for test in each["results"]]
+        for each in results
+    ]
+    assert got == [[{"valid": True}]]
     assert returncode == 0
 
 
 @pytest.mark.asyncio
 async def test_no_tests_run(lintsonschema):
     async with bowtie("-i", lintsonschema) as send:
-        returncode, stdout, stderr = await send("")
+        returncode, results, stderr = await send("")
 
-    assert stderr.decode() == ""
+    assert results == []
     assert returncode == os.EX_DATAERR
 
 
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, stdout, stderr = await send(
+        returncode, results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
@@ -91,32 +99,47 @@ async def test_restarts_crashed_implementations(envsonschema):
             """,  # noqa: E501
         )
 
-    assert stderr.decode() == ""
+    got = [
+        [test["result"] for test in each["results"]]
+        for each in results
+    ]
+    assert got == [[{"valid": False}], [{"valid": False}]]
     assert returncode == 0
 
 
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, stdout, stderr = await send(
+        returncode, results, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "4", "schema": {}, "tests": [{"description": "error:message=boom", "instance": {}}] }
+            {"description": "works", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert stderr.decode() == ""
+    got = [
+        [
+            (test["test"]["description"], test["result"])
+            for test in each["results"]
+        ] for each in results
+    ]
+    assert got == [[("valid:1", {"valid": True})]]
     assert returncode == 0
 
 
 @pytest.mark.asyncio
 async def test_it_handles_split_messages(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, stdout, stderr = await send(
+        returncode, results, stderr = await send(
             """
             {"description": "split:1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}, {"description": "2 valid:0", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert stderr.decode() == ""
+    got = [
+        [test["result"] for test in each["results"]]
+        for each in results
+    ]
+    assert got == [[{"valid": True}, {"valid": False}]]
     assert returncode == 0

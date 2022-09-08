@@ -98,6 +98,13 @@ class Runner:
                 elif instruction == "skip":
                     result = dict(each.split("=", 1) for each in arg.split(","))
                     result.update(skipped=True)
+                elif instruction == "error":
+                    result = dict(
+                        (each.split("=", 1) for each in arg.split(",")),
+                        errored=True,
+                        seq=seq,
+                    )
+                    return self.send(**result)
 
             results["results"].append(result)
 
