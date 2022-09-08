@@ -7,6 +7,7 @@ import sys
 
 import aiodocker
 import click
+import structlog
 
 from bowtie._core import Implementation, Reporter
 
@@ -31,6 +32,20 @@ def run(context, **kwargs):
     Run a sequence of cases provided on standard input.
     """
 
+    out = sys.stderr
+    structlog.configure(
+        processors=[
+            structlog.processors.TimeStamper(
+                fmt="%Y-%m-%d %H:%M.%S", utc=False,
+            ),
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            structlog.dev.ConsoleRenderer(
+                colors=getattr(out, "isatty", lambda: False)(),
+            ),
+        ],
+        logger_factory=structlog.PrintLoggerFactory(out),
+    )
     cases = (json.loads(line) for line in sys.stdin.buffer)
     reporter = Reporter()
     count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
