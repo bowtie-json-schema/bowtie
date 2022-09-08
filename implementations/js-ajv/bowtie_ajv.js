@@ -24,6 +24,8 @@ const cmds = {
       implementation: {
         language: "javascript",
         name: "ajv",
+        homepage: "https://ajv.js.org/",
+        issues: "https://github.com/ajv-validator/ajv/issues",
       },
     };
   },

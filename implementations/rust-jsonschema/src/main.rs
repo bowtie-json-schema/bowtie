@@ -20,6 +20,8 @@ fn main() -> Result<()> {
                     "implementation": {
                         "language": "rust",
                         "name": "jsonschema",
+                        "homepage": "https://docs.rs/jsonschema/latest/jsonschema/",
+                        "issues": "https://github.com/Stranger6667/jsonschema-rs/issues",
                     }
                 });
                 println!("{}", response.to_string());

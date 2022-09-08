@@ -39,6 +39,8 @@ func main() {
 				"implementation": map[string]interface{}{
 					"language": "go",
 					"name":     "jsonschema",
+                                        "homepage": "https://github.com/santhosh-tekuri/jsonschema",
+                                        "issues": "https://github.com/santhosh-tekuri/jsonschema/issues",
 				},
 			}
 

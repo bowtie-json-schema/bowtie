@@ -24,6 +24,8 @@ const cmds = {
       implementation: {
         language: "javascript",
         name: "hyperjump-jsv",
+        homepage: "https://json-schema.hyperjump.io/",
+        issues: "https://github.com/hyperjump-io/json-schema-validator/issues",
       },
     };
   },

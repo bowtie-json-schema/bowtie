@@ -33,6 +33,10 @@ class Runner:
                 language="python",
                 name="jsonschema",
                 version=metadata.version("jsonschema"),
+                homepage="https://python-jsonschema.readthedocs.io/",
+                issues=(
+                    "https://github.com/python-jsonschema/jsonschema/issues"
+                ),
             ),
         )
 

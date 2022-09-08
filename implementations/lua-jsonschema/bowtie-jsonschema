@@ -16,6 +16,8 @@ local cmds = {
       implementation = {
         language = 'lua',
         name = 'jsonschema',
+        homepage = 'https://github.com/api7/jsonschema',
+        issues = 'https://github.com/api7/jsonschema/issues',
       }
     }
   end,

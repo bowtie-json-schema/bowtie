@@ -32,6 +32,8 @@ while ((line = Console.In.ReadLine()) != null && line != "") {
                     {
                         ["language"] = "dotnet",
                         ["name"] = "json-everything",
+                        ["homepage"] = "https://json-everything.net/json-schema/",
+                        ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
                     },
                 };
                 Console.Out.WriteLine(StartResult);

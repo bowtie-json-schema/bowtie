@@ -33,6 +33,10 @@ class Runner:
                 language="python",
                 name="fastjsonschema",
                 version=metadata.version("fastjsonschema"),
+                homepage="https://horejsek.github.io/python-fastjsonschema/",
+                issues=(
+                    "https://github.com/horejsek/python-fastjsonschema/issues"
+                ),
             ),
         )
 

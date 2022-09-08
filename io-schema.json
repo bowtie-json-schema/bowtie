@@ -57,6 +57,27 @@
                     "version": {
                       "description": "The implementation version",
                       "type": "string"
+                    },
+                    "homepage": {
+                      "description": "A URL for the implementation's homepage",
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "issues": {
+                      "description": "A URL for the implementation's bug tracker",
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "links": {
+                      "description": "Additional web page links relevant to the implementation",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "description": { "type": "string" },
+                          "url": { "type": "string", "format": "uri" }
+                        }
+                      }
                     }
                   }
                 }
