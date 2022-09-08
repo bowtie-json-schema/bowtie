@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+from dataclasses import dataclass
+from importlib import metadata
+import io
+import json
+import sys
+import traceback
+
+import jschon
+
+METASCHEMA_URI = jschon.URI("https://json-schema.org/draft/2020-12/schema")
+
+
+@dataclass
+class Runner:
+
+    _started: bool = False
+    _stdout: io.TextIOWrapper = sys.stdout
+
+    _catalog = jschon.create_catalog("2020-12")
+
+    def run(self, stdin=sys.stdin):
+        for line in stdin:
+            each = json.loads(line)
+            cmd = each.pop("cmd")
+            response = getattr(self, f"cmd_{cmd}")(**each)
+            self._stdout.write(f"{json.dumps(response)}\n")
+            self._stdout.flush()
+
+    def cmd_start(self, version):
+        assert version == 1
+        self._started = True
+        # jschon.create_catalog('2020-12')
+        return dict(
+            ready=True,
+            version=1,
+            implementation=dict(
+                language="python",
+                name="jschon",
+                version=metadata.version("jschon"),
+                homepage="https://jschon.readthedocs.io/",
+                issues="https://github.com/marksparkza/jschon/issues",
+            ),
+        )
+
+    def cmd_run(self, case, seq):
+        assert self._started, "Not started!"
+        try:
+            schema = jschon.JSONSchema(
+                case["schema"],
+                metaschema_uri=METASCHEMA_URI,
+            )
+
+            results = []
+
+            for test in case["tests"]:
+                result = schema.evaluate(jschon.JSON(test["instance"]))
+                results.append({"valid": result.valid})
+
+            return dict(seq=seq, results=results)
+        except Exception:
+            return dict(
+                errored=True,
+                seq=seq,
+                context={"traceback": traceback.format_exc()},
+            )
+
+    def cmd_stop(self):
+        assert self._started, "Not started!"
+        sys.exit(0)
+
+
+Runner().run()
