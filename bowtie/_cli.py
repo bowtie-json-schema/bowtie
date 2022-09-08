@@ -1,4 +1,3 @@
-from collections import defaultdict
 from contextlib import AsyncExitStack
 import asyncio
 import json

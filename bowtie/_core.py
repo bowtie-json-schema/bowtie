@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from textwrap import indent
 from time import monotonic_ns
 import asyncio
-import io
 import json
 import sys
 
@@ -152,9 +151,7 @@ def writer(file=sys.stdout):
 class Reporter:
 
     _write = field(default=writer())
-    _log: structlog.BoundLogger = field(
-        factory=structlog.get_logger
-    )
+    _log: structlog.BoundLogger = field(factory=structlog.get_logger)
 
     def run_starting(self, implementations):
         self._log.info("Starting", implementations=implementations)
