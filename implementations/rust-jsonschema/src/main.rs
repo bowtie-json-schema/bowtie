@@ -14,7 +14,14 @@ fn main() -> Result<()> {
                 if request["version"] != 1 {
                     panic!("Not version 1!")
                 };
-                let response = json!({"ready": true, "version": 1});
+                let response = json!({
+                    "ready": true,
+                    "version": 1,
+                    "implementation": {
+                        "language": "rust",
+                        "name": "jsonschema",
+                    }
+                });
                 println!("{}", response.to_string());
             }
             "run" => {

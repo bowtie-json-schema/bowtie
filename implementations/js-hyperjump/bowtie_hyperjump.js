@@ -18,7 +18,14 @@ const cmds = {
   start: async (args) => {
     console.assert(args.version === 1, { args });
     started = true;
-    return {ready: true, version: 1}
+    return {
+      ready: true,
+      version: 1,
+      implementation: {
+        language: 'javascript',
+        name: 'hyperjump-jsv',
+      },
+    }
   },
 
   run: async (args) => {

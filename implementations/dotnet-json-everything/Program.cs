@@ -24,7 +24,17 @@ while ((line = Console.In.ReadLine()) != null && line != "") {
                     throw new UnknownVersion(version);
                 }
                 Started = true;
-                Console.Out.WriteLine("{\"ready\": true, \"version\": 1}");
+                JsonObject StartResult = new JsonObject
+                {
+                    ["ready"] = true,
+                    ["version"] = 1,
+                    ["implementation"] = new JsonObject
+                    {
+                        ["language"] = "dotnet",
+                        ["name"] = "json-everything",
+                    },
+                };
+                Console.Out.WriteLine(StartResult);
                 break;
 
             case "run":
@@ -50,12 +60,12 @@ while ((line = Console.In.ReadLine()) != null && line != "") {
                     results.Add(testResult);
                 };
 
-                JsonObject result = new JsonObject
+                JsonObject RunResult = new JsonObject
                 {
                     ["seq"] = root.GetProperty("seq").GetInt64(),
                     ["results"] = results,
                 };
-                Console.Out.WriteLine(result);
+                Console.Out.WriteLine(RunResult);
                 break;
 
             case "stop":

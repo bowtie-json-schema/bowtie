@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
+from importlib import metadata
 import io
 import json
 import sys
@@ -25,7 +26,15 @@ class Runner:
     def cmd_start(self, version):
         assert version == 1
         self._started = True
-        return dict(ready=True, version=1)
+        return dict(
+            ready=True,
+            version=1,
+            implementation=dict(
+                language="python",
+                name="jsonschema",
+                version=metadata.version("jsonschema"),
+            ),
+        )
 
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"

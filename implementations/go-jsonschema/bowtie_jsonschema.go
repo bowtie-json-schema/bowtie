@@ -36,6 +36,10 @@ func main() {
 			data := map[string]interface{}{
 				"ready":   true,
 				"version": 1,
+				"implementation": map[string]interface{}{
+					"language": "go",
+					"name":     "jsonschema",
+				},
 			}
 
 			if err := encoder.Encode(&data); err != nil {

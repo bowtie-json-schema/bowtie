@@ -10,7 +10,14 @@ local cmds = {
   start = function(request)
     assert(request.version == 1, "Wrong version!")
     STARTED = true
-    return { ready = true, version = 1 }
+    return {
+      ready = true,
+      version = 1,
+      implementation = {
+        language = 'lua',
+        name = 'jsonschema',
+      }
+    }
   end,
   run = function(request)
     assert(STARTED, "Not started!")

@@ -18,7 +18,14 @@ const cmds = {
   start: (args) => {
     console.assert(args.version === 1, { args });
     started = true;
-    return {ready: true, version: 1}
+    return {
+      ready: true,
+      version: 1,
+      implementation: {
+        language: 'javascript',
+        name: 'ajv',
+      },
+    }
   },
 
   run: (args) => {

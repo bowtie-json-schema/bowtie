@@ -26,7 +26,14 @@ class Runner:
     def cmd_start(self, version):
         assert version == 1
         self._started = True
-        return dict(ready=True, version=1)
+        return dict(
+            ready=True,
+            version=1,
+            implementation=dict(
+                language="python",
+                name="cheatsonschema",
+            ),
+        )
 
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
