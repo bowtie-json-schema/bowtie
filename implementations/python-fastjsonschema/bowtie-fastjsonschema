@@ -29,19 +29,26 @@ class Runner:
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
         schema = case["schema"]
-        validate = fastjsonschema.compile(schema)
+        try:
+            validate = fastjsonschema.compile(schema)
 
-        results = []
+            results = []
 
-        for test in case["tests"]:
-            try:
-                validate(test["instance"])
-            except fastjsonschema.JsonSchemaException:
-                results.append({"valid": False})
-            else:
-                results.append({"valid": True})
+            for test in case["tests"]:
+                try:
+                    validate(test["instance"])
+                except fastjsonschema.JsonSchemaException:
+                    results.append({"valid": False})
+                else:
+                    results.append({"valid": True})
 
-        return dict(seq=seq, results=results)
+            return dict(seq=seq, results=results)
+        except Exception:
+            return dict(
+                errored=True,
+                seq=seq,
+                context={"traceback": traceback.format_exc()},
+            )
 
     def cmd_stop(self):
         assert self._started, "Not started!"

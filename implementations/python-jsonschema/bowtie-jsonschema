@@ -29,13 +29,20 @@ class Runner:
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
         schema = case["schema"]
-        validator = jsonschema.validators.validator_for(schema)(schema)
+        try:
+            validator = jsonschema.validators.validator_for(schema)(schema)
 
-        results = [
-            {"valid": validator.is_valid(test["instance"])}
-            for test in case["tests"]
-        ]
-        return dict(seq=seq, results=results)
+            results = [
+                {"valid": validator.is_valid(test["instance"])}
+                for test in case["tests"]
+            ]
+            return dict(seq=seq, results=results)
+        except Exception:
+            return dict(
+                errored=True,
+                seq=seq,
+                context={"traceback": traceback.format_exc()},
+            )
 
     def cmd_stop(self):
         assert self._started, "Not started!"

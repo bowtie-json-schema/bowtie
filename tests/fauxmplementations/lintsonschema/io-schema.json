@@ -62,13 +62,13 @@
               },
               "oneOf": [
                 { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/result" },
-                { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped" }
+                { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped" },
+                { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/errored" }
               ],
               "$defs": {
                 "result": {
                   "description": "Signal that the implementation ran the test case (though may have skipped tests within it) and got the provided result.",
 
-                  "type": "object",
                   "required": ["results"],
                   "properties": {
                     "results": {
@@ -83,7 +83,8 @@
                             "required": ["valid"],
                             "additionalProperties": false
                           },
-                          { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped" }
+                          { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped" },
+                          { "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/errored" }
                         ]
                       }
                     }
@@ -92,7 +93,6 @@
                 "skipped": {
                   "description": "Signal that the implementation skipped the test case or test (typically because it is a known bug). Either an issue URL or a human-readable message is encouraged to explain the skip.",
 
-                  "type": "object",
                   "required": ["skipped"],
                   "properties": {
                     "skipped": {"const": true},
@@ -104,6 +104,18 @@
                       "description": "An optional link to a relevant issue on the implementation's bug tracker.",
                       "type": "string",
                       "format": "url"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "errored": {
+                  "description": "Signal that the implementation encountered an internal error (which it caught). Additional context can be passed along (e.g. a traceback or exception detail).",
+
+                  "required": ["errored"],
+                  "properties": {
+                    "errored": {"const": true},
+                    "context": {
+                      "description": "Additional implementation-specific or language-specific context available when the error was caught."
                     }
                   },
                   "additionalProperties": false

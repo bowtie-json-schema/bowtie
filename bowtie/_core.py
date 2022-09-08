@@ -174,7 +174,6 @@ class _CaseReporter:
 
     @classmethod
     def case_started(cls, log):
-        log.info("Starting")
         return cls(log=log)
 
     def case_finished(self, results):
@@ -184,4 +183,7 @@ class _CaseReporter:
         self._log.warn("Backing off!", **result)
 
     def errored(self, result):
-        self._log.error("ERROR", **result)
+        self._log.error("Error", **result)
+
+    def errored_uncaught(self, result):
+        self._log.error("UNCAUGHT", **result)

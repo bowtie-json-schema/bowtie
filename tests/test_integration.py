@@ -96,6 +96,20 @@ async def test_restarts_crashed_implementations(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_implementations_can_signal_errors(envsonschema):
+    async with bowtie("-i", envsonschema) as send:
+        returncode, stdout, stderr = await send(
+            """
+            {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
+            {"description": "4", "schema": {}, "tests": [{"description": "error:message=boom", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert stderr.decode() == ""
+    assert returncode == 0
+
+
+@pytest.mark.asyncio
 async def test_it_handles_split_messages(envsonschema):
     async with bowtie("-i", envsonschema) as send:
         returncode, stdout, stderr = await send(

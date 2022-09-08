@@ -60,7 +60,11 @@ async def _run(implementations, reporter, cases):
                     if result.get("backoff"):
                         case_reporter.backoff(result)
                     else:
-                        case_reporter.errored(result)
+                        case_reporter.errored_uncaught(result)
+                    continue
+
+                if result["response"].get("errored"):
+                    case_reporter.errored(result)
                     continue
 
                 results = result["response"]["results"]

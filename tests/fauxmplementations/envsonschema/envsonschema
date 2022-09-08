@@ -56,6 +56,13 @@ class Runner:
                 time.sleep(float(arg))
             elif instruction == "hang":
                 self._hang_on_stop = True
+            elif instruction == "error":
+                result = dict(
+                    (each.split("=", 1) for each in arg.split(",")),
+                    errored=True,
+                    seq=seq,
+                )
+                return self.send(**result)
             elif instruction == "skip":
                 result = dict(
                     (each.split("=", 1) for each in arg.split(",")),
