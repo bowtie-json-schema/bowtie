@@ -32,14 +32,6 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - name: Build Fixtures
-        run: |
-          for each in {implementations/,tests/fauxmplementations/}*; do
-            (
-              cd $each
-              podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
-            )
-          done
       - name: Set up nox
         uses: wntrblm/nox@2022.8.7
       - name: Run nox

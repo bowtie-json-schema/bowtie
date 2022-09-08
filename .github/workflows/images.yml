@@ -1,0 +1,20 @@
+name: Bowtie Images
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Bowtie Images
+        run: |
+          for each in {implementations/,tests/fauxmplementations/}*; do
+            (
+              cd $each
+              podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
+            )
+          done
