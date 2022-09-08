@@ -55,10 +55,12 @@ jobs:
         uses: wntrblm/nox@2022.8.7
       - name: Create shiv
         run: nox -s shiv -- dist/bowtie
+      - name: Tar files
+        run: tar -cvf bowtie.tar dist
       - uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: dist
+          name: packages
+          path: bowtie.tar
       - name: Publish package
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
