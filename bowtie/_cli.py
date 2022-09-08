@@ -26,6 +26,15 @@ def main():
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
+@click.option(
+    "--hide-expected-results/--include-expected-results",
+    "hide_expected_results",
+    default=True,
+    help=(
+        "Don't pass expected results to implementations under test. "
+        "Doing so generally should have no expected change in behavior."
+    ),
+)
 def run(context, **kwargs):
     """
     Run a sequence of cases provided on standard input.
@@ -52,7 +61,7 @@ def run(context, **kwargs):
         context.exit(os.EX_DATAERR)
 
 
-async def _run(implementations, reporter, cases):
+async def _run(implementations, reporter, cases, hide_expected_results):
     reporter.run_starting(implementations=implementations)
 
     async with AsyncExitStack() as stack:
@@ -66,6 +75,11 @@ async def _run(implementations, reporter, cases):
 
         seq = 0
         for seq, case, case_reporter in sequenced(cases, reporter):
+            if hide_expected_results:
+                for test in case["tests"]:
+                    # TODO: Re-emit me later
+                    test.pop("valid", None)
+
             responses = [each.run_case(seq=seq, case=case) for each in runners]
             for each in asyncio.as_completed(responses):
                 response = await each
