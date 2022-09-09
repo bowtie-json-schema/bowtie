@@ -52,7 +52,7 @@ async def bowtie(*args):
         stderr=asyncio.subprocess.PIPE,
     )
 
-    async def _send(stdin):
+    async def _send(stdin=""):
         input = dedent(stdin).lstrip("\n").encode()
         stdout, stderr = await proc.communicate(input)
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
@@ -73,6 +73,21 @@ async def test_lint(lintsonschema):
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
+
+    got = [
+        [test["result"] for test in each["results"]]
+        for each in results
+    ]
+    assert got == [[{"valid": True}]]
+    assert returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_it_runs_tests_from_a_file(tmp_path, lintsonschema):
+    tests = tmp_path / "tests.jsonl"
+    tests.write_text("""{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""")  # noqa: E501
+    async with bowtie("-i", lintsonschema, tests) as send:
+        returncode, results, stderr = await send()
 
     got = [
         [test["result"] for test in each["results"]]

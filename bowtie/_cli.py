@@ -35,7 +35,12 @@ def main():
         "Doing so generally should have no expected change in behavior."
     ),
 )
-def run(context, **kwargs):
+@click.argument(
+    "input",
+    default="-",
+    type=click.File(mode="rb"),
+)
+def run(context, input, **kwargs):
     """
     Run a sequence of cases provided on standard input.
     """
@@ -54,7 +59,7 @@ def run(context, **kwargs):
         ],
         logger_factory=structlog.PrintLoggerFactory(out),
     )
-    cases = (json.loads(line) for line in sys.stdin.buffer)
+    cases = (json.loads(line) for line in input)
     reporter = Reporter()
     count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
     if not count:
