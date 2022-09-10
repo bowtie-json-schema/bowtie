@@ -72,7 +72,7 @@ class Implementation:
         if not got["succeeded"]:
             raise StartError(
                 f"{self.name} failed on startup. Stderr contained:\n\n"
-                f"{indent(got['response']['stderr'].decode(), '  ')}",
+                f"{indent(response.get('stderr', b'').decode(), '  ')}",
             )
 
         if not response.get("ready"):
