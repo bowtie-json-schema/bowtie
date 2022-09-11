@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "CpL9tQP8drSczK4FBz7ULBih7d7HahOgonDZbt3gPQTHHBd+Z07gpz5lyaD2+IcJaX3CyiYWcB6fH+s8PTf2JQ==",
+  "success": true,
+  "projectFilePath": "C:\\projects\\bowtie\\implementations\\dotnet-json-everything\\bowtie_json_everything.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\gregs\\.nuget\\packages\\jetbrains.annotations\\2021.2.0\\jetbrains.annotations.2021.2.0.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\json.more.net\\1.7.0\\json.more.net.1.7.0.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\jsonpointer.net\\2.2.1\\jsonpointer.net.2.2.1.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\jsonschema.net\\3.2.1\\jsonschema.net.3.2.1.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\system.text.encodings.web\\6.0.0\\system.text.encodings.web.6.0.0.nupkg.sha512",
+    "C:\\Users\\gregs\\.nuget\\packages\\system.text.json\\6.0.2\\system.text.json.6.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
