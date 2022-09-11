@@ -1,4 +1,5 @@
 from contextlib import AsyncExitStack
+from fnmatch import fnmatch
 import asyncio
 import json
 import os
@@ -27,6 +28,11 @@ def main():
     multiple=True,
 )
 @click.option(
+    "-k", "filter",
+    type=lambda pattern: f"*{pattern}*",
+    help="Only run cases whose description match the given glob pattern.",
+)
+@click.option(
     "--hide-expected-results/--include-expected-results",
     "hide_expected_results",
     default=True,
@@ -40,7 +46,7 @@ def main():
     default="-",
     type=click.File(mode="rb"),
 )
-def run(context, input, **kwargs):
+def run(context, input, filter, **kwargs):
     """
     Run a sequence of cases provided on standard input.
     """
@@ -60,6 +66,12 @@ def run(context, input, **kwargs):
         logger_factory=structlog.PrintLoggerFactory(out),
     )
     cases = (json.loads(line) for line in input)
+    if filter:
+        cases = (
+            case for case in cases
+            if fnmatch(case["description"], filter)
+        )
+
     reporter = Reporter()
     count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
     if not count:
