@@ -161,7 +161,7 @@ class Reporter:
     _log: structlog.BoundLogger = field(factory=structlog.get_logger)
 
     def run_starting(self, implementations):
-        self._log.info("Starting", implementations=implementations)
+        pass
 
     def ready(self, implementations):
         metadata = {
@@ -169,7 +169,6 @@ class Reporter:
             for implementation in implementations
         }
         self._write({"implementations": metadata})
-        self._log.debug("Ready", implementations=metadata)
 
     def finished(self, count):
         if not count:
