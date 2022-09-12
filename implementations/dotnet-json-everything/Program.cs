@@ -41,7 +41,7 @@ while (Console.ReadLine() is { } line && line != "")
 			}
 
 			var testCase = root["case"];
-			var schemaText = root["schema"];
+			var schemaText = testCase["schema"];
 			var schema = schemaText.Deserialize<JsonSchema>();
 			var tests = testCase["tests"].AsArray();
 			var results = new JsonArray();
@@ -58,7 +58,7 @@ while (Console.ReadLine() is { } line && line != "")
 
 			var runResult = new JsonObject
 			{
-				["seq"] = root["seq"],
+				["seq"] = root["seq"].GetValue<int>(),
 				["results"] = results,
 			};
 			Console.WriteLine(runResult);
