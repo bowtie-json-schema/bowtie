@@ -54,9 +54,9 @@ jobs:
       - name: Set up nox
         uses: wntrblm/nox@2022.8.7
       - name: Create shiv
-        run: nox -s shiv -- dist/bowtie
+        run: mkdir shiv/ && nox -s shiv -- shiv/bowtie
       - name: Tar files
-        run: tar -cvf bowtie.tar dist
+        run: tar -cvf bowtie.tar dist shiv
       - uses: actions/upload-artifact@v3
         with:
           name: packages
