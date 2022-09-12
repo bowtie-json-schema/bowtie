@@ -1,90 +1,83 @@
 using System;
-using System.IO;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using Json.Schema;
 
 
-bool Started = false;
+bool started = false;
 
 
-string line;
-while ((line = Console.In.ReadLine()) != null && line != "") {
-    using (JsonDocument document = JsonDocument.Parse(line)) {
-        JsonElement root = document.RootElement;
-        string cmd = root.GetProperty("cmd").GetString();
-        switch (cmd)
-        {
-            case "start":
-                JsonElement version = root.GetProperty("version");
-                if (version.GetInt32() != 1) {
-                    throw new UnknownVersion(version);
-                }
-                Started = true;
-                JsonObject StartResult = new JsonObject
-                {
-                    ["ready"] = true,
-                    ["version"] = 1,
-                    ["implementation"] = new JsonObject
-                    {
-                        ["language"] = "dotnet",
-                        ["name"] = "json-everything",
-                        ["homepage"] = "https://json-everything.net/json-schema/",
-                        ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
-                    },
-                };
-                Console.Out.WriteLine(StartResult);
-                break;
+while (Console.ReadLine() is { } line && line != "")
+{
+	var root = JsonNode.Parse(line);
+	var cmd = root["cmd"].GetValue<string>();
+	switch (cmd)
+	{
+		case "start":
+			var version = root["version"];
+			if (version.GetValue<int>() != 1) {
+				throw new UnknownVersion(version);
+			}
+			started = true;
+			var startResult = new JsonObject
+			{
+				["ready"] = true,
+				["version"] = 1,
+				["implementation"] = new JsonObject
+				{
+					["language"] = "dotnet",
+					["name"] = "json-everything",
+					["homepage"] = "https://json-everything.net/json-schema/",
+					["issues"] = "https://github.com/gregsdennis/json-everything/issues",
+				},
+			};
+			Console.WriteLine(startResult);
+			break;
 
-            case "run":
-                if (!Started) {
-                    throw new NotStarted();
-                }
+		case "run":
+			if (!started) {
+				throw new NotStarted();
+			}
 
-                JsonElement testCase = root.GetProperty("case");
-                // FIXME: JsonDocument -> JsonSchema ?
-                JsonSchema schema = JsonSchema.FromText(
-                    JsonObject.Create(testCase.GetProperty("schema")).ToJsonString()
-                );
-                JsonElement tests = testCase.GetProperty("tests");
-                var results = new JsonArray();
+			var testCase = root["case"];
+			var schemaText = testCase["schema"];
+			var schema = schemaText.Deserialize<JsonSchema>();
+			var tests = testCase["tests"].AsArray();
+			var results = new JsonArray();
 
-                foreach (JsonElement test in tests.EnumerateArray())
-                {
-                    var validationResult = schema.Validate(test.GetProperty("instance"));
-                    JsonObject testResult = new JsonObject
-                    {
-                        ["valid"] = validationResult.IsValid,
-                    };
-                    results.Add(testResult);
-                };
+			foreach (var test in tests)
+			{
+				var validationResult = schema.Validate(test["instance"]);
+				var testResult = new JsonObject
+				{
+					["valid"] = validationResult.IsValid,
+				};
+				results.Add(testResult);
+			};
 
-                JsonObject RunResult = new JsonObject
-                {
-                    ["seq"] = root.GetProperty("seq").GetInt64(),
-                    ["results"] = results,
-                };
-                Console.Out.WriteLine(RunResult);
-                break;
+			var runResult = new JsonObject
+			{
+				["seq"] = root["seq"].GetValue<int>(),
+				["results"] = results,
+			};
+			Console.WriteLine(runResult);
+			break;
 
-            case "stop":
-                if (!Started) {
-                    throw new NotStarted();
-                }
-                Environment.Exit(0);
-                break;
+		case "stop":
+			if (!started) {
+				throw new NotStarted();
+			}
+			Environment.Exit(0);
+			break;
 
-            case null:
-                throw new UnknownCommand("Missing command!");
+		case null:
+			throw new UnknownCommand("Missing command!");
 
-            default:
-                throw new UnknownCommand(cmd);
+		default:
+			throw new UnknownCommand(cmd);
 
-        }
-    }
+	}
 }
 
 class UnknownCommand : Exception
@@ -94,10 +87,9 @@ class UnknownCommand : Exception
 
 class UnknownVersion : Exception
 {
-    public UnknownVersion(JsonElement version) {}
+    public UnknownVersion(JsonNode version) {}
 }
 
 class NotStarted : Exception
 {
-    public NotStarted() {}
 }
