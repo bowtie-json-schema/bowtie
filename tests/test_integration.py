@@ -60,7 +60,10 @@ async def bowtie(*args):
         metadata = next(lines)
         assert metadata.keys() == {"implementations"}
 
-        results = sorted(lines, key=lambda line: line["implementation"])
+        results = sorted(
+            (each for each in lines if "implementation" in each),
+            key=lambda each: each["implementation"],
+        )
         return proc.returncode, results, stderr
     yield _send
 
@@ -75,7 +78,7 @@ async def test_lint(lintsonschema):
         )
 
     got = [
-        [test["result"] for test in each["results"]]
+        [test for test in each["response"]["results"]]
         for each in results
     ]
     assert got == [[{"valid": True}]]
@@ -90,7 +93,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, lintsonschema):
         returncode, results, stderr = await send()
 
     got = [
-        [test["result"] for test in each["results"]]
+        [test for test in each["response"]["results"]]
         for each in results
     ]
     assert got == [[{"valid": True}]]
@@ -118,7 +121,7 @@ async def test_restarts_crashed_implementations(envsonschema):
         )
 
     got = [
-        [test["result"] for test in each["results"]]
+        [test for test in each["response"]["results"]]
         for each in results
     ]
     assert got == [[{"valid": False}]]
@@ -137,12 +140,10 @@ async def test_implementations_can_signal_errors(envsonschema):
         )
 
     got = [
-        [
-            (test["test"]["description"], test["result"])
-            for test in each["results"]
-        ] for each in results
+        [test for test in each["response"]["results"]]
+        for each in results
     ]
-    assert got == [[("valid:1", {"valid": True})]]
+    assert got == [[{"valid": True}]]
     assert returncode == 0
 
 
@@ -156,7 +157,7 @@ async def test_it_handles_split_messages(envsonschema):
         )
 
     got = [
-        [test["result"] for test in each["results"]]
+        [test for test in each["response"]["results"]]
         for each in results
     ]
     assert got == [[{"valid": True}, {"valid": False}]]

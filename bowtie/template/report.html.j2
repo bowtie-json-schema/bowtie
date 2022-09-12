@@ -65,7 +65,7 @@
                         </a>
                       </td>
                       {% for implementation in implementations %}
-                        <td>{{ to_icon(test_results[implementation.image].valid) }}</td>
+                        <td>{{ to_icon(test_results.get(implementation.image, {"valid": None}).valid) }}</td>
                       {% endfor %}
                     </tr>
                   {% endfor %}
