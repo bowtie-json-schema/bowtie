@@ -39,7 +39,7 @@ const cmds = {
     JsonSchema.add(
       testCase.schema,
       schemaId,
-      "https://json-schema.org/draft/2020-12/schema"
+      "https://json-schema.org/draft/2020-12/schema",
     );
     const schema = JsonSchema.get(schemaId);
 
