@@ -1,4 +1,3 @@
-from collections import defaultdict
 from contextlib import asynccontextmanager
 from textwrap import indent
 from time import monotonic_ns
