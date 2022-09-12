@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from textwrap import indent
 from time import monotonic_ns
@@ -154,7 +155,7 @@ class Implementation:
 
 
 def writer(file=sys.stdout):
-    return lambda result: file.write(f"{json.dumps(result)}\n")
+    return lambda **result: file.write(f"{json.dumps(result)}\n")
 
 
 @define
@@ -168,10 +169,11 @@ class Reporter:
 
     def ready(self, implementations):
         metadata = {
-            implementation.name: implementation.metadata
-            for implementation in implementations
+            implementation.name: dict(
+                implementation.metadata, image=implementation.name,
+            ) for implementation in implementations
         }
-        self._write({"implementations": metadata})
+        self._write(implementations=metadata)
 
     def finished(self, count):
         if not count:
@@ -181,6 +183,8 @@ class Reporter:
 
     def case_started(self, seq, case):
         return _CaseReporter.case_started(
+            case=case,
+            seq=seq,
             write=self._write,
             log=self._log.bind(seq=seq, case=case),
         )
@@ -193,11 +197,13 @@ class _CaseReporter:
     _log: structlog.BoundLogger
 
     @classmethod
-    def case_started(cls, log, write):
-        return cls(log=log, write=write)
+    def case_started(cls, log, write, case, seq):
+        self = cls(log=log, write=write)
+        self._write(case=case, seq=seq)
+        return self
 
-    def got_results(self, results, implementation):
-        self._write(dict(implementation=implementation, results=results))
+    def got_results(self, **result):
+        self._write(**result)
 
     def backoff(self, result):
         self._log.warn("Backing off!", **result)
@@ -207,3 +213,35 @@ class _CaseReporter:
 
     def errored_uncaught(self, result):
         self._log.error("UNCAUGHT", **result)
+
+
+def report_on(input):
+    """
+    Create a structure suitable for the report template from an input file.
+    """
+
+    lines = (json.loads(line) for line in input)
+    header = next(lines)
+    implementations = header["implementations"]
+
+    combined = {}
+
+    for each in lines:
+        if "case" in each:
+            combined[each["seq"]] = {
+                "case": each["case"],
+                "results": [(test, {}) for test in each["case"]["tests"]],
+            }
+            continue
+
+        implementation = each.pop("implementation")
+        assert len(each) == 1, each.keys()
+        response = each["response"]
+        case = combined[response["seq"]]
+        for result, (_, seen) in zip(response["results"], case["results"]):
+            seen[implementation] = result
+
+    return dict(
+        implementations=implementations.values(),
+        results=[(v, k) for k, v in sorted(combined.items())],
+    )

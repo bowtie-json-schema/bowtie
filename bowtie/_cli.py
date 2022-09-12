@@ -7,9 +7,10 @@ import sys
 
 import aiodocker
 import click
+import jinja2
 import structlog
 
-from bowtie._core import Implementation, Reporter
+from bowtie._core import Implementation, Reporter, report_on
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
@@ -18,6 +19,35 @@ def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
+
+
+@main.command()
+@click.argument(
+    "input",
+    default="-",
+    type=click.File(mode="r"),
+)
+@click.option(
+    "--out", "-o", "output",
+    help="Where to write the outputted report HTML.",
+    default="bowtie-report.html",
+    type=click.File("w"),
+)
+def report(input, output):
+    """
+    Generate a Bowtie report from a previous run.
+    """
+
+    env = jinja2.Environment(
+        loader=jinja2.PackageLoader("bowtie", "template"),
+        undefined=jinja2.StrictUndefined,
+        keep_trailing_newline=True,
+    )
+    template = env.get_template(
+        "report.html.j2",
+        globals=dict(pretty=lambda obj: json.dumps(obj, indent=2)),
+    )
+    output.write(template.render(**report_on(input)))
 
 
 @main.command()
@@ -113,13 +143,7 @@ async def _run(implementations, reporter, cases, hide_expected_results):
 
                 case_reporter.got_results(
                     implementation=response["implementation"],
-                    results=[
-                        dict(test=test, result=result)
-                        for test, result in zip(
-                            case["tests"],
-                            response["response"]["results"],
-                        )
-                    ],
+                    response=response["response"],
                 )
         reporter.finished(count=seq)
     return seq
