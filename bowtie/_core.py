@@ -126,7 +126,10 @@ class Implementation:
                 data = []
                 while message is not None and message.stream == 2:
                     data.append(message.data)
-                    message = await self._read_with_timeout()
+                    try:
+                        message = await self._read_with_timeout()
+                    except asyncio.exceptions.TimeoutError:
+                        break
                 return False, {
                     "stderr": b"".join(data),
                     "implementation": self.name,
