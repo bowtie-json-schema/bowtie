@@ -50,3 +50,5 @@ Adding an Implementation
 Add a ``Dockerfile`` which runs as its entry point a bowtie-compatible process to the ``implementations/`` directory in the root of this repository.
 
 Name your directory ``<(ascii-compatible-name-of-)language-your-implementation-is-written-in>-<language-specific-package-identifier>``, so if your implementation is written in B++ and called ``flooblekins``, name the directory ``bpp-flooblekins``.
+
+Please use an alpine or slim image to keep the sizes small.
