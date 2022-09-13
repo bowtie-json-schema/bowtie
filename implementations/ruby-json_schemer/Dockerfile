@@ -1,4 +1,4 @@
-FROM ruby:3-slim
+FROM ruby:3-alpine
 WORKDIR /usr/src/app
 COPY . .
 RUN bundle install
