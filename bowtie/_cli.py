@@ -128,24 +128,7 @@ async def _run(implementations, reporter, cases, hide_expected_results):
             responses = [each.run_case(seq=seq, case=case) for each in runners]
             for each in asyncio.as_completed(responses):
                 response = await each
-                implementation = response["implementation"]
-                if not response["succeeded"]:
-                    if response.get("backoff"):
-                        case_reporter.backoff(response)
-                    else:
-                        case_reporter.errored_uncaught(
-                            implementation,
-                            response,
-                        )
-                    continue
-
-                if response["response"].get("errored"):
-                    case_reporter.errored(implementation, response)
-                else:
-                    case_reporter.got_results(
-                        implementation=implementation,
-                        response=response["response"],
-                    )
+                response.report(reporter=case_reporter)
         reporter.finished(count=seq)
     return seq
 
