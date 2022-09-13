@@ -32,7 +32,7 @@ while (Console.ReadLine() is { } line && line != "")
 					["issues"] = "https://github.com/gregsdennis/json-everything/issues",
 				},
 			};
-			Console.WriteLine(startResult);
+			Console.WriteLine(startResult.ToJsonString());
 			break;
 
 		case "run":
@@ -62,7 +62,7 @@ while (Console.ReadLine() is { } line && line != "")
                                     ["seq"] = root["seq"].GetValue<int>(),
                                     ["results"] = results,
                             };
-                            Console.WriteLine(runResult);
+                            Console.WriteLine(runResult.ToJsonString());
                         }
                         catch (Exception e)
                         {
@@ -75,7 +75,7 @@ while (Console.ReadLine() is { } line && line != "")
                                         ["StackTrace"] = Environment.StackTrace,
                                     },
                             };
-                            Console.WriteLine(errorResult);
+                            Console.WriteLine(errorResult.ToJsonString());
                         }
 			break;
 
