@@ -143,7 +143,10 @@ class Implementation:
                     except asyncio.exceptions.TimeoutError:
                         return False, {"data": data}
                     data += message.data
-                return True, json.loads(data)
+                try:
+                    return True, json.loads(data)
+                except json.JSONDecodeError:
+                    return False, {"data": data}
         return False, {}
 
     def _read_with_timeout(self):
