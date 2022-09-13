@@ -43,10 +43,7 @@ def report(input, output):
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
-    template = env.get_template(
-        "report.html.j2",
-        globals=dict(pretty=lambda obj: json.dumps(obj, indent=2)),
-    )
+    template = env.get_template("report.html.j2")
     output.write(template.render(**report_on(input)))
 
 
