@@ -15,6 +15,7 @@ async-timeout==4.0.2
 attrs==22.1.0
     # via
     #   aiohttp
+    #   bowtie-json-schema
     #   pytest
 file:.#egg=bowtie-json-schema
     # via -r test-requirements.in
@@ -30,6 +31,10 @@ idna==3.3
     # via yarl
 iniconfig==1.1.1
     # via pytest
+jinja2==3.1.2
+    # via bowtie-json-schema
+markupsafe==2.1.1
+    # via jinja2
 multidict==6.0.2
     # via
     #   aiohttp
