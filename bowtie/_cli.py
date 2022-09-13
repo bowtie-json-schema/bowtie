@@ -60,8 +60,14 @@ def report(input, output):
     help="Only run cases whose description match the given glob pattern.",
 )
 @click.option(
+    "-x", "--fail-fast",
+    is_flag=True,
+    default=False,
+    help="Fail immediately after the first error or disagreement.",
+)
+@click.option(
     "--hide-expected-results/--include-expected-results",
-    "hide_expected_results",
+    "hide_results",
     default=True,
     help=(
         "Don't pass expected results to implementations under test. "
@@ -106,7 +112,7 @@ def run(context, input, filter, **kwargs):
         context.exit(os.EX_DATAERR)
 
 
-async def _run(implementations, reporter, cases, hide_expected_results):
+async def _run(implementations, reporter, cases, hide_results, fail_fast):
     reporter.run_starting(implementations=implementations)
 
     async with AsyncExitStack() as stack:
@@ -120,7 +126,10 @@ async def _run(implementations, reporter, cases, hide_expected_results):
 
         seq = 0
         for seq, case, case_reporter in sequenced(cases, reporter):
-            if hide_expected_results:
+
+            should_stop = False
+
+            if hide_results:
                 for test in case["tests"]:
                     # TODO: Re-emit me later
                     test.pop("valid", None)
@@ -129,6 +138,11 @@ async def _run(implementations, reporter, cases, hide_expected_results):
             for each in asyncio.as_completed(responses):
                 response = await each
                 response.report(reporter=case_reporter)
+                if fail_fast and not response.succeeded:
+                    should_stop = True
+
+            if should_stop:
+                break
         reporter.finished(count=seq)
     return seq
 
