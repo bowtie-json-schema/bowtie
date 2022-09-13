@@ -44,24 +44,39 @@ while (Console.ReadLine() is { } line && line != "")
 			var schemaText = testCase["schema"];
 			var schema = schemaText.Deserialize<JsonSchema>();
 			var tests = testCase["tests"].AsArray();
-			var results = new JsonArray();
+                        try {
+                            var results = new JsonArray();
 
-			foreach (var test in tests)
-			{
-				var validationResult = schema.Validate(test["instance"]);
-				var testResult = new JsonObject
-				{
-					["valid"] = validationResult.IsValid,
-				};
-				results.Add(testResult);
-			};
+                            foreach (var test in tests)
+                            {
+                                    var validationResult = schema.Validate(test["instance"]);
+                                    var testResult = new JsonObject
+                                    {
+                                            ["valid"] = validationResult.IsValid,
+                                    };
+                                    results.Add(testResult);
+                            };
 
-			var runResult = new JsonObject
-			{
-				["seq"] = root["seq"].GetValue<int>(),
-				["results"] = results,
-			};
-			Console.WriteLine(runResult);
+                            var runResult = new JsonObject
+                            {
+                                    ["seq"] = root["seq"].GetValue<int>(),
+                                    ["results"] = results,
+                            };
+                            Console.WriteLine(runResult);
+                        }
+                        catch (Exception e)
+                        {
+                            var errorResult = new JsonObject
+                            {
+                                    ["seq"] = root["seq"].GetValue<int>(),
+                                    ["errored"] = true,
+                                    ["context"] = new JsonObject {
+                                        ["Exception"] = e.ToString(),
+                                        ["StackTrace"] = Environment.StackTrace,
+                                    },
+                            };
+                            Console.WriteLine(errorResult);
+                        }
 			break;
 
 		case "stop":
