@@ -210,11 +210,11 @@ class _CaseReporter:
     def backoff(self, result):
         self._log.warn("Backing off!", **result)
 
-    def errored(self, result):
-        self._log.error("Error", **result)
+    def errored(self, implementation, response):
+        self._log.error(f"{implementation} (UNCAUGHT)", **response)
 
-    def errored_uncaught(self, result):
-        self._log.error("UNCAUGHT", **result)
+    def errored_uncaught(self, implementation, response):
+        self._log.error(implementation, **response)
 
 
 def report_on(input):
