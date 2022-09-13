@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-alpine
 RUN python -m pip install jsonschema
 COPY lintsonschema /usr/bin
 COPY io-schema.json /
