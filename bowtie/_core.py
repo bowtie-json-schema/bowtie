@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from textwrap import indent
-from time import monotonic_ns
 import asyncio
 import json
 import sys
