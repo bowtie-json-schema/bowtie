@@ -77,10 +77,7 @@ async def test_lint(lintsonschema):
             """,  # noqa: E501
         )
 
-    got = [
-        [test for test in each["response"]["results"]]
-        for each in results
-    ]
+    got = [[test for test in each["results"]] for each in results]
     assert got == [[{"valid": True}]]
     assert returncode == 0
 
@@ -92,10 +89,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, lintsonschema):
     async with bowtie("-i", lintsonschema, tests) as send:
         returncode, results, stderr = await send()
 
-    got = [
-        [test for test in each["response"]["results"]]
-        for each in results
-    ]
+    got = [[test for test in each["results"]] for each in results]
     assert got == [[{"valid": True}]]
     assert returncode == 0
 
@@ -106,6 +100,7 @@ async def test_no_tests_run(lintsonschema):
         returncode, results, stderr = await send("")
 
     assert results == []
+    assert stderr != ""
     assert returncode == os.EX_DATAERR
 
 
@@ -120,11 +115,9 @@ async def test_restarts_crashed_implementations(envsonschema):
             """,  # noqa: E501
         )
 
-    got = [
-        [test for test in each["response"]["results"]]
-        for each in results
-    ]
+    got = [[test for test in each["results"]] for each in results]
     assert got == [[{"valid": False}]]
+    assert stderr != ""
     assert returncode == 0
 
 
@@ -139,11 +132,9 @@ async def test_implementations_can_signal_errors(envsonschema):
             """,  # noqa: E501
         )
 
-    got = [
-        [test for test in each["response"]["results"]]
-        for each in results
-    ]
+    got = [[test for test in each["results"]] for each in results]
     assert got == [[{"valid": True}]]
+    assert stderr != ""
     assert returncode == 0
 
 
@@ -156,9 +147,6 @@ async def test_it_handles_split_messages(envsonschema):
             """,  # noqa: E501
         )
 
-    got = [
-        [test for test in each["response"]["results"]]
-        for each in results
-    ]
+    got = [[test for test in each["results"]] for each in results]
     assert got == [[{"valid": True}, {"valid": False}]]
     assert returncode == 0

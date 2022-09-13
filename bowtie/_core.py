@@ -90,6 +90,8 @@ class Empty:
     We didn't get a response.
     """
 
+    implementation: str
+
     succeeded = False
 
     def report(self, reporter):
@@ -227,7 +229,7 @@ class Implementation:
                     implementation=self.name,
                     data=b"".join(data),
                 )
-        return Empty()
+        return Empty(implementation=self.name)
 
     def _read_with_timeout(self):
         return asyncio.wait_for(
