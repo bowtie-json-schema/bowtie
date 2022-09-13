@@ -81,11 +81,12 @@ def run(context, input, filter, **kwargs):
     out = sys.stderr
     structlog.configure(
         processors=[
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(
                 fmt="%Y-%m-%d %H:%M.%S", utc=False,
             ),
-            structlog.processors.StackInfoRenderer(),
-            structlog.dev.set_exc_info,
             structlog.dev.ConsoleRenderer(
                 colors=getattr(out, "isatty", lambda: False)(),
             ),
