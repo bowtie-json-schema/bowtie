@@ -58,8 +58,7 @@ async def bowtie(*args):
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
 
         metadata = next(lines, None)
-        if metadata is None:
-            assert False, stderr
+        assert metadata is not None, stderr
         assert metadata.keys() == {"implementations"}
 
         results = sorted(
