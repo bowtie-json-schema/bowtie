@@ -37,16 +37,19 @@ class Response:
 
     implementation: str
     contents: dict
+    expected: bool | None
 
     succeeded = True
 
     def report(self, reporter):
         if "errored" in self.contents:
-            report = reporter.errored
-        else:
-            report = reporter.got_results
+            return reporter.errored(self.implementation, self.contents)
 
-        report(self.implementation, self.contents)
+        reporter.got_results(
+            implementation=self.implementation,
+            results=self.contents,
+            expected=self.expected,
+        )
 
 
 @define
@@ -183,16 +186,21 @@ class Implementation:
 
         return response.contents.get("implementation", {})
 
-    async def run_case(self, seq, case):
+    async def run_case(self, seq, case, expected):
         if self._restarts <= 0:
             return BackingOff(implementation=self.name)
-        return await self._send(cmd="run", seq=seq, case=case)
+        return await self._send(
+            cmd="run",
+            seq=seq,
+            case=case,
+            expected=expected,
+        )
 
     async def _stop(self):
         if self._restarts > 0:
             await self._send(cmd="stop")
 
-    async def _send(self, **kwargs):
+    async def _send(self, retry=3, expected=None, **kwargs):
         cmd = f"{json.dumps(kwargs)}\n"
         try:
             await self._stream.write_in(cmd.encode("utf-8"))
@@ -201,9 +209,7 @@ class Implementation:
             # stream is closed
             await self._restart_container()
             await self._stream.write_in(cmd.encode("utf-8"))
-        return await self._recv()
 
-    async def _recv(self, retry=3):
         for _ in range(retry):
             try:
                 message = await self._read_with_timeout()
@@ -240,6 +246,7 @@ class Implementation:
                 return Response(
                     implementation=self.name,
                     contents=json.loads(data),
+                    expected=expected,
                 )
             except json.JSONDecodeError:
                 return BadFraming(
@@ -306,8 +313,12 @@ class _CaseReporter:
         self._write(case=case, seq=seq)
         return self
 
-    def got_results(self, implementation, results):
-        self._write(implementation=implementation, **results)
+    def got_results(self, implementation, expected, results):
+        self._write(
+            implementation=implementation,
+            expected=expected,
+            **results,
+        )
 
     def backoff(self, implementation):
         self._log.warn("backing off", logger_name=implementation)
@@ -340,8 +351,14 @@ def report_on(input):
 
         implementation = each.pop("implementation")
         case = combined[each["seq"]]
-        for result, (_, seen) in zip(each["results"], case["results"]):
-            seen[implementation] = result
+
+        for result, expected, (_, seen) in zip(
+            each["results"],
+            each["expected"],
+            case["results"],
+        ):
+            incorrect = expected is not None and result["valid"] != expected
+            seen[implementation] = result, incorrect
 
     return dict(
         implementations=implementations.values(),

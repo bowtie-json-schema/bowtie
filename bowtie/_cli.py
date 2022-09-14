@@ -206,14 +206,15 @@ async def _run(
         should_stop = False
         for seq, case, case_reporter in sequenced(cases, reporter):
             if hide_results:
-                for test in case["tests"]:
-                    # TODO: Re-emit me later
-                    test.pop("valid", None)
+                expected = [test.pop("valid", None) for test in case["tests"]]
+            else:
+                expected = [test.get("valid") for test in case["tests"]]
             if set_schema and not isinstance(case["schema"], bool):
                 case["schema"]["$schema"] = dialect
 
             responses = [
-                each.run_case(seq=seq, case=case) for each in implementations
+                each.run_case(seq=seq, case=case, expected=expected)
+                for each in implementations
             ]
             for each in asyncio.as_completed(responses):
                 response = await each
