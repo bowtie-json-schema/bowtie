@@ -18,6 +18,12 @@ local cmds = {
         name = 'jsonschema',
         homepage = 'https://github.com/api7/jsonschema',
         issues = 'https://github.com/api7/jsonschema/issues',
+
+        dialects = {
+          'http://json-schema.org/draft-07/schema#',
+          'http://json-schema.org/draft-06/schema#',
+          'http://json-schema.org/draft-04/schema#',
+        },
       }
     }
   end,

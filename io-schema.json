@@ -43,8 +43,9 @@
                   "$ref": "#/$defs/version"
                 },
                 "implementation": {
-                  "description": "Metadata about the implementation. The below properties are encouraged, but additional metadata can also be passed",
+                  "description": "Metadata about the implementation. The list below contain required or suggested values, but implementation-specific additional metadata can also be included and will be preserved in emitted reports.",
                   "type": "object",
+                  "required": ["language", "name", "dialects", "issues"],
                   "properties": {
                     "language": {
                       "description": "The implementation language (e.g. C++, Python, etc.)",
@@ -57,6 +58,11 @@
                     "version": {
                       "description": "The implementation version",
                       "type": "string"
+                    },
+                    "dialects": {
+                      "description": "A list of JSON Schema dialects (URIs) which the implementation understands. When running test cases, this list will be consulted before sending them to the implementation (and any unsupported dialects will be skipped).",
+                      "type": "array",
+                      "items": { "type": "string", "format": "uri" }
                     },
                     "homepage": {
                       "description": "A URL for the implementation's homepage",

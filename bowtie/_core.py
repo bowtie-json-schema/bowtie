@@ -15,6 +15,20 @@ class StartError(Exception):
     """
 
 
+class UnsupportedDialect(Exception):
+    """
+    An implementation doesn't support the dialect in use for test cases.
+    """
+
+    def __init__(self, implementation, dialect):
+        super().__init__(implementation, dialect)
+        self.implementation = implementation
+        self.dialect = dialect
+
+    def __str__(self):
+        return f"{self.implementation.name} does not support {self.dialect}."
+
+
 @define
 class Response:
     """
@@ -122,10 +136,12 @@ class Implementation:
 
     @classmethod
     @asynccontextmanager
-    async def start(cls, docker, image_name):
+    async def start(cls, docker, image_name, dialect):
         try:
             self = cls(name=image_name, docker=docker)
-            await self._restart_container()
+            metadata = await self._restart_container()
+            if dialect not in metadata["dialects"]:
+                raise UnsupportedDialect(implementation=self, dialect=dialect)
             yield self
             await self._stop()
         finally:
@@ -149,6 +165,7 @@ class Implementation:
             stderr=True,
         )
         self.metadata = await self._start()
+        return self.metadata
 
     async def _start(self):
         response = await self._send(cmd="start", version=1)
@@ -250,6 +267,9 @@ class Reporter:
 
     def run_starting(self, implementations):
         pass
+
+    def unsupported_dialect(self, exc_info):
+        self._log.warn("Unsupported dialect", exc_info=exc_info)
 
     def ready(self, implementations):
         metadata = {

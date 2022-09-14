@@ -105,6 +105,17 @@ async def test_no_tests_run(lintsonschema):
 
 
 @pytest.mark.asyncio
+async def test_unsupported_dialect(lintsonschema):
+    dialect = "some://other/URI/"
+    async with bowtie("-i", lintsonschema, "--dialect", dialect) as send:
+        returncode, results, stderr = await send("")
+
+    assert results == []
+    assert b"unsupported dialect" in stderr.lower()
+    assert returncode == os.EX_DATAERR
+
+
+@pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
     async with bowtie("-i", envsonschema) as send:
         returncode, results, stderr = await send(

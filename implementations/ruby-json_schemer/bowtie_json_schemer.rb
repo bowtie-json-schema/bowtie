@@ -29,6 +29,12 @@ module BowtieJsonSchemer
           :name => :json_schemer,
           :homepage => "https://github.com/davishmcclurg/json_schemer",
           :issues => "https://github.com/davishmcclurg/json_schemer/issues",
+
+          :dialects => [
+            "http://json-schema.org/draft-07/schema#",
+            "http://json-schema.org/draft-06/schema#",
+            "http://json-schema.org/draft-04/schema#",
+         ],
         }
       }
       puts "#{JSON.generate(response)}\n"

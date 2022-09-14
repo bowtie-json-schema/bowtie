@@ -30,6 +30,14 @@ while (Console.ReadLine() is { } line && line != "")
 					["name"] = "json-everything",
 					["homepage"] = "https://json-everything.net/json-schema/",
 					["issues"] = "https://github.com/gregsdennis/json-everything/issues",
+
+					["dialects"] = new JsonArray
+                                        {
+                                            "https://json-schema.org/draft/2020-12/schema",
+                                            "https://json-schema.org/draft/2019-09/schema",
+                                            "http://json-schema.org/draft-07/schema#",
+                                            "http://json-schema.org/draft-06/schema#",
+                                        },
 				},
 			};
 			Console.WriteLine(startResult.ToJsonString());
