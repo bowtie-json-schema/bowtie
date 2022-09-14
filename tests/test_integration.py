@@ -57,7 +57,9 @@ async def bowtie(*args):
         stdout, stderr = await proc.communicate(input)
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
 
-        metadata = next(lines)
+        metadata = next(lines, None)
+        if metadata is None:
+            assert False, stderr
         assert metadata.keys() == {"implementations"}
 
         results = sorted(

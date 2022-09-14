@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from textwrap import indent
+from typing import Optional
 import asyncio
 import json
 import sys
@@ -37,7 +38,7 @@ class Response:
 
     implementation: str
     contents: dict
-    expected: bool | None
+    expected: Optional[bool]
 
     succeeded = True
 
