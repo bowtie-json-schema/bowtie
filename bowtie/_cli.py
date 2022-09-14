@@ -105,9 +105,22 @@ def report(input, output):
 )
 @click.option(
     "--dialect", "-D", "dialect",
-    help="A URI or shortname identifying the dialect of each test case",
+    help=(
+        "A URI or shortname identifying the dialect of each test case."
+        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
+    ),
     type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
     default="2020-12",
+)
+@click.option(
+    "--set-schema/--no-set-schema", "-S",
+    "set_schema",
+    default=False,
+    help=(
+        "Explicitly set $schema in all (non-boolean) case schemas sent to "
+        "implementations. Note this of course means what is passed to "
+        "implementations will differ from what is provided in the input."
+    ),
 )
 @click.option(
     "--hide-expected-results/--include-expected-results",
@@ -163,6 +176,7 @@ async def _run(
     dialect: str,
     hide_results: bool,
     fail_fast: bool,
+    set_schema: bool,
 ):
     reporter.run_starting(implementations=image_names)
 
@@ -195,6 +209,8 @@ async def _run(
                 for test in case["tests"]:
                     # TODO: Re-emit me later
                     test.pop("valid", None)
+            if set_schema and not isinstance(case["schema"], bool):
+                case["schema"]["$schema"] = dialect
 
             responses = [
                 each.run_case(seq=seq, case=case) for each in implementations
