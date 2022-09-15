@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import AsyncExitStack
 from fnmatch import fnmatch
 import asyncio
@@ -163,21 +165,20 @@ def run(context, input, filter, **kwargs):
             if fnmatch(case["description"], filter)
         )
 
-    reporter = Reporter()
-    count = asyncio.run(_run(**kwargs, reporter=reporter, cases=cases))
+    count = asyncio.run(_run(**kwargs, cases=cases))
     if not count:
         context.exit(os.EX_DATAERR)
 
 
 async def _run(
-    image_names,
+    image_names: list[str],
     cases,
-    reporter: Reporter,
     dialect: str,
     hide_results: bool,
     fail_fast: bool,
     set_schema: bool,
 ):
+    reporter = Reporter()
     reporter.run_starting(implementations=image_names)
 
     async with AsyncExitStack() as stack:
