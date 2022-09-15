@@ -12,12 +12,8 @@ import click
 import jinja2
 import structlog
 
-from bowtie._core import (
-    Implementation,
-    Reporter,
-    UnsupportedDialect,
-    report_on,
-)
+from bowtie._core import Implementation, Reporter, report_on
+from bowtie.exceptions import UnsupportedDialect
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"

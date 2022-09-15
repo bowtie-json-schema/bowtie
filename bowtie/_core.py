@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from textwrap import indent
 import asyncio
 import json
 import sys
@@ -10,25 +9,7 @@ from attrs import define, field
 import aiodocker
 import structlog
 
-
-class StartError(Exception):
-    """
-    An implementation failed to start properly.
-    """
-
-
-class UnsupportedDialect(Exception):
-    """
-    An implementation doesn't support the dialect in use for test cases.
-    """
-
-    def __init__(self, implementation, dialect):
-        super().__init__(implementation, dialect)
-        self.implementation = implementation
-        self.dialect = dialect
-
-    def __str__(self):
-        return f"{self.implementation.name} does not support {self.dialect}."
+from bowtie import exceptions
 
 
 @define
@@ -146,7 +127,10 @@ class Implementation:
             self = cls(name=image_name, docker=docker)
             metadata = await self._restart_container()
             if dialect not in metadata["dialects"]:
-                raise UnsupportedDialect(implementation=self, dialect=dialect)
+                raise exceptions.UnsupportedDialect(
+                    implementation=self,
+                    dialect=dialect,
+                )
             yield self
             await self._stop()
         finally:
@@ -176,15 +160,13 @@ class Implementation:
         response = await self._send(cmd="start", version=1)
 
         if not response.succeeded:
-            raise StartError(
-                f"{self.name} failed on startup. Stderr contained:\n\n"
-                f"{indent(response.get('stderr', b'').decode(), '  ')}",
-            )
-
-        if not response.contents.get("ready"):
-            raise StartError(f"{self.name} is not ready!")
-        elif response.contents.get("version") != 1:
-            raise StartError(f"{self.name} did not speak version 1!")
+            raise exceptions.StartupFailure(self, response.get("stderr", b""))
+        elif not response.contents.get("ready"):
+            raise exceptions.ImplementationNotReady(self)
+        else:
+            version = response.contents.get("version")
+            if version != 1:
+                raise exceptions.VersionMismatch(self, expected=1, got=version)
 
         return response.contents.get("implementation", {})
 
