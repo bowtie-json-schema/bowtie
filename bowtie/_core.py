@@ -256,9 +256,6 @@ class Reporter:
     _write = field(default=writer())
     _log: structlog.BoundLogger = field(factory=structlog.get_logger)
 
-    def run_starting(self, implementations):
-        pass
-
     def unsupported_dialect(self, exc_info):
         self._log.warn("Unsupported dialect", exc_info=exc_info)
 

@@ -56,6 +56,8 @@ def main():
     A meta-validator for the JSON Schema specifications.
     """
 
+    redirect_structlog()
+
 
 @main.command()
 @click.argument(
@@ -139,21 +141,6 @@ def run(context, input, filter, **kwargs):
     Run a sequence of cases provided on standard input.
     """
 
-    out = sys.stderr
-    structlog.configure(
-        processors=[
-            structlog.processors.add_log_level,
-            structlog.processors.StackInfoRenderer(),
-            structlog.dev.set_exc_info,
-            structlog.processors.TimeStamper(
-                fmt="%Y-%m-%d %H:%M.%S", utc=False,
-            ),
-            structlog.dev.ConsoleRenderer(
-                colors=getattr(out, "isatty", lambda: False)(),
-            ),
-        ],
-        logger_factory=structlog.PrintLoggerFactory(out),
-    )
     cases = (json.loads(line) for line in input)
     if filter:
         cases = (
@@ -173,10 +160,8 @@ async def _run(
     hide_results: bool,
     fail_fast: bool,
     set_schema: bool,
+    reporter: Reporter = Reporter(),
 ):
-    reporter = Reporter()
-    reporter.run_starting(implementations=image_names)
-
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
 
@@ -229,3 +214,24 @@ async def _run(
 def sequenced(cases, reporter):
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
+
+
+def redirect_structlog(file=sys.stderr):
+    """
+    Reconfigure structlog's defaults to go to the given location.
+    """
+
+    structlog.configure(
+        processors=[
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            structlog.processors.TimeStamper(
+                fmt="%Y-%m-%d %H:%M.%S", utc=False,
+            ),
+            structlog.dev.ConsoleRenderer(
+                colors=getattr(file, "isatty", lambda: False)(),
+            ),
+        ],
+        logger_factory=structlog.PrintLoggerFactory(file),
+    )
