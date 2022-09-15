@@ -54,7 +54,10 @@
                     <tr>
                       <td scope="col">test</td>
                       {% for implementation in implementations %}
-                        <td class="text-center" scope="col">{{ implementation.name }} ({{ implementation.language }})</td>
+                        <td class="text-center" scope="col">
+                          {{ implementation.name }}
+                          <small class="text-muted">{{ implementation.language }}</small>
+                        </td>
                       {% endfor %}
                     </tr>
                   </thead>
