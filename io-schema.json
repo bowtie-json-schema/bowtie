@@ -189,16 +189,12 @@
         },
 
         "stop": {
-          "description": "Sent once at program end to the implementation to indicate it should shut down.",
+          "description": "Sent once at program end to the implementation to indicate it should shut down. No response is required.",
 
           "properties": {
             "cmd": { "const": "stop" }
           },
-          "$defs": {
-            "response": {
-              "additionalProperties": false
-            }
-          }
+          "$defs": { "response": {} }
         }
       }
     },
