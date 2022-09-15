@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/python-jsonschema/bowtie/1/io-schema.json",
+  "$id": "https://github.com/python-jsonschema/bowtie/v0/io-schema.json",
   "title": "Bowtie IO Protocol",
   "description": "Input/output specification for Bowtie, a meta-validator for JSON Schema validator implementations",
 
