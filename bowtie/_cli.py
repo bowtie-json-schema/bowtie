@@ -122,15 +122,6 @@ def report(input, output):
         "implementations will differ from what is provided in the input."
     ),
 )
-@click.option(
-    "--hide-expected-results/--include-expected-results",
-    "hide_results",
-    default=True,
-    help=(
-        "Don't pass expected results to implementations under test. "
-        "Doing so generally should have no expected change in behavior."
-    ),
-)
 @click.argument(
     "input",
     default="-",
@@ -157,7 +148,6 @@ async def _run(
     image_names: list[str],
     cases,
     dialect: str,
-    hide_results: bool,
     fail_fast: bool,
     set_schema: bool,
     reporter: Reporter = Reporter(),
@@ -187,10 +177,7 @@ async def _run(
         seq = 0
         should_stop = False
         for seq, case, case_reporter in sequenced(cases, reporter):
-            if hide_results:
-                expected = [test.pop("valid", None) for test in case["tests"]]
-            else:
-                expected = [test.get("valid") for test in case["tests"]]
+            expected = [test.pop("valid", None) for test in case["tests"]]
             if set_schema and not isinstance(case["schema"], bool):
                 case["schema"]["$schema"] = dialect
 
