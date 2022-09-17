@@ -63,14 +63,22 @@ const cmds = {
   run: (args) => {
     console.assert(started, "Not started!");
 
-    const testCase = args.case;
-    const validate = ajv.compile(testCase.schema);
-    return {
-      seq: args.seq,
-      results: testCase.tests.map((test) => ({
-        valid: validate(test.instance),
-      })),
-    };
+    try {
+      const testCase = args.case;
+      const validate = ajv.compile(testCase.schema);
+      return {
+        seq: args.seq,
+        results: testCase.tests.map((test) => ({
+          valid: validate(test.instance),
+        })),
+      };
+    } catch (e) {
+      return {
+        errored: true,
+        seq: args.seq,
+        context: { error: e.toString() },
+      };
+    }
   },
 
   stop: (_) => {
