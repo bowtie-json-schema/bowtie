@@ -37,7 +37,8 @@ class Result:
     expected: bool | None
 
     def report(self, reporter):
-        if "errored" in self.contents:
+        errored = self.contents.pop("errored", None)
+        if errored:
             return reporter.errored(self.implementation, self.contents)
 
         reporter.got_results(
