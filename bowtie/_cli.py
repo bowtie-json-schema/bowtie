@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack
 from fnmatch import fnmatch
+from pathlib import Path
 import asyncio
 import json
 import os
@@ -143,6 +144,71 @@ def run(context, input, filter, **kwargs):
         context.exit(os.EX_DATAERR)
 
 
+@main.command()
+@click.pass_context
+@click.option(
+    "--implementation", "-i", "image_names",
+    help="A docker image which implements the bowtie IO protocol.",
+    multiple=True,
+)
+@click.option(
+    "-k", "filter",
+    type=lambda pattern: f"*{pattern}*",
+    help="Only run cases whose description match the given glob pattern.",
+)
+@click.option(
+    "-x", "--fail-fast",
+    is_flag=True,
+    default=False,
+    help="Fail immediately after the first error or disagreement.",
+)
+@click.option(
+    "--set-schema/--no-set-schema", "-S",
+    "set_schema",
+    default=False,
+    help=(
+        "Explicitly set $schema in all (non-boolean) case schemas sent to "
+        "implementations. Note this of course means what is passed to "
+        "implementations will differ from what is provided in the input."
+    ),
+)
+@click.argument(
+    "input",
+    default="-",
+    type=click.Path(exists=True, path_type=Path),
+)
+def suite(context, input, filter, **kwargs):
+    """
+    Run a directory containing files in the official test suite format.
+
+    Supports paths like:
+
+        * :sample:`{ROOT}/tests/draft7` to run a version's tests
+        * :sample:`{ROOT}/tests/draft7/foo.json` to run just one file
+    """
+
+    if input.is_dir():
+        cases = suite_cases_from(files=input.glob("*.json"))
+        dialect = DIALECT_SHORTNAMES.get(input.name)
+    else:
+        cases = suite_cases_from(files=[input])
+        dialect = DIALECT_SHORTNAMES.get(input.parent.name)
+    if dialect is None:
+        raise click.BadParameter(
+            f"{input} is not a JSON Schema Test Suite directory.",
+        )
+
+    if filter:
+        cases = (
+            case for case in cases
+            if fnmatch(case["description"], filter)
+        )
+
+    count = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
+    if not count:
+        context.exit(os.EX_DATAERR)
+
+
 async def _run(
     image_names: list[str],
     cases,
@@ -207,6 +273,14 @@ async def _run(
 def sequenced(cases, reporter):
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
+
+
+def suite_cases_from(files):
+    for file in files:
+        for case in json.loads(file.read_text()):
+            for test in case["tests"]:
+                test["instance"] = test.pop("data")
+            yield case
 
 
 def redirect_structlog(file=sys.stderr):
