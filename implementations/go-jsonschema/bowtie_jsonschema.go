@@ -7,7 +7,16 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"log"
 	"os"
+	"strings"
 )
+
+var drafts = map[string]*jsonschema.Draft{
+	"https://json-schema.org/draft/2020-12/schema": jsonschema.Draft2020,
+	"https://json-schema.org/draft/2019-09/schema": jsonschema.Draft2019,
+	"http://json-schema.org/draft-07/schema#":      jsonschema.Draft7,
+	"http://json-schema.org/draft-06/schema#":      jsonschema.Draft6,
+	"http://json-schema.org/draft-04/schema#":      jsonschema.Draft4,
+}
 
 func main() {
 
@@ -22,6 +31,7 @@ func main() {
 			return
 		}
 		encoder := json.NewEncoder(os.Stdout)
+		compiler := jsonschema.NewCompiler()
 		switch request["cmd"] {
 		case "start":
 			started = true
@@ -55,6 +65,20 @@ func main() {
 			if err := encoder.Encode(&data); err != nil {
 				panic("Failed sending a response!")
 			}
+		case "dialect":
+			if !started {
+				panic("Not started!")
+			}
+			rawDialect, ok := request["dialect"]
+			if !ok {
+				panic("No dialect!")
+			}
+			dialect := rawDialect.(string)
+			compiler.Draft = drafts[dialect]
+			data := map[string]interface{}{"ok": true}
+			if err := encoder.Encode(&data); err != nil {
+				panic("Failed sending a response!")
+			}
 		case "run":
 			if !started {
 				panic("Not started!")
@@ -69,8 +93,11 @@ func main() {
 			if err != nil {
 				panic("This should never happen.")
 			}
-			// Base URL?
-			schema, err := jsonschema.CompileString("", string(reserialized))
+			var fakeURI = "bowtie.sent.schema.json"
+			if err := compiler.AddResource(fakeURI, strings.NewReader(string(reserialized))); err != nil {
+				panic("Bad schema!")
+			}
+			schema, err := compiler.Compile(fakeURI)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%#v\n", err)
 				os.Exit(1)

@@ -22,6 +22,8 @@
                           :dialects ["http://json-schema.org/draft-07/schema#",
                                      "http://json-schema.org/draft-06/schema#",
                                      "http://json-schema.org/draft-04/schema#"]}})
+            "dialect" (do (assert @started "Not started!")
+                          {:ok false})
             "run" (do (assert @started "Not started!")
                       {:seq (request "seq")
                        :results (let [test-case (request "case")]

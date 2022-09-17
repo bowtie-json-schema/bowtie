@@ -6,7 +6,8 @@ import json
 import sys
 import traceback
 
-import jsonschema.validators
+from jsonschema.protocols import Validator
+from jsonschema.validators import validator_for
 
 
 @dataclass
@@ -14,6 +15,7 @@ class Runner:
 
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
+    _DefaultValidator: Validator | None = None
 
     def run(self, stdin=sys.stdin):
         for line in stdin:
@@ -49,11 +51,21 @@ class Runner:
             ),
         )
 
+    def cmd_dialect(self, dialect):
+        assert self._started, "Not started!"
+        self._DefaultValidator = validator_for({"$schema": dialect})
+        return dict(ok=True)
+
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
         schema = case["schema"]
         try:
-            validator = jsonschema.validators.validator_for(schema)(schema)
+            Validator = validator_for(schema, self._DefaultValidator)
+            assert Validator is not None, (
+                "No dialect sent and schema is missing $schema."
+            )
+
+            validator = Validator(schema)
 
             results = [
                 {"valid": validator.is_valid(test["instance"])}

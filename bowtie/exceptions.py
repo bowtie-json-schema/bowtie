@@ -34,13 +34,3 @@ class VersionMismatch(Exception):
     implementation: "Implementation"
     expected: int
     got: int
-
-
-@define
-class UnsupportedDialect(Exception):
-    """
-    An implementation doesn't support the dialect in use for test cases.
-    """
-
-    implementation: "Implementation"
-    dialect: str

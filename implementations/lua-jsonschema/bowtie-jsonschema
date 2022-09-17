@@ -27,6 +27,10 @@ local cmds = {
       }
     }
   end,
+  dialect = function(_)
+    assert(STARTED, "Not started!")
+    return { ok = false }
+  end,
   run = function(request)
     assert(STARTED, "Not started!")
 

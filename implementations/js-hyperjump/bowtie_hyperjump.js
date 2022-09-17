@@ -13,6 +13,7 @@ function send(data) {
 }
 
 var started = false;
+var dialect = null;
 
 const cmds = {
   start: async (args) => {
@@ -38,18 +39,20 @@ const cmds = {
     };
   },
 
+  dialect: async (args) => {
+    console.assert(started, "Not started!");
+    dialect = args.dialect;
+    return { ok: true };
+  },
+
   run: async (args) => {
     console.assert(started, "Not started!");
 
     const testCase = args.case;
 
-    const schemaId = "http://example.com/schema/" + args.seq.toString();
-    JsonSchema.add(
-      testCase.schema,
-      schemaId,
-      "https://json-schema.org/draft/2020-12/schema",
-    );
-    const schema = JsonSchema.get(schemaId);
+    const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
+    JsonSchema.add(testCase.schema, fakeURI, dialect);
+    const schema = JsonSchema.get(fakeURI);
 
     const validate = await JsonSchema.validate(schema);
     const promises = testCase.tests.map((test) => ({

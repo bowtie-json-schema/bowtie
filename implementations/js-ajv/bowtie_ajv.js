@@ -1,6 +1,12 @@
 const readline = require("readline");
 
-const Ajv = require("ajv");
+const DRAFTS = {
+  "https://json-schema.org/draft/2020-12/schema": require("ajv/dist/2020"),
+  "https://json-schema.org/draft/2019-09/schema": require("ajv/dist/2019"),
+  "http://json-schema.org/draft-07/schema#": require("ajv"),
+  "http://json-schema.org/draft-04/schema#": require("ajv-draft-04"),
+};
+var ajv;
 
 const stdio = readline.createInterface({
   input: process.stdin,
@@ -38,6 +44,22 @@ const cmds = {
     };
   },
 
+  dialect: (args) => {
+    console.assert(started, "Not started!");
+
+    // For some reason ajv's process for Draft 6 is different, so split.
+    if (args.dialect !== "http://json-schema.org/draft-06/schema#") {
+      ajv = new DRAFTS[args.dialect]();
+    } else {
+      const Ajv = require("ajv");
+      const draft6MetaSchema = require("ajv/dist/refs/json-schema-draft-06.json");
+
+      ajv = new Ajv();
+      ajv.addMetaSchema(draft6MetaSchema);
+    }
+    return { ok: true };
+  },
+
   run: (args) => {
     console.assert(started, "Not started!");
 
@@ -56,8 +78,6 @@ const cmds = {
     process.exit(0);
   },
 };
-
-const ajv = new Ajv();
 
 stdio.on("line", (line) => {
   const request = JSON.parse(line);

@@ -13,16 +13,28 @@ from bowtie import exceptions
 
 
 @define
-class Response:
+class InvalidResponse:
     """
-    An implementation sent a response, though it may still indicate an error.
+    An implementation sent an invalid response to a command.
     """
+
+    succeeded = False
+
+    exc_info: Exception
+    response: dict
+
+
+@define
+class Result:
+    """
+    The result of running a test case.
+    """
+
+    succeeded = True
 
     implementation: str
     contents: dict
     expected: bool | None
-
-    succeeded = True
 
     def report(self, reporter):
         if "errored" in self.contents:
@@ -33,6 +45,27 @@ class Response:
             results=self.contents,
             expected=self.expected,
         )
+
+
+@define
+class Started:
+
+    succeeded = True
+
+    implementation: dict
+    ready: bool = False
+    version: int = None
+
+
+@define
+class StartedDialect:
+
+    succeeded = True
+
+    ok: bool
+
+
+StartedDialect.OK = StartedDialect(ok=True)
 
 
 @define
@@ -122,15 +155,10 @@ class Implementation:
 
     @classmethod
     @asynccontextmanager
-    async def start(cls, docker, image_name, dialect):
+    async def start(cls, docker, image_name):
         try:
             self = cls(name=image_name, docker=docker)
-            metadata = await self._restart_container()
-            if dialect not in metadata["dialects"]:
-                raise exceptions.UnsupportedDialect(
-                    implementation=self,
-                    dialect=dialect,
-                )
+            await self._restart_container()
             yield self
             await self._stop()
         finally:
@@ -154,21 +182,30 @@ class Implementation:
             stderr=True,
         )
         self.metadata = await self._start()
-        return self.metadata
+
+    def supports_dialect(self, dialect):
+        return dialect in self.metadata.get("dialects", [])
+
+    async def start_speaking(self, dialect):
+        return await self._send(
+            cmd="dialect",
+            dialect=dialect,
+            succeed=StartedDialect,
+        )
 
     async def _start(self):
-        response = await self._send(cmd="start", version=1)
+        response = await self._send(cmd="start", version=1, succeed=Started)
 
         if not response.succeeded:
-            raise exceptions.StartupFailure(self, response.get("stderr", b""))
-        elif not response.contents.get("ready"):
+            raise exceptions.StartupFailure(self, response.stderr)
+        elif not response.ready:
             raise exceptions.ImplementationNotReady(self)
         else:
-            version = response.contents.get("version")
+            version = response.version
             if version != 1:
                 raise exceptions.VersionMismatch(self, expected=1, got=version)
 
-        return response.contents.get("implementation", {})
+        return response.implementation
 
     async def run_case(self, seq, case, expected):
         if self._restarts <= 0:
@@ -177,14 +214,18 @@ class Implementation:
             cmd="run",
             seq=seq,
             case=case,
-            expected=expected,
+            succeed=lambda **contents: Result(
+                implementation=self.name,
+                contents=contents,
+                expected=expected,
+            ),
         )
 
     async def _stop(self):
         if self._restarts > 0:
-            await self._send(cmd="stop")
+            await self._send(cmd="stop", succeed=lambda **data: None)
 
-    async def _send(self, retry=3, expected=None, **kwargs):
+    async def _send(self, succeed, retry=3, **kwargs):
         cmd = f"{json.dumps(kwargs)}\n"
         try:
             await self._stream.write_in(cmd.encode("utf-8"))
@@ -227,16 +268,17 @@ class Implementation:
                     )
                 data += message.data
             try:
-                return Response(
-                    implementation=self.name,
-                    contents=json.loads(data),
-                    expected=expected,
-                )
+                data = json.loads(data)
             except json.JSONDecodeError:
                 return BadFraming(
                     implementation=self.name,
                     data=b"".join(data),
                 )
+            else:
+                try:
+                    return succeed(**data)
+                except Exception as error:
+                    return InvalidResponse(exc_info=error, response=data)
         return Empty(implementation=self.name)
 
     def _read_with_timeout(self):
@@ -256,16 +298,35 @@ class Reporter:
     _write = field(default=writer())
     _log: structlog.BoundLogger = field(factory=structlog.get_logger)
 
-    def unsupported_dialect(self, exc_info):
-        self._log.warn("Unsupported dialect", exc_info=exc_info)
+    def unsupported_dialect(self, implementation, dialect):
+        self._log.warn(
+            "Unsupported dialect, skipping implementation.",
+            logger_name=implementation.name,
+            dialect=dialect,
+        )
 
-    def ready(self, implementations):
+    def unacknowledged_dialect(self, implementation, dialect, response):
+        self._log.warn(
+            (
+                "Implicit dialect not acknowledged. "
+                "Proceeding, but implementation may not have configured "
+                "itself to handle schemas without $schema."
+            ),
+            logger_name=implementation.name,
+            dialect=dialect,
+            response=response,
+        )
+
+    def ready(self, implementations, dialect):
         metadata = {
             implementation.name: dict(
                 implementation.metadata, image=implementation.name,
             ) for implementation in implementations
         }
         self._write(implementations=metadata)
+
+    def will_speak(self, dialect):
+        self._log.info("Will speak dialect", dialect=dialect)
 
     def finished(self, count):
         if not count:

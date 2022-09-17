@@ -14,6 +14,7 @@ end
 module BowtieJsonSchemer
 
   started = false
+  draft = nil
 
   ARGF.each_line do |line|
     request = JSON.parse(line)
@@ -38,9 +39,14 @@ module BowtieJsonSchemer
         }
       }
       puts "#{JSON.generate(response)}\n"
+    when "dialect"
+      raise NotStarted if not started
+      draft = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[request["dialect"]]
+      response = { :ok => true }
+      puts "#{JSON.generate(response)}\n"
     when "run"
       raise NotStarted if not started
-      schemer = JSONSchemer.schema(request["case"]["schema"])
+      schemer = draft.new(request["case"]["schema"])
       response = {
         :seq => request["seq"],
         :results => request["case"]["tests"].map{ |test|

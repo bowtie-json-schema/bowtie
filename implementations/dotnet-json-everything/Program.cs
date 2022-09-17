@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -6,6 +7,16 @@ using Json.Schema;
 
 
 bool started = false;
+var options = new ValidationOptions();
+
+
+var drafts = new Dictionary<string, Draft>
+{
+    {"https://json-schema.org/draft/2020-12/schema", Draft.Draft202012},
+    {"https://json-schema.org/draft/2019-09/schema", Draft.Draft201909},
+    {"http://json-schema.org/draft-07/schema#", Draft.Draft7},
+    {"http://json-schema.org/draft-06/schema#", Draft.Draft6},
+};
 
 
 while (Console.ReadLine() is { } line && line != "")
@@ -43,6 +54,21 @@ while (Console.ReadLine() is { } line && line != "")
 			Console.WriteLine(startResult.ToJsonString());
 			break;
 
+                case "dialect":
+			if (!started) {
+				throw new NotStarted();
+			}
+                        options = new ValidationOptions{
+                                ValidateAs = drafts[root["dialect"].GetValue<string>()]
+                        };
+
+			var dialectResult = new JsonObject
+			{
+                          ["ok"] = true,
+                        };
+			Console.WriteLine(dialectResult.ToJsonString());
+			break;
+
 		case "run":
 			if (!started) {
 				throw new NotStarted();
@@ -57,7 +83,7 @@ while (Console.ReadLine() is { } line && line != "")
 
                             foreach (var test in tests)
                             {
-                                    var validationResult = schema.Validate(test["instance"]);
+                                    var validationResult = schema.Validate(test["instance"], options);
                                     var testResult = new JsonObject
                                     {
                                             ["valid"] = validationResult.IsValid,

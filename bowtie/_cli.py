@@ -12,8 +12,7 @@ import click
 import jinja2
 import structlog
 
-from bowtie._core import Implementation, Reporter, report_on
-from bowtie.exceptions import UnsupportedDialect
+from bowtie._core import Implementation, Reporter, StartedDialect, report_on
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
@@ -157,22 +156,29 @@ async def _run(
 
         starting = [
             stack.enter_async_context(
-                Implementation.start(
-                    docker=docker,
-                    image_name=image_name,
-                    dialect=dialect,
-                ),
+                Implementation.start(docker=docker, image_name=image_name),
             ) for image_name in image_names
         ]
+        reporter.will_speak(dialect=dialect)
         implementations = []
         for each in asyncio.as_completed(starting):
-            try:
-                implementation = await each
-            except UnsupportedDialect as error:
-                reporter.unsupported_dialect(error)
-            else:
+            implementation = await each
+
+            if implementation.supports_dialect(dialect):
+                ack = await implementation.start_speaking(dialect)
+                if ack != StartedDialect.OK:
+                    reporter.unacknowledged_dialect(
+                        implementation=implementation,
+                        dialect=dialect,
+                        response=ack,
+                    )
                 implementations.append(implementation)
-        reporter.ready(implementations=implementations)
+            else:
+                reporter.unsupported_dialect(
+                    implementation=implementation,
+                    dialect=dialect,
+                )
+        reporter.ready(implementations=implementations, dialect=dialect)
 
         seq = 0
         should_stop = False

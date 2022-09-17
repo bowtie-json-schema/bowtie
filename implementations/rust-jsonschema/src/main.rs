@@ -1,10 +1,35 @@
-use std::{io, process};
+use std::{collections::HashMap, io, process};
 
-use jsonschema::JSONSchema;
+use jsonschema::{Draft, JSONSchema};
 use serde_json::{json, Result};
 
 fn main() -> Result<()> {
+    let dialects = HashMap::from([
+        (
+            String::from("https://json-schema.org/draft/2020-12/schema"),
+            Draft::Draft202012,
+        ),
+        (
+            String::from("https://json-schema.org/draft/2019-09/schema"),
+            Draft::Draft201909,
+        ),
+        (
+            String::from("http://json-schema.org/draft-07/schema#"),
+            Draft::Draft7,
+        ),
+        (
+            String::from("http://json-schema.org/draft-06/schema#"),
+            Draft::Draft6,
+        ),
+        (
+            String::from("http://json-schema.org/draft-04/schema#"),
+            Draft::Draft4,
+        ),
+    ]);
+
     let mut started = false;
+    let mut options = JSONSchema::options();
+    let mut compiler = options.with_draft(Draft::Draft202012);
 
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
@@ -34,12 +59,22 @@ fn main() -> Result<()> {
                 });
                 println!("{}", response.to_string());
             }
+            "dialect" => {
+                if !started {
+                    panic!("Not started!")
+                };
+                let dialect = request["dialect"].as_str().expect("Bad dialect!");
+                options = JSONSchema::options();
+                compiler = options.with_draft(*dialects.get(dialect).expect("No such draft!"));
+                let response = json!({"ok": true});
+                println!("{}", response.to_string());
+            }
             "run" => {
                 if !started {
                     panic!("Not started!")
                 };
                 let case = &request["case"];
-                let compiled = JSONSchema::compile(&case["schema"]).expect("Invalid schema!");
+                let compiled = compiler.compile(&case["schema"]).expect("Invalid schema!");
                 let results: Vec<_> = case["tests"]
                     .as_array()
                     .expect("Invalid tests!")
