@@ -4,6 +4,7 @@ from contextlib import AsyncExitStack
 from fnmatch import fnmatch
 from pathlib import Path
 import asyncio
+import functools
 import json
 import os
 import sys
@@ -85,34 +86,23 @@ def report(input, output):
     output.write(template.render(**report_on(input)))
 
 
-@main.command()
-@click.pass_context
-@click.option(
+IMPLEMENTATION = click.option(
     "--implementation", "-i", "image_names",
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
-@click.option(
+FILTER = click.option(
     "-k", "filter",
     type=lambda pattern: f"*{pattern}*",
     help="Only run cases whose description match the given glob pattern.",
 )
-@click.option(
+FAIL_FAST = click.option(
     "-x", "--fail-fast",
     is_flag=True,
     default=False,
     help="Fail immediately after the first error or disagreement.",
 )
-@click.option(
-    "--dialect", "-D", "dialect",
-    help=(
-        "A URI or shortname identifying the dialect of each test case."
-        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
-    ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
-    default="2020-12",
-)
-@click.option(
+SET_SCHEMA = click.option(
     "--set-schema/--no-set-schema", "-S",
     "set_schema",
     default=False,
@@ -121,6 +111,23 @@ def report(input, output):
         "implementations. Note this of course means what is passed to "
         "implementations will differ from what is provided in the input."
     ),
+)
+
+
+@main.command()
+@click.pass_context
+@IMPLEMENTATION
+@FILTER
+@FAIL_FAST
+@SET_SCHEMA
+@click.option(
+    "--dialect", "-D", "dialect",
+    help=(
+        "A URI or shortname identifying the dialect of each test case."
+        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
+    ),
+    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
+    default="2020-12",
 )
 @click.argument(
     "input",
@@ -146,32 +153,10 @@ def run(context, input, filter, **kwargs):
 
 @main.command()
 @click.pass_context
-@click.option(
-    "--implementation", "-i", "image_names",
-    help="A docker image which implements the bowtie IO protocol.",
-    multiple=True,
-)
-@click.option(
-    "-k", "filter",
-    type=lambda pattern: f"*{pattern}*",
-    help="Only run cases whose description match the given glob pattern.",
-)
-@click.option(
-    "-x", "--fail-fast",
-    is_flag=True,
-    default=False,
-    help="Fail immediately after the first error or disagreement.",
-)
-@click.option(
-    "--set-schema/--no-set-schema", "-S",
-    "set_schema",
-    default=False,
-    help=(
-        "Explicitly set $schema in all (non-boolean) case schemas sent to "
-        "implementations. Note this of course means what is passed to "
-        "implementations will differ from what is provided in the input."
-    ),
-)
+@IMPLEMENTATION
+@FILTER
+@FAIL_FAST
+@SET_SCHEMA
 @click.argument(
     "input",
     default="-",
