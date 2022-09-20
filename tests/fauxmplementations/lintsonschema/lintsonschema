@@ -40,10 +40,12 @@ class Runner:
     def run(self, stdin=sys.stdin):
         for line in stdin:
             each = json.loads(line)
-            REQUEST_VALIDATOR.validate(each)
+            for error in REQUEST_VALIDATOR.iter_errors(each):
+                self._stderr.write(error.message)
             cmd = each.pop("cmd")
             response = getattr(self, f"cmd_{cmd}")(**each)
-            RESPONSE_VALIDATORS[cmd].validate(response)
+            for error in RESPONSE_VALIDATORS[cmd].iter_errors(response):
+                self._stderr.write(error.message)
             self._stdout.write(f"{json.dumps(response)}\n")
             self._stdout.flush()
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/python-jsonschema/bowtie/1/io-schema.json",
+  "$id": "https://github.com/python-jsonschema/bowtie/v0/io-schema.json",
   "title": "Bowtie IO Protocol",
   "description": "Input/output specification for Bowtie, a meta-validator for JSON Schema validator implementations",
 
@@ -13,8 +13,9 @@
       "unevaluatedProperties": false,
       "oneOf": [
         { "$ref": "#/$defs/command/$defs/start" },
-        { "$ref": "#/$defs/command/$defs/stop" },
-        { "$ref": "#/$defs/command/$defs/run" }
+        { "$ref": "#/$defs/command/$defs/dialect" },
+        { "$ref": "#/$defs/command/$defs/run" },
+        { "$ref": "#/$defs/command/$defs/stop" }
       ],
 
       "$defs": {
@@ -43,8 +44,9 @@
                   "$ref": "#/$defs/version"
                 },
                 "implementation": {
-                  "description": "Metadata about the implementation. The below properties are encouraged, but additional metadata can also be passed",
+                  "description": "Metadata about the implementation. The list below contain required or suggested values, but implementation-specific additional metadata can also be included and will be preserved in emitted reports.",
                   "type": "object",
+                  "required": ["language", "name", "dialects", "issues"],
                   "properties": {
                     "language": {
                       "description": "The implementation language (e.g. C++, Python, etc.)",
@@ -57,10 +59,63 @@
                     "version": {
                       "description": "The implementation version",
                       "type": "string"
+                    },
+                    "dialects": {
+                      "description": "A list of JSON Schema dialects (URIs) which the implementation understands. When running test cases, this list will be consulted before sending them to the implementation (and any unsupported dialects will be skipped).",
+                      "type": "array",
+                      "items": { "type": "string", "format": "uri" }
+                    },
+                    "homepage": {
+                      "description": "A URL for the implementation's homepage",
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "issues": {
+                      "description": "A URL for the implementation's bug tracker",
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "links": {
+                      "description": "Additional web page links relevant to the implementation",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "description": { "type": "string" },
+                          "url": { "type": "string", "format": "uri" }
+                        }
+                      }
                     }
                   }
                 }
               }
+            }
+          }
+        },
+
+        "dialect": {
+          "description": "Sent to indicate an 'implicit dialect' -- i.e. which dialect is intended for schemas which do not contain $schema. May be sent multiple times by bowtie to indicate a change in implicit dialect. Note that implementations do not have to support processing such schemas in certain versions of the JSON Schema specification. Harnesses should *not* attempt to pepper this behavior over, or otherwise change the behavior of an implementation. In other words, this value should *not* be used to mutate incoming schemas (by inserting $schema). If an implementation does not support indicating what dialect a schema is written against unless indicated by $schema, or if it refuses to process schemas which do not contain $schema entirely, it should respond to this command as indicated below, and simply error when running cases containing such schemas as it would when used normally. Regardless of the dialect specified by this request, *explicitly* dialected schemas (which do contain $schema) with a different dialect may still be sent (as long as the implementation has signalled it supports the dialect)!",
+
+          "properties": {
+            "cmd": { "const": "dialect" },
+            "dialect": {
+              "description": "A dialect URI which has previously been recognized as supported by the implementation's start response.",
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "$defs": {
+            "response": {
+              "oneOf": [
+                {
+                  "description": "The implementation supports out-of-band indication of schema dialects and has configured itself for the dialect sent.",
+                  "const": { "ok": true }
+                },
+                {
+                  "description": "The implementation does not support out-of-band indication of schema dialects. Cases may proceed to be sent nevertheless.",
+                  "const": { "ok": false }
+                }
+              ]
             }
           }
         },
@@ -162,16 +217,12 @@
         },
 
         "stop": {
-          "description": "Sent once at program end to the implementation to indicate it should shut down.",
+          "description": "Sent once at program end to the implementation to indicate it should shut down. No response is required.",
 
           "properties": {
             "cmd": { "const": "stop" }
           },
-          "$defs": {
-            "response": {
-              "additionalProperties": false
-            }
-          }
+          "$defs": { "response": {} }
         }
       }
     },
