@@ -12,6 +12,15 @@ It's called Bowtie because it fans in lots of JSON then fans out lots of results
 Also because it's elegant – we hope.
 
 
+Contents
+--------
+
+.. toctree::
+    :maxdepth: 2
+
+    cli
+
+
 Execution
 ---------
 
