@@ -119,9 +119,11 @@ class Runner:
                     result.update(skipped=True)
                 elif instruction == "error":
                     result = dict(
-                        (each.split("=", 1) for each in arg.split(",")),
                         errored=True,
                         seq=seq,
+                        context=dict(
+                            each.split("=", 1) for each in arg.split(",")
+                        ),
                     )
                     return self.send(**result)
 
