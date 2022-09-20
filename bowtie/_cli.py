@@ -4,7 +4,6 @@ from contextlib import AsyncExitStack
 from fnmatch import fnmatch
 from pathlib import Path
 import asyncio
-import functools
 import json
 import os
 import sys
@@ -216,12 +215,12 @@ async def _run(
             implementation = await each
 
             if implementation.supports_dialect(dialect):
-                ack = await implementation.start_speaking(dialect)
-                if ack != StartedDialect.OK:
+                response = await implementation.start_speaking(dialect)
+                if response != StartedDialect.OK:
                     reporter.unacknowledged_dialect(
                         implementation=implementation,
                         dialect=dialect,
-                        response=ack,
+                        response=response,
                     )
                 implementations.append(implementation)
             else:

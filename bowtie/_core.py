@@ -5,14 +5,14 @@ import asyncio
 import json
 import sys
 
-from attrs import define, field
 import aiodocker
+import attrs
 import structlog
 
 from bowtie import exceptions
 
 
-@define
+@attrs.define
 class InvalidResponse:
     """
     An implementation sent an invalid response to a command.
@@ -24,7 +24,7 @@ class InvalidResponse:
     response: dict
 
 
-@define
+@attrs.define
 class Result:
     """
     The result of running a test case.
@@ -48,7 +48,7 @@ class Result:
         )
 
 
-@define
+@attrs.define
 class Started:
 
     succeeded = True
@@ -58,7 +58,7 @@ class Started:
     version: int = None
 
 
-@define
+@attrs.define
 class StartedDialect:
 
     succeeded = True
@@ -69,7 +69,7 @@ class StartedDialect:
 StartedDialect.OK = StartedDialect(ok=True)
 
 
-@define
+@attrs.define
 class BackingOff:
     """
     An implementation has failed too many times.
@@ -83,7 +83,7 @@ class BackingOff:
         reporter.backoff(implementation=self.implementation)
 
 
-@define
+@attrs.define
 class UncaughtError:
     """
     An implementation spewed to its stderr.
@@ -101,7 +101,7 @@ class UncaughtError:
         )
 
 
-@define
+@attrs.define
 class BadFraming:
     """
     We're confused about line endings.
@@ -118,7 +118,7 @@ class BadFraming:
         )
 
 
-@define
+@attrs.define
 class Empty:
     """
     We didn't get a response.
@@ -135,7 +135,7 @@ class Empty:
         )
 
 
-@define(hash=True)
+@attrs.define(hash=True)
 class Implementation:
     """
     A running implementation under test.
@@ -143,14 +143,14 @@ class Implementation:
 
     name: str
 
-    _docker: aiodocker.Docker = field(repr=False)
-    _restarts: int = field(default=20 + 1, repr=False)
-    _read_timeout_sec: float = field(default=2.0, repr=False)
+    _docker: aiodocker.Docker = attrs.field(repr=False)
+    _restarts: int = attrs.field(default=20 + 1, repr=False)
+    _read_timeout_sec: float = attrs.field(default=2.0, repr=False)
 
-    _container: aiodocker.containers.DockerContainer = field(
+    _container: aiodocker.containers.DockerContainer = attrs.field(
         default=None, repr=False,
     )
-    _stream: aiodocker.stream.Stream = field(default=None, repr=False)
+    _stream: aiodocker.stream.Stream = attrs.field(default=None, repr=False)
 
     metadata: dict = {}
 
@@ -293,11 +293,11 @@ def writer(file=sys.stdout):
     return lambda **result: file.write(f"{json.dumps(result)}\n")
 
 
-@define
+@attrs.define
 class Reporter:
 
-    _write = field(default=writer())
-    _log: structlog.BoundLogger = field(factory=structlog.get_logger)
+    _write = attrs.field(default=writer())
+    _log: structlog.BoundLogger = attrs.field(factory=structlog.get_logger)
 
     def unsupported_dialect(self, implementation, dialect):
         self._log.warn(
@@ -344,7 +344,7 @@ class Reporter:
         )
 
 
-@define
+@attrs.define
 class _CaseReporter:
 
     _write: callable
