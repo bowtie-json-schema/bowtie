@@ -168,8 +168,8 @@ def suite(context, input, filter, **kwargs):
 
     Supports paths like:
 
-        * :sample:`{ROOT}/tests/draft7` to run a version's tests
-        * :sample:`{ROOT}/tests/draft7/foo.json` to run just one file
+        * :file:`{ROOT}/tests/draft7` to run a version's tests
+        * :file:`{ROOT}/tests/draft7/foo.json` to run just one file
     """
 
     if input.is_dir():
