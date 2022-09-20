@@ -79,7 +79,7 @@ async def test_lint(lintsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]]
+    assert results == [[{"valid": True}]], stderr
     assert returncode == 0
 
 
@@ -90,7 +90,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, lintsonschema):
     async with bowtie("-i", lintsonschema, tests) as send:
         returncode, results, stderr = await send()
 
-    assert results == [[{"valid": True}]]
+    assert results == [[{"valid": True}]], stderr
     assert returncode == 0
 
 
@@ -128,7 +128,7 @@ async def test_restarts_crashed_implementations(envsonschema):
 
     assert results == [[{"valid": False}]]
     assert stderr != ""
-    assert returncode == 0
+    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio
@@ -142,9 +142,9 @@ async def test_implementations_can_signal_errors(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]]
+    assert results == [[{"valid": True}]], stderr
     assert stderr != ""
-    assert returncode == 0
+    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio
