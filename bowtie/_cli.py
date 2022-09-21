@@ -174,7 +174,6 @@ def run(context, input, filter, **kwargs):
 @VALIDATE
 @click.argument(
     "input",
-    default="-",
     type=click.Path(exists=True, path_type=Path),
 )
 def suite(context, input, filter, **kwargs):
