@@ -71,8 +71,8 @@ async def bowtie(*args):
 
 
 @pytest.mark.asyncio
-async def test_lint(lintsonschema):
-    async with bowtie("-i", lintsonschema) as send:
+async def test_validating_on_both_sides(lintsonschema):
+    async with bowtie("-i", lintsonschema, "-V") as send:
         returncode, results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
@@ -84,19 +84,19 @@ async def test_lint(lintsonschema):
 
 
 @pytest.mark.asyncio
-async def test_it_runs_tests_from_a_file(tmp_path, lintsonschema):
+async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
     tests = tmp_path / "tests.jsonl"
     tests.write_text("""{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""")  # noqa: E501
-    async with bowtie("-i", lintsonschema, tests) as send:
+    async with bowtie("-i", envsonschema, tests) as send:
         returncode, results, stderr = await send()
 
-    assert results == [[{"valid": True}]], stderr
+    assert results == [[{"valid": False}]], stderr
     assert returncode == 0
 
 
 @pytest.mark.asyncio
-async def test_no_tests_run(lintsonschema):
-    async with bowtie("-i", lintsonschema) as send:
+async def test_no_tests_run(envsonschema):
+    async with bowtie("-i", envsonschema) as send:
         returncode, results, stderr = await send("")
 
     assert results == []
@@ -105,9 +105,9 @@ async def test_no_tests_run(lintsonschema):
 
 
 @pytest.mark.asyncio
-async def test_unsupported_dialect(lintsonschema):
+async def test_unsupported_dialect(envsonschema):
     dialect = "some://other/URI/"
-    async with bowtie("-i", lintsonschema, "--dialect", dialect) as send:
+    async with bowtie("-i", envsonschema, "--dialect", dialect) as send:
         returncode, results, stderr = await send("")
 
     assert results == []
