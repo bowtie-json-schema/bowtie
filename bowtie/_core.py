@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from importlib import resources
 import asyncio
 import json
 import sys
@@ -9,7 +10,7 @@ import aiodocker
 import attrs
 import structlog
 
-from bowtie import exceptions
+from bowtie import _commands
 
 
 @attrs.define
@@ -22,51 +23,6 @@ class InvalidResponse:
 
     exc_info: Exception
     response: dict
-
-
-@attrs.define
-class Result:
-    """
-    The result of running a test case.
-    """
-
-    succeeded = True
-
-    implementation: str
-    contents: dict
-    expected: bool | None
-
-    def report(self, reporter):
-        errored = self.contents.pop("errored", None)
-        if errored:
-            return reporter.errored(self.implementation, self.contents)
-
-        reporter.got_results(
-            implementation=self.implementation,
-            results=self.contents,
-            expected=self.expected,
-        )
-
-
-@attrs.define
-class Started:
-
-    succeeded = True
-
-    implementation: dict
-    ready: bool = False
-    version: int = None
-
-
-@attrs.define
-class StartedDialect:
-
-    succeeded = True
-
-    ok: bool
-
-
-StartedDialect.OK = StartedDialect(ok=True)
 
 
 @attrs.define
@@ -135,13 +91,54 @@ class Empty:
         )
 
 
-@attrs.define(hash=True)
+@attrs.define
+class Test:
+
+    description: str
+    instance: object
+    valid: bool | None = None
+
+
+@attrs.define
+class TestCase:
+
+    description: str
+    schema: object
+    tests: list[Test]
+    comment: str | None = None
+
+    @classmethod
+    def from_dict(cls, data):
+        data["tests"] = [Test(**test) for test in data["tests"]]
+        return cls(**data)
+
+    def without_expected_results(self):
+        as_dict = {
+            "tests": [
+                attrs.asdict(test, filter=lambda k, _: k.name != "valid")
+                for test in self.tests
+            ],
+        }
+        as_dict.update(
+            attrs.asdict(
+                self,
+                filter=lambda k, v: k.name != "tests" and (
+                    k.name != "comment" or v is not None
+                )
+            )
+        )
+        return as_dict
+
+
+@attrs.define(hash=True, slots=False)
 class Implementation:
     """
     A running implementation under test.
     """
 
     name: str
+
+    _maybe_validate: callable
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
     _restarts: int = attrs.field(default=20 + 1, repr=False)
@@ -154,11 +151,29 @@ class Implementation:
 
     metadata: dict = {}
 
+    _dialect = None
+
     @classmethod
     @asynccontextmanager
-    async def start(cls, docker, image_name):
+    async def start(cls, docker, image_name, validate_implementations):
+        if validate_implementations:
+            from jsonschema.validators import RefResolver, validator_for
+
+            text = resources.read_text("bowtie.schemas", "io-schema.json")
+            root_schema = json.loads(text)
+            resolver = RefResolver.from_schema(root_schema)
+            Validator = validator_for(root_schema)
+            Validator.check_schema(root_schema)
+
+            def validate(instance, schema):
+                resolver.store["urn:current-dialect"] = {"$ref": self._dialect}
+                Validator(schema, resolver=resolver).validate(instance)
+        else:
+            def validate(instance, schema):
+                pass
+
+        self = cls(name=image_name, docker=docker, maybe_validate=validate)
         try:
-            self = cls(name=image_name, docker=docker)
             await self._restart_container()
             yield self
             await self._stop()
@@ -182,59 +197,41 @@ class Implementation:
             stdout=True,
             stderr=True,
         )
-        self.metadata = await self._start()
+        self.metadata = await self._send(_commands.START_V1)
 
     def supports_dialect(self, dialect):
         return dialect in self.metadata.get("dialects", [])
 
     async def start_speaking(self, dialect):
-        return await self._send(
-            cmd="dialect",
-            dialect=dialect,
-            succeed=StartedDialect,
-        )
+        self._dialect = dialect
+        return await self._send(_commands.Dialect(dialect=dialect))
 
-    async def _start(self):
-        response = await self._send(cmd="start", version=1, succeed=Started)
-
-        if not response.succeeded:
-            raise exceptions.StartupFailure(self, response.stderr)
-        elif not response.ready:
-            raise exceptions.ImplementationNotReady(self)
-        else:
-            version = response.version
-            if version != 1:
-                raise exceptions.VersionMismatch(self, expected=1, got=version)
-
-        return response.implementation
-
-    async def run_case(self, seq, case, expected):
+    async def run_case(self, seq, case):
         if self._restarts <= 0:
             return BackingOff(implementation=self.name)
-        return await self._send(
-            cmd="run",
-            seq=seq,
-            case=case,
-            succeed=lambda **contents: Result(
-                implementation=self.name,
-                contents=contents,
-                expected=expected,
-            ),
-        )
+
+        command = _commands.Run(seq=seq, case=case.without_expected_results())
+        response = await self._send(command)
+        expected = [test.valid for test in case.tests]
+        return response(implementation=self.name, expected=expected)
 
     async def _stop(self):
         if self._restarts > 0:
-            await self._send(cmd="stop", succeed=lambda **data: None)
+            await self._send(_commands.STOP)
 
-    async def _send(self, succeed, retry=3, **kwargs):
-        cmd = f"{json.dumps(kwargs)}\n"
+    async def _send(self, cmd, retry=3):
+        request = _commands.to_request(cmd)
+        pointer = f"#/$defs/command/$defs/{cmd.cmd}"
+        self._maybe_validate(instance=request, schema={"$ref": pointer})
+        as_bytes = f"{json.dumps(request)}\n".encode("utf-8")
+
         try:
-            await self._stream.write_in(cmd.encode("utf-8"))
+            await self._stream.write_in(as_bytes)
         except AttributeError:
             # FIXME: aiodocker doesn't appear to properly report when its
             # stream is closed
             await self._restart_container()
-            await self._stream.write_in(cmd.encode("utf-8"))
+            await self._stream.write_in(as_bytes)
 
         for _ in range(retry):
             try:
@@ -252,7 +249,7 @@ class Implementation:
                         message = await self._read_with_timeout()
                     except asyncio.exceptions.TimeoutError:
                         break
-                return UncaughtError(
+                return lambda *args, **kwargs: UncaughtError(
                     implementation=self.name,
                     stderr=b"".join(data),
                 )
@@ -263,7 +260,7 @@ class Implementation:
                 try:
                     message = await self._read_with_timeout()
                 except asyncio.exceptions.TimeoutError:
-                    return BadFraming(
+                    return lambda *args, **kwargs: BadFraming(
                         implementation=self.name,
                         data=b"".join(data),
                     )
@@ -271,16 +268,15 @@ class Implementation:
             try:
                 data = json.loads(data)
             except json.JSONDecodeError:
-                return BadFraming(
+                return lambda *args, **kwargs: BadFraming(
                     implementation=self.name,
                     data=b"".join(data),
                 )
             else:
-                try:
-                    return succeed(**data)
-                except Exception as error:
-                    return InvalidResponse(exc_info=error, response=data)
-        return Empty(implementation=self.name)
+                pointer = f"#/$defs/command/$defs/{cmd.cmd}/$defs/response"
+                self._maybe_validate(instance=data, schema={"$ref": pointer})
+                return cmd.succeed(cmd.Response(**data))
+        return lambda *args, **kwargs: Empty(implementation=self.name)
 
     def _read_with_timeout(self):
         return asyncio.wait_for(
@@ -340,7 +336,11 @@ class Reporter:
             case=case,
             seq=seq,
             write=self._write,
-            log=self._log.bind(seq=seq, case=case),
+            log=self._log.bind(
+                seq=seq,
+                case=case.description,
+                schema=case.schema,
+            ),
         )
 
 
@@ -351,17 +351,13 @@ class _CaseReporter:
     _log: structlog.BoundLogger
 
     @classmethod
-    def case_started(cls, log, write, case, seq):
+    def case_started(cls, log, write, case: TestCase, seq: int):
         self = cls(log=log, write=write)
-        self._write(case=case, seq=seq)
+        self._write(case=attrs.asdict(case), seq=seq)
         return self
 
-    def got_results(self, implementation, expected, results):
-        self._write(
-            implementation=implementation,
-            expected=expected,
-            **results,
-        )
+    def got_results(self, results):
+        self._write(**attrs.asdict(results))
 
     def backoff(self, implementation):
         self._log.warn("backing off", logger_name=implementation)

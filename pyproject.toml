@@ -41,6 +41,7 @@ dependencies = [
   "attrs",
   "click",
   "jinja2",
+  "jsonschema",
   "structlog",
 ]
 

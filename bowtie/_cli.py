@@ -13,7 +13,8 @@ import click
 import jinja2
 import structlog
 
-from bowtie._core import Implementation, Reporter, StartedDialect, report_on
+from bowtie._commands import StartedDialect
+from bowtie._core import Implementation, Reporter, TestCase, report_on
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
@@ -111,6 +112,18 @@ SET_SCHEMA = click.option(
         "implementations will differ from what is provided in the input."
     ),
 )
+VALIDATE = click.option(
+    "--validate-implementations/--no-validate-implementations", "-V",
+    "validate_implementations",
+    default=False,
+    help=(
+        "When speaking to implementations (provided via -i), validate "
+        "(or don't validate) the requests and responses sent to them. "
+        "Generally, this option protects against broken Bowtie "
+        "implementations and can be left at its default (of off) unless "
+        "you are developing a new implementation container."
+    ),
+)
 
 
 @main.command()
@@ -119,6 +132,7 @@ SET_SCHEMA = click.option(
 @FILTER
 @FAIL_FAST
 @SET_SCHEMA
+@VALIDATE
 @click.option(
     "--dialect", "-D", "dialect",
     help=(
@@ -138,7 +152,7 @@ def run(context, input, filter, **kwargs):
     Run a sequence of cases provided on standard input.
     """
 
-    cases = (json.loads(line) for line in input)
+    cases = (TestCase.from_dict(json.loads(line)) for line in input)
     if filter:
         cases = (
             case for case in cases
@@ -156,6 +170,7 @@ def run(context, input, filter, **kwargs):
 @FILTER
 @FAIL_FAST
 @SET_SCHEMA
+@VALIDATE
 @click.argument(
     "input",
     default="-",
@@ -199,6 +214,7 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
+    validate_implementations: bool,
     reporter: Reporter = Reporter(),
 ):
     async with AsyncExitStack() as stack:
@@ -206,7 +222,11 @@ async def _run(
 
         starting = [
             stack.enter_async_context(
-                Implementation.start(docker=docker, image_name=image_name),
+                Implementation.start(
+                    docker=docker,
+                    image_name=image_name,
+                    validate_implementations=validate_implementations,
+                ),
             ) for image_name in image_names
         ]
         reporter.will_speak(dialect=dialect)
@@ -233,13 +253,11 @@ async def _run(
         seq = 0
         should_stop = False
         for seq, case, case_reporter in sequenced(cases, reporter):
-            expected = [test.pop("valid", None) for test in case["tests"]]
             if set_schema and not isinstance(case["schema"], bool):
                 case["schema"]["$schema"] = dialect
 
             responses = [
-                each.run_case(seq=seq, case=case, expected=expected)
-                for each in implementations
+                each.run_case(seq=seq, case=case) for each in implementations
             ]
             for each in asyncio.as_completed(responses):
                 response = await each
@@ -264,7 +282,7 @@ def suite_cases_from(files):
         for case in json.loads(file.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
-            yield case
+            yield TestCase.from_dict(case)
 
 
 def redirect_structlog(file=sys.stderr):
