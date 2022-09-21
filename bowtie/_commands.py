@@ -9,6 +9,45 @@ from bowtie import exceptions
 
 
 @attrs.define
+class Test:
+
+    description: str
+    instance: object
+    valid: bool | None = None
+
+
+@attrs.define
+class TestCase:
+
+    description: str
+    schema: object
+    tests: list[Test]
+    comment: str | None = None
+
+    @classmethod
+    def from_dict(cls, data):
+        data["tests"] = [Test(**test) for test in data["tests"]]
+        return cls(**data)
+
+    def without_expected_results(self):
+        as_dict = {
+            "tests": [
+                attrs.asdict(test, filter=lambda k, _: k.name != "valid")
+                for test in self.tests
+            ],
+        }
+        as_dict.update(
+            attrs.asdict(
+                self,
+                filter=lambda k, v: k.name != "tests" and (
+                    k.name != "comment" or v is not None
+                ),
+            ),
+        )
+        return as_dict
+
+
+@attrs.define
 class Started:
 
     succeeded = True

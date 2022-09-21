@@ -13,8 +13,9 @@ import click
 import jinja2
 import structlog
 
-from bowtie._commands import StartedDialect
-from bowtie._core import Implementation, Reporter, TestCase, report_on
+from bowtie import _report
+from bowtie._commands import StartedDialect, TestCase
+from bowtie._core import Implementation
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
@@ -83,7 +84,7 @@ def report(input, output):
         keep_trailing_newline=True,
     )
     template = env.get_template("report.html.j2")
-    output.write(template.render(**report_on(input)))
+    output.write(template.render(**_report.from_input(input)))
 
 
 IMPLEMENTATION = click.option(
@@ -215,7 +216,7 @@ async def _run(
     fail_fast: bool,
     set_schema: bool,
     validate_implementations: bool,
-    reporter: Reporter = Reporter(),
+    reporter: _report.Reporter = _report.Reporter(),
 ):
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
