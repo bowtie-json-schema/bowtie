@@ -14,6 +14,7 @@ import jsonschema.validators
 SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/io-schema.json"))
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
 RESOLVER = jsonschema.validators.RefResolver.from_schema(SCHEMA)
+RESOLVER.store["urn:current-dialect"] = {"$ref": SCHEMA["$schema"]}
 Validator = jsonschema.validators.validator_for(SCHEMA)
 REQUEST_VALIDATOR = Validator(
     schema={"$ref": f"{SCHEMA['$id']}#/$defs/command"},
