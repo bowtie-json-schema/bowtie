@@ -124,8 +124,8 @@ class TestCase:
                 self,
                 filter=lambda k, v: k.name != "tests" and (
                     k.name != "comment" or v is not None
-                )
-            )
+                ),
+            ),
         )
         return as_dict
 
@@ -251,7 +251,7 @@ class Implementation:
                         break
                 return lambda *args, **kwargs: UncaughtError(
                     implementation=self.name,
-                    stderr=b"".join(data),
+                    stderr=b"".join(data),  # noqa: B023
                 )
 
             data = message.data
@@ -260,9 +260,9 @@ class Implementation:
                 try:
                     message = await self._read_with_timeout()
                 except asyncio.exceptions.TimeoutError:
-                    return lambda *args, **kwargs: BadFraming(
+                    return lambda *args, **kwargs: BadFraming(  # noqa: B023
                         implementation=self.name,
-                        data=b"".join(data),
+                        data=b"".join(data),  # noqa: B023
                     )
                 data += message.data
             try:
@@ -270,7 +270,7 @@ class Implementation:
             except json.JSONDecodeError:
                 return lambda *args, **kwargs: BadFraming(
                     implementation=self.name,
-                    data=b"".join(data),
+                    data=b"".join(data),  # noqa: B023
                 )
             else:
                 pointer = f"#/$defs/command/$defs/{cmd.cmd}/$defs/response"
