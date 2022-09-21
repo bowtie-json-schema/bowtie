@@ -18,7 +18,7 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    cli
+    CLI <cli>
 
 
 Execution
