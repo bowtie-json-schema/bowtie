@@ -32,6 +32,7 @@ class Runner:
             implementation=dict(
                 language="python",
                 name="cheatsonschema",
+                issues="https://github.com/python-jsonschema/bowtie/issues",
                 dialects=[
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",
