@@ -7,3 +7,4 @@ edition = "2021"
 jsonschema = { version = "0.16", features = [ "draft201909", "draft202012" ] }
 serde = "1.0"
 serde_json = "1.0"
+url = "2.2.2"

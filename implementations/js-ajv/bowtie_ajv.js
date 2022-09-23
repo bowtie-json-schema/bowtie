@@ -65,7 +65,13 @@ const cmds = {
 
     try {
       const testCase = args.case;
+      const registry = testCase.registry;
+
+      ajv.removeSchema(); // Clear the cache.
+      for (const id in registry) ajv.addSchema(registry[id], id);
+
       const validate = ajv.compile(testCase.schema);
+
       return {
         seq: args.seq,
         results: testCase.tests.map((test) => ({

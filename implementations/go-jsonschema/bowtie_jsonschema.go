@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/santhosh-tekuri/jsonschema/v5"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -86,6 +87,21 @@ func main() {
 			testCase, ok := request["case"].(map[string]interface{})
 			if !ok {
 				panic("No case!")
+			}
+
+			jsonschema.LoadURL = func(s string) (io.ReadCloser, error) {
+				refSchema, ok := testCase["registry"].(map[string]interface{})[s]
+
+				if !ok {
+					return nil, fmt.Errorf("%q not found", s)
+				}
+
+				// FIXME: map[string].interface{} -> Schema?
+				reserializedRef, err := json.Marshal(refSchema)
+				if err != nil {
+					panic("This should never happen.")
+				}
+				return io.NopCloser(strings.NewReader(string(reserializedRef))), nil
 			}
 
 			// FIXME: map[string].interface{} -> Schema?

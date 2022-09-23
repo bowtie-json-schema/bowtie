@@ -34,7 +34,13 @@ local cmds = {
   run = function(request)
     assert(STARTED, "Not started!")
 
-    local validate = jsonschema.generate_validator(request.case.schema)
+    local validate = jsonschema.generate_validator(
+      request.case.schema, {
+        external_resolver = function(url)
+          return request.case.registry[url]
+        end,
+      }
+    )
     local results = {}
     for _, test in ipairs(request.case.tests) do
       table.insert(results, { valid = validate(test.instance) })

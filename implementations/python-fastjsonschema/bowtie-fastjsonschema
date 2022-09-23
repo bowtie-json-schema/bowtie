@@ -54,6 +54,11 @@ class Runner:
         assert self._started, "Not started!"
         schema = case["schema"]
         try:
+            # The registry parameter isn't used here when building cases.
+            # Unless I'm missing it, it doesn't seem there's a way to register
+            # schemas with fastjsonschema. It seems to use RefResolver-like
+            # objects, but they're not exposed to end-user APIs like compile.
+
             validate = fastjsonschema.compile(schema)
 
             results = []

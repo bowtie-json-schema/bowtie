@@ -8,6 +8,31 @@ import traceback
 
 import jschon
 
+SUITE_REMOTES_BASE_URI = jschon.URI("http://localhost:1234/")
+
+
+class InMemorySource(jschon.catalog.Source):
+    # From what I can tell this seems to be the way to get jschon to look up
+    # schemas. Just using catalog.add_schema doesn't seem to do it.
+
+    def __init__(self, base_url, registry, **kwargs):
+        # It probably doesn't matter here, but it seems super() isn't the right
+        # thing to use, as jschon.catalog.Source.__init__ seems to have a
+        # different signature than its subclasses from the examples I see.
+        jschon.catalog.Source.__init__(self, **kwargs)
+        self.base_url = base_url
+        self.registry = registry
+
+    def __call__(self, relative_path):
+        url = str(jschon.URI(relative_path).resolve(self.base_url))
+        return self.registry[url]
+
+
+VOCABULARIES = {
+    jschon.URI("https://json-schema.org/draft/2020-12/schema"): "2020-12",
+    jschon.URI("https://json-schema.org/draft/2019-09/schema"): "2019-09",
+}
+
 
 @dataclass
 class Runner:
@@ -47,19 +72,27 @@ class Runner:
 
     def cmd_dialect(self, dialect):
         assert self._started, "Not started!"
-        vocabularies = {
-            "https://json-schema.org/draft/2020-12/schema": "2020-12",
-            "https://json-schema.org/draft/2019-09/schema": "2019-09",
-        }
-        jschon.create_catalog(vocabularies[dialect])
         self._metaschema_uri = jschon.URI(dialect)
-        return dict(ok=True)
+        return dict(ok=self._metaschema_uri in VOCABULARIES)
 
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
         try:
+            catalog = jschon.create_catalog(
+                VOCABULARIES[self._metaschema_uri],
+                name=f"catalog-{seq}",
+            )
+            catalog.add_uri_source(
+                SUITE_REMOTES_BASE_URI,
+                InMemorySource(
+                    base_url=SUITE_REMOTES_BASE_URI,
+                    registry=case.get("registry", {}),
+                ),
+            )
+
             schema = jschon.JSONSchema(
                 case["schema"],
+                catalog=catalog,
                 metaschema_uri=self._metaschema_uri,
             )
 

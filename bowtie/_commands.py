@@ -23,11 +23,12 @@ class TestCase:
     schema: object
     tests: list[Test]
     comment: str | None = None
+    registry: dict | None = None
 
     @classmethod
-    def from_dict(cls, data):
-        data["tests"] = [Test(**test) for test in data["tests"]]
-        return cls(**data)
+    def from_dict(cls, tests, **kwargs):
+        kwargs["tests"] = [Test(**test) for test in tests]
+        return cls(**kwargs)
 
     def without_expected_results(self):
         as_dict = {
@@ -40,7 +41,8 @@ class TestCase:
             attrs.asdict(
                 self,
                 filter=lambda k, v: k.name != "tests" and (
-                    k.name != "comment" or v is not None
+                    k.name not in {"comment", "registry"}
+                    or v is not None
                 ),
             ),
         )

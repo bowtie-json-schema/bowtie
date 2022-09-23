@@ -243,6 +243,30 @@
           "description": "A valid JSON Schema.",
           "$ref": "urn:current-dialect"
         },
+        "registry": {
+          "description": "A collection of schemas (with URIs) which tests may reference (via $ref) and expect to be retrievable. They should be registered in whatever mechanism is expected by the implementation.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "description": "A JSON Schema, in any dialect."
+              },
+              "retrievalURIs": {
+                "description": "An array of retrieval URIs that the implementation should resolve to the schema in this registry entry.",
+                "type": "array",
+                "items": { "type": "string", "format": "uri" }
+              },
+              "requireDialects": {
+                "description": "An optional array of dialects which this registry entry (schema) requires the implementation to support. Only needed if the referenced dialect is different from the dialect currently being spoken (as an implementation may not support the referenced dialect).",
+                "type": "array",
+                "items": { "type": "string", "format": "uri" }
+              }
+            },
+            "required": ["schema", "retrievalURIs"],
+            "additionalProperties": false
+          }
+        },
         "tests": {
           "description": "A set of related tests all using the same schema",
           "type": "array",

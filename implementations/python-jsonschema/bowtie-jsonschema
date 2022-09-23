@@ -7,7 +7,7 @@ import sys
 import traceback
 
 from jsonschema.protocols import Validator
-from jsonschema.validators import validator_for
+from jsonschema.validators import RefResolver, validator_for
 
 
 @dataclass
@@ -65,7 +65,9 @@ class Runner:
                 "No dialect sent and schema is missing $schema."
             )
 
-            validator = Validator(schema)
+            registry = case.get("registry", {})
+            resolver = RefResolver.from_schema(schema, store=registry)
+            validator = Validator(schema, resolver=resolver)
 
             results = [
                 {"valid": validator.is_valid(test["instance"])}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import AsyncExitStack
 from fnmatch import fnmatch
 from pathlib import Path
+from urllib.parse import urljoin
 import asyncio
 import json
 import os
@@ -153,7 +154,7 @@ def run(context, input, filter, **kwargs):
     Run a sequence of cases provided on standard input.
     """
 
-    cases = (TestCase.from_dict(json.loads(line)) for line in input)
+    cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (
             case for case in cases
@@ -187,10 +188,12 @@ def suite(context, input, filter, **kwargs):
     """
 
     if input.is_dir():
-        cases = suite_cases_from(files=input.glob("*.json"))
+        remotes = input.parent.parent.joinpath("remotes")
+        cases = suite_cases_from(files=input.glob("*.json"), remotes=remotes)
         dialect = DIALECT_SHORTNAMES.get(input.name)
     else:
-        cases = suite_cases_from(files=[input])
+        remotes = input.parent.parent.parent.joinpath("remotes")
+        cases = suite_cases_from(files=[input], remotes=remotes)
         dialect = DIALECT_SHORTNAMES.get(input.parent.name)
     if dialect is None:
         raise click.BadParameter(
@@ -277,12 +280,23 @@ def sequenced(cases, reporter):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
-def suite_cases_from(files):
+def suite_cases_from(files, remotes):
     for file in files:
+        if file.name == "refRemote.json":
+            registry = {
+                urljoin(
+                    "http://localhost:1234",
+                    str(each.relative_to(remotes)).replace("\\", "/"),
+                ): json.loads(each.read_text())
+                for each in remotes.glob("**/*.json")
+            }
+        else:
+            registry = {}
+
         for case in json.loads(file.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
-            yield TestCase.from_dict(case)
+            yield TestCase.from_dict(**case, registry=registry)
 
 
 def redirect_structlog(file=sys.stderr):

@@ -76,8 +76,16 @@ while (Console.ReadLine() is { } line && line != "")
 
 			var testCase = root["case"];
 			var schemaText = testCase["schema"];
+                        var registry = testCase["registry"];
+
+                        options.SchemaRegistry.Fetch = uri =>
+                        {
+                            return registry[uri.ToString()].Deserialize<JsonSchema>();
+                        };
+
 			var schema = schemaText.Deserialize<JsonSchema>();
 			var tests = testCase["tests"].AsArray();
+
                         try {
                             var results = new JsonArray();
 

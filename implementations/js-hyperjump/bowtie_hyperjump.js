@@ -50,6 +50,12 @@ const cmds = {
 
     const testCase = args.case;
 
+    for (const id in testCase.registry) {
+      try {
+        JsonSchema.add(testCase.registry[id], id, dialect);
+      } catch {}
+    }
+
     const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
     JsonSchema.add(testCase.schema, fakeURI, dialect);
     const schema = JsonSchema.get(fakeURI);
