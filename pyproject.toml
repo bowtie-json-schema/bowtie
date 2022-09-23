@@ -5,6 +5,9 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.force-include]
+"bowtie/schemas/io-schema.json" = "bowtie/schemas/io-schema.json"
+
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
