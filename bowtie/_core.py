@@ -13,70 +13,9 @@ from bowtie import _commands
 
 
 @attrs.define
-class InvalidResponse:
-    """
-    An implementation sent an invalid response to a command.
-    """
-
-    succeeded = False
-
-    exc_info: Exception
-    response: dict
-
-
-@attrs.define
 class GotStderr(Exception):
 
     stderr: bytes
-
-
-@attrs.define
-class BackingOff:
-    """
-    An implementation has failed too many times.
-    """
-
-    succeeded = False
-
-    implementation: str
-
-    def report(self, reporter):
-        reporter.backoff(implementation=self.implementation)
-
-
-@attrs.define
-class UncaughtError:
-    """
-    An implementation spewed to its stderr.
-    """
-
-    implementation: str
-    stderr: bytes
-
-    succeeded = False
-
-    def report(self, reporter):
-        reporter.errored_uncaught(
-            implementation=self.implementation,
-            stderr=self.stderr,
-        )
-
-
-@attrs.define
-class Empty:
-    """
-    We didn't get a response.
-    """
-
-    implementation: str
-
-    succeeded = False
-
-    def report(self, reporter):
-        reporter.errored_uncaught(
-            implementation=self.implementation,
-            reason="Empty response.",
-        )
 
 
 @attrs.define
@@ -143,11 +82,10 @@ class Implementation:
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
     _restarts: int = attrs.field(default=20 + 1, repr=False)
-
     _container: aiodocker.containers.DockerContainer = attrs.field(
         default=None, repr=False,
     )
-    _stream: aiodocker.stream.Stream = attrs.field(default=None, repr=False)
+    _stream: Stream = attrs.field(default=None, repr=False)
 
     metadata: dict = {}
 
@@ -193,7 +131,8 @@ class Implementation:
         )
         await self._container.start()
         self._stream = Stream.attached_to(self._container)
-        self.metadata = await self._send(_commands.START_V1)
+        started = await self._send(_commands.START_V1)
+        self.metadata = started.implementation
 
     def supports_dialect(self, dialect):
         return dialect in self.metadata.get("dialects", [])
@@ -204,24 +143,27 @@ class Implementation:
 
     async def run_case(self, seq, case):
         if self._restarts <= 0:
-            return BackingOff(implementation=self.name)
+            return _commands.BackingOff(implementation=self.name)
 
         command = _commands.Run(seq=seq, case=case.without_expected_results())
         try:
-            response = await self._send(command)
             expected = [test.valid for test in case.tests]
+            response = await self._send(command)
+            if response is None:
+                return _commands.Empty(implementation=self.name)
             return response(implementation=self.name, expected=expected)
         except GotStderr as error:
-            return UncaughtError(implementation=self.name, stderr=error.stderr)
+            return _commands.UncaughtError(
+                implementation=self.name,
+                stderr=error.stderr,
+            )
 
     async def _stop(self):
         if self._restarts > 0:
             await self._send(_commands.STOP, retry=0)
 
     async def _send(self, cmd, retry=3):
-        request = _commands.to_request(cmd)
-        schema = {"$ref": f"#/$defs/command/$defs/{cmd.cmd}"}
-        self._maybe_validate(instance=request, schema=schema)
+        request = cmd.to_request(validate=self._maybe_validate)
 
         try:
             await self._stream.send(request)
@@ -233,11 +175,9 @@ class Implementation:
 
         for _ in range(retry):
             try:
-                data = await self._stream.receive()
+                return cmd.from_response(
+                    response=await self._stream.receive(),
+                    validate=self._maybe_validate,
+                )
             except asyncio.exceptions.TimeoutError:
                 continue
-
-            pointer = f"#/$defs/command/$defs/{cmd.cmd}/$defs/response"
-            self._maybe_validate(instance=data, schema={"$ref": pointer})
-            return cmd.succeed(cmd.Response(**data))
-        return lambda *args, **kwargs: Empty(implementation=self.name)

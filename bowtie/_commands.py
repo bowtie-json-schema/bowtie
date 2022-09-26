@@ -52,32 +52,42 @@ class TestCase:
 @attrs.define
 class Started:
 
-    succeeded = True
-
     implementation: dict
     ready: bool = False
     version: int = None
 
+    def __attrs_post_init__(self):
+        if not self.ready:
+            raise exceptions.ImplementationNotReady(self)
+        if self.version != 1:
+            raise exceptions.VersionMismatch(expected=1, got=self.version)
 
-@attrs.define
+
+def command(name, Response):
+
+    request_schema = {"$ref": f"#/$defs/command/$defs/{name}"}
+    response_schema = {"$ref": f"#/$defs/command/$defs/{name}/$defs/response"}
+
+    def _command(cls):
+        def to_request(self, validate):
+            request = dict(cmd=name, **attrs.asdict(self))
+            validate(instance=request, schema=request_schema)
+            return request
+
+        def from_response(self, response, validate):
+            validate(instance=response, schema=response_schema)
+            return Response(**response)
+
+        cls.to_request = to_request
+        cls.from_response = from_response
+        return attrs.define(cls)
+    return _command
+
+
+@command(name="start", Response=Started)
 class Start:
 
-    cmd = "start"
-    Response = Started
-
     version: int
-
-    def succeed(self, response):
-        if not response.succeeded:
-            raise exceptions.StartupFailure(self, response.stderr)
-        elif not response.ready:
-            raise exceptions.ImplementationNotReady(self)
-        else:
-            version = response.version
-            if version != 1:
-                raise exceptions.VersionMismatch(self, expected=1, got=version)
-
-        return response.implementation
 
 
 START_V1 = Start(version=1)
@@ -86,24 +96,16 @@ START_V1 = Start(version=1)
 @attrs.define
 class StartedDialect:
 
-    succeeded = True
-
     ok: bool
 
 
 StartedDialect.OK = StartedDialect(ok=True)
 
 
-@attrs.define
+@command(name="dialect", Response=StartedDialect)
 class Dialect:
 
-    cmd = "dialect"
-    Response = StartedDialect
-
     dialect: str
-
-    def succeed(self, response):
-        return response
 
 
 def _case_result(errored=False, **response):
@@ -121,9 +123,6 @@ def _case_result(errored=False, **response):
 
 @attrs.define
 class CaseResult:
-    """
-    The result of running a test case.
-    """
 
     succeeded = True
 
@@ -150,36 +149,61 @@ class CaseErrored:
 
 
 @attrs.define
-class Run:
+class BackingOff:
+    """
+    An implementation has failed too many times.
+    """
 
-    cmd = "run"
-    Response = staticmethod(_case_result)
+    succeeded = False
+
+    implementation: str
+
+    def report(self, reporter):
+        reporter.backoff(implementation=self.implementation)
+
+
+@attrs.define
+class UncaughtError:
+    """
+    An implementation spewed to its stderr.
+    """
+
+    implementation: str
+    stderr: bytes
+
+    succeeded = False
+
+    def report(self, reporter):
+        reporter.errored_uncaught(
+            implementation=self.implementation,
+            stderr=self.stderr,
+        )
+
+
+@attrs.define
+class Empty:
+    """
+    An implementation didn't send a response.
+    """
+
+    succeeded = False
+
+    implementation: str
+
+    def report(self, reporter):
+        reporter.no_response(implementation=self.implementation)
+
+
+@command(name="run", Response=_case_result)
+class Run:
 
     seq: int
     case: dict
 
-    def succeed(self, response):
-        return response
 
-
-@attrs.define
+@command(name="stop", Response=lambda: None)
 class Stop:
-
-    cmd = "stop"
-
-    def Response(self, **kwargs):
-        # FIXME: Ugh, the last response... we're off by one.
-        if kwargs:
-            return _case_result(**kwargs)
-
-    def succeed(self, response):
-        return response
+    pass
 
 
 STOP = Stop()
-
-
-def to_request(command):
-    as_dict = {"cmd": command.cmd}
-    as_dict.update(attrs.asdict(command))
-    return as_dict

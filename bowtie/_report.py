@@ -84,6 +84,9 @@ class _CaseReporter:
     def backoff(self, implementation):
         self._log.warn("backing off", logger_name=implementation)
 
+    def no_response(self, implementation):
+        self._log.error("No response", logger_name=implementation)
+
     def errored(self, implementation, response):
         self._log.error("", logger_name=implementation, **response)
 
