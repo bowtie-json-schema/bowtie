@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from contextlib import asynccontextmanager
 from importlib import resources
 import asyncio
@@ -21,6 +22,12 @@ class InvalidResponse:
 
     exc_info: Exception
     response: dict
+
+
+@attrs.define
+class GotStderr(Exception):
+
+    stderr: bytes
 
 
 @attrs.define
@@ -56,23 +63,6 @@ class UncaughtError:
 
 
 @attrs.define
-class BadFraming:
-    """
-    We're confused about line endings.
-    """
-
-    data: bytes
-
-    succeeded = False
-
-    def report(self, reporter):
-        reporter.errored_uncaught(
-            implementation=self.implementation,
-            data=self.data,
-        )
-
-
-@attrs.define
 class Empty:
     """
     We didn't get a response.
@@ -89,6 +79,58 @@ class Empty:
         )
 
 
+@attrs.define
+class Stream:
+    """
+    Wrapper to make aiodocker's Stream more pleasant to use.
+    """
+
+    _stream: aiodocker.stream.Stream
+    _buffer: deque[bytes] = attrs.field(factory=deque)
+    _last: bytes = b""
+
+    @classmethod
+    def attached_to(cls, container):
+        stream = container.attach(stdin=True, stdout=True, stderr=True)
+        return cls(stream=stream)
+
+    def _read_with_timeout(self, timeout_sec=2.0):
+        return asyncio.wait_for(self._stream.read_out(), timeout=timeout_sec)
+
+    def send(self, message):
+        as_bytes = f"{json.dumps(message)}\n".encode("utf-8")
+        return self._stream.write_in(as_bytes)
+
+    async def receive(self):
+        if self._buffer:
+            return json.loads(self._buffer.popleft())
+
+        message = None
+        while message is None:
+            message = await self._read_with_timeout()
+
+        if message.stream == 2:
+            data = []
+
+            while message.stream == 2:
+                data.append(message.data)
+                message = await self._read_with_timeout()
+                if message is None:
+                    raise GotStderr(b"".join(data))
+
+        while True:
+            line, *rest = message.data.split(b"\n")
+            if rest:
+                line, self._last = self._last + line, rest.pop()
+                self._buffer.extend(rest)
+                return json.loads(line)
+
+            message = None
+            while message is None:
+                message = await self._read_with_timeout()
+            self._last += line
+
+
 @attrs.define(hash=True, slots=False)
 class Implementation:
     """
@@ -101,7 +143,6 @@ class Implementation:
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
     _restarts: int = attrs.field(default=20 + 1, repr=False)
-    _read_timeout_sec: float = attrs.field(default=2.0, repr=False)
 
     _container: aiodocker.containers.DockerContainer = attrs.field(
         default=None, repr=False,
@@ -151,11 +192,7 @@ class Implementation:
             config=dict(Image=self.name, OpenStdin=True),
         )
         await self._container.start()
-        self._stream = self._container.attach(
-            stdin=True,
-            stdout=True,
-            stderr=True,
-        )
+        self._stream = Stream.attached_to(self._container)
         self.metadata = await self._send(_commands.START_V1)
 
     def supports_dialect(self, dialect):
@@ -170,75 +207,37 @@ class Implementation:
             return BackingOff(implementation=self.name)
 
         command = _commands.Run(seq=seq, case=case.without_expected_results())
-        response = await self._send(command)
-        expected = [test.valid for test in case.tests]
-        return response(implementation=self.name, expected=expected)
+        try:
+            response = await self._send(command)
+            expected = [test.valid for test in case.tests]
+            return response(implementation=self.name, expected=expected)
+        except GotStderr as error:
+            return UncaughtError(implementation=self.name, stderr=error.stderr)
 
     async def _stop(self):
         if self._restarts > 0:
-            await self._send(_commands.STOP)
+            await self._send(_commands.STOP, retry=0)
 
     async def _send(self, cmd, retry=3):
         request = _commands.to_request(cmd)
-        pointer = f"#/$defs/command/$defs/{cmd.cmd}"
-        self._maybe_validate(instance=request, schema={"$ref": pointer})
-        as_bytes = f"{json.dumps(request)}\n".encode("utf-8")
+        schema = {"$ref": f"#/$defs/command/$defs/{cmd.cmd}"}
+        self._maybe_validate(instance=request, schema=schema)
 
         try:
-            await self._stream.write_in(as_bytes)
+            await self._stream.send(request)
         except AttributeError:
             # FIXME: aiodocker doesn't appear to properly report when its
             # stream is closed
             await self._restart_container()
-            await self._stream.write_in(as_bytes)
+            await self._stream.send(request)
 
         for _ in range(retry):
             try:
-                message = await self._read_with_timeout()
-                if message is None:
-                    continue
+                data = await self._stream.receive()
             except asyncio.exceptions.TimeoutError:
                 continue
 
-            if message.stream == 2:
-                data = []
-                while message is not None and message.stream == 2:
-                    data.append(message.data)
-                    try:
-                        message = await self._read_with_timeout()
-                    except asyncio.exceptions.TimeoutError:
-                        break
-                return lambda *args, **kwargs: UncaughtError(
-                    implementation=self.name,
-                    stderr=b"".join(data),  # noqa: B023
-                )
-
-            data = message.data
-            assert b"\n" not in message[:-1]
-            while not data.endswith(b"\n"):
-                try:
-                    message = await self._read_with_timeout()
-                except asyncio.exceptions.TimeoutError:
-                    return lambda *args, **kwargs: BadFraming(  # noqa: B023
-                        implementation=self.name,
-                        data=b"".join(data),  # noqa: B023
-                    )
-                data += message.data
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return lambda *args, **kwargs: BadFraming(
-                    implementation=self.name,
-                    data=b"".join(data),  # noqa: B023
-                )
-            else:
-                pointer = f"#/$defs/command/$defs/{cmd.cmd}/$defs/response"
-                self._maybe_validate(instance=data, schema={"$ref": pointer})
-                return cmd.succeed(cmd.Response(**data))
+            pointer = f"#/$defs/command/$defs/{cmd.cmd}/$defs/response"
+            self._maybe_validate(instance=data, schema={"$ref": pointer})
+            return cmd.succeed(cmd.Response(**data))
         return lambda *args, **kwargs: Empty(implementation=self.name)
-
-    def _read_with_timeout(self):
-        return asyncio.wait_for(
-            self._stream.read_out(),
-            timeout=self._read_timeout_sec,
-        )
