@@ -31,7 +31,7 @@ class Reporter:
                 "Proceeding, but implementation may not have configured "
                 "itself to handle schemas without $schema."
             ),
-            logger_name=implementation.name,
+            logger_name=implementation,
             dialect=dialect,
             response=response,
         )
@@ -80,9 +80,6 @@ class _CaseReporter:
 
     def got_results(self, results):
         self._write(**attrs.asdict(results))
-
-    def backoff(self, implementation):
-        self._log.warn("backing off", logger_name=implementation)
 
     def no_response(self, implementation):
         self._log.error("No response", logger_name=implementation)

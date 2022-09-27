@@ -149,20 +149,6 @@ class CaseErrored:
 
 
 @attrs.define
-class BackingOff:
-    """
-    An implementation has failed too many times.
-    """
-
-    succeeded = False
-
-    implementation: str
-
-    def report(self, reporter):
-        reporter.backoff(implementation=self.implementation)
-
-
-@attrs.define
 class UncaughtError:
     """
     An implementation spewed to its stderr.

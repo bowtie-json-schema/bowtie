@@ -70,6 +70,47 @@ class Stream:
             self._last += line
 
 
+@attrs.define
+class DialectRunner:
+
+    _name: str
+    _dialect: str
+    _send: callable
+    _start_response: _commands.StartedDialect
+
+    @classmethod
+    async def start(cls, send, dialect, name):
+        return cls(
+            name=name,
+            send=send,
+            dialect=dialect,
+            start_response=await send(_commands.Dialect(dialect=dialect)),
+        )
+
+    def warn_if_unacknowledged(self, reporter):
+        if self._start_response == _commands.StartedDialect.OK:
+            return
+        reporter.unacknowledged_dialect(
+            implementation=self._name,
+            dialect=self._dialect,
+            response=self._start_response,
+        )
+
+    async def run_case(self, seq, case):
+        command = _commands.Run(seq=seq, case=case.without_expected_results())
+        try:
+            expected = [test.valid for test in case.tests]
+            response = await self._send(command)
+            if response is None:
+                return _commands.Empty(implementation=self._name)
+            return response(implementation=self._name, expected=expected)
+        except GotStderr as error:
+            return _commands.UncaughtError(
+                implementation=self._name,
+                stderr=error.stderr,
+            )
+
+
 @attrs.define(hash=True, slots=False)
 class Implementation:
     """
@@ -89,7 +130,7 @@ class Implementation:
 
     metadata: dict = {}
 
-    _dialect = None
+    _dialect: DialectRunner | None = None
 
     @classmethod
     @asynccontextmanager
@@ -139,28 +180,14 @@ class Implementation:
 
     async def start_speaking(self, dialect):
         self._dialect = dialect
-        return await self._send(_commands.Dialect(dialect=dialect))
-
-    async def run_case(self, seq, case):
-        if self._restarts <= 0:
-            return _commands.BackingOff(implementation=self.name)
-
-        command = _commands.Run(seq=seq, case=case.without_expected_results())
-        try:
-            expected = [test.valid for test in case.tests]
-            response = await self._send(command)
-            if response is None:
-                return _commands.Empty(implementation=self.name)
-            return response(implementation=self.name, expected=expected)
-        except GotStderr as error:
-            return _commands.UncaughtError(
-                implementation=self.name,
-                stderr=error.stderr,
-            )
+        return await DialectRunner.start(
+            name=self.name,
+            send=self._send,
+            dialect=dialect,
+        )
 
     async def _stop(self):
-        if self._restarts > 0:
-            await self._send(_commands.STOP, retry=0)
+        await self._send(_commands.STOP, retry=0)
 
     async def _send(self, cmd, retry=3):
         request = cmd.to_request(validate=self._maybe_validate)

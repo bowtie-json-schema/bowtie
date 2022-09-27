@@ -15,7 +15,7 @@ import jinja2
 import structlog
 
 from bowtie import _report
-from bowtie._commands import StartedDialect, TestCase
+from bowtie._commands import TestCase
 from bowtie._core import Implementation
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
@@ -233,25 +233,21 @@ async def _run(
             ) for image_name in image_names
         ]
         reporter.will_speak(dialect=dialect)
-        implementations = []
+        acknowledged, runners = [], []
         for each in asyncio.as_completed(starting):
             implementation = await each
 
             if implementation.supports_dialect(dialect):
-                response = await implementation.start_speaking(dialect)
-                if response != StartedDialect.OK:
-                    reporter.unacknowledged_dialect(
-                        implementation=implementation,
-                        dialect=dialect,
-                        response=response,
-                    )
-                implementations.append(implementation)
+                runner = await implementation.start_speaking(dialect)
+                runner.warn_if_unacknowledged(reporter=reporter)
+                acknowledged.append(implementation)
+                runners.append(runner)
             else:
                 reporter.unsupported_dialect(
                     implementation=implementation,
                     dialect=dialect,
                 )
-        reporter.ready(implementations=implementations, dialect=dialect)
+        reporter.ready(implementations=acknowledged, dialect=dialect)
 
         seq = 0
         should_stop = False
@@ -259,9 +255,7 @@ async def _run(
             if set_schema and not isinstance(case["schema"], bool):
                 case["schema"]["$schema"] = dialect
 
-            responses = [
-                each.run_case(seq=seq, case=case) for each in implementations
-            ]
+            responses = [each.run_case(seq=seq, case=case) for each in runners]
             for each in asyncio.as_completed(responses):
                 response = await each
                 response.report(reporter=case_reporter)
