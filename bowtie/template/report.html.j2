@@ -7,11 +7,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
   </head>
 
-
   <body>
-    <nav class="navbar sticky-top bg-light">
+    <nav class="navbar navbar-expand-lg sticky-top bg-light mb-4">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Bowtie</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="#summary">Summary</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#cases">Details</a>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
 
@@ -32,9 +44,72 @@
         {% endif %}
     {%- endmacro %}
 
-    <div class="container">
+    <div class="container p-4">
 
-      <div class="accordion" id="cases">
+      <div class="card mx-auto mb-3 w-75" id="summary">
+        <div class="card-header">
+          Summary
+        </div>
+
+        <div class="card-body">
+          <table class="table table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th rowspan=2 scope="col" class="text-center align-middle">implementation</td>
+                <th colspan=2 class="text-center"><span class="text-muted">cases</span></th>
+                <th colspan=4 class="text-center"><span class="text-muted">tests</span></th>
+              </tr>
+
+              <tr>
+
+                <th scope="col">ran</th>
+                <th scope="col">errors</th>
+
+                <th scope="col" class="table-bordered">ran</th>
+                <th scope="col" class="table-bordered">failed</th>
+                <th scope="col" class="table-bordered">skipped</th>
+                <th scope="col" class="table-bordered">errors</th>
+              </tr>
+            </thead>
+
+            <tbody class="table-group-divider">
+              {% for implementation in summary.implementations %}
+                {% set counts = summary.counts[implementation.image] %}
+                <tr>
+                  <th scope="row">
+                    <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
+                    <small class="text-muted">{{ implementation.language }}</small>
+                  </td>
+
+                  <td>{{ counts.total_cases }}</td>
+                  <td>{{ counts.errored_cases }}</td>
+
+                  <td>{{ counts.total_tests }}</td>
+                  <td>{{ counts.failed_tests }}</td>
+                  <td>{{ counts.skipped_tests }}</td>
+                  <td>{{ counts.errored_tests }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <th scope="row">total</td>
+
+                <td>{{ summary.total_cases }}</td>
+                <td>{{ summary.errored_cases }}</td>
+
+                <td>{{ summary.total_tests }}</td>
+                <td>{{ summary.failed_tests }}</td>
+                <td>{{ summary.skipped_tests }}</td>
+                <td>{{ summary.errored_tests }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="accordion pt-5" id="cases">
         {% for each, seq in results %}
           {% set case = each.case %}
 
@@ -53,7 +128,7 @@
                   <thead>
                     <tr>
                       <td scope="col">test</td>
-                      {% for implementation in implementations %}
+                      {% for implementation in summary.implementations %}
                         <td class="text-center" scope="col">
                           {{ implementation.name }}
                           <small class="text-muted">{{ implementation.language }}</small>
@@ -67,7 +142,7 @@
                       <td>
                         <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ test.instance | tojson(indent=2) }}</pre>'>{{ test.description }}</a>
                       </td>
-                      {% for implementation in implementations %}
+                      {% for implementation in summary.implementations %}
                         {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, False)) %}
                         <td class="text-center {% if incorrect %}text-bg-danger{% elif implementation_result.valid != True and implementation_result.valid != False %}text-bg-warning{% endif %}">{{ to_icon(implementation_result.valid) }}</td>
                       {% endfor %}

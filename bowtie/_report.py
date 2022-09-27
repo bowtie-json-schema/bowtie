@@ -91,6 +91,74 @@ class _CaseReporter:
         self._log.error("uncaught", logger_name=implementation, **response)
 
 
+@attrs.define
+class Count:
+
+    total_cases: int = 0
+    errored_cases: int = 0
+
+    total_tests: int = 0
+    failed_tests: int = 0
+    errored_tests: int = 0
+    skipped_tests: int = 0
+
+
+@attrs.define(slots=False)
+class Summary:
+
+    implementations: list[str]
+    _combined: dict = attrs.field(factory=dict)
+
+    def __attrs_post_init__(self):
+        self.counts = {each["image"]: Count() for each in self.implementations}
+
+    @property
+    def total_cases(self):
+        return sum(count.total_cases for count in self.counts.values())
+
+    @property
+    def errored_cases(self):
+        return sum(count.errored_cases for count in self.counts.values())
+
+    @property
+    def total_tests(self):
+        return sum(count.total_tests for count in self.counts.values())
+
+    @property
+    def failed_tests(self):
+        return sum(count.failed_tests for count in self.counts.values())
+
+    @property
+    def errored_tests(self):
+        return sum(count.errored_tests for count in self.counts.values())
+
+    @property
+    def skipped_tests(self):
+        return sum(count.skipped_tests for count in self.counts.values())
+
+    def add_case_metadata(self, seq, case):
+        self._combined[seq] = dict(
+            case=case,
+            results=[(test, {}) for test in case["tests"]],
+        )
+
+    def see_results(self, implementation, seq, results, expected):
+        count = self.counts[implementation]
+        count.total_cases += 1
+
+        got = self._combined[seq]["results"]
+
+        for result, valid, (_, seen) in zip(results, expected, got):
+            count.total_tests += 1
+            failed = expected is not None and result["valid"] != valid
+            if failed:
+                count.failed_tests += 1
+            seen[implementation] = result, failed
+
+    def combined(self):
+        return [(v, k) for k, v in sorted(self._combined.items())]
+
+
 def from_input(input):
     """
     Create a structure suitable for the report template from an input file.
@@ -98,30 +166,11 @@ def from_input(input):
 
     lines = (json.loads(line) for line in input)
     header = next(lines)
-    implementations = header["implementations"]
-
-    combined = {}
+    summary = Summary(implementations=header["implementations"].values())
 
     for each in lines:
         if "case" in each:
-            combined[each["seq"]] = {
-                "case": each["case"],
-                "results": [(test, {}) for test in each["case"]["tests"]],
-            }
-            continue
-
-        implementation = each.pop("implementation")
-        case = combined[each["seq"]]
-
-        for result, expected, (_, seen) in zip(
-            each["results"],
-            each["expected"],
-            case["results"],
-        ):
-            incorrect = expected is not None and result["valid"] != expected
-            seen[implementation] = result, incorrect
-
-    return dict(
-        implementations=implementations.values(),
-        results=[(v, k) for k, v in sorted(combined.items())],
-    )
+            summary.add_case_metadata(**each)
+        else:
+            summary.see_results(**each)
+    return dict(summary=summary, results=summary.combined())
