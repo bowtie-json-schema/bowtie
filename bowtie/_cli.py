@@ -293,6 +293,26 @@ def suite_cases_from(files, remotes):
             yield TestCase.from_dict(**case, registry=registry)
 
 
+def _stderr_processor(file):
+    def stderr_processor(logger, method_name, event_dict):
+        stderr = event_dict.pop("stderr", None)
+        if stderr is not None:
+            from rich import console, panel
+            implementation = event_dict["logger_name"]
+            console.Console(file=file, color_system="truecolor").print(
+                panel.Panel(
+                    stderr.rstrip("\n"),
+                    title=f"[traceback.title]{implementation} [dim](stderr)",
+                    border_style="traceback.border",
+                    expand=True,
+                    padding=(1, 4),
+                    highlight=True,
+                ),
+            )
+        return event_dict
+    return stderr_processor
+
+
 def redirect_structlog(file=sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
@@ -306,6 +326,7 @@ def redirect_structlog(file=sys.stderr):
             structlog.processors.TimeStamper(
                 fmt="%Y-%m-%d %H:%M.%S", utc=False,
             ),
+            _stderr_processor(file),
             structlog.dev.ConsoleRenderer(
                 colors=getattr(file, "isatty", lambda: False)(),
             ),
