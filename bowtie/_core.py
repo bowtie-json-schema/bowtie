@@ -175,6 +175,9 @@ class Implementation:
         started = await self._send(_commands.START_V1)
         self.metadata = started.implementation
 
+        if self._dialect is not None:
+            await self.start_speaking(dialect=self._dialect)
+
     def supports_dialect(self, dialect):
         return dialect in self.metadata.get("dialects", [])
 
