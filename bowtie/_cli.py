@@ -9,6 +9,7 @@ import json
 import os
 import sys
 
+from rich import console, panel
 import aiodocker
 import click
 import jinja2
@@ -297,7 +298,6 @@ def _stderr_processor(file):
     def stderr_processor(logger, method_name, event_dict):
         stderr = event_dict.pop("stderr", None)
         if stderr is not None:
-            from rich import console, panel
             implementation = event_dict["logger_name"]
             console.Console(file=file, color_system="truecolor").print(
                 panel.Panel(
