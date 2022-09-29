@@ -105,9 +105,10 @@ class DialectRunner:
                 return _commands.Empty(implementation=self._name)
             return response(implementation=self._name, expected=expected)
         except GotStderr as error:
-            return _commands.UncaughtError(
+            return _commands.CaseErrored.uncaught(
+                seq=seq,
                 implementation=self._name,
-                stderr=error.stderr,
+                stderr=error.stderr.decode("utf-8"),
             )
 
 

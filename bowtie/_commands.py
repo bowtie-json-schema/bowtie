@@ -144,25 +144,18 @@ class CaseErrored:
     seq: int
     context: dict
 
-    def report(self, reporter):
-        return reporter.errored(self.implementation, self.context)
-
-
-@attrs.define
-class UncaughtError:
-    """
-    An implementation spewed to its stderr.
-    """
-
-    implementation: str
-    stderr: bytes
-
-    succeeded = False
+    caught: bool = True
 
     def report(self, reporter):
-        reporter.errored_uncaught(
-            implementation=self.implementation,
-            stderr=self.stderr,
+        return reporter.errored(self)
+
+    @classmethod
+    def uncaught(cls, implementation, seq, **context):
+        return cls(
+            implementation=implementation,
+            seq=seq,
+            caught=False,
+            context=context,
         )
 
 

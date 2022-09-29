@@ -4,7 +4,7 @@ import sys
 import attrs
 import structlog
 
-from bowtie._commands import TestCase
+from bowtie import _commands
 
 
 def writer(file=sys.stdout):
@@ -73,7 +73,7 @@ class _CaseReporter:
     _log: structlog.BoundLogger
 
     @classmethod
-    def case_started(cls, log, write, case: TestCase, seq: int):
+    def case_started(cls, log, write, case: _commands.TestCase, seq: int):
         self = cls(log=log, write=write)
         self._write(case=attrs.asdict(case), seq=seq)
         return self
@@ -84,11 +84,11 @@ class _CaseReporter:
     def no_response(self, implementation):
         self._log.error("No response", logger_name=implementation)
 
-    def errored(self, implementation, response):
-        self._log.error("", logger_name=implementation, **response)
-
-    def errored_uncaught(self, implementation, **response):
-        self._log.error("uncaught", logger_name=implementation, **response)
+    def errored(self, results: _commands.CaseErrored):
+        implementation, context = results.implementation, results.context
+        message = "" if results.caught else "uncaught error"
+        self._log.error(message, logger_name=implementation, **context)
+        self.got_results(results)
 
 
 @attrs.define
@@ -142,6 +142,15 @@ class Summary:
             results=[(test, {}) for test in case["tests"]],
         )
 
+    def see_error(self, implementation, seq, context, caught):
+        count = self.counts[implementation]
+        count.total_cases += 1
+        count.errored_cases += 1
+
+        case = self._combined[seq]["case"]
+        count.total_tests += len(case["tests"])
+        count.errored_tests += len(case["tests"])
+
     def see_results(self, implementation, seq, results, expected):
         count = self.counts[implementation]
         count.total_cases += 1
@@ -171,6 +180,8 @@ def from_input(input):
     for each in lines:
         if "case" in each:
             summary.add_case_metadata(**each)
+        elif "caught" in each:
+            summary.see_error(**each)
         else:
             summary.see_results(**each)
     return dict(summary=summary, results=summary.combined())
