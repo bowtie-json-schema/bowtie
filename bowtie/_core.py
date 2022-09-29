@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import deque
 from contextlib import asynccontextmanager
-from importlib import resources
 import asyncio
 import json
 
@@ -136,13 +135,7 @@ class Implementation:
 
     @classmethod
     @asynccontextmanager
-    async def start(cls, docker, image_name, validate_implementations):
-        if validate_implementations:
-            make_validator = validator_for_dialect
-        else:
-            def make_validator(dialect=None):
-                return lambda instance, schema: None
-
+    async def start(cls, docker, image_name, make_validator):
         self = cls(
             name=image_name,
             docker=docker,
@@ -210,22 +203,3 @@ class Implementation:
                 )
             except asyncio.exceptions.TimeoutError:
                 continue
-
-
-def validator_for_dialect(dialect: str | None = None):
-    from jsonschema.validators import RefResolver, validator_for
-
-    text = resources.read_text("bowtie.schemas", "io-schema.json")
-    root_schema = json.loads(text)
-    resolver = RefResolver.from_schema(root_schema)
-    Validator = validator_for(root_schema)
-    Validator.check_schema(root_schema)
-
-    if dialect is None:
-        dialect = Validator.META_SCHEMA["$id"]
-
-    def validate(instance, schema):
-        resolver.store["urn:current-dialect"] = {"$ref": dialect}
-        Validator(schema, resolver=resolver).validate(instance)
-
-    return validate

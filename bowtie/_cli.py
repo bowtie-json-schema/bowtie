@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack
 from fnmatch import fnmatch
+from importlib import resources
 from pathlib import Path
 from urllib.parse import urljoin
 import asyncio
@@ -89,6 +90,29 @@ def report(input, output):
     output.write(template.render(**_report.from_input(input)))
 
 
+def validator_for_dialect(dialect: str | None = None):
+    from jsonschema.validators import RefResolver, validator_for
+
+    text = resources.read_text("bowtie.schemas", "io-schema.json")
+    root_schema = json.loads(text)
+    resolver = RefResolver.from_schema(root_schema)
+    Validator = validator_for(root_schema)
+    Validator.check_schema(root_schema)
+
+    if dialect is None:
+        dialect = Validator.META_SCHEMA["$id"]
+
+    def validate(instance, schema):
+        resolver.store["urn:current-dialect"] = {"$ref": dialect}
+        Validator(schema, resolver=resolver).validate(instance)
+
+    return validate
+
+
+def do_not_validate(dialect: str | None = None):
+    return lambda *args, **kwargs: None
+
+
 IMPLEMENTATION = click.option(
     "--implementation", "-i", "image_names",
     help="A docker image which implements the bowtie IO protocol.",
@@ -116,13 +140,16 @@ SET_SCHEMA = click.option(
     ),
 )
 VALIDATE = click.option(
-    "--validate-implementations/--no-validate-implementations", "-V",
-    "validate_implementations",
-    default=False,
+    "--validate-implementations", "-V", "make_validator",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,
+    is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
-        "(or don't validate) the requests and responses sent to them. "
-        "Generally, this option protects against broken Bowtie "
+        "the requests and responses sent to them under Bowtie's JSON Schema "
+        "specification. Generally, this option protects against broken Bowtie "
         "implementations and can be left at its default (of off) unless "
         "you are developing a new implementation container."
     ),
@@ -218,7 +245,7 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
-    validate_implementations: bool,
+    make_validator: callable,
     reporter: _report.Reporter = _report.Reporter(),
 ):
     async with AsyncExitStack() as stack:
@@ -229,7 +256,7 @@ async def _run(
                 Implementation.start(
                     docker=docker,
                     image_name=image_name,
-                    validate_implementations=validate_implementations,
+                    make_validator=make_validator,
                 ),
             ) for image_name in image_names
         ]
