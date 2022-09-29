@@ -328,19 +328,22 @@ def suite_cases_from(files, remotes):
 
 def _stderr_processor(file):
     def stderr_processor(logger, method_name, event_dict):
-        stderr = event_dict.pop("stderr", None)
-        if stderr is not None:
-            implementation = event_dict["logger_name"]
-            console.Console(file=file, color_system="truecolor").print(
-                panel.Panel(
-                    stderr.rstrip("\n"),
-                    title=f"[traceback.title]{implementation} [dim](stderr)",
-                    border_style="traceback.border",
-                    expand=True,
-                    padding=(1, 4),
-                    highlight=True,
-                ),
-            )
+        for each in "stderr", "traceback":
+            contents = event_dict.pop(each, None)
+            if contents is not None:
+                implementation = event_dict["logger_name"]
+                title = f"[traceback.title]{implementation} [dim]({each})"
+                console.Console(file=file, color_system="truecolor").print(
+                    panel.Panel(
+                        contents.rstrip("\n"),
+                        title=title,
+                        border_style="traceback.border",
+                        expand=True,
+                        padding=(1, 4),
+                        highlight=True,
+                    ),
+                )
+
         return event_dict
 
     return stderr_processor
