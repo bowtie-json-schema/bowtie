@@ -120,6 +120,7 @@ class Implementation:
 
     name: str
 
+    _make_validator: callable
     _maybe_validate: callable
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
@@ -137,22 +138,18 @@ class Implementation:
     @asynccontextmanager
     async def start(cls, docker, image_name, validate_implementations):
         if validate_implementations:
-            from jsonschema.validators import RefResolver, validator_for
-
-            text = resources.read_text("bowtie.schemas", "io-schema.json")
-            root_schema = json.loads(text)
-            resolver = RefResolver.from_schema(root_schema)
-            Validator = validator_for(root_schema)
-            Validator.check_schema(root_schema)
-
-            def validate(instance, schema):
-                resolver.store["urn:current-dialect"] = {"$ref": self._dialect}
-                Validator(schema, resolver=resolver).validate(instance)
+            make_validator = validator_for_dialect
         else:
-            def validate(instance, schema):
-                pass
+            def make_validator(dialect=None):
+                return lambda instance, schema: None
 
-        self = cls(name=image_name, docker=docker, maybe_validate=validate)
+        self = cls(
+            name=image_name,
+            docker=docker,
+            make_validator=make_validator,
+            maybe_validate=make_validator(),
+        )
+
         try:
             await self._restart_container()
             yield self
@@ -184,6 +181,7 @@ class Implementation:
 
     async def start_speaking(self, dialect):
         self._dialect = dialect
+        self._maybe_validate = self._make_validator(dialect)
         return await DialectRunner.start(
             name=self.name,
             send=self._send,
@@ -212,3 +210,22 @@ class Implementation:
                 )
             except asyncio.exceptions.TimeoutError:
                 continue
+
+
+def validator_for_dialect(dialect: str | None = None):
+    from jsonschema.validators import RefResolver, validator_for
+
+    text = resources.read_text("bowtie.schemas", "io-schema.json")
+    root_schema = json.loads(text)
+    resolver = RefResolver.from_schema(root_schema)
+    Validator = validator_for(root_schema)
+    Validator.check_schema(root_schema)
+
+    if dialect is None:
+        dialect = Validator.META_SCHEMA["$id"]
+
+    def validate(instance, schema):
+        resolver.store["urn:current-dialect"] = {"$ref": dialect}
+        Validator(schema, resolver=resolver).validate(instance)
+
+    return validate
