@@ -123,7 +123,7 @@ class Implementation:
     _maybe_validate: callable
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
-    _restarts: int = attrs.field(default=20 + 1, repr=False)
+    _restarts: int = attrs.field(default=20, repr=False)
     _container: aiodocker.containers.DockerContainer = attrs.field(
         default=None,
         repr=False,
@@ -145,7 +145,7 @@ class Implementation:
         )
 
         try:
-            await self._restart_container()
+            await self._start_container()
             yield self
             await self._stop()
         finally:
@@ -154,11 +154,7 @@ class Implementation:
             except aiodocker.exceptions.DockerError:
                 pass
 
-    async def _restart_container(self):
-        self._restarts -= 1
-
-        if self._container is not None:
-            await self._container.delete(force=True)
+    async def _start_container(self):
         self._container = await self._docker.containers.create(
             config=dict(Image=self.name, OpenStdin=True),
         )
@@ -167,8 +163,11 @@ class Implementation:
         started = await self._send(_commands.START_V1)
         self.metadata = started.implementation
 
-        if self._dialect is not None:
-            await self.start_speaking(dialect=self._dialect)
+    async def _restart_container(self):
+        self._restarts -= 1
+        await self._container.delete(force=True)
+        await self._start_container()
+        await self.start_speaking(dialect=self._dialect)
 
     def supports_dialect(self, dialect):
         return dialect in self.metadata.get("dialects", [])
