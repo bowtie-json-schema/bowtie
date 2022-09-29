@@ -33,22 +33,17 @@ DIALECT_SHORTNAMES = {
     "2020-12": DRAFT2020,
     "draft2020-12": DRAFT2020,
     "draft202012": DRAFT2020,
-
     "2019": DRAFT2019,
     "201909": DRAFT2019,
     "2019-09": DRAFT2019,
     "draft2019-09": DRAFT2019,
     "draft201909": DRAFT2019,
-
     "7": DRAFT7,
     "draft7": DRAFT7,
-
     "6": DRAFT6,
     "draft6": DRAFT6,
-
     "4": DRAFT4,
     "draft4": DRAFT4,
-
     "3": DRAFT3,
     "draft3": DRAFT3,
 }
@@ -71,7 +66,9 @@ def main():
     type=click.File(mode="r"),
 )
 @click.option(
-    "--out", "-o", "output",
+    "--out",
+    "-o",
+    "output",
     help="Where to write the outputted report HTML.",
     default="bowtie-report.html",
     type=click.File("w"),
@@ -114,23 +111,28 @@ def do_not_validate(dialect: str | None = None):
 
 
 IMPLEMENTATION = click.option(
-    "--implementation", "-i", "image_names",
+    "--implementation",
+    "-i",
+    "image_names",
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
 FILTER = click.option(
-    "-k", "filter",
+    "-k",
+    "filter",
     type=lambda pattern: f"*{pattern}*",
     help="Only run cases whose description match the given glob pattern.",
 )
 FAIL_FAST = click.option(
-    "-x", "--fail-fast",
+    "-x",
+    "--fail-fast",
     is_flag=True,
     default=False,
     help="Fail immediately after the first error or disagreement.",
 )
 SET_SCHEMA = click.option(
-    "--set-schema/--no-set-schema", "-S",
+    "--set-schema/--no-set-schema",
+    "-S",
     "set_schema",
     default=False,
     help=(
@@ -140,7 +142,9 @@ SET_SCHEMA = click.option(
     ),
 )
 VALIDATE = click.option(
-    "--validate-implementations", "-V", "make_validator",
+    "--validate-implementations",
+    "-V",
+    "make_validator",
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
@@ -164,7 +168,9 @@ VALIDATE = click.option(
 @SET_SCHEMA
 @VALIDATE
 @click.option(
-    "--dialect", "-D", "dialect",
+    "--dialect",
+    "-D",
+    "dialect",
     help=(
         "A URI or shortname identifying the dialect of each test case."
         f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
@@ -185,8 +191,7 @@ def run(context, input, filter, **kwargs):
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (
-            case for case in cases
-            if fnmatch(case["description"], filter)
+            case for case in cases if fnmatch(case["description"], filter)
         )
 
     count = asyncio.run(_run(**kwargs, cases=cases))
@@ -230,8 +235,7 @@ def suite(context, input, filter, **kwargs):
 
     if filter:
         cases = (
-            case for case in cases
-            if fnmatch(case["description"], filter)
+            case for case in cases if fnmatch(case["description"], filter)
         )
 
     count = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
@@ -258,7 +262,8 @@ async def _run(
                     image_name=image_name,
                     make_validator=make_validator,
                 ),
-            ) for image_name in image_names
+            )
+            for image_name in image_names
         ]
         reporter.will_speak(dialect=dialect)
         acknowledged, runners = [], []
@@ -337,6 +342,7 @@ def _stderr_processor(file):
                 ),
             )
         return event_dict
+
     return stderr_processor
 
 
@@ -351,7 +357,8 @@ def redirect_structlog(file=sys.stderr):
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(
-                fmt="%Y-%m-%d %H:%M.%S", utc=False,
+                fmt="%Y-%m-%d %H:%M.%S",
+                utc=False,
             ),
             _stderr_processor(file),
             structlog.dev.ConsoleRenderer(

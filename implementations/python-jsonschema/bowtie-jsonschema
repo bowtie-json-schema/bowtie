@@ -39,7 +39,6 @@ class Runner:
                 issues=(
                     "https://github.com/python-jsonschema/jsonschema/issues"
                 ),
-
                 dialects=[
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",
@@ -61,9 +60,9 @@ class Runner:
         schema = case["schema"]
         try:
             Validator = validator_for(schema, self._DefaultValidator)
-            assert Validator is not None, (
-                "No dialect sent and schema is missing $schema."
-            )
+            assert (
+                Validator is not None
+            ), "No dialect sent and schema is missing $schema."
 
             registry = case.get("registry", {})
             resolver = RefResolver.from_schema(schema, store=registry)

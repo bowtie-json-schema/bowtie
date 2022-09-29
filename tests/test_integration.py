@@ -36,6 +36,7 @@ def image(name):
         )
         yield tag
         await docker.images.delete(name=tag, force=True)
+
     return _image
 
 
@@ -46,7 +47,11 @@ envsonschema = image("envsonschema")
 @asynccontextmanager
 async def bowtie(*args):
     proc = await asyncio.create_subprocess_exec(
-        sys.executable, "-m", "bowtie", "run", *args,
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        *args,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -72,6 +77,7 @@ async def bowtie(*args):
             else:
                 errors.append(each)
         return proc.returncode, successful, errors, stderr
+
     yield _send
 
 
@@ -91,7 +97,9 @@ async def test_validating_on_both_sides(lintsonschema):
 @pytest.mark.asyncio
 async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
     tests = tmp_path / "tests.jsonl"
-    tests.write_text("""{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""")  # noqa: E501
+    tests.write_text(
+        """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
+    )
     async with bowtie("-i", envsonschema, tests) as send:
         returncode, results, _, stderr = await send()
 

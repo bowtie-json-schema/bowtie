@@ -41,8 +41,10 @@ class Reporter:
     def ready(self, implementations, dialect):
         metadata = {
             implementation.name: dict(
-                implementation.metadata, image=implementation.name,
-            ) for implementation in implementations
+                implementation.metadata,
+                image=implementation.name,
+            )
+            for implementation in implementations
         }
         self._write(implementations=metadata)
 

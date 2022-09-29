@@ -125,7 +125,8 @@ class Implementation:
     _docker: aiodocker.Docker = attrs.field(repr=False)
     _restarts: int = attrs.field(default=20 + 1, repr=False)
     _container: aiodocker.containers.DockerContainer = attrs.field(
-        default=None, repr=False,
+        default=None,
+        repr=False,
     )
     _stream: Stream = attrs.field(default=None, repr=False)
 

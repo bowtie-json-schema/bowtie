@@ -40,10 +40,8 @@ class TestCase:
         as_dict.update(
             attrs.asdict(
                 self,
-                filter=lambda k, v: k.name != "tests" and (
-                    k.name not in {"comment", "registry"}
-                    or v is not None
-                ),
+                filter=lambda k, v: k.name != "tests"
+                and (k.name not in {"comment", "registry"} or v is not None),
             ),
         )
         return as_dict
@@ -81,6 +79,7 @@ def command(name, Response):
         cls.to_request = to_request
         cls.from_response = from_response
         return attrs.define(cls)
+
     return _command
 
 

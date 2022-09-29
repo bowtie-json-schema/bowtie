@@ -30,11 +30,15 @@ def shiv(session):
         tmpdir = Path(session.create_tmp())
         out = tmpdir / "bowtie"
     session.run(
-        "python", "-m", "shiv",
+        "python",
+        "-m",
+        "shiv",
         "--reproducible",
-        "-c", "bowtie",
+        "-c",
+        "bowtie",
         str(ROOT),
-        "-o", str(out),
+        "-o",
+        str(out),
     )
     print(f"Outputted a shiv to {out}.")
 
@@ -62,9 +66,14 @@ def style(session):
 
 @nox.session(tags=["docs"])
 @nox.parametrize(
-    "builder", [
-        nox.param(name, id=name) for name in [
-            "dirhtml", "doctest", "linkcheck", "spelling",
+    "builder",
+    [
+        nox.param(name, id=name)
+        for name in [
+            "dirhtml",
+            "doctest",
+            "linkcheck",
+            "spelling",
         ]
     ],
 )
@@ -75,8 +84,14 @@ def docs(session, builder):
     if builder != "spelling":
         argv += ["-q"]
     session.run(
-        "python", "-m", "sphinx", "-b", builder,
-        str(DOCS), str(tmpdir / builder), *argv,
+        "python",
+        "-m",
+        "sphinx",
+        "-b",
+        builder,
+        str(DOCS),
+        str(tmpdir / builder),
+        *argv,
     )
 
 

@@ -91,6 +91,7 @@ class Runner:
                 )
                 return self.send(**result)
             elif instruction == "split":
+
                 def send(**response):
                     dumped = json.dumps(response)
                     size = len(dumped) // 2
@@ -116,7 +117,9 @@ class Runner:
                 if instruction == "valid":
                     result = _VALID.get(arg, {"valid": arg})
                 elif instruction == "skip":
-                    result = dict(each.split("=", 1) for each in arg.split(","))
+                    result = dict(
+                        each.split("=", 1) for each in arg.split(",")
+                    )
                     result.update(skipped=True)
                 elif instruction == "error":
                     result = dict(
