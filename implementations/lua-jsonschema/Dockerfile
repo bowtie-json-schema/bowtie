@@ -5,6 +5,5 @@ RUN apk add --no-cache luajit luajit-dev pcre-dev gcc libc-dev curl make cmake &
     ./configure && make && make install
 RUN sed -i '/WGET/d' /usr/local/share/lua/5.1/luarocks/fs/tools.lua
 RUN luarocks install jsonschema
-COPY json.lua .
-COPY bowtie-jsonschema /usr/bin
-CMD ["/usr/bin/bowtie-jsonschema"]
+COPY json.lua bowtie_jsonschema.lua .
+CMD ["luajit", "bowtie_jsonschema.lua"]

@@ -1,4 +1,3 @@
-#!/usr/bin/env luajit
 local jsonschema = require 'jsonschema'
 local json = require 'json'
 
