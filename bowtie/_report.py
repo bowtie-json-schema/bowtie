@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 import json
 import sys
 
@@ -110,10 +111,14 @@ class Count:
 @attrs.define(slots=False)
 class Summary:
 
-    implementations: list[str]
+    implementations: Iterable[str]
     _combined: dict = attrs.field(factory=dict)
 
     def __attrs_post_init__(self):
+        self.implementations = sorted(
+            self.implementations,
+            key=lambda each: (each["language"], each["name"]),
+        )
         self.counts = {each["image"]: Count() for each in self.implementations}
 
     @property
