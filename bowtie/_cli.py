@@ -20,6 +20,8 @@ from bowtie import _report
 from bowtie._commands import TestCase
 from bowtie._core import Implementation
 
+IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
+
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
 DRAFT7 = "http://json-schema.org/draft-07/schema#"
@@ -114,6 +116,7 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
+    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
