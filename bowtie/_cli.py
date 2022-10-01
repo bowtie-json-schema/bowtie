@@ -52,7 +52,7 @@ DIALECT_SHORTNAMES = {
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
-@click.version_option(prog_name="bowtie")
+@click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
     """
     A meta-validator for the JSON Schema specifications.
