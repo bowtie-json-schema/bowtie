@@ -1,9 +1,12 @@
 from pathlib import Path
+from urllib.parse import urljoin
 import importlib.metadata
 import re
 
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
+
+HOMEPAGE = "https://github.com/python-jsonschema/bowtie/"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -20,10 +23,12 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx_click",
+    "sphinx_json_schema_spec",
     "sphinxcontrib.spelling",
 ]
 
@@ -53,6 +58,13 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/", None),
 }
 
+# -- Options for extlinks extension ------------------------------------------
+
+extlinks = {
+    "gh": (urljoin(HOMEPAGE, "%s"), None),
+    "glossary": ("https://json-schema.org/learn/glossary.html#%s", None),
+}
+
 # -- Options for the linkcheck builder ------------------------------------
 
 
@@ -63,6 +75,6 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("codecov.io"),
     entire_domain("img.shields.io"),
-    "https://github.com/python-jsonschema/bowtie/actions",
-    "https://github.com/python-jsonschema/bowtie/workflows/CI/badge.svg",
+    urljoin(HOMEPAGE, "actions"),
+    urljoin(HOMEPAGE, "bowtie/workflows/CI/badge.svg"),
 ]

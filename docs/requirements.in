@@ -3,4 +3,5 @@ furo
 pygments-github-lexers
 sphinx-click
 sphinx>5
+sphinx-json-schema-spec
 sphinxcontrib-spelling>5
