@@ -1,20 +1,36 @@
 name: Bowtie Images
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+  push:
+    paths:
+      - "implementations/**"
+    tags:
+      - "v*"
 
 jobs:
   build-images:
     runs-on: ubuntu-latest
 
+    permissions:
+      packages: write
+
     steps:
       - uses: actions/checkout@v3
+
+      - name: Registry Login
+        uses: redhat-actions/podman-login@v1
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+          registry: ghcr.io/${{ github.repository_owner }}
+
       - name: Build Bowtie Images
         run: |
           for each in {implementations/,tests/fauxmplementations/}*; do
             (
               cd $each
-              podman build -f Dockerfile -t "localhost/bowtie/$(basename $each)"
+              podman build -f Dockerfile -t "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
+              podman push "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
             )
           done
