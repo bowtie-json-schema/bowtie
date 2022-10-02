@@ -3,10 +3,13 @@ from urllib.parse import urljoin
 import importlib.metadata
 import re
 
+from hyperlink import URL
+
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
-HOMEPAGE = "https://github.com/python-jsonschema/bowtie/"
+GITHUB = URL.from_text("https://github.com/")
+HOMEPAGE = GITHUB.child("bowtie-json-schema", "bowtie")
 
 project = "bowtie"
 author = "Julian Berman"
@@ -61,7 +64,8 @@ intersphinx_mapping = {
 # -- Options for extlinks extension ------------------------------------------
 
 extlinks = {
-    "gh": (urljoin(HOMEPAGE, "%s"), None),
+    "gh": (str(HOMEPAGE.child("%s")), None),
+    "github": (str(GITHUB.child("%s")), None),
     "glossary": ("https://json-schema.org/learn/glossary.html#%s", None),
 }
 
@@ -75,6 +79,6 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("codecov.io"),
     entire_domain("img.shields.io"),
-    urljoin(HOMEPAGE, "actions"),
-    urljoin(HOMEPAGE, "bowtie/workflows/CI/badge.svg"),
+    str(HOMEPAGE.child("actions")),
+    str(HOMEPAGE.child("bowtie/workflows/CI/badge.svg")),
 ]

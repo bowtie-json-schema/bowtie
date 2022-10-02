@@ -1,5 +1,6 @@
 file:.#egg=bowtie-json-schema
 furo
+hyperlink
 pygments-github-lexers
 sphinx-click
 sphinx>5

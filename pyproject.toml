@@ -53,9 +53,9 @@ dependencies = [
 bowtie = "bowtie._cli:main"
 
 [project.urls]
-Homepage = "https://github.com/python-jsonschema/bowtie"
-Issues = "https://github.com/python-jsonschema/bowtie/issues/"
-Source = "https://github.com/python-jsonschema/bowtie"
+Homepage = "https://github.com/bowtie-json-schema/bowtie"
+Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
+Source = "https://github.com/bowtie-json-schema/bowtie"
 
 [tool.isort]
 from_first = true
