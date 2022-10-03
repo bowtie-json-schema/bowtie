@@ -31,8 +31,10 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx_click",
+    "sphinx_copybutton",
     "sphinx_json_schema_spec",
     "sphinxcontrib.spelling",
+    "sphinxext.opengraph",
 ]
 
 pygments_style = "lovelace"
