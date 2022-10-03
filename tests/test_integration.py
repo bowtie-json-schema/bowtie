@@ -17,31 +17,31 @@ FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 def tar_from_directory(directory):
     fileobj = BytesIO()
-    tar = tarfile.TarFile(fileobj=fileobj, mode="w")
-    for file in directory.iterdir():
-        tar.add(file, file.name)
-    tar.close()
+    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
+        for file in directory.iterdir():
+            tar.add(file, file.name)
     fileobj.seek(0)
     return fileobj
 
 
-def image(name):
+def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
         tag = f"bowtie-integration-tests/{name}"
-        await docker.images.build(
-            fileobj=tar_from_directory(FAUXMPLEMENTATIONS / name),
-            encoding="utf-8",
-            tag=tag,
-        )
+        await docker.images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
         yield tag
         await docker.images.delete(name=tag, force=True)
 
     return _image
 
 
-lintsonschema = image("lintsonschema")
-envsonschema = image("envsonschema")
+def fauxmplementation(name):
+    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
+    return image(name=name, fileobj=fileobj)
+
+
+lintsonschema = fauxmplementation("lintsonschema")
+envsonschema = fauxmplementation("envsonschema")
 
 
 @asynccontextmanager
