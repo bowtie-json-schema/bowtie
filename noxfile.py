@@ -73,6 +73,7 @@ def style(session):
             "dirhtml",
             "doctest",
             "linkcheck",
+            "man",
             "spelling",
         ]
     ],
