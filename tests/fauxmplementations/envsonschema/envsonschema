@@ -38,9 +38,6 @@ class Runner:
         self._stdout.flush()
 
     def cmd_start(self, version):
-        if os.environ.get("ENVSONSCHEMA_CRASH") == "1":
-            raise Crash()
-
         assert version == 1
         self._started = True
         self.send(
