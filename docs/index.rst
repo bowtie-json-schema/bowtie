@@ -8,7 +8,8 @@ Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-sch
 
 To do so it defines a simple input/output protocol (specified in `this JSON Schema <https://github.com/bowtie-json-schema/bowtie/blob/main/io-schema.json>`_ which validator implementations can implement, and it provides a CLI which can execute supported implementations.
 
-It's called Bowtie because it fans in lots of JSON then fans out lots of results: ``>·<``. Looks like a bowtie, no?
+It's called Bowtie because it fans in lots of JSON then fans out lots of results: ``>·<``.
+Looks like a bowtie, no?
 Also because it's elegant – we hope.
 
 
@@ -16,49 +17,27 @@ Contents
 --------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    CLI <cli>
+    cli
     implementers
 
 
 Execution
 ---------
 
-In general, executing ``bowtie`` consists of providing 2 pieces of input:
+In general, executing Bowtie consists of providing 2 pieces of input:
 
     * The names of one or more supported implementations to execute
     * One or more test cases to run against these implementations (schemas, instances and optionally, expected validation results)
 
-Given these, ``bowtie`` will report on the result of executing each implementation against the input schema/instance pairs.
+Given these, Bowtie will report on the result of executing each implementation against the input schema/instance pairs.
 If expected results are provided, it will compare the results produced against the expected ones, reporting on any implementations which differ from the expected output.
-
-CLI
-===
-
-A sample invocation of the CLI is:
-
-.. code:: sh
-
-    $ bowtie run -i some/jsonschema-implementation/docker-image <<EOF
-    {"description": "stuff", "schema": {}, "tests": [{"description": "a test", "instance": {"foo": "bar"}}] }
-    EOF
-    {"valid": true}
-
-(TODO)
 
 Uses
 ----
 
-A key use of ``bowtie`` is in executing as input the `official test suite <https://github.com/json-schema-org/JSON-Schema-Test-Suite>`_ and comparing the results produced by implementations to the expected ones from the suite.
+A key use of Bowtie is in executing as input the `official test suite <https://github.com/json-schema-org/JSON-Schema-Test-Suite>`_ and comparing the results produced by implementations to the expected ones from the suite.
 
-Of course one isn't limited to just the test cases in the test suite, as ``bowtie`` can be used to compare the validation results of any input across its supported implementations.
-
-Adding an Implementation
-------------------------
-
-Add a ``Dockerfile`` which runs as its entry point a bowtie-compatible process to the ``implementations/`` directory in the root of this repository.
-
-Name your directory ``<(ascii-compatible-name-of-)language-your-implementation-is-written-in>-<language-specific-package-identifier>``, so if your implementation is written in B++ and called ``flooblekins``, name the directory ``bpp-flooblekins``.
-
-Please use an alpine or slim image to keep the sizes small.
+Bowtie however isn't limited to just the test cases in the test suite.
+It can be used to compare the validation results of any JSON Schema input across its supported implementations.
