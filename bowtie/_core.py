@@ -182,9 +182,9 @@ class Implementation:
         )
 
     async def _stop(self):
-        await self._send(_commands.STOP, retry=0)
+        await self._send_no_response(_commands.STOP)
 
-    async def _send(self, cmd, retry=3):
+    async def _send_no_response(self, cmd):
         request = cmd.to_request(validate=self._maybe_validate)
 
         try:
@@ -195,6 +195,8 @@ class Implementation:
             await self._restart_container()
             await self._stream.send(request)
 
+    async def _send(self, cmd, retry=3):
+        await self._send_no_response(cmd)
         for _ in range(retry):
             try:
                 return cmd.from_response(
