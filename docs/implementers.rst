@@ -38,7 +38,7 @@ As a last step before we get into details, let's summarize some terminology (whi
         the *i*\ nput → *h*\ arness → *o*\ utput *p*\ rotocol.
         A JSON protocol governing the structure and semantics of messages which Bowtie will send to `test harnesses <test harness>` as well as the structure and semantics it expects from JSON responses sent back.
 
-.. spelling::
+.. spelling:word-list::
 
     nput
     arness
@@ -197,13 +197,16 @@ You can enable this validation by passing :program:`bowtie run` the :option:`-V`
 .. code-block:: sh
 
     bowtie run -i localhost/tutorial-lua-jsonschema -V <<EOF
-        {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
-        {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }
+    {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
+    {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }
     EOF
-
-    ...
-
-    [] is not of type 'object'
+    2022-10-05 20:59.41 [info     ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
+    2022-10-05 20:59.41 [error    ] Invalid response               [localhost/tutorial-lua-jsonschema] errors=[<ValidationError: "[] is not of type 'object'">] request=Start(version=1)
+    2022-10-05 20:59.45 [warning  ] Unsupported dialect, skipping implementation. [localhost/tutorial-lua-jsonschema] dialect=https://json-schema.org/draft/2020-12/schema
+    {"implementations": {}}
+    {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
+    {"case": {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}, "valid": null}, {"description": "is 37", "instance": 37, "valid": null}], "comment": null, "registry": null}, "seq": 2}
+    2022-10-05 20:59.45 [info     ] Finished                       count=2
 
 which is telling us we're returning JSON arrays to Bowtie instead of JSON objects.
 Lua the language has only one container type (``table``), and we've returned ``{}`` which the JSON library guesses means "empty array".
