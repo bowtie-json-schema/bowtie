@@ -71,7 +71,7 @@ extlinks = {
     "glossary": ("https://json-schema.org/learn/glossary.html#%s", None),
 }
 
-# -- Options for the linkcheck builder ------------------------------------
+# -- Options for the linkcheck builder ---------------------------------------
 
 
 def entire_domain(host):
@@ -84,3 +84,7 @@ linkcheck_ignore = [
     str(HOMEPAGE.child("actions")),
     str(HOMEPAGE.child("bowtie/workflows/CI/badge.svg")),
 ]
+
+# -- Options for spelling extension ------------------------------------------
+
+spelling_show_suggestions = True
