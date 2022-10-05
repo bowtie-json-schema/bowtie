@@ -8,7 +8,7 @@ import json
 import aiodocker
 import attrs
 
-from bowtie import _commands
+from bowtie import _commands, exceptions
 
 
 @attrs.define
@@ -136,6 +136,7 @@ class Implementation:
 
     _make_validator: callable
     _maybe_validate: callable
+    _reporter: object
 
     _docker: aiodocker.Docker = attrs.field(repr=False)
     _restarts: int = attrs.field(default=20, repr=False)
@@ -151,12 +152,13 @@ class Implementation:
 
     @classmethod
     @asynccontextmanager
-    async def start(cls, docker, image_name, make_validator):
+    async def start(cls, docker, image_name, make_validator, reporter):
         self = cls(
             name=image_name,
             docker=docker,
             make_validator=make_validator,
             maybe_validate=make_validator(),
+            reporter=reporter,
         )
 
         try:
@@ -179,6 +181,8 @@ class Implementation:
         await self._container.start()
         self._stream = Stream.attached_to(self._container)
         started = await self._send(_commands.START_V1)
+        if started is None:
+            return
         self.metadata = started.implementation
 
     async def _restart_container(self):
@@ -217,9 +221,19 @@ class Implementation:
         await self._send_no_response(cmd)
         for _ in range(retry):
             try:
-                return cmd.from_response(
-                    response=await self._stream.receive(),
-                    validate=self._maybe_validate,
-                )
+                response = await self._stream.receive()
             except asyncio.exceptions.TimeoutError:
                 continue
+
+            try:
+                return cmd.from_response(
+                    response=response,
+                    validate=self._maybe_validate,
+                )
+            except exceptions._ProtocolError as error:
+                self._reporter.invalid_response(
+                    error=error,
+                    implementation=self,
+                    response=response,
+                    request=cmd,
+                )

@@ -61,6 +61,14 @@ class Reporter:
     def startup_failed(self, name):
         self._log.error("Startup failed!", logger_name=name)
 
+    def invalid_response(self, request, response, implementation, error):
+        self._log.error(
+            "Invalid response",
+            logger_name=implementation.name,
+            errors=error.errors,
+            request=request,
+        )
+
     def case_started(self, seq, case):
         return _CaseReporter.case_started(
             case=case,

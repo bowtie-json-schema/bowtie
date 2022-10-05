@@ -19,6 +19,7 @@ import structlog
 from bowtie import _report
 from bowtie._commands import TestCase
 from bowtie._core import Implementation, StartupFailed
+from bowtie.exceptions import _ProtocolError
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
@@ -103,7 +104,10 @@ def validator_for_dialect(dialect: str | None = None):
 
     def validate(instance, schema):
         resolver.store["urn:current-dialect"] = {"$ref": dialect}
-        Validator(schema, resolver=resolver).validate(instance)
+        validator = Validator(schema, resolver=resolver)
+        errors = list(validator.iter_errors(instance))
+        if errors:
+            raise _ProtocolError(errors=errors)
 
     return validate
 
@@ -264,6 +268,7 @@ async def _run(
                     docker=docker,
                     image_name=image_name,
                     make_validator=make_validator,
+                    reporter=reporter,
                 ),
             )
             for image_name in image_names

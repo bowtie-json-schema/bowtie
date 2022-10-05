@@ -34,3 +34,12 @@ class VersionMismatch(Exception):
     implementation: "Implementation"
     expected: int
     got: int
+
+
+@define
+class _ProtocolError(Exception):
+    """
+    An invalid request or response was sent.
+    """
+
+    errors: list
