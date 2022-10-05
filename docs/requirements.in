@@ -3,6 +3,8 @@ furo
 hyperlink
 pygments-github-lexers
 sphinx-click
-sphinx>5
+sphinx-copybutton
 sphinx-json-schema-spec
+sphinx>5
 sphinxcontrib-spelling>5
+sphinxext-opengraph

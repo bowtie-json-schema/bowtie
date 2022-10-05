@@ -90,7 +90,7 @@ pytz==2022.4
     # via babel
 requests==2.28.1
     # via sphinx
-rich==12.5.1
+rich==12.6.0
     # via bowtie-json-schema
 snowballstemmer==2.2.0
     # via sphinx
@@ -102,11 +102,15 @@ sphinx==5.2.3
     #   furo
     #   sphinx-basic-ng
     #   sphinx-click
+    #   sphinx-copybutton
     #   sphinx-json-schema-spec
     #   sphinxcontrib-spelling
+    #   sphinxext-opengraph
 sphinx-basic-ng==1.0.0b1
     # via furo
 sphinx-click==4.3.0
+    # via -r docs/requirements.in
+sphinx-copybutton==0.5.0
     # via -r docs/requirements.in
 sphinx-json-schema-spec==2.3.1
     # via -r docs/requirements.in
@@ -123,6 +127,8 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sphinxcontrib-spelling==7.6.0
+    # via -r docs/requirements.in
+sphinxext-opengraph==0.6.3
     # via -r docs/requirements.in
 structlog==22.1.0
     # via bowtie-json-schema
