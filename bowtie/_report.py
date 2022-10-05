@@ -62,10 +62,10 @@ class Reporter:
         self._log.error("Startup failed!", logger_name=name)
 
     def invalid_response(self, request, response, implementation, error):
-        self._log.error(
+        self._log.exception(
             "Invalid response",
             logger_name=implementation.name,
-            errors=error.errors,
+            exc_info=error,
             request=request,
         )
 
