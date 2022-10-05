@@ -40,8 +40,23 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
+def strimplementation(name, contents):
+    fileobj = BytesIO()
+    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
+        contents = dedent(contents).encode("utf-8")
+        info = tarfile.TarInfo(name="Dockerfile")
+        info.size = len(contents)
+        tar.addfile(info, BytesIO(contents))
+    fileobj.seek(0)
+    return image(name=name, fileobj=fileobj)
+
+
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
+succeed_immediately = strimplementation(
+    name="succeed",
+    contents="FROM alpine:3.16\nENTRYPOINT true\n",
+)
 
 
 @asynccontextmanager
@@ -141,6 +156,21 @@ async def test_restarts_crashed_implementations(envsonschema):
 
     assert results == [[{"valid": False}]]
     assert stderr != ""
+    assert returncode == 0, stderr
+
+
+@pytest.mark.asyncio
+async def test_handles_dead_implementations(succeed_immediately, envsonschema):
+    async with bowtie("-i", succeed_immediately, "-i", envsonschema) as send:
+        returncode, results, _, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [[{"valid": False}], [{"valid": False}]]
+    assert b"startup failed" in stderr.lower(), stderr
     assert returncode == 0, stderr
 
 

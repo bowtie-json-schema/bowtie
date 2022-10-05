@@ -18,7 +18,7 @@ import structlog
 
 from bowtie import _report
 from bowtie._commands import TestCase
-from bowtie._core import Implementation
+from bowtie._core import Implementation, StartupFailed
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
@@ -271,7 +271,11 @@ async def _run(
         reporter.will_speak(dialect=dialect)
         acknowledged, runners = [], []
         for each in asyncio.as_completed(starting):
-            implementation = await each
+            try:
+                implementation = await each
+            except StartupFailed as error:
+                reporter.startup_failed(name=error.name)
+                continue
 
             if implementation.supports_dialect(dialect):
                 runner = await implementation.start_speaking(dialect)

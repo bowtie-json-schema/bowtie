@@ -18,19 +18,30 @@ class GotStderr(Exception):
 
 
 @attrs.define
+class StartupFailed(Exception):
+
+    name: str
+
+
+class StreamClosed(Exception):
+    pass
+
+
+@attrs.define
 class Stream:
     """
     Wrapper to make aiodocker's Stream more pleasant to use.
     """
 
     _stream: aiodocker.stream.Stream
+    _container: aiodocker.containers.DockerContainer
     _buffer: deque[bytes] = attrs.field(factory=deque)
     _last: bytes = b""
 
     @classmethod
     def attached_to(cls, container):
         stream = container.attach(stdin=True, stdout=True, stderr=True)
-        return cls(stream=stream)
+        return cls(stream=stream, container=container)
 
     def _read_with_timeout(self, timeout_sec=2.0):
         return asyncio.wait_for(self._stream.read_out(), timeout=timeout_sec)
@@ -43,9 +54,13 @@ class Stream:
         if self._buffer:
             return json.loads(self._buffer.popleft())
 
-        message = None
-        while message is None:
+        while True:
             message = await self._read_with_timeout()
+            if message is not None:
+                break
+            info = await self._container.show()
+            if info["State"]["FinishedAt"]:
+                raise StreamClosed(self)
 
         if message.stream == 2:
             data = []
@@ -145,7 +160,10 @@ class Implementation:
         )
 
         try:
-            await self._start_container()
+            try:
+                await self._start_container()
+            except StreamClosed:
+                raise StartupFailed(name=image_name)
             yield self
             await self._stop()
         finally:

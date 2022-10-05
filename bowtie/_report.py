@@ -58,6 +58,9 @@ class Reporter:
         else:
             self._log.msg("Finished", count=count)
 
+    def startup_failed(self, name):
+        self._log.error("Startup failed!", logger_name=name)
+
     def case_started(self, seq, case):
         return _CaseReporter.case_started(
             case=case,
