@@ -5,19 +5,19 @@ from contextlib import asynccontextmanager
 import asyncio
 import json
 
+from attrs import field, frozen, mutable
 import aiodocker
-import attrs
 
 from bowtie import _commands, exceptions
 
 
-@attrs.define
+@frozen
 class GotStderr(Exception):
 
     stderr: bytes
 
 
-@attrs.define
+@frozen
 class StartupFailed(Exception):
 
     name: str
@@ -27,7 +27,7 @@ class StreamClosed(Exception):
     pass
 
 
-@attrs.define
+@mutable
 class Stream:
     """
     Wrapper to make aiodocker's Stream more pleasant to use.
@@ -35,7 +35,7 @@ class Stream:
 
     _stream: aiodocker.stream.Stream
     _container: aiodocker.containers.DockerContainer
-    _buffer: deque[bytes] = attrs.field(factory=deque)
+    _buffer: deque[bytes] = field(factory=deque)
     _last: bytes = b""
 
     @classmethod
@@ -84,7 +84,7 @@ class Stream:
             self._last += line
 
 
-@attrs.define
+@frozen
 class DialectRunner:
 
     _name: str
@@ -126,7 +126,7 @@ class DialectRunner:
             )
 
 
-@attrs.define(hash=True, slots=False)
+@mutable
 class Implementation:
     """
     A running implementation under test.
@@ -138,13 +138,13 @@ class Implementation:
     _maybe_validate: callable
     _reporter: object
 
-    _docker: aiodocker.Docker = attrs.field(repr=False)
-    _restarts: int = attrs.field(default=20, repr=False)
-    _container: aiodocker.containers.DockerContainer = attrs.field(
+    _docker: aiodocker.Docker = field(repr=False)
+    _restarts: int = field(default=20, repr=False)
+    _container: aiodocker.containers.DockerContainer = field(
         default=None,
         repr=False,
     )
-    _stream: Stream = attrs.field(default=None, repr=False)
+    _stream: Stream = field(default=None, repr=False)
 
     metadata: dict = {}
 
