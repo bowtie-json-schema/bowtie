@@ -1,4 +1,5 @@
 FROM python:3.10-alpine
-RUN python -m pip install jschon
-COPY bowtie-jschon /usr/bin
-CMD ["/usr/bin/bowtie-jschon"]
+WORKDIR /usr/src/myapp
+RUN python3 -m pip install jschon
+COPY bowtie_jschon.py .
+CMD ["python3", "bowtie_jschon.py"]

@@ -1,4 +1,5 @@
 FROM python:3.10-alpine
-RUN python -m pip install fastjsonschema
-COPY bowtie-fastjsonschema /usr/bin
-CMD ["/usr/bin/bowtie-fastjsonschema"]
+WORKDIR /usr/src/myapp
+RUN python3 -m pip install fastjsonschema
+COPY bowtie_fastjsonschema.py .
+CMD ["python3", "bowtie_fastjsonschema.py"]
