@@ -1,4 +1,5 @@
 from pathlib import Path
+import shlex
 
 import nox
 
@@ -143,4 +144,21 @@ def bench_startup(session):
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
         ]
 
-    session.run("hyperfine", *args, cmd)
+    session.run("hyperfine", *args, cmd, external=True)
+
+
+@session(default=False, tags=["perf"], name="bench(suite)")
+def bench_suite(session):
+    session.install(str(ROOT))
+    executable = Path(session.bin) / "bowtie"
+
+    posargs = shlex.join(session.posargs)
+    args = [
+        "--warmup",
+        "1",
+        "-L",
+        "implementation",
+        ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
+        f"{executable} suite -i {{implementation}} {posargs}",
+    ]
+    session.run("hyperfine", *args, external=True)
