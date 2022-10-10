@@ -47,7 +47,7 @@ class Stream:
         return asyncio.wait_for(self._stream.read_out(), timeout=timeout_sec)
 
     def send(self, message):
-        as_bytes = f"{json.dumps(message)}\n".encode("utf-8")
+        as_bytes = f"{json.dumps(message)}\n".encode()
         return self._stream.write_in(as_bytes)
 
     async def receive(self):
