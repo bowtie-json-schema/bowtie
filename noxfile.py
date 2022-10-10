@@ -5,23 +5,36 @@ import nox
 ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
+IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
 
 
-@nox.session(python=["3.8", "3.9", "3.10"])
+nox.options.sessions = []
+
+
+def session(default=True, **kwargs):
+    def _session(fn):
+        if default:
+            nox.options.sessions.append(kwargs.get("name", fn.__name__))
+        return nox.session(**kwargs)(fn)
+
+    return _session
+
+
+@session(python=["3.8", "3.9", "3.10"])
 def tests(session):
     session.install("-r", str(ROOT / "test-requirements.txt"))
     session.run("pytest")
 
 
-@nox.session(tags=["build"])
+@session(tags=["build"])
 def build(session):
     session.install("build")
     tmpdir = session.create_tmp()
     session.run("python", "-m", "build", str(ROOT), "--outdir", tmpdir)
 
 
-@nox.session(tags=["build"])
+@session(tags=["build"])
 def shiv(session):
     session.install("shiv")
     if session.posargs:
@@ -43,7 +56,7 @@ def shiv(session):
     print(f"Outputted a shiv to {out}.")
 
 
-@nox.session(tags=["style"])
+@session(tags=["style"])
 def readme(session):
     session.install("build", "twine")
     tmpdir = session.create_tmp()
@@ -51,7 +64,7 @@ def readme(session):
     session.run("python", "-m", "twine", "check", tmpdir + "/*")
 
 
-@nox.session(tags=["style"])
+@session(tags=["style"])
 def style(session):
     session.install(
         "flake8",
@@ -64,7 +77,7 @@ def style(session):
     session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS), __file__)
 
 
-@nox.session(tags=["docs"])
+@session(tags=["docs"])
 @nox.parametrize(
     "builder",
     [
@@ -96,7 +109,7 @@ def docs(session, builder):
     )
 
 
-@nox.session(tags=["docs", "style"], name="docs(style)")
+@session(tags=["docs", "style"], name="docs(style)")
 def docs_style(session):
     session.install(
         "doc8",
@@ -104,3 +117,30 @@ def docs_style(session):
         "pygments-github-lexers",
     )
     session.run("python", "-m", "doc8", "--max-line-length", "1000", str(DOCS))
+
+
+@session(default=False, tags=["perf"], name="bench(startup)")
+def bench_startup(session):
+    session.install(str(ROOT))
+    executable = Path(session.bin) / "bowtie"
+
+    tmpdir = Path(session.create_tmp())
+    trivial = tmpdir / "trivial.json"
+    trivial.write_text(
+        '{"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }\n'  # noqa: E501
+    )
+
+    cmd = f"{executable} run -i {{implementation}} {trivial}"
+
+    if session.posargs:
+        args = session.posargs
+    else:
+        args = [
+            "--warmup",
+            "3",
+            "-L",
+            "implementation",
+            ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
+        ]
+
+    session.run("hyperfine", *args, cmd)
