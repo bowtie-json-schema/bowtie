@@ -146,7 +146,7 @@ class Implementation:
     )
     _stream: Stream = field(default=None, repr=False)
 
-    metadata: dict = {}
+    metadata: dict | None = None
 
     _dialect: DialectRunner | None = None
 
@@ -167,7 +167,11 @@ class Implementation:
             except StreamClosed:
                 raise StartupFailed(name=image_name)
             yield self
-            await self._stop()
+            try:
+                await self._stop()
+            except GotStderr:
+                # XXX: Log this too?
+                pass
         finally:
             try:
                 await self._container.delete(force=True)
@@ -192,6 +196,8 @@ class Implementation:
         await self.start_speaking(dialect=self._dialect)
 
     def supports_dialect(self, dialect):
+        if self.metadata is None:
+            raise StartupFailed(name=self.name)
         return dialect in self.metadata.get("dialects", [])
 
     async def start_speaking(self, dialect):

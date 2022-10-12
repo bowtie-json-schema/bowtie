@@ -18,7 +18,7 @@ import structlog
 
 from bowtie import _report
 from bowtie._commands import TestCase
-from bowtie._core import Implementation, StartupFailed
+from bowtie._core import GotStderr, Implementation, StartupFailed
 from bowtie.exceptions import _ProtocolError
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
@@ -201,9 +201,8 @@ def run(context, input, filter, **kwargs):
             case for case in cases if fnmatch(case["description"], filter)
         )
 
-    count = asyncio.run(_run(**kwargs, cases=cases))
-    if not count:
-        context.exit(os.EX_DATAERR)
+    exit_code = asyncio.run(_run(**kwargs, cases=cases))
+    context.exit(exit_code)
 
 
 @main.command()
@@ -274,19 +273,28 @@ async def _run(
             for image_name in image_names
         ]
         reporter.will_speak(dialect=dialect)
-        acknowledged, runners = [], []
+        acknowledged, runners, exit_code = [], [], 0
         for each in asyncio.as_completed(starting):
             try:
                 implementation = await each
             except StartupFailed as error:
+                exit_code = os.EX_CONFIG
                 reporter.startup_failed(name=error.name)
                 continue
 
             if implementation.supports_dialect(dialect):
-                runner = await implementation.start_speaking(dialect)
-                runner.warn_if_unacknowledged(reporter=reporter)
-                acknowledged.append(implementation)
-                runners.append(runner)
+                try:
+                    runner = await implementation.start_speaking(dialect)
+                except GotStderr as error:
+                    exit_code = os.EX_CONFIG
+                    reporter.dialect_error(
+                        implementation=implementation,
+                        stderr=error.stderr.decode(),
+                    )
+                else:
+                    runner.warn_if_unacknowledged(reporter=reporter)
+                    acknowledged.append(implementation)
+                    runners.append(runner)
             else:
                 reporter.unsupported_dialect(
                     implementation=implementation,
@@ -311,7 +319,9 @@ async def _run(
             if should_stop:
                 break
         reporter.finished(count=seq)
-    return seq
+    if not seq:
+        exit_code = os.EX_NOINPUT
+    return exit_code
 
 
 def sequenced(cases, reporter):

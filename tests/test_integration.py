@@ -57,6 +57,13 @@ succeed_immediately = strimplementation(
     name="succeed",
     contents="FROM alpine:3.16\nENTRYPOINT true\n",
 )
+fail_on_run = strimplementation(
+    name="fail_on_run",
+    contents=r"""
+    FROM alpine:3.16
+    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
+    """,  # noqa: E501
+)
 
 
 @asynccontextmanager
@@ -129,7 +136,7 @@ async def test_no_tests_run(envsonschema):
 
     assert results == []
     assert stderr != ""
-    assert returncode == os.EX_DATAERR
+    assert returncode == os.EX_NOINPUT
 
 
 @pytest.mark.asyncio
@@ -140,7 +147,7 @@ async def test_unsupported_dialect(envsonschema):
 
     assert results == []
     assert b"unsupported dialect" in stderr.lower()
-    assert returncode == os.EX_DATAERR
+    assert returncode != 0
 
 
 @pytest.mark.asyncio
@@ -171,7 +178,22 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
 
     assert results == [[{"valid": False}], [{"valid": False}]]
     assert b"startup failed" in stderr.lower(), stderr
-    assert returncode == 0, stderr
+    assert returncode != 0, stderr
+
+
+@pytest.mark.asyncio
+async def test_handles_broken_run_implementations(fail_on_run):
+    async with bowtie("-i", fail_on_run, "--dialect", "urn:foo") as send:
+        returncode, results, _, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == []
+    assert b"got an error" in stderr.lower(), stderr
+    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio

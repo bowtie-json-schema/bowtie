@@ -61,6 +61,13 @@ class Reporter:
     def startup_failed(self, name):
         self._log.error("Startup failed!", logger_name=name)
 
+    def dialect_error(self, implementation, stderr):
+        self._log.error(
+            "Tried to start sending test cases, but got an error.",
+            logger_name=implementation.name,
+            stderr=stderr,
+        )
+
     def invalid_response(self, request, response, implementation, error):
         self._log.exception(
             "Invalid response",
