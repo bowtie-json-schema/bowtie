@@ -128,7 +128,7 @@ def bench_startup(session):
     tmpdir = Path(session.create_tmp())
     trivial = tmpdir / "trivial.json"
     trivial.write_text(
-        '{"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }\n'  # noqa: E501
+        '{"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }\n',  # noqa: E501
     )
 
     cmd = f"{executable} run -i {{implementation}} {trivial}"
