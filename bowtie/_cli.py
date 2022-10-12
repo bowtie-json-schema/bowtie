@@ -282,24 +282,28 @@ async def _run(
                 reporter.startup_failed(name=error.name)
                 continue
 
-            if implementation.supports_dialect(dialect):
-                try:
-                    runner = await implementation.start_speaking(dialect)
-                except GotStderr as error:
-                    exit_code = os.EX_CONFIG
-                    reporter.dialect_error(
-                        implementation=implementation,
-                        stderr=error.stderr.decode(),
-                    )
+            try:
+                if implementation.supports_dialect(dialect):
+                    try:
+                        runner = await implementation.start_speaking(dialect)
+                    except GotStderr as error:
+                        exit_code = os.EX_CONFIG
+                        reporter.dialect_error(
+                            implementation=implementation,
+                            stderr=error.stderr.decode(),
+                        )
+                    else:
+                        runner.warn_if_unacknowledged(reporter=reporter)
+                        acknowledged.append(implementation)
+                        runners.append(runner)
                 else:
-                    runner.warn_if_unacknowledged(reporter=reporter)
-                    acknowledged.append(implementation)
-                    runners.append(runner)
-            else:
-                reporter.unsupported_dialect(
-                    implementation=implementation,
-                    dialect=dialect,
-                )
+                    reporter.unsupported_dialect(
+                        implementation=implementation,
+                        dialect=dialect,
+                    )
+            except StartupFailed as error:
+                exit_code = os.EX_CONFIG
+                reporter.startup_failed(name=error.name)
         reporter.ready(implementations=acknowledged, dialect=dialect)
 
         seq = 0
