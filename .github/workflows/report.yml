@@ -1,0 +1,62 @@
+name: Test Suite Report
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    # Daily at 2:15
+    - cron: "15 2 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      # FIXME: we can skip checking out if we are able to list all images in
+      #        the image repository
+      - uses: actions/checkout@v3
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v2
+
+      - name: Clone the Test Suite
+        uses: actions/checkout@v3
+        with:
+          path: JSON-Schema-Test-Suite
+          repository: json-schema-org/JSON-Schema-Test-Suite
+
+      - run: mkdir _site
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Bowtie
+        run: python3 -m pip install bowtie-json-schema
+
+      - name: Generate the Report
+        run: |
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') JSON-Schema-Test-Suite/tests/draft2020-12/ | bowtie report --out _site/index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: report
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
