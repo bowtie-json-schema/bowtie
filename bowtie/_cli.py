@@ -82,7 +82,7 @@ def report(input, output):
     """
 
     env = jinja2.Environment(
-        loader=jinja2.PackageLoader("bowtie", "template"),
+        loader=jinja2.PackageLoader("bowtie"),
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
