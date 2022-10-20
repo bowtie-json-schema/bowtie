@@ -59,7 +59,7 @@ class Reporter:
             self._log.msg("Finished", count=count)
 
     def startup_failed(self, name):
-        self._log.error("Startup failed!", logger_name=name)
+        self._log.exception("Startup failed!", logger_name=name)
 
     def dialect_error(self, implementation, stderr):
         self._log.error(
