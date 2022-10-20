@@ -68,6 +68,9 @@ class Reporter:
             stderr=stderr,
         )
 
+    def no_implementations(self):
+        self._log.error("No implementations started successfully!")
+
     def invalid_response(self, request, response, implementation, error):
         self._log.exception(
             "Invalid response",

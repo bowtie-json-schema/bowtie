@@ -67,7 +67,7 @@ fail_on_run = strimplementation(
 
 
 @asynccontextmanager
-async def bowtie(*args):
+async def bowtie(*args, succeed=True):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -84,21 +84,23 @@ async def bowtie(*args):
         stdout, stderr = await proc.communicate(input)
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
 
-        metadata = next(lines, None)
-        assert metadata is not None, stderr
-        assert metadata.keys() == {"implementations"}
+        if succeed:
+            metadata = next(lines, None)
+            assert metadata is not None, stderr
+            assert metadata.keys() == {"implementations"}
+        else:
+            assert proc.returncode != 0
 
-        results = sorted(
-            (each for each in lines if "implementation" in each),
-            key=lambda each: each["implementation"],
-        )
-        successful, errors = [], []
-        for each in results:
+        successful, errors, cases = [], [], []
+        for each in sorted(lines, key=lambda e: e.get("implementation", "")):
             if "results" in each:
                 successful.append(each["results"])
+            elif "case" in each:
+                cases.append(each)
             else:
                 errors.append(each)
-        return proc.returncode, successful, errors, stderr
+
+        return proc.returncode, successful, errors, cases, stderr
 
     yield _send
 
@@ -106,7 +108,7 @@ async def bowtie(*args):
 @pytest.mark.asyncio
 async def test_validating_on_both_sides(lintsonschema):
     async with bowtie("-i", lintsonschema, "-V") as send:
-        returncode, results, _, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
@@ -123,7 +125,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
         """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
     )
     async with bowtie("-i", envsonschema, tests) as send:
-        returncode, results, _, stderr = await send()
+        returncode, results, _, _, stderr = await send()
 
     assert results == [[{"valid": False}]], stderr
     assert returncode == 0
@@ -132,9 +134,10 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
 @pytest.mark.asyncio
 async def test_no_tests_run(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, stderr = await send("")
+        returncode, results, _, cases, stderr = await send("")
 
     assert results == []
+    assert cases == []
     assert stderr != ""
     assert returncode == os.EX_NOINPUT
 
@@ -142,8 +145,14 @@ async def test_no_tests_run(envsonschema):
 @pytest.mark.asyncio
 async def test_unsupported_dialect(envsonschema):
     dialect = "some://other/URI/"
-    async with bowtie("-i", envsonschema, "--dialect", dialect) as send:
-        returncode, results, _, stderr = await send("")
+    async with bowtie(
+        "-i",
+        envsonschema,
+        "--dialect",
+        dialect,
+        succeed=False,
+    ) as send:
+        returncode, results, _, _, stderr = await send("")
 
     assert results == []
     assert b"unsupported dialect" in stderr.lower()
@@ -153,7 +162,7 @@ async def test_unsupported_dialect(envsonschema):
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
@@ -169,7 +178,7 @@ async def test_restarts_crashed_implementations(envsonschema):
 @pytest.mark.asyncio
 async def test_handles_dead_implementations(succeed_immediately, envsonschema):
     async with bowtie("-i", succeed_immediately, "-i", envsonschema) as send:
-        returncode, results, _, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
@@ -182,9 +191,35 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
+    """
+    Don't uselessly "run" tests on no implementations.
+    """
+    async with bowtie("-i", succeed_immediately, succeed=False) as send:
+        returncode, results, _, cases, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == []
+    assert cases == []
+    assert b"startup failed" in stderr.lower(), stderr
+    assert returncode != 0, stderr
+
+
+@pytest.mark.asyncio
 async def test_handles_broken_run_implementations(fail_on_run):
-    async with bowtie("-i", fail_on_run, "--dialect", "urn:foo") as send:
-        returncode, results, _, stderr = await send(
+    async with bowtie(
+        "-i",
+        fail_on_run,
+        "--dialect",
+        "urn:foo",
+        succeed=False,
+    ) as send:
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
@@ -199,7 +234,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "4", "schema": {}, "tests": [{"description": "error:message=boom", "instance": {}}] }
@@ -215,7 +250,7 @@ async def test_implementations_can_signal_errors(envsonschema):
 @pytest.mark.asyncio
 async def test_it_handles_split_messages(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "split:1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}, {"description": "2 valid:0", "instance": {}}] }
             """,  # noqa: E501

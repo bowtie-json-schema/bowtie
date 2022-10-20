@@ -304,27 +304,34 @@ async def _run(
             except StartupFailed as error:
                 exit_code = os.EX_CONFIG
                 reporter.startup_failed(name=error.name)
-        reporter.ready(implementations=acknowledged, dialect=dialect)
 
-        seq = 0
-        should_stop = False
-        for seq, case, case_reporter in sequenced(cases, reporter):
-            if set_schema and not isinstance(case["schema"], bool):
-                case["schema"]["$schema"] = dialect
+        if not runners:
+            exit_code = os.EX_CONFIG
+            reporter.no_implementations()
+        else:
+            reporter.ready(implementations=acknowledged, dialect=dialect)
 
-            responses = [each.run_case(seq=seq, case=case) for each in runners]
-            for each in asyncio.as_completed(responses):
-                response = await each
-                response.report(reporter=case_reporter)
-                if fail_fast and not response.succeeded:
-                    # Stop after this case, since we still have awaitables out
-                    should_stop = True
+            seq = 0
+            should_stop = False
+            for seq, case, case_reporter in sequenced(cases, reporter):
+                if set_schema and not isinstance(case["schema"], bool):
+                    case["schema"]["$schema"] = dialect
 
-            if should_stop:
-                break
-        reporter.finished(count=seq)
-    if not seq:
-        exit_code = os.EX_NOINPUT
+                responses = [
+                    each.run_case(seq=seq, case=case) for each in runners
+                ]
+                for each in asyncio.as_completed(responses):
+                    response = await each
+                    response.report(reporter=case_reporter)
+                    if fail_fast and not response.succeeded:
+                        # Stop after this case, since we still have futures out
+                        should_stop = True
+
+                if should_stop:
+                    break
+            reporter.finished(count=seq)
+            if not seq:
+                exit_code = os.EX_NOINPUT
     return exit_code
 
 
