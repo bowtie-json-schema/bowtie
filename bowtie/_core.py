@@ -180,7 +180,11 @@ class Implementation:
 
     async def _start_container(self):
         self._container = await self._docker.containers.run(
-            config=dict(Image=self.name, OpenStdin=True),
+            config=dict(
+                Image=self.name,
+                OpenStdin=True,
+                HostConfig=dict(NetworkMode="none"),
+            ),
         )
         self._stream = Stream.attached_to(self._container)
         started = await self._send(_commands.START_V1)

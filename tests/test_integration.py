@@ -64,6 +64,13 @@ fail_on_run = strimplementation(
     CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
+hit_the_network = strimplementation(
+    name="hit_the_network",
+    contents=r"""
+    FROM alpine:3.16
+    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
+    """,  # noqa: E501
+)
 
 
 @asynccontextmanager
@@ -258,3 +265,19 @@ async def test_it_handles_split_messages(envsonschema):
 
     assert results == [[{"valid": True}, {"valid": False}]]
     assert returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_it_prevents_network_access(hit_the_network):
+    """
+    Don't uselessly "run" tests on no implementations.
+    """
+    async with bowtie("-i", hit_the_network, "--dialect", "urn:foo") as send:
+        returncode, results, errors, cases, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == []
+    assert b"bad address" in stderr.lower(), stderr
