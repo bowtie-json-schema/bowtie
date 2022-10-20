@@ -162,16 +162,16 @@ class Implementation:
         )
 
         try:
-            try:
-                await self._start_container()
-            except StreamClosed:
-                raise StartupFailed(name=image_name)
-            yield self
-            try:
-                await self._stop()
-            except GotStderr:
-                # XXX: Log this too?
-                pass
+            await self._start_container()
+        except (aiodocker.exceptions.DockerError, StreamClosed):
+            raise StartupFailed(name=image_name)
+
+        yield self
+        try:
+            await self._stop()
+        except GotStderr:
+            # XXX: Log this too?
+            pass
         finally:
             try:
                 await self._container.delete(force=True)
