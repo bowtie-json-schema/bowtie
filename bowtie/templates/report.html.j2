@@ -117,9 +117,10 @@
 
             <h2 class="accordion-header" id="case-{{ seq }}-heading">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
-                <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ case.schema | tojson(indent=2) }}</pre>'>{{ case.description }}</a>
+                <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ case.schema | tojson(indent=2) }}</pre>'>
+                  {{ case.description }}
+                </a>
               </button>
-
             </h2>
 
             <div id="case-{{ seq }}" class="accordion-collapse collapse" aria-labelledby="case-{{ seq }}-heading" data-bs-parent="#cases">
