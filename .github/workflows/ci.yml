@@ -32,6 +32,10 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
       - name: Set up nox
         uses: wntrblm/nox@2022.8.7
       - name: Run nox
