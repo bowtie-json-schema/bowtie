@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Bowtie Images
         run: |
-          for each in {implementations/,tests/fauxmplementations/}*; do
+          for each in implementations/*; do
             (
               cd $each
               podman build -f Dockerfile -t "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
