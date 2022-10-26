@@ -218,7 +218,8 @@ class _TestSuiteCases(click.ParamType):
         if path.is_dir():
             remotes = path.parent.parent.joinpath("remotes")
             cases = suite_cases_from(
-                files=path.glob("*.json"), remotes=remotes
+                files=path.glob("*.json"),
+                remotes=remotes,
             )
             dialect = DIALECT_SHORTNAMES.get(path.name)
         else:
