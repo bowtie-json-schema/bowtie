@@ -205,6 +205,37 @@ def run(context, input, filter, **kwargs):
     context.exit(exit_code)
 
 
+class _TestSuiteCases(click.ParamType):
+
+    name = "json-schema-org/JSON-Schema-Test-Suite test cases"
+
+    def convert(self, value, param, ctx):
+        if not isinstance(value, (Path, str)):
+            return value
+
+        path = Path(value)
+
+        if path.is_dir():
+            remotes = path.parent.parent.joinpath("remotes")
+            cases = suite_cases_from(
+                files=path.glob("*.json"), remotes=remotes
+            )
+            dialect = DIALECT_SHORTNAMES.get(path.name)
+        else:
+            remotes = path.parent.parent.parent.joinpath("remotes")
+            cases = suite_cases_from(files=[path], remotes=remotes)
+            dialect = DIALECT_SHORTNAMES.get(path.parent.name)
+
+        if dialect is not None:
+            return cases, dialect
+
+        self.fail(
+            f"{value} does not contain JSON Schema Test Suite cases.",
+            param,
+            ctx,
+        )
+
+
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
@@ -212,33 +243,19 @@ def run(context, input, filter, **kwargs):
 @FAIL_FAST
 @SET_SCHEMA
 @VALIDATE
-@click.argument(
-    "input",
-    type=click.Path(exists=True, path_type=Path),
-)
+@click.argument("input", type=_TestSuiteCases())
 def suite(context, input, filter, **kwargs):
     """
     Run a directory containing files in the official test suite format.
 
     Supports paths like:
 
-        * :file:`{ROOT}/tests/draft7` to run a version's tests
-        * :file:`{ROOT}/tests/draft7/foo.json` to run just one file
+        * ``{ROOT}/tests/draft7`` to run a version's tests
+
+        * ``{ROOT}/tests/draft7/foo.json`` to run just one file
     """
 
-    if input.is_dir():
-        remotes = input.parent.parent.joinpath("remotes")
-        cases = suite_cases_from(files=input.glob("*.json"), remotes=remotes)
-        dialect = DIALECT_SHORTNAMES.get(input.name)
-    else:
-        remotes = input.parent.parent.parent.joinpath("remotes")
-        cases = suite_cases_from(files=[input], remotes=remotes)
-        dialect = DIALECT_SHORTNAMES.get(input.parent.name)
-    if dialect is None:
-        raise click.BadParameter(
-            f"{input} is not a JSON Schema Test Suite directory.",
-        )
-
+    cases, dialect = input
     if filter:
         cases = (
             case for case in cases if fnmatch(case["description"], filter)
