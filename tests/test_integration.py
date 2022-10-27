@@ -139,6 +139,19 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
+    async with bowtie("-i", envsonschema, "--set-schema") as send:
+        returncode, results, _, _, stderr = await send(
+            """
+            {"description": "a test case", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [[{"valid": True}]], stderr
+    assert returncode == 0
+
+
+@pytest.mark.asyncio
 async def test_no_tests_run(envsonschema):
     async with bowtie("-i", envsonschema) as send:
         returncode, results, _, cases, stderr = await send("")

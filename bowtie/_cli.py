@@ -332,8 +332,8 @@ async def _run(
             seq = 0
             should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
-                if set_schema and not isinstance(case["schema"], bool):
-                    case["schema"]["$schema"] = dialect
+                if set_schema and not isinstance(case.schema, bool):
+                    case.schema["$schema"] = dialect
 
                 responses = [
                     each.run_case(seq=seq, case=case) for each in runners
