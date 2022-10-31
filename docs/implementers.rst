@@ -149,6 +149,8 @@ Change your harness to contain:
 
     local json = require 'json'
 
+    io.stdout:setvbuf 'line'
+
     local cmds = {
       start = function(_)
         io.stderr:write("STARTING")
@@ -168,6 +170,12 @@ Change your harness to contain:
     end
 
 If this is your first time reading Lua code, what we've done is create a dispatch table (a mapping from string command names to functions handling each one), and implemented stub functions which simply write to ``stderr`` when called, and then return empty responses.
+
+.. note::
+
+    We also have configured ``stdout`` for the harness to be line-buffered (by calling ``setvbuf``).
+    Ensure you've done the equivalent for your host language, as Bowtie expects to be able to read responses to each message it sends.
+
 Any other command other than ``start`` or ``stop`` will blow up, but we're reading and writing JSON!
 
 .. program:: bowtie run
@@ -301,6 +309,176 @@ Tell Bowtie we are speaking an earlier version by passing the :option:`--dialect
 
     Any of ``7``, ``draft7``, or the full draft 7 meta schema URI will work to set the dialect in use.
 
+If we yet again invoke ``bowtie``, we now see something like::
+
+    2022-10-31 12:26.05 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    ╭───────────── localhost/tutorial-lua-jsonschema (stderr) ─────────────╮
+    │                                                                      │
+    │    luajit: bowtie_jsonschema.lua:35: attempt to call a nil value     │
+    │    stack traceback:                                                  │
+    │            bowtie_jsonschema.lua:35: in main chunk                   │
+    │            [C]: at 0xaaaad55c8690                                    │
+    │                                                                      │
+    ╰──────────────────────────────────────────────────────────────────────╯
+    2022-10-31 12:26.06 [error    ] Tried to start sending test cases, but got an error. [localhost/tutorial-lua-jsonschema]
+    2022-10-31 12:26.06 [error    ] No implementations started successfully!
+
+which is indicating that we have yet another command to implement -- the ``dialect`` command.
+
+Step 2: Configuring Implicit Dialects
+-------------------------------------
+
+The JSON Schema specification (in at least some dialects) allows schemas of the form ``{"type": "object"}`` -- i.e. where the schema does not include a :kw:`$schema` property which indicates the dialect of JSON Schema being used.
+In other words, the aforementioned schema may be treated (depending on its author's intention) as a Draft 4 schema, a Draft 7 schema, a Draft 2020-12 schema, etc.
+Bowtie enables specifying an intended behavior for such schemas by communicating it "out-of-band" to harnesses via the ``dialect`` command, which indicates to the harness "treat schemas without ``$schema`` as this particular dialect (provided in the request)".
+The structure of this command looks like:
+
+.. literalinclude:: ../bowtie/schemas/io-schema.json
+    :language: json
+    :start-at: "dialect"
+    :end-before: "$defs"
+    :dedent:
+
+We need the harness to accept the incoming dialect request and configure the Lua implementation that we're wrapping to treat ``$schema``-less schemas as the specified dialect -- only there's a catch.
+This implementation actually doesn't support a mechanism for specifying how to treat these kinds of schemas.
+
+.. seealso::
+
+    `The harness for the Rust jsonschema-rs implementation <https://github.com/bowtie-json-schema/bowtie/blob/090f259b03888c7bc72beb7702546d00b7622e90/implementations/rust-jsonschema/src/main.rs#L78-L87>`_
+        for an example of an implementation which does support self-configuration for the ``dialect`` command.
+
+In this case, the harness should flag this to Bowtie so that it is aware that the harness is unable to configure the implementation in this way, which we do by simply responding with ``{"ok": false}``.
+Add a handler for the ``dialect`` command to your harness which returns that response:
+
+.. code:: lua
+
+    dialect = function(_)
+      assert(STARTED, 'Not started!')
+      return { ok = false }
+    end,
+
+Running ``bowtie`` now should produce::
+
+    2022-10-31 13:04.51 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    2022-10-31 13:04.52 [warning  ] Implicit dialect not acknowledged. Proceeding, but implementation may not have configured itself to handle schemas without $schema. [localhost/tutorial-lua-jsonschema] dialect=http://json-schema.org/draft-07/schema# response=StartedDialect(ok=False)
+    {"implementations": {"localhost/tutorial-lua-jsonschema": {"language": "lua", "name": "jsonschema", "homepage": "https://github.com/api7/jsonschema", "issues": "https://github.com/api7/jsonschema/issues", "dialects": ["http://json-schema.org/draft-07/schema#", "http://json-schema.org/draft-06/schema#", "http://json-schema.org/draft-04/schema#"], "image": "localhost/tutorial-lua-jsonschema"}}}
+    {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
+    ╭───────────── localhost/tutorial-lua-jsonschema (stderr) ─────────────╮
+    │                                                                      │
+    │    luajit: bowtie_jsonschema.lua:42: attempt to call a nil value     │
+    │    stack traceback:                                                  │
+    │            bowtie_jsonschema.lua:42: in main chunk                   │
+    │            [C]: at 0xaaaacecf8690                                    │
+    │                                                                      │
+    ╰──────────────────────────────────────────────────────────────────────╯
+    2022-10-31 13:04.52 [error    ] uncaught error                 [localhost/tutorial-lua-jsonschema] case=test case 1 schema={} seq=1
+    {"implementation": "localhost/tutorial-lua-jsonschema", "seq": 1, "context": {"stderr": "luajit: bowtie_jsonschema.lua:42: attempt to call a nil value\nstack traceback:\n\tbowtie_jsonschema.lua:42: in main chunk\n\t[C]: at 0xaaaacecf8690\n"}, "caught": false}
+    {"case": {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}, "valid": null}, {"description": "is 37", "instance": 37, "valid": null}], "comment": null, "registry": null}, "seq": 2}
+    ╭───────────── localhost/tutorial-lua-jsonschema (stderr) ─────────────╮
+    │                                                                      │
+    │    luajit: bowtie_jsonschema.lua:42: attempt to call a nil value     │
+    │    stack traceback:                                                  │
+    │            bowtie_jsonschema.lua:42: in main chunk                   │
+    │            [C]: at 0xaaaae3078690                                    │
+    │                                                                      │
+    ╰──────────────────────────────────────────────────────────────────────╯
+    2022-10-31 13:04.53 [error    ] uncaught error                 [localhost/tutorial-lua-jsonschema] case=test case 2 schema={'const': 37} seq=2
+    {"implementation": "localhost/tutorial-lua-jsonschema", "seq": 2, "context": {"stderr": "luajit: bowtie_jsonschema.lua:42: attempt to call a nil value\nstack traceback:\n\tbowtie_jsonschema.lua:42: in main chunk\n\t[C]: at 0xaaaae3078690\n"}, "caught": false}
+    2022-10-31 13:04.53 [info     ] Finished                       count=2
+
+where we have one final command left to implement -- actually running our test cases!
+
+Step 3: Validating Instances
+----------------------------
+
+It's now time to actually invoke the implementation itself, so import the library by adding:
+
+.. code:: lua
+
+    local jsonschema = require 'jsonschema'
+
+to the top of your harness.
+
+The API we need within the Lua ``jsonschema`` library is one called ``jsonschema.generate_validator``, which is the API which a user of the library calls in order to validate an instance under a provided schema.
+For details on how to use this API, see `the library's documentation <https://github.com/api7/jsonschema/tree/b8c362b62492b23b346781b8dcff8c611d112831#getting-started>`_, but for our purposes it essentially takes 2 arguments -- a JSON Schema (represented as a Lua ``table``) along with an additional options argument which we'll use momentarily.
+It returns a callable which then can be used to validate instances (other Lua values).
+Let's take a first pass at implementing the ``run`` command, whose input looks like:
+
+.. literalinclude:: ../bowtie/schemas/io-schema.json
+    :language: json
+    :start-at: "run"
+    :end-before: "$defs"
+    :dedent:
+
+``run`` requests contain a test case (a schema with tests), alongside a ``seq`` parameter which is simply an identifier for the request and needs to be included in the response we write back.
+Here's an implementation of the ``run`` command to add to our harness implementation:
+
+.. code:: lua
+
+    run = function(request)
+      assert(STARTED, 'Not started!')
+
+      local validate = jsonschema.generate_validator(request.case.schema)
+      local results = {}
+      for _, test in ipairs(request.case.tests) do
+        table.insert(results, { valid = validate(test.instance) })
+      end
+      return { seq = request.seq, results = results }
+    end,
+
+We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` number alongside results for each test.
+The results are indicated positionally as shown above, meaning the first result in the results array should be the result for the first test in the input array.
+
+If we run ``bowtie`` again, we see::
+
+    2022-10-31 13:20.14 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    2022-10-31 13:20.14 [warning  ] Implicit dialect not acknowledged. Proceeding, but implementation may not have configured itself to handle schemas without $schema. [localhost/tutorial-lua-jsonschema] dialect=http://json-schema.org/draft-07/schema# response=StartedDialect(ok=False)
+    {"implementations": {"localhost/tutorial-lua-jsonschema": {"dialects": ["http://json-schema.org/draft-07/schema#", "http://json-schema.org/draft-06/schema#", "http://json-schema.org/draft-04/schema#"], "language": "lua", "name": "jsonschema", "homepage": "https://github.com/api7/jsonschema", "issues": "https://github.com/api7/jsonschema/issues", "image": "localhost/tutorial-lua-jsonschema"}}}
+    {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
+    {"implementation": "localhost/tutorial-lua-jsonschema", "seq": 1, "results": [{"valid": true}], "expected": [null]}
+    {"case": {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}, "valid": null}, {"description": "is 37", "instance": 37, "valid": null}], "comment": null, "registry": null}, "seq": 2}
+    {"implementation": "localhost/tutorial-lua-jsonschema", "seq": 2, "results": [{"valid": false}, {"valid": true}], "expected": [null, null]}
+    2022-10-31 13:20.14 [info     ] Finished                       count=2
+
+where we've now successfully run some inputted test cases.
+The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie report <cli:report>`.
+Hooray!
+
+Step 4: Resolving References
+----------------------------
+
+We could stop here but there's one last thing for us to implement before we're done.
+In order to support testing the :kw:`$ref` keyword from JSON Schema, which involves resolving references to JSON documents, there's an additional parameter that is sent with ``run`` commands which contains a schema *registry*, i.e. a collection of additional schemas beyond the test case schema itself which may be referenced from within the test case.
+The intention is that the harness should configure its implementation to be able to retrieve any of the schemas present in the registry for the duration of the test case.
+
+As an example, a registry may look like:
+
+.. code:: json
+
+    {
+      "http://example.com/my/string/schema": {"type": "string"}
+    }
+
+which, if included in a ``run`` request means that the implementation is expected to resolve a retrieval URI of ``http://example.com/my/string/schema`` to the corresponding schema above.
+Each key in the registry is an (absolute) retrieval URI and each value is a corresponding JSON Schema.
+
+The Lua implementation we have been writing a harness for actually contains no built-in support for resolving ``$ref`` by default, but does give us a way to "hook in" an implementation of reference resolution.
+Specifically, ``generate_validator`` takes a second argument (a Lua ``table``) whose ``external_resolver`` key may point to a callable that is called when encountering a reference.
+If we pass the library a callable which simply retrieves references from the registry provided whenever encountering a ``$ref``, we have implemented what's needed by Bowtie.
+Change the call to ``generate_validator`` to look like:
+
+.. code:: lua
+
+    local validate = jsonschema.generate_validator(request.case.schema, {
+      external_resolver = function(url)
+        return request.case.registry[url]
+      end,
+    })
+
+where we simply index into ``request.case.registry`` anytime we see a referenced URL.
+And *now* we're done.
+
+If you've gotten to the end and wish to see the full code for the harness, have a look at the `completed harness for lua-jsonschema <https://github.com/bowtie-json-schema/bowtie/blob/090f259b03888c7bc72beb7702546d00b7622e90/implementations/lua-jsonschema/bowtie_jsonschema.lua>`_.
 
 Addendum: Submitting Upstream
 -----------------------------

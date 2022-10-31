@@ -4,6 +4,7 @@ boolean
 bowtie
 golang
 linter
+positionally
 schemas
 shortname
 shortnames
