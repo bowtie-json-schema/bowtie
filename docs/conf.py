@@ -80,6 +80,7 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("codecov.io"),
     entire_domain("img.shields.io"),
+    f"{GITHUB}.*#.*",
     str(HOMEPAGE.child("actions")),
     str(HOMEPAGE.child("bowtie/workflows/CI/badge.svg")),
 ]
