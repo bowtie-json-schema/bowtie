@@ -84,7 +84,7 @@ pygments-github-lexers==0.0.5
     # via -r docs/requirements.in
 pyparsing==3.0.9
     # via packaging
-pyrsistent==0.18.1
+pyrsistent==0.19.1
     # via jsonschema
 pytz==2022.5
     # via babel
