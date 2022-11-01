@@ -28,12 +28,6 @@ jobs:
         id: pages
         uses: actions/configure-pages@v2
 
-      - name: Clone the Test Suite
-        uses: actions/checkout@v3
-        with:
-          path: JSON-Schema-Test-Suite
-          repository: json-schema-org/JSON-Schema-Test-Suite
-
       - run: mkdir _site
 
       - uses: actions/setup-python@v4
@@ -45,7 +39,7 @@ jobs:
 
       - name: Generate the Report
         run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') JSON-Schema-Test-Suite/tests/draft2020-12/ | bowtie report --out _site/index.html
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft2020-12 | bowtie report --out _site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1

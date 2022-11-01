@@ -3,12 +3,14 @@ from __future__ import annotations
 from contextlib import AsyncExitStack
 from fnmatch import fnmatch
 from importlib import resources
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urljoin
 import asyncio
 import json
 import os
 import sys
+import zipfile
 
 from rich import console, panel
 import aiodocker
@@ -22,6 +24,8 @@ from bowtie._core import GotStderr, Implementation, StartupFailed
 from bowtie.exceptions import _ProtocolError
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
+TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
+TEST_SUITE_CONTENT_URL = f"{TEST_SUITE_URL}/blob/"
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
@@ -213,19 +217,23 @@ class _TestSuiteCases(click.ParamType):
         if not isinstance(value, (Path, str)):
             return value
 
-        path = Path(value)
-
-        if path.is_dir():
-            remotes = path.parent.parent.joinpath("remotes")
-            cases = suite_cases_from(
-                files=path.glob("*.json"),
-                remotes=remotes,
-            )
-            dialect = DIALECT_SHORTNAMES.get(path.name)
+        is_local_path = not value.casefold().startswith(TEST_SUITE_CONTENT_URL)
+        if is_local_path:
+            cases, dialect = self._cases_and_dialect(path=Path(value))
         else:
-            remotes = path.parent.parent.parent.joinpath("remotes")
-            cases = suite_cases_from(files=[path], remotes=remotes)
-            dialect = DIALECT_SHORTNAMES.get(path.parent.name)
+            from github3 import GitHub
+
+            gh = GitHub()
+            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")
+            ref, sep, partial = value.partition("blob/")[2].partition("/tests")
+            data = BytesIO()
+            repo.archive(format="zipball", path=data, ref=ref)
+            data.seek(0)
+            with zipfile.ZipFile(data) as zf:
+                (contents,) = zipfile.Path(zf).iterdir()
+                path = contents / sep.strip("/") / partial.strip("/")
+                cases, dialect = self._cases_and_dialect(path=path)
+                cases = list(cases)
 
         if dialect is not None:
             return cases, dialect
@@ -235,6 +243,18 @@ class _TestSuiteCases(click.ParamType):
             param,
             ctx,
         )
+
+    def _cases_and_dialect(self, path):
+        if path.name.endswith(".json"):
+            files, version_path = [path], path.parent
+        else:
+            files, version_path = _glob(path, "*.json"), path
+
+        remotes = version_path.parent.parent / "remotes"
+        cases = suite_cases_from(files=files, remotes=remotes)
+        dialect = DIALECT_SHORTNAMES.get(version_path.name)
+
+        return cases, dialect
 
 
 @main.command()
@@ -254,7 +274,13 @@ def suite(context, input, filter, **kwargs):
         * ``{ROOT}/tests/draft7`` to run a version's tests
 
         * ``{ROOT}/tests/draft7/foo.json`` to run just one file
-    """
+
+        * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/``
+          to run a version directly from a branch which exists in GitHub
+
+        * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
+          to run a single file directly from a branch which exists in GitHub
+    """  # noqa: E501
 
     cases, dialect = input
     if filter:
@@ -364,9 +390,9 @@ def suite_cases_from(files, remotes):
             registry = {
                 urljoin(
                     "http://localhost:1234",
-                    str(each.relative_to(remotes)).replace("\\", "/"),
+                    str(_relative_to(each, remotes)).replace("\\", "/"),
                 ): json.loads(each.read_text())
-                for each in remotes.glob("**/*.json")
+                for each in _rglob(remotes, "*.json")
             }
         else:
             registry = {}
@@ -421,3 +447,24 @@ def redirect_structlog(file=sys.stderr):
         ],
         logger_factory=structlog.PrintLoggerFactory(file),
     )
+
+
+# Missing zipfile.Path methods...
+def _glob(path, path_pattern):
+    return (  # It's missing .match() too, so we fnmatch directly
+        each for each in path.iterdir() if fnmatch(each.name, path_pattern)
+    )
+
+
+def _rglob(path, path_pattern):
+    for each in path.iterdir():
+        if fnmatch(each.name, path_pattern):
+            yield each
+        elif each.is_dir():
+            yield from _rglob(each, path_pattern)
+
+
+def _relative_to(path, other):
+    if hasattr(path, "relative_to"):
+        return path.relative_to(other)
+    return Path(path.at).relative_to(other.at)

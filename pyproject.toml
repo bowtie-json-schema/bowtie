@@ -49,6 +49,7 @@ dependencies = [
   "aiodocker",
   "attrs",
   "click",
+  "github3.py",
   "jinja2",
   "jsonschema",
   "rich",
