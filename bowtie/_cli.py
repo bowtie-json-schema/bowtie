@@ -25,7 +25,6 @@ from bowtie.exceptions import _ProtocolError
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
-TEST_SUITE_CONTENT_URL = f"{TEST_SUITE_URL}/blob/"
 
 DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
 DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
@@ -217,7 +216,7 @@ class _TestSuiteCases(click.ParamType):
         if not isinstance(value, (Path, str)):
             return value
 
-        is_local_path = not value.casefold().startswith(TEST_SUITE_CONTENT_URL)
+        is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
         else:
@@ -225,7 +224,11 @@ class _TestSuiteCases(click.ParamType):
 
             gh = GitHub()
             repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")
-            ref, sep, partial = value.partition("blob/")[2].partition("/tests")
+
+            _, _, rest = (
+                value[len(TEST_SUITE_URL) :].lstrip("/").partition("/")
+            )
+            ref, sep, partial = rest.partition("/tests")
             data = BytesIO()
             repo.archive(format="zipball", path=data, ref=ref)
             data.seek(0)
