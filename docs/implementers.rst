@@ -444,10 +444,11 @@ where we've now successfully run some inputted test cases.
 The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie report <cli:report>`.
 Hooray!
 
+We could stop here but there are two last things for us to implement before we're done.
+
 Step 4: Resolving References
 ----------------------------
 
-We could stop here but there's one last thing for us to implement before we're done.
 In order to support testing the :kw:`$ref` keyword from JSON Schema, which involves resolving references to JSON documents, there's an additional parameter that is sent with ``run`` commands which contains a schema *registry*, i.e. a collection of additional schemas beyond the test case schema itself which may be referenced from within the test case.
 The intention is that the harness should configure its implementation to be able to retrieve any of the schemas present in the registry for the duration of the test case.
 
@@ -477,6 +478,29 @@ Change the call to ``generate_validator`` to look like:
 
 where we simply index into ``request.case.registry`` anytime we see a referenced URL.
 And *now* we're done.
+
+Step 5: Handling Errors
+-----------------------
+
+If an implementation happens to not be fully compliant with the specification, or not fully compliant *yet*, Bowtie may end up passing a schema or instance that causes the harness to crash if the underlying implementation crashes (by panicking, raising an exception, etc. depending on the host language).
+
+Whilst Bowtie tries to be hearty about these possibilities by automatically restarting crashed containers, it's more efficient for the harness itself to do so via mechanisms within the host language.
+
+Bowtie will show an ``uncaught error`` message in its debugging output whenever a container crashes.
+We can make the harness internally catch the error(s) and return a special response to ``run`` requests which signals that the implementation errored.
+Doing so will still be marked as an error in debugging output, but Bowtie will recognize that the error was caught by the harness, and things will generally be faster by not incurring additional restart cost each time the harness crashes.
+
+Catching exceptions from our Lua implementation is simple, by wrapping the ``validate()`` function call with the ``pcall`` function, which will catch any errors raised and allow us to detect whether any have occurred.
+Once the harness detects an error, it should return an error response (in place of results), which may include any diagnostic information for later use, e.g. a traceback or internal error message.
+The structure of error responses is:
+
+.. literalinclude:: ../bowtie/schemas/io-schema.json
+    :language: json
+    :start-at: "errored": {
+    :end-before: "stop"
+    :dedent:
+
+(i.e. in particular the harness should return a response setting ``errored`` to ``true``).
 
 If you've gotten to the end and wish to see the full code for the harness, have a look at the `completed harness for lua-jsonschema <https://github.com/bowtie-json-schema/bowtie/blob/090f259b03888c7bc72beb7702546d00b7622e90/implementations/lua-jsonschema/bowtie_jsonschema.lua>`_.
 
