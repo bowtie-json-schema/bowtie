@@ -85,7 +85,6 @@ int main() {
       }
 
       dialect = request["dialect"].GetString();
-      // TODO: Check me
       response.AddMember("ok", true, allocator);
     } else if (cmd == "run") {
       if (!started) {
