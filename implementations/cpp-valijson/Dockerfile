@@ -9,5 +9,9 @@ RUN mkdir valijson/build && cd valijson/build && cmake .. && cmake --install .
 WORKDIR /usr/src/myapp
 COPY . .
 
-RUN g++ -std=c++17 -o bowtie-valijson bowtie_valijson.cpp
-CMD ["/usr/src/myapp/bowtie-valijson"]
+RUN g++ -static -std=c++17 -o bowtie-valijson bowtie_valijson.cpp
+
+FROM alpine
+COPY --from=builder /usr/src/myapp/bowtie-valijson /usr/local/bin
+
+CMD ["bowtie-valijson"]

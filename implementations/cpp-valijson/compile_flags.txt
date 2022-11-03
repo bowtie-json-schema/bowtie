@@ -1,1 +1,2 @@
+-static
 -std=c++17
