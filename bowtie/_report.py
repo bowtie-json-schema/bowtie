@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import importlib.metadata
 import json
 import sys
 
@@ -8,6 +9,10 @@ import attrs
 import structlog
 
 from bowtie import _commands
+
+
+class _InvalidBowtieReport(Exception):
+    pass
 
 
 def writer(file=sys.stdout):
@@ -47,16 +52,20 @@ class Reporter:
             )
             for implementation in implementations
         }
-        self._write(implementations=metadata)
+        self._write(
+            implementations=metadata,
+            bowtie_version=importlib.metadata.version("bowtie-json-schema"),
+        )
 
     def will_speak(self, dialect):
-        self._log.info("Will speak dialect", dialect=dialect)
+        self._write(dialect=dialect)
 
-    def finished(self, count):
+    def finished(self, count, did_fail_fast):
         if not count:
             self._log.error("No test cases ran.")
         else:
             self._log.msg("Finished", count=count)
+        self._write(did_fail_fast=did_fail_fast)
 
     def startup_failed(self, name):
         self._log.exception("Startup failed!", logger_name=name)
@@ -130,10 +139,11 @@ class Count:
 
 
 @attrs.define(slots=False)
-class Summary:
+class _Summary:
 
     implementations: Iterable[str]
     _combined: dict = attrs.field(factory=dict)
+    did_fail_fast: bool = False
 
     def __attrs_post_init__(self):
         self.implementations = sorted(
@@ -194,8 +204,29 @@ class Summary:
                 count.failed_tests += 1
             seen[implementation] = result, failed
 
+    def see_maybe_fail_fast(self, did_fail_fast):
+        self.did_fail_fast = did_fail_fast
+
     def combined(self):
         return [(v, k) for k, v in sorted(self._combined.items())]
+
+
+@attrs.define
+class RunInfo:
+
+    bowtie_version: str
+    dialect: str
+    _implementations: dict[str, dict]
+
+    @classmethod
+    def from_header_lines(cls, first, second):
+        return cls(**first, **second)
+
+    def create_summary(self):
+        """
+        Create a summary object used to incrementally parse reports.
+        """
+        return _Summary(implementations=self._implementations.values())
 
 
 def from_input(input):
@@ -204,14 +235,16 @@ def from_input(input):
     """
 
     lines = (json.loads(line) for line in input)
-    header = next(lines)
-    summary = Summary(implementations=header["implementations"].values())
+    run_info = RunInfo.from_header_lines(next(lines), next(lines))
+    summary = run_info.create_summary()
 
     for each in lines:
         if "case" in each:
             summary.add_case_metadata(**each)
         elif "caught" in each:
             summary.see_error(**each)
+        elif "did_fail_fast" in each:
+            summary.see_maybe_fail_fast(**each)
         else:
             summary.see_results(**each)
-    return dict(summary=summary, results=summary.combined())
+    return dict(summary=summary, results=summary.combined(), run_info=run_info)

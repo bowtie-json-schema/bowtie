@@ -11,6 +11,8 @@ import tarfile
 import pytest
 import pytest_asyncio
 
+from bowtie._report import RunInfo, _InvalidBowtieReport
+
 HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
@@ -92,9 +94,10 @@ async def bowtie(*args, succeed=True):
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
 
         if succeed:
-            metadata = next(lines, None)
-            assert metadata is not None, stderr
-            assert metadata.keys() == {"implementations"}
+            try:
+                RunInfo.from_header_lines(next(lines, None), next(lines))
+            except _InvalidBowtieReport:
+                pytest.fail(f"Invalid report, stderr contained: {stderr}")
         else:
             assert proc.returncode != 0
 

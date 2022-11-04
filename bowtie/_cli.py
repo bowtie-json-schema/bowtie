@@ -376,7 +376,7 @@ async def _run(
 
                 if should_stop:
                     break
-            reporter.finished(count=seq)
+            reporter.finished(count=seq, did_fail_fast=should_stop)
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
