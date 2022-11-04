@@ -370,9 +370,22 @@ async def _run(
                 for each in asyncio.as_completed(responses):
                     response = await each
                     response.report(reporter=case_reporter)
-                    if fail_fast and not response.succeeded:
+
+                    if fail_fast:
+                        # TODO: Combine this with the logic in the template
+                        failed = any(
+                            expected is not None and expected != got
+                            for expected, got in zip(
+                                (test.valid for test in case.tests),
+                                (
+                                    result["valid"]
+                                    for result in response.results
+                                ),
+                            )
+                        )
+                        errored = not response.succeeded
                         # Stop after this case, since we still have futures out
-                        should_stop = True
+                        should_stop = failed or errored
 
                 if should_stop:
                     break

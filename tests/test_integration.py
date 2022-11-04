@@ -297,3 +297,19 @@ async def test_it_prevents_network_access(hit_the_network):
 
     assert results == []
     assert b"bad address" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_fail_fast(envsonschema):
+    async with bowtie("-i", envsonschema, "-x") as send:
+        returncode, results, _, _, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [[{"valid": True}], [{"valid": False}]], stderr
+    assert stderr != ""
+    assert returncode == 0, stderr
