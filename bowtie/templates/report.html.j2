@@ -136,15 +136,13 @@
       </div>
 
       <div class="accordion pt-5" id="cases">
-        {% for each, seq in results %}
-          {% set case = each.case %}
-
+        {% for seq, description, schema, results in summary.case_results() %}
           <div class="accordion-item">
 
             <h2 class="accordion-header" id="case-{{ seq }}-heading">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
-                <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ case.schema | tojson(indent=2) }}</pre>'>
-                  {{ case.description }}
+                <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ schema | tojson(indent=2) }}</pre>'>
+                  {{ description }}
                 </a>
               </button>
             </h2>
@@ -164,7 +162,7 @@
                     </tr>
                   </thead>
 
-                  {% for test, test_results in each.results %}
+                  {% for test, test_results in results %}
                     <tr>
                       <td>
                         <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ test.instance | tojson(indent=2) }}</pre>'>{{ test.description }}</a>

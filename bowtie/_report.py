@@ -207,8 +207,10 @@ class _Summary:
     def see_maybe_fail_fast(self, did_fail_fast):
         self.did_fail_fast = did_fail_fast
 
-    def combined(self):
-        return [(v, k) for k, v in sorted(self._combined.items())]
+    def case_results(self):
+        for seq, each in sorted(self._combined.items()):
+            case, results = each["case"], each["results"]
+            yield seq, case["description"], case["schema"], results
 
 
 @attrs.define
@@ -247,4 +249,4 @@ def from_input(input):
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_results(**each)
-    return dict(summary=summary, results=summary.combined(), run_info=run_info)
+    return dict(summary=summary, run_info=run_info)
