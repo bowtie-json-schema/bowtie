@@ -120,18 +120,12 @@ def docs_style(session):
     session.run("python", "-m", "doc8", "--max-line-length", "1000", str(DOCS))
 
 
-@session(default=False, tags=["perf"], name="bench(startup)")
-def bench_startup(session):
+@session(default=False, tags=["perf"], name="bench(smoke)")
+def bench_smoke(session):
     session.install(str(ROOT))
     executable = Path(session.bin) / "bowtie"
 
-    tmpdir = Path(session.create_tmp())
-    trivial = tmpdir / "trivial.json"
-    trivial.write_text(
-        '{"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }\n',  # noqa: E501
-    )
-
-    cmd = f"{executable} run -i {{implementation}} {trivial}"
+    cmd = f"{executable} smoke -i {{implementation}}"
 
     if session.posargs:
         args = session.posargs

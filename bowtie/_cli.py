@@ -19,7 +19,7 @@ import jinja2
 import structlog
 
 from bowtie import _report
-from bowtie._commands import TestCase
+from bowtie._commands import Test, TestCase
 from bowtie._core import GotStderr, Implementation, StartupFailed
 from bowtie.exceptions import _ProtocolError
 
@@ -53,6 +53,7 @@ DIALECT_SHORTNAMES = {
     "3": DRAFT3,
     "draft3": DRAFT3,
 }
+LATEST_DIALECT_NAME = "draft2020-12"
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
@@ -108,9 +109,13 @@ def validator_for_dialect(dialect: str | None = None):
     def validate(instance, schema):
         resolver.store["urn:current-dialect"] = {"$ref": dialect}
         validator = Validator(schema, resolver=resolver)
-        errors = list(validator.iter_errors(instance))
-        if errors:
-            raise _ProtocolError(errors=errors)
+        try:
+            errors = list(validator.iter_errors(instance))
+        except Exception:  # XXX: Warn after Reporter disappears
+            pass
+        else:
+            if errors:
+                raise _ProtocolError(errors=errors)
 
     return validate
 
@@ -126,6 +131,17 @@ IMPLEMENTATION = click.option(
     type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
+)
+DIALECT = click.option(
+    "--dialect",
+    "-D",
+    "dialect",
+    help=(
+        "A URI or shortname identifying the dialect of each test case."
+        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
+    ),
+    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
+    default=LATEST_DIALECT_NAME,
 )
 FILTER = click.option(
     "-k",
@@ -173,21 +189,11 @@ VALIDATE = click.option(
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
+@DIALECT
 @FILTER
 @FAIL_FAST
 @SET_SCHEMA
 @VALIDATE
-@click.option(
-    "--dialect",
-    "-D",
-    "dialect",
-    help=(
-        "A URI or shortname identifying the dialect of each test case."
-        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
-    ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
-    default="2020-12",
-)
 @click.argument(
     "input",
     default="-",
@@ -206,6 +212,72 @@ def run(context, input, filter, **kwargs):
 
     exit_code = asyncio.run(_run(**kwargs, cases=cases))
     context.exit(exit_code)
+
+
+@main.command()
+@click.pass_context
+@IMPLEMENTATION
+def smoke(context, **kwargs):
+    """
+    Smoke test one or more implementations for basic correctness.
+    """
+    exit_code = asyncio.run(_smoke(**kwargs))
+    context.exit(exit_code)
+
+
+async def _smoke(image_names: list[str]):
+    exit_code = 0
+    async for each in _start(
+        image_names=image_names,
+        make_validator=validator_for_dialect,
+        reporter=None,  # FIXME: we don't want to print anything here
+    ):
+        implementation = await each
+        click.echo(f"Testing {implementation.name!r}...")
+
+        if implementation.metadata is None:
+            exit_code |= os.EX_CONFIG
+            click.echo("  ❗ (error): startup failed")
+            continue
+
+        dialect = implementation.dialects[0]
+        runner = await implementation.start_speaking(dialect)
+
+        cases = [
+            TestCase(
+                description="allow-everything schema",
+                schema={"$schema": dialect},
+                tests=[
+                    Test(description="First", instance=1, valid=True),
+                    Test(description="Second", instance="foo", valid=True),
+                ],
+            ),
+            TestCase(
+                description="allow-nothing schema",
+                schema={"$schema": dialect, "not": {}},
+                tests=[
+                    Test(description="First", instance=12, valid=False),
+                ],
+            ),
+        ]
+        for seq, case in enumerate(cases):
+            response = await runner.run_case(seq=seq, case=case)
+            if response.errored:
+                exit_code |= os.EX_DATAERR
+                message = "❗ (error)"
+            elif response.failed:
+                exit_code |= os.EX_DATAERR
+                message = "✗ (failed)"
+            else:
+                message = "✓"
+            click.echo(f"  {message}: {case.description}")
+
+    if exit_code:
+        click.echo("\n❌ some failures")
+    else:
+        click.echo("\n✅ all passed")
+
+    return exit_code
 
 
 class _TestSuiteCases(click.ParamType):
@@ -270,9 +342,9 @@ class _TestSuiteCases(click.ParamType):
 @click.argument("input", type=_TestSuiteCases())
 def suite(context, input, filter, **kwargs):
     """
-    Run a directory containing files in the official test suite format.
+    Run test cases from the official JSON Schema test suite.
 
-    Supports paths like:
+    Supports file or URL inputs like:
 
         * ``{ROOT}/tests/draft7`` to run a version's tests
 
@@ -291,9 +363,8 @@ def suite(context, input, filter, **kwargs):
             case for case in cases if fnmatch(case["description"], filter)
         )
 
-    count = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
-    if not count:
-        context.exit(os.EX_DATAERR)
+    exit_code = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
+    context.exit(exit_code)
 
 
 async def _run(
@@ -305,52 +376,42 @@ async def _run(
     make_validator: callable,
     reporter: _report.Reporter = _report.Reporter(),
 ):
-    async with AsyncExitStack() as stack:
-        docker = await stack.enter_async_context(aiodocker.Docker())
+    reporter.will_speak(dialect=dialect)
+    acknowledged, runners, exit_code = [], [], 0
+    async for each in _start(
+        image_names=image_names,
+        make_validator=make_validator,
+        reporter=reporter,
+    ):
+        try:
+            implementation = await each
+        except StartupFailed as error:
+            exit_code = os.EX_CONFIG
+            reporter.startup_failed(name=error.name)
+            continue
 
-        starting = [
-            stack.enter_async_context(
-                Implementation.start(
-                    docker=docker,
-                    image_name=image_name,
-                    make_validator=make_validator,
-                    reporter=reporter,
-                ),
-            )
-            for image_name in image_names
-        ]
-        reporter.will_speak(dialect=dialect)
-        acknowledged, runners, exit_code = [], [], 0
-        for each in asyncio.as_completed(starting):
-            try:
-                implementation = await each
-            except StartupFailed as error:
-                exit_code = os.EX_CONFIG
-                reporter.startup_failed(name=error.name)
-                continue
-
-            try:
-                if implementation.supports_dialect(dialect):
-                    try:
-                        runner = await implementation.start_speaking(dialect)
-                    except GotStderr as error:
-                        exit_code = os.EX_CONFIG
-                        reporter.dialect_error(
-                            implementation=implementation,
-                            stderr=error.stderr.decode(),
-                        )
-                    else:
-                        runner.warn_if_unacknowledged(reporter=reporter)
-                        acknowledged.append(implementation)
-                        runners.append(runner)
-                else:
-                    reporter.unsupported_dialect(
+        try:
+            if dialect in implementation.dialects:
+                try:
+                    runner = await implementation.start_speaking(dialect)
+                except GotStderr as error:
+                    exit_code = os.EX_CONFIG
+                    reporter.dialect_error(
                         implementation=implementation,
-                        dialect=dialect,
+                        stderr=error.stderr.decode(),
                     )
-            except StartupFailed as error:
-                exit_code = os.EX_CONFIG
-                reporter.startup_failed(name=error.name)
+                else:
+                    runner.warn_if_unacknowledged(reporter=reporter)
+                    acknowledged.append(implementation)
+                    runners.append(runner)
+            else:
+                reporter.unsupported_dialect(
+                    implementation=implementation,
+                    dialect=dialect,
+                )
+        except StartupFailed as error:
+            exit_code = os.EX_CONFIG
+            reporter.startup_failed(name=error.name)
 
         if not runners:
             exit_code = os.EX_CONFIG
@@ -372,20 +433,9 @@ async def _run(
                     response.report(reporter=case_reporter)
 
                     if fail_fast:
-                        # TODO: Combine this with the logic in the template
-                        failed = any(
-                            expected is not None and expected != got
-                            for expected, got in zip(
-                                (test.valid for test in case.tests),
-                                (
-                                    result["valid"]
-                                    for result in response.results
-                                ),
-                            )
-                        )
-                        errored = not response.succeeded
                         # Stop after this case, since we still have futures out
-                        should_stop = failed or errored
+                        # TODO: Combine this with the logic in the template
+                        should_stop = response.errored or response.failed
 
                 if should_stop:
                     break
@@ -393,6 +443,24 @@ async def _run(
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
+
+
+async def _start(image_names, **kwargs):
+    async with AsyncExitStack() as stack:
+        docker = await stack.enter_async_context(aiodocker.Docker())
+
+        starting = [
+            stack.enter_async_context(
+                Implementation.start(
+                    docker=docker,
+                    image_name=image_name,
+                    **kwargs,
+                ),
+            )
+            for image_name in image_names
+        ]
+        for each in asyncio.as_completed(starting):
+            yield each
 
 
 def sequenced(cases, reporter):

@@ -313,3 +313,21 @@ async def test_fail_fast(envsonschema):
     assert results == [[{"valid": True}], [{"valid": False}]], stderr
     assert stderr != ""
     assert returncode == 0, stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke(envsonschema):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "smoke",
+        "-i",
+        envsonschema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, _ = await proc.communicate()
+    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
+    #        Change to asserting about the smoke stdout once that's there.
+    assert proc.returncode != 0

@@ -198,15 +198,16 @@ class Implementation:
         await self._start_container()
         await self.start_speaking(dialect=self._dialect)
 
-    def supports_dialect(self, dialect):
+    @property
+    def dialects(self):
         if self.metadata is None:
             raise StartupFailed(name=self.name)
-        return dialect in self.metadata.get("dialects", [])
+        return self.metadata.get("dialects", [])
 
-    async def start_speaking(self, dialect):
+    def start_speaking(self, dialect):
         self._dialect = dialect
         self._maybe_validate = self._make_validator(dialect)
-        return await DialectRunner.start(
+        return DialectRunner.start(
             name=self.name,
             send=self._send,
             dialect=dialect,

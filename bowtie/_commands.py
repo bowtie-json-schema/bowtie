@@ -123,12 +123,19 @@ def _case_result(errored=False, **response):
 @attrs.define
 class CaseResult:
 
-    succeeded = True
+    errored = False
 
     implementation: str
     seq: int
-    results: dict
+    results: list[dict[str, bool]]
     expected: list[bool | None]
+
+    @property
+    def failed(self):
+        return any(
+            got.get("valid") != expected and expected is not None
+            for got, expected in zip(self.results, self.expected)
+        )
 
     def report(self, reporter):
         reporter.got_results(self)
@@ -137,7 +144,7 @@ class CaseResult:
 @attrs.define
 class CaseErrored:
 
-    succeeded = False
+    errored = True
 
     implementation: str
     seq: int
@@ -164,7 +171,7 @@ class Empty:
     An implementation didn't send a response.
     """
 
-    succeeded = False
+    errored = True
 
     implementation: str
 
