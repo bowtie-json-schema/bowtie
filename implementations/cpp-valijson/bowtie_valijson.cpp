@@ -102,10 +102,14 @@ int main() {
       SchemaParser parser(DIALECTS.at(dialect));
       RapidJsonAdapter schemaAdapter(testCase["schema"]);
 
-      auto registry = Registry{&testCase["registry"]};
-      parser.populateSchema(schemaAdapter, schema,
-                            bind(&Registry::fetchDocument, registry, _1),
-                            freeDocument);
+      if (testCase.HasMember("registry")) {
+        auto registry = Registry{&testCase["registry"]};
+        parser.populateSchema(schemaAdapter, schema,
+                              bind(&Registry::fetchDocument, registry, _1),
+                              freeDocument);
+      } else {
+        parser.populateSchema(schemaAdapter, schema);
+      }
 
       for (auto &each : testCase["tests"].GetArray()) {
         RapidJsonAdapter instance(each["instance"]);
