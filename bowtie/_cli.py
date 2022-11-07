@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from importlib import resources
 from io import BytesIO
@@ -227,50 +227,51 @@ def smoke(context, **kwargs):
 
 async def _smoke(image_names: list[str]):
     exit_code = 0
-    async for each in _start(
+    async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
         reporter=None,  # FIXME: we don't want to print anything here
-    ):
-        implementation = await each
-        click.echo(f"Testing {implementation.name!r}...")
+    ) as starting:
+        for each in asyncio.as_completed(starting):
+            implementation = await each
+            click.echo(f"Testing {implementation.name!r}...")
 
-        if implementation.metadata is None:
-            exit_code |= os.EX_CONFIG
-            click.echo("  ❗ (error): startup failed")
-            continue
+            if implementation.metadata is None:
+                exit_code |= os.EX_CONFIG
+                click.echo("  ❗ (error): startup failed")
+                continue
 
-        dialect = implementation.dialects[0]
-        runner = await implementation.start_speaking(dialect)
+            dialect = implementation.dialects[0]
+            runner = await implementation.start_speaking(dialect)
 
-        cases = [
-            TestCase(
-                description="allow-everything schema",
-                schema={"$schema": dialect},
-                tests=[
-                    Test(description="First", instance=1, valid=True),
-                    Test(description="Second", instance="foo", valid=True),
-                ],
-            ),
-            TestCase(
-                description="allow-nothing schema",
-                schema={"$schema": dialect, "not": {}},
-                tests=[
-                    Test(description="First", instance=12, valid=False),
-                ],
-            ),
-        ]
-        for seq, case in enumerate(cases):
-            response = await runner.run_case(seq=seq, case=case)
-            if response.errored:
-                exit_code |= os.EX_DATAERR
-                message = "❗ (error)"
-            elif response.failed:
-                exit_code |= os.EX_DATAERR
-                message = "✗ (failed)"
-            else:
-                message = "✓"
-            click.echo(f"  {message}: {case.description}")
+            cases = [
+                TestCase(
+                    description="allow-everything schema",
+                    schema={"$schema": dialect},
+                    tests=[
+                        Test(description="First", instance=1, valid=True),
+                        Test(description="Second", instance="foo", valid=True),
+                    ],
+                ),
+                TestCase(
+                    description="allow-nothing schema",
+                    schema={"$schema": dialect, "not": {}},
+                    tests=[
+                        Test(description="First", instance=12, valid=False),
+                    ],
+                ),
+            ]
+            for seq, case in enumerate(cases):
+                response = await runner.run_case(seq=seq, case=case)
+                if response.errored:
+                    exit_code |= os.EX_DATAERR
+                    message = "❗ (error)"
+                elif response.failed:
+                    exit_code |= os.EX_DATAERR
+                    message = "✗ (failed)"
+                else:
+                    message = "✓"
+                click.echo(f"  {message}: {case.description}")
 
     if exit_code:
         click.echo("\n❌ some failures")
@@ -378,40 +379,41 @@ async def _run(
 ):
     reporter.will_speak(dialect=dialect)
     acknowledged, runners, exit_code = [], [], 0
-    async for each in _start(
+    async with _start(
         image_names=image_names,
         make_validator=make_validator,
         reporter=reporter,
-    ):
-        try:
-            implementation = await each
-        except StartupFailed as error:
-            exit_code = os.EX_CONFIG
-            reporter.startup_failed(name=error.name)
-            continue
+    ) as starting:
+        for each in asyncio.as_completed(starting):
+            try:
+                implementation = await each
+            except StartupFailed as error:
+                exit_code = os.EX_CONFIG
+                reporter.startup_failed(name=error.name)
+                continue
 
-        try:
-            if dialect in implementation.dialects:
-                try:
-                    runner = await implementation.start_speaking(dialect)
-                except GotStderr as error:
-                    exit_code = os.EX_CONFIG
-                    reporter.dialect_error(
-                        implementation=implementation,
-                        stderr=error.stderr.decode(),
-                    )
+            try:
+                if dialect in implementation.dialects:
+                    try:
+                        runner = await implementation.start_speaking(dialect)
+                    except GotStderr as error:
+                        exit_code = os.EX_CONFIG
+                        reporter.dialect_error(
+                            implementation=implementation,
+                            stderr=error.stderr.decode(),
+                        )
+                    else:
+                        runner.warn_if_unacknowledged(reporter=reporter)
+                        acknowledged.append(implementation)
+                        runners.append(runner)
                 else:
-                    runner.warn_if_unacknowledged(reporter=reporter)
-                    acknowledged.append(implementation)
-                    runners.append(runner)
-            else:
-                reporter.unsupported_dialect(
-                    implementation=implementation,
-                    dialect=dialect,
-                )
-        except StartupFailed as error:
-            exit_code = os.EX_CONFIG
-            reporter.startup_failed(name=error.name)
+                    reporter.unsupported_dialect(
+                        implementation=implementation,
+                        dialect=dialect,
+                    )
+            except StartupFailed as error:
+                exit_code = os.EX_CONFIG
+                reporter.startup_failed(name=error.name)
 
         if not runners:
             exit_code = os.EX_CONFIG
@@ -445,11 +447,12 @@ async def _run(
     return exit_code
 
 
+@asynccontextmanager
 async def _start(image_names, **kwargs):
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
 
-        starting = [
+        yield [
             stack.enter_async_context(
                 Implementation.start(
                     docker=docker,
@@ -459,8 +462,6 @@ async def _start(image_names, **kwargs):
             )
             for image_name in image_names
         ]
-        for each in asyncio.as_completed(starting):
-            yield each
 
 
 def sequenced(cases, reporter):
