@@ -1,5 +1,6 @@
 (ns bowtie-json-schema.core
-  (:require [clojure.data.json :as json]
+  (:require [clojure.stacktrace]
+            [clojure.data.json :as json]
             [json-schema.core :as json-schema])
   (:gen-class))
 
@@ -25,12 +26,17 @@
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")
-                      {:seq (request "seq")
-                       :results (let [test-case (request "case")]
-                                  (mapv #(try
-                                           (json-schema/validate (test-case "schema") %)
-                                           {:valid true}
-                                           (catch clojure.lang.ExceptionInfo _ {:valid false}))
-                                        (test-case "tests")))})
+                      (let [test-case (request "case")]
+                        (try
+                          {:seq (request "seq")
+                           :results (mapv #(try
+                                             (json-schema/validate (test-case "schema") %)
+                                             {:valid true}
+                                             (catch clojure.lang.ExceptionInfo _ {:valid false}))
+                                          (test-case "tests"))}
+                          (catch Throwable e
+                            {:seq (request "seq")
+                             :errored true
+                             :context {:traceback (with-out-str (clojure.stacktrace/print-cause-trace e 4))}}))))
             "stop" (do (assert @started "Not started!")
                        (System/exit 0))))))))
