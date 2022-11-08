@@ -53,12 +53,22 @@ module BowtieJsonSchemer
         request['case']['schema'],
         ref_resolver: proc { |uri| request['case']['registry'][uri.to_s] },
       )
-      response = {
-        seq: request['seq'],
-        results: request['case']['tests'].map do |test|
-          { valid: schemer.valid?(test['instance']) }
-        end,
-      }
+      begin
+        response = {
+          seq: request['seq'],
+          results: request['case']['tests'].map do |test|
+            { valid: schemer.valid?(test['instance']) }
+          end,
+        }
+      rescue StandardError => e
+        response = {
+          seq: request['seq'],
+          errored: true,
+          context: {
+            traceback: e.backtrace.join('\n'),
+          },
+        }
+      end
       puts "#{JSON.generate(response)}\n"
     when 'stop'
       raise NotStarted unless @started
