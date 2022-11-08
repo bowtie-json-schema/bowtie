@@ -1,4 +1,10 @@
+const path = require("path");
 const readline = require("readline");
+
+const ajv_version = require(path.join(
+  path.dirname(path.dirname(require.resolve("ajv"))),
+  "package.json",
+)).version;
 
 const DRAFTS = {
   "https://json-schema.org/draft/2020-12/schema": require("ajv/dist/2020"),
@@ -30,6 +36,7 @@ const cmds = {
       implementation: {
         language: "javascript",
         name: "ajv",
+        version: ajv_version,
         homepage: "https://ajv.js.org/",
         issues: "https://github.com/ajv-validator/ajv/issues",
 

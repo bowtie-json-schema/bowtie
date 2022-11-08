@@ -1,4 +1,10 @@
+const path = require("path");
 const readline = require("readline/promises");
+
+const hyperjump_version = require(path.join(
+  path.dirname(path.dirname(require.resolve("@hyperjump/json-schema"))),
+  "package.json",
+)).version;
 
 const JsonSchema = require("@hyperjump/json-schema");
 
@@ -25,6 +31,7 @@ const cmds = {
       implementation: {
         language: "javascript",
         name: "hyperjump-jsv",
+        version: hyperjump_version,
         homepage: "https://json-schema.hyperjump.io/",
         issues: "https://github.com/hyperjump-io/json-schema-validator/issues",
 

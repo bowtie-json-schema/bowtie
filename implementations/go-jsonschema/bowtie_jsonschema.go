@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
 )
 
@@ -44,12 +45,27 @@ func main() {
 			if version != 1 {
 				panic("Not version 1!")
 			}
+
+			buildInfo, ok := debug.ReadBuildInfo()
+			if !ok {
+				panic("Failed to read build info")
+			}
+
+			var jsonschemaVersion = ""
+			for _, dep := range buildInfo.Deps {
+				if strings.Contains(dep.Path, "github.com/santhosh-tekuri/jsonschema") {
+					jsonschemaVersion = dep.Version
+					break
+				}
+			}
+
 			data := map[string]interface{}{
 				"ready":   true,
 				"version": 1,
 				"implementation": map[string]interface{}{
 					"language": "go",
 					"name":     "jsonschema",
+					"version":  jsonschemaVersion,
 					"homepage": "https://github.com/santhosh-tekuri/jsonschema",
 					"issues":   "https://github.com/santhosh-tekuri/jsonschema/issues",
 
