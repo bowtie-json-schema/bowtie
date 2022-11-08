@@ -47,6 +47,7 @@ jobs:
           bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft6 | bowtie report --out _site/draft6.html
           bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft4 | bowtie report --out _site/draft4.html
           bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft3 | bowtie report --out _site/draft3.html
+          cp _site/index.html _site/draft2020.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
