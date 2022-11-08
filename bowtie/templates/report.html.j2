@@ -97,8 +97,15 @@
                 {% set counts = summary.counts[implementation.image] %}
                 <tr>
                   <th scope="row">
-                    <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
-                    <small class="text-muted">{{ implementation.language }}</small>
+                    <div class="row">
+                      <div class="col-6">
+                        <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
+                        <small class="text-muted">{{ implementation.language }}</small>
+                      </div>
+                      <div class="col col-lg-2 text-end">
+                        <small>{{ implementation.get("version", "") }}</small>
+                      </div>
+                    </div>
                   </td>
 
                   <td>{{ counts.total_cases }}</td>
