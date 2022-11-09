@@ -2,14 +2,16 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/santhosh-tekuri/jsonschema/v5"
 	"io"
 	"log"
 	"os"
 	"runtime/debug"
 	"strings"
+
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 var drafts = map[string]*jsonschema.Draft{
@@ -21,19 +23,21 @@ var drafts = map[string]*jsonschema.Draft{
 }
 
 func main() {
-
 	var started = false
+	var draft *jsonschema.Draft = nil
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		var request map[string]interface{}
-		err := json.Unmarshal([]byte(scanner.Text()), &request)
+
+		decoder := json.NewDecoder(strings.NewReader(scanner.Text()))
+		decoder.UseNumber()
+		err := decoder.Decode(&request)
 		if err != nil {
 			fmt.Printf("could not unmarshal json: %s\n", err)
 			return
 		}
-		encoder := json.NewEncoder(os.Stdout)
-		compiler := jsonschema.NewCompiler()
+
 		switch request["cmd"] {
 		case "start":
 			started = true
@@ -41,34 +45,19 @@ func main() {
 			if !ok {
 				panic("No version!")
 			}
-			version := rawVersion.(float64)
-			if version != 1 {
+			version := rawVersion.(json.Number)
+			if v, err := version.Float64(); err != nil || v != 1 {
 				panic("Not version 1!")
 			}
-
-			buildInfo, ok := debug.ReadBuildInfo()
-			if !ok {
-				panic("Failed to read build info")
-			}
-
-			var jsonschemaVersion = ""
-			for _, dep := range buildInfo.Deps {
-				if strings.Contains(dep.Path, "github.com/santhosh-tekuri/jsonschema") {
-					jsonschemaVersion = dep.Version
-					break
-				}
-			}
-
 			data := map[string]interface{}{
 				"ready":   true,
 				"version": 1,
 				"implementation": map[string]interface{}{
 					"language": "go",
 					"name":     "jsonschema",
-					"version":  jsonschemaVersion,
+					"version":  jsonschemaVersion(),
 					"homepage": "https://github.com/santhosh-tekuri/jsonschema",
 					"issues":   "https://github.com/santhosh-tekuri/jsonschema/issues",
-
 					"dialects": []string{
 						"https://json-schema.org/draft/2020-12/schema",
 						"https://json-schema.org/draft/2019-09/schema",
@@ -78,10 +67,7 @@ func main() {
 					},
 				},
 			}
-
-			if err := encoder.Encode(&data); err != nil {
-				panic("Failed sending a response!")
-			}
+			printJSON(data)
 		case "dialect":
 			if !started {
 				panic("Not started!")
@@ -91,11 +77,9 @@ func main() {
 				panic("No dialect!")
 			}
 			dialect := rawDialect.(string)
-			compiler.Draft = drafts[dialect]
-			data := map[string]interface{}{"ok": true}
-			if err := encoder.Encode(&data); err != nil {
-				panic("Failed sending a response!")
-			}
+			draft = drafts[dialect]
+			data := map[string]interface{}{"ok": draft != nil}
+			printJSON(data)
 		case "run":
 			if !started {
 				panic("Not started!")
@@ -105,28 +89,20 @@ func main() {
 				panic("No case!")
 			}
 
-			jsonschema.LoadURL = func(s string) (io.ReadCloser, error) {
+			compiler := jsonschema.NewCompiler()
+			if draft != nil {
+				compiler.Draft = draft
+			}
+			compiler.LoadURL = func(s string) (io.ReadCloser, error) {
 				refSchema, ok := testCase["registry"].(map[string]interface{})[s]
-
 				if !ok {
 					return nil, fmt.Errorf("%q not found", s)
 				}
-
-				// FIXME: map[string].interface{} -> Schema?
-				reserializedRef, err := json.Marshal(refSchema)
-				if err != nil {
-					panic("This should never happen.")
-				}
-				return io.NopCloser(strings.NewReader(string(reserializedRef))), nil
+				return jsonReader(refSchema), nil
 			}
 
-			// FIXME: map[string].interface{} -> Schema?
-			reserialized, err := json.Marshal(testCase["schema"])
-			if err != nil {
-				panic("This should never happen.")
-			}
 			var fakeURI = "bowtie.sent.schema.json"
-			if err := compiler.AddResource(fakeURI, strings.NewReader(string(reserialized))); err != nil {
+			if err := compiler.AddResource(fakeURI, jsonReader(testCase["schema"])); err != nil {
 				panic("Bad schema!")
 			}
 			schema, err := compiler.Compile(fakeURI)
@@ -136,22 +112,19 @@ func main() {
 			}
 
 			var results []map[string]interface{}
-
-			for _, v := range testCase["tests"].([]interface{}) {
-				err := schema.Validate(v.(map[string]interface{})["instance"])
+			for _, test := range testCase["tests"].([]interface{}) {
+				err := schema.Validate(test.(map[string]interface{})["instance"])
 				result := map[string]interface{}{
 					"valid": err == nil,
 				}
 				results = append(results, result)
 			}
+
 			data := map[string]interface{}{
 				"seq":     request["seq"],
 				"results": results,
 			}
-			if err := encoder.Encode(&data); err != nil {
-				panic("Failed sending a response!")
-			}
-
+			printJSON(data)
 		case "stop":
 			if !started {
 				panic("Not started!")
@@ -164,5 +137,36 @@ func main() {
 
 	if err := scanner.Err(); err != nil {
 		log.Println(err)
+	}
+}
+
+func jsonschemaVersion() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		panic("Failed to read build info")
+	}
+
+	var version = ""
+	for _, dep := range buildInfo.Deps {
+		if strings.Contains(dep.Path, "github.com/santhosh-tekuri/jsonschema") {
+			version = dep.Version
+			break
+		}
+	}
+	return version
+}
+
+func jsonReader(v interface{}) io.ReadCloser {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic("This should never happen.")
+	}
+	return io.NopCloser(bytes.NewReader(b))
+}
+
+func printJSON(v interface{}) {
+	encoder := json.NewEncoder(os.Stdout)
+	if err := encoder.Encode(v); err != nil {
+		panic("Failed sending a response!")
 	}
 }
