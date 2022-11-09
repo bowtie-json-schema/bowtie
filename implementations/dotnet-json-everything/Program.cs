@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 using Json.Schema;
 
@@ -32,6 +34,7 @@ while (Console.ReadLine() is {} line && line != "") {
           new JsonObject {
             ["language"] = "dotnet",
             ["name"] = "JsonSchema.Net",
+            ["version"] = GetLibVersion(),
             ["homepage"] = "https://json-everything.net/json-schema/",
             ["issues"] =
                 "https://github.com/gregsdennis/json-everything/issues",
@@ -120,6 +123,12 @@ while (Console.ReadLine() is {} line && line != "") {
   default:
     throw new UnknownCommand(cmd);
   }
+}
+
+static string GetLibVersion()
+{
+		var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+		return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
 }
 
 class UnknownCommand : Exception {
