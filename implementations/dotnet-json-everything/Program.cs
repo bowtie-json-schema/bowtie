@@ -31,7 +31,7 @@ while (Console.ReadLine() is {} line && line != "") {
       ["implementation"] =
           new JsonObject {
             ["language"] = "dotnet",
-            ["name"] = "json-everything",
+            ["name"] = "JsonSchema.Net",
             ["homepage"] = "https://json-everything.net/json-schema/",
             ["issues"] =
                 "https://github.com/gregsdennis/json-everything/issues",
