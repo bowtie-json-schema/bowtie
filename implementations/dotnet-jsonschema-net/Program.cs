@@ -126,7 +126,9 @@ while (Console.ReadLine() is {} line && line != "") {
 }
 
 static string GetLibVersion() {
-  var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+  var attribute =
+      typeof(JsonSchema)
+          .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
   return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
 }
 
