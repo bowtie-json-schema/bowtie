@@ -471,7 +471,7 @@ def sequenced(cases, reporter):
 
 def suite_cases_from(files, remotes):
     for file in files:
-        if file.stem in {"refRemote", "dynamicRef", "vocabulary"}:
+        if _stem(file) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = {
                 urljoin(
                     "http://localhost:1234",
@@ -553,3 +553,9 @@ def _relative_to(path, other):
     if hasattr(path, "relative_to"):
         return path.relative_to(other)
     return Path(path.at).relative_to(other.at)
+
+
+def _stem(path):
+    if hasattr(path, "stem"):
+        return path.stem
+    return Path(path.at).stem
