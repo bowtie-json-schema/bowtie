@@ -154,7 +154,12 @@ class _Summary:
 
     @property
     def total_cases(self):
-        return sum(count.total_cases for count in self.counts.values())
+        counts = {count.total_cases for count in self.counts.values()}
+        if len(counts) != 1:
+            raise _InvalidBowtieReport(
+                f"Inconsistent number of cases run: {self.counts}",
+            )
+        return counts.pop()
 
     @property
     def errored_cases(self):
@@ -162,7 +167,12 @@ class _Summary:
 
     @property
     def total_tests(self):
-        return sum(count.total_tests for count in self.counts.values())
+        counts = {count.total_tests for count in self.counts.values()}
+        if len(counts) != 1:
+            raise _InvalidBowtieReport(
+                f"Inconsistent number of tests run: {self.counts}",
+            )
+        return counts.pop()
 
     @property
     def failed_tests(self):

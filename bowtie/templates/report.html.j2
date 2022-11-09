@@ -76,16 +76,14 @@
             <thead class="table-light">
               <tr>
                 <th rowspan=2 scope="col" class="text-center align-middle">implementation</td>
-                <th colspan=2 class="text-center"><span class="text-muted">cases</span></th>
-                <th colspan=4 class="text-center"><span class="text-muted">tests</span></th>
+                <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
+                <th colspan=3 class="text-center"><span class="text-muted">tests ({{ summary.total_tests }})</span></th>
               </tr>
 
               <tr>
 
-                <th scope="col">ran</th>
                 <th scope="col">errors</th>
 
-                <th scope="col" class="table-bordered">ran</th>
                 <th scope="col" class="table-bordered">failed</th>
                 <th scope="col" class="table-bordered">skipped</th>
                 <th scope="col" class="table-bordered">errors</th>
@@ -108,10 +106,8 @@
                     </div>
                   </td>
 
-                  <td>{{ counts.total_cases }}</td>
                   <td>{{ counts.errored_cases }}</td>
 
-                  <td>{{ counts.total_tests }}</td>
                   <td>{{ counts.failed_tests }}</td>
                   <td>{{ counts.skipped_tests }}</td>
                   <td>{{ counts.errored_tests }}</td>
@@ -123,10 +119,8 @@
               <tr>
                 <th scope="row">total</td>
 
-                <td>{{ summary.total_cases }}</td>
                 <td>{{ summary.errored_cases }}</td>
 
-                <td>{{ summary.total_tests }}</td>
                 <td>{{ summary.failed_tests }}</td>
                 <td>{{ summary.skipped_tests }}</td>
                 <td>{{ summary.errored_tests }}</td>
