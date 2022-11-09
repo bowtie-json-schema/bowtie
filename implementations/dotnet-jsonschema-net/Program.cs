@@ -125,10 +125,9 @@ while (Console.ReadLine() is {} line && line != "") {
   }
 }
 
-static string GetLibVersion()
-{
-		var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-		return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
+static string GetLibVersion() {
+  var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+  return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
 }
 
 class UnknownCommand : Exception {
