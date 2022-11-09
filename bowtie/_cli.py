@@ -471,7 +471,7 @@ def sequenced(cases, reporter):
 
 def suite_cases_from(files, remotes):
     for file in files:
-        if file.name in {"refRemote.json", "dynamicRef.json", "vocabulary.json"}:
+        if file.stem in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = {
                 urljoin(
                     "http://localhost:1234",
