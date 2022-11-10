@@ -29,6 +29,7 @@ module BowtieJsonSchemer
         implementation: {
           language: :ruby,
           name: :json_schemer,
+          version: Gem::Specification.find_by_name('json_schemer').version,
           homepage: 'https://github.com/davishmcclurg/json_schemer',
           issues: 'https://github.com/davishmcclurg/json_schemer/issues',
 
