@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "bowtie_json_everything": {
+      "commandName": "Project",
+      "commandLineArgs": "test-cmd.json"
+    }
+  }
+}

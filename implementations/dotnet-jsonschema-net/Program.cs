@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
 using Json.Schema;
+
+ICommandSource cmdSource = args.Length == 0
+    ? new ConsoleCommandSource()
+    : new FileCommandSource(args[0]);
 
 bool started = false;
 var options = new ValidationOptions();
@@ -17,7 +22,7 @@ var drafts = new Dictionary<string, Draft> {
     { "http://json-schema.org/draft-06/schema#", Draft.Draft6 },
 };
 
-while (Console.ReadLine() is {} line && line != "")
+while (cmdSource.GetNextCommand() is {} line && line != "")
 {
     var root = JsonNode.Parse(line);
     var cmd = root["cmd"].GetValue<string>();
@@ -58,7 +63,11 @@ while (Console.ReadLine() is {} line && line != "")
             {
                 throw new NotStarted();
             }
-            options = new ValidationOptions { ValidateAs = drafts[root["dialect"].GetValue<string>()] };
+            options = new ValidationOptions {
+                ValidateAs = drafts[root["dialect"].GetValue<string>()],
+				// for local debugging, change this to Verbose
+                OutputFormat = OutputFormat.Basic
+            };
 
             var dialectResult = new JsonObject {
                 ["ok"] = true,
@@ -89,11 +98,9 @@ while (Console.ReadLine() is {} line && line != "")
                 foreach (var test in tests)
                 {
                     var validationResult = schema.Validate(test["instance"], options);
-                    var testResult = new JsonObject {
-                        ["valid"] = validationResult.IsValid,
-                    };
+                    var testResult = JsonSerializer.SerializeToNode(validationResult);
                     results.Add(testResult);
-                };
+                }
 
                 var runResult = new JsonObject {
                     ["seq"] = root["seq"].GetValue<int>(),
@@ -150,4 +157,38 @@ class UnknownVersion : Exception
 
 class NotStarted : Exception
 {
+}
+
+interface ICommandSource
+{
+    string? GetNextCommand();
+}
+
+class ConsoleCommandSource : ICommandSource
+{
+    public string? GetNextCommand()
+    {
+        return Console.ReadLine();
+    }
+}
+
+class FileCommandSource : ICommandSource
+{
+    private readonly string[] _fileContents;
+    private int _line;
+
+    public FileCommandSource(string fileName)
+    {
+        _fileContents = File.ReadAllLines(fileName);
+    }
+
+    public string? GetNextCommand()
+    {
+        if (_line < _fileContents.Length)
+        {
+            return _fileContents[_line++];
+        }
+
+        return null;
+    }
 }

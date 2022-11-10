@@ -167,8 +167,7 @@
                             "properties": {
                               "valid": { "type": "boolean" }
                             },
-                            "required": ["valid"],
-                            "additionalProperties": false
+                            "required": ["valid"]
                           },
                           {
                             "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped"
