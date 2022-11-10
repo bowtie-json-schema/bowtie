@@ -119,7 +119,7 @@
                   <td>{{ counts.errored_tests }}</td>
 
                   <td>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#{{ implementation.name }}-{{ implementation.language }}-modal">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-details">
                       Details
                     </button>
                   </td>
@@ -198,11 +198,11 @@
     </div>
 
     {% for implementation in summary.implementations %}
-      <div class="modal fade" id="{{ implementation.name }}-{{ implementation.language }}-modal" tabindex="-1" aria-labelledby="{{ implementation.name }}-{{ implementation.language }}-modal-label" aria-hidden="true">
+      <div class="modal fade" id="implementation-{{ loop.index }}-details" tabindex="-1" aria-labelledby="implementation-{{ loop.index }}-details-label" aria-hidden="true">
         <div class="modal-dialog modal-fullscreen">
           <div class="modal-content">
             <div class="modal-header">
-              <h1 class="modal-title fs-5" id="{{ implementation.name }}-{{ implementation.language }}-modal-label">
+              <h1 class="modal-title fs-5" id="implementation-{{ loop.index }}-details-label">
                 {{ implementation.name }}
                 <small class="text-muted">{{ implementation.language }}</small>
               </h1>
