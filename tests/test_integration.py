@@ -316,6 +316,22 @@ async def test_fail_fast(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_filter(envsonschema):
+    async with bowtie("-i", envsonschema, "-k", "baz") as send:
+        returncode, results, _, _, stderr = await send(
+            """
+            {"description": "foo", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "bar", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "baz", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [[{"valid": True}]], stderr
+    assert stderr != ""
+    assert returncode == 0, stderr
+
+
+@pytest.mark.asyncio
 async def test_smoke(envsonschema):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,

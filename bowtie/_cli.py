@@ -206,9 +206,7 @@ def run(context, input, filter, **kwargs):
 
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
-        cases = (
-            case for case in cases if fnmatch(case["description"], filter)
-        )
+        cases = (case for case in cases if fnmatch(case.description, filter))
 
     exit_code = asyncio.run(_run(**kwargs, cases=cases))
     context.exit(exit_code)
@@ -360,9 +358,7 @@ def suite(context, input, filter, **kwargs):
 
     cases, dialect = input
     if filter:
-        cases = (
-            case for case in cases if fnmatch(case["description"], filter)
-        )
+        cases = (case for case in cases if fnmatch(case.description, filter))
 
     exit_code = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
     context.exit(exit_code)
