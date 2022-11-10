@@ -79,7 +79,7 @@
           <table class="table table-sm table-hover">
             <thead class="table-light">
               <tr>
-                <th rowspan=2 scope="col" class="text-center align-middle">implementation</td>
+                <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</td>
                 <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
                 <th colspan=3 class="text-center"><span class="text-muted">tests ({{ summary.total_tests }})</span></th>
                 <th colspan=1></th>
@@ -101,15 +101,11 @@
                 {% set counts = summary.counts[implementation.image] %}
                 <tr>
                   <th scope="row">
-                    <div class="row">
-                      <div class="col-9">
-                        <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
-                        <small class="text-muted">{{ implementation.language }}</small>
-                      </div>
-                      <div class="col">
-                        <small>{{ implementation.get("version", "") }}</small>
-                      </div>
-                    </div>
+                    <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
+                    <small class="text-muted">{{ implementation.language }}</small>
+                  </th>
+                  <td>
+                    <small class="font-monospace text-muted">{{ implementation.get("version", "") }}</small>
                   </td>
 
                   <td>{{ counts.errored_cases }}</td>
