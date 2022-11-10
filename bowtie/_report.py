@@ -47,7 +47,7 @@ class Reporter:
 
     def ready(self, run_info):
         self._write(
-            **{k.lstrip("_"): v for k, v in attrs.asdict(run_info).items()}
+            **{k.lstrip("_"): v for k, v in attrs.asdict(run_info).items()},
         )
 
     def will_speak(self, dialect):
