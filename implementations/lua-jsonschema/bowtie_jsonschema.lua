@@ -5,6 +5,10 @@ STARTED = false
 
 io.stdout:setvbuf 'no'
 
+local handle = io.popen 'luarocks show jsonschema --mversion'
+local jsonschema_version = handle:read '*a'
+handle:close()
+
 local cmds = {
   start = function(request)
     assert(request.version == 1, 'Wrong version!')
@@ -15,6 +19,7 @@ local cmds = {
       implementation = {
         language = 'lua',
         name = 'jsonschema',
+        version = jsonschema_version,
         homepage = 'https://github.com/api7/jsonschema',
         issues = 'https://github.com/api7/jsonschema/issues',
 
