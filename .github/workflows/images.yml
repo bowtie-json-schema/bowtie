@@ -37,7 +37,7 @@ jobs:
           for each in implementations/*; do
             (
               cd $each
-              podman build --all-platforms -f Dockerfile -t "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
+              podman build -f Dockerfile -t "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
               podman push "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
               bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
             )
