@@ -95,7 +95,7 @@ async def bowtie(*args, succeed=True):
 
         if succeed:
             try:
-                RunInfo.from_header_lines(next(lines, None), next(lines))
+                RunInfo(**next(lines))
             except _InvalidBowtieReport:
                 pytest.fail(f"Invalid report, stderr contained: {stderr}")
         else:
