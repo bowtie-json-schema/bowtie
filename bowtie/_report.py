@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import datetime, timezone
 import importlib.metadata
 import json
 import sys
@@ -44,21 +45,13 @@ class Reporter:
             response=response,
         )
 
-    def ready(self, implementations, dialect):
-        metadata = {
-            implementation.name: dict(
-                implementation.metadata,
-                image=implementation.name,
-            )
-            for implementation in implementations
-        }
+    def ready(self, run_info):
         self._write(
-            implementations=metadata,
-            bowtie_version=importlib.metadata.version("bowtie-json-schema"),
+            **{k.lstrip("_"): v for k, v in attrs.asdict(run_info).items()}
         )
 
     def will_speak(self, dialect):
-        self._write(dialect=dialect)
+        self._log.info("Will speak", dialect=dialect)
 
     def finished(self, count, did_fail_fast):
         if not count:
@@ -226,13 +219,30 @@ class _Summary:
 @attrs.define
 class RunInfo:
 
+    started: str
     bowtie_version: str
     dialect: str
     _implementations: dict[str, dict]
 
     @classmethod
-    def from_header_lines(cls, first, second):
-        return cls(**first, **second)
+    def from_implementations(cls, implementations, dialect):
+        return cls(
+            dialect=dialect,
+            bowtie_version=importlib.metadata.version("bowtie-json-schema"),
+            started=datetime.now(timezone.utc).isoformat(),
+            implementations={
+                implementation.name: dict(
+                    implementation.metadata,
+                    image=implementation.name,
+                )
+                for implementation in implementations
+            },
+        )
+
+    @property
+    def ago(self):
+        ago = datetime.now(timezone.utc) - datetime.fromisoformat(self.started)
+        return ago.total_seconds()
 
     def create_summary(self):
         """
@@ -247,7 +257,7 @@ def from_input(input):
     """
 
     lines = (json.loads(line) for line in input)
-    run_info = RunInfo.from_header_lines(next(lines), next(lines))
+    run_info = RunInfo(**next(lines))
     summary = run_info.create_summary()
 
     for each in lines:

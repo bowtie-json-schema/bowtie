@@ -377,13 +377,13 @@ async def _run(
     make_validator: callable,
     reporter: _report.Reporter = _report.Reporter(),
 ):
-    reporter.will_speak(dialect=dialect)
     acknowledged, runners, exit_code = [], [], 0
     async with _start(
         image_names=image_names,
         make_validator=make_validator,
         reporter=reporter,
     ) as starting:
+        reporter.will_speak(dialect=dialect)
         for each in asyncio.as_completed(starting):
             try:
                 implementation = await each
@@ -419,7 +419,12 @@ async def _run(
             exit_code = os.EX_CONFIG
             reporter.no_implementations()
         else:
-            reporter.ready(implementations=acknowledged, dialect=dialect)
+            reporter.ready(
+                _report.RunInfo.from_implementations(
+                    implementations=acknowledged,
+                    dialect=dialect,
+                ),
+            )
 
             seq = 0
             should_stop = False
