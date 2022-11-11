@@ -66,7 +66,9 @@
             </tr>
             <tr>
               <td>Ran</td>
-              <td id="runStarted">{{ run_info.started }}</td>
+              <td>
+                <time datetime="{{ run_info.started }}" id="runStarted"></time>
+              </td>
             </tr>
           </table>
         </div>
@@ -244,7 +246,7 @@
     </script>
 
     <script>
-      var ago = {{ run_info.ago }};
+      var ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
       var agoUnits = 'seconds';
       if (ago > 60) {
         ago /= 60; agoUnits = 'minutes';

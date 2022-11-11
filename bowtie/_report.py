@@ -239,11 +239,6 @@ class RunInfo:
             },
         )
 
-    @property
-    def ago(self):
-        ago = datetime.now(timezone.utc) - datetime.fromisoformat(self.started)
-        return ago.total_seconds()
-
     def create_summary(self):
         """
         Create a summary object used to incrementally parse reports.
