@@ -63,7 +63,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             }
             options = new ValidationOptions { ValidateAs = drafts[root["dialect"].GetValue<string>()],
                                               // for local debugging, change this to Verbose
-                                              OutputFormat = OutputFormat.Basic };
+                                              OutputFormat = OutputFormat.Flag };
 
             var dialectResult = new JsonObject {
                 ["ok"] = true,
