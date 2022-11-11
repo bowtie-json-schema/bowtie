@@ -11,6 +11,7 @@
 *.sln.docstates
 Json*.xml
 /JsonSchema/nuspec/*/*.dll
+test-cmd.json
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)
