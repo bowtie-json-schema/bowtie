@@ -8,9 +8,7 @@ using System.Text.RegularExpressions;
 
 using Json.Schema;
 
-ICommandSource cmdSource = args.Length == 0
-    ? new ConsoleCommandSource()
-    : new FileCommandSource(args[0]);
+ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new FileCommandSource(args[0]);
 
 bool started = false;
 var options = new ValidationOptions();
@@ -63,11 +61,9 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             {
                 throw new NotStarted();
             }
-            options = new ValidationOptions {
-                ValidateAs = drafts[root["dialect"].GetValue<string>()],
-                // for local debugging, change this to Verbose
-                OutputFormat = OutputFormat.Basic
-            };
+            options = new ValidationOptions { ValidateAs = drafts[root["dialect"].GetValue<string>()],
+                                              // for local debugging, change this to Verbose
+                                              OutputFormat = OutputFormat.Basic };
 
             var dialectResult = new JsonObject {
                 ["ok"] = true,
