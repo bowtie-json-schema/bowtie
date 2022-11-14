@@ -22,7 +22,7 @@ var drafts = new Dictionary<string, Draft> {
 
 var unsupportedTests = new Dictionary<(string, string), string>
 {
-	[("float division = inf", "always invalid, but naive implementations may raise an overflow error")] = "System.Decimal does not support large values like 1e308"
+    [("float division = inf", "always invalid, but naive implementations may raise an overflow error")] = "System.Decimal does not support large values like 1e308"
 };
 
 while (cmdSource.GetNextCommand() is {} line && line != "")
@@ -96,34 +96,34 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
 
             try
             {
-	            var results = new JsonArray();
+                var results = new JsonArray();
 
-	            foreach (var test in tests)
-	            {
-		            testDescription = test["description"].GetValue<string>();
-		            var validationResult = schema.Validate(test["instance"], options);
-		            var testResult = JsonSerializer.SerializeToNode(validationResult);
-		            results.Add(testResult);
-	            }
+                foreach (var test in tests)
+                {
+                    testDescription = test["description"].GetValue<string>();
+                    var validationResult = schema.Validate(test["instance"], options);
+                    var testResult = JsonSerializer.SerializeToNode(validationResult);
+                    results.Add(testResult);
+                }
 
-	            var runResult = new JsonObject
-	            {
-		            ["seq"] = root["seq"].GetValue<int>(),
-		            ["results"] = results,
-	            };
-	            Console.WriteLine(runResult.ToJsonString());
+                var runResult = new JsonObject
+                {
+                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["results"] = results,
+                };
+                Console.WriteLine(runResult.ToJsonString());
             }
             catch (Exception) when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out var message))
             {
-	            var skipResult = new JsonObject
-	            {
-		            ["seq"] = root["seq"].GetValue<int>(),
-		            ["skipped"] = true,
-		            ["message"] = message
-	            };
-	            Console.WriteLine(skipResult.ToJsonString());
+                var skipResult = new JsonObject
+                {
+                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["skipped"] = true,
+                    ["message"] = message
+                };
+                Console.WriteLine(skipResult.ToJsonString());
             }
-			catch (Exception e)
+            catch (Exception e)
             {
                 var errorResult = new JsonObject {
                     ["seq"] = root["seq"].GetValue<int>(),
