@@ -20,6 +20,12 @@ var drafts = new Dictionary<string, Draft> {
     { "http://json-schema.org/draft-06/schema#", Draft.Draft6 },
 };
 
+var unsupportedTests =
+    new Dictionary<(string, string),
+                   string> { [("float division = inf",
+                               "always invalid, but naive implementations may raise an overflow error")] =
+                                 "System.Decimal does not support large values like 1e308" };
+
 while (cmdSource.GetNextCommand() is {} line && line != "")
 {
     var root = JsonNode.Parse(line);
@@ -78,6 +84,8 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             }
 
             var testCase = root["case"];
+            var testCaseDescription = testCase["description"].GetValue<string>();
+            string? testDescription = null;
             var schemaText = testCase["schema"];
             var registry = testCase["registry"];
 
@@ -93,6 +101,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
 
                 foreach (var test in tests)
                 {
+                    testDescription = test["description"].GetValue<string>();
                     var validationResult = schema.Validate(test["instance"], options);
                     var testResult = JsonSerializer.SerializeToNode(validationResult);
                     results.Add(testResult);
@@ -103,6 +112,13 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                     ["results"] = results,
                 };
                 Console.WriteLine(runResult.ToJsonString());
+            }
+            catch (Exception)
+                when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out var message))
+            {
+                var skipResult =
+                    new JsonObject { ["seq"] = root["seq"].GetValue<int>(), ["skipped"] = true, ["message"] = message };
+                Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
