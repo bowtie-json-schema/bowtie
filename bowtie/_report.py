@@ -109,6 +109,9 @@ class _CaseReporter:
     def got_results(self, results):
         self._write(**attrs.asdict(results))
 
+    def skipped(self, skipped):
+        self._write(skipped=True, **attrs.asdict(skipped))
+
     def no_response(self, implementation):
         self._log.error("No response", logger_name=implementation)
 
@@ -207,6 +210,18 @@ class _Summary:
                 count.failed_tests += 1
             seen[implementation] = result, failed
 
+    def see_skip(self, skipped: _commands.CaseSkipped):
+        count = self.counts[skipped.implementation]
+        count.total_cases += 1
+
+        case = self._combined[skipped.seq]["case"]
+        count.total_tests += len(case["tests"])
+        count.skipped_tests += len(case["tests"])
+
+        for _, seen in self._combined[skipped.seq]["results"]:
+            message = skipped.issue_url or skipped.message or "skipped"
+            seen[skipped.implementation] = message, "skipped"
+
     def see_maybe_fail_fast(self, did_fail_fast):
         self.did_fail_fast = did_fail_fast
 
@@ -260,6 +275,9 @@ def from_input(input):
             summary.add_case_metadata(**each)
         elif "caught" in each:
             summary.see_error(**each)
+        elif "skipped" in each:
+            del each["skipped"]
+            summary.see_skip(_commands.CaseSkipped(**each))
         elif "did_fail_fast" in each:
             summary.see_maybe_fail_fast(**each)
         else:

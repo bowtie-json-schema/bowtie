@@ -107,9 +107,14 @@ class Dialect:
     dialect: str
 
 
-def _case_result(errored=False, **response):
+def _case_result(errored=False, skipped=False, **response):
     if errored:
         return lambda implementation, expected: CaseErrored(
+            implementation=implementation,
+            **response,
+        )
+    elif skipped:
+        return lambda implementation, expected: CaseSkipped(
             implementation=implementation,
             **response,
         )
@@ -163,6 +168,21 @@ class CaseErrored:
             caught=False,
             context=context,
         )
+
+
+@attrs.define
+class CaseSkipped:
+
+    errored = False
+
+    implementation: str
+    seq: int
+
+    message: str | None = None
+    issue_url: str | None = None
+
+    def report(self, reporter):
+        return reporter.skipped(self)
 
 
 @attrs.define
