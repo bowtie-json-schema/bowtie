@@ -2,8 +2,8 @@ name: Test Suite Report
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
   workflow_dispatch:
   schedule:
     # Daily at 2:15
