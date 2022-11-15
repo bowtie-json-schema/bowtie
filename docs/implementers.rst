@@ -444,8 +444,6 @@ where we've now successfully run some inputted test cases.
 The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie report <cli:report>`.
 Hooray!
 
-We could stop here but there are two last things for us to implement before we're done.
-
 Step 4: Resolving References
 ----------------------------
 
@@ -477,7 +475,9 @@ Change the call to ``generate_validator`` to look like:
     })
 
 where we simply index into ``request.case.registry`` anytime we see a referenced URL.
-And *now* we're done.
+
+And *now* it would seem we're done.
+We could stop here, as we've done enough that Bowtie can take it from here, but there are a few finishing touches to implement which improve performance or overall experience interacting with our new harness, so let's get to those before we clean up shop.
 
 Step 5: Handling Errors
 -----------------------
@@ -501,6 +501,29 @@ The structure of error responses is:
     :dedent:
 
 (i.e. in particular the harness should return a response setting ``errored`` to ``true``).
+
+Step 6: Skipping Tests & Handling Known Issues
+----------------------------------------------
+
+The aforementioned error-handling support means that a running harness can be fairly sure it gracefully continues in the face of issues, even for unexpectedly new input.
+
+But if an implementation has *known* gaps, it's better to explicitly tell Bowtie that a particular feature is unsupported, rather than simply letting the error handling code trap any exception or error.
+The reasoning here is that Bowtie can surface any detail about *why* a test is skipped, or some day may even notice when an issue on an implementation is closed (and retry running the test).
+In general, it is preferable that a test harness have 0 errors, and certainly 0 uncaught errors, when being run under the official suite (and instead intentionally skip known issues, while emitting a link to an issue tracking the missing functionality).
+Support for skipping tests is still somewhat crude, but it does indeed work, and should be preferred by an implementer if you know a particular test from the official suite isn't supported by your implementation.
+
+The structure of skip responses, which you should send when presented with a "known" unsupported test, is:
+
+.. literalinclude:: ../bowtie/schemas/io-schema.json
+    :language: json
+    :start-at: "skipped": {
+    :end-before: "errored"
+    :dedent:
+
+The biggest consideration at the minute is how to *identify* incoming test cases.
+Adding some sort of "persistent identifier" to test cases is something we've previously discussed upstream in the official test suite, which would make this easier.
+Until that happens however, your best current bet is to match on the test case description and/or schema, and use that to decide this incoming test is unsupported (and then respond with a skip request as above).
+For a specific example of doing so for Bowtie's reporting, see `this PR <https://github.com/bowtie-json-schema/bowtie/pull/73>`_.
 
 If you've gotten to the end and wish to see the full code for the harness, have a look at the `completed harness for lua-jsonschema <https://github.com/bowtie-json-schema/bowtie/blob/090f259b03888c7bc72beb7702546d00b7622e90/implementations/lua-jsonschema/bowtie_jsonschema.lua>`_.
 
