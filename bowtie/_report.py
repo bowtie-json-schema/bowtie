@@ -205,10 +205,15 @@ class _Summary:
 
         for result, valid, (_, seen) in zip(results, expected, got):
             count.total_tests += 1
-            failed = expected is not None and result["valid"] != valid
-            if failed:
-                count.failed_tests += 1
-            seen[implementation] = result, failed
+            if result.get("skipped"):
+                count.skipped_tests += 1
+                msg = result.get("issue_url") or result.get("message")
+                seen[implementation] = msg or "skipped", "skipped"
+            else:
+                failed = expected is not None and result["valid"] != valid
+                if failed:
+                    count.failed_tests += 1
+                seen[implementation] = result, failed
 
     def see_skip(self, skipped: _commands.CaseSkipped):
         count = self.counts[skipped.implementation]
