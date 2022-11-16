@@ -5,15 +5,40 @@ on:
   push:
     paths:
       - "implementations/**"
+      - ".github/workflows/images.yml"
     tags:
       - "v*"
 
 jobs:
-  build-images:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.images-matrix.outputs.images }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: images-matrix
+        run: |
+          python3 -c '
+          from pathlib import Path
+          import json
+          paths = [
+              str(path.name)
+              for path in Path("implementations").iterdir()
+              if path.is_dir()
+          ]
+          print(f"images={json.dumps(paths)}")
+          ' >> $GITHUB_OUTPUT
+
+  build:
+    needs: list
     runs-on: ubuntu-latest
 
     permissions:
       packages: write
+
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -32,13 +57,8 @@ jobs:
       - name: Install Bowtie
         run: python3 -m pip install bowtie-json-schema
 
-      - name: Build Bowtie Images
+      - name: Build Bowtie Image
         run: |
-          for each in implementations/*; do
-            (
-              cd $each
-              podman build -f Dockerfile -t "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
-              podman push "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
-              bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/$(basename $each)"
-            )
-          done
+          podman build -f implementations/${{ matrix.image }}/Dockerfile -t "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          podman push "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
