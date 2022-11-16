@@ -92,10 +92,10 @@ const cmds = {
 
     const validate = await JsonSchema.validate(schema);
     const promises = testCase.tests.map((test) => {
-      if (testCase.description in skipedTests) {
+      if (testCase.description in skippedTests) {
         return {
           skipped: true,
-          message: skipedTests[testCase.description],
+          message: skippedTests[testCase.description],
         };
       } else {
         return { valid: validate(test.instance).valid };
