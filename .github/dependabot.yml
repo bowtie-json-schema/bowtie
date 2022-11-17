@@ -1,5 +1,13 @@
 version: 2
 updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Dependabot for Implementations (Harnesses)
+  # ------------------------------------------
+
   # FIXME: Dependabot doesn't support clojure.
   #        See https://github.com/frenchy64/dependabot-lein-via-mvn for
   #        a possible workaround.
