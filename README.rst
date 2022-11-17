@@ -10,6 +10,10 @@ Bowtie
 
 |
 
+.. image:: https://zenodo.org/badge/531839193.svg
+  :alt: DOI
+  :target: https://zenodo.org/badge/latestdoi/531839193
+
 .. image:: https://img.shields.io/pypi/v/bowtie-json-schema.svg
   :alt: PyPI version
   :target: https://pypi.org/project/bowtie-json-schema/
