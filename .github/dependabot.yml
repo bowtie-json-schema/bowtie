@@ -1,0 +1,46 @@
+version: 2
+updates:
+  # FIXME: Dependabot doesn't support clojure.
+  #        See https://github.com/frenchy64/dependabot-lein-via-mvn for
+  #        a possible workaround.
+  # - package-ecosystem: "clojure"
+  #   directory: "implementations/clojure-json-schema"
+  #   schedule:
+  #     interval: "daily"
+
+  # cpp-valijson builds its repository's HEAD
+
+  - package-ecosystem: "nuget"
+    directory: "implementations/dotnet-jsonschema-net"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directory: "implementations/go-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "implementations/js-ajv"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "implementations/js-hyperjump"
+    schedule:
+      interval: "daily"
+
+  # lua-jsonschema installs the latest (unpinned) version
+  # python-fastjsonschema installs the latest (unpinned) version
+  # python-jschon installs the latest (unpinned) version
+  # python-jsonschema installs the latest (unpinned) version
+
+  - package-ecosystem: "bundler"
+    directory: "implementations/ruby-json_schemer"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo"
+    directory: "implementations/rust-jsonschema"
+    schedule:
+      interval: "daily"

@@ -1,3 +1,5 @@
+Dependabot
+Javascript
 Lua
 autoformatter
 boolean
