@@ -33,7 +33,8 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_json_schema_spec",
     "sphinxcontrib.spelling",
-    "sphinxext.opengraph",
+    # FIXME: Disabled, as it's raising exceptions on build. Needs looking into.
+    # "sphinxext.opengraph",
 ]
 
 pygments_style = "lovelace"
