@@ -210,7 +210,7 @@ class _Summary:
                 msg = result.get("issue_url") or result.get("message")
                 seen[implementation] = msg or "skipped", "skipped"
             else:
-                failed = expected is not None and result["valid"] != valid
+                failed = valid is not None and result["valid"] != valid
                 if failed:
                     count.failed_tests += 1
                 seen[implementation] = result, failed
