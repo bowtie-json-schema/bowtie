@@ -320,12 +320,12 @@ class _TestSuiteCases(click.ParamType):
 
     def _cases_and_dialect(self, path):
         if path.name.endswith(".json"):
-            files, version_path = [path], path.parent
+            paths, version_path = [path], path.parent
         else:
-            files, version_path = _glob(path, "*.json"), path
+            paths, version_path = _glob(path, "*.json"), path
 
         remotes = version_path.parent.parent / "remotes"
-        cases = suite_cases_from(files=files, remotes=remotes)
+        cases = suite_cases_from(paths=paths, remotes=remotes)
         dialect = DIALECT_SHORTNAMES.get(version_path.name)
 
         return cases, dialect
@@ -470,9 +470,9 @@ def sequenced(cases, reporter):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
-def suite_cases_from(files, remotes):
-    for file in files:
-        if _stem(file) in {"refRemote", "dynamicRef", "vocabulary"}:
+def suite_cases_from(paths, remotes):
+    for path in paths:
+        if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = {
                 urljoin(
                     "http://localhost:1234",
@@ -483,7 +483,7 @@ def suite_cases_from(files, remotes):
         else:
             registry = {}
 
-        for case in json.loads(file.read_text()):
+        for case in json.loads(path.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
             yield TestCase.from_dict(**case, registry=registry)
@@ -556,7 +556,7 @@ def _relative_to(path, other):
     return Path(path.at).relative_to(other.at)
 
 
-def _stem(path):
+def _stem(path):  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
     return Path(path.at).stem
