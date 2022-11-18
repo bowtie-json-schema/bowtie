@@ -347,3 +347,26 @@ async def test_smoke(envsonschema):
     # FIXME: This != 0 is because indeed envsonschema gets answers wrong
     #        Change to asserting about the smoke stdout once that's there.
     assert proc.returncode != 0
+
+
+@pytest.mark.asyncio
+async def test_validate(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("a.json").write_text("12")
+    tmp_path.joinpath("b.json").write_text('"foo"')
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "validate",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "a.json",
+        tmp_path / "b.json",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, _ = await proc.communicate()
+    assert proc.returncode == 0

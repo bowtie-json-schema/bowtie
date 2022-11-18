@@ -215,6 +215,30 @@ def run(context, input, filter, **kwargs):
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
+@DIALECT
+@SET_SCHEMA
+@click.argument("schema", type=click.File(mode="rb"))
+@click.argument("instances", nargs=-1, type=click.File(mode="rb"))
+def validate(context, schema, instances, **kwargs):
+    """
+    Validate a schema & one or more instances across implementations.
+    """
+    case = TestCase(
+        description="bowtie validate",
+        schema=json.load(schema),
+        tests=[
+            Test(description=str(i), instance=json.load(instance))
+            for i, instance in enumerate(instances, 1)
+        ],
+    )
+    kwargs.update(fail_fast=False, make_validator=do_not_validate)
+    exit_code = asyncio.run(_run(**kwargs, cases=[case]))
+    context.exit(exit_code)
+
+
+@main.command()
+@click.pass_context
+@IMPLEMENTATION
 def smoke(context, **kwargs):
     """
     Smoke test one or more implementations for basic correctness.
