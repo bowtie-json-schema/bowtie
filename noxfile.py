@@ -143,16 +143,20 @@ def bench_smoke(session):
 
 @session(default=False, tags=["perf"], name="bench(suite)")
 def bench_suite(session):
+    if not session.posargs:
+        session.error("Provide a test suite to benchmark")
+
     session.install(str(ROOT))
-    executable = Path(session.bin) / "bowtie"
+    bowtie = Path(session.bin) / "bowtie"
 
     posargs = shlex.join(session.posargs)
-    args = [
-        "--warmup",
-        "1",
-        "-L",
-        "implementation",
-        ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
-        f"{executable} suite -i {{implementation}} {posargs}",
-    ]
-    session.run("hyperfine", *args, external=True)
+    if "-i" not in session.posargs:
+        args = [
+            "-L",
+            "implementation",
+            ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
+            f"{bowtie} suite -i {{implementation}} {posargs}",
+        ]
+    else:
+        args = [f"{bowtie} suite {posargs}"]
+    session.run("hyperfine", "--warmup", "1", *args, external=True)
