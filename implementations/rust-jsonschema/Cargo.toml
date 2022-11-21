@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+backtrace = "0.3"
 jsonschema = { version = "0.16", features = [ "draft201909", "draft202012" ] }
 serde = "1.0"
 serde_json = "1.0"

@@ -1,8 +1,10 @@
 use std::{collections::HashMap, io, process, sync::Arc};
 
-use jsonschema::{Draft, JSONSchema, SchemaResolver, SchemaResolverError};
+use backtrace::Backtrace;
 use serde_json::{json, Result};
 use url::Url;
+
+use jsonschema::{Draft, JSONSchema, SchemaResolver, SchemaResolverError};
 
 struct InMemoryResolver {
     registry: serde_json::Value,
@@ -97,14 +99,25 @@ fn main() -> Result<()> {
                 };
                 compiler = compiler.with_resolver(resolver);
 
-                let compiled = compiler.compile(&case["schema"]).expect("Invalid schema!");
-                let results: Vec<_> = case["tests"]
-                    .as_array()
-                    .expect("Invalid tests!")
-                    .iter()
-                    .map(|test| json!({"valid": compiled.is_valid(&test["instance"])}))
-                    .collect();
-                let response = json!({"seq": &request["seq"], "results": &results});
+                let response = match compiler.compile(&case["schema"]) {
+                    Ok(compiled) => {
+                        let results: Vec<_> = case["tests"]
+                            .as_array()
+                            .expect("Invalid tests!")
+                            .iter()
+                            .map(|test| json!({"valid": compiled.is_valid(&test["instance"])}))
+                            .collect();
+                        json!({"seq": &request["seq"], "results": &results})
+                    }
+                    Err(error) => json!({
+                        "errored": true,
+                        "seq": &request["seq"],
+                        "context": {
+                            "traceback": format!("{:?}", Backtrace::new()),
+                            "error": format!("{:?}", error),
+                        },
+                    }),
+                };
                 println!("{}", response.to_string());
             }
             "stop" => {
