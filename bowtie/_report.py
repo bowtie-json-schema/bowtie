@@ -20,7 +20,7 @@ def writer(file=sys.stdout):
     return lambda **result: file.write(f"{json.dumps(result)}\n")
 
 
-@attrs.define
+@attrs.frozen
 class Reporter:
 
     _write = attrs.field(default=writer())
@@ -94,7 +94,7 @@ class Reporter:
         )
 
 
-@attrs.define
+@attrs.frozen
 class _CaseReporter:
 
     _write: Callable
@@ -235,7 +235,7 @@ class _Summary:
             yield seq, case["description"], case["schema"], results
 
 
-@attrs.define
+@attrs.frozen
 class RunInfo:
 
     started: str

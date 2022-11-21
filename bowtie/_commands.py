@@ -8,7 +8,7 @@ import attrs
 from bowtie import exceptions
 
 
-@attrs.define
+@attrs.frozen
 class Test:
 
     description: str
@@ -16,7 +16,7 @@ class Test:
     valid: bool | None = None
 
 
-@attrs.define
+@attrs.frozen
 class TestCase:
 
     description: str
@@ -47,18 +47,22 @@ class TestCase:
         return as_dict
 
 
-@attrs.define
+@attrs.frozen
 class Started:
 
     implementation: dict
-    ready: bool = False
-    version: int = None  # type: ignore
+    ready: bool = attrs.field()
+    version: int = attrs.field()
 
-    def __attrs_post_init__(self):
-        if not self.ready:
-            raise exceptions.ImplementationNotReady(self)
-        if self.version != 1:
-            raise exceptions.VersionMismatch(expected=1, got=self.version)
+    @ready.validator
+    def _check_ready(self, _, ready):
+        if not ready:
+            raise exceptions.ImplementationNotReady(self.implementation)
+
+    @version.validator
+    def _check_version(self, _, version):
+        if version != 1:
+            raise exceptions.VersionMismatch(expected=1, got=version)
 
 
 def command(name, Response):
@@ -78,7 +82,7 @@ def command(name, Response):
 
         cls.to_request = to_request
         cls.from_response = from_response
-        return attrs.define(cls)
+        return attrs.frozen(cls)
 
     return _command
 
@@ -92,7 +96,7 @@ class Start:
 START_V1 = Start(version=1)  # type: ignore
 
 
-@attrs.define
+@attrs.frozen
 class StartedDialect:
 
     ok: bool
@@ -148,7 +152,7 @@ class SkippedTest:
     issue_url: str | None = None
 
 
-@attrs.define
+@attrs.frozen
 class CaseResult:
 
     errored = False
@@ -183,7 +187,7 @@ class CaseResult:
             yield test, failed
 
 
-@attrs.define
+@attrs.frozen
 class CaseErrored:
 
     errored = True
@@ -207,7 +211,7 @@ class CaseErrored:
         )
 
 
-@attrs.define
+@attrs.frozen
 class CaseSkipped:
 
     errored = False
@@ -222,7 +226,7 @@ class CaseSkipped:
         return reporter.skipped(self)
 
 
-@attrs.define
+@attrs.frozen
 class Empty:
     """
     An implementation didn't send a response.
