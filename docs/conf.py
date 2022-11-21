@@ -68,7 +68,6 @@ intersphinx_mapping = {
 extlinks = {
     "gh": (str(HOMEPAGE.child("%s")), None),
     "github": (str(GITHUB.child("%s")), None),
-    "glossary": ("https://json-schema.org/learn/glossary.html#%s", None),
 }
 
 # -- Options for the linkcheck builder ---------------------------------------
