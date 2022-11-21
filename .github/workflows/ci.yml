@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Set up nox
-        uses: wntrblm/nox@2022.8.7
+        uses: wntrblm/nox@2022.11.21
       - name: Run nox
         run: nox
 
@@ -56,7 +56,7 @@ jobs:
       - name: Create packages
         run: python -m build .
       - name: Set up nox
-        uses: wntrblm/nox@2022.8.7
+        uses: wntrblm/nox@2022.11.21
       - name: Create shiv
         run: mkdir shiv/ && nox -s shiv -- shiv/bowtie && chmod +x shiv/bowtie
       - name: Tar files
