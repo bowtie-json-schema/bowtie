@@ -151,6 +151,14 @@ class SkippedTest:
     message: str | None = None
     issue_url: str | None = None
 
+    @property
+    def reason(self) -> str:
+        if self.message is not None:
+            return self.message
+        if self.issue_url is not None:
+            return self.issue_url
+        return "skipped"
+
 
 @attrs.frozen
 class CaseResult:
