@@ -207,7 +207,8 @@ class _Summary:
             count.total_tests += 1
             if test.skipped:
                 count.skipped_tests += 1
-                msg = test.issue_url or test.message or "skipped"  # type: ignore
+                # type: ignore
+                msg = test.issue_url or test.message or "skipped"
                 seen[result.implementation] = msg, "skipped"
             else:
                 if failed:
