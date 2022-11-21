@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
 import importlib.metadata
 import json
@@ -97,7 +97,7 @@ class Reporter:
 @attrs.define
 class _CaseReporter:
 
-    _write: callable
+    _write: Callable
     _log: structlog.BoundLogger
 
     @classmethod
@@ -197,23 +197,22 @@ class _Summary:
         count.total_tests += len(case["tests"])
         count.errored_tests += len(case["tests"])
 
-    def see_results(self, implementation, seq, results, expected):
-        count = self.counts[implementation]
+    def see_result(self, result: _commands.CaseResult):
+        count = self.counts[result.implementation]
         count.total_cases += 1
 
-        got = self._combined[seq]["results"]
+        combined = self._combined[result.seq]["results"]
 
-        for result, valid, (_, seen) in zip(results, expected, got):
+        for (test, failed), (_, seen) in zip(result.compare(), combined):
             count.total_tests += 1
-            if result.get("skipped"):
+            if test.skipped:
                 count.skipped_tests += 1
-                msg = result.get("issue_url") or result.get("message")
-                seen[implementation] = msg or "skipped", "skipped"
+                msg = test.issue_url or test.message or "skipped"  # type: ignore
+                seen[result.implementation] = msg, "skipped"
             else:
-                failed = valid is not None and result["valid"] != valid
                 if failed:
                     count.failed_tests += 1
-                seen[implementation] = result, failed
+                seen[result.implementation] = test, failed
 
     def see_skip(self, skipped: _commands.CaseSkipped):
         count = self.counts[skipped.implementation]
@@ -286,5 +285,5 @@ def from_input(input):
         elif "did_fail_fast" in each:
             summary.see_maybe_fail_fast(**each)
         else:
-            summary.see_results(**each)
+            summary.see_result(_commands.CaseResult.from_dict(each))
     return dict(summary=summary, run_info=run_info)

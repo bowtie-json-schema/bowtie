@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from importlib import resources
@@ -315,7 +316,7 @@ class _TestSuiteCases(click.ParamType):
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
         else:
-            from github3 import GitHub
+            from github3 import GitHub  # type: ignore
 
             gh = GitHub()
             repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")
@@ -394,7 +395,7 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
-    make_validator: callable,
+    make_validator: Callable,
     reporter: _report.Reporter = _report.Reporter(),
 ):
     acknowledged, runners, exit_code = [], [], 0

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 import asyncio
 import json
@@ -89,7 +90,7 @@ class DialectRunner:
 
     _name: str
     _dialect: str
-    _send: callable
+    _send: Callable
     _start_response: _commands.StartedDialect
 
     @classmethod
@@ -134,8 +135,8 @@ class Implementation:
 
     name: str
 
-    _make_validator: callable
-    _maybe_validate: callable
+    _make_validator: Callable
+    _maybe_validate: Callable
     _reporter: object
 
     _docker: aiodocker.Docker = field(repr=False)

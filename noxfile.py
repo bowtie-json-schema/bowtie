@@ -78,6 +78,12 @@ def style(session):
     session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS), __file__)
 
 
+@session()
+def typing(session):
+    session.install("mypy", "types-jsonschema", str(ROOT))
+    session.run("python", "-m", "mypy", str(BOWTIE))
+
+
 @session(tags=["docs"])
 @nox.parametrize(
     "builder",

@@ -52,7 +52,7 @@ class Started:
 
     implementation: dict
     ready: bool = False
-    version: int = None
+    version: int = None  # type: ignore
 
     def __attrs_post_init__(self):
         if not self.ready:
@@ -89,7 +89,7 @@ class Start:
     version: int
 
 
-START_V1 = Start(version=1)
+START_V1 = Start(version=1)  # type: ignore
 
 
 @attrs.define
@@ -98,7 +98,7 @@ class StartedDialect:
     ok: bool
 
 
-StartedDialect.OK = StartedDialect(ok=True)
+StartedDialect.OK = StartedDialect(ok=True)  # type: ignore
 
 
 @command(name="dialect", Response=StartedDialect)
@@ -118,11 +118,34 @@ def _case_result(errored=False, skipped=False, **response):
             implementation=implementation,
             **response,
         )
-    return lambda implementation, expected: CaseResult(
+    return lambda implementation, expected: CaseResult.from_dict(
+        response,
         implementation=implementation,
         expected=expected,
-        **response,
     )
+
+
+@attrs.frozen
+class TestResult:
+
+    skipped = False
+
+    valid: bool
+
+    @classmethod
+    def from_dict(cls, data):
+        if data.pop("skipped", False):
+            return SkippedTest(**data)
+        return cls(valid=data["valid"])
+
+
+@attrs.frozen
+class SkippedTest:
+
+    skipped: bool = True
+
+    message: str | None = None
+    issue_url: str | None = None
 
 
 @attrs.define
@@ -132,18 +155,32 @@ class CaseResult:
 
     implementation: str
     seq: int
-    results: list[dict[str, bool]]
+    results: list[TestResult | SkippedTest]
     expected: list[bool | None]
+
+    @classmethod
+    def from_dict(cls, data, **kwargs):
+        return cls(
+            results=[TestResult.from_dict(t) for t in data.pop("results")],
+            **data,
+            **kwargs,
+        )
 
     @property
     def failed(self):
-        return any(
-            got.get("valid") != expected and expected is not None
-            for got, expected in zip(self.results, self.expected)
-        )
+        return any(failed for _, failed in self.compare())
 
     def report(self, reporter):
         reporter.got_results(self)
+
+    def compare(self):
+        for test, expected in zip(self.results, self.expected):
+            failed = (
+                not test.skipped
+                and expected is not None
+                and expected != test.valid
+            )
+            yield test, failed
 
 
 @attrs.define
