@@ -173,8 +173,8 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            _, data, *_ = error.args
-            if data.get("cause") == "image not known":  # :/
+            status, data, *_ = error.args
+            if data.get("cause") == "image not known" or status == 500:  # :/
                 raise NoSuchImage(name=image_name)
             raise StartupFailed(name=image_name)
 
