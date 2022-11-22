@@ -21,7 +21,7 @@ import structlog
 
 from bowtie import _report
 from bowtie._commands import Test, TestCase
-from bowtie._core import GotStderr, Implementation, StartupFailed
+from bowtie._core import GotStderr, Implementation, NoSuchImage, StartupFailed
 from bowtie.exceptions import _ProtocolError
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
@@ -256,7 +256,15 @@ async def _smoke(image_names: list[str]):
         reporter=None,  # FIXME: we don't want to print anything here
     ) as starting:
         for each in asyncio.as_completed(starting):
-            implementation = await each
+            try:
+                implementation = await each
+            except NoSuchImage as error:
+                exit_code |= os.EX_CONFIG
+                click.echo(
+                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                )
+                continue
+
             click.echo(f"Testing {implementation.name!r}...")
 
             if implementation.metadata is None:
@@ -408,9 +416,9 @@ async def _run(
         for each in asyncio.as_completed(starting):
             try:
                 implementation = await each
-            except StartupFailed as error:
+            except NoSuchImage as error:
                 exit_code = os.EX_CONFIG
-                reporter.startup_failed(name=error.name)
+                reporter.no_such_image(name=error.name)
                 continue
 
             try:

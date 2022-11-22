@@ -370,3 +370,61 @@ async def test_validate(envsonschema, tmp_path):
     )
     _, _ = await proc.communicate()
     assert proc.returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_no_such_image():
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        "no-such-image",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    assert stdout == b""
+    assert (
+        b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        in stderr
+    )
+    assert proc.returncode != 0
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "smoke",
+        "-i",
+        "no-such-image",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    assert (
+        b"'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
+        in stdout
+    )
+    assert proc.returncode != 0
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "validate",
+        "-i",
+        "no-such-image",
+        "-",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate(b"{}")
+    assert stdout == b""
+    assert (
+        b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        in stderr
+    )
+    assert proc.returncode != 0

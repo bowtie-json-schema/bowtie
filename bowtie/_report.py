@@ -60,6 +60,9 @@ class Reporter:
             self._log.msg("Finished", count=count)
         self._write(did_fail_fast=did_fail_fast)
 
+    def no_such_image(self, name):
+        self._log.error("Not a known Bowtie implementation.", logger_name=name)
+
     def startup_failed(self, name):
         self._log.exception("Startup failed!", logger_name=name)
 

@@ -24,6 +24,12 @@ class StartupFailed(Exception):
     name: str
 
 
+@frozen
+class NoSuchImage(Exception):
+
+    name: str
+
+
 class StreamClosed(Exception):
     pass
 
@@ -164,7 +170,12 @@ class Implementation:
 
         try:
             await self._start_container()
-        except (aiodocker.exceptions.DockerError, StreamClosed):
+        except StreamClosed:
+            raise StartupFailed(name=image_name)
+        except aiodocker.exceptions.DockerError as error:
+            _, data, *_ = error.args
+            if data.get("cause") == "image not known":  # :/
+                raise NoSuchImage(name=image_name)
             raise StartupFailed(name=image_name)
 
         yield self
