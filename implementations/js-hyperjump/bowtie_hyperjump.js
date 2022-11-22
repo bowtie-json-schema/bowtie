@@ -86,22 +86,26 @@ const cmds = {
       } catch {}
     }
 
-    const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
-    JsonSchema.add(testCase.schema, fakeURI, dialect);
-    const schema = await JsonSchema.get(fakeURI);
-
-    const validate = await JsonSchema.validate(schema);
-    const promises = testCase.tests.map((test) => {
-      if (testCase.description in skippedTests) {
+    let results;
+    if (testCase.description in skippedTests) {
+      results = testCase.tests.map((test) => {
         return {
           skipped: true,
           message: skippedTests[testCase.description],
         };
-      } else {
-        return { valid: validate(test.instance).valid };
-      }
-    });
-    const results = await Promise.all(promises);
+      });
+    } else {
+      const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
+      JsonSchema.add(testCase.schema, fakeURI, dialect);
+      const schema = await JsonSchema.get(fakeURI);
+
+      const validate = await JsonSchema.validate(schema);
+      const promises = testCase.tests.map((test) => ({
+        valid: validate(test.instance).valid,
+      }));
+      results = await Promise.all(promises);
+    }
+
     return { seq: args.seq, results: results };
   },
 
