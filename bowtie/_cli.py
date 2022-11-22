@@ -416,6 +416,10 @@ async def _run(
         for each in asyncio.as_completed(starting):
             try:
                 implementation = await each
+            except StartupFailed as error:
+                exit_code = os.EX_CONFIG
+                reporter.startup_failed(name=error.name)
+                continue
             except NoSuchImage as error:
                 exit_code = os.EX_CONFIG
                 reporter.no_such_image(name=error.name)
