@@ -146,7 +146,7 @@ sphinxcontrib-spelling==7.7.0
     # via -r docs/requirements.in
 sphinxext-opengraph==0.7.2
     # via -r docs/requirements.in
-structlog==22.1.0
+structlog==22.2.0
     # via bowtie-json-schema
 typing-extensions==4.4.0
     # via aiodocker
