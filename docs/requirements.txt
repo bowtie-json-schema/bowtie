@@ -144,7 +144,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sphinxcontrib-spelling==7.7.0
     # via -r docs/requirements.in
-sphinxext-opengraph==0.7.2
+sphinxext-opengraph==0.7.3
     # via -r docs/requirements.in
 structlog==22.2.0
     # via bowtie-json-schema

@@ -113,8 +113,6 @@ def docs(session, builder):
         str(DOCS),
         str(tmpdir / builder),
         *argv,
-        # FIXME: https://github.com/wpilibsuite/sphinxext-opengraph/issues/87
-        env={} if builder != "dirhtml" else {"READTHEDOCS": "true"},
     )
 
 
