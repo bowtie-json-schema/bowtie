@@ -80,13 +80,6 @@ const cmds = {
 
     const testCase = args.case;
 
-    if (testCase.description in skipedTests) {
-      return {
-        skipped: true,
-        message: skipedTests[testCase.description],
-      };
-    }
-
     for (const id in testCase.registry) {
       try {
         JsonSchema.add(testCase.registry[id], id, dialect);
@@ -98,9 +91,16 @@ const cmds = {
     const schema = await JsonSchema.get(fakeURI);
 
     const validate = await JsonSchema.validate(schema);
-    const promises = testCase.tests.map((test) => ({
-      valid: validate(test.instance).valid,
-    }));
+    const promises = testCase.tests.map((test) => {
+      if (testCase.description in skippedTests) {
+        return {
+          skipped: true,
+          message: skippedTests[testCase.description],
+        };
+      } else {
+        return { valid: validate(test.instance).valid };
+      }
+    });
     const results = await Promise.all(promises);
     return { seq: args.seq, results: results };
   },
