@@ -22,26 +22,38 @@ var started = false;
 var dialect = null;
 
 // Skip
-const boundaryCrossingMessage =
-  "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
 const keywordsNotInSchemaMessage =
   "Ignoring schema meta-data keywords in places that are not schemas (such as a $id in a const) is not supported. Because this implementation is dialect agnostic, there's no way to know whether a location is a schema or not. Especially because there's no reason for a schema to use keywords in places that aren't schemas, I'm not concerned about making it work.";
-const skippedTests = {
+const keywordsNotInSchemaSkippedTests = [
+  "id inside an enum is not a real identifier",
+  "$id inside an enum is not a real identifier",
+  "$id inside an unknown keyword is not a real identifier",
+  "naive replacement of $ref with its destination is not correct",
+  "$ref prevents a sibling id from changing the base uri",
+  "$ref prevents a sibling $id from changing the base uri",
+  "$anchor inside an enum is not a real identifier",
+  "$anchor inside an enum is not a real identifier",
+  "$id inside an unknown keyword is not a real identifier",
+].reduce((acc, description) => {
+  acc[description] = keywordsNotInSchemaMessage;
+  return acc;
+});
+
+const boundaryCrossingMessage =
+  "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
+const boundaryCrossingSkippedTests = {
   "base URI change - change folder in subschema": boundaryCrossingMessage,
-  "id inside an enum is not a real identifier": keywordsNotInSchemaMessage,
-  "$id inside an enum is not a real identifier": keywordsNotInSchemaMessage,
-  "$id inside an unknown keyword is not a real identifier":
-    keywordsNotInSchemaMessage,
-  "naive replacement of $ref with its destination is not correct":
-    keywordsNotInSchemaMessage,
-  "$ref prevents a sibling id from changing the base uri":
-    keywordsNotInSchemaMessage,
-  "$ref prevents a sibling $id from changing the base uri":
-    keywordsNotInSchemaMessage,
-  "$anchor inside an enum is not a real identifier": keywordsNotInSchemaMessage,
-  "$anchor inside an enum is not a real identifier": keywordsNotInSchemaMessage,
-  "$id inside an unknown keyword is not a real identifier":
-    keywordsNotInSchemaMessage,
+};
+
+const modernSkippedTests = { ...keywordsNotInSchemaSkippedTests };
+const legacySkippedTests = { ...boundaryCrossingSkippedTests, ...keywordsNotInSchemaSkippedTests };
+
+const dialectSkippedTests = {
+  "https://json-schema.org/draft/2020-12/schema": modernSkippedTests,
+  "https://json-schema.org/draft/2019-09/schema": modernSkippedTests,
+  "http://json-schema.org/draft-07/schema#": legacySkippedTests,
+  "http://json-schema.org/draft-06/schema#": legacySkippedTests,
+  "http://json-schema.org/draft-04/schema#": legacySkippedTests,
 };
 
 const cmds = {
@@ -87,11 +99,11 @@ const cmds = {
     }
 
     let results;
-    if (testCase.description in skippedTests) {
+    if (testCase.description in dialectSkippedTests[dialect]) {
       results = testCase.tests.map((test) => {
         return {
           skipped: true,
-          message: skippedTests[testCase.description],
+          message: dialectSkippedTests[dialect][testCase.description],
         };
       });
     } else {
