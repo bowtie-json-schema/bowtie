@@ -110,15 +110,26 @@ const cmds = {
         };
       });
     } else {
-      const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
-      JsonSchema.add(testCase.schema, fakeURI, dialect);
-      const schema = await JsonSchema.get(fakeURI);
+      try {
+        const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
+        JsonSchema.add(testCase.schema, fakeURI, dialect);
+        const schema = await JsonSchema.get(fakeURI);
 
-      const validate = await JsonSchema.validate(schema);
-      const promises = testCase.tests.map((test) => ({
-        valid: validate(test.instance).valid,
-      }));
-      results = await Promise.all(promises);
+        const validate = await JsonSchema.validate(schema);
+        results = testCase.tests.map((test) => {
+          try {
+            const result = validate(test.instance);
+            return { valid: result.valid };
+          } catch (error) {
+            return { errored: true, context: error.message };
+          }
+        });
+      } catch (error) {
+        results = testCase.tests.map((test) => ({
+          errored: true,
+          context: error.message,
+        }));
+      }
     }
 
     return { seq: args.seq, results: results };
