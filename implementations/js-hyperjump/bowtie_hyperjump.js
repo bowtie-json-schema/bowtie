@@ -37,7 +37,7 @@ const keywordsNotInSchemaSkippedTests = [
 ].reduce((acc, description) => {
   acc[description] = keywordsNotInSchemaMessage;
   return acc;
-});
+}, {});
 
 const boundaryCrossingMessage =
   "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
