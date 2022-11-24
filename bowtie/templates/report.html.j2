@@ -110,11 +110,11 @@
                     <small class="font-monospace text-muted">{{ implementation.get("version", "") }}</small>
                   </td>
 
-                  <td>{{ counts.errored_cases }}</td>
+                  <td class="text-center">{{ counts.errored_cases }}</td>
 
-                  <td>{{ counts.failed_tests }}</td>
-                  <td>{{ counts.skipped_tests }}</td>
-                  <td>{{ counts.errored_tests }}</td>
+                  <td class="text-center">{{ counts.failed_tests }}</td>
+                  <td class="text-center">{{ counts.skipped_tests }}</td>
+                  <td class="text-center">{{ counts.errored_tests }}</td>
 
                   <td>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-details">
@@ -129,11 +129,11 @@
               <tr>
                 <th scope="row" colspan=2>total</th>
 
-                <td>{{ summary.errored_cases }}</td>
+                <td class="text-center">{{ summary.errored_cases }}</td>
 
-                <td>{{ summary.failed_tests }}</td>
-                <td>{{ summary.skipped_tests }}</td>
-                <td>{{ summary.errored_tests }}</td>
+                <td class="text-center">{{ summary.failed_tests }}</td>
+                <td class="text-center">{{ summary.skipped_tests }}</td>
+                <td class="text-center">{{ summary.errored_tests }}</td>
                 <td></td>
               </tr>
             </tfoot>
