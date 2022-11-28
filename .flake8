@@ -2,8 +2,12 @@
 ban-relative-imports = true
 inline-quotes = "
 ignore =
-    B008,  # Barring function calls in default args. Ha, no.
-    B306,  # See https://github.com/PyCQA/flake8-bugbear/issues/131
-    W503,  # (flake8 default) old PEP8 boolean operator line breaks
-    E203,  # https://black.readthedocs.io/en/latest/contributing/issue_triage.html#black-formatted-code-is-violating-flake8-s-e203
-           # Not getting in the middle of that one.
+    # Barring function calls in default args. Ha, no.
+    B008,
+    # See https://github.com/PyCQA/flake8-bugbear/issues/131
+    B306,
+    # (flake8 default) old PEP8 boolean operator line breaks
+    W503,
+    # See https://black.readthedocs.io/en/latest/contributing/issue_triage.html#black-formatted-code-is-violating-flake8-s-e203
+    # Not getting in the middle of that one.
+    E203,
