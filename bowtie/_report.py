@@ -113,7 +113,7 @@ class _CaseReporter:
         self._write(**attrs.asdict(results))
 
     def skipped(self, skipped):
-        self._write(skipped=True, **attrs.asdict(skipped))
+        self._write(**attrs.asdict(skipped))
 
     def no_response(self, implementation):
         self._log.error("No response", logger_name=implementation)
@@ -211,6 +211,9 @@ class _Summary:
             if test.skipped:
                 count.skipped_tests += 1
                 seen[result.implementation] = test.reason, "skipped"
+            elif test.errored:
+                count.errored_tests += 1
+                seen[result.implementation] = test.reason, "errored"
             else:
                 if failed:
                     count.failed_tests += 1

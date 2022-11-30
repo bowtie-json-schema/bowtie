@@ -183,7 +183,11 @@
                         {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, True)) %}
                         {% if incorrect == "skipped" %}
                           <td class="text-center text-bg-warning">
-                            {{ to_icon(False) }}
+                            {{ to_icon(None) }}
+                          </td>
+                        {% elif incorrect == "errored" %}
+                          <td class="text-center text-bg-danger">
+                            {{ to_icon(None) }}
                           </td>
                         {% else %}
                           <td class="text-center {% if incorrect %}text-bg-danger{% elif implementation_result.valid != True and implementation_result.valid != False %}text-bg-warning{% endif %}">
@@ -222,6 +226,18 @@
                         {% if incorrect == "skipped" %}
                           <div class="col">
                             <div class="card border-warning mb-3">
+                              <div class="card-body">
+                                <h5 class="card-title">{{ description }}</h5>
+                                <p class="card-text">{{ test.description }}</p>
+                              </div>
+                              <div class="card-footer text-muted text-center">
+                                {{ implementation_result }}
+                              </div>
+                            </div>
+                          </div>
+                        {% elif incorrect == "errored" %}
+                          <div class="col">
+                            <div class="card border-danger mb-3">
                               <div class="card-body">
                                 <h5 class="card-title">{{ description }}</h5>
                                 <p class="card-text">{{ test.description }}</p>

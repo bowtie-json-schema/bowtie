@@ -134,6 +134,7 @@ def _case_result(errored=False, skipped=False, **response):
 @attrs.frozen
 class TestResult:
 
+    errored = False
     skipped = False
 
     valid: bool
@@ -142,16 +143,19 @@ class TestResult:
     def from_dict(cls, data):
         if data.pop("skipped", False):
             return SkippedTest(**data)
+        elif data.pop("errored", False):
+            return ErroredTest(**data)
         return cls(valid=data["valid"])
 
 
 @attrs.frozen
 class SkippedTest:
 
-    skipped: bool = True
+    message: str | None = attrs.field(default=None)
+    issue_url: str | None = attrs.field(default=None)
 
-    message: str | None = None
-    issue_url: str | None = None
+    errored = False
+    skipped = attrs.field(init=False, default=True)
 
     @property
     def reason(self) -> str:
@@ -160,6 +164,22 @@ class SkippedTest:
         if self.issue_url is not None:
             return self.issue_url
         return "skipped"
+
+
+@attrs.frozen
+class ErroredTest:
+
+    context: dict[str, Any] = attrs.field(factory=dict)
+
+    errored = attrs.field(init=False, default=True)
+    skipped = False
+
+    @property
+    def reason(self) -> str:
+        message = self.context.get("message")
+        if message:
+            return message
+        return "Encountered an error."
 
 
 @attrs.frozen
@@ -191,6 +211,7 @@ class CaseResult:
         for test, expected in zip(self.results, self.expected):
             failed = (
                 not test.skipped
+                and not test.errored
                 and expected is not None
                 and expected != test.valid
             )
