@@ -89,7 +89,7 @@ const cmds = {
       return {
         errored: true,
         seq: args.seq,
-        context: { error: e.toString() },
+        context: { message: e.toString() },
       };
     }
   },

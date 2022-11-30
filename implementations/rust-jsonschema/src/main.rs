@@ -113,8 +113,8 @@ fn main() -> Result<()> {
                         "errored": true,
                         "seq": &request["seq"],
                         "context": {
+                            "message": format!("{:?}", error),
                             "traceback": format!("{:?}", Backtrace::new()),
-                            "error": format!("{:?}", error),
                         },
                     }),
                 };

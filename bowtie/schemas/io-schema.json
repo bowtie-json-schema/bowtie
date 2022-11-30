@@ -204,7 +204,23 @@
                   "properties": {
                     "errored": { "const": true },
                     "context": {
-                      "description": "Additional implementation-specific or language-specific context available when the error was caught."
+                      "description": "Additional implementation-specific or language-specific context available when the error was caught.",
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "description": "A (short) description of the error.",
+                          "type": "string"
+                        },
+                        "traceback": {
+                          "description": "A language-specific traceback (backtrace) containing stack frames or fuller debugging information on where the error occurred.",
+                          "type": "string"
+                        },
+                        "stderr": {
+                          "description": "The raw (captured) contents of standard error from within the harness. Prefer using 'traceback' if the contents are a traceback.",
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
                     }
                   }
                 }

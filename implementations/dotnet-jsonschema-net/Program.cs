@@ -127,8 +127,8 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                     ["errored"] = true,
                     ["context"] =
                         new JsonObject {
-                            ["Exception"] = e.ToString(),
-                            ["StackTrace"] = Environment.StackTrace,
+                            ["message"] = e.ToString(),
+                            ["traceback"] = Environment.StackTrace,
                         },
                 };
                 Console.WriteLine(errorResult.ToJsonString());

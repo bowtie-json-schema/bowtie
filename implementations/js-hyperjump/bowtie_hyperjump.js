@@ -103,7 +103,7 @@ const cmds = {
 
     let results;
     if (testCase.description in dialectSkippedTests[dialect]) {
-      results = testCase.tests.map((test) => {
+      results = testCase.tests.map((_) => {
         return {
           skipped: true,
           message: dialectSkippedTests[dialect][testCase.description],
@@ -121,13 +121,13 @@ const cmds = {
             const result = validate(test.instance);
             return { valid: result.valid };
           } catch (error) {
-            return { errored: true, context: error.message };
+            return { errored: true, context: { message: error.message } };
           }
         });
       } catch (error) {
-        results = testCase.tests.map((test) => ({
+        results = testCase.tests.map((_) => ({
           errored: true,
-          context: error.message,
+          context: { message: error.message },
         }));
       }
     }
