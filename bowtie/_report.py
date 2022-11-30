@@ -125,7 +125,7 @@ class _CaseReporter:
         self.got_results(results)
 
 
-@attrs.define
+@attrs.mutable
 class Count:
 
     total_cases: int = 0
@@ -137,12 +137,13 @@ class Count:
     skipped_tests: int = 0
 
 
-@attrs.define(slots=False)
+@attrs.mutable
 class _Summary:
 
     implementations: Iterable[str]
     _combined: dict = attrs.field(factory=dict)
     did_fail_fast: bool = False
+    counts: dict[str, Count] = attrs.field(init=False)
 
     def __attrs_post_init__(self):
         self.implementations = sorted(

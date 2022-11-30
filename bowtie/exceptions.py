@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING
 
-from attrs import define
+from attrs import frozen
 
 if TYPE_CHECKING:
     from bowtie._core import Implementation
 
 
-@define
+@frozen
 class StartupFailure(Exception):
     """
     An implementation failed to start properly.
@@ -16,7 +16,7 @@ class StartupFailure(Exception):
     stderr: bytes
 
 
-@define
+@frozen
 class ImplementationNotReady(Exception):
     """
     An implementation said it was not ready.
@@ -25,7 +25,7 @@ class ImplementationNotReady(Exception):
     implementation: "Implementation"
 
 
-@define
+@frozen
 class VersionMismatch(Exception):
     """
     The wrong protocol version was returned from an implementation.
@@ -36,7 +36,7 @@ class VersionMismatch(Exception):
     got: int
 
 
-@define
+@frozen
 class _ProtocolError(Exception):
     """
     An invalid request or response was sent.
