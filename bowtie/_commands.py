@@ -252,6 +252,7 @@ class CaseSkipped:
 
     message: str | None = None
     issue_url: str | None = None
+    skipped: bool = attrs.field(init=False, default=True)
 
     def report(self, reporter):
         return reporter.skipped(self)
