@@ -218,6 +218,7 @@ def run(context, input, filter, **kwargs):
 @IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
+@VALIDATE
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(context, schema, instances, **kwargs):
@@ -232,8 +233,7 @@ def validate(context, schema, instances, **kwargs):
             for i, instance in enumerate(instances, 1)
         ],
     )
-    kwargs.update(fail_fast=False, make_validator=do_not_validate)
-    exit_code = asyncio.run(_run(**kwargs, cases=[case]))
+    exit_code = asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
     context.exit(exit_code)
 
 
