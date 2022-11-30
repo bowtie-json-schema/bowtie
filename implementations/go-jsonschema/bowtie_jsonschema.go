@@ -103,12 +103,13 @@ func main() {
 
 			var fakeURI = "bowtie.sent.schema.json"
 			if err := compiler.AddResource(fakeURI, jsonReader(testCase["schema"])); err != nil {
-				panic("Bad schema!")
+				printError(request["seq"].(json.Number), err)
+				break
 			}
 			schema, err := compiler.Compile(fakeURI)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%#v\n", err)
-				os.Exit(1)
+				printError(request["seq"].(json.Number), err)
+				break
 			}
 
 			var results []map[string]interface{}
@@ -169,4 +170,15 @@ func printJSON(v interface{}) {
 	if err := encoder.Encode(v); err != nil {
 		panic("Failed sending a response!")
 	}
+}
+
+func printError(seq json.Number, err error) {
+	data := map[string]interface{}{
+		"seq":     seq,
+		"errored": true,
+		"context": map[string]interface{}{
+			"message": err.Error(),
+		},
+	}
+	printJSON(data)
 }
