@@ -22,11 +22,11 @@ repos:
     hooks:
       - id: yesqa
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.0
+    rev: v3.3.1
     hooks:
       - id: pyupgrade
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 22.12.0
     hooks:
       - name: black (python implementations & bowtie internals)
         id: black
@@ -59,7 +59,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.15.2
+    rev: v0.15.3
     hooks:
       - name: stylua (lua implementations)
         id: stylua
