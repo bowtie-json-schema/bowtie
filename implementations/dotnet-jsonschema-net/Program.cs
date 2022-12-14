@@ -11,13 +11,13 @@ using Json.Schema;
 ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new FileCommandSource(args[0]);
 
 bool started = false;
-var options = new ValidationOptions();
+var options = new EvaluationOptions();
 
-var drafts = new Dictionary<string, Draft> {
-    { "https://json-schema.org/draft/2020-12/schema", Draft.Draft202012 },
-    { "https://json-schema.org/draft/2019-09/schema", Draft.Draft201909 },
-    { "http://json-schema.org/draft-07/schema#", Draft.Draft7 },
-    { "http://json-schema.org/draft-06/schema#", Draft.Draft6 },
+var drafts = new Dictionary<string, SpecVersion> {
+    { "https://json-schema.org/draft/2020-12/schema", SpecVersion.Draft202012 },
+    { "https://json-schema.org/draft/2019-09/schema", SpecVersion.Draft201909 },
+    { "http://json-schema.org/draft-07/schema#", SpecVersion.Draft7 },
+    { "http://json-schema.org/draft-06/schema#", SpecVersion.Draft6 },
 };
 
 var unsupportedTests =
@@ -67,7 +67,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             {
                 throw new NotStarted();
             }
-            options = new ValidationOptions { ValidateAs = drafts[root["dialect"].GetValue<string>()],
+            options = new EvaluationOptions { EvaluateAs = drafts[root["dialect"].GetValue<string>()],
                                               // for local debugging, change this to Verbose
                                               OutputFormat = OutputFormat.Flag };
 
