@@ -23,6 +23,29 @@ Contents
     implementers
 
 
+Installation
+------------
+
+Bowtie is written in Python, and uses a container runtime to execute JSON Schema implementations, so you'll need both Python and a suitable container runtime installed.
+
+If you have no previous container runtime installed (e.g. Docker), follow the `installation instructions for podman <https://podman.io/getting-started/installation>`_ specific to your operating system.
+Ensure you've started a Podman VM if you are on macOS.
+
+Then follow the `pipx installation process <https://pypa.github.io/pipx/installation/>`_ to install ``pipx``, and finally use it to install Bowtie via:
+
+.. code:: sh
+
+    pipx install bowtie-json-schema
+
+which should give you a working Bowtie installation, which you can check via:
+
+.. code:: sh
+
+    bowtie --help
+
+Further usage details of the command-line interface can be found `here <cli>`.
+
+
 Execution
 ---------
 

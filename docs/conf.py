@@ -59,6 +59,7 @@ autosectionlabel_prefix_document = True
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
+    "podman": ("https://docs.podman.io/en/latest", None),
     "python": ("https://docs.python.org/", None),
 }
 
