@@ -60,7 +60,7 @@ If expected results are provided, it will compare the results produced against t
 Uses
 ----
 
-A key use of Bowtie is in executing as input the `official test suite <https://github.com/json-schema-org/JSON-Schema-Test-Suite>`_ and comparing the results produced by implementations to the expected ones from the suite.
+A key use of Bowtie is in executing as input the `official test suite`_ and comparing the results produced by implementations to the expected ones from the suite.
 
 Bowtie however isn't limited to just the test cases in the test suite.
 It can be used to compare the validation results of any JSON Schema input across its supported implementations.

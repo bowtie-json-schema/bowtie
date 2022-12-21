@@ -68,3 +68,9 @@ Source = "https://github.com/bowtie-json-schema/bowtie"
 from_first = true
 include_trailing_comma = true
 multi_line_output = 3
+
+[tool.doc8]
+ignore = [
+    "D000",  # see PyCQA/doc8#125
+    "D001",  # one sentence per line, so max length doesn't make sense
+]

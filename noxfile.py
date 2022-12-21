@@ -4,6 +4,7 @@ import shlex
 import nox
 
 ROOT = Path(__file__).parent
+PYPROJECT = ROOT / "pyproject.toml"
 DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
 IMPLEMENTATIONS = ROOT / "implementations"
@@ -123,7 +124,7 @@ def docs_style(session):
         "pygments",
         "pygments-github-lexers",
     )
-    session.run("python", "-m", "doc8", "--max-line-length", "1000", str(DOCS))
+    session.run("python", "-m", "doc8", "--config", str(PYPROJECT), str(DOCS))
 
 
 @session(default=False, tags=["perf"], name="bench(smoke)")
