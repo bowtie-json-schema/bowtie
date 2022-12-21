@@ -43,6 +43,10 @@ html_theme = "furo"
 html_logo = str(STATIC / "dreamed.png")
 html_static_path = [str(STATIC)]
 
+rst_prolog = """
+.. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
+"""  # noqa: E501
+
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for autodoc extension -------------------------------------------
@@ -69,6 +73,7 @@ extlinks = {
     "gh": (str(HOMEPAGE.child("%s")), None),
     "github": (str(GITHUB.child("%s")), None),
 }
+extlinks_detect_hardcoded_links = True
 
 # -- Options for the linkcheck builder ---------------------------------------
 
