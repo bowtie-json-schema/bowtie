@@ -59,6 +59,13 @@ succeed_immediately = strimplementation(
     name="succeed",
     contents="FROM alpine:3.16\nENTRYPOINT true\n",
 )
+fail_on_start = strimplementation(
+    name="fail_on_start",
+    contents=r"""
+    FROM alpine:3.16
+    CMD read && printf 'BOOM!\n' >&2
+    """,
+)
 fail_on_run = strimplementation(
     name="fail_on_run",
     contents=r"""
@@ -231,6 +238,25 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
     assert cases == []
     assert b"startup failed" in stderr.lower(), stderr
     assert returncode != 0, stderr
+
+
+@pytest.mark.asyncio
+async def test_handles_broken_start_implementations(
+    fail_on_start,
+    envsonschema,
+):
+    async with bowtie("-i", fail_on_start, "-i", envsonschema) as send:
+        returncode, results, _, _, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert b"startup failed" in stderr.lower(), stderr
+    assert b"BOOM!" in stderr, stderr
+    assert returncode != 0, stderr
+    assert results == [[{"valid": False}], [{"valid": False}]]
 
 
 @pytest.mark.asyncio

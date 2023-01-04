@@ -22,6 +22,7 @@ class GotStderr(Exception):
 class StartupFailed(Exception):
 
     name: str
+    stderr: str = ""
 
 
 @frozen
@@ -170,6 +171,8 @@ class Implementation:
 
         try:
             await self._start_container()
+        except GotStderr as error:
+            raise StartupFailed(name=image_name, stderr=error.stderr.decode())
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:

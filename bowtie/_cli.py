@@ -418,7 +418,7 @@ async def _run(
                 implementation = await each
             except StartupFailed as error:
                 exit_code = os.EX_CONFIG
-                reporter.startup_failed(name=error.name)
+                reporter.startup_failed(name=error.name, stderr=error.stderr)
                 continue
             except NoSuchImage as error:
                 exit_code = os.EX_CONFIG
@@ -446,7 +446,7 @@ async def _run(
                     )
             except StartupFailed as error:
                 exit_code = os.EX_CONFIG
-                reporter.startup_failed(name=error.name)
+                reporter.startup_failed(name=error.name, stderr=error.stderr)
 
         if not runners:
             exit_code = os.EX_CONFIG
