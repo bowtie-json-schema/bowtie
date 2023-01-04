@@ -1,4 +1,3 @@
-import * as path from "path";
 import readline from "readline/promises";
 import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-2019-09";
