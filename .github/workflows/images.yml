@@ -60,5 +60,5 @@ jobs:
       - name: Build Bowtie Image
         run: |
           podman build -f implementations/${{ matrix.image }}/Dockerfile -t "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
-          bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
           podman push "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
