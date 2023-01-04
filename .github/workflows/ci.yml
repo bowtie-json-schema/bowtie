@@ -9,6 +9,10 @@ on:
     # Daily at 5:12
     - cron: "12 5 * * *"
 
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_PYTHON_VERSION_WARNING: "1"
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
@@ -16,30 +20,50 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
       - uses: pre-commit/action@v3.0.0
 
-  ci:
+  list:
     runs-on: ubuntu-latest
+    outputs:
+      noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up nox
+        uses: wntrblm/nox@2022.11.21
+      - id: noxenvs-matrix
+        run: |
+          echo >>$GITHUB_OUTPUT noxenvs=$(
+            nox --list-sessions |
+            grep '^* ' |
+            cut -d ' ' -f 2- |
+            jq --raw-input --slurp 'split("\n") | map(select(. != ""))'
+          )
+
+  ci:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
 
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        run: >
-          sudo apt-get update &&
-          sudo apt-get install -y libenchant-2-dev
-        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
+        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
       - name: Set up nox
         uses: wntrblm/nox@2022.11.21
       - name: Run nox
-        run: nox
+        run: nox -s "${{ matrix.noxenv }}"
 
   packaging:
     needs: ci
@@ -50,7 +74,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
       - name: Install dependencies
         run: python -m pip install build
       - name: Create packages
@@ -69,7 +93,6 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
           password: ${{ secrets.pypi_password }}
       - name: Create a Release
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
