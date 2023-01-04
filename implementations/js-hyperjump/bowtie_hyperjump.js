@@ -1,12 +1,14 @@
-const path = require("path");
-const readline = require("readline/promises");
+import * as path from "path";
+import readline from "readline/promises";
+import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import "@hyperjump/json-schema/draft-2019-09";
+import "@hyperjump/json-schema/draft-07";
+import "@hyperjump/json-schema/draft-06";
+import "@hyperjump/json-schema/draft-04";
 
-const hyperjump_version = require(path.join(
-  path.dirname(path.dirname(require.resolve("@hyperjump/json-schema"))),
-  "package.json",
-)).version;
-
-const JsonSchema = require("@hyperjump/json-schema");
+const hyperjump_version = await import("./package.json", {
+  assert: { type: "json" },
+}).version;
 
 const stdio = readline.createInterface({
   input: process.stdin,
@@ -97,7 +99,7 @@ const cmds = {
 
     for (const id in testCase.registry) {
       try {
-        JsonSchema.add(testCase.registry[id], id, dialect);
+        addSchema(testCase.registry[id], id, dialect);
       } catch {}
     }
 
@@ -112,13 +114,11 @@ const cmds = {
     } else {
       try {
         const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
-        JsonSchema.add(testCase.schema, fakeURI, dialect);
-        const schema = await JsonSchema.get(fakeURI);
-
-        const validate = await JsonSchema.validate(schema);
+        addSchema(testCase.schema, fakeURI, dialect);
+        const _validate = await validate(fakeURI);
         results = testCase.tests.map((test) => {
           try {
-            const result = validate(test.instance);
+            const result = _validate(test.instance);
             return { valid: result.valid };
           } catch (error) {
             return { errored: true, context: { message: error.message } };
