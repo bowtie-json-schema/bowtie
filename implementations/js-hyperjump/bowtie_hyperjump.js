@@ -1,6 +1,10 @@
 import * as path from "path";
 import readline from "readline/promises";
-import { addSchema, validate } from "@hyperjump/json-schema";
+import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import "@hyperjump/json-schema/draft-2019-09";
+import "@hyperjump/json-schema/draft-07";
+import "@hyperjump/json-schema/draft-06";
+import "@hyperjump/json-schema/draft-04";
 
 const hyperjump_version = await import("./package.json", {
   assert: { type: "json" },
