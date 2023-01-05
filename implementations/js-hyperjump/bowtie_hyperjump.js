@@ -112,7 +112,7 @@ const cmds = {
       });
     } else {
       try {
-        const fakeURI = "bowtie.sent.schema." + args.seq.toString() + ".json";
+        const fakeURI = "https://example.com/bowtie.sent.schema." + args.seq.toString() + ".json";
         addSchema(testCase.schema, fakeURI, dialect);
         const _validate = await validate(fakeURI);
         results = testCase.tests.map((test) => {
