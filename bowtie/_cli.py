@@ -240,6 +240,57 @@ def validate(context, schema, instances, **kwargs):
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
+def info(context, **kwargs):
+    """
+    Retrieve a particular implementation (harness)'s metadata.
+    """
+    exit_code = asyncio.run(_info(**kwargs))
+    context.exit(exit_code)
+
+
+async def _info(image_names: list[str]):
+    exit_code = 0
+    async with _start(
+        image_names=image_names,
+        make_validator=validator_for_dialect,
+        reporter=None,  # FIXME: we don't want to print anything here
+    ) as starting:
+        for each in asyncio.as_completed(starting):
+            try:
+                implementation = await each
+            except NoSuchImage as error:
+                exit_code |= os.EX_CONFIG
+                click.echo(
+                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                )
+                continue
+
+            if implementation.metadata is None:
+                exit_code |= os.EX_CONFIG
+                click.echo("  ❗ (error): startup failed")
+                continue
+
+            click.echo(
+                "\n".join(
+                    f"{k}: {json.dumps(v, indent=2)}"
+                    for k, v in sorted(
+                        implementation.metadata.items(),
+                        key=lambda kv: (
+                            kv[0] != "name",
+                            kv[0] != "language",
+                            kv[0] != "version",
+                            kv[0] == "dialects",
+                            kv[0],
+                        ),
+                    )
+                ),
+            )
+    return exit_code
+
+
+@main.command()
+@click.pass_context
+@IMPLEMENTATION
 def smoke(context, **kwargs):
     """
     Smoke test one or more implementations for basic correctness.

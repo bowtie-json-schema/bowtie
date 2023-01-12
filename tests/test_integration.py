@@ -376,6 +376,38 @@ async def test_smoke(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_info(envsonschema):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "info",
+        "-i",
+        envsonschema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    assert proc.returncode == 0, (stdout, stderr)
+    assert stdout.decode() == dedent(
+        """\
+        name: "envsonschema"
+        language: "python"
+        issues: "https://github.com/bowtie-json-schema/bowtie/issues"
+        dialects: [
+          "https://json-schema.org/draft/2020-12/schema",
+          "https://json-schema.org/draft/2019-09/schema",
+          "http://json-schema.org/draft-07/schema#",
+          "http://json-schema.org/draft-06/schema#",
+          "http://json-schema.org/draft-04/schema#",
+          "http://json-schema.org/draft-03/schema#"
+        ]
+        """,
+    )
+    assert stderr == b""
+
+
+@pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")
