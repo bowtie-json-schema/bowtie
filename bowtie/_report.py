@@ -156,8 +156,12 @@ class _Summary:
     def total_cases(self):
         counts = {count.total_cases for count in self.counts.values()}
         if len(counts) != 1:
+            summary = "  \n".join(
+                f"  {each.rpartition('/')[2]}: {count.total_cases}"
+                for each, count in self.counts.items()
+            )
             raise _InvalidBowtieReport(
-                f"Inconsistent number of cases run: {self.counts}",
+                f"Inconsistent number of cases run:\n\n{summary}",
             )
         return counts.pop()
 
