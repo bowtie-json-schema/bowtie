@@ -18,35 +18,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  report:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - draft2020-12
+          - draft2019-09
+          - draft7
+          - draft6
+          - draft4
+          - draft3
+
     steps:
       # FIXME: we can skip checking out if we are able to list all images in
       #        the image repository
       - uses: actions/checkout@v3
 
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v2
-
-      - run: mkdir _site
-
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install Bowtie
         run: python3 -m pip install bowtie-json-schema
 
       - name: Generate the Report
         run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft2020-12 | bowtie report --out _site/index.html
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft2019-09 | bowtie report --out _site/draft2019.html
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie report --out _site/draft7.html
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft6 | bowtie report --out _site/draft6.html
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft4 | bowtie report --out _site/draft4.html
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft3 | bowtie report --out _site/draft3.html
-          cp _site/index.html _site/draft2020.html
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | bowtie report --out ${{ matrix.version }}.html
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: report
+          path: ${{ matrix.version }}.html
+
+  collect:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v2
+
+      - run: mkdir _site
+
+      - name: Download the reports
+        uses: actions/download-artifact@v3
+        with:
+          name: report
+          path: _site
+
+      - name: Finish the site structure setup
+        run: |
+          cp _site/draft2020-12.html _site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
@@ -56,7 +81,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: report
+    needs: collect
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
