@@ -60,7 +60,7 @@ class Stream:
 
     async def receive(self):
         if self._buffer:
-            return json.loads(self._buffer.popleft())
+            return self._buffer.popleft()
 
         while True:
             message = await self._read_with_timeout()
@@ -84,7 +84,7 @@ class Stream:
             if rest:
                 line, self._last = self._last + line, rest.pop()
                 self._buffer.extend(rest)
-                return json.loads(line)
+                return line
 
             message = None
             while message is None:

@@ -253,7 +253,7 @@ async def _info(image_names: list[str]):
     async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
-        reporter=None,  # FIXME: we don't want to print anything here
+        reporter=_report.Reporter(),
     ) as starting:
         for each in asyncio.as_completed(starting):
             try:
@@ -304,7 +304,7 @@ async def _smoke(image_names: list[str]):
     async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
-        reporter=None,  # FIXME: we don't want to print anything here
+        reporter=_report.Reporter(),
     ) as starting:
         for each in asyncio.as_completed(starting):
             try:
