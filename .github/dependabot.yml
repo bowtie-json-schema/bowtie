@@ -5,11 +5,6 @@ updates:
     schedule:
       interval: "weekly"
 
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -48,6 +43,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "npm"
+    directory: "implementations/ts-vscode-json-languageservice"
+    schedule:
+      interval: "daily"
+
   # lua-jsonschema installs the latest (unpinned) version
   # python-fastjsonschema installs the latest (unpinned) version
   # python-jschon installs the latest (unpinned) version
@@ -60,5 +60,81 @@ updates:
 
   - package-ecosystem: "cargo"
     directory: "implementations/rust-jsonschema"
+    schedule:
+      interval: "daily"
+
+  # Dependabot for Dockerfiles
+  # --------------------------
+
+  # See dependabot/dependabot-core#1015 or dependabot/dependabot-core#2178,
+  # this doesn't happen automatically, so hooray, manual list.
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/clojure-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/cpp-valijson"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/dotnet-jsonschema-net"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/go-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-ajv"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-hyperjump"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/lua-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/python-fastjsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/python-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/ruby-json_schemer"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/rust-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/tests/fauxmplementations/badsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/tests/fauxmplementations/envsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/tests/fauxmplementations/lintsonschema"
     schedule:
       interval: "daily"
