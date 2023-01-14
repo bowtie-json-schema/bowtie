@@ -26,6 +26,18 @@ Contents
 Installation
 ------------
 
+Via Homebrew (macOS or Linuxbrew)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bowtie is available in a `tap <https://docs.brew.sh/Taps>`_ which is located :github:`here <bowtie-json-schema/homebrew-tap>`, and can be installed via:
+
+.. code:: sh
+
+    brew install bowtie-json-schema/tap/bowtie
+
+Manual Installation via PyPI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Bowtie is written in Python, and uses a container runtime to execute JSON Schema implementations, so you'll need both Python and a suitable container runtime installed.
 
 If you have no previous container runtime installed (e.g. Docker), follow the `installation instructions for podman <https://podman.io/getting-started/installation>`_ specific to your operating system.
