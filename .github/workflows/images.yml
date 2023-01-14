@@ -37,6 +37,7 @@ jobs:
       packages: write
 
     strategy:
+      fail-fast: false
       matrix:
         image: ${{ fromJson(needs.list.outputs.images) }}
 
