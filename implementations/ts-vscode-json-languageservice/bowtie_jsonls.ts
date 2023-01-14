@@ -1,5 +1,8 @@
 import * as readline from "readline/promises";
 import * as process from "process";
+import * as packageJson from "./node_modules/vscode-json-languageservice/package.json";
+
+const jsonls_version = packageJson.version;
 
 import {
   getLanguageService,
@@ -40,6 +43,7 @@ const cmds = {
       implementation: {
         language: "typescript",
         name: "vscode-json-language-service",
+        version: jsonls_version,
         homepage: "https://github.com/microsoft/vscode-json-languageservice",
         issues:
           "https://github.com/microsoft/vscode-json-languageservice/issues",
