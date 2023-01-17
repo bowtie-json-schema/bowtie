@@ -47,7 +47,7 @@ dynamic = ["version"]
 
 dependencies = [
   "aiodocker",
-  "attrs",
+  "attrs>=22.2.0",
   "click",
   "github3.py",
   "jinja2",
@@ -64,13 +64,20 @@ Homepage = "https://github.com/bowtie-json-schema/bowtie"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 
-[tool.isort]
-from_first = true
-include_trailing_comma = true
-multi_line_output = 3
-
 [tool.doc8]
 ignore = [
     "D000",  # see PyCQA/doc8#125
     "D001",  # one sentence per line, so max length doesn't make sense
+]
+
+[tool.isort]
+combine_as_imports = true
+from_first = true
+include_trailing_comma = true
+multi_line_output = 3
+
+[tool.pyright]
+exclude = [
+    "**/tests/__init__.py",
+    "**/tests/test_*.py",
 ]

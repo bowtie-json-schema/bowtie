@@ -115,8 +115,7 @@ def summary(input, format):
     if format is None:
         format = "pretty" if sys.stdout.isatty() else "json"
 
-    report = _report.from_input(input)
-    summary = report.pop("summary")
+    summary = _report.from_input(input)["summary"]
     counts = (
         (implementation["name"], summary.counts[implementation["image"]])
         for implementation in summary.implementations
@@ -414,10 +413,10 @@ async def _smoke(image_names: list[str]):
             ]
             for seq, case in enumerate(cases):
                 response = await runner.run_case(seq=seq, case=case)
-                if response.errored:
+                if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
                     exit_code |= os.EX_DATAERR
                     message = "❗ (error)"
-                elif response.failed:
+                elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
                     exit_code |= os.EX_DATAERR
                     message = "✗ (failed)"
                 else:
@@ -437,7 +436,7 @@ class _TestSuiteCases(click.ParamType):
     name = "json-schema-org/JSON-Schema-Test-Suite test cases"
 
     def convert(self, value, param, ctx):
-        if not isinstance(value, (Path, str)):
+        if not isinstance(value, str):
             return value
 
         is_local_path = not value.casefold().startswith(TEST_SUITE_URL)

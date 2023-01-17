@@ -73,6 +73,13 @@ fail_on_run = strimplementation(
     CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
+wrong_version = strimplementation(
+    name="wrong_version",
+    contents=r"""
+    FROM alpine:3.16
+    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 0}\n' && read >&2
+    """,  # noqa: E501
+)
 hit_the_network = strimplementation(
     name="hit_the_network",
     contents=r"""
@@ -315,7 +322,7 @@ async def test_it_prevents_network_access(hit_the_network):
     Don't uselessly "run" tests on no implementations.
     """
     async with bowtie("-i", hit_the_network, "--dialect", "urn:foo") as send:
-        returncode, results, errors, cases, stderr = await send(
+        returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             """,  # noqa: E501
@@ -323,6 +330,29 @@ async def test_it_prevents_network_access(hit_the_network):
 
     assert results == []
     assert b"bad address" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_wrong_version(wrong_version):
+    """
+    An implementation speaking the wrong version of the protocol is skipped.
+    """
+    async with bowtie(
+        "-i",
+        wrong_version,
+        "--dialect",
+        "urn:foo",
+        succeed=False,
+    ) as send:
+        returncode, results, _, _, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [], stderr
+    assert b"VersionMismatch: (1, 0)" in stderr, stderr
+    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio

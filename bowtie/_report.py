@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
+from typing import Any, TypedDict
 import importlib.metadata
 import json
 import sys
@@ -23,7 +24,7 @@ def writer(file=sys.stdout):
 @attrs.frozen
 class Reporter:
 
-    _write = attrs.field(default=writer())
+    _write: Callable = attrs.field(default=writer())
     _log: structlog.BoundLogger = attrs.field(factory=structlog.get_logger)
 
     def unsupported_dialect(self, implementation, dialect):
@@ -100,8 +101,8 @@ class Reporter:
 @attrs.frozen
 class _CaseReporter:
 
-    _write: Callable
-    _log: structlog.BoundLogger
+    _write: Callable = attrs.field(alias="write")
+    _log: structlog.BoundLogger = attrs.field(alias="log")
 
     @classmethod
     def case_started(cls, log, write, case: _commands.TestCase, seq: int):
@@ -140,16 +141,17 @@ class Count:
 @attrs.mutable
 class _Summary:
 
-    implementations: Iterable[str]
+    implementations: Iterable[dict[str, Any]] = attrs.field(
+        converter=lambda value: sorted(
+            value,
+            key=lambda each: (each["language"], each["name"]),
+        ),
+    )
     _combined: dict = attrs.field(factory=dict)
     did_fail_fast: bool = False
     counts: dict[str, Count] = attrs.field(init=False)
 
     def __attrs_post_init__(self):
-        self.implementations = sorted(
-            self.implementations,
-            key=lambda each: (each["language"], each["name"]),
-        )
         self.counts = {each["image"]: Count() for each in self.implementations}
 
     @property
@@ -215,10 +217,10 @@ class _Summary:
             count.total_tests += 1
             if test.skipped:
                 count.skipped_tests += 1
-                seen[result.implementation] = test.reason, "skipped"
+                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
             elif test.errored:
                 count.errored_tests += 1
-                seen[result.implementation] = test.reason, "errored"
+                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
             else:
                 if failed:
                     count.failed_tests += 1
@@ -251,7 +253,7 @@ class RunInfo:
     started: str
     bowtie_version: str
     dialect: str
-    _implementations: dict[str, dict]
+    _implementations: dict[str, dict] = attrs.field(alias="implementations")
 
     @classmethod
     def from_implementations(cls, implementations, dialect):
@@ -268,14 +270,19 @@ class RunInfo:
             },
         )
 
-    def create_summary(self):
+    def create_summary(self) -> _Summary:
         """
         Create a summary object used to incrementally parse reports.
         """
         return _Summary(implementations=self._implementations.values())
 
 
-def from_input(input):
+class ReportData(TypedDict):
+    summary: _Summary
+    run_info: RunInfo
+
+
+def from_input(input) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
@@ -296,4 +303,4 @@ def from_input(input):
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
-    return dict(summary=summary, run_info=run_info)
+    return ReportData(summary=summary, run_info=run_info)

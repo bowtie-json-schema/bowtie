@@ -3,13 +3,20 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 import asyncio
 import json
 
 from attrs import field, frozen, mutable
-import aiodocker
+import aiodocker.containers
+import aiodocker.docker
+import aiodocker.exceptions
+import aiodocker.stream
 
 from bowtie import _commands, exceptions
+
+if TYPE_CHECKING:
+    from bowtie._report import Reporter
 
 
 @frozen
@@ -41,9 +48,9 @@ class Stream:
     Wrapper to make aiodocker's Stream more pleasant to use.
     """
 
-    _stream: aiodocker.stream.Stream
-    _container: aiodocker.containers.DockerContainer
-    _buffer: deque[bytes] = field(factory=deque)
+    _stream: aiodocker.stream.Stream = field(alias="stream")
+    _container: aiodocker.containers.DockerContainer = field(alias="container")
+    _buffer: deque[bytes] = field(factory=deque, alias="buffer")
     _last: bytes = b""
 
     @classmethod
@@ -95,10 +102,10 @@ class Stream:
 @frozen
 class DialectRunner:
 
-    _name: str
-    _dialect: str
-    _send: Callable
-    _start_response: _commands.StartedDialect
+    _name: str = field(alias="name")
+    _dialect: str = field(alias="dialect")
+    _send: Callable = field(alias="send")
+    _start_response: _commands.StartedDialect = field(alias="start_response")
 
     @classmethod
     async def start(cls, send, dialect, name):
@@ -142,17 +149,18 @@ class Implementation:
 
     name: str
 
-    _make_validator: Callable
-    _maybe_validate: Callable
-    _reporter: object
+    _make_validator: Callable = field(alias="make_validator")
+    _maybe_validate: Callable = field(alias="maybe_validate")
+    _reporter: Reporter = field(alias="reporter")
 
-    _docker: aiodocker.Docker = field(repr=False)
-    _restarts: int = field(default=20, repr=False)
+    _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
+    _restarts: int = field(default=20, repr=False, alias="restarts")
     _container: aiodocker.containers.DockerContainer = field(
         default=None,
         repr=False,
+        alias="container",
     )
-    _stream: Stream = field(default=None, repr=False)
+    _stream: Stream = field(default=None, repr=False, alias="stream")
 
     metadata: dict | None = None
 

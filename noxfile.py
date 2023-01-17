@@ -25,7 +25,7 @@ def session(default=True, **kwargs):
 
 @session(python=["3.8", "3.9", "3.10", "3.11"])
 def tests(session):
-    session.install("-r", str(ROOT / "test-requirements.txt"))
+    session.install("-r", ROOT / "test-requirements.txt")
     session.run("pytest", "--verbosity=3")
 
 
@@ -33,7 +33,7 @@ def tests(session):
 def build(session):
     session.install("build")
     tmpdir = session.create_tmp()
-    session.run("python", "-m", "build", str(ROOT), "--outdir", tmpdir)
+    session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
 
 
 @session(tags=["build"])
@@ -51,9 +51,9 @@ def shiv(session):
         "--reproducible",
         "-c",
         "bowtie",
-        str(ROOT),
+        ROOT,
         "-o",
-        str(out),
+        out,
     )
     print(f"Outputted a shiv to {out}.")
 
@@ -62,7 +62,7 @@ def shiv(session):
 def readme(session):
     session.install("build", "twine")
     tmpdir = session.create_tmp()
-    session.run("python", "-m", "build", str(ROOT), "--outdir", tmpdir)
+    session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
     session.run("python", "-m", "twine", "check", tmpdir + "/*")
 
 
@@ -76,13 +76,13 @@ def style(session):
         "flake8-quotes",
         "flake8-tidy-imports",
     )
-    session.run("python", "-m", "flake8", str(BOWTIE), str(TESTS), __file__)
+    session.run("python", "-m", "flake8", BOWTIE, TESTS, __file__)
 
 
 @session()
 def typing(session):
-    session.install("mypy", "types-jsonschema", str(ROOT))
-    session.run("python", "-m", "mypy", str(BOWTIE))
+    session.install("pyright", "types-jsonschema", ROOT)
+    session.run("python", "-m", "pyright", BOWTIE)
 
 
 @session(tags=["docs"])
@@ -100,7 +100,7 @@ def typing(session):
     ],
 )
 def docs(session, builder):
-    session.install("-r", str(DOCS / "requirements.txt"))
+    session.install("-r", DOCS / "requirements.txt")
     tmpdir = Path(session.create_tmp())
     argv = ["-n", "-T", "-W"]
     if builder != "spelling":
@@ -111,8 +111,8 @@ def docs(session, builder):
         "sphinx",
         "-b",
         builder,
-        str(DOCS),
-        str(tmpdir / builder),
+        DOCS,
+        tmpdir / builder,
         *argv,
     )
 
@@ -124,12 +124,12 @@ def docs_style(session):
         "pygments",
         "pygments-github-lexers",
     )
-    session.run("python", "-m", "doc8", "--config", str(PYPROJECT), str(DOCS))
+    session.run("python", "-m", "doc8", "--config", PYPROJECT, DOCS)
 
 
 @session(default=False, tags=["perf"], name="bench(smoke)")
 def bench_smoke(session):
-    session.install(str(ROOT))
+    session.install(ROOT)
     executable = Path(session.bin) / "bowtie"
 
     cmd = f"{executable} smoke -i {{implementation}}"
@@ -153,7 +153,7 @@ def bench_suite(session):
     if not session.posargs:
         session.error("Provide a test suite to benchmark")
 
-    session.install(str(ROOT))
+    session.install(ROOT)
     bowtie = Path(session.bin) / "bowtie"
 
     posargs = shlex.join(session.posargs)
