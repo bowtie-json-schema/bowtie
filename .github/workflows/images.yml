@@ -44,22 +44,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Registry Login
-        uses: redhat-actions/podman-login@v1
+      - name: Build
+        id: build_image
+        uses: redhat-actions/buildah-build@v2
         with:
-          username: ${{ github.repository_owner }}
-          password: ${{ github.token }}
+          context: implementations/${{ matrix.image }}
+          containerfiles: |
+            implementations/${{ matrix.image }}/Dockerfile
+          image: ${{ matrix.image }}
+          tags: latest ${{ github.sha }}
+
+      - name: Publish
+        id: push
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
           registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
 
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
-      - name: Install Bowtie
-        run: python3 -m pip install bowtie-json-schema
-
-      - name: Build Bowtie Image
+      - name: Smoke Test
         run: |
-          podman build -f implementations/${{ matrix.image }}/Dockerfile -t "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
-          podman push "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
-          bowtie smoke -i "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          python3 -m pip install bowtie-json-schema
+          bowtie smoke -i "${{ steps.build_image.outputs.image-with-tag }}"
