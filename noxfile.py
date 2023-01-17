@@ -73,6 +73,7 @@ def style(session):
         "flake8-broken-line",
         "flake8-bugbear",
         "flake8-commas",
+        "flake8-docstrings",
         "flake8-quotes",
         "flake8-tidy-imports",
     )
@@ -81,6 +82,7 @@ def style(session):
 
 @session()
 def typing(session):
+    # FIXME: Don't repeat dependencies.
     session.install("pyright", "types-jsonschema", ROOT)
     session.run("python", "-m", "pyright", BOWTIE)
 
