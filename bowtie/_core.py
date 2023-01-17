@@ -31,6 +31,11 @@ class StartupFailed(Exception):
     name: str
     stderr: str = ""
 
+    def __str__(self):
+        if self.stderr:
+            return f"{self.name}'s stderr contained: {self.stderr}"
+        return self.name
+
 
 @frozen
 class NoSuchImage(Exception):
