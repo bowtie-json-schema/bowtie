@@ -95,6 +95,75 @@ def report(input, output):
     output.write(template.render(**_report.from_input(input)))
 
 
+@main.command()
+@click.option(
+    "--format",
+    "-f",
+    help="What format to use for the output",
+    default=None,
+    type=click.Choice(["json", "pretty"]),
+)
+@click.argument(
+    "input",
+    default="-",
+    type=click.File(mode="r"),
+)
+def summary(input, format):
+    """
+    Generate an (in-terminal) summary of a Bowtie run.
+    """
+    if format is None:
+        format = "pretty" if sys.stdout.isatty() else "json"
+
+    report = _report.from_input(input)
+    summary = report.pop("summary")
+    counts = (
+        (implementation["name"], summary.counts[implementation["image"]])
+        for implementation in summary.implementations
+    )
+
+    combined = [
+        (
+            name,
+            {
+                "errored": each.errored_tests,
+                "failed": each.failed_tests,
+                "skipped": each.skipped_tests,
+            },
+        )
+        for name, each in counts
+    ]
+    ordered = sorted(
+        combined,
+        key=lambda each: each[1]["failed"] + each[1]["errored"],
+        reverse=True,
+    )
+
+    if format == "json":
+        click.echo(json.dumps(ordered, indent=2))
+    else:
+        from rich.table import Table
+
+        test = "tests" if summary.total_tests != 1 else "test"
+        table = Table(
+            "Implementation",
+            "Skips",
+            "Errors",
+            "Failures",
+            title="Bowtie",
+            caption=f"{summary.total_tests} {test} ran",
+        )
+        for implementation, counts in ordered:
+            table.add_row(
+                implementation,
+                str(counts["skipped"]),
+                str(counts["errored"]),
+                str(counts["failed"]),
+            )
+
+        console.Console().print(table)
+
+
 def validator_for_dialect(dialect: str | None = None):
     from jsonschema.validators import RefResolver, validator_for
 
