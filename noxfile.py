@@ -129,8 +129,35 @@ def docs_style(session):
     session.run("python", "-m", "doc8", "--config", PYPROJECT, DOCS)
 
 
+@session(default=False, tags=["perf"], name="bench(info)")
+def bench_info(session):
+    """
+    Time how long ``bowtie info`` takes to run (effectively startup time).
+    """
+    session.install(ROOT)
+    executable = Path(session.bin) / "bowtie"
+
+    cmd = f"{executable} info -i {{implementation}}"
+
+    if session.posargs:
+        args = session.posargs
+    else:
+        args = [
+            "--warmup",
+            "3",
+            "-L",
+            "implementation",
+            ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
+        ]
+
+    session.run("hyperfine", *args, cmd, external=True)
+
+
 @session(default=False, tags=["perf"], name="bench(smoke)")
 def bench_smoke(session):
+    """
+    Time how long ``bowtie smoke`` takes to run (startup + ~2 simple examples).
+    """
     session.install(ROOT)
     executable = Path(session.bin) / "bowtie"
 
