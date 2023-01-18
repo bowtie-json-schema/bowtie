@@ -493,7 +493,7 @@ async def test_summary(envsonschema, tmp_path):
     stdout, stderr = await summary.communicate(validate_stdout)
     assert stderr == b""
     assert json.loads(stdout) == [
-        ["envsonschema", dict(errored=0, failed=0, skipped=0)],
+        [["envsonschema", "python"], dict(errored=0, failed=0, skipped=0)],
     ]
 
 

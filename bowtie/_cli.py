@@ -117,24 +117,27 @@ def summary(input, format):
 
     summary = _report.from_input(input)["summary"]
     counts = (
-        (implementation["name"], summary.counts[implementation["image"]])
+        (
+            (implementation["name"], implementation["language"]),
+            summary.counts[implementation["image"]],
+        )
         for implementation in summary.implementations
     )
 
     combined = [
         (
-            name,
+            metadata,
             {
                 "errored": each.errored_tests,
                 "failed": each.failed_tests,
                 "skipped": each.skipped_tests,
             },
         )
-        for name, each in counts
+        for metadata, each in counts
     ]
     ordered = sorted(
         combined,
-        key=lambda each: each[1]["failed"] + each[1]["errored"],
+        key=lambda each: (sum(each[1].values()), each[0][0]),
         reverse=True,
     )
 
@@ -142,6 +145,7 @@ def summary(input, format):
         click.echo(json.dumps(ordered, indent=2))
     else:
         from rich.table import Table
+        from rich.text import Text
 
         test = "tests" if summary.total_tests != 1 else "test"
         table = Table(
@@ -152,9 +156,9 @@ def summary(input, format):
             title="Bowtie",
             caption=f"{summary.total_tests} {test} ran",
         )
-        for implementation, counts in ordered:
+        for (implementation, language), counts in ordered:
             table.add_row(
-                implementation,
+                Text.assemble(implementation, (f" ({language})", "dim")),
                 str(counts["skipped"]),
                 str(counts["errored"]),
                 str(counts["failed"]),
