@@ -44,6 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
       - name: Build
         id: build_image
         uses: redhat-actions/buildah-build@v2
@@ -53,6 +58,7 @@ jobs:
             implementations/${{ matrix.image }}/Dockerfile
           image: ${{ matrix.image }}
           tags: latest ${{ github.sha }}
+          archs: amd64, arm64
 
       - name: Publish
         id: push
