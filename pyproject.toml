@@ -57,6 +57,9 @@ dependencies = [
   "typing-extensions; python_version<'3.11'",
 ]
 
+[project.optional-dependencies]
+ls = ["lsprotocol", "pygls"]
+
 [project.scripts]
 bowtie = "bowtie._cli:main"
 

@@ -435,6 +435,16 @@ def validate(
 
 
 @main.command()
+def ls():
+    """
+    Run a language server targeting one or more implementations.
+    """
+    import bowtie._ls
+
+    bowtie._ls.Bowtie.create().start()
+
+
+@main.command()
 @click.pass_context
 @FORMAT
 @IMPLEMENTATION
