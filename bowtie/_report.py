@@ -65,7 +65,11 @@ class Reporter:
         self._log.error("Not a known Bowtie implementation.", logger_name=name)
 
     def startup_failed(self, name, stderr):
-        self._log.exception("Startup failed!", logger_name=name, stderr=stderr)
+        self._log.exception(
+            "Startup failed!",
+            logger_name=name,
+            **{"stderr": stderr} if stderr else {},
+        )
 
     def dialect_error(self, implementation, stderr):
         self._log.error(
