@@ -54,6 +54,8 @@ dependencies = [
   "jsonschema",
   "rich",
   "structlog",
+  "importlib-resources; python_version<'3.9'",
+  "typing-extensions; python_version<'3.11'",
 ]
 
 [project.scripts]
@@ -72,11 +74,14 @@ ignore = [
 
 [tool.isort]
 combine_as_imports = true
+ensure_newline_before_comments = true
 from_first = true
 include_trailing_comma = true
 multi_line_output = 3
+use_parentheses = true
 
 [tool.pyright]
+strict = ["**/*.py"]
 exclude = [
     "**/tests/__init__.py",
     "**/tests/test_*.py",

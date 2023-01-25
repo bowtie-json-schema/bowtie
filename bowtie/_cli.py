@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
-from importlib import resources
 from io import BytesIO
 from pathlib import Path
+from typing import Any, TextIO, Union
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -18,11 +18,25 @@ import aiodocker
 import click
 import jinja2
 import structlog
+import structlog.typing
 
 from bowtie import _report
-from bowtie._commands import Test, TestCase
-from bowtie._core import GotStderr, Implementation, NoSuchImage, StartupFailed
-from bowtie.exceptions import _ProtocolError
+from bowtie._commands import ReportableResult, Test, TestCase
+from bowtie._core import (
+    DialectRunner,
+    GotStderr,
+    Implementation,
+    NoSuchImage,
+    StartupFailed,
+)
+from bowtie.exceptions import (
+    _ProtocolError,  # type: ignore[reportPrivateUsage]
+)
+
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files  # type: ignore
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
@@ -81,7 +95,7 @@ def main():
     default="bowtie-report.html",
     type=click.File("w"),
 )
-def report(input, output):
+def report(input: Iterable[str], output: TextIO):
     """
     Generate a Bowtie report from a previous run.
     """
@@ -108,7 +122,7 @@ def report(input, output):
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input, format):
+def summary(input: Iterable[str], format: str | None):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
@@ -137,7 +151,7 @@ def summary(input, format):
     ]
     ordered = sorted(
         combined,
-        key=lambda each: (sum(each[1].values()), each[0][0]),
+        key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
 
@@ -168,32 +182,35 @@ def summary(input, format):
 
 
 def validator_for_dialect(dialect: str | None = None):
-    from jsonschema.validators import RefResolver, validator_for
+    from jsonschema.validators import (
+        validator_for,  # type: ignore[reportUnknownVariableType]
+    )
+    from jsonschema.validators import RefResolver
 
-    text = resources.read_text("bowtie.schemas", "io-schema.json")
-    root_schema = json.loads(text)
-    resolver = RefResolver.from_schema(root_schema)
-    Validator = validator_for(root_schema)
-    Validator.check_schema(root_schema)
+    text = files("bowtie.schemas").joinpath("io-schema.json").read_text()  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    root_schema = json.loads(text)  # type: ignore[reportUnknownArgumentType]
+    resolver = RefResolver.from_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]  # noqa: E501
+    Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     if dialect is None:
-        dialect = Validator.META_SCHEMA["$id"]
+        dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
-    def validate(instance, schema):
-        resolver.store["urn:current-dialect"] = {"$ref": dialect}
-        validator = Validator(schema, resolver=resolver)
+    def validate(instance: Any, schema: Any) -> None:
+        resolver.store["urn:current-dialect"] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        validator = Validator(schema, resolver=resolver)  # type: ignore[reportUnknownVariableType]  # noqa: E501
         try:
-            errors = list(validator.iter_errors(instance))
+            errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
         except Exception:  # XXX: Warn after Reporter disappears
             pass
         else:
             if errors:
-                raise _ProtocolError(errors=errors)
+                raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
 
     return validate
 
 
-def do_not_validate(dialect: str | None = None):
+def do_not_validate(dialect: str | None = None) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
@@ -201,7 +218,7 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",
+    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     help="A docker image which implements the bowtie IO protocol.",
     multiple=True,
 )
@@ -213,13 +230,13 @@ DIALECT = click.option(
         "A URI or shortname identifying the dialect of each test case."
         f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
     ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),
+    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     default=LATEST_DIALECT_NAME,
 )
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",
+    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     help="Only run cases whose description match the given glob pattern.",
 )
 FAIL_FAST = click.option(
@@ -247,7 +264,7 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,
+    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
@@ -272,7 +289,12 @@ VALIDATE = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(context, input, filter, **kwargs):
+def run(
+    context: click.Context,
+    input: Iterable[str],
+    filter: str,
+    **kwargs: Any,
+):
     """
     Run a sequence of cases provided on standard input.
     """
@@ -293,7 +315,12 @@ def run(context, input, filter, **kwargs):
 @VALIDATE
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
-def validate(context, schema, instances, **kwargs):
+def validate(
+    context: click.Context,
+    schema: TextIO,
+    instances: Iterable[TextIO],
+    **kwargs: Any,
+):
     """
     Validate a schema & one or more instances across implementations.
     """
@@ -312,7 +339,7 @@ def validate(context, schema, instances, **kwargs):
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
-def info(context, **kwargs):
+def info(context: click.Context, **kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
@@ -363,7 +390,7 @@ async def _info(image_names: list[str]):
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
-def smoke(context, **kwargs):
+def smoke(context: click.Context, **kwargs: Any):
     """
     Smoke test one or more implementations for basic correctness.
     """
@@ -439,7 +466,12 @@ class _TestSuiteCases(click.ParamType):
 
     name = "json-schema-org/JSON-Schema-Test-Suite test cases"
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self,
+        value: Any,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> tuple[Iterable[TestCase], str]:
         if not isinstance(value, str):
             return value
 
@@ -447,17 +479,23 @@ class _TestSuiteCases(click.ParamType):
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
         else:
-            from github3 import GitHub  # type: ignore
+            # Sigh. PyCQA/isort#1839
+            # isort: off
+            from github3 import (  # type: ignore[reportMissingTypeStubs]
+                GitHub,  # type: ignore[reportUnknownVariableType]
+            )
 
-            gh = GitHub()
-            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")
+            # isort: on
+
+            gh = GitHub()  # type: ignore[reportUnknownVariableType]  # noqa: E501
+            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
             _, _, rest = (
                 value[len(TEST_SUITE_URL) :].lstrip("/").partition("/")
             )
             ref, sep, partial = rest.partition("/tests")
             data = BytesIO()
-            repo.archive(format="zipball", path=data, ref=ref)
+            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]  # noqa: E501
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
@@ -474,7 +512,7 @@ class _TestSuiteCases(click.ParamType):
             ctx,
         )
 
-    def _cases_and_dialect(self, path):
+    def _cases_and_dialect(self, path: Any):
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
@@ -495,7 +533,12 @@ class _TestSuiteCases(click.ParamType):
 @SET_SCHEMA
 @VALIDATE
 @click.argument("input", type=_TestSuiteCases())
-def suite(context, input, filter, **kwargs):
+def suite(
+    context: click.Context,
+    input: tuple[Iterable[TestCase], str],
+    filter: str,
+    **kwargs: Any,
+):
     """
     Run test cases from the official JSON Schema test suite.
 
@@ -522,14 +565,16 @@ def suite(context, input, filter, **kwargs):
 
 async def _run(
     image_names: list[str],
-    cases,
+    cases: Iterable[TestCase],
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
-    make_validator: Callable,
+    make_validator: Callable[[], Callable[..., None]],
     reporter: _report.Reporter = _report.Reporter(),
-):
-    acknowledged, runners, exit_code = [], [], 0
+) -> int:
+    exit_code = 0
+    acknowledged: list[Implementation] = []
+    runners: list[DialectRunner] = []
     async with _start(
         image_names=image_names,
         make_validator=make_validator,
@@ -583,12 +628,12 @@ async def _run(
             )
 
             seq = 0
-            should_stop = False
+            should_stop: bool = False
             for seq, case, case_reporter in sequenced(cases, reporter):
                 if set_schema and not isinstance(case.schema, bool):
                     case.schema["$schema"] = dialect
 
-                responses = [
+                responses: Iterable[Awaitable[ReportableResult]] = [
                     each.run_case(seq=seq, case=case) for each in runners
                 ]
                 for each in asyncio.as_completed(responses):
@@ -598,18 +643,18 @@ async def _run(
                     if fail_fast:
                         # Stop after this case, since we still have futures out
                         # TODO: Combine this with the logic in the template
-                        should_stop = response.errored or response.failed
+                        should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
 
                 if should_stop:
                     break
-            reporter.finished(count=seq, did_fail_fast=should_stop)
+            reporter.finished(count=seq, did_fail_fast=should_stop)  # type: ignore[reportUnknownArgumentType]  # noqa: E501
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
 
 
 @asynccontextmanager
-async def _start(image_names, **kwargs):
+async def _start(image_names: Iterable[str], **kwargs: Any):
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
 
@@ -625,12 +670,15 @@ async def _start(image_names, **kwargs):
         ]
 
 
-def sequenced(cases, reporter):
+def sequenced(
+    cases: Iterable[TestCase],
+    reporter: _report.Reporter,
+) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]  # noqa: E501
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
-def suite_cases_from(paths, remotes):
+def suite_cases_from(paths: Iterable[_P], remotes: Path) -> Iterable[TestCase]:
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = {
@@ -649,8 +697,12 @@ def suite_cases_from(paths, remotes):
             yield TestCase.from_dict(**case, registry=registry)
 
 
-def _stderr_processor(file):
-    def stderr_processor(logger, method_name, event_dict):
+def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
+    def stderr_processor(
+        logger: structlog.typing.BindableLogger,
+        method_name: str,
+        event_dict: structlog.typing.EventDict,
+    ) -> structlog.typing.EventDict:
         for each in "stderr", "traceback":
             contents = event_dict.pop(each, None)
             if contents is not None:
@@ -672,7 +724,7 @@ def _stderr_processor(file):
     return stderr_processor
 
 
-def redirect_structlog(file=sys.stderr):
+def redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
@@ -695,14 +747,17 @@ def redirect_structlog(file=sys.stderr):
     )
 
 
+_P = Union[Path, zipfile.Path]
+
+
 # Missing zipfile.Path methods...
-def _glob(path, path_pattern):
+def _glob(path: _P, path_pattern: str) -> Iterable[_P]:
     return (  # It's missing .match() too, so we fnmatch directly
         each for each in path.iterdir() if fnmatch(each.name, path_pattern)
     )
 
 
-def _rglob(path, path_pattern):
+def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
     for each in path.iterdir():
         if fnmatch(each.name, path_pattern):
             yield each
@@ -710,13 +765,13 @@ def _rglob(path, path_pattern):
             yield from _rglob(each, path_pattern)
 
 
-def _relative_to(path, other):
+def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
-        return path.relative_to(other)
-    return Path(path.at).relative_to(other.at)
+        return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
+    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
 
 
-def _stem(path):  # Missing on < 3.11
+def _stem(path: _P) -> str:  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
-    return Path(path.at).stem
+    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
