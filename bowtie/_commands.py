@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
 @attrs.frozen
 class Test:
-
     description: str
     instance: Any
     valid: bool | None = None
@@ -40,7 +39,6 @@ class Test:
 
 @attrs.frozen
 class TestCase:
-
     description: str
     schema: Any
     tests: list[Test]
@@ -71,7 +69,6 @@ class TestCase:
 
 @attrs.frozen
 class Started:
-
     implementation: dict[str, Any]
     ready: bool = attrs.field()
     version: int = attrs.field()
@@ -107,7 +104,6 @@ def command(
     name: str,
     Response: Callable[..., _R | None],
 ) -> Callable[[type], type[Command[_R]]]:
-
     request_schema = {"$ref": f"#/$defs/command/$defs/{name}"}
     response_schema = {"$ref": f"#/$defs/command/$defs/{name}/$defs/response"}
 
@@ -142,7 +138,6 @@ def command(
 
 @command(name="start", Response=Started)
 class Start:
-
     version: int
 
 
@@ -151,7 +146,6 @@ START_V1 = Start(version=1)
 
 @attrs.frozen
 class StartedDialect:
-
     ok: bool
 
     OK: ClassVar[StartedDialect]
@@ -162,7 +156,6 @@ StartedDialect.OK = StartedDialect(ok=True)
 
 @command(name="dialect", Response=StartedDialect)
 class Dialect:
-
     dialect: str
 
 
@@ -190,7 +183,6 @@ def _case_result(
 
 @attrs.frozen
 class TestResult:
-
     errored = False
     skipped = False
 
@@ -210,7 +202,6 @@ class TestResult:
 
 @attrs.frozen
 class SkippedTest:
-
     message: str | None = attrs.field(default=None)
     issue_url: str | None = attrs.field(default=None)
 
@@ -228,7 +219,6 @@ class SkippedTest:
 
 @attrs.frozen
 class ErroredTest:
-
     context: dict[str, Any] = attrs.field(factory=dict)
 
     errored: bool = attrs.field(init=False, default=True)
@@ -243,7 +233,6 @@ class ErroredTest:
 
 
 class ReportableResult(Protocol):
-
     errored: bool
 
     def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]  # noqa: E501
@@ -252,7 +241,6 @@ class ReportableResult(Protocol):
 
 @attrs.frozen
 class CaseResult:
-
     errored = False
 
     implementation: str
@@ -290,7 +278,6 @@ class CaseResult:
 
 @attrs.frozen
 class CaseErrored:
-
     errored = True
 
     implementation: str
@@ -314,7 +301,6 @@ class CaseErrored:
 
 @attrs.frozen
 class CaseSkipped:
-
     errored = False
 
     implementation: str
@@ -344,7 +330,6 @@ class Empty:
 
 @command(name="run", Response=_case_result)
 class Run:
-
     seq: int
     case: dict[str, Any]
 

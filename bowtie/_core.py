@@ -21,13 +21,11 @@ if TYPE_CHECKING:
 
 @frozen
 class GotStderr(Exception):
-
     stderr: bytes
 
 
 @frozen
 class StartupFailed(Exception):
-
     name: str
     stderr: str = ""
 
@@ -39,7 +37,6 @@ class StartupFailed(Exception):
 
 @frozen
 class NoSuchImage(Exception):
-
     name: str
 
 
@@ -113,7 +110,6 @@ class Stream:
 
 @frozen
 class DialectRunner:
-
     _name: str = field(alias="name")
     _dialect: str = field(alias="dialect")
     _send: Callable[[_commands.Command[Any]], Awaitable[Any]] = field(

@@ -12,7 +12,6 @@ from jsonschema.validators import RefResolver, validator_for
 
 @dataclass
 class Runner:
-
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
     _DefaultValidator: Validator | None = None
