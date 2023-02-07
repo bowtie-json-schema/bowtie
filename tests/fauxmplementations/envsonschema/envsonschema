@@ -22,7 +22,6 @@ _VALID = {"1": {"valid": True}, "0": {"valid": False}}
 
 @dataclass
 class Runner:
-
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
     _hang_on_stop = False

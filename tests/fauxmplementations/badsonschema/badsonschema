@@ -10,7 +10,6 @@ import sys
 
 @dataclass
 class Runner:
-
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
     _stderr: io.TextIOWrapper = sys.stderr

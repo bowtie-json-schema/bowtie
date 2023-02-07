@@ -26,7 +26,6 @@ def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
 
 @attrs.frozen
 class Reporter:
-
     _write: Callable[..., Any] = attrs.field(default=writer())
     _log: structlog.stdlib.BoundLogger = attrs.field(
         factory=structlog.stdlib.get_logger,
@@ -124,7 +123,6 @@ class Reporter:
 
 @attrs.frozen
 class _CaseReporter:
-
     _write: Callable[..., Any] = attrs.field(alias="write")
     _log: structlog.stdlib.BoundLogger = attrs.field(alias="log")
 
@@ -161,7 +159,6 @@ class _CaseReporter:
 
 @attrs.mutable
 class Count:
-
     total_cases: int = 0
     errored_cases: int = 0
 
@@ -173,7 +170,6 @@ class Count:
 
 @attrs.mutable
 class _Summary:
-
     implementations: Iterable[dict[str, Any]] = attrs.field(
         converter=lambda value: sorted(
             value,
@@ -288,7 +284,6 @@ class _Summary:
 
 @attrs.frozen
 class RunInfo:
-
     started: str
     bowtie_version: str
     dialect: str

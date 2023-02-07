@@ -463,7 +463,6 @@ async def _smoke(image_names: list[str]):
 
 
 class _TestSuiteCases(click.ParamType):
-
     name = "json-schema-org/JSON-Schema-Test-Suite test cases"
 
     def convert(

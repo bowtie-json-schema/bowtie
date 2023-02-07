@@ -11,7 +11,6 @@ import fastjsonschema
 
 @dataclass
 class Runner:
-
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
 
