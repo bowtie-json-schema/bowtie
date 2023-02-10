@@ -52,19 +52,22 @@ class Stream:
 
     _stream: aiodocker.stream.Stream = field(alias="stream")
     _container: aiodocker.containers.DockerContainer = field(alias="container")
+    _read_timeout_sec: float | None = field(alias="read_timeout_sec")
     _buffer: deque[bytes] = field(factory=deque, alias="buffer")
     _last: bytes = b""
 
     @classmethod
-    def attached_to(cls, container: aiodocker.containers.DockerContainer):
+    def attached_to(
+        cls,
+        container: aiodocker.containers.DockerContainer,
+        **kwargs: Any,
+    ):
         stream = container.attach(stdin=True, stdout=True, stderr=True)
-        return cls(stream=stream, container=container)
+        return cls(stream=stream, container=container, **kwargs)
 
-    def _read_with_timeout(
-        self,
-        timeout_sec: float = 2.0,
-    ) -> Awaitable[aiodocker.stream.Message | None]:
-        return asyncio.wait_for(self._stream.read_out(), timeout=timeout_sec)
+    def _read_with_timeout(self) -> Awaitable[aiodocker.stream.Message | None]:
+        read = self._stream.read_out()
+        return asyncio.wait_for(read, timeout=self._read_timeout_sec)
 
     def send(self, message: dict[str, Any]) -> Awaitable[None]:
         as_bytes = f"{json.dumps(message)}\n".encode()
@@ -185,6 +188,11 @@ class Implementation:
         alias="container",
     )
     _stream: Stream = field(default=None, repr=False, alias="stream")
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        converter=lambda value: value or None,
+        repr=False,
+    )
 
     metadata: dict[str, Any] | None = None
 
@@ -195,17 +203,15 @@ class Implementation:
     @asynccontextmanager
     async def start(
         cls,
-        docker: aiodocker.docker.Docker,
         image_name: str,
         make_validator: _MakeValidator,
-        reporter: Reporter,
+        **kwargs: Any,
     ):
         self = cls(
             name=image_name,
-            docker=docker,
             make_validator=make_validator,
             maybe_validate=make_validator(),
-            reporter=reporter,
+            **kwargs,
         )
 
         try:
@@ -240,7 +246,10 @@ class Implementation:
                 HostConfig=dict(NetworkMode="none"),
             ),
         )
-        self._stream = Stream.attached_to(self._container)
+        self._stream = Stream.attached_to(
+            self._container,
+            read_timeout_sec=self._read_timeout_sec,
+        )
         started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
         if started is None:
             return

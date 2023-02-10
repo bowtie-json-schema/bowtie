@@ -257,6 +257,19 @@ SET_SCHEMA = click.option(
         "implementations will differ from what is provided in the input."
     ),
 )
+TIMEOUT = click.option(
+    "--read-timeout",
+    "-T",
+    "read_timeout_sec",
+    metavar="SECONDS",
+    default=2.0,
+    help=(
+        "An explicit timeout to wait for each implementation to respond "
+        "to *each* instance being validated. Set this to 0 if you wish "
+        "to wait forever, though note that this means you may end up waiting "
+        "... forever!"
+    ),
+)
 VALIDATE = click.option(
     "--validate-implementations",
     "-V",
@@ -283,6 +296,7 @@ VALIDATE = click.option(
 @FILTER
 @FAIL_FAST
 @SET_SCHEMA
+@TIMEOUT
 @VALIDATE
 @click.argument(
     "input",
@@ -312,6 +326,7 @@ def run(
 @IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
+@TIMEOUT
 @VALIDATE
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
@@ -530,6 +545,7 @@ class _TestSuiteCases(click.ParamType):
 @FILTER
 @FAIL_FAST
 @SET_SCHEMA
+@TIMEOUT
 @VALIDATE
 @click.argument("input", type=_TestSuiteCases())
 def suite(
@@ -568,16 +584,16 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
-    make_validator: Callable[[], Callable[..., None]],
     reporter: _report.Reporter = _report.Reporter(),
+    **kwargs: Any,
 ) -> int:
     exit_code = 0
     acknowledged: list[Implementation] = []
     runners: list[DialectRunner] = []
     async with _start(
         image_names=image_names,
-        make_validator=make_validator,
         reporter=reporter,
+        **kwargs,
     ) as starting:
         reporter.will_speak(dialect=dialect)
         for each in asyncio.as_completed(starting):
