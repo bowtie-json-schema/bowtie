@@ -38,12 +38,23 @@ repos:
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"
     hooks:
-      - name: cargo fmt (rust implementations)
+      - name: cargo fmt rust-jsonschema
         id: fmt
         args:
           [
             "--manifest-path",
             "implementations/rust-jsonschema/Cargo.toml",
+            "--",
+          ]
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: "v1.0"
+    hooks:
+      - name: cargo fmt rust-boon
+        id: fmt
+        args:
+          [
+            "--manifest-path",
+            "implementations/rust-boon/Cargo.toml",
             "--",
           ]
   - repo: https://github.com/syntaqx/git-hooks
