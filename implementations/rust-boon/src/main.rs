@@ -74,6 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 if let Value::Object(obj) = &case["registry"] {
                     compiler.register_url_loader("http", Box::new(MapUrlLoader(obj.clone())));
+                    compiler.register_url_loader("https", Box::new(MapUrlLoader(obj.clone())));
                 }
                 let fake_url = "http://fake.com/schema.json";
                 if let Err(e) = compiler.add_resource(fake_url, case["schema"].clone()) {
@@ -114,11 +115,13 @@ struct MapUrlLoader(Map<String, Value>);
 
 impl UrlLoader for MapUrlLoader {
     fn load(&self, url: &Url) -> Result<Value, Box<dyn Error>> {
-        let value = self
-            .0
-            .get(url.as_str())
-            .ok_or(format!("{url} not found in registry"))?;
-        Ok(value.clone())
+        let value = self.0.get(url.as_str());
+        if let Some(v) = value {
+            return Ok(v.clone());
+        }
+        // go to internet
+        let reader = ureq::get(url.as_str()).call()?.into_reader();
+        Ok(serde_json::from_reader(reader)?)
     }
 }
 
@@ -127,7 +130,7 @@ fn print_error(seq: &Value, err: impl Error) {
         "seq": seq,
         "errored": true,
         "context": {
-            "message": format!("{err}"),
+            "message": format!("{err:#}"),
         }
     });
     println!("{response}");
