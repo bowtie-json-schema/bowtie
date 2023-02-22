@@ -54,7 +54,11 @@ class TestCase:
     def without_expected_results(self) -> dict[str, Any]:
         as_dict = {
             "tests": [
-                attrs.asdict(test, filter=lambda k, _: k.name != "valid")
+                attrs.asdict(
+                    test,
+                    filter=lambda k, v: k.name != "valid"
+                    and (k.name != "comment" or v is not None),
+                )
                 for test in self.tests
             ],
         }
