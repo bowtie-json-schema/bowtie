@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 class Test:
     description: str
     instance: Any
+    comment: str | None = None
     valid: bool | None = None
 
 
