@@ -128,7 +128,7 @@ updates:
     directory: "/implementations/rust-jsonschema"
     schedule:
       interval: "daily"
-  
+
   - package-ecosystem: "docker"
     directory: "/implementations/rust-boon"
     schedule:
