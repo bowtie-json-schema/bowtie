@@ -63,6 +63,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "cargo"
+    directory: "implementations/rust-boon"
+    schedule:
+      interval: "daily"
+
   # Dependabot for Dockerfiles
   # --------------------------
 
@@ -121,6 +126,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/rust-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/rust-boon"
     schedule:
       interval: "daily"
 
