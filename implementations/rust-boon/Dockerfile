@@ -7,10 +7,11 @@ RUN update-ca-certificates
 WORKDIR /usr/src/myapp
 COPY . .
 
-ENV RUSTFLAGS='-C linker=x86_64-linux-gnu-gcc'
-RUN cargo build --target x86_64-unknown-linux-musl --release
+#ENV RUSTFLAGS='-C linker=x86_64-linux-gnu-gcc'
+RUN cargo build --release
 
-FROM alpine
-COPY --from=builder /usr/src/myapp/target/x86_64-unknown-linux-musl/release/bowtie-rust-boon /usr/local/bin
+FROM debian:bullseye-slim
+RUN apt-get update && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/src/myapp/target/release/bowtie-rust-boon /usr/local/bin
 
 CMD ["bowtie-rust-boon"]
