@@ -2,6 +2,10 @@ name: Bowtie Images
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "implementations/**"
+      - ".github/workflows/images.yml"
   push:
     paths:
       - "implementations/**"
