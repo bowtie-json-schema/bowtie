@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let results = tests
                     .iter()
                     .map(|test| {
-                        let valid = schemas.validate(test, schema).is_ok();
+                        let valid = schemas.validate(&test["instance"], schema).is_ok();
                         json!({ "valid": valid })
                     })
                     .collect::<Vec<_>>();
