@@ -220,6 +220,7 @@ IMPLEMENTATION = click.option(
     "image_names",
     type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     help="A docker image which implements the bowtie IO protocol.",
+    required=True,
     multiple=True,
 )
 DIALECT = click.option(
