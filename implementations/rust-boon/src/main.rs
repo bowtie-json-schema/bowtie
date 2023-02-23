@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let results = tests
                     .iter()
                     .map(|test| {
-                        let valid = schemas.validate(test, schema).is_ok();
+                        let valid = schemas.validate(&test["instance"], schema).is_ok();
                         json!({ "valid": valid })
                     })
                     .collect::<Vec<_>>();
@@ -119,9 +119,7 @@ impl UrlLoader for MapUrlLoader {
         if let Some(v) = value {
             return Ok(v.clone());
         }
-        // go to internet
-        let reader = ureq::get(url.as_str()).call()?.into_reader();
-        Ok(serde_json::from_reader(reader)?)
+        Err(format!("Can't load {url}"))?
     }
 }
 
