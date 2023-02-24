@@ -22,6 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     "implementation": {
                         "language": "rust",
                         "name": "boon",
+                        "version": env!("BOON_VERSION"),
                         "homepage": "https://github.com/santhosh-tekuri/boon",
                         "issues": "htps://github.com/santhosh-tekuri/boon/issues",
                         "dialects": [
