@@ -1,26 +1,10 @@
-use std::{collections::HashMap, error::Error, io, process};
+use std::{error::Error, io, process};
 
 use boon::{Compiler, Draft, Schemas, UrlLoader};
 use serde_json::{json, Map, Value};
 use url::Url;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let drafts = {
-        let mut m = HashMap::new();
-        m.insert(
-            "https://json-schema.org/draft/2020-12/schema",
-            Draft::V2020_12,
-        );
-        m.insert(
-            "https://json-schema.org/draft/2019-09/schema",
-            Draft::V2019_09,
-        );
-        m.insert("http://json-schema.org/draft-07/schema#", Draft::V7);
-        m.insert("http://json-schema.org/draft-06/schema#", Draft::V6);
-        m.insert("http://json-schema.org/draft-04/schema#", Draft::V4);
-        m
-    };
-
     let mut started = false;
     let mut draft = None;
     for line in io::stdin().lines() {
@@ -38,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     "implementation": {
                         "language": "rust",
                         "name": "boon",
-                        "homepage": "https://docs.rs/boon/latest/boon/",
+                        "homepage": "https://github.com/santhosh-tekuri/boon",
                         "issues": "htps://github.com/santhosh-tekuri/boon/issues",
                         "dialects": [
                             "https://json-schema.org/draft/2020-12/schema",
@@ -53,11 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             "dialect" => {
                 let dialect = request["dialect"].as_str().ok_or("no dialect")?;
-                draft = Some(
-                    drafts
-                        .get(dialect)
-                        .ok_or(format!("no such dialect {dialect}"))?,
-                );
+                draft = Draft::from_url(dialect);
                 let response = json!({"ok": true});
                 println!("{response}");
             }
@@ -70,7 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let mut schemas = Schemas::default();
                 let mut compiler = Compiler::default();
                 if let Some(draft) = draft {
-                    compiler.set_default_draft(*draft);
+                    compiler.set_default_draft(draft);
                 }
                 if let Value::Object(obj) = &case["registry"] {
                     compiler.register_url_loader("http", Box::new(MapUrlLoader(obj.clone())));
@@ -81,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     print_error(seq, e);
                     continue;
                 }
-                let schema = match compiler.compile(&mut schemas, fake_url.to_owned()) {
+                let schema = match compiler.compile(fake_url.to_owned(), &mut schemas) {
                     Ok(sch) => sch,
                     Err(e) => {
                         print_error(seq, e);
