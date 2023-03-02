@@ -4,10 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-boon = "0.2"
-serde = "1"
+boon = "0.3"
 serde_json = "1"
-url = "2"
 
 [build-dependencies]
 cargo-lock = "8.0"

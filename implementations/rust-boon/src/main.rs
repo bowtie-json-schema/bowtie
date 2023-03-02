@@ -2,7 +2,6 @@ use std::{error::Error, io, process};
 
 use boon::{Compiler, Draft, Schemas, UrlLoader};
 use serde_json::{json, Map, Value};
-use url::Url;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut started = false;
@@ -62,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     print_error(seq, e);
                     continue;
                 }
-                let schema = match compiler.compile(fake_url.to_owned(), &mut schemas) {
+                let schema = match compiler.compile(fake_url, &mut schemas) {
                     Ok(sch) => sch,
                     Err(e) => {
                         print_error(seq, e);
@@ -95,8 +94,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 struct MapUrlLoader(Map<String, Value>);
 
 impl UrlLoader for MapUrlLoader {
-    fn load(&self, url: &Url) -> Result<Value, Box<dyn Error>> {
-        let value = self.0.get(url.as_str());
+    fn load(&self, url: &str) -> Result<Value, Box<dyn Error>> {
+        let value = self.0.get(url);
         if let Some(v) = value {
             return Ok(v.clone());
         }
