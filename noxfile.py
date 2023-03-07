@@ -196,3 +196,16 @@ def bench_suite(session):
     else:
         args = [f"{bowtie} suite {posargs}"]
     session.run("hyperfine", "--warmup", "1", *args, external=True)
+
+
+@session(default=False)
+def requirements(session):
+    session.install("pip-tools")
+    for each in [DOCS / "requirements.in", ROOT / "test-requirements.in"]:
+        session.run(
+            "pip-compile",
+            "--resolver",
+            "backtracking",
+            "-U",
+            each.relative_to(ROOT),
+        )
