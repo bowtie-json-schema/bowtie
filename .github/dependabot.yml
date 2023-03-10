@@ -95,6 +95,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
+    directory: "/implementations/go-gojsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/implementations/js-ajv"
     schedule:
       interval: "daily"
