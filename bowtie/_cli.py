@@ -132,17 +132,27 @@ def report(
     default=None,
     type=click.Choice(["json", "pretty"]),
 )
+@click.option(
+    "--show",
+    "-s",
+    help="Displays the summary according to Argument",
+    default="failures",
+    type=click.Choice(["failures", "validation"]),
+)
 @click.argument(
     "input",
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: str | None):
+def summary(input: Iterable[str], format: str | None, show: str | None):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
     if format is None:
         format = "pretty" if sys.stdout.isatty() else "json"
+    
+    if show is None:
+        show="failures" if sys.stdout.isatty() else "validation"
 
     summary = _report.from_input(input, False)["summary"]
     counts = (
@@ -152,7 +162,6 @@ def summary(input: Iterable[str], format: str | None):
         )
         for implementation in summary.implementations
     )
-
     combined = [
         (
             metadata,
@@ -169,31 +178,60 @@ def summary(input: Iterable[str], format: str | None):
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
+    validity={
+
+        str(summary._combined[schemas]['case']['schema']['type']):[
+            {str(result[0]['instance']):["valid" if result[1][implementation["image"]][0].valid==True else "invalid" for implementation in summary.implementations]
+            for result in summary._combined[schemas]['results']
+            }
+            ]
+        for schemas in summary._combined
+    }
 
     if format == "json":
         click.echo(json.dumps(ordered, indent=2))
     else:
         from rich.table import Table
         from rich.text import Text
-
-        test = "tests" if summary.total_tests != 1 else "test"
-        table = Table(
-            "Implementation",
-            "Skips",
-            "Errors",
-            "Failures",
-            title="Bowtie",
-            caption=f"{summary.total_tests} {test} ran",
-        )
-        for (implementation, language), counts in ordered:
-            table.add_row(
-                Text.assemble(implementation, (f" ({language})", "dim")),
-                str(counts["skipped"]),
-                str(counts["errored"]),
-                str(counts["failed"]),
+        if show == "failures":
+            test = "tests" if summary.total_tests != 1 else "test"
+            table = Table(
+                "Implementation",
+                "Skips",
+                "Errors",
+                "Failures",
+                title="Bowtie",
+                caption=f"{summary.total_tests} {test} ran\n",
             )
+            for (implementation, language), counts in ordered:
+                table.add_row(
+                    Text.assemble(implementation, (f" ({language})", "dim")),
+                    str(counts["skipped"]),
+                    str(counts["errored"]),
+                    str(counts["failed"]),
+                )
+            
+            console.Console().print(table)
 
-        console.Console().print(table)
+        else:
+            test = "tests" if summary.total_tests != 1 else "test"
+            
+            for types in validity:
+                table = Table(
+                    "Instance",
+                    title=f"Bowtie \n\n Schema: 'type': {str(types)}",
+                    caption=f"{summary.total_tests} {test} ran",
+                )
+
+                for (implementation,language),counts in ordered:
+                    table.add_column(f"{implementation} ({language})")
+
+                for instances, valid in validity[types][0].items():
+                    table.add_row(
+                        instances,
+                        *valid
+                    )
+                console.Console().print(table)
 
 
 def validator_for_dialect(dialect: str | None = None):
