@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Any, TextIO, Union
 from urllib.parse import urljoin
 import asyncio
+import gzip
 import json
 import os
 import sys
 import zipfile
-import gzip
 
 from rich import console, panel
 import aiodocker
