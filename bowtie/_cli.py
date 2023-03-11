@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import zipfile
+import gzip
 
 from rich import console, panel
 import aiodocker
@@ -106,7 +107,9 @@ def report(input: Iterable[str], output: TextIO):
         keep_trailing_newline=True,
     )
     template = env.get_template("report.html.j2")
-    output.write(template.render(**_report.from_input(input)))
+    # output.write(template.render(**_report.from_input(input)))
+    with gzip.open("bowtie-report.html", "wt", encoding="utf-8") as f:
+        f.write(template.render(**_report.from_input(input)))
 
 
 @main.command()
