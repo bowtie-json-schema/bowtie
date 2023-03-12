@@ -178,15 +178,18 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
-    validity=[
+    validity = [
         [
-            str(summary._combined[schemas]['case']['schema']),
+            str(summary._combined[schemas]["case"]["schema"]),
             {
-                str(result[0]['instance']):[
-                    "valid" if result[1][implementation["image"]][0].valid==True else "invalid" for implementation in summary.implementations
-                    ]
-                    for result in summary._combined[schemas]['results']
-            }
+                str(result[0]["instance"]): [
+                    "valid"
+                    if result[1][implementation["image"]][0].valid == True
+                    else "invalid"
+                    for implementation in summary.implementations
+                ]
+                for result in summary._combined[schemas]["results"]
+            },
         ]
         for schemas in summary._combined
     ]
@@ -196,6 +199,7 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
     else:
         from rich.table import Table
         from rich.text import Text
+
         if show == "failures":
             test = "tests" if summary.total_tests != 1 else "test"
             table = Table(
@@ -213,12 +217,12 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                     str(counts["errored"]),
                     str(counts["failed"]),
                 )
-            
+
             console.Console().print(table)
 
         else:
             test = "tests" if summary.total_tests != 1 else "test"
-            
+
             for types in validity:
                 table = Table(
                     "Instance",
@@ -226,14 +230,11 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                     caption=f"{summary.total_tests} {test} ran",
                 )
 
-                for (implementation,language),_counts in ordered:
+                for (implementation, language), _counts in ordered:
                     table.add_column(f"{implementation} ({language})")
 
                 for instances, valid in types[1].items():
-                    table.add_row(
-                        instances,
-                        *valid
-                    )
+                    table.add_row(instances, *valid)
                 console.Console().print(table)
 
 
