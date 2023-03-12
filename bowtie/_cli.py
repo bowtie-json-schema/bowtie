@@ -19,6 +19,7 @@ import click
 import jinja2
 import structlog
 import structlog.typing
+import zlib
 
 from bowtie import _report
 from bowtie._commands import ReportableResult, Test, TestCase
@@ -100,13 +101,17 @@ def report(input: Iterable[str], output: TextIO):
     Generate a Bowtie report from a previous run.
     """
 
+    report_data = _report.from_input(input)   #to generate the report data
+
+    compressed_data = zlib.compress(report_data.encode()) #to compress the report data
+
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
     template = env.get_template("report.html.j2")
-    output.write(template.render(**_report.from_input(input)))
+    output.write(template.render(compressed_data=compressed_data))
 
 
 @main.command()
