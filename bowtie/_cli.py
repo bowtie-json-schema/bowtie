@@ -150,11 +150,11 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
     """
     if format is None:
         format = "pretty" if sys.stdout.isatty() else "json"
-    
-    if show is None:
-        show="failures" if sys.stdout.isatty() else "validation"
 
-    summary = _report.from_input(input, False)["summary"]
+    if show is None:
+        show = "failures" if sys.stdout.isatty() else "validation"
+
+    summary = _report.from_input(input)["summary"]
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -178,15 +178,18 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
-    validity={
-
-        str(summary._combined[schemas]['case']['schema']['type']):[
-            {str(result[0]['instance']):["valid" if result[1][implementation["image"]][0].valid==True else "invalid" for implementation in summary.implementations]
-            for result in summary._combined[schemas]['results']
+    validity=[
+        [
+            str(summary._combined[schemas]['case']['schema']),
+            {
+                str(result[0]['instance']):[
+                    "valid" if result[1][implementation["image"]][0].valid==True else "invalid" for implementation in summary.implementations
+                    ]
+                    for result in summary._combined[schemas]['results']
             }
-            ]
+        ]
         for schemas in summary._combined
-    }
+    ]
 
     if format == "json":
         click.echo(json.dumps(ordered, indent=2))
@@ -219,14 +222,14 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
             for types in validity:
                 table = Table(
                     "Instance",
-                    title=f"Bowtie \n\n Schema: 'type': {str(types)}",
+                    title=f"Bowtie \n\n Schema: {str(types[0])}",
                     caption=f"{summary.total_tests} {test} ran",
                 )
 
-                for (implementation,language),counts in ordered:
+                for (implementation,language),_counts in ordered:
                     table.add_column(f"{implementation} ({language})")
 
-                for instances, valid in validity[types][0].items():
+                for instances, valid in types[1].items():
                     table.add_row(
                         instances,
                         *valid

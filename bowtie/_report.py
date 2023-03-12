@@ -325,7 +325,7 @@ class ReportData(TypedDict):
 
 def from_input(
     input: Iterable[str],
-    generate_dialect_navigation: bool,
+    generate_dialect_navigation: bool = False,
 ) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
