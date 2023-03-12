@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import zipfile
+import zlib
 
 from rich import console, panel
 import aiodocker
@@ -19,7 +20,6 @@ import click
 import jinja2
 import structlog
 import structlog.typing
-import zlib
 
 from bowtie import _report
 from bowtie._commands import ReportableResult, Test, TestCase
@@ -101,9 +101,11 @@ def report(input: Iterable[str], output: TextIO):
     Generate a Bowtie report from a previous run.
     """
 
-    report_data = _report.from_input(input)   #to generate the report data
+    report_data = _report.from_input(input)  # to generate the report data
 
-    compressed_data = zlib.compress(report_data.encode()) #to compress the report data
+    compressed_data = zlib.compress(
+        report_data.encode()
+    )  # to compress the report data
 
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
