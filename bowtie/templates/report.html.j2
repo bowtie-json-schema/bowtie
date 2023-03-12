@@ -90,9 +90,10 @@
               <tr>
                 <th scope="col" class="text-center">errors</th>
 
-                <th scope="col" class="table-bordered text-center">failed</th>
                 <th scope="col" class="table-bordered text-center">skipped</th>
-                <th scope="col" class="table-bordered text-center">errors</th>
+                <th scope="col" class="table-bordered text-center">unsuccessful</th>
+                {% comment %} <th scope="col" class="table-bordered text-center">failed</th>
+                <th scope="col" class="table-bordered text-center">errors</th> {% endcomment %}
 
                 <th scope="col"></th>
               </tr>
@@ -112,9 +113,8 @@
 
                   <td class="text-center">{{ counts.errored_cases }}</td>
 
-                  <td class="text-center">{{ counts.failed_tests }}</td>
                   <td class="text-center">{{ counts.skipped_tests }}</td>
-                  <td class="text-center">{{ counts.errored_tests }}</td>
+                  <td class="text-center">{{ counts.failed_tests + counts.errored_tests }}</td>
 
                   <td>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-details">
@@ -131,9 +131,8 @@
 
                 <td class="text-center">{{ summary.errored_cases }}</td>
 
-                <td class="text-center">{{ summary.failed_tests }}</td>
                 <td class="text-center">{{ summary.skipped_tests }}</td>
-                <td class="text-center">{{ summary.errored_tests }}</td>
+                <td class="text-center">{{ summary.failed_tests + summary.errored_tests }}</td>
                 <td></td>
               </tr>
             </tfoot>
