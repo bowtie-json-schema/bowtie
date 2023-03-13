@@ -16,6 +16,24 @@ If you're going to work on Bowtie itself, you likely will want to install it usi
 
 which will allow you to make changes to files within Bowtie and see the results without reinstalling it repeatedly.
 
+Running the Tests
+-----------------
+
+Bowtie has a small set of integration tests which ensure it works correctly on a number of cases.
+
+You can find them in the ``tests/`` directory.
+
+You can run them using `nox <nox:index>`, which you can install using the `linked instructions <nox:tutorial>`, and then can run:
+
+.. code:: sh
+
+    $ nox -s tests-3.11
+
+to run the tests using Python 3.11 (or any other version you'd like).
+
+Before submitting a PR you may want to run the full suite of tests by running ``nox`` with no arguments to run all environments.
+
+
 For Implementers
 ----------------
 
