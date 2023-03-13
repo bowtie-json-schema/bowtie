@@ -64,7 +64,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.16.1
+    rev: v0.17.0
     hooks:
       - name: stylua (lua implementations)
         id: stylua
