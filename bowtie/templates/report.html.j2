@@ -1,5 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<style>
+  .details-required {
+      position: relative;
+  }
+
+  .details-required div {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      opacity: 0;
+      visibility: hidden;
+      -webkit-transition: visibility 0s, opacity 0.5s linear;
+      transition: visibility 0s, opacity 0.5s linear;
+  }
+
+  .details-required:hover {
+      cursor: tooltip;
+  }
+
+  .details-required:hover div {
+      padding: 1rem;
+      padding-bottom: 0rem;
+      margin-right: 8rem;
+      visibility: visible;
+      border-radius: 1rem;
+      background-color: rgba(242, 242, 242, 0.892);
+      opacity: 1;
+  }
+  .details-required:hover div .details-desc{
+      right: -40%;
+  }
+
+  .hover-details {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 0.7rem;
+  }
+
+  .hover-details span {
+      font-style: italic;
+      font-weight: 500;
+      color: rgb(112, 112, 112);
+      font-size: 0.8rem;
+  }
+
+
+</style>
+
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -90,9 +140,18 @@
               <tr>
                 <th scope="col" class="text-center">errors</th>
 
-                <th scope="col" class="table-bordered text-center">failed</th>
                 <th scope="col" class="table-bordered text-center">skipped</th>
-                <th scope="col" class="table-bordered text-center">errors</th>
+                <th scope="col" class="table-bordered text-center details-required">
+                  <div class="hover-details details-desc text-center">
+                      <p>failed
+                          <br><span>implementation worked successfully but got the wrong answer</span>
+                      </p>
+                      <p>errored
+                          <br><span>implementation crashed when trying to calculate an answer</span>
+                      </p>
+                  </div>
+                  unsuccessful
+              </th>
 
                 <th scope="col"></th>
               </tr>
@@ -112,9 +171,14 @@
 
                   <td class="text-center">{{ counts.errored_cases }}</td>
 
-                  <td class="text-center">{{ counts.failed_tests }}</td>
                   <td class="text-center">{{ counts.skipped_tests }}</td>
-                  <td class="text-center">{{ counts.errored_tests }}</td>
+                  <td class="text-center details-required">{{ counts.failed_tests + counts.errored_tests }}
+                    <div class="hover-details text-center">
+                      <p><b>failed</b>: {{counts.failed_tests}}</p>
+                      <p><b>errored</b>: {{counts.errored_tests}}</p>
+                    </div>
+                  </td>
+
 
                   <td>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-details">
@@ -131,10 +195,13 @@
 
                 <td class="text-center">{{ summary.errored_cases }}</td>
 
-                <td class="text-center">{{ summary.failed_tests }}</td>
                 <td class="text-center">{{ summary.skipped_tests }}</td>
-                <td class="text-center">{{ summary.errored_tests }}</td>
-                <td></td>
+                <td class="text-center details-required">{{ summary.failed_tests + summary.errored_tests }}
+                  <div class="hover-details text-center">
+                    <p><b>failed</b>: {{summary.failed_tests}} </p>
+                    <p><b>errored</b>: {{summary.errored_tests}}</p>
+                  </div>
+                </td><td></td>
               </tr>
             </tfoot>
           </table>
