@@ -184,7 +184,7 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
             {
                 str(result[0]["instance"]): [
                     "valid"
-                    if result[1][implementation["image"]][0].valid == True
+                    if result[1][implementation["image"]][0].valid is True
                     else "invalid"
                     for implementation in summary.implementations
                 ]
