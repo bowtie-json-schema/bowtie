@@ -180,6 +180,52 @@ def summary(input: Iterable[str], format: str | None):
 
         console.Console().print(table)
 
+@main.command()
+@click.argument(
+    "input",
+    default="-",
+    type=click.File(mode="r"),
+)
+def badges(input: Iterable[str]):
+    """
+    Generate a badge with details about the Bowtie run.
+    """
+    report = _report.from_input(input)
+    summary = report["summary"]
+    dialect = report["run_info"].dialect
+    
+    counts = (
+        (
+            (implementation["name"], implementation["language"]),
+            summary.counts[implementation["image"]],
+        )
+        for implementation in summary.implementations
+    )
+
+    combined = [
+        (
+            metadata,
+            {
+                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
+            },
+        )
+        for metadata, each in counts
+    ]
+    _passpercstring = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
+    
+    click.echo(f"-----: {dialect}")
+    click.echo(f"-----: {_passpercstring}")
+
+    # _jsonfile = {
+    #     "schemaVersion": 1,
+    #     "label": _report.from_input(input)["run_info"].dialect,
+    #     "message": _passpercstring,
+    #     "color": "green"
+    #     }
+    # json_object = json.dumps(_jsonfile, indent=2)
+    # output.write(json_object)
+
+
 
 def validator_for_dialect(dialect: str | None = None):
     from jsonschema.validators import (
