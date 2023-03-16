@@ -135,7 +135,9 @@ def report(
 @click.option(
     "--show",
     "-s",
-    help="Configure whether to display validation results (whether instances are valid or not) or test failure results (whether the validation results match expected validation results)",
+    help="""Configure whether to display validation results
+    (whether instances are valid or not) or test failure results
+    (whether the validation results match expected validation results)""",
     default="validation",
     type=click.Choice(["failures", "validation"]),
 )
