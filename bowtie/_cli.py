@@ -77,7 +77,6 @@ def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
-
     redirect_structlog()
 
 
@@ -99,7 +98,6 @@ def report(input: Iterable[str], output: TextIO):
     """
     Generate a Bowtie report from a previous run.
     """
-
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
         undefined=jinja2.StrictUndefined,
@@ -313,7 +311,6 @@ def run(
     """
     Run a sequence of cases provided on standard input.
     """
-
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
@@ -570,7 +567,6 @@ def suite(
         * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
           to run a single file directly from a branch which exists in GitHub
     """  # noqa: E501
-
     cases, dialect = input
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
@@ -744,7 +740,6 @@ def redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
-
     structlog.configure(
         processors=[
             structlog.processors.add_log_level,
