@@ -136,7 +136,7 @@ def report(
     "--show",
     "-s",
     help="Configure whether to display validation results (whether instances are valid or not) or test failure results (whether the validation results match expected validation results)",
-    default="failures",
+    default="validation",
     type=click.Choice(["failures", "validation"]),
 )
 @click.argument(
@@ -150,9 +150,6 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
     """
     if format is None:
         format = "pretty" if sys.stdout.isatty() else "json"
-
-    if show is None:
-        show = "failures" if sys.stdout.isatty() else "validation"
 
     summary = _report.from_input(input)["summary"]
     counts = (
@@ -178,24 +175,31 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
-    validity = [
-        [
-            str(summary._combined[schemas]["case"]["schema"]),
-            {
-                str(result[0]["instance"]): [
-                    "valid"
-                    if result[1][implementation["image"]][0].valid is True
-                    else "invalid"
-                    for implementation in summary.implementations
-                ]
-                for result in summary._combined[schemas]["results"]
-            },
-        ]
-        for schemas in summary._combined
-    ]
+
+    validity = []
+    for _, schemas in summary._combined.items():
+        schema = []
+        instances = {}
+        for result in schemas["results"]:
+            validation = {}
+            for implementation in summary.implementations:
+                valid = result[1].get(implementation["image"], "error")
+                if valid == "error":
+                    validation[implementation["name"]] = valid
+                elif valid[0].valid is True:
+                    validation[implementation["name"]] = "valid"
+                else:
+                    validation[implementation["name"]] = "invalid"
+            instances[str(result[0]["instance"])] = validation
+        schema.append(str(schemas["case"]["schema"]))
+        schema.append(instances)
+        validity.append(schema)
 
     if format == "json":
-        click.echo(json.dumps(ordered, indent=2))
+        if show == "failures":
+            click.echo(json.dumps(ordered, indent=2))
+        else:
+            click.echo(json.dumps(validity, indent=2))
     else:
         from rich.table import Table
         from rich.text import Text
@@ -218,24 +222,24 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                     str(counts["failed"]),
                 )
 
-            console.Console().print(table)
-
         else:
             test = "tests" if summary.total_tests != 1 else "test"
+            table = Table(
+                "Schema",
+                "Instance",
+                title="Bowtie",
+                caption=f"{summary.total_tests} {test} ran",
+            )
+
+            for (implementation, language), _counts in ordered:
+                table.add_column(f"{implementation} ({language})")
 
             for types in validity:
-                table = Table(
-                    "Instance",
-                    title=f"Bowtie \n\n Schema: {str(types[0])}",
-                    caption=f"{summary.total_tests} {test} ran",
-                )
-
-                for (implementation, language), _counts in ordered:
-                    table.add_column(f"{implementation} ({language})")
-
                 for instances, valid in types[1].items():
-                    table.add_row(instances, *valid)
-                console.Console().print(table)
+                    table.add_row(types[0], instances, *valid.values())
+                table.add_section()
+
+        console.Console().print(table)
 
 
 def validator_for_dialect(dialect: str | None = None):
