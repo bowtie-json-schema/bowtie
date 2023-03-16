@@ -12,7 +12,8 @@ import json
 import os
 import sys
 import zipfile
-import zlib
+import gzip
+import base64
 
 from rich import console, panel
 import aiodocker
@@ -100,19 +101,26 @@ def report(input: Iterable[str], output: TextIO):
     """
     Generate a Bowtie report from a previous run.
     """
-
-    # report_data = _report.from_input(input)  # to generate the report data
-
-    # compressed_data = zlib.compress(report_data.encode())  # to compress the report data
+    json_data = _report.from_input(input)
 
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
+    
     template = env.get_template("report.html.j2")
-    # output.write(template.render(compressed_data=compressed_data))
-    output.write(template.render(_report.from_input(input)))
+    output.write(template.render(json_data))
+    
+
+    json_string = json.dumps(json_data, default=str)
+    compressed_data = gzip.compress(bytes(json_string, 'utf-8'))
+    compressed_data_base64 = base64.b64encode(compressed_data).decode('utf-8')
+    template = env.get_template("dummy_report.html.j2")
+    output_str = template.render(data=compressed_data_base64)
+
+    with open('dummy_bowtie-report.html', 'w') as f:
+        f.write(output_str)
 
 
 @main.command()
