@@ -24,6 +24,10 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.0.256"
+    hooks:
+      - id: ruff
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
@@ -64,7 +68,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.16.1
+    rev: v0.17.0
     hooks:
       - name: stylua (lua implementations)
         id: stylua

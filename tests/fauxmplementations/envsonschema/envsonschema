@@ -5,7 +5,6 @@ A bowtie runner which always gets the right answer, slowly.
 from dataclasses import dataclass
 import io
 import json
-import os
 import shlex
 import sys
 import time

@@ -127,6 +127,7 @@ docstring-quotes = "double"
 "noxfile.py" = ["D"]
 "docs/*" = ["D"]
 "tests/*" = ["D"]
+"implementations/*" = ["D"]
 "bowtie/schemas/__init__.py" = ["D"]
 
 [tool.ruff.pyupgrade]
