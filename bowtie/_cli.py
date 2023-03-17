@@ -181,7 +181,7 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
     validity = []
     for _, schemas in summary._combined.items():
         schema = []
-        instances = {}
+        instances = []
         for result in schemas["results"]:
             validation = {}
             for implementation in summary.implementations:
@@ -192,19 +192,19 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                     validation[implementation["name"]] = "valid"
                 else:
                     validation[implementation["name"]] = "invalid"
-            instances[str(result[0]["instance"])] = validation
-        schema.append(str(schemas["case"]["schema"]))
+            instances.append([result[0]["instance"], validation])
+        schema.append(schemas["case"]["schema"])
         schema.append(instances)
         validity.append(schema)
-
     if format == "json":
         if show == "failures":
             click.echo(json.dumps(ordered, indent=2))
         else:
             click.echo(json.dumps(validity, indent=2))
     else:
-        from rich.table import Table
+        from rich.table import Table, Column
         from rich.text import Text
+        from rich import box
 
         if show == "failures":
             test = "tests" if summary.total_tests != 1 else "test"
@@ -227,18 +227,27 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
         else:
             test = "tests" if summary.total_tests != 1 else "test"
             table = Table(
-                "Schema",
-                "Instance",
+                Column(header="Schema", vertical="middle"),
+                "",
                 title="Bowtie",
                 caption=f"{summary.total_tests} {test} ran",
             )
 
-            for (implementation, language), _counts in ordered:
-                table.add_column(f"{implementation} ({language})")
-
             for types in validity:
-                for instances, valid in types[1].items():
-                    table.add_row(types[0], instances, *valid.values())
+                schema_table = Table(
+                    "Instance",
+                    box=box.SIMPLE_HEAD,
+                )
+                for (implementation, language), _counts in ordered:
+                    schema_table.add_column(f"{implementation} ({language})")
+
+                for instances in types[1]:
+                    schema_table.add_row(
+                        str(instances[0]),
+                        *instances[1].values(),
+                    )
+
+                table.add_row(json.dumps(types[0], indent=1), schema_table)
                 table.add_section()
 
         console.Console().print(table)
