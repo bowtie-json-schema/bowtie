@@ -71,6 +71,11 @@ DIALECT_SHORTNAMES = {
 LATEST_DIALECT_NAME = "draft2020-12"
 
 DIALECT_REVERSE_MAPPING = {
+    'draft-01': 'Draft 1',
+    'draft-02': 'Draft 2',
+    'draft-03': 'Draft 3',
+    'draft-04': 'Draft 4, 5',
+    'draft-06': 'Draft 6',
     'draft-07': 'Draft 7',
 }
 
