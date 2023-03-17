@@ -470,9 +470,11 @@ async def test_validate(envsonschema, tmp_path):
 
 @pytest.mark.asyncio
 async def test_summary(envsonschema, tmp_path):
-    tmp_path.joinpath("schema.json").write_text(json.dumps(
-        {"type": "integer"},
-    ))
+    tmp_path.joinpath("schema.json").write_text(
+        json.dumps(
+            {"type": "integer"},
+        ),
+    )
     tmp_path.joinpath("instance.json").write_text("12")
     tmp_path.joinpath("instance1.json").write_text("12.5")
 

@@ -202,9 +202,9 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
         else:
             click.echo(json.dumps(validity, indent=2))
     else:
-        from rich.table import Table, Column
-        from rich.text import Text
         from rich import box
+        from rich.table import Column, Table
+        from rich.text import Text
 
         if show == "failures":
             test = "tests" if summary.total_tests != 1 else "test"
