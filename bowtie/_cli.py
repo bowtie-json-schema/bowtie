@@ -70,6 +70,10 @@ DIALECT_SHORTNAMES = {
 }
 LATEST_DIALECT_NAME = "draft2020-12"
 
+DIALECT_REVERSE_MAPPING = {
+    'draft-07': 'Draft 7',
+}
+
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
@@ -186,7 +190,15 @@ def summary(input: Iterable[str], format: str | None):
     default="-",
     type=click.File(mode="r"),
 )
-def badges(input: Iterable[str]):
+@click.option(
+    "--out",
+    "-o",
+    "output",
+    help="Where to write the outputted report HTML.",
+    default="endpoint.json",
+    type=click.File("w"),
+)
+def badges(input: Iterable[str], output: TextIO):
     """
     Generate a badge with details about the Bowtie run.
     """
@@ -212,18 +224,21 @@ def badges(input: Iterable[str]):
         for metadata, each in counts
     ]
     _passpercstring = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
+        
+    draft_version = ""
+    for every in dialect.split("/"):
+        if "draft" in every:
+            draft_version = every
     
-    click.echo(f"-----: {dialect}")
-    click.echo(f"-----: {_passpercstring}")
-
-    # _jsonfile = {
-    #     "schemaVersion": 1,
-    #     "label": _report.from_input(input)["run_info"].dialect,
-    #     "message": _passpercstring,
-    #     "color": "green"
-    #     }
-    # json_object = json.dumps(_jsonfile, indent=2)
-    # output.write(json_object)
+    _jsonfile = {
+        "schemaVersion": 1,
+        "label": DIALECT_REVERSE_MAPPING[draft_version],
+        "message": _passpercstring,
+        "color": "green"
+        }
+    
+    json_object = json.dumps(_jsonfile, indent=2)
+    output.write(json_object)
 
 
 
