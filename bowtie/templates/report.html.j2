@@ -297,6 +297,11 @@
       document.getElementById('runStarted').textContent = new Intl.RelativeTimeFormat(
         'en', {numeric: 'auto'}
       ).format(-Math.round(ago), agoUnits);
+      fetch("endpoint.json")
+      .then(response => response.json())
+      .then(data => {
+          document.getElementById('badge').innerHTML = `<img src="https://img.shields.io/badge/${data.label}-${data.message}-brightgreen">`;
+      })
     </script>
   </body>
 </html>
