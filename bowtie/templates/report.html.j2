@@ -74,6 +74,8 @@
         </div>
       </div>
 
+      <img src="https://raw.githubusercontent.com/bowtie-json-schema/bowtie/main/badge.json" alt="per-draft-passing-percentage-badge">
+
       <div class="card mx-auto mb-3 w-75" id="summary">
         <div class="card-header">Summary</div>
 
@@ -297,11 +299,6 @@
       document.getElementById('runStarted').textContent = new Intl.RelativeTimeFormat(
         'en', {numeric: 'auto'}
       ).format(-Math.round(ago), agoUnits);
-      fetch("endpoint.json")
-      .then(response => response.json())
-      .then(data => {
-          document.getElementById('badge').innerHTML = `<img src="https://img.shields.io/badge/${data.label}-${data.message}-brightgreen">`;
-      })
     </script>
   </body>
 </html>
