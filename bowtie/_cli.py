@@ -71,12 +71,12 @@ DIALECT_SHORTNAMES = {
 LATEST_DIALECT_NAME = "draft2020-12"
 
 DIALECT_REVERSE_MAPPING = {
-    'draft-01': 'Draft%201',
-    'draft-02': 'Draft%202',
-    'draft-03': 'Draft%203',
-    'draft-04': 'Draft%204,%205',
-    'draft-06': 'Draft%206',
-    'draft-07': 'Draft%207',
+    'draft-01': 'Draft 1',
+    'draft-02': 'Draft 2',
+    'draft-03': 'Draft 3',
+    'draft-04': 'Draft 4, 5',
+    'draft-06': 'Draft 6',
+    'draft-07': 'Draft 7',
 }
 
 
@@ -104,10 +104,22 @@ def main():
     default="bowtie-report.html",
     type=click.File("w"),
 )
-def report(input: Iterable[str], output: TextIO):
+@click.option(
+    "--outs",
+    "-o",
+    "outputs",
+    help="Where to write the outputted report HTML.",
+    default="endpoint.json",
+    type=click.File("w"),
+)
+def report(input: Iterable[str], output: TextIO, outputs: TextIO):
     """
     Generate a Bowtie report from a previous run.
     """
+    
+    report = _report.from_input(input)
+    summary = report["summary"]
+    dialect = report["run_info"].dialect
 
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
@@ -115,8 +127,37 @@ def report(input: Iterable[str], output: TextIO):
         keep_trailing_newline=True,
     )
     template = env.get_template("report.html.j2")
-    output.write(template.render(**_report.from_input(input)))
+    output.write(template.render(**report))
+    
+    counts = (
+        (
+            (implementation["name"], implementation["language"]),
+            summary.counts[implementation["image"]],
+        )
+        for implementation in summary.implementations
+    )
 
+    combined = [
+        (
+            metadata,
+            {
+                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
+            },
+        )
+        for metadata, each in counts
+    ]
+    passing_percentage = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
+    draft_version = dialect.split("/")[3]
+    
+    json_file = {
+        "schemaVersion": 1,
+        "label": DIALECT_REVERSE_MAPPING[draft_version],
+        "message": passing_percentage,
+        "color": "green"
+        }
+    
+    json_object = json.dumps(json_file, indent=2)
+    output.write(json_object)
 
 @main.command()
 @click.option(
@@ -188,63 +229,6 @@ def summary(input: Iterable[str], format: str | None):
             )
 
         console.Console().print(table)
-
-@main.command()
-@click.argument(
-    "input",
-    default="-",
-    type=click.File(mode="r"),
-)
-@click.option(
-    "--out",
-    "-o",
-    "output",
-    help="Where to write the outputted report HTML.",
-    default="endpoint.json",
-    type=click.File("w"),
-)
-def badges(input: Iterable[str], output: TextIO):
-    """
-    Generate a badge with details about the Bowtie run.
-    """
-    report = _report.from_input(input)
-    summary = report["summary"]
-    dialect = report["run_info"].dialect
-    
-    counts = (
-        (
-            (implementation["name"], implementation["language"]),
-            summary.counts[implementation["image"]],
-        )
-        for implementation in summary.implementations
-    )
-
-    combined = [
-        (
-            metadata,
-            {
-                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
-            },
-        )
-        for metadata, each in counts
-    ]
-    _passpercstring = str("%0.2f" % combined[0][1]['passing_percentage']) + "%25"
-        
-    draft_version = ""
-    for every in dialect.split("/"):
-        if "draft" in every:
-            draft_version = every
-    
-    _jsonfile = {
-        "schemaVersion": 1,
-        "label": DIALECT_REVERSE_MAPPING[draft_version],
-        "message": _passpercstring,
-        "color": "green"
-        }
-    
-    json_object = json.dumps(_jsonfile, indent=2)
-    output.write(json_object)
-
 
 
 def validator_for_dialect(dialect: str | None = None):
