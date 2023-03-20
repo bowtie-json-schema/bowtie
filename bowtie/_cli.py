@@ -107,12 +107,12 @@ def main():
 @click.option(
     "--outs",
     "-o",
-    "outputs",
-    help="Where to write the outputted report HTML.",
-    default="endpoint.json",
+    "badgeoutput",
+    help="Where to write the outputted badge details JSON.",
+    default="badge.json",
     type=click.File("w"),
 )
-def report(input: Iterable[str], output: TextIO, outputs: TextIO):
+def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO):
     """
     Generate a Bowtie report from a previous run.
     """
@@ -157,7 +157,7 @@ def report(input: Iterable[str], output: TextIO, outputs: TextIO):
         }
     
     json_object = json.dumps(json_file, indent=2)
-    output.write(json_object)
+    badgeoutput.write(json_object)
 
 @main.command()
 @click.option(
