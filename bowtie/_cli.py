@@ -105,21 +105,18 @@ def main():
     type=click.File("w"),
 )
 @click.option(
-    "--outs",
-    "-o",
-    "badgeoutput",
+    "--badges",
+    "-b",
+    "gen_badge",
     help="Where to write the outputted badge details JSON.",
-    default="badge.json",
     type=click.File("w"),
 )
-def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO):
+def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO | None):
     """
     Generate a Bowtie report from a previous run.
     """
     
     report = _report.from_input(input)
-    summary = report["summary"]
-    dialect = report["run_info"].dialect
 
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
@@ -129,35 +126,8 @@ def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO):
     template = env.get_template("report.html.j2")
     output.write(template.render(**report))
     
-    counts = (
-        (
-            (implementation["name"], implementation["language"]),
-            summary.counts[implementation["image"]],
-        )
-        for implementation in summary.implementations
-    )
-
-    combined = [
-        (
-            metadata,
-            {
-                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
-            },
-        )
-        for metadata, each in counts
-    ]
-    passing_percentage = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
-    draft_version = dialect.split("/")[3]
-    
-    json_file = {
-        "schemaVersion": 1,
-        "label": DIALECT_REVERSE_MAPPING[draft_version],
-        "message": passing_percentage,
-        "color": "green"
-        }
-    
-    json_object = json.dumps(json_file, indent=2)
-    badgeoutput.write(json_object)
+    if(badgeoutput != None):
+        _badges(report, badgeoutput)
 
 @main.command()
 @click.option(
@@ -841,3 +811,39 @@ def _stem(path: _P) -> str:  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
     return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
+
+def _badges(report: _report.ReportData, output: TextIO):
+    summary = report["summary"]
+    dialect = report["run_info"].dialect
+    
+    counts = (
+        (
+            (implementation["name"], implementation["language"]),
+            summary.counts[implementation["image"]],
+        )
+        for implementation in summary.implementations
+    )
+
+    combined = [
+        (
+            metadata,
+            {
+                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
+            },
+        )
+        for metadata, each in counts
+    ]
+    passing_percentage = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
+    draft_version = dialect.split("/")[3]
+    
+    json_file = {
+        "schemaVersion": 1,
+        "label": DIALECT_REVERSE_MAPPING[draft_version],
+        "message": passing_percentage,
+        "color": "green"
+        }
+    
+    json_object = json.dumps(json_file, indent=2)
+    output.write(json_object)
+    
+    # click.echo(summary.implementations[0]['dialects'])
