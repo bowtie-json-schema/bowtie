@@ -70,7 +70,7 @@ class Runner:
                     results.append({"valid": True})
 
             return dict(seq=seq, results=results)
-        except:  # fastjsonschema can even raise things like IndentationError
+        except:  # noqa: E722  fastjsonschema can raise e.g. IndentationError
             return dict(
                 errored=True,
                 seq=seq,

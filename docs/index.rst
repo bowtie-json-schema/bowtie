@@ -21,6 +21,7 @@ Contents
 
     cli
     implementers
+    contributing
 
 
 Installation

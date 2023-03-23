@@ -9,8 +9,11 @@ autoformatter
 boolean
 bowtie
 errored
+frontend
 golang
+implementers
 linter
+linters
 positionally
 runtime
 schemas

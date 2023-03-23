@@ -63,7 +63,9 @@ autosectionlabel_prefix_document = True
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
+    "nox": ("https://nox.thea.codes/en/stable/", None),
     "podman": ("https://docs.podman.io/en/latest", None),
+    "pip": ("https://pip.pypa.io/en/stable/", None),
     "python": ("https://docs.python.org/", None),
 }
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Iterable, Protocol
 import asyncio
 import json
@@ -227,16 +227,10 @@ class Implementation:
             raise StartupFailed(name=image_name)
 
         yield self
-        try:
+        with suppress(GotStderr):  # XXX: Log this too?
             await self._stop()
-        except GotStderr:
-            # XXX: Log this too?
-            pass
-        finally:
-            try:
-                await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
-            except aiodocker.exceptions.DockerError:
-                pass
+        with suppress(aiodocker.exceptions.DockerError):
+            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     async def _start_container(self):
         self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]  # noqa: E501

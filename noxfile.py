@@ -68,16 +68,8 @@ def readme(session):
 
 @session(tags=["style"])
 def style(session):
-    session.install(
-        "flake8",
-        "flake8-broken-line",
-        "flake8-bugbear",
-        "flake8-commas",
-        "flake8-docstrings",
-        "flake8-quotes",
-        "flake8-tidy-imports",
-    )
-    session.run("python", "-m", "flake8", BOWTIE, TESTS, __file__)
+    session.install("ruff")
+    session.run("python", "-m", "ruff", "check", BOWTIE, TESTS, __file__)
 
 
 @session()

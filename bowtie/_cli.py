@@ -71,12 +71,12 @@ DIALECT_SHORTNAMES = {
 LATEST_DIALECT_NAME = "draft2020-12"
 
 DIALECT_REVERSE_MAPPING = {
-    'draft-01': 'Draft 1',
-    'draft-02': 'Draft 2',
-    'draft-03': 'Draft 3',
-    'draft-04': 'Draft 4, 5',
-    'draft-06': 'Draft 6',
-    'draft-07': 'Draft 7',
+    "draft-01": "Draft 1",
+    "draft-02": "Draft 2",
+    "draft-03": "Draft 3",
+    "draft-04": "Draft 4, 5",
+    "draft-06": "Draft 6",
+    "draft-07": "Draft 7",
 }
 
 
@@ -86,7 +86,6 @@ def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
-
     redirect_structlog()
 
 
@@ -107,17 +106,15 @@ def main():
 @click.option(
     "--badges",
     "-b",
-    "gen_badge",
+    "badge_output",
     help="Where to write the outputted badge details JSON.",
     type=click.File("w"),
 )
-def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO | None):
+def report(input: Iterable[str], output: TextIO, badge_output: TextIO | None):
     """
     Generate a Bowtie report from a previous run.
     """
-    
     report = _report.from_input(input)
-
     env = jinja2.Environment(
         loader=jinja2.PackageLoader("bowtie"),
         undefined=jinja2.StrictUndefined,
@@ -125,9 +122,10 @@ def report(input: Iterable[str], output: TextIO, badgeoutput: TextIO | None):
     )
     template = env.get_template("report.html.j2")
     output.write(template.render(**report))
-    
-    if(badgeoutput != None):
-        _badges(report, badgeoutput)
+
+    if badge_output is not None:
+        badge_output.write(_report.badges(report))
+
 
 @main.command()
 @click.option(
@@ -333,7 +331,6 @@ def run(
     """
     Run a sequence of cases provided on standard input.
     """
-
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
@@ -590,7 +587,6 @@ def suite(
         * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
           to run a single file directly from a branch which exists in GitHub
     """  # noqa: E501
-
     cases, dialect = input
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
@@ -764,7 +760,6 @@ def redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
-
     structlog.configure(
         processors=[
             structlog.processors.add_log_level,
@@ -811,39 +806,3 @@ def _stem(path: _P) -> str:  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
     return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
-
-def _badges(report: _report.ReportData, output: TextIO):
-    summary = report["summary"]
-    dialect = report["run_info"].dialect
-    
-    counts = (
-        (
-            (implementation["name"], implementation["language"]),
-            summary.counts[implementation["image"]],
-        )
-        for implementation in summary.implementations
-    )
-
-    combined = [
-        (
-            metadata,
-            {
-                "passing_percentage": (100*(each.total_tests-each.failed_tests)/each.total_tests),
-            },
-        )
-        for metadata, each in counts
-    ]
-    passing_percentage = str("%0.2f" % combined[0][1]['passing_percentage']) + "%"
-    draft_version = dialect.split("/")[3]
-    
-    json_file = {
-        "schemaVersion": 1,
-        "label": DIALECT_REVERSE_MAPPING[draft_version],
-        "message": passing_percentage,
-        "color": "green"
-        }
-    
-    json_object = json.dumps(json_file, indent=2)
-    output.write(json_object)
-    
-    # click.echo(summary.implementations[0]['dialects'])

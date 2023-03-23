@@ -326,7 +326,6 @@ def from_input(input: Iterable[str]) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
-
     lines = (json.loads(line) for line in input)
     run_info = RunInfo(**next(lines))
     summary = run_info.create_summary()
