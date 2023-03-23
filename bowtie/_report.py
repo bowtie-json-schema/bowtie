@@ -20,6 +20,46 @@ class _InvalidBowtieReport(Exception):
     pass
 
 
+DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
+DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
+DRAFT7 = "http://json-schema.org/draft-07/schema#"
+DRAFT6 = "http://json-schema.org/draft-06/schema#"
+DRAFT4 = "http://json-schema.org/draft-04/schema#"
+DRAFT3 = "http://json-schema.org/draft-03/schema#"
+
+
+DIALECT_REVERSE_MAPPING = {
+    DRAFT2020: "Draft 2020-12",
+    DRAFT2019: "Draft 2019-09",
+    DRAFT7: "Draft 7",
+    DRAFT6: "Draft 6",
+    DRAFT4: "Draft 4",
+    DRAFT3: "Draft 3",
+}
+
+DIALECT_SHORTNAMES = {
+    "2020": DRAFT2020,
+    "202012": DRAFT2020,
+    "2020-12": DRAFT2020,
+    "draft2020-12": DRAFT2020,
+    "draft202012": DRAFT2020,
+    "2019": DRAFT2019,
+    "201909": DRAFT2019,
+    "2019-09": DRAFT2019,
+    "draft2019-09": DRAFT2019,
+    "draft201909": DRAFT2019,
+    "7": DRAFT7,
+    "draft7": DRAFT7,
+    "6": DRAFT6,
+    "draft6": DRAFT6,
+    "4": DRAFT4,
+    "draft4": DRAFT4,
+    "3": DRAFT3,
+    "draft3": DRAFT3,
+}
+LATEST_DIALECT_NAME = "draft2020-12"
+
+
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")
 
@@ -343,3 +383,35 @@ def from_input(input: Iterable[str]) -> ReportData:
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
     return ReportData(summary=summary, run_info=run_info)
+
+
+def badges(report: ReportData):
+    summary = report["summary"]
+    dialect = report["run_info"].dialect
+
+    counts = (
+        (
+            (implementation["name"], implementation["language"]),
+            summary.counts[implementation["image"]],
+        )
+        for implementation in summary.implementations
+    )
+
+    combined = [
+        (
+            metadata,
+            {
+                "passing_percentage": (each.total_tests - each.failed_tests)
+                / each.total_tests,
+            },
+        )
+        for metadata, each in counts
+    ]
+    passing_percentage = f"{combined[0][1]['passing_percentage']:.2%}"
+
+    return {
+        "schemaVersion": 1,
+        "label": DIALECT_REVERSE_MAPPING[dialect],
+        "message": passing_percentage,
+        "color": "green",
+    }

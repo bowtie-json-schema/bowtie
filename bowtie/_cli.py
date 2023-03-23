@@ -41,44 +41,6 @@ except ImportError:
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
 
-DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
-DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
-DRAFT7 = "http://json-schema.org/draft-07/schema#"
-DRAFT6 = "http://json-schema.org/draft-06/schema#"
-DRAFT4 = "http://json-schema.org/draft-04/schema#"
-DRAFT3 = "http://json-schema.org/draft-03/schema#"
-
-DIALECT_SHORTNAMES = {
-    "2020": DRAFT2020,
-    "202012": DRAFT2020,
-    "2020-12": DRAFT2020,
-    "draft2020-12": DRAFT2020,
-    "draft202012": DRAFT2020,
-    "2019": DRAFT2019,
-    "201909": DRAFT2019,
-    "2019-09": DRAFT2019,
-    "draft2019-09": DRAFT2019,
-    "draft201909": DRAFT2019,
-    "7": DRAFT7,
-    "draft7": DRAFT7,
-    "6": DRAFT6,
-    "draft6": DRAFT6,
-    "4": DRAFT4,
-    "draft4": DRAFT4,
-    "3": DRAFT3,
-    "draft3": DRAFT3,
-}
-LATEST_DIALECT_NAME = "draft2020-12"
-
-DIALECT_REVERSE_MAPPING = {
-    "draft-01": "Draft 1",
-    "draft-02": "Draft 2",
-    "draft-03": "Draft 3",
-    "draft-04": "Draft 4, 5",
-    "draft-06": "Draft 6",
-    "draft-07": "Draft 7",
-}
-
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
@@ -124,7 +86,7 @@ def report(input: Iterable[str], output: TextIO, badge_output: TextIO | None):
     output.write(template.render(**report))
 
     if badge_output is not None:
-        badge_output.write(_report.badges(report))
+        badge_output.write(json.dumps(_report.badges(report), indent=2))
 
 
 @main.command()
@@ -247,10 +209,10 @@ DIALECT = click.option(
     "dialect",
     help=(
         "A URI or shortname identifying the dialect of each test case."
-        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
+        f"Shortnames include: {sorted(_report.DIALECT_SHORTNAMES)}."
     ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
-    default=LATEST_DIALECT_NAME,
+    type=lambda dialect: _report.DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    default=_report.LATEST_DIALECT_NAME,
 )
 FILTER = click.option(
     "-k",
@@ -552,7 +514,7 @@ class _TestSuiteCases(click.ParamType):
 
         remotes = version_path.parent.parent / "remotes"
         cases = suite_cases_from(paths=paths, remotes=remotes)
-        dialect = DIALECT_SHORTNAMES.get(version_path.name)
+        dialect = _report.DIALECT_SHORTNAMES.get(version_path.name)
 
         return cases, dialect
 
