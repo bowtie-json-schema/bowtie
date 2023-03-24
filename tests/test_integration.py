@@ -471,7 +471,9 @@ async def test_validate(envsonschema, tmp_path):
 @pytest.mark.asyncio
 async def test_summary(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text(
-        '{"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}',
+        """\
+            {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        """,
     )
 
     validate = await asyncio.create_subprocess_exec(
