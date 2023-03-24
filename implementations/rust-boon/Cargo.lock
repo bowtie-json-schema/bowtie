@@ -19,15 +19,16 @@ checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
 
 [[package]]
 name = "boon"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2566e35d36f1ca44963385ee2307fa01d3539c018ebb216637c0af6a407a5d57"
+checksum = "1acd0f59d4c45e2e20a99212835720f229d12b86ba877f77f9d69c1b5db032f8"
 dependencies = [
  "base64",
  "idna",
  "once_cell",
  "percent-encoding",
  "regex",
+ "regex-syntax",
  "serde",
  "serde_json",
  "url",
