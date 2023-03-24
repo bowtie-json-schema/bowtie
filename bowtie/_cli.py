@@ -188,6 +188,8 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                 valid = result[1].get(implementation["image"], "error")
                 if valid == "error":
                     validation[implementation["name"]] = valid
+                elif valid[1] == "skipped":
+                    validation[implementation["name"]] = "skipped"
                 elif valid[0].valid is True:
                     validation[implementation["name"]] = "valid"
                 else:
@@ -238,8 +240,10 @@ def summary(input: Iterable[str], format: str | None, show: str | None):
                     "Instance",
                     box=box.SIMPLE_HEAD,
                 )
-                for (implementation, language), _counts in ordered:
-                    schema_table.add_column(f"{implementation} ({language})")
+                for display in summary.implementations:
+                    schema_table.add_column(
+                        f"{display['name']} ({display['language']})",
+                    )
 
                 for instances in types[1]:
                     schema_table.add_row(

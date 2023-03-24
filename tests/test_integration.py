@@ -471,23 +471,17 @@ async def test_validate(envsonschema, tmp_path):
 @pytest.mark.asyncio
 async def test_summary(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text(
-        json.dumps(
-            {"type": "integer"},
-        ),
+        '{"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}',
     )
-    tmp_path.joinpath("instance.json").write_text("12")
-    tmp_path.joinpath("instance1.json").write_text("12.5")
 
     validate = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
-        "validate",
+        "run",
         "-i",
-        "js-hyperjump",
+        envsonschema,
         tmp_path / "schema.json",
-        tmp_path / "instance.json",
-        tmp_path / "instance1.json",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -510,7 +504,7 @@ async def test_summary(envsonschema, tmp_path):
     assert stderr == b""
     assert json.loads(stdout) == [
         [
-            ["hyperjump-jsv", "javascript"],
+            ["envsonschema", "python"],
             dict(errored=0, failed=0, skipped=0),
         ],
     ]
@@ -531,8 +525,8 @@ async def test_summary(envsonschema, tmp_path):
         [
             {"type": "integer"},
             [
-                [12, {"hyperjump-jsv": "valid"}],
-                [12.5, {"hyperjump-jsv": "invalid"}],
+                [12, {"envsonschema": "valid"}],
+                [12.5, {"envsonschema": "invalid"}],
             ],
         ],
     ]
