@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Any, Iterable, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
 import json
 
@@ -97,13 +97,13 @@ class Stream:
                     raise GotStderr(b"".join(data))
 
         line: bytes
-        rest: Iterable[bytes]
+        rest: list[bytes]
         while True:
             line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]  # noqa: E501
             if rest:
-                line, self._last = self._last + line, rest.pop()
+                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]  # noqa: E501
                 self._buffer.extend(rest)
-                return line
+                return line  # type: ignore[reportUnknownVariableType]  # noqa: E501
 
             message = None
             while message is None:
