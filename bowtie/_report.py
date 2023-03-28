@@ -401,17 +401,25 @@ def badges(report: ReportData):
         (
             metadata,
             {
-                "passing_percentage": (each.total_tests - each.failed_tests)
+                "passing_percentage": (each.total_tests - each.failed_tests - each.skipped_tests - each.errored_tests)
                 / each.total_tests,
             },
         )
         for metadata, each in counts
     ]
+    passing_percentage_float = combined[0][1]['passing_percentage']
     passing_percentage = f"{combined[0][1]['passing_percentage']:.2%}"
-
+    
+    if passing_percentage_float in range(90, 100):
+        color = "success"
+    elif passing_percentage_float in range(80, 100):
+        color = "important"
+    else:
+        color = "critical"
+    
     return {
         "schemaVersion": 1,
         "label": DIALECT_REVERSE_MAPPING[dialect],
         "message": passing_percentage,
-        "color": "green",
+        "color": color,
     }
