@@ -412,12 +412,12 @@ def badges(report: ReportData):
         )
         for metadata, each in counts
     ]
-    passing_percentage_float = combined[0][1]["passing_percentage"]
+    passing_percentage_int = int(combined[0][1]["passing_percentage"] * 100)
     passing_percentage = f"{combined[0][1]['passing_percentage']:.2%}"
 
-    if passing_percentage_float in range(90, 100):
+    if passing_percentage_int in range(90, 100):
         color = "success"
-    elif passing_percentage_float in range(80, 100):
+    elif passing_percentage_int in range(80, 100):
         color = "important"
     else:
         color = "critical"
