@@ -1,4 +1,6 @@
 import readline from "readline/promises";
+import os from 'os';
+import process from 'process';
 import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-2019-09";
 import "@hyperjump/json-schema/draft-07";
@@ -80,6 +82,9 @@ const cmds = {
           "http://json-schema.org/draft-06/schema#",
           "http://json-schema.org/draft-04/schema#",
         ],
+        os: os.platform(),
+        os_version: os.release(),
+        language_version: process.version,
       },
     };
   },
