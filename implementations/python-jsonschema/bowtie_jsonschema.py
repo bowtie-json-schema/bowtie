@@ -5,6 +5,7 @@ import io
 import json
 import sys
 import traceback
+import platform
 
 from jsonschema.protocols import Validator
 from jsonschema.validators import RefResolver, validator_for
@@ -46,6 +47,9 @@ class Runner:
                     "http://json-schema.org/draft-04/schema#",
                     "http://json-schema.org/draft-03/schema#",
                 ],
+                os=platform.system(),
+                os_version=platform.release(),
+                language_version=platform.python_version(),
             ),
         )
 
