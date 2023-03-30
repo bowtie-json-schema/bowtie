@@ -8,8 +8,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"runtime/debug"
 	"strings"
+	"syscall"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
@@ -20,6 +22,21 @@ var drafts = map[string]*jsonschema.Draft{
 	"http://json-schema.org/draft-07/schema#":      jsonschema.Draft7,
 	"http://json-schema.org/draft-06/schema#":      jsonschema.Draft6,
 	"http://json-schema.org/draft-04/schema#":      jsonschema.Draft4,
+}
+
+func getOsVersion() string {
+	var uname syscall.Utsname
+	if err := syscall.Uname(&uname); err != nil {
+		return ""
+	}
+	release := ""
+	for _, b := range uname.Release {
+		if b == 0 {
+			break
+		}
+		release += string(b)
+	}
+	return fmt.Sprintf(release)
 }
 
 func main() {
@@ -65,6 +82,9 @@ func main() {
 						"http://json-schema.org/draft-06/schema#",
 						"http://json-schema.org/draft-04/schema#",
 					},
+					"os":runtime.GOOS,
+					"os_version": getOsVersion(),
+					"language_version":runtime.Version(),
 				},
 			}
 			printJSON(data)
