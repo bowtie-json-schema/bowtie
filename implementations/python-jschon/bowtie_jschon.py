@@ -5,6 +5,7 @@ import io
 import json
 import sys
 import traceback
+import platform
 
 import jschon
 
@@ -65,6 +66,9 @@ class Runner:
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",
                 ],
+                os=platform.system(),
+                os_version=platform.release(),
+                language_version=platform.python_version(),
             ),
         )
 
