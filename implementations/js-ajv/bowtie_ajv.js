@@ -5,7 +5,7 @@ const process = require("process");
 
 const ajv_version = require(path.join(
   path.dirname(path.dirname(require.resolve("ajv"))),
-  "package.json"
+  "package.json",
 )).version;
 
 const DRAFTS = {
