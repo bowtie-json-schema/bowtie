@@ -1,6 +1,6 @@
 import readline from "readline/promises";
-import os from 'os';
-import process from 'process';
+import os from "os";
+import process from "process";
 import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-2019-09";
 import "@hyperjump/json-schema/draft-07";

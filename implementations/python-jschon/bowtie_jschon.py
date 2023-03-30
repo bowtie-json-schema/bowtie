@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from importlib import metadata
 import io
 import json
+import platform
 import sys
 import traceback
-import platform
 
 import jschon
 
