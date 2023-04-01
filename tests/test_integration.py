@@ -517,7 +517,8 @@ async def test_summary_show_validation(envsonschema, tmp_path):
             {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
             {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"crash:1","instance":"{}"}]}
             {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"skip:1,","instance":""}]}
-        """)
+        """
+    )
 
     validate = await asyncio.create_subprocess_exec(
         sys.executable,
