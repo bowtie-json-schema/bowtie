@@ -82,9 +82,9 @@ func main() {
 						"http://json-schema.org/draft-06/schema#",
 						"http://json-schema.org/draft-04/schema#",
 					},
-					"os":runtime.GOOS,
-					"os_version": getOsVersion(),
-					"language_version":runtime.Version(),
+					"os":               runtime.GOOS,
+					"os_version":       getOsVersion(),
+					"language_version": runtime.Version(),
 				},
 			}
 			printJSON(data)
