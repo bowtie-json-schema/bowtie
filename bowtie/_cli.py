@@ -146,7 +146,7 @@ def report(
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: str | None, show: str | None):
+def summary(input: Iterable[str], format: str | None, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """

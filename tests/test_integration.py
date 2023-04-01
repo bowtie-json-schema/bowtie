@@ -469,12 +469,55 @@ async def test_validate(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary(envsonschema, tmp_path):
+async def test_summary_show_failures(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    validate = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "validate",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    validate_stdout, _ = await validate.communicate()
+
+    summary_failures = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "failures",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await summary_failures.communicate(validate_stdout)
+    assert stderr == b""
+    assert json.loads(stdout) == [
+        [
+            ["envsonschema", "python"],
+            dict(errored=0, failed=0, skipped=0),
+        ],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_summary_show_validation(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         """\
             {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-        """,
-    )
+            {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"crash:1","instance":"{}"}]}
+            {"description":"summary test","schema":{"type": "integer"},"tests":[{"description":"skip:1,","instance":""}]}
+        """)
 
     validate = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -489,7 +532,7 @@ async def test_summary(envsonschema, tmp_path):
     )
     validate_stdout, _ = await validate.communicate()
 
-    summary = await asyncio.create_subprocess_exec(
+    summary_validation = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
@@ -497,31 +540,12 @@ async def test_summary(envsonschema, tmp_path):
         "--format",
         "json",
         "--show",
-        "failures",
+        "validation",
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await summary.communicate(validate_stdout)
-    assert stderr == b""
-    assert json.loads(stdout) == [
-        [
-            ["envsonschema", "python"],
-            dict(errored=0, failed=0, skipped=0),
-        ],
-    ]
-    summary = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "bowtie",
-        "summary",
-        "--format",
-        "json",
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await summary.communicate(validate_stdout)
+    stdout, stderr = await summary_validation.communicate(validate_stdout)
     assert stderr == b""
     assert json.loads(stdout) == [
         [
@@ -529,6 +553,12 @@ async def test_summary(envsonschema, tmp_path):
             [
                 [12, {"envsonschema": "valid"}],
                 [12.5, {"envsonschema": "invalid"}],
+            ],
+        ],
+        [
+            {"type": "integer"},
+            [
+                ["{}", {"envsonschema": "error"}],
             ],
         ],
     ]
