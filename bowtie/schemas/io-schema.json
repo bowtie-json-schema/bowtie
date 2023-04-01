@@ -97,6 +97,7 @@
                     "language_version": {
                       "type": "string",
                       "description": "Version of language used to run the implementation"
+                    }
                   }
                 }
               }
