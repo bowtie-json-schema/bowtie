@@ -108,8 +108,11 @@ async def bowtie(*args, succeed=True):
         lines = (json.loads(line.decode()) for line in stdout.splitlines())
 
         if succeed:
+            header = next(lines, None)
+            if header is None:
+                pytest.fail(f"No report produced, stderr contained: {stderr}")
             try:
-                RunInfo(**next(lines))
+                RunInfo(**header)
             except _InvalidBowtieReport:
                 pytest.fail(f"Invalid report, stderr contained: {stderr}")
         else:

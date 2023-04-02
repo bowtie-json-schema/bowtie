@@ -70,6 +70,9 @@ DIALECT_SHORTNAMES = {
 }
 LATEST_DIALECT_NAME = "draft2020-12"
 
+#: Should match the magic value used to validate `schema`s in `io-schema.json`
+CURRENT_DIALECT_URI = "urn:current-dialect"
+
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
@@ -195,7 +198,7 @@ def validator_for_dialect(dialect: str | None = None):
         dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     def validate(instance: Any, schema: Any) -> None:
-        resolver.store["urn:current-dialect"] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        resolver.store[CURRENT_DIALECT_URI] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
         validator = Validator(schema, resolver=resolver)  # type: ignore[reportUnknownVariableType]  # noqa: E501
         try:
             errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
