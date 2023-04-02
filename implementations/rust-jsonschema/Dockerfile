@@ -8,6 +8,7 @@ WORKDIR /usr/src/myapp
 COPY . .
 
 ENV RUSTFLAGS='-C linker=x86_64-linux-gnu-gcc'
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM alpine
