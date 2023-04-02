@@ -85,6 +85,18 @@
                           "url": { "type": "string", "format": "uri" }
                         }
                       }
+                    },
+                    "os": {
+                      "type": "string",
+                      "description": "Operating system the implementation is running on"
+                    },
+                    "os_version": {
+                      "type": "string",
+                      "description": "Version of OS the implementation is running on"
+                    },
+                    "language_version": {
+                      "type": "string",
+                      "description": "Version of language used to run the implementation"
                     }
                   }
                 }

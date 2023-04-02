@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from importlib import metadata
 import io
 import json
+import platform
 import sys
 import traceback
 
@@ -65,6 +66,9 @@ class Runner:
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",
                 ],
+                os=platform.system(),
+                os_version=platform.release(),
+                language_version=platform.python_version(),
             ),
         )
 

@@ -1,5 +1,7 @@
 const path = require("path");
 const readline = require("readline");
+const os = require("os");
+const process = require("process");
 
 const ajv_version = require(path.join(
   path.dirname(path.dirname(require.resolve("ajv"))),
@@ -47,6 +49,9 @@ const cmds = {
           "http://json-schema.org/draft-06/schema#",
           "http://json-schema.org/draft-04/schema#",
         ],
+        os: os.platform(),
+        os_version: os.release(),
+        language_version: process.version,
       },
     };
   },
