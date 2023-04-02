@@ -30,7 +30,7 @@ charset-normalizer==3.1.0
     #   requests
 click==8.1.3
     # via bowtie-json-schema
-cryptography==39.0.2
+cryptography==40.0.1
     # via pyjwt
 frozenlist==1.3.3
     # via
@@ -79,7 +79,7 @@ pytest==7.2.2
     #   -r test-requirements.in
     #   pytest-asyncio
     #   pytest-icdiff
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via -r test-requirements.in
 pytest-icdiff==0.6
     # via -r test-requirements.in
@@ -87,7 +87,7 @@ python-dateutil==2.8.2
     # via github3-py
 requests==2.28.2
     # via github3-py
-rich==13.3.2
+rich==13.3.3
     # via bowtie-json-schema
 six==1.16.0
     # via python-dateutil
@@ -97,7 +97,7 @@ typing-extensions==4.5.0
     # via aiodocker
 uritemplate==4.1.1
     # via github3-py
-urllib3==1.26.14
+urllib3==1.26.15
     # via requests
 yarl==1.8.2
     # via aiohttp
