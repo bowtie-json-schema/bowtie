@@ -73,6 +73,7 @@ LATEST_DIALECT_NAME = "draft2020-12"
 #: Should match the magic value used to validate `schema`s in `io-schema.json`
 CURRENT_DIALECT_URI = "urn:current-dialect"
 
+
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
@@ -100,9 +101,11 @@ def main():
     "--generate-dialect-navigation",
     help="generate hyperlinks to all dialect reports",
     is_flag=True,
-    default=False
+    default=False,
 )
-def report(input: Iterable[str], output: TextIO, generate_dialect_navigation: bool):
+def report(
+    input: Iterable[str], output: TextIO, generate_dialect_navigation: bool
+):
     """
     Generate a Bowtie report from a previous run.
     """
@@ -112,7 +115,11 @@ def report(input: Iterable[str], output: TextIO, generate_dialect_navigation: bo
         keep_trailing_newline=True,
     )
     template = env.get_template("report.html.j2")
-    output.write(template.render(**_report.from_input(input, generate_dialect_navigation)))
+    output.write(
+        template.render(
+            **_report.from_input(input, generate_dialect_navigation)
+        )
+    )
 
 
 @main.command()
