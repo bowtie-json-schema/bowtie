@@ -24,28 +24,29 @@ jobs:
     outputs:
       images: ${{ steps.filter.outputs.changes }}
     steps:
-    - uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        filters: |
-          clojure-json-schema: implementations/clojure-json-schema
-          cpp-valijson: implementations/cpp-valijson
-          dotnet-jsonschema-net: implementations/dotnet-jsonschema-net
-          go-gojsonschema: implementations/go-gojsonschema
-          go-jsonschema: implementations/go-jsonschema
-          js-ajv: implementations/js-ajv
-          js-hyperjump: implementations/js-hyperjump
-          lua-jsonschema: implementations/lua-jsonschema
-          python-fastjsonschema: implementations/python-fastjsonschema
-          python-jschon: implementations/python-jschon
-          python-jsonschema: implementations/python-jsonschema
-          ruby-json_schemer: implementations/ruby-json_schemer
-          rust-boon: implementations/rust-boon
-          rust-jsonschema: implementations/rust-jsonschema
-          ts-vscode-json-languageservice: implementations/ts-vscode-json-languageservice
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            clojure-json-schema: implementations/clojure-json-schema
+            cpp-valijson: implementations/cpp-valijson
+            dotnet-jsonschema-net: implementations/dotnet-jsonschema-net
+            go-gojsonschema: implementations/go-gojsonschema
+            go-jsonschema: implementations/go-jsonschema
+            js-ajv: implementations/js-ajv
+            js-hyperjump: implementations/js-hyperjump
+            lua-jsonschema: implementations/lua-jsonschema
+            python-fastjsonschema: implementations/python-fastjsonschema
+            python-jschon: implementations/python-jschon
+            python-jsonschema: implementations/python-jsonschema
+            ruby-json_schemer: implementations/ruby-json_schemer
+            rust-boon: implementations/rust-boon
+            rust-jsonschema: implementations/rust-jsonschema
+            ts-vscode-json-languageservice: implementations/ts-vscode-json-languageservice
 
   build:
     needs: changes
+    if: ${{ needs.changes.outputs.images != '[]' && needs.changes.outputs.images!= '' }}
     runs-on: ubuntu-latest
 
     permissions:
