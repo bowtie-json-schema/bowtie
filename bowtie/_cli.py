@@ -243,10 +243,10 @@ def summary(input: Iterable[str], format: str | None, show: str):
                         ),
                     )
 
-                for instances in results:
+                for instance, implementations_results in results:
                     schema_table.add_row(
-                        json.dumps(instances[0]),
-                        *instances[1].values(),
+                        json.dumps(instance),
+                        *implementations_results.values(),
                     )
 
                 table.add_row(json.dumps(schema, indent=2), schema_table)
