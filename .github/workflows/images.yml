@@ -7,6 +7,8 @@ on:
       - "implementations/**"
       - ".github/workflows/images.yml"
   push:
+    branches-ignore:
+      - "wip*"
     paths:
       - "implementations/**"
       - ".github/workflows/images.yml"
