@@ -63,6 +63,7 @@ fn main() -> Result<()> {
                     "implementation": {
                         "language": "rust",
                         "name": "jsonschema",
+                        "version": env!("JSONSCHEMA_VERSION"),
                         "homepage": "https://docs.rs/jsonschema/latest/jsonschema/",
                         "issues": "https://github.com/Stranger6667/jsonschema-rs/issues",
 
