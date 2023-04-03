@@ -233,24 +233,23 @@ def summary(input: Iterable[str], format: str | None, show: str):
                 caption=f"{summary.total_tests} {test} ran",
             )
 
-            for types in all_results:
-                schema_table = Table(
-                    "Instance",
-                    box=box.SIMPLE_HEAD,
-                    show_lines=True,
-                )
-                for display in summary.implementations:
+            for schema, results in all_results:
+                schema_table = Table("Instance", box=box.SIMPLE_HEAD)
+                for implementation in summary.implementations:
                     schema_table.add_column(
-                        f"{display['name']} ({display['language']})",
+                        Text.assemble(
+                            implementation["name"],
+                            (f" ({implementation['language']})", "dim"),
+                        ),
                     )
 
-                for instances in types[1]:
+                for instances in results:
                     schema_table.add_row(
                         json.dumps(instances[0]),
                         *instances[1].values(),
                     )
 
-                table.add_row(json.dumps(types[0], indent=1), schema_table)
+                table.add_row(json.dumps(schema, indent=2), schema_table)
                 table.add_section()
 
         console.Console().print(table)
