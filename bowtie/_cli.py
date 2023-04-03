@@ -104,7 +104,9 @@ def main():
     default=False,
 )
 def report(
-    input: Iterable[str], output: TextIO, generate_dialect_navigation: bool
+    input: Iterable[str],
+    output: TextIO,
+    generate_dialect_navigation: bool,
 ):
     """
     Generate a Bowtie report from a previous run.
