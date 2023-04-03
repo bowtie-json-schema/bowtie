@@ -16,27 +16,36 @@ on:
       - "v*"
 
 jobs:
-  list:
+  # JOB to run change detection
+  changes:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     outputs:
-      images: ${{ steps.images-matrix.outputs.images }}
+      images: ${{ steps.filter.outputs.changes }}
     steps:
-      - uses: actions/checkout@v3
-      - id: images-matrix
-        run: |
-          python3 -c '
-          from pathlib import Path
-          import json
-          paths = [
-              str(path.name)
-              for path in Path("implementations").iterdir()
-              if path.is_dir()
-          ]
-          print(f"images={json.dumps(paths)}")
-          ' >> $GITHUB_OUTPUT
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          clojure-json-schema: implementations/clojure-json-schema
+          cpp-valijson: implementations/cpp-valijson
+          dotnet-jsonschema-net: implementations/dotnet-jsonschema-net
+          go-gojsonschema: implementations/go-gojsonschema
+          go-jsonschema: implementations/go-jsonschema
+          js-ajv: implementations/js-ajv
+          js-hyperjump: implementations/js-hyperjump
+          lua-jsonschema: implementations/lua-jsonschema
+          python-fastjsonschema: implementations/python-fastjsonschema
+          python-jschon: implementations/python-jschon
+          python-jsonschema: implementations/python-jsonschema
+          ruby-json_schemer: implementations/ruby-json_schemer
+          rust-boon: implementations/rust-boon
+          rust-jsonschema: implementations/rust-jsonschema
+          ts-vscode-json-languageservice: implementations/ts-vscode-json-languageservice
 
   build:
-    needs: list
+    needs: changes
     runs-on: ubuntu-latest
 
     permissions:
@@ -45,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.list.outputs.images) }}
+        image: ${{ fromJson(needs.changes.outputs.images) }}
 
     steps:
       - uses: actions/checkout@v3
