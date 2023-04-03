@@ -48,7 +48,7 @@ func main() {
 		var request map[string]interface{}
 
 		decoder := json.NewDecoder(strings.NewReader(scanner.Text()))
-		decoder.UseNumber()
+		decoder.UseNumber() // we want number precision
 		err := decoder.Decode(&request)
 		if err != nil {
 			fmt.Printf("could not unmarshal json: %s\n", err)
