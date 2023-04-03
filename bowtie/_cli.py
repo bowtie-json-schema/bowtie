@@ -178,31 +178,29 @@ def summary(input: Iterable[str], format: str | None, show: str):
         reverse=True,
     )
 
-    validity = []
+    all_results = []
     for _, schemas in summary._combined.items():
-        schema = []
-        instances = []
+        results = []
         for result in schemas["results"]:
-            validation = {}
+            descriptions = {}
             for implementation in summary.implementations:
                 valid = result[1].get(implementation["image"], "error")
                 if valid == "error":
-                    validation[implementation["name"]] = valid
+                    descriptions[implementation["name"]] = valid
                 elif valid[1] == "skipped":
-                    validation[implementation["name"]] = "skipped"
-                elif valid[0].valid is True:
-                    validation[implementation["name"]] = "valid"
+                    descriptions[implementation["name"]] = "skipped"
+                elif valid[0].valid:
+                    descriptions[implementation["name"]] = "valid"
                 else:
-                    validation[implementation["name"]] = "invalid"
-            instances.append([result[0]["instance"], validation])
-        schema.append(schemas["case"]["schema"])
-        schema.append(instances)
-        validity.append(schema)
+                    descriptions[implementation["name"]] = "invalid"
+            results.append((result[0]["instance"], descriptions))
+        all_results.append((schemas["case"]["schema"], results))
+
     if format == "json":
         if show == "failures":
             click.echo(json.dumps(ordered, indent=2))
         else:
-            click.echo(json.dumps(validity, indent=2))
+            click.echo(json.dumps(all_results, indent=2))
     else:
         from rich import box
         from rich.table import Column, Table
@@ -235,10 +233,11 @@ def summary(input: Iterable[str], format: str | None, show: str):
                 caption=f"{summary.total_tests} {test} ran",
             )
 
-            for types in validity:
+            for types in all_results:
                 schema_table = Table(
                     "Instance",
                     box=box.SIMPLE_HEAD,
+                    show_lines=True,
                 )
                 for display in summary.implementations:
                     schema_table.add_column(
@@ -247,7 +246,7 @@ def summary(input: Iterable[str], format: str | None, show: str):
 
                 for instances in types[1]:
                     schema_table.add_row(
-                        str(instances[0]),
+                        json.dumps(instances[0]),
                         *instances[1].values(),
                     )
 
