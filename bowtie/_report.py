@@ -277,6 +277,11 @@ class _Summary:
         self.did_fail_fast = did_fail_fast
 
     def case_results(self):
+        return (
+            (each["case"], each["results"]) for each in self._combined.values()
+        )
+
+    def flat_results(self):
         for seq, each in sorted(self._combined.items()):
             case, results = each["case"], each["results"]
             yield seq, case["description"], case["schema"], results
@@ -325,7 +330,7 @@ class ReportData(TypedDict):
 
 def from_input(
     input: Iterable[str],
-    generate_dialect_navigation: bool,
+    generate_dialect_navigation: bool = False,
 ) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
