@@ -554,33 +554,75 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
         [
             {"type": "integer"},
             [
-                [12, {"envsonschema (python)": "valid", "lintsonschema (python)": "valid"}],
-                [12.5, {"envsonschema (python)": "invalid", "lintsonschema (python)": "valid"}],
+                [
+                    12,
+                    {
+                        "envsonschema (python)": "valid",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
+                [
+                    12.5,
+                    {
+                        "envsonschema (python)": "invalid",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "string"},
             [
-                ["{}", {"envsonschema (python)": "error", "lintsonschema (python)": "valid"}],
+                [
+                    "{}",
+                    {
+                        "envsonschema (python)": "error",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "number"},
             [
-                ["{}", {"envsonschema (python)": "error", "lintsonschema (python)": "valid"}],
-                [37, {"envsonschema (python)": "error", "lintsonschema (python)": "valid"}],
+                [
+                    "{}",
+                    {
+                        "envsonschema (python)": "error",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
+                [
+                    37,
+                    {
+                        "envsonschema (python)": "error",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "array"},
             [
-                ["", {"envsonschema (python)": "skipped", "lintsonschema (python)": "valid"}],
+                [
+                    "",
+                    {
+                        "envsonschema (python)": "skipped",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "boolean"},
             [
-                ["", {"envsonschema (python)": "skipped", "lintsonschema (python)": "valid"}],
+                [
+                    "",
+                    {
+                        "envsonschema (python)": "skipped",
+                        "lintsonschema (python)": "valid",
+                    },
+                ],
             ],
         ],
     ]
