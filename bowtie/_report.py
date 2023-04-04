@@ -297,14 +297,16 @@ class _Summary:
             lang = impl["language"]
             counts = self.counts[impl["image"]]
             total = counts.total_tests
-            passed = (total
+            passed = (
+                total
                 - counts.failed_tests
                 - counts.errored_tests
-                - counts.skipped_tests)
-            pct = (passed/total)*100
-            impl_dir = os.path.join(target_dir, lang+"-"+name)
+                - counts.skipped_tests
+            )
+            pct = (passed / total) * 100
+            impl_dir = os.path.join(target_dir, lang + "-" + name)
             os.makedirs(impl_dir, exist_ok=True)
-            file = os.path.join(impl_dir, label.replace(" ", "_")+".json")
+            file = os.path.join(impl_dir, label.replace(" ", "_") + ".json")
             with open(file, "w") as f:
                 badge = {
                     "schemaVersion": 1,
@@ -313,6 +315,7 @@ class _Summary:
                     "color": badge_color(pct),
                 }
                 f.write(json.dumps(badge))
+
 
 @attrs.frozen
 class RunInfo:
@@ -347,6 +350,7 @@ class RunInfo:
         Create a summary object used to incrementally parse reports.
         """
         return _Summary(implementations=self._implementations.values())
+
 
 class ReportData(TypedDict):
     summary: _Summary
@@ -384,7 +388,7 @@ def from_input(
     )
 
 
-def badge_color(pct: float) -> str :
+def badge_color(pct: float) -> str:
     """
     Create hex color from red(0%) to yellow(50%) to green(100%).
     """

@@ -128,9 +128,7 @@ def report(
         dialect = report_data["run_info"].dialect
         report_data["summary"].generate_badges(badges, dialect)
     template = env.get_template("report.html.j2")
-    output.write(
-        template.render(**report_data)
-    )
+    output.write(template.render(**report_data))
 
 
 @main.command()
