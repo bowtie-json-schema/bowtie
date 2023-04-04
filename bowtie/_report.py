@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict
 import importlib.metadata
 import json
+import os
 import sys
 
 import attrs
@@ -281,6 +282,37 @@ class _Summary:
             case, results = each["case"], each["results"]
             yield seq, case["description"], case["schema"], results
 
+    def generate_badges(self, target_dir: str, dialect: str):
+        labels = {
+            "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
+            "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
+            "http://json-schema.org/draft-07/schema#": "Draft 7",
+            "http://json-schema.org/draft-06/schema#": "Draft 6",
+            "http://json-schema.org/draft-04/schema#": "Draft 4",
+            "http://json-schema.org/draft-03/schema#": "Draft 3",
+        }
+        label = labels[dialect]
+        for impl in self.implementations:
+            name = impl["name"]
+            lang = impl["language"]
+            counts = self.counts[impl["image"]]
+            total = counts.total_tests
+            passed = (total
+                - counts.failed_tests
+                - counts.errored_tests
+                - counts.skipped_tests)
+            pct = (passed/total)*100
+            impl_dir = os.path.join(target_dir, lang+"-"+name)
+            os.makedirs(impl_dir, exist_ok=True)
+            file = os.path.join(impl_dir, label.replace(" ", "_")+".json")
+            with open(file, "w") as f:
+                badge = {
+                    "schemaVersion": 1,
+                    "label": label,
+                    "message": "%d%% Passing" % int(pct),
+                    "color": badge_color(pct),
+                }
+                f.write(json.dumps(badge))
 
 @attrs.frozen
 class RunInfo:
@@ -316,7 +348,6 @@ class RunInfo:
         """
         return _Summary(implementations=self._implementations.values())
 
-
 class ReportData(TypedDict):
     summary: _Summary
     run_info: RunInfo
@@ -351,3 +382,17 @@ def from_input(
         run_info=run_info,
         generate_dialect_navigation=generate_dialect_navigation,
     )
+
+
+def badge_color(pct: float) -> str :
+    """
+    Create hex color from red(0%) to yellow(50%) to green(100%).
+    """
+    r, g, b = 0, 0, 0
+    if pct < 50:
+        r = 255
+        g = int(5.1 * pct)
+    else:
+        g = 255
+        r = 510 - int(5.1 * pct)
+    return f"{r:02x}{g:02x}{b:02x}"
