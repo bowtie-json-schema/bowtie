@@ -168,7 +168,7 @@
                   <td>
                     <small class="font-monospace text-muted">{{ implementation.get("version", "") }}</small>
 
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-runtime-info">
                       more info
                     </button>
                   </td>
@@ -340,6 +340,29 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div class="modal fade" role="dialog" id="implementation-{{ loop.index }}-runtime-info" tabindex="-1" aria-labelledby="implementation-{{ loop.index }}-runtime-info-label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="implementation-{{ loop.index }}-runtime-info-label">
+                <b>{{ implementation.name }} </b> <small class="text-muted"> {{ implementation.language }}</small>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>OS Version : </strong>{{ implementation.get("os_version", "") }}</p>
+                <p><strong>OS : </strong>{{ implementation.get("os", "") }}</p>
+                <p><strong>Language : </strong>{{ implementation.language }}</p>
+                <p><strong>Language Version : </strong>{{ implementation.get("language_version", "") }}</p>
+            </div>
+            <div class="modal-footer m-2 p-0">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
         </div>
