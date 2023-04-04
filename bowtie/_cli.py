@@ -95,6 +95,7 @@ def main():
     "output",
     help="Where to write the outputted report HTML.",
     default="bowtie-report.html",
+    show_default=True,
     type=click.File("w"),
 )
 @click.option(
@@ -140,6 +141,7 @@ def report(
     (whether instances are valid or not) or test failure results
     (whether the validation results match expected validation results)""",
     default="validation",
+    show_default=True,
     type=click.Choice(["failures", "validation"]),
 )
 @click.argument(
@@ -191,7 +193,7 @@ def _ordered_failures(summary):
     )
 
 
-def _failure_table(summary: _report._Summary, results):
+def _failure_table(summary, results):
     from rich.table import Table
     from rich.text import Text
 
@@ -239,7 +241,7 @@ def _validation_results(summary):
     return all_results
 
 
-def _validation_results_table(summary: _report._Summary, results):
+def _validation_results_table(summary, results):
     from rich import box
     from rich.table import Column, Table
     from rich.text import Text
@@ -326,6 +328,7 @@ DIALECT = click.option(
     ),
     type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     default=LATEST_DIALECT_NAME,
+    show_default=True,
 )
 FILTER = click.option(
     "-k",
@@ -344,6 +347,7 @@ SET_SCHEMA = click.option(
     "--set-schema/--no-set-schema",
     "-S",
     "set_schema",
+    show_default=True,
     default=False,
     help=(
         "Explicitly set $schema in all (non-boolean) case schemas sent to "
@@ -357,6 +361,7 @@ TIMEOUT = click.option(
     "read_timeout_sec",
     metavar="SECONDS",
     default=2.0,
+    show_default=True,
     help=(
         "An explicit timeout to wait for each implementation to respond "
         "to *each* instance being validated. Set this to 0 if you wish "
