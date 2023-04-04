@@ -185,18 +185,18 @@ def summary(input: Iterable[str], format: str | None, show: str):
             descriptions = {}
             for implementation in summary.implementations:
                 valid = result[1].get(implementation["image"], "error")
-                key="{} ({})".format(
+                key = "{} ({})".format(
                     implementation["name"],
                     implementation["language"],
                 )
                 if valid == "error":
-                    descriptions[key]=valid
+                    descriptions[key] = valid
                 elif valid[1] == "skipped":
-                    descriptions[key]="skipped"
+                    descriptions[key] = "skipped"
                 elif valid[0].valid:
-                    descriptions[key]="valid"
+                    descriptions[key] = "valid"
                 else:
-                    descriptions[key]="invalid"
+                    descriptions[key] = "invalid"
             results.append((result[0]["instance"], descriptions))
         all_results.append((schemas["case"]["schema"], results))
     # print(all_results)
