@@ -369,15 +369,21 @@ def validate(
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
-def info(context: click.Context, **kwargs: Any):
+@click.option(
+     "--badges",
+     "-b",
+     help="Directory to write the generated badge json files.",
+     type=click.Path(),
+ )
+def info(context: click.Context, badges: str | None, **kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
-    exit_code = asyncio.run(_info(**kwargs))
+    exit_code = asyncio.run(_info(badges, **kwargs))
     context.exit(exit_code)
 
 
-async def _info(image_names: list[str]):
+async def _info(badges_dir: str | None , image_names: list[str]):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -414,6 +420,43 @@ async def _info(image_names: list[str]):
                     )
                 ),
             )
+
+            # generate badge
+            if badges_dir is not None:
+                versions_map = {
+                     "https://json-schema.org/draft/2020-12/schema": "2020-12",
+                     "https://json-schema.org/draft/2019-09/schema": "2019-09",
+                     "http://json-schema.org/draft-07/schema#": "7",
+                     "http://json-schema.org/draft-06/schema#": "6",
+                     "http://json-schema.org/draft-04/schema#": "4",
+                     "http://json-schema.org/draft-03/schema#": "3",
+                }
+                metadata = implementation.metadata
+                versions = [
+                    versions_map[dialect] for dialect in metadata["dialects"]
+                ]
+                def numeric_version(v: str) -> int:
+                    try:
+                        dash = v.index("-")
+                        v = v[:dash]
+                    except ValueError:
+                        pass
+                    return int(v)
+                versions = sorted(versions, key = numeric_version, reverse = True)
+                impl_dir = os.path.join(
+                    badges_dir, metadata["language"]+"-"+metadata["name"]
+                )
+                os.makedirs(impl_dir, exist_ok=True)
+                file = os.path.join(impl_dir, "dialects.json")
+                with open(file, "w") as f:
+                    badge = {
+                        "schemaVersion": 1,
+                        "label": "JSON Schema Versions",
+                        "message": ", ".join(versions),
+                        "color": "green",
+                    }
+                    f.write(json.dumps(badge))
+
     return exit_code
 
 
