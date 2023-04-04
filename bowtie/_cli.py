@@ -223,26 +223,23 @@ def _failure_table(
 
 def _validation_results(
     summary: _report._Summary,  # type: ignore[reportPrivateUsage]
-) -> Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]]:
+) -> Iterable[tuple[Any, Iterable[tuple[Any, list[str]]]]]:
     for case, case_results in summary.case_results():
-        results: list[tuple[Any, dict[str, str]]] = []
-        for result in case_results:
-            descriptions: dict[str, str] = {}
+        results: list[tuple[Any, list[str]]] = []
+        for case_result in case_results:
+            descriptions: list[str] = []
             for implementation in summary.implementations:
-                valid = result[1].get(implementation["image"], "error")
-                key = "{} ({})".format(
-                    implementation["name"],
-                    implementation["language"],
-                )
+                valid = case_result[1].get(implementation["image"], "error")
                 if valid == "error":
-                    descriptions[key] = valid
+                    description = "error"
                 elif valid[1] == "skipped":
-                    descriptions[key] = "skipped"
+                    description = "skipped"
                 elif valid[0].valid:
-                    descriptions[key] = "valid"
+                    description = "valid"
                 else:
-                    descriptions[key] = "invalid"
-            results.append((result[0]["instance"], descriptions))
+                    description = "invalid"
+                descriptions.append(description)
+            results.append((case_result[0]["instance"], descriptions))
         yield case["schema"], results
 
 
@@ -259,22 +256,19 @@ def _validation_results_table(
     )
 
     for schema, case_results in results:
-        schema_table = Table("Instance", box=box.SIMPLE_HEAD)
+        subtable = Table("Instance", box=box.SIMPLE_HEAD)
         for implementation in summary.implementations:
-            schema_table.add_column(
+            subtable.add_column(
                 Text.assemble(
                     implementation["name"],
                     (f" ({implementation['language']})", "dim"),
                 ),
             )
 
-        for instance, implementations_results in case_results:
-            schema_table.add_row(
-                json.dumps(instance),
-                *implementations_results.values(),
-            )
+        for instance, ordered_results in case_results:
+            subtable.add_row(json.dumps(instance), *ordered_results)
 
-        table.add_row(json.dumps(schema, indent=2), schema_table)
+        table.add_row(json.dumps(schema, indent=2), subtable)
         table.add_section()
 
     return table
