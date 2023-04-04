@@ -199,7 +199,6 @@ def summary(input: Iterable[str], format: str | None, show: str):
                     descriptions[key]="invalid"
             results.append((result[0]["instance"], descriptions))
         all_results.append((schemas["case"]["schema"], results))
-    # print(all_results)
     if format == "json":
         if show == "failures":
             click.echo(json.dumps(ordered, indent=2))
