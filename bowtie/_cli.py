@@ -129,7 +129,8 @@ def report(
     "--format",
     "-f",
     help="What format to use for the output",
-    default=None,
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
     type=click.Choice(["json", "pretty"]),
 )
 @click.option(
@@ -146,14 +147,25 @@ def report(
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: str | None, show: str):
+def summary(input: Iterable[str], format: str, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
-    if format is None:
-        format = "pretty" if sys.stdout.isatty() else "json"
-
     summary = _report.from_input(input)["summary"]
+    if show == "failures":
+        results = _ordered_failures(summary)
+        to_table = _failure_table
+    else:
+        results = _validation_results(summary)
+        to_table = _validation_results_table
+
+    if format == "json":
+        click.echo(json.dumps(results, indent=2))
+    else:
+        console.Console().print(to_table(summary, results))
+
+
+def _ordered_failures(summary):
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -172,17 +184,42 @@ def summary(input: Iterable[str], format: str | None, show: str):
         )
         for metadata, each in counts
     ]
-    ordered = sorted(
+    return sorted(
         combined,
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
 
+
+def _failure_table(summary: _report._Summary, results):
+    from rich.table import Table
+    from rich.text import Text
+
+    test = "tests" if summary.total_tests != 1 else "test"
+    table = Table(
+        "Implementation",
+        "Skips",
+        "Errors",
+        "Failures",
+        title="Bowtie",
+        caption=f"{summary.total_tests} {test} ran\n",
+    )
+    for (implementation, language), counts in results:
+        table.add_row(
+            Text.assemble(implementation, (f" ({language})", "dim")),
+            str(counts["skipped"]),
+            str(counts["errored"]),
+            str(counts["failed"]),
+        )
+    return table
+
+
+def _validation_results(summary):
     all_results = []
     for _, schemas in summary._combined.items():
-        results = []
+        results: list[tuple[Any, dict[str, str]]] = []
         for result in schemas["results"]:
-            descriptions = {}
+            descriptions: dict[str, str] = {}
             for implementation in summary.implementations:
                 valid = result[1].get(implementation["image"], "error")
                 key = "{} ({})".format(
@@ -199,63 +236,42 @@ def summary(input: Iterable[str], format: str | None, show: str):
                     descriptions[key] = "invalid"
             results.append((result[0]["instance"], descriptions))
         all_results.append((schemas["case"]["schema"], results))
-    if format == "json":
-        if show == "failures":
-            click.echo(json.dumps(ordered, indent=2))
-        else:
-            click.echo(json.dumps(all_results, indent=2))
-    else:
-        from rich import box
-        from rich.table import Column, Table
-        from rich.text import Text
+    return all_results
 
-        if show == "failures":
-            test = "tests" if summary.total_tests != 1 else "test"
-            table = Table(
-                "Implementation",
-                "Skips",
-                "Errors",
-                "Failures",
-                title="Bowtie",
-                caption=f"{summary.total_tests} {test} ran\n",
-            )
-            for (implementation, language), counts in ordered:
-                table.add_row(
-                    Text.assemble(implementation, (f" ({language})", "dim")),
-                    str(counts["skipped"]),
-                    str(counts["errored"]),
-                    str(counts["failed"]),
-                )
 
-        else:
-            test = "tests" if summary.total_tests != 1 else "test"
-            table = Table(
-                Column(header="Schema", vertical="middle"),
-                "",
-                title="Bowtie",
-                caption=f"{summary.total_tests} {test} ran",
+def _validation_results_table(summary: _report._Summary, results):
+    from rich import box
+    from rich.table import Column, Table
+    from rich.text import Text
+
+    test = "tests" if summary.total_tests != 1 else "test"
+    table = Table(
+        Column(header="Schema", vertical="middle"),
+        "",
+        title="Bowtie",
+        caption=f"{summary.total_tests} {test} ran",
+    )
+
+    for schema, case_results in results:
+        schema_table = Table("Instance", box=box.SIMPLE_HEAD)
+        for implementation in summary.implementations:
+            schema_table.add_column(
+                Text.assemble(
+                    implementation["name"],
+                    (f" ({implementation['language']})", "dim"),
+                ),
             )
 
-            for schema, results in all_results:
-                schema_table = Table("Instance", box=box.SIMPLE_HEAD)
-                for implementation in summary.implementations:
-                    schema_table.add_column(
-                        Text.assemble(
-                            implementation["name"],
-                            (f" ({implementation['language']})", "dim"),
-                        ),
-                    )
+        for instance, implementations_results in case_results:
+            schema_table.add_row(
+                json.dumps(instance),
+                *implementations_results.values(),
+            )
 
-                for instance, implementations_results in results:
-                    schema_table.add_row(
-                        json.dumps(instance),
-                        *implementations_results.values(),
-                    )
+        table.add_row(json.dumps(schema, indent=2), schema_table)
+        table.add_section()
 
-                table.add_row(json.dumps(schema, indent=2), schema_table)
-                table.add_section()
-
-        console.Console().print(table)
+    return table
 
 
 def validator_for_dialect(dialect: str | None = None):
