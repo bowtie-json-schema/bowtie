@@ -13,7 +13,9 @@ import os
 import sys
 import zipfile
 
-from rich import console, panel
+from rich import box, console, panel
+from rich.table import Column, Table
+from rich.text import Text
 import aiodocker
 import click
 import jinja2
@@ -162,12 +164,15 @@ def summary(input: Iterable[str], format: str, show: str):
         to_table = _validation_results_table
 
     if format == "json":
-        click.echo(json.dumps(results, indent=2))
+        click.echo(json.dumps(list(results), indent=2))
     else:
-        console.Console().print(to_table(summary, results))
+        table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+        console.Console().print(table)
 
 
-def _ordered_failures(summary):
+def _ordered_failures(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[tuple[str, str], dict[str, int]]]:
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -175,7 +180,7 @@ def _ordered_failures(summary):
         )
         for implementation in summary.implementations
     )
-    combined = [
+    combined = (
         (
             metadata,
             {
@@ -185,7 +190,7 @@ def _ordered_failures(summary):
             },
         )
         for metadata, each in counts
-    ]
+    )
     return sorted(
         combined,
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
@@ -193,10 +198,10 @@ def _ordered_failures(summary):
     )
 
 
-def _failure_table(summary, results):
-    from rich.table import Table
-    from rich.text import Text
-
+def _failure_table(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    results: list[tuple[tuple[str, str], dict[str, int]]],
+):
     test = "tests" if summary.total_tests != 1 else "test"
     table = Table(
         "Implementation",
@@ -216,11 +221,12 @@ def _failure_table(summary, results):
     return table
 
 
-def _validation_results(summary):
-    all_results = []
-    for _, schemas in summary._combined.items():
+def _validation_results(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]]:
+    for case, case_results in summary.case_results():
         results: list[tuple[Any, dict[str, str]]] = []
-        for result in schemas["results"]:
+        for result in case_results:
             descriptions: dict[str, str] = {}
             for implementation in summary.implementations:
                 valid = result[1].get(implementation["image"], "error")
@@ -237,15 +243,13 @@ def _validation_results(summary):
                 else:
                     descriptions[key] = "invalid"
             results.append((result[0]["instance"], descriptions))
-        all_results.append((schemas["case"]["schema"], results))
-    return all_results
+        yield case["schema"], results
 
 
-def _validation_results_table(summary, results):
-    from rich import box
-    from rich.table import Column, Table
-    from rich.text import Text
-
+def _validation_results_table(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    results: Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]],
+):
     test = "tests" if summary.total_tests != 1 else "test"
     table = Table(
         Column(header="Schema", vertical="middle"),

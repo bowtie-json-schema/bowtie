@@ -238,7 +238,7 @@
       </div>
 
       <div class="accordion pt-5" id="cases">
-        {% for seq, description, schema, results in summary.case_results() %}
+        {% for seq, description, schema, results in summary.flat_results() %}
           <div class="accordion-item">
 
             <h2 class="accordion-header" id="case-{{ seq }}-heading">
@@ -310,7 +310,7 @@
             </div>
             <div class="modal-body">
               <div class="row row-cols-1 row-cols-md-2 g-4">
-                {% for seq, description, schema, results in summary.case_results() %}
+                {% for seq, description, schema, results in summary.flat_results() %}
                     {% for test, test_results in results %}
                         {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, True)) %}
                         {% if incorrect == "skipped" %}
