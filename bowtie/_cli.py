@@ -101,6 +101,12 @@ def main():
     type=click.File("w"),
 )
 @click.option(
+    "--badges",
+    "-b",
+    help="Directory to write the generated badge json files.",
+    type=click.Path(),
+)
+@click.option(
     "--generate-dialect-navigation",
     help="generate hyperlinks to all dialect reports",
     is_flag=True,
@@ -109,6 +115,7 @@ def main():
 def report(
     input: Iterable[str],
     output: TextIO,
+    badges: str | None,
     generate_dialect_navigation: bool,
 ):
     """
@@ -119,12 +126,12 @@ def report(
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
+    report_data = _report.from_input(input, generate_dialect_navigation)
+    if badges is not None:
+        dialect = report_data["run_info"].dialect
+        report_data["summary"].generate_badges(badges, dialect)
     template = env.get_template("report.html.j2")
-    output.write(
-        template.render(
-            **_report.from_input(input, generate_dialect_navigation)
-        )
-    )
+    output.write(template.render(**report_data))
 
 
 @main.command()
