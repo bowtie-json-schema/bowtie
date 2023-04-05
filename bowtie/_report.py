@@ -300,6 +300,8 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _BADGE_LABELS[dialect]
         for impl in self.implementations:
+            if dialect not in impl["dialects"]:
+                continue
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
