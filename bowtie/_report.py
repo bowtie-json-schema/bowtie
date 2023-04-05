@@ -315,11 +315,12 @@ class _Summary:
             pct = (passed / total) * 100
             impl_dir = target_dir / f"{lang}-{name}"
             impl_dir.mkdir(parents=True, exist_ok=True)
+            r, g, b = 100 - pct, pct, 0
             badge = {
                 "schemaVersion": 1,
                 "label": label,
                 "message": "%d%% Passing" % int(pct),
-                "color": badge_color(pct),
+                "color": f"{r:02x}{g:02x}{b:02x}",
             }
             badge_path = impl_dir / f"{label.replace(' ', '_')}.json"
             badge_path.write_text(json.dumps(badge))
@@ -394,17 +395,3 @@ def from_input(
         run_info=run_info,
         generate_dialect_navigation=generate_dialect_navigation,
     )
-
-
-def badge_color(pct: float) -> str:
-    """
-    Create hex color from red(0%) to yellow(50%) to green(100%).
-    """
-    r, g, b = 0, 0, 0
-    if pct < 50:
-        r = 255
-        g = int(5.1 * pct)
-    else:
-        g = 255
-        r = 510 - int(5.1 * pct)
-    return f"{r:02x}{g:02x}{b:02x}"
