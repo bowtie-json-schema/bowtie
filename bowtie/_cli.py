@@ -104,7 +104,7 @@ def main():
     "--badges",
     "-b",
     help="Directory to write the generated badge json files.",
-    type=click.Path(),
+    type=click.Path(path_type=Path),
 )
 @click.option(
     "--generate-dialect-navigation",
@@ -115,7 +115,7 @@ def main():
 def report(
     input: Iterable[str],
     output: TextIO,
-    badges: str | None,
+    badges: Path | None,
     generate_dialect_navigation: bool,
 ):
     """

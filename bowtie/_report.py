@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict
 import importlib.metadata
 import json
-import os
 import sys
 
 import attrs
@@ -19,6 +19,16 @@ if TYPE_CHECKING:
 
 class _InvalidBowtieReport(Exception):
     pass
+
+
+_BADGE_LABELS = {
+    "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
+    "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
+    "http://json-schema.org/draft-07/schema#": "Draft 7",
+    "http://json-schema.org/draft-06/schema#": "Draft 6",
+    "http://json-schema.org/draft-04/schema#": "Draft 4",
+    "http://json-schema.org/draft-03/schema#": "Draft 3",
+}
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
@@ -287,16 +297,8 @@ class _Summary:
             case, results = each["case"], each["results"]
             yield seq, case["description"], case["schema"], results
 
-    def generate_badges(self, target_dir: str, dialect: str):
-        labels = {
-            "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
-            "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
-            "http://json-schema.org/draft-07/schema#": "Draft 7",
-            "http://json-schema.org/draft-06/schema#": "Draft 6",
-            "http://json-schema.org/draft-04/schema#": "Draft 4",
-            "http://json-schema.org/draft-03/schema#": "Draft 3",
-        }
-        label = labels[dialect]
+    def generate_badges(self, target_dir: Path, dialect: str):
+        label = _BADGE_LABELS[dialect]
         for impl in self.implementations:
             name = impl["name"]
             lang = impl["language"]
@@ -309,17 +311,16 @@ class _Summary:
                 - counts.skipped_tests
             )
             pct = (passed / total) * 100
-            impl_dir = os.path.join(target_dir, lang + "-" + name)
-            os.makedirs(impl_dir, exist_ok=True)
-            file = os.path.join(impl_dir, label.replace(" ", "_") + ".json")
-            with open(file, "w") as f:
-                badge = {
-                    "schemaVersion": 1,
-                    "label": label,
-                    "message": "%d%% Passing" % int(pct),
-                    "color": badge_color(pct),
-                }
-                f.write(json.dumps(badge))
+            impl_dir = target_dir / f"{lang}-{name}"
+            impl_dir.mkdir(parents=True, exist_ok=True)
+            badge = {
+                "schemaVersion": 1,
+                "label": label,
+                "message": "%d%% Passing" % int(pct),
+                "color": badge_color(pct),
+            }
+            badge_path = impl_dir / f"{label.replace(' ', '_')}.json"
+            badge_path.write_text(json.dumps(badge))
 
 
 @attrs.frozen
