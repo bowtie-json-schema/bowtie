@@ -378,10 +378,18 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+              {% if implementation.get("os_version") %}
                 <p><strong>OS Version: </strong>{{ implementation.get("os_version", "") }}</p>
+              {% endif %}
+              {% if implementation.get("os") %}
                 <p><strong>OS: </strong>{{ implementation.get("os", "") }}</p>
+              {% endif %}
+              {% if implementation.get("language") %}
                 <p><strong>Language: </strong>{{ implementation.language }}</p>
+              {% endif %}
+              {% if implementation.get("language_version") %}
                 <p><strong>Language Version: </strong>{{ implementation.get("language_version", "") }}</p>
+              {% endif %}
             </div>
             <div class="modal-footer m-2 p-0">
               <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
