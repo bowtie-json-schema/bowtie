@@ -315,7 +315,7 @@ class _Summary:
             pct = (passed / total) * 100
             impl_dir = target_dir / f"{lang}-{name}"
             impl_dir.mkdir(parents=True, exist_ok=True)
-            r, g, b = 100 - pct, pct, 0
+            r, g, b = 100 - int(pct), int(pct), 0
             badge = {
                 "schemaVersion": 1,
                 "label": label,
