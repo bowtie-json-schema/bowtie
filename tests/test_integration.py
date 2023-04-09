@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
+from pprint import pformat
 from textwrap import dedent, indent
 import asyncio
 import json
@@ -8,6 +9,7 @@ import os
 import sys
 import tarfile
 
+from aiodocker.exceptions import DockerError
 import pytest
 import pytest_asyncio
 
@@ -29,10 +31,15 @@ def tar_from_directory(directory):
 def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
+        images = docker.images
         tag = f"bowtie-integration-tests/{name}"
-        await docker.images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
+        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
+        try:
+            await docker.images.inspect(tag)
+        except DockerError:
+            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
         yield tag
-        await docker.images.delete(name=tag, force=True)
+        await images.delete(name=tag, force=True)
 
     return _image
 
