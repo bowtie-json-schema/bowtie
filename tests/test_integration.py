@@ -102,7 +102,7 @@ def _failed(message, stderr):
 
 
 @asynccontextmanager
-async def bowtie(*args, succeed=True):
+async def bowtie(*args, succeed=True, expecting_errors=False):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -136,9 +136,12 @@ async def bowtie(*args, succeed=True):
                 successful.append(each["results"])
             elif "case" in each:
                 cases.append(each)
+            elif "did_fail_fast" in each:
+                continue
             else:
                 errors.append(each)
 
+        assert errors if expecting_errors else not errors, errors
         return proc.returncode, successful, errors, cases, stderr
 
     yield _send
@@ -213,7 +216,7 @@ async def test_unsupported_dialect(envsonschema):
 
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -304,7 +307,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
 
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -336,7 +339,13 @@ async def test_it_prevents_network_access(hit_the_network):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with bowtie("-i", hit_the_network, "--dialect", "urn:foo") as send:
+    async with bowtie(
+        "-i",
+        hit_the_network,
+        "--dialect",
+        "urn:foo",
+        expecting_errors=True,
+    ) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
