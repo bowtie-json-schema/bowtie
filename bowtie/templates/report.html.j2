@@ -135,7 +135,7 @@
 
         <div class="card-body">
           <table class="table table-sm table-hover">
-            <thead class="table-light">
+            <thead class="table-header table-light">
               <tr>
                 <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</th>
                 <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
@@ -351,6 +351,7 @@
     <script>
       var light = true;
       var navbar = document.querySelector('.navbar');
+      var tableHeader = document.querySelector('.table-header');
       var body = document.querySelector('body');
       const toggler = document.querySelector('#theme-toggler');
       toggler.addEventListener('click', ()=>{
@@ -359,11 +360,15 @@
         if (!light){
           navbar.classList.remove('bg-light');
           navbar.classList.add('navbar-dark', 'bg-dark');
+          tableHeader.classList.remove('table-light');
+          tableHeader.classList.add('table-dark');
         } else {
           navbar.classList.remove('navbar-dark', 'bg-dark');
           navbar.classList.add('bg-light');
+          tableHeader.classList.remove('table-dark');
+          tableHeader.classList.add('table-light');
         }
-        console.log(light)
+        
       })
     </script>
 
