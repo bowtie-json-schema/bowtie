@@ -521,7 +521,14 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     assert json.loads(stdout) == [
         [
             ["envsonschema", "python"],
-            dict(errored=0, failed=0, skipped=0),
+            dict(
+                errored_cases=0,
+                total_cases=1,
+                total_tests=1,
+                failed_tests=0,
+                skipped_tests=0,
+                errored_tests=0,
+            ),
         ],
     ]
 

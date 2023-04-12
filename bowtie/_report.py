@@ -178,6 +178,13 @@ class Count:
     errored_tests: int = 0
     skipped_tests: int = 0
 
+    @property
+    def unsuccessful_tests(self):
+        """
+        Any test which was not a successful result, including skips.
+        """
+        return self.errored_tests + self.failed_tests + self.skipped_tests
+
 
 @attrs.mutable
 class _Summary:
