@@ -63,7 +63,7 @@
   </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg sticky-top bg-light mb-4">
+    <nav class="navbar navbar-expand-lg sticky-top mb-4 bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Bowtie</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -350,11 +350,19 @@
 
     <script>
       var light = true;
-      const body = document.querySelector('body');
+      var navbar = document.querySelector('.navbar');
+      var body = document.querySelector('body');
       const toggler = document.querySelector('#theme-toggler');
       toggler.addEventListener('click', ()=>{
         body.setAttribute('data-bs-theme', light ? 'dark' : 'light');
         light = !light;
+        if (!light){
+          navbar.classList.remove('bg-light');
+          navbar.classList.add('navbar-dark', 'bg-dark');
+        } else {
+          navbar.classList.remove('navbar-dark', 'bg-dark');
+          navbar.classList.add('bg-light');
+        }
         console.log(light)
       })
     </script>
