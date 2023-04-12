@@ -13,6 +13,7 @@ import os
 import sys
 import zipfile
 
+from attrs import asdict
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
@@ -166,12 +167,19 @@ def summary(input: Iterable[str], format: str, show: str):
     if show == "failures":
         results = _ordered_failures(summary)
         to_table = _failure_table
+
+        def to_serializable(
+            value: Iterable[tuple[tuple[str, str], _report.Count]],
+        ):
+            return [(metadata, asdict(counts)) for metadata, counts in value]
+
     else:
         results = _validation_results(summary)
         to_table = _validation_results_table
+        to_serializable = list  # type: ignore[reportGeneralTypeIssues]
 
     if format == "json":
-        click.echo(json.dumps(list(results), indent=2))
+        click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
     else:
         table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
         console.Console().print(table)
@@ -179,7 +187,7 @@ def summary(input: Iterable[str], format: str, show: str):
 
 def _ordered_failures(
     summary: _report._Summary,  # type: ignore[reportPrivateUsage]
-) -> Iterable[tuple[tuple[str, str], dict[str, int]]]:
+) -> Iterable[tuple[tuple[str, str], _report.Count]]:
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -187,27 +195,16 @@ def _ordered_failures(
         )
         for implementation in summary.implementations
     )
-    combined = (
-        (
-            metadata,
-            {
-                "errored": each.errored_tests,
-                "failed": each.failed_tests,
-                "skipped": each.skipped_tests,
-            },
-        )
-        for metadata, each in counts
-    )
     return sorted(
-        combined,
-        key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+        counts,
+        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
 
 
 def _failure_table(
     summary: _report._Summary,  # type: ignore[reportPrivateUsage]
-    results: list[tuple[tuple[str, str], dict[str, int]]],
+    results: list[tuple[tuple[str, str], _report.Count]],
 ):
     test = "tests" if summary.total_tests != 1 else "test"
     table = Table(
@@ -221,9 +218,9 @@ def _failure_table(
     for (implementation, language), counts in results:
         table.add_row(
             Text.assemble(implementation, (f" ({language})", "dim")),
-            str(counts["skipped"]),
-            str(counts["errored"]),
-            str(counts["failed"]),
+            str(counts.skipped_tests),
+            str(counts.errored_tests),
+            str(counts.failed_tests),
         )
     return table
 
@@ -231,7 +228,7 @@ def _failure_table(
 def _validation_results(
     summary: _report._Summary,  # type: ignore[reportPrivateUsage]
 ) -> Iterable[tuple[Any, Iterable[tuple[Any, list[str]]]]]:
-    for case, case_results in summary.case_results():
+    for case, _, case_results in summary.case_results():
         results: list[tuple[Any, list[str]]] = []
         for case_result in case_results:
             descriptions: list[str] = []

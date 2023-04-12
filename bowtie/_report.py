@@ -178,6 +178,13 @@ class Count:
     errored_tests: int = 0
     skipped_tests: int = 0
 
+    @property
+    def unsuccessful_tests(self):
+        """
+        Any test which was not a successful result, including skips.
+        """
+        return self.errored_tests + self.failed_tests + self.skipped_tests
+
 
 @attrs.mutable
 class _Summary:
@@ -289,13 +296,20 @@ class _Summary:
 
     def case_results(self):
         return (
-            (each["case"], each["results"]) for each in self._combined.values()
+            (each["case"], each.get("registry", {}), each["results"])
+            for each in self._combined.values()
         )
 
     def flat_results(self):
         for seq, each in sorted(self._combined.items()):
-            case, results = each["case"], each["results"]
-            yield seq, case["description"], case["schema"], results
+            case = each["case"]
+            yield (
+                seq,
+                case["description"],
+                case["schema"],
+                case["registry"],
+                each["results"],
+            )
 
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _BADGE_LABELS[dialect]
