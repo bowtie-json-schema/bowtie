@@ -13,7 +13,9 @@ import os
 import sys
 import zipfile
 
-from rich import console, panel
+from rich import box, console, panel
+from rich.table import Column, Table
+from rich.text import Text
 import aiodocker
 import click
 import jinja2
@@ -95,9 +97,27 @@ def main():
     "output",
     help="Where to write the outputted report HTML.",
     default="bowtie-report.html",
+    show_default=True,
     type=click.File("w"),
 )
-def report(input: Iterable[str], output: TextIO):
+@click.option(
+    "--badges",
+    "-b",
+    help="Directory to write the generated badge json files.",
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--generate-dialect-navigation",
+    help="generate hyperlinks to all dialect reports",
+    is_flag=True,
+    default=False,
+)
+def report(
+    input: Iterable[str],
+    output: TextIO,
+    badges: Path | None,
+    generate_dialect_navigation: bool,
+):
     """
     Generate a Bowtie report from a previous run.
     """
@@ -106,8 +126,12 @@ def report(input: Iterable[str], output: TextIO):
         undefined=jinja2.StrictUndefined,
         keep_trailing_newline=True,
     )
+    report_data = _report.from_input(input, generate_dialect_navigation)
+    if badges is not None:
+        dialect = report_data["run_info"].dialect
+        report_data["summary"].generate_badges(badges, dialect)
     template = env.get_template("report.html.j2")
-    output.write(template.render(**_report.from_input(input)))
+    output.write(template.render(**report_data))
 
 
 @main.command()
@@ -115,22 +139,47 @@ def report(input: Iterable[str], output: TextIO):
     "--format",
     "-f",
     help="What format to use for the output",
-    default=None,
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
     type=click.Choice(["json", "pretty"]),
+)
+@click.option(
+    "--show",
+    "-s",
+    help="""Configure whether to display validation results
+    (whether instances are valid or not) or test failure results
+    (whether the validation results match expected validation results)""",
+    default="validation",
+    show_default=True,
+    type=click.Choice(["failures", "validation"]),
 )
 @click.argument(
     "input",
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: str | None):
+def summary(input: Iterable[str], format: str, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
-    if format is None:
-        format = "pretty" if sys.stdout.isatty() else "json"
-
     summary = _report.from_input(input)["summary"]
+    if show == "failures":
+        results = _ordered_failures(summary)
+        to_table = _failure_table
+    else:
+        results = _validation_results(summary)
+        to_table = _validation_results_table
+
+    if format == "json":
+        click.echo(json.dumps(list(results), indent=2))
+    else:
+        table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+        console.Console().print(table)
+
+
+def _ordered_failures(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[tuple[str, str], dict[str, int]]]:
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -138,8 +187,7 @@ def summary(input: Iterable[str], format: str | None):
         )
         for implementation in summary.implementations
     )
-
-    combined = [
+    combined = (
         (
             metadata,
             {
@@ -149,37 +197,88 @@ def summary(input: Iterable[str], format: str | None):
             },
         )
         for metadata, each in counts
-    ]
-    ordered = sorted(
+    )
+    return sorted(
         combined,
         key=lambda each: (sum(each[1].values()), each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
         reverse=True,
     )
 
-    if format == "json":
-        click.echo(json.dumps(ordered, indent=2))
-    else:
-        from rich.table import Table
-        from rich.text import Text
 
-        test = "tests" if summary.total_tests != 1 else "test"
-        table = Table(
-            "Implementation",
-            "Skips",
-            "Errors",
-            "Failures",
-            title="Bowtie",
-            caption=f"{summary.total_tests} {test} ran",
+def _failure_table(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    results: list[tuple[tuple[str, str], dict[str, int]]],
+):
+    test = "tests" if summary.total_tests != 1 else "test"
+    table = Table(
+        "Implementation",
+        "Skips",
+        "Errors",
+        "Failures",
+        title="Bowtie",
+        caption=f"{summary.total_tests} {test} ran\n",
+    )
+    for (implementation, language), counts in results:
+        table.add_row(
+            Text.assemble(implementation, (f" ({language})", "dim")),
+            str(counts["skipped"]),
+            str(counts["errored"]),
+            str(counts["failed"]),
         )
-        for (implementation, language), counts in ordered:
-            table.add_row(
-                Text.assemble(implementation, (f" ({language})", "dim")),
-                str(counts["skipped"]),
-                str(counts["errored"]),
-                str(counts["failed"]),
+    return table
+
+
+def _validation_results(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[Any, Iterable[tuple[Any, list[str]]]]]:
+    for case, case_results in summary.case_results():
+        results: list[tuple[Any, list[str]]] = []
+        for case_result in case_results:
+            descriptions: list[str] = []
+            for implementation in summary.implementations:
+                valid = case_result[1].get(implementation["image"], "error")
+                if valid == "error":
+                    description = "error"
+                elif valid[1] == "skipped":
+                    description = "skipped"
+                elif valid[0].valid:
+                    description = "valid"
+                else:
+                    description = "invalid"
+                descriptions.append(description)
+            results.append((case_result[0]["instance"], descriptions))
+        yield case["schema"], results
+
+
+def _validation_results_table(
+    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    results: Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]],
+):
+    test = "tests" if summary.total_tests != 1 else "test"
+    table = Table(
+        Column(header="Schema", vertical="middle"),
+        "",
+        title="Bowtie",
+        caption=f"{summary.total_tests} {test} ran",
+    )
+
+    for schema, case_results in results:
+        subtable = Table("Instance", box=box.SIMPLE_HEAD)
+        for implementation in summary.implementations:
+            subtable.add_column(
+                Text.assemble(
+                    implementation["name"],
+                    (f" ({implementation['language']})", "dim"),
+                ),
             )
 
-        console.Console().print(table)
+        for instance, ordered_results in case_results:
+            subtable.add_row(json.dumps(instance), *ordered_results)
+
+        table.add_row(json.dumps(schema, indent=2), subtable)
+        table.add_section()
+
+    return table
 
 
 def validator_for_dialect(dialect: str | None = None):
@@ -234,6 +333,7 @@ DIALECT = click.option(
     ),
     type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
     default=LATEST_DIALECT_NAME,
+    show_default=True,
 )
 FILTER = click.option(
     "-k",
@@ -252,6 +352,7 @@ SET_SCHEMA = click.option(
     "--set-schema/--no-set-schema",
     "-S",
     "set_schema",
+    show_default=True,
     default=False,
     help=(
         "Explicitly set $schema in all (non-boolean) case schemas sent to "
@@ -265,6 +366,7 @@ TIMEOUT = click.option(
     "read_timeout_sec",
     metavar="SECONDS",
     default=2.0,
+    show_default=True,
     help=(
         "An explicit timeout to wait for each implementation to respond "
         "to *each* instance being validated. Set this to 0 if you wish "

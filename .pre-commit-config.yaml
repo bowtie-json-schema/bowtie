@@ -25,11 +25,11 @@ repos:
     hooks:
       - id: pyupgrade
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.259"
+    rev: "v0.0.261"
     hooks:
       - id: ruff
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - name: black (python implementations & bowtie internals)
         id: black
@@ -68,7 +68,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.17.0
+    rev: v0.17.1
     hooks:
       - name: stylua (lua implementations)
         id: stylua

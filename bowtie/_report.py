@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict
 import importlib.metadata
 import json
@@ -18,6 +19,16 @@ if TYPE_CHECKING:
 
 class _InvalidBowtieReport(Exception):
     pass
+
+
+_BADGE_LABELS = {
+    "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
+    "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
+    "http://json-schema.org/draft-07/schema#": "Draft 7",
+    "http://json-schema.org/draft-06/schema#": "Draft 6",
+    "http://json-schema.org/draft-04/schema#": "Draft 4",
+    "http://json-schema.org/draft-03/schema#": "Draft 3",
+}
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
@@ -277,9 +288,42 @@ class _Summary:
         self.did_fail_fast = did_fail_fast
 
     def case_results(self):
+        return (
+            (each["case"], each["results"]) for each in self._combined.values()
+        )
+
+    def flat_results(self):
         for seq, each in sorted(self._combined.items()):
             case, results = each["case"], each["results"]
             yield seq, case["description"], case["schema"], results
+
+    def generate_badges(self, target_dir: Path, dialect: str):
+        label = _BADGE_LABELS[dialect]
+        for impl in self.implementations:
+            if dialect not in impl["dialects"]:
+                continue
+            name = impl["name"]
+            lang = impl["language"]
+            counts = self.counts[impl["image"]]
+            total = counts.total_tests
+            passed = (
+                total
+                - counts.failed_tests
+                - counts.errored_tests
+                - counts.skipped_tests
+            )
+            pct = (passed / total) * 100
+            impl_dir = target_dir / f"{lang}-{name}"
+            impl_dir.mkdir(parents=True, exist_ok=True)
+            r, g, b = 100 - int(pct), int(pct), 0
+            badge = {
+                "schemaVersion": 1,
+                "label": label,
+                "message": "%d%% Passing" % int(pct),
+                "color": f"{r:02x}{g:02x}{b:02x}",
+            }
+            badge_path = impl_dir / f"{label.replace(' ', '_')}.json"
+            badge_path.write_text(json.dumps(badge))
 
 
 @attrs.frozen
@@ -320,9 +364,13 @@ class RunInfo:
 class ReportData(TypedDict):
     summary: _Summary
     run_info: RunInfo
+    generate_dialect_navigation: bool
 
 
-def from_input(input: Iterable[str]) -> ReportData:
+def from_input(
+    input: Iterable[str],
+    generate_dialect_navigation: bool = False,
+) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
@@ -342,4 +390,8 @@ def from_input(input: Iterable[str]) -> ReportData:
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
-    return ReportData(summary=summary, run_info=run_info)
+    return ReportData(
+        summary=summary,
+        run_info=run_info,
+        generate_dialect_navigation=generate_dialect_navigation,
+    )

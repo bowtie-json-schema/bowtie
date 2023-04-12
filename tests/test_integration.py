@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
+from pprint import pformat
 from textwrap import dedent, indent
 import asyncio
 import json
@@ -8,6 +9,7 @@ import os
 import sys
 import tarfile
 
+from aiodocker.exceptions import DockerError
 import pytest
 import pytest_asyncio
 
@@ -29,10 +31,15 @@ def tar_from_directory(directory):
 def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
+        images = docker.images
         tag = f"bowtie-integration-tests/{name}"
-        await docker.images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
+        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
+        try:
+            await docker.images.inspect(tag)
+        except DockerError:
+            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
         yield tag
-        await docker.images.delete(name=tag, force=True)
+        await images.delete(name=tag, force=True)
 
     return _image
 
@@ -95,7 +102,7 @@ def _failed(message, stderr):
 
 
 @asynccontextmanager
-async def bowtie(*args, succeed=True):
+async def bowtie(*args, succeed=True, expecting_errors=False):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -129,9 +136,12 @@ async def bowtie(*args, succeed=True):
                 successful.append(each["results"])
             elif "case" in each:
                 cases.append(each)
+            elif "did_fail_fast" in each:
+                continue
             else:
                 errors.append(each)
 
+        assert errors if expecting_errors else not errors, errors
         return proc.returncode, successful, errors, cases, stderr
 
     yield _send
@@ -206,7 +216,7 @@ async def test_unsupported_dialect(envsonschema):
 
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -297,7 +307,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
 
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -329,7 +339,13 @@ async def test_it_prevents_network_access(hit_the_network):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with bowtie("-i", hit_the_network, "--dialect", "urn:foo") as send:
+    async with bowtie(
+        "-i",
+        hit_the_network,
+        "--dialect",
+        "urn:foo",
+        expecting_errors=True,
+    ) as send:
         returncode, results, _, _, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
@@ -469,7 +485,7 @@ async def test_validate(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary(envsonschema, tmp_path):
+async def test_summary_show_failures(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
 
@@ -487,21 +503,102 @@ async def test_summary(envsonschema, tmp_path):
     )
     validate_stdout, _ = await validate.communicate()
 
-    summary = await asyncio.create_subprocess_exec(
+    summary_failures = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
         "summary",
         "--format",
         "json",
+        "--show",
+        "failures",
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await summary.communicate(validate_stdout)
+    stdout, stderr = await summary_failures.communicate(validate_stdout)
     assert stderr == b""
     assert json.loads(stdout) == [
-        [["envsonschema", "python"], dict(errored=0, failed=0, skipped=0)],
+        [
+            ["envsonschema", "python"],
+            dict(errored=0, failed=0, skipped=0),
+        ],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
+    run = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    run_stdout, _ = await run.communicate(
+        b"""\
+            {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+            {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+            {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+            {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+            {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        """  # noqa: E501
+    )
+
+    summary_validation = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "validation",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await summary_validation.communicate(run_stdout)
+    assert stderr == b""
+    assert json.loads(stdout) == [
+        [
+            {"type": "integer"},
+            [
+                [12, ["valid", "valid"]],
+                [12.5, ["invalid", "valid"]],
+            ],
+        ],
+        [
+            {"type": "string"},
+            [
+                ["{}", ["error", "valid"]],
+            ],
+        ],
+        [
+            {"type": "number"},
+            [
+                ["{}", ["error", "valid"]],
+                [37, ["error", "valid"]],
+            ],
+        ],
+        [
+            {"type": "array"},
+            [
+                ["", ["skipped", "valid"]],
+            ],
+        ],
+        [
+            {"type": "boolean"},
+            [
+                ["", ["skipped", "valid"]],
+            ],
+        ],
     ]
 
 
