@@ -231,7 +231,7 @@ def _failure_table(
 def _validation_results(
     summary: _report._Summary,  # type: ignore[reportPrivateUsage]
 ) -> Iterable[tuple[Any, Iterable[tuple[Any, list[str]]]]]:
-    for case, case_results in summary.case_results():
+    for case, _, case_results in summary.case_results():
         results: list[tuple[Any, list[str]]] = []
         for case_result in case_results:
             descriptions: list[str] = []
