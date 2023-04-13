@@ -420,7 +420,7 @@
     </div>
   </div>
    {# Schema Display (Hidden by default) start #}
-    <div id="display-body" class="card mb-3" style="max-width: 100%">
+    <div id="display-body" class="card mb-3 d-none" style="max-width: 100%">
       <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
         <small class="font-monospace text-body-secondary text-uppercase">Schema</small>
           <div class="d-flex ms-auto">
@@ -458,11 +458,13 @@
       const displayBody = document.querySelector("#display-body");
       const codes = document.querySelector("#code");
       function displayCode(code) {
-        displayBody.style.display = "block";
+        displayBody.classList.remove("d-none");
+        displayBody.classList.add("d-block");
         codes.innerHTML = `<pre>${code}</pre>`;
       }
       function schemaDisplay(parentBodyId, code) {
-        displayBody.style.display = "block";
+        displayBody.classList.remove("d-none");
+        displayBody.classList.add("d-block");
         displayCode(code);
         const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
         // If the code segment is displayed, remove it
@@ -476,7 +478,8 @@
       }
       {# Close Schema Card  #}
       function closeSchemaCard(){
-        document.getElementById('display-body').style.display = 'none';
+        displayBody.classList.remove("d-block");
+        displayBody.classList.add("d-none");
       }
       {# Copy Schema from display  #}
       function copySchemaFromDisplay(){
