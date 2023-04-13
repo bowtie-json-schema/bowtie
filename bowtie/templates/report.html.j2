@@ -485,7 +485,7 @@
         tempElement.value = textToCopy;
         document.body.appendChild(tempElement);
         tempElement.select();
-        tempElement.setSelectionRange(0, 99999); 
+        tempElement.setSelectionRange(0, 99999);
         document.execCommand("copy");
         document.body.removeChild(tempElement);
         {# Change the Copy Button icon after copied #}
