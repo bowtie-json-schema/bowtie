@@ -433,7 +433,7 @@
   </script>
 
   <script>
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
       var light = false;
     } else{
       var light = true;
