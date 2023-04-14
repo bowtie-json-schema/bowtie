@@ -46,11 +46,6 @@
     font-weight: 500;
     color: rgb(112, 112, 112);
     font-size: 0.8rem;
-  }
-  .hidden {
-    display: none;
-  }
-
 </style>
 
 <head>
@@ -457,8 +452,8 @@
           tableHeader.classList.remove('table-light');
           tableHeader.classList.add('table-dark');
 
-          sunIcon.classList.add('hidden');
-          moonIcon.classList.remove('hidden');
+          sunIcon.classList.add('d-none');
+          moonIcon.classList.remove('d-none');
 
         } else {
           navbar.classList.remove('navbar-dark', 'bg-dark');
@@ -467,8 +462,8 @@
           tableHeader.classList.remove('table-dark');
           tableHeader.classList.add('table-light');
 
-          moonIcon.classList.add('hidden');
-          sunIcon.classList.remove('hidden');
+          moonIcon.classList.add('d-none');
+          sunIcon.classList.remove('d-none');
         }
 
       })
