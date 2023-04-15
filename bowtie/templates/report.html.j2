@@ -282,7 +282,7 @@
               {% for test, test_results in results %}
               <tr>
                 <td>
-                  <a href="#schema" class="text-decoration-none" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`)'>{{ test.description }}</a>
+                  <a href="#schema" class="text-decoration-none" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>{{ test.description }}</a>
                 </td>
                 {% for implementation in summary.implementations %}
                 {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None},
@@ -420,22 +420,13 @@
           <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
             <small class="font-monospace text-body-secondary text-uppercase">Schema</small>
             <div class="d-flex ms-auto">
-              <button type="button" id="copy-button" class="btn mt-0 me-0" onclick="copySchemaFromDisplay()" aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
+              <button type="button" id="copy-button-schema" class="btn mt-0 me-0" onclick='copyToClipboard("schema-code","copy-button-schema")' aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
               data-bs-custom-class="custom-tooltip"
               data-bs-title="Copy to clipboard">
               {# Clipboard SVG Icon  #}
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
                   <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                   <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                </svg>
-              </button>
-              <button type="button" class="btn text-nowrap" onclick="closeSchemaCard()" aria-label="Close" data-bs-toggle="tooltip" data-bs-placement="top"
-              data-bs-custom-class="custom-tooltip"
-              data-bs-title="Close">
-              {# Close SVG Icon  #}
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square" viewBox="0 0 16 16">
-                  <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
               </button>
             </div>
@@ -446,7 +437,7 @@
             <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
               <small class="font-monospace text-body-secondary text-uppercase">Instance</small>
                 <div class="d-flex ms-auto">
-                  <button type="button" id="copy-button" class="btn mt-0 me-0" aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
+                  <button type="button" id="copy-button-instance" onclick='copyToClipboard("instance-info","copy-button-instance")' class="btn mt-0 me-0" aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
                   data-bs-custom-class="custom-tooltip"
                   data-bs-title="Copy to clipboard">
                   {# Clipboard SVG Icon  #}
@@ -455,18 +446,9 @@
                       <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                     </svg>
                   </button>
-                  <button type="button" class="btn text-nowrap" aria-label="Close" data-bs-toggle="tooltip" data-bs-placement="top"
-                  data-bs-custom-class="custom-tooltip"
-                  data-bs-title="Close">
-                  {# Close SVG Icon  #}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square" viewBox="0 0 16 16">
-                      <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                      <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                    </svg>
-                  </button>
                 </div>
           </div>
-        <div id="code" class="card-body"></div>
+        <div id="instance-info" class="card-body"></div>
         </div>
       </div>
     </div>
@@ -491,24 +473,18 @@
         displayBody.classList.remove("d-none");
         displayBody.classList.add("d-block");
         displayCode(code,targetId);
+        document.getElementById('instance-info').innerHTML = '';
         const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
-        // If the code segment is displayed, remove it
         if (isDisplayed) {
           displayBody.parentElement.removeChild(displayBody);
         } else {
-          // If the code segment is not displayed, append it to the accordion body
           const accordionBody = document.querySelector(`#${parentBodyId}`);
           accordionBody.insertBefore(displayBody, accordionBody.firstChild);
         }
       }
-      {# Close Schema Card  #}
-      function closeSchemaCard(){
-        displayBody.classList.remove("d-block");
-        displayBody.classList.add("d-none");
-      }
       {# Copy Schema from display  #}
-      function copySchemaFromDisplay(){
-        const textToCopy = document.getElementById("code").innerText;
+      function copyToClipboard(targetTextToCopy, btnId){
+        const textToCopy = document.getElementById(targetTextToCopy).innerText;
         const tempElement = document.createElement("textarea");
         tempElement.value = textToCopy;
         document.body.appendChild(tempElement);
@@ -518,12 +494,12 @@
         document.body.removeChild(tempElement);
         {# Change the Copy Button icon after copied #}
         {# Checkmark SVG Icon  #}
-        document.getElementById("copy-button").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+        document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
                                                               <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                                                             </svg>`;
 setTimeout(() => {
   {# Clipboard SVG Icon setting as a default again after copy  #}
-  document.getElementById("copy-button").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+  document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
                                                         <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                                                         <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
                                                       </svg>`;
