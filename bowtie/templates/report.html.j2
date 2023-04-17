@@ -3,390 +3,484 @@
 
 <style>
   .details-required {
-      position: relative;
+    position: relative;
   }
 
   .details-required div {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      opacity: 0;
-      visibility: hidden;
-      -webkit-transition: visibility 0s, opacity 0.5s linear;
-      transition: visibility 0s, opacity 0.5s linear;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    opacity: 0;
+    visibility: hidden;
+    -webkit-transition: visibility 0s, opacity 0.5s linear;
+    transition: visibility 0s, opacity 0.5s linear;
   }
 
   .details-required:hover {
-      cursor: tooltip;
+    cursor: tooltip;
   }
 
   .details-required:hover div {
-      padding: 1rem;
-      padding-bottom: 0rem;
-      margin-right: 8rem;
-      visibility: visible;
-      border-radius: 1rem;
-      background-color: rgba(242, 242, 242, 0.892);
-      opacity: 1;
+    padding: 1rem;
+    padding-bottom: 0rem;
+    margin-right: 8rem;
+    visibility: visible;
+    border-radius: 1rem;
+    background-color: rgba(242, 242, 242, 0.892);
+    opacity: 1;
   }
-  .details-required:hover div .details-desc{
-      right: -40%;
+
+  .details-required:hover div .details-desc {
+    right: -40%;
   }
 
   .hover-details {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      gap: 0.7rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.7rem;
   }
 
   .hover-details span {
-      font-style: italic;
-      font-weight: 500;
-      color: rgb(112, 112, 112);
-      font-size: 0.8rem;
-  }
-
-
+    font-style: italic;
+    font-weight: 500;
+    color: rgb(112, 112, 112);
+    font-size: 0.8rem;
 </style>
 
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bowtie</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-  </head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bowtie</title>
+  <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+      crossorigin="anonymous"
+  />
+</head>
 
-  <body>
-    <nav class="navbar navbar-expand-lg sticky-top bg-light mb-4">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">Bowtie</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link" href="#run-info">Run Info</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#summary">Summary</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#cases">Details</a>
-            </li>
-            {% if generate_dialect_navigation %}
-              <li class="nav-item">
-                <a class="nav-link" href="#"><b>Dialects:</b></a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft2020-12.html">2020-12</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft2019-09.html">2019-09</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft7.html">7</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft6.html">6</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft4.html">4</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="draft3.html">3</a>
-              </li>
-            {% endif %}
-          </ul>
-        </div>
-
-        <a href="https://github.com/bowtie-json-schema/bowtie/" class="link-secondary">
-          <span class="navbar-text">
-            <small>Bowtie v{{ run_info.bowtie_version }}</small>
-          </span>
-        </a>
-      </div>
-    </nav>
-
-    {% macro to_icon(valid) -%}
-        {% if valid == True %}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
-            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-          </svg>
-        {% elif valid == False %}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16">
-            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-          </svg>
-        {% else %}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon" viewBox="0 0 16 16">
-            <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1H5.1z"/>
-            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-          </svg>
-        {% endif %}
-    {%- endmacro %}
-
-    <div class="container p-4">
-
-      <div class="card mx-auto mb-3 w-75" id="run-info">
-        <div class="card-header">Run Info</div>
-
-        <div class="card-body">
-          <table class="table table-sm table-hover">
-            <tr>
-              <td>Dialect</td>
-              <td>{{ run_info.dialect }}</td>
-            </tr>
-            <tr>
-              <td>Ran</td>
-              <td>
-                <time datetime="{{ run_info.started }}" id="runStarted"></time>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="card mx-auto mb-3 w-75" id="summary">
-        <div class="card-header">Summary</div>
-
-        <div class="card-body">
-          <table class="table table-sm table-hover">
-            <thead class="table-light">
-              <tr>
-                <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</th>
-                <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
-                <th colspan=3 class="text-center"><span class="text-muted">tests ({{ summary.total_tests }})</span></th>
-                <th colspan=1></th>
-              </tr>
-
-              <tr>
-                <th scope="col" class="text-center">errors</th>
-
-                <th scope="col" class="table-bordered text-center">skipped</th>
-                <th scope="col" class="table-bordered text-center details-required">
-                  <div class="hover-details details-desc text-center">
-                      <p>failed
-                          <br><span>implementation worked successfully but got the wrong answer</span>
-                      </p>
-                      <p>errored
-                          <br><span>implementation crashed when trying to calculate an answer</span>
-                      </p>
-                  </div>
-                  unsuccessful
-              </th>
-
-                <th scope="col"></th>
-              </tr>
-            </thead>
-
-            <tbody class="table-group-divider">
-              {% for implementation in summary.implementations %}
-                {% set counts = summary.counts[implementation.image] %}
-                <tr>
-                  <th scope="row">
-                    <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
-                    <small class="text-muted">{{ implementation.language }}</small>
-                  </th>
-                  <td>
-                    <small class="font-monospace text-muted">{{ implementation.get("version", "") }}</small>
-                  </td>
-
-                  <td class="text-center">{{ counts.errored_cases }}</td>
-
-                  <td class="text-center">{{ counts.skipped_tests }}</td>
-                  <td class="text-center details-required">{{ counts.failed_tests + counts.errored_tests }}
-                    <div class="hover-details text-center">
-                      <p><b>failed</b>: {{counts.failed_tests}}</p>
-                      <p><b>errored</b>: {{counts.errored_tests}}</p>
-                    </div>
-                  </td>
-
-
-                  <td>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#implementation-{{ loop.index }}-details">
-                      Details
-                    </button>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-
-            <tfoot>
-              <tr>
-                <th scope="row" colspan=2>total</th>
-
-                <td class="text-center">{{ summary.errored_cases }}</td>
-
-                <td class="text-center">{{ summary.skipped_tests }}</td>
-                <td class="text-center details-required">{{ summary.failed_tests + summary.errored_tests }}
-                  <div class="hover-details text-center">
-                    <p><b>failed</b>: {{summary.failed_tests}} </p>
-                    <p><b>errored</b>: {{summary.errored_tests}}</p>
-                  </div>
-                </td><td></td>
-              </tr>
-            </tfoot>
-          </table>
-
-          {% if summary.did_fail_fast %}
-            <div class="alert alert-warning" role="alert">
-              This run failed fast, so some input cases may not have been run.
-            </div>
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand mb-0 h1" href="#">Bowtie</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="#run-info">Run Info</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#summary">Summary</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#cases">Details</a>
+          </li>
+          {# If generate_dialect_navigation exists, then render the dropdown navigation  #}
+          {% if generate_dialect_navigation %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Dialects
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="draft2020-12">2020-12</a></li>
+              <li><a class="dropdown-item" href="draft2019-09">2019-09</a></li>
+              <li><a class="dropdown-item" href="draft7">7</a></li>
+              <li><a class="dropdown-item" href="draft6">6</a></li>
+              <li><a class="dropdown-item" href="draft4">4</a></li>
+              <li><a class="dropdown-item" href="draft3">3</a></li>
+            </ul>
+          </li>
           {% endif %}
-        </div>
+        </ul>
       </div>
+      <button id="theme-toggler" class="btn border-0" style="margin-right: 1vw;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-sun" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </svg>
+      </button>
 
-      <div class="accordion pt-5" id="cases">
-        {% for seq, description, schema, results in summary.flat_results() %}
-          <div class="accordion-item">
+      <a href="https://github.com/bowtie-json-schema/bowtie/" class="link-secondary">
+        <span class="navbar-text">
+          <small>Bowtie v{{ run_info.bowtie_version }}</small>
+        </span>
+      </a>
+    </div>
+  </nav>
 
-            <h2 class="accordion-header" id="case-{{ seq }}-heading">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
-                <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ schema | tojson(indent=2) }}</pre>'>
-                  {{ description }}
-                </a>
-              </button>
-            </h2>
+  {% macro to_icon(valid) -%}
+  {% if valid == True %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill"
+    viewBox="0 0 16 16">
+    <path
+      d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+  </svg>
+  {% elif valid == False %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill"
+    viewBox="0 0 16 16">
+    <path
+      d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" />
+  </svg>
+  {% else %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon"
+    viewBox="0 0 16 16">
+    <path
+      d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1H5.1z" />
+    <path
+      d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
+  </svg>
+  {% endif %}
+  {%- endmacro %}
 
-            <div id="case-{{ seq }}" class="accordion-collapse collapse" aria-labelledby="case-{{ seq }}-heading" data-bs-parent="#cases">
-              <div class="accordion-body">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <td scope="col">test</td>
-                      {% for implementation in summary.implementations %}
-                        <td class="text-center" scope="col">
-                          {{ implementation.name }}
-                          <small class="text-muted">{{ implementation.language }}</small>
-                        </td>
-                      {% endfor %}
-                    </tr>
-                  </thead>
+  <div class="container p-4">
 
-                  {% for test, test_results in results %}
-                    <tr>
-                      <td>
-                        <a href="#" data-bs-toggle="tooltip" data-bs-html="true" data-bs-title='<pre>{{ test.instance | tojson(indent=2) }}</pre>'>{{ test.description }}</a>
-                      </td>
-                      {% for implementation in summary.implementations %}
-                        {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, True)) %}
-                        {% if incorrect == "skipped" %}
-                          <td class="text-center text-bg-warning">
-                            {{ to_icon(None) }}
-                          </td>
-                        {% elif incorrect == "errored" %}
-                          <td class="text-center text-bg-danger">
-                            {{ to_icon(None) }}
-                          </td>
-                        {% else %}
-                          <td class="text-center {% if incorrect %}text-bg-danger{% elif implementation_result.valid != True and implementation_result.valid != False %}text-bg-warning{% endif %}">
-                            {{ to_icon(implementation_result.valid) }}
-                          </td>
-                        {% endif %}
-                      {% endfor %}
-                    </tr>
-                  {% endfor %}
-                </table>
-              </div>
-            </div>
+    <div class="card mx-auto mb-3 w-75" id="run-info">
+      <div class="card-header">Run Info</div>
 
-          </div>
-        {% endfor %}
+      <div class="card-body">
+        <table class="table table-sm table-hover">
+          <tr>
+            <td>Dialect</td>
+            <td>{{ run_info.dialect }}</td>
+          </tr>
+          <tr>
+            <td>Ran</td>
+            <td>
+              <time datetime="{{ run_info.started }}" id="runStarted"></time>
+            </td>
+          </tr>
+        </table>
       </div>
-
     </div>
 
-    {% for implementation in summary.implementations %}
-      <div class="modal fade" id="implementation-{{ loop.index }}-details" tabindex="-1" aria-labelledby="implementation-{{ loop.index }}-details-label" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h1 class="modal-title fs-5" id="implementation-{{ loop.index }}-details-label">
-                {{ implementation.name }}
+    <div class="card mx-auto mb-3 w-75" id="summary">
+      <div class="card-header">Summary</div>
+
+      <div class="card-body">
+        <table class="table table-sm table-hover">
+          <thead class="table-header table-light">
+            <tr>
+              <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</th>
+              <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
+              <th colspan=3 class="text-center"><span class="text-muted">tests ({{ summary.total_tests }})</span></th>
+              <th colspan=1></th>
+            </tr>
+
+            <tr>
+              <th scope="col" class="text-center">errors</th>
+
+              <th scope="col" class="table-bordered text-center">skipped</th>
+              <th scope="col" class="table-bordered text-center details-required">
+                <div class="hover-details details-desc text-center">
+                  <p>failed
+                    <br><span>implementation worked successfully but got the wrong answer</span>
+                  </p>
+                  <p>errored
+                    <br><span>implementation crashed when trying to calculate an answer</span>
+                  </p>
+                </div>
+                unsuccessful
+              </th>
+
+              <th scope="col"></th>
+            </tr>
+          </thead>
+
+          <tbody class="table-group-divider">
+            {% for implementation in summary.implementations %}
+            {% set counts = summary.counts[implementation.image] %}
+            <tr>
+              <th scope="row">
+                <a href="{{ implementation.homepage or implementation.issues }}">{{ implementation.name }}</a>
                 <small class="text-muted">{{ implementation.language }}</small>
-              </h1>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <div class="row row-cols-1 row-cols-md-2 g-4">
-                {% for seq, description, schema, results in summary.flat_results() %}
-                    {% for test, test_results in results %}
-                        {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, True)) %}
-                        {% if incorrect == "skipped" %}
-                          <div class="col">
-                            <div class="card border-warning mb-3">
-                              <div class="card-body">
-                                <h5 class="card-title">{{ description }}</h5>
-                                <p class="card-text">{{ test.description }}</p>
-                              </div>
-                              <div class="card-footer text-muted text-center">
-                                {{ implementation_result }}
-                              </div>
-                            </div>
-                          </div>
-                        {% elif incorrect == "errored" %}
-                          <div class="col">
-                            <div class="card border-danger mb-3">
-                              <div class="card-body">
-                                <h5 class="card-title">{{ description }}</h5>
-                                <p class="card-text">{{ test.description }}</p>
-                              </div>
-                              <div class="card-footer text-muted text-center">
-                                {{ implementation_result }}
-                              </div>
-                            </div>
-                          </div>
-                        {% elif incorrect %}
-                          <div class="col">
-                            <div class="card border-danger mb-3">
-                              <div class="card-body">
-                                <h5 class="card-title">{{ description }}</h5>
-                                <p class="card-text">{{ test.description }}</p>
-                              </div>
-                              <div class="card-footer text-muted text-center">
-                                Unexpectedly {{
-                                  "valid" if implementation_result.valid == True
-                                          else "invalid" if implementation_result.valid == False
-                                          else "errored" }}
-                              </div>
-                            </div>
-                          </div>
-                        {% endif %}
-                    {% endfor %}
+              </th>
+              <td>
+                <small class="font-monospace text-muted">{{ implementation.get("version", "") }}</small>
+                <button class="btn border-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-info-circle-fill" viewBox="0 0 16 16" data-bs-toggle="modal"
+                    data-bs-target="#implementation-{{ loop.index }}-runtime-info">
+                    <path
+                      d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+                  </svg>
+              </button>
+              </td>
+
+              <td class="text-center">{{ counts.errored_cases }}</td>
+
+              <td class="text-center">{{ counts.skipped_tests }}</td>
+              <td class="text-center details-required">{{ counts.failed_tests + counts.errored_tests }}
+                <div class="hover-details text-center">
+                  <p><b>failed</b>: {{counts.failed_tests}}</p>
+                  <p><b>errored</b>: {{counts.errored_tests}}</p>
+                </div>
+              </td>
+
+
+              <td>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                  data-bs-target="#implementation-{{ loop.index }}-details">
+                  Details
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <th scope="row" colspan=2>total</th>
+
+              <td class="text-center">{{ summary.errored_cases }}</td>
+
+              <td class="text-center">{{ summary.skipped_tests }}</td>
+              <td class="text-center details-required">{{ summary.failed_tests + summary.errored_tests }}
+                <div class="hover-details text-center">
+                  <p><b>failed</b>: {{summary.failed_tests}} </p>
+                  <p><b>errored</b>: {{summary.errored_tests}}</p>
+                </div>
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {% if summary.did_fail_fast %}
+        <div class="alert alert-warning" role="alert">
+          This run failed fast, so some input cases may not have been run.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="accordion pt-5" id="cases">
+      {% for seq, description, schema, registry, results in summary.flat_results() %}
+      <div class="accordion-item">
+
+        <h2 class="accordion-header" id="case-{{ seq }}-heading">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
+            <a href="#" data-bs-toggle="tooltip" data-bs-html="true"
+              data-bs-title='<pre>{{ schema | tojson(indent=2) }}</pre>'>
+              {{ description }}
+            </a>
+          </button>
+        </h2>
+
+        <div id="case-{{ seq }}" class="accordion-collapse collapse" aria-labelledby="case-{{ seq }}-heading"
+          data-bs-parent="#cases">
+          <div class="accordion-body">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <td scope="col">test</td>
+                  {% for implementation in summary.implementations %}
+                  <td class="text-center" scope="col">
+                    {{ implementation.name }}
+                    <small class="text-muted">{{ implementation.language }}</small>
+                  </td>
+                  {% endfor %}
+                </tr>
+              </thead>
+
+              {% for test, test_results in results %}
+              <tr>
+                <td>
+                  <a href="#" data-bs-toggle="tooltip" data-bs-html="true"
+                    data-bs-title='<pre>{{ test.instance | tojson(indent=2) }}</pre>'>{{ test.description }}</a>
+                </td>
+                {% for implementation in summary.implementations %}
+                {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None},
+                True)) %}
+                {% if incorrect == "skipped" %}
+                <td class="text-center text-bg-warning">
+                  {{ to_icon(None) }}
+                </td>
+                {% elif incorrect == "errored" %}
+                <td class="text-center text-bg-danger">
+                  {{ to_icon(None) }}
+                </td>
+                {% else %}
+                <td
+                  class="text-center {% if incorrect %}text-bg-danger{% elif implementation_result.valid != True and implementation_result.valid != False %}text-bg-warning{% endif %}">
+                  {{ to_icon(implementation_result.valid) }}
+                </td>
+                {% endif %}
                 {% endfor %}
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+              </tr>
+              {% endfor %}
+            </table>
           </div>
         </div>
+
       </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
-    <script>
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-    </script>
+  </div>
 
-    <script>
-      var ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
-      var agoUnits = 'seconds';
+  {% for implementation in summary.implementations %}
+  <div class="modal fade" id="implementation-{{ loop.index }}-details" tabindex="-1"
+    aria-labelledby="implementation-{{ loop.index }}-details-label" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="implementation-{{ loop.index }}-details-label">
+            {{ implementation.name }}
+            <small class="text-muted">{{ implementation.language }}</small>
+          </h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for seq, description, schema, registry, results in summary.flat_results() %}
+            {% for test, test_results in results %}
+            {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None}, True)) %}
+            {% if incorrect == "skipped" %}
+            <div class="col">
+              <div class="card border-warning mb-3">
+                <div class="card-body">
+                  <h5 class="card-title">{{ description }}</h5>
+                  <p class="card-text">{{ test.description }}</p>
+                </div>
+                <div class="card-footer text-muted text-center">
+                  {{ implementation_result }}
+                </div>
+              </div>
+            </div>
+            {% elif incorrect == "errored" %}
+            <div class="col">
+              <div class="card border-danger mb-3">
+                <div class="card-body">
+                  <h5 class="card-title">{{ description }}</h5>
+                  <p class="card-text">{{ test.description }}</p>
+                </div>
+                <div class="card-footer text-muted text-center">
+                  {{ implementation_result }}
+                </div>
+              </div>
+            </div>
+            {% elif incorrect %}
+            <div class="col">
+              <div class="card border-danger mb-3">
+                <div class="card-body">
+                  <h5 class="card-title">{{ description }}</h5>
+                  <p class="card-text">{{ test.description }}</p>
+                </div>
+                <div class="card-footer text-muted text-center">
+                  Unexpectedly {{
+                  "valid" if implementation_result.valid == True
+                  else "invalid" if implementation_result.valid == False
+                  else "errored" }}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal fade" role="dialog" id="implementation-{{ loop.index }}-runtime-info" tabindex="-1"
+    aria-labelledby="implementation-{{ loop.index }}-runtime-info-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="implementation-{{ loop.index }}-runtime-info-label">
+            <b>{{ implementation.name }} </b> <small class="text-muted"> {{ implementation.language }}</small>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {% if implementation.get("os_version") %}
+          <p><strong>OS Version: </strong>{{ implementation.get("os_version", "") }}</p>
+          {% endif %}
+          {% if implementation.get("os") %}
+          <p><strong>OS: </strong>{{ implementation.get("os", "") }}</p>
+          {% endif %}
+          {% if implementation.get("language") %}
+          <p><strong>Language: </strong>{{ implementation.language }}</p>
+          {% endif %}
+          {% if implementation.get("language_version") %}
+          <p><strong>Language Version: </strong>{{ implementation.get("language_version", "") }}</p>
+          {% endif %}
+        </div>
+        <div class="modal-footer m-2 p-0">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+  <script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+  </script>
+
+  <script>
+    var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    var navbar = document.querySelector('.navbar');
+    var tableHeader = document.querySelector('.table-header');
+    var body = document.querySelector('body');
+    var sunIcon = document.querySelector('.bi-sun');
+    var moonIcon = document.querySelector('.bi-moon-stars-fill');
+    const toggler = document.querySelector('#theme-toggler');
+
+    body.setAttribute('data-bs-theme', light ? 'light' : 'dark');
+    tableHeader.classList.add( light ? 'table-light' : 'table-dark');
+    navbar.classList.add( light ? 'navbar-light' : 'navbar-dark');
+    navbar.classList.add( light ? 'bg-light' : 'bg-dark');
+    light ? (moonIcon.classList.add('d-none')) : (sunIcon.classList.add('d-none'));
+
+    toggler.addEventListener('click', ()=>{
+      body.setAttribute('data-bs-theme', light ? 'dark' : 'light');
+      light = !light;
+
+      tableHeader.classList.toggle('table-dark', !light);
+      tableHeader.classList.toggle('table-light', light);
+
+      navbar.classList.toggle('navbar-dark', !light);
+      navbar.classList.toggle('bg-dark', !light);
+      navbar.classList.toggle('bg-light', light);
+
+      moonIcon.classList.toggle('d-none', light);
+      sunIcon.classList.toggle('d-none', !light);
+    })
+  </script>
+
+  <script>
+    var ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
+    var agoUnits = 'seconds';
+    if (ago > 60) {
+      ago /= 60; agoUnits = 'minutes';
       if (ago > 60) {
-        ago /= 60; agoUnits = 'minutes';
-        if (ago > 60) {
-          ago /= 60; agoUnits = 'hours';
-          if (ago > 24) {
-            ago /= 24; agoUnits = 'days';
-            if (ago > 7) { ago /= 7; agoUnits = 'weeks'; }
-          }
+        ago /= 60; agoUnits = 'hours';
+        if (ago > 24) {
+          ago /= 24; agoUnits = 'days';
+          if (ago > 7) { ago /= 7; agoUnits = 'weeks'; }
         }
-      };
-      document.getElementById('runStarted').textContent = new Intl.RelativeTimeFormat(
-        'en', {numeric: 'auto'}
-      ).format(-Math.round(ago), agoUnits);
-    </script>
-  </body>
+      }
+    };
+    document.getElementById('runStarted').textContent = new Intl.RelativeTimeFormat(
+      'en', { numeric: 'auto' }
+    ).format(-Math.round(ago), agoUnits);
+  </script>
+</body>
+
 </html>
