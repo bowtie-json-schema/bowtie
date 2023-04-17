@@ -99,7 +99,7 @@
           {% endif %}
         </ul>
       </div>
-      <button id="theme-toggler" class="btn border-0" style="margin-right: 1vw;">
+      <button id="theme-toggler" class="btn border-0 me-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-sun" viewBox="0 0 16 16">
           <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
         </svg>
@@ -220,11 +220,10 @@
               <td class="text-center">{{ counts.skipped_tests }}</td>
               <td class="text-center details-required">{{ counts.failed_tests + counts.errored_tests }}
                 <div class="hover-details text-center">
-                  <p><b>failed</b>: {{counts.failed_tests}}</p>
-                  <p><b>errored</b>: {{counts.errored_tests}}</p>
+                  <p><b>failed</b>: {{ counts.failed_tests }}</p>
+                  <p><b>errored</b>: {{ counts.errored_tests }}</p>
                 </div>
               </td>
-
 
               <td>
                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
@@ -245,8 +244,8 @@
               <td class="text-center">{{ summary.skipped_tests }}</td>
               <td class="text-center details-required">{{ summary.failed_tests + summary.errored_tests }}
                 <div class="hover-details text-center">
-                  <p><b>failed</b>: {{summary.failed_tests}} </p>
-                  <p><b>errored</b>: {{summary.errored_tests}}</p>
+                  <p><b>failed</b>: {{ summary.failed_tests }} </p>
+                  <p><b>errored</b>: {{ summary.errored_tests }}</p>
                 </div>
               </td>
               <td></td>
@@ -395,7 +394,6 @@
       </div>
     </div>
   </div>
-
 
   <div class="modal fade" role="dialog" id="implementation-{{ loop.index }}-runtime-info" tabindex="-1"
     aria-labelledby="implementation-{{ loop.index }}-runtime-info-label" aria-hidden="true">
