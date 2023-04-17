@@ -488,17 +488,20 @@ async def _info(image_names: list[str], format: str):
                 click.echo("  ❗ (error): startup failed")
                 continue
 
-            metadata = {k : v for k, v in sorted(
-                implementation.metadata.items(),
-                key=lambda kv: (
-                    kv[0] != "name",
-                    kv[0] != "language",
-                    kv[0] != "version",
-                    kv[0] == "dialects",
-                    kv[0],
-                ),
-            )}
-            if (format == "json"):
+            metadata = {
+                k: v
+                for k, v in sorted(
+                    implementation.metadata.items(),
+                    key=lambda kv: (
+                        kv[0] != "name",
+                        kv[0] != "language",
+                        kv[0] != "version",
+                        kv[0] == "dialects",
+                        kv[0],
+                    ),
+                )
+            }
+            if format == "json":
                 click.echo(json.dumps(metadata, indent=2))
             else:
                 click.echo(
