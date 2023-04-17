@@ -450,12 +450,12 @@ async def test_info(envsonschema):
         "language": "python",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "dialects": [
-          "https://json-schema.org/draft/2020-12/schema",
-          "https://json-schema.org/draft/2019-09/schema",
-          "http://json-schema.org/draft-07/schema#",
-          "http://json-schema.org/draft-06/schema#",
-          "http://json-schema.org/draft-04/schema#",
-          "http://json-schema.org/draft-03/schema#"
+            "https://json-schema.org/draft/2020-12/schema",
+            "https://json-schema.org/draft/2019-09/schema",
+            "http://json-schema.org/draft-07/schema#",
+            "http://json-schema.org/draft-06/schema#",
+            "http://json-schema.org/draft-04/schema#",
+            "http://json-schema.org/draft-03/schema#",
         ],
     }
     assert stderr == b""
