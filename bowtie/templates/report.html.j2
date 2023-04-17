@@ -1,63 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<style>
-  .details-required {
-    position: relative;
-  }
-
-  .details-required div {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    opacity: 0;
-    visibility: hidden;
-    -webkit-transition: visibility 0s, opacity 0.5s linear;
-    transition: visibility 0s, opacity 0.5s linear;
-  }
-
-  .details-required:hover {
-    cursor: tooltip;
-  }
-
-  .details-required:hover div {
-    padding: 1rem;
-    padding-bottom: 0rem;
-    margin-right: 8rem;
-    visibility: visible;
-    border-radius: 1rem;
-    background-color: rgba(242, 242, 242, 0.892);
-    opacity: 1;
-  }
-
-  .details-required:hover div .details-desc {
-    right: -40%;
-  }
-
-  .hover-details {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 0.7rem;
-  }
-
-  .hover-details span {
-    font-style: italic;
-    font-weight: 500;
-    color: rgb(112, 112, 112);
-    font-size: 0.8rem;
-</style>
-
 <head>
   <meta charset="utf-8">
+  <meta name="description" content="Bowtie report for implementations of the {{ run_info.dialect_shortname }} JSON Schema dialect">
+  <meta name="keywords" content="JSON Schema, jsonschema, Bowtie, compliance, reporting">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bowtie</title>
+  <title>Bowtie – {{ run_info.dialect_shortname }}</title>
   <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
       crossorigin="anonymous"
   />
+
+  <style>
+    .details-required {
+      position: relative;
+    }
+
+    .details-required div {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      opacity: 0;
+      visibility: hidden;
+      -webkit-transition: visibility 0s, opacity 0.5s linear;
+      transition: visibility 0s, opacity 0.5s linear;
+    }
+
+    .details-required:hover {
+      cursor: tooltip;
+    }
+
+    .details-required:hover div {
+      padding: 1rem;
+      padding-bottom: 0rem;
+      margin-right: 8rem;
+      visibility: visible;
+      border-radius: 1rem;
+      background-color: rgba(242, 242, 242, 0.892);
+      opacity: 1;
+    }
+
+    .details-required:hover div .details-desc {
+      right: -40%;
+    }
+
+    .hover-details {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 0.7rem;
+    }
+
+    .hover-details span {
+      font-style: italic;
+      font-weight: 500;
+      color: rgb(112, 112, 112);
+      font-size: 0.8rem;
+  </style>
 </head>
 
 <body>
