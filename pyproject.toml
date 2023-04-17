@@ -67,6 +67,13 @@ Homepage = "https://github.com/bowtie-json-schema/bowtie"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 
+[tool.djlint]
+# H008: Single and double quotes don't mean the same thing in Jinja, so it's
+#       not always the case that the latter should be used unfortunately.
+# J018: url_for is a flask thing, not a Jinja2 native one.
+ignore = "H008,J018"
+indent = 2
+
 [tool.doc8]
 ignore = [
     "D000",  # see PyCQA/doc8#125
