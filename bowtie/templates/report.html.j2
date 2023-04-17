@@ -46,6 +46,7 @@
     font-weight: 500;
     color: rgb(112, 112, 112);
     font-size: 0.8rem;
+  }
 </style>
 
 <head>
@@ -482,7 +483,7 @@
         displayBody.classList.add("d-block");
         targetDisplay.innerHTML = `<pre>${code}</pre>`;
       }
-      function schemaDisplay(parentBodyId,code,targetId) {
+      function schemaDisplay(parentBodyId, code, targetId) {
         displayBody.classList.remove("d-none");
         displayBody.classList.add("d-block");
         displayCode(code, targetId);
