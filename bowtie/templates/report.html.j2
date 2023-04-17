@@ -294,7 +294,7 @@
               </thead>
 
               {% for test, test_results in results %}
-              <tr>
+              <tr onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
                 <td>
                   <a href="#schema" class="text-decoration-none" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>{{ test.description }}</a>
                 </td>
