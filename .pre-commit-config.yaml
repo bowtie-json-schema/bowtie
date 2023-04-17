@@ -79,7 +79,7 @@ repos:
         exclude: .*/json.lua
         args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v16.0.0
+    rev: v16.0.1
     hooks:
       - name: clang-format (c/c++/c# implementations)
         id: clang-format
