@@ -61,7 +61,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
-        if: steps.changes.outputs.impl == 'true'
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Build
         id: build_image
@@ -73,7 +73,7 @@ jobs:
           image: ${{ matrix.image }}
           tags: latest ${{ github.sha }}
           archs: amd64, arm64
-        if: steps.changes.outputs.impl == 'true'
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Publish
         id: push
@@ -84,7 +84,7 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-        if: steps.changes.outputs.impl == 'true' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
 
       - uses: actions/setup-python@v4
         with:
@@ -95,4 +95,4 @@ jobs:
         run: |
           python3 -m pip install bowtie-json-schema
           bowtie smoke -i "${{ steps.build_image.outputs.image-with-tag }}"
-        if: steps.changes.outputs.impl == 'true'
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
