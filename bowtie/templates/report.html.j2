@@ -296,7 +296,7 @@
               {% for test, test_results in results %}
               <tr onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
                 <td>
-                  <a href="#schema" class="text-decoration-none" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>{{ test.description }}</a>
+                  <a href="#schema" class="text-decoration-none">{{ test.description }}</a>
                 </td>
                 {% for implementation in summary.implementations %}
                 {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None},
