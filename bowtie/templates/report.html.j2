@@ -489,6 +489,7 @@
           currentParrentBodyId = parentBodyId;
           displayBody.classList.remove("d-none");
           displayBody.classList.add("d-block");
+          document.getElementById('instance-info').innerHTML = '';
           const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
           if (isDisplayed) {
             displayBody.parentElement.removeChild(displayBody);
@@ -497,8 +498,6 @@
             const accordionBody = document.querySelector(`#${parentBodyId}`);
             accordionBody.insertBefore(displayBody, accordionBody.firstChild);
           }
-        }else {
-          document.getElementById('instance-info').innerHTML = '';
         }
       }
       {# Copy Schema from display  #}
