@@ -81,7 +81,7 @@
           <li class="nav-item">
             <a class="nav-link" href="#cases">Details</a>
           </li>
-          {# If generate_dialect_navigation exists, then render the dropdown navigation  #}
+          {# If generate_dialect_navigation exists, then render the dropdown navigation #}
           {% if generate_dialect_navigation %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -119,21 +119,21 @@
 
   {% macro to_icon(valid) -%}
   {% if valid == True %}
-  {# Circular Checkmark SVG Icon  #}
+  {# Circular Checkmark SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill"
     viewBox="0 0 16 16">
     <path
       d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
   </svg>
   {% elif valid == False %}
-  {# Circular cross (x) SVG Icon   #}
+  {# Circular cross (x) SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill"
     viewBox="0 0 16 16">
     <path
       d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" />
   </svg>
   {% else %}
-  {# Circular warning (!) SVG Icon  #}
+  {# Circular warning (!) SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon"
     viewBox="0 0 16 16">
     <path
@@ -436,7 +436,7 @@
               <button type="button" id="copy-button-schema" class="btn mt-0 me-0" onclick='copyToClipboard("schema-code","copy-button-schema")' aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
               data-bs-custom-class="custom-tooltip"
               data-bs-title="Copy to clipboard">
-              {# Clipboard SVG Icon  #}
+              {# Clipboard SVG Icon #}
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
                   <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                   <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -453,7 +453,7 @@
                   <button type="button" id="copy-button-instance" onclick='copyToClipboard("instance-info","copy-button-instance")' class="btn mt-0 me-0" aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
                   data-bs-custom-class="custom-tooltip"
                   data-bs-title="Copy to clipboard">
-                  {# Clipboard SVG Icon  #}
+                  {# Clipboard SVG Icon #}
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
                       <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                       <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -465,26 +465,29 @@
         </div>
       </div>
     </div>
-  {# Schema Display end  #}
+  {# Schema Display end #}
   {% endfor %}
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
   <script>
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
   </script>
-  {# Scripts for Schema Display start  #}
+
   <script>
       const displayBody = document.querySelector("#display-body");
       const codes = document.querySelector("#schema-code");
       let currentParrentBodyId = '';
+
       function displayCode(code, targetId) {
         const targetDisplay = document.getElementById(targetId);
         displayBody.classList.remove("d-none");
         displayBody.classList.add("d-block");
         targetDisplay.innerHTML = `<pre>${code}</pre>`;
       }
+
       function schemaDisplay(parentBodyId, code, targetId) {
-        if (parentBodyId != currentParrentBodyId){
+        if (parentBodyId != currentParrentBodyId) {
           currentParrentBodyId = parentBodyId;
           displayBody.classList.remove("d-none");
           displayBody.classList.add("d-block");
@@ -499,25 +502,26 @@
           }
         }
       }
-      {# Copy Schema from display  #}
-      function copyToClipboard(targetTextToCopy, btnId){
-      const textToCopy = document.getElementById(targetTextToCopy).innerText;
-      navigator.clipboard.writeText(textToCopy)
-        {# Change the Copy Button icon after copied #}
-        {# Checkmark SVG Icon  #}
+
+      {# Copy Schema from display #}
+      function copyToClipboard(targetTextToCopy, btnId) {
+        const textToCopy = document.getElementById(targetTextToCopy).innerText;
+        navigator.clipboard.writeText(textToCopy)
+        {# Change the Copy Button icon after copying #}
+        {# Checkmark SVG Icon #}
         document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
                                                               <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                                                             </svg>`;
-setTimeout(() => {
-  {# Clipboard SVG Icon setting as a default again after copy  #}
-  document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-                                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                                      </svg>`;
-}, 2000);
+        setTimeout(() => {
+          {# Clipboard SVG Icon setting as a default again after copy #}
+          document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                                              </svg>`;
+        }, 2000);
       }
   </script>
-  {# Scripts for Schema Display end  #}
+
   <script>
     var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
 
