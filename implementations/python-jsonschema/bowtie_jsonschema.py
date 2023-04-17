@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 from dataclasses import dataclass
 from importlib import metadata
 import io
@@ -8,7 +10,8 @@ import sys
 import traceback
 
 from jsonschema.protocols import Validator
-from jsonschema.validators import RefResolver, validator_for
+from jsonschema.validators import validator_for
+import referencing.jsonschema
 
 
 @dataclass
@@ -16,6 +19,7 @@ class Runner:
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
     _DefaultValidator: Validator | None = None
+    _default_spec: referencing.Specification | None = None
 
     def run(self, stdin=sys.stdin):
         for line in stdin:
@@ -56,6 +60,7 @@ class Runner:
     def cmd_dialect(self, dialect):
         assert self._started, "Not started!"
         self._DefaultValidator = validator_for({"$schema": dialect})
+        self._default_spec = referencing.jsonschema.specification_with(dialect)
         return dict(ok=True)
 
     def cmd_run(self, case, seq):
@@ -67,9 +72,11 @@ class Runner:
                 Validator is not None
             ), "No dialect sent and schema is missing $schema."
 
-            registry = case.get("registry", {})
-            resolver = RefResolver.from_schema(schema, store=registry)
-            validator = Validator(schema, resolver=resolver)
+            registry = referencing.Registry().with_contents(
+                case.get("registry", {}).items(),
+                default_specification=self._default_spec,
+            )
+            validator = Validator(schema, registry=registry)
 
             results = [
                 {"valid": validator.is_valid(test["instance"])}
