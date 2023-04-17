@@ -477,6 +477,7 @@
   <script>
       const displayBody = document.querySelector("#display-body");
       const codes = document.querySelector("#schema-code");
+      let currentParrentBodyId = '';
       function displayCode(code, targetId) {
         const targetDisplay = document.getElementById(targetId);
         displayBody.classList.remove("d-none");
@@ -484,16 +485,20 @@
         targetDisplay.innerHTML = `<pre>${code}</pre>`;
       }
       function schemaDisplay(parentBodyId, code, targetId) {
-        displayBody.classList.remove("d-none");
-        displayBody.classList.add("d-block");
-        displayCode(code, targetId);
-        document.getElementById('instance-info').innerHTML = '';
-        const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
-        if (isDisplayed) {
-          displayBody.parentElement.removeChild(displayBody);
-        } else {
-          const accordionBody = document.querySelector(`#${parentBodyId}`);
-          accordionBody.insertBefore(displayBody, accordionBody.firstChild);
+        if (parentBodyId != currentParrentBodyId){
+          currentParrentBodyId = parentBodyId;
+          displayBody.classList.remove("d-none");
+          displayBody.classList.add("d-block");
+          const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
+          if (isDisplayed) {
+            displayBody.parentElement.removeChild(displayBody);
+          } else {
+            displayCode(code, targetId);
+            const accordionBody = document.querySelector(`#${parentBodyId}`);
+            accordionBody.insertBefore(displayBody, accordionBody.firstChild);
+          }
+        }else {
+          document.getElementById('instance-info').innerHTML = '';
         }
       }
       {# Copy Schema from display  #}
