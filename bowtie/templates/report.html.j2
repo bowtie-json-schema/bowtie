@@ -502,14 +502,8 @@
       }
       {# Copy Schema from display  #}
       function copyToClipboard(targetTextToCopy, btnId){
-        const textToCopy = document.getElementById(targetTextToCopy).innerText;
-        const tempElement = document.createElement("textarea");
-        tempElement.value = textToCopy;
-        document.body.appendChild(tempElement);
-        tempElement.select();
-        tempElement.setSelectionRange(0, 99999);
-        document.execCommand("copy");
-        document.body.removeChild(tempElement);
+      const textToCopy = document.getElementById(targetTextToCopy).innerText;
+      navigator.clipboard.writeText(textToCopy)
         {# Change the Copy Button icon after copied #}
         {# Checkmark SVG Icon  #}
         document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
@@ -524,7 +518,7 @@ setTimeout(() => {
 }, 2000);
       }
   </script>
-  {# Scripts for Schema Display start  #}
+  {# Scripts for Schema Display end  #}
   <script>
     var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
 
