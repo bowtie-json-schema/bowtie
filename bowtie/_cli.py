@@ -510,7 +510,7 @@ async def _info(image_names: list[str], format: str):
             else:
                 click.echo(
                     "\n".join(
-                        f"{k}:{json.dumps(v, indent=2)}"
+                        f"{k}: {json.dumps(v, indent=2)}"
                         for k, v in metadata.items()
                     ),
                 )

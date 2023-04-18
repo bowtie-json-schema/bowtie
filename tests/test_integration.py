@@ -447,10 +447,10 @@ async def test_info_pretty(envsonschema):
     assert proc.returncode == 0, (stdout, stderr)
     assert stdout.decode() == dedent(
         """\
-        name:"envsonschema"
-        language:"python"
-        issues:"https://github.com/bowtie-json-schema/bowtie/issues"
-        dialects:[
+        name: "envsonschema"
+        language: "python"
+        issues: "https://github.com/bowtie-json-schema/bowtie/issues"
+        dialects: [
           "https://json-schema.org/draft/2020-12/schema",
           "https://json-schema.org/draft/2019-09/schema",
           "http://json-schema.org/draft-07/schema#",
