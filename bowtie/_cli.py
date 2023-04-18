@@ -454,6 +454,14 @@ def validate(
 @main.command()
 @click.pass_context
 @IMPLEMENTATION
+@click.option(
+    "--format",
+    "-f",
+    help="What format to use for the output",
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
+    type=click.Choice(["json", "pretty"]),
+)
 def info(context: click.Context, **kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
@@ -462,7 +470,7 @@ def info(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _info(image_names: list[str]):
+async def _info(image_names: list[str], format: str):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -484,21 +492,28 @@ async def _info(image_names: list[str]):
                 click.echo("  ❗ (error): startup failed")
                 continue
 
-            click.echo(
-                "\n".join(
-                    f"{k}: {json.dumps(v, indent=2)}"
-                    for k, v in sorted(
-                        implementation.metadata.items(),
-                        key=lambda kv: (
-                            kv[0] != "name",
-                            kv[0] != "language",
-                            kv[0] != "version",
-                            kv[0] == "dialects",
-                            kv[0],
-                        ),
-                    )
-                ),
-            )
+            metadata = {
+                k: v
+                for k, v in sorted(
+                    implementation.metadata.items(),
+                    key=lambda kv: (
+                        kv[0] != "name",
+                        kv[0] != "language",
+                        kv[0] != "version",
+                        kv[0] == "dialects",
+                        kv[0],
+                    ),
+                )
+            }
+            if format == "json":
+                click.echo(json.dumps(metadata, indent=2))
+            else:
+                click.echo(
+                    "\n".join(
+                        f"{k}: {json.dumps(v, indent=2)}"
+                        for k, v in metadata.items()
+                    ),
+                )
     return exit_code
 
 
