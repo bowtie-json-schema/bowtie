@@ -1,63 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<style>
-  .details-required {
-    position: relative;
-  }
-
-  .details-required div {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    opacity: 0;
-    visibility: hidden;
-    -webkit-transition: visibility 0s, opacity 0.5s linear;
-    transition: visibility 0s, opacity 0.5s linear;
-  }
-
-  .details-required:hover {
-    cursor: tooltip;
-  }
-
-  .details-required:hover div {
-    padding: 1rem;
-    padding-bottom: 0rem;
-    margin-right: 8rem;
-    visibility: visible;
-    border-radius: 1rem;
-    background-color: rgba(242, 242, 242, 0.892);
-    opacity: 1;
-  }
-
-  .details-required:hover div .details-desc {
-    right: -40%;
-  }
-
-  .hover-details {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 0.7rem;
-  }
-
-  .hover-details span {
-    font-style: italic;
-    font-weight: 500;
-    color: rgb(112, 112, 112);
-    font-size: 0.8rem;
-</style>
-
 <head>
   <meta charset="utf-8">
+  <meta name="description" content="Bowtie report for implementations of the {{ run_info.dialect_shortname }} JSON Schema dialect">
+  <meta name="keywords" content="JSON Schema, jsonschema, Bowtie, compliance, reporting">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bowtie</title>
+  <title>Bowtie – {{ run_info.dialect_shortname }}</title>
   <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
       crossorigin="anonymous"
   />
+
+  <style>
+    .details-required {
+      position: relative;
+    }
+
+    .details-required div {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      opacity: 0;
+      visibility: hidden;
+      -webkit-transition: visibility 0s, opacity 0.5s linear;
+      transition: visibility 0s, opacity 0.5s linear;
+    }
+
+    .details-required:hover {
+      cursor: tooltip;
+    }
+
+    .details-required:hover div {
+      padding: 1rem;
+      padding-bottom: 0rem;
+      margin-right: 8rem;
+      visibility: visible;
+      border-radius: 1rem;
+      background-color: rgba(242, 242, 242, 0.892);
+      opacity: 1;
+    }
+
+    .details-required:hover div .details-desc {
+      right: -40%;
+    }
+
+    .hover-details {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 0.7rem;
+    }
+
+    .hover-details span {
+      font-style: italic;
+      font-weight: 500;
+      color: rgb(112, 112, 112);
+      font-size: 0.8rem;
+    }
+  </style>
 </head>
 
 <body>
@@ -79,7 +81,7 @@
           <li class="nav-item">
             <a class="nav-link" href="#cases">Details</a>
           </li>
-          {# If generate_dialect_navigation exists, then render the dropdown navigation  #}
+          {# If generate_dialect_navigation exists, then render the dropdown navigation #}
           {% if generate_dialect_navigation %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -97,7 +99,7 @@
           {% endif %}
         </ul>
       </div>
-      <button id="theme-toggler" class="btn border-0" style="margin-right: 1vw;">
+      <button id="theme-toggler" class="btn border-0 me-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-sun" viewBox="0 0 16 16">
           <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
         </svg>
@@ -117,18 +119,21 @@
 
   {% macro to_icon(valid) -%}
   {% if valid == True %}
+  {# Circular Checkmark SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill"
     viewBox="0 0 16 16">
     <path
       d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
   </svg>
   {% elif valid == False %}
+  {# Circular cross (x) SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill"
     viewBox="0 0 16 16">
     <path
       d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" />
   </svg>
   {% else %}
+  {# Circular warning (!) SVG Icon #}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon"
     viewBox="0 0 16 16">
     <path
@@ -218,11 +223,10 @@
               <td class="text-center">{{ counts.skipped_tests }}</td>
               <td class="text-center details-required">{{ counts.failed_tests + counts.errored_tests }}
                 <div class="hover-details text-center">
-                  <p><b>failed</b>: {{counts.failed_tests}}</p>
-                  <p><b>errored</b>: {{counts.errored_tests}}</p>
+                  <p><b>failed</b>: {{ counts.failed_tests }}</p>
+                  <p><b>errored</b>: {{ counts.errored_tests }}</p>
                 </div>
               </td>
-
 
               <td>
                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
@@ -243,8 +247,8 @@
               <td class="text-center">{{ summary.skipped_tests }}</td>
               <td class="text-center details-required">{{ summary.failed_tests + summary.errored_tests }}
                 <div class="hover-details text-center">
-                  <p><b>failed</b>: {{summary.failed_tests}} </p>
-                  <p><b>errored</b>: {{summary.errored_tests}}</p>
+                  <p><b>failed</b>: {{ summary.failed_tests }} </p>
+                  <p><b>errored</b>: {{ summary.errored_tests }}</p>
                 </div>
               </td>
               <td></td>
@@ -265,10 +269,9 @@
       <div class="accordion-item">
 
         <h2 class="accordion-header" id="case-{{ seq }}-heading">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+          <button class="accordion-button collapsed" type="button" onclick='schemaDisplay("accordion-body{{ seq }}",`{{ schema | tojson(indent=2) }}`,"schema-code")' data-bs-toggle="collapse"
             data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
-            <a href="#" data-bs-toggle="tooltip" data-bs-html="true"
-              data-bs-title='<pre>{{ schema | tojson(indent=2) }}</pre>'>
+            <a href="#schema" class="text-decoration-none">
               {{ description }}
             </a>
           </button>
@@ -276,11 +279,11 @@
 
         <div id="case-{{ seq }}" class="accordion-collapse collapse" aria-labelledby="case-{{ seq }}-heading"
           data-bs-parent="#cases">
-          <div class="accordion-body">
+          <div id="accordion-body{{ seq }}" class="accordion-body">
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <td scope="col">test</td>
+                  <td scope="col">Tests</td>
                   {% for implementation in summary.implementations %}
                   <td class="text-center" scope="col">
                     {{ implementation.name }}
@@ -291,10 +294,9 @@
               </thead>
 
               {% for test, test_results in results %}
-              <tr>
+              <tr onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
                 <td>
-                  <a href="#" data-bs-toggle="tooltip" data-bs-html="true"
-                    data-bs-title='<pre>{{ test.instance | tojson(indent=2) }}</pre>'>{{ test.description }}</a>
+                  <a href="#schema" class="text-decoration-none">{{ test.description }}</a>
                 </td>
                 {% for implementation in summary.implementations %}
                 {% set implementation_result, incorrect = test_results.get(implementation.image, ({"valid": None},
@@ -394,7 +396,6 @@
     </div>
   </div>
 
-
   <div class="modal fade" role="dialog" id="implementation-{{ loop.index }}-runtime-info" tabindex="-1"
     aria-labelledby="implementation-{{ loop.index }}-runtime-info-label" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -425,11 +426,100 @@
       </div>
     </div>
   </div>
+   {# Schema Display (Hidden by default) start #}
+    <div id="display-body" class="card mb-3 d-none mw-100">
+      <div class="row">
+        <div class="col-8 pe-0">
+          <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+            <small class="font-monospace text-body-secondary text-uppercase">Schema</small>
+            <div class="d-flex ms-auto">
+              <button type="button" id="copy-button-schema" class="btn mt-0 me-0" onclick='copyToClipboard("schema-code","copy-button-schema")' aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
+              data-bs-custom-class="custom-tooltip"
+              data-bs-title="Copy to clipboard">
+              {# Clipboard SVG Icon #}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                </svg>
+              </button>
+            </div>
+        </div>
+        <div id="schema-code" class="card-body"></div>
+        </div>
+        <div class="col-4 border-start ps-0">
+            <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+              <small class="font-monospace text-body-secondary text-uppercase">Instance</small>
+                <div class="d-flex ms-auto">
+                  <button type="button" id="copy-button-instance" onclick='copyToClipboard("instance-info","copy-button-instance")' class="btn mt-0 me-0" aria-label="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="Copy to clipboard">
+                  {# Clipboard SVG Icon #}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                  </button>
+                </div>
+          </div>
+        <div id="instance-info" class="card-body"></div>
+        </div>
+      </div>
+    </div>
+  {# Schema Display end #}
   {% endfor %}
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
   <script>
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+  </script>
+
+  <script>
+      const displayBody = document.querySelector("#display-body");
+      const codes = document.querySelector("#schema-code");
+      let currentParrentBodyId = '';
+
+      function displayCode(code, targetId) {
+        const targetDisplay = document.getElementById(targetId);
+        displayBody.classList.remove("d-none");
+        displayBody.classList.add("d-block");
+        targetDisplay.innerHTML = `<pre>${code}</pre>`;
+      }
+
+      function schemaDisplay(parentBodyId, code, targetId) {
+        if (parentBodyId != currentParrentBodyId) {
+          currentParrentBodyId = parentBodyId;
+          displayBody.classList.remove("d-none");
+          displayBody.classList.add("d-block");
+          document.getElementById('instance-info').innerHTML = '';
+          const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
+          if (isDisplayed) {
+            displayBody.parentElement.removeChild(displayBody);
+          } else {
+            displayCode(code, targetId);
+            const accordionBody = document.querySelector(`#${parentBodyId}`);
+            accordionBody.insertBefore(displayBody, accordionBody.firstChild);
+          }
+        }
+      }
+
+      {# Copy Schema from display #}
+      function copyToClipboard(targetTextToCopy, btnId) {
+        const textToCopy = document.getElementById(targetTextToCopy).innerText;
+        navigator.clipboard.writeText(textToCopy)
+        {# Change the Copy Button icon after copying #}
+        {# Checkmark SVG Icon #}
+        document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+                                                              <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                                                            </svg>`;
+        setTimeout(() => {
+          {# Clipboard SVG Icon setting as a default again after copy #}
+          document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                                              </svg>`;
+        }, 2000);
+      }
   </script>
 
   <script>
@@ -482,5 +572,4 @@
     ).format(-Math.round(ago), agoUnits);
   </script>
 </body>
-
 </html>
