@@ -510,17 +510,8 @@ async def _info(image_names: list[str], format: str):
             else:
                 click.echo(
                     "\n".join(
-                        f"{k}: {json.dumps(v, indent=2)}"
-                        for k, v in sorted(
-                            implementation.metadata.items(),
-                            key=lambda kv: (
-                                kv[0] != "name",
-                                kv[0] != "language",
-                                kv[0] != "version",
-                                kv[0] == "dialects",
-                                kv[0],
-                            ),
-                        )
+                        f"{k}:{json.dumps(v, indent=2)}"
+                        for k, v in metadata.items()
                     ),
                 )
     return exit_code
