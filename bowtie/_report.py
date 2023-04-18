@@ -21,7 +21,7 @@ class _InvalidBowtieReport(Exception):
     pass
 
 
-_BADGE_LABELS = {
+_DIALECT_URI_TO_SHORTNAME = {
     "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
     "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
     "http://json-schema.org/draft-07/schema#": "Draft 7",
@@ -312,7 +312,7 @@ class _Summary:
             )
 
     def generate_badges(self, target_dir: Path, dialect: str):
-        label = _BADGE_LABELS[dialect]
+        label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
             if dialect not in impl["dialects"]:
                 continue
@@ -348,6 +348,10 @@ class RunInfo:
     _implementations: dict[str, dict[str, Any]] = attrs.field(
         alias="implementations",
     )
+
+    @property
+    def dialect_shortname(self):
+        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
 
     @classmethod
     def from_implementations(
