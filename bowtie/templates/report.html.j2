@@ -269,7 +269,7 @@
       <div class="accordion-item">
 
         <h2 class="accordion-header" id="case-{{ seq }}-heading">
-          <button class="accordion-button collapsed" type="button" onclick='schemaDisplay("accordion-body{{ seq }}",`{{ schema | tojson(indent=2) }}`,"schema-code")' data-bs-toggle="collapse"
+          <button class="accordion-button collapsed" type="button" onclick='schemaDisplay("accordion-body{{ seq }}", `{{ schema | tojson(indent=2) }}`, "schema-code", "row-{{ seq }}")' data-bs-toggle="collapse"
             data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
             <a href="#schema" class="text-decoration-none">
               {{ description }}
@@ -294,7 +294,7 @@
               </thead>
 
               {% for test, test_results in results %}
-              <tr onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
+              <tr class="row-{{ seq }}" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
                 <td>
                   <a href="#schema" class="text-decoration-none">{{ test.description }}</a>
                 </td>
@@ -478,6 +478,20 @@
       const displayBody = document.querySelector("#display-body");
       const codes = document.querySelector("#schema-code");
       let currentParrentBodyId = '';
+      {# Highlight the clicked row   #}
+      function rowHighlightListener(rowClass) {
+        const instanceRows = document.getElementsByClassName(rowClass);
+        for (let i = 0; i < instanceRows.length; i++) {
+          const currentInstanceRow = instanceRows[i];
+          currentInstanceRow.addEventListener('click', function () {
+            const activeElements = document.getElementsByClassName('table-active');
+            for (let j = 0; j < activeElements.length; j++) {
+              activeElements[j].classList.remove('table-active');
+            }
+            currentInstanceRow.classList.add('table-active');
+          });
+        }
+      }
 
       function displayCode(code, targetId) {
         const targetDisplay = document.getElementById(targetId);
@@ -486,7 +500,7 @@
         targetDisplay.innerHTML = `<pre>${code}</pre>`;
       }
 
-      function schemaDisplay(parentBodyId, code, targetId) {
+      function schemaDisplay(parentBodyId, code, targetId, rowClass) {
         if (parentBodyId != currentParrentBodyId) {
           currentParrentBodyId = parentBodyId;
           displayBody.classList.remove("d-none");
@@ -496,6 +510,8 @@
           if (isDisplayed) {
             displayBody.parentElement.removeChild(displayBody);
           } else {
+            {# Add Highlight Row Functionality to clicked accordion only  #}
+            rowHighlightListener(rowClass);
             displayCode(code, targetId);
             const accordionBody = document.querySelector(`#${parentBodyId}`);
             accordionBody.insertBefore(displayBody, accordionBody.firstChild);
@@ -520,6 +536,7 @@
                                                               </svg>`;
         }, 2000);
       }
+
   </script>
 
   <script>
