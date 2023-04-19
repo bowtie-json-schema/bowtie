@@ -170,7 +170,7 @@
 
       <div class="card-body">
         <table class="table table-sm table-hover">
-          <thead class="table-header table-light">
+          <thead>
             <tr>
               <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</th>
               <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
@@ -269,7 +269,7 @@
       <div class="accordion-item">
 
         <h2 class="accordion-header" id="case-{{ seq }}-heading">
-          <button class="accordion-button collapsed" type="button" onclick='schemaDisplay("accordion-body{{ seq }}",`{{ schema | tojson(indent=2) }}`,"schema-code")' data-bs-toggle="collapse"
+          <button class="accordion-button collapsed" type="button" onclick='schemaDisplay("accordion-body{{ seq }}", `{{ schema | tojson(indent=2) }}`, "schema-code", "row-{{ seq }}")' data-bs-toggle="collapse"
             data-bs-target="#case-{{ seq }}" aria-expanded="false" aria-controls="case-{{ seq }}">
             <a href="#schema" class="text-decoration-none">
               {{ description }}
@@ -294,7 +294,7 @@
               </thead>
 
               {% for test, test_results in results %}
-              <tr onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
+              <tr class="row-{{ seq }}" onclick='displayCode(`{{ test.instance | tojson(indent=2) }}`,"instance-info")'>
                 <td>
                   <a href="#schema" class="text-decoration-none">{{ test.description }}</a>
                 </td>
@@ -476,8 +476,21 @@
 
   <script>
       const displayBody = document.querySelector("#display-body");
-      const codes = document.querySelector("#schema-code");
       let currentParrentBodyId = '';
+      {# Highlight the clicked row   #}
+      function rowHighlightListener(rowClass) {
+        const instanceRows = document.getElementsByClassName(rowClass);
+        for (let i = 0; i < instanceRows.length; i++) {
+          const currentInstanceRow = instanceRows[i];
+          currentInstanceRow.addEventListener('click', function () {
+            const activeElements = document.getElementsByClassName('table-active');
+            for (let j = 0; j < activeElements.length; j++) {
+              activeElements[j].classList.remove('table-active');
+            }
+            currentInstanceRow.classList.add('table-active');
+          });
+        }
+      }
 
       function displayCode(code, targetId) {
         const targetDisplay = document.getElementById(targetId);
@@ -486,7 +499,7 @@
         targetDisplay.innerHTML = `<pre>${code}</pre>`;
       }
 
-      function schemaDisplay(parentBodyId, code, targetId) {
+      function schemaDisplay(parentBodyId, code, targetId, rowClass) {
         if (parentBodyId != currentParrentBodyId) {
           currentParrentBodyId = parentBodyId;
           displayBody.classList.remove("d-none");
@@ -496,6 +509,8 @@
           if (isDisplayed) {
             displayBody.parentElement.removeChild(displayBody);
           } else {
+            {# Add Highlight Row Functionality to clicked accordion only  #}
+            rowHighlightListener(rowClass);
             displayCode(code, targetId);
             const accordionBody = document.querySelector(`#${parentBodyId}`);
             accordionBody.insertBefore(displayBody, accordionBody.firstChild);
@@ -503,6 +518,7 @@
         }
       }
 
+      const clipBoardIcon = document.querySelector('.bi-clipboard');
       {# Copy Schema from display #}
       function copyToClipboard(targetTextToCopy, btnId) {
         const textToCopy = document.getElementById(targetTextToCopy).innerText;
@@ -514,36 +530,38 @@
                                                             </svg>`;
         setTimeout(() => {
           {# Clipboard SVG Icon setting as a default again after copy #}
-          document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-                                                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                                              </svg>`;
+          document.getElementById(btnId).innerHTML = clipBoardIcon.outerHTML;
         }, 2000);
       }
+
   </script>
 
   <script>
-    var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    var navbar = document.querySelector('.navbar');
-    var tableHeader = document.querySelector('.table-header');
-    var body = document.querySelector('body');
-    var sunIcon = document.querySelector('.bi-sun');
-    var moonIcon = document.querySelector('.bi-moon-stars-fill');
+    const navbar = document.querySelector('.navbar');
+    const tables = document.getElementsByClassName('table');
+    const body = document.querySelector('body');
+    const sunIcon = document.querySelector('.bi-sun');
+    const moonIcon = document.querySelector('.bi-moon-stars-fill');
     const toggler = document.querySelector('#theme-toggler');
 
     body.setAttribute('data-bs-theme', light ? 'light' : 'dark');
-    tableHeader.classList.add( light ? 'table-light' : 'table-dark');
     navbar.classList.add( light ? 'navbar-light' : 'navbar-dark');
     navbar.classList.add( light ? 'bg-light' : 'bg-dark');
+    for(let i = 0; i < tables.length; i++){
+      tables[i].classList.add( light ? 'table-light' : 'table-dark');
+    }
     light ? (moonIcon.classList.add('d-none')) : (sunIcon.classList.add('d-none'));
 
     toggler.addEventListener('click', ()=>{
       body.setAttribute('data-bs-theme', light ? 'dark' : 'light');
       light = !light;
 
-      tableHeader.classList.toggle('table-dark', !light);
-      tableHeader.classList.toggle('table-light', light);
+      for(let i = 0; i < tables.length; i++){
+      tables[i].classList.toggle('table-dark', !light);
+      tables[i].classList.toggle('table-light', light);
+    }
 
       navbar.classList.toggle('navbar-dark', !light);
       navbar.classList.toggle('bg-dark', !light);
@@ -555,8 +573,8 @@
   </script>
 
   <script>
-    var ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
-    var agoUnits = 'seconds';
+    let ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
+    let agoUnits = 'seconds';
     if (ago > 60) {
       ago /= 60; agoUnits = 'minutes';
       if (ago > 60) {
