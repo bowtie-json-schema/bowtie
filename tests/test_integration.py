@@ -430,12 +430,14 @@ async def test_smoke(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_info(envsonschema):
+async def test_info_pretty(envsonschema):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
         "info",
+        "--format",
+        "pretty",
         "-i",
         envsonschema,
         stdout=asyncio.subprocess.PIPE,
@@ -458,6 +460,38 @@ async def test_info(envsonschema):
         ]
         """,
     )
+    assert stderr == b""
+
+
+@pytest.mark.asyncio
+async def test_info_json(envsonschema):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "info",
+        "--format",
+        "json",
+        "-i",
+        envsonschema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    assert proc.returncode == 0, (stdout, stderr)
+    assert json.loads(stdout) == {
+        "name": "envsonschema",
+        "language": "python",
+        "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
+        "dialects": [
+            "https://json-schema.org/draft/2020-12/schema",
+            "https://json-schema.org/draft/2019-09/schema",
+            "http://json-schema.org/draft-07/schema#",
+            "http://json-schema.org/draft-06/schema#",
+            "http://json-schema.org/draft-04/schema#",
+            "http://json-schema.org/draft-03/schema#",
+        ],
+    }
     assert stderr == b""
 
 
