@@ -522,7 +522,6 @@
       {# Copy Schema from display #}
       function copyToClipboard(targetTextToCopy, btnId) {
         const textToCopy = document.getElementById(targetTextToCopy).innerText;
-        console.log(clipBoardIcon);
         navigator.clipboard.writeText(textToCopy)
         {# Change the Copy Button icon after copying #}
         {# Checkmark SVG Icon #}
