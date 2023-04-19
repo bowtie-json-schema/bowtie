@@ -574,8 +574,8 @@
   </script>
 
   <script>
-    const ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
-    const agoUnits = 'seconds';
+    let ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
+    let agoUnits = 'seconds';
     if (ago > 60) {
       ago /= 60; agoUnits = 'minutes';
       if (ago > 60) {
