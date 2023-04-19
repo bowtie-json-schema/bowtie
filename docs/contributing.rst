@@ -12,7 +12,7 @@ If you're going to work on Bowtie itself, you likely will want to install it usi
 
 .. code:: sh
 
-    $ pip install -e wherever/you/cloned/bowtie
+    pip install -e wherever/you/cloned/bowtie
 
 which will allow you to make changes to files within Bowtie and see the results without reinstalling it repeatedly.
 
@@ -27,7 +27,7 @@ You can run them using `nox <nox:index>`, which you can install using the `linke
 
 .. code:: sh
 
-    $ nox -s tests-3.11
+    nox -s tests-3.11
 
 to run the tests using Python 3.11 (or any other version you'd like).
 
