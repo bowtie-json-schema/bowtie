@@ -540,14 +540,13 @@
   </script>
 
   <script>
-    var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    var navbar = document.querySelector('.navbar');
+    const navbar = document.querySelector('.navbar');
     const tables = document.getElementsByClassName('table');
-    console.log(tables);
-    var body = document.querySelector('body');
-    var sunIcon = document.querySelector('.bi-sun');
-    var moonIcon = document.querySelector('.bi-moon-stars-fill');
+    const body = document.querySelector('body');
+    const sunIcon = document.querySelector('.bi-sun');
+    const moonIcon = document.querySelector('.bi-moon-stars-fill');
     const toggler = document.querySelector('#theme-toggler');
 
     body.setAttribute('data-bs-theme', light ? 'light' : 'dark');
@@ -577,8 +576,8 @@
   </script>
 
   <script>
-    var ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
-    var agoUnits = 'seconds';
+    const ago = (Date.now() - Date.parse("{{ run_info.started }}")) / 1000;
+    const agoUnits = 'seconds';
     if (ago > 60) {
       ago /= 60; agoUnits = 'minutes';
       if (ago > 60) {
