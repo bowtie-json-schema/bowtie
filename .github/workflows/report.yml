@@ -52,7 +52,7 @@ jobs:
           name: report
           path: |
             ${{ matrix.version }}.html
-            ${{ matrix.version }}.json
+            ${{ matrix.version }}.json.gz
             badges/
 
   collect:
