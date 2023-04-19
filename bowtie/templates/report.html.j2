@@ -170,7 +170,7 @@
 
       <div class="card-body">
         <table class="table table-sm table-hover">
-          <thead class="table-header table-light">
+          <thead>
             <tr>
               <th colspan=2 rowspan=2 scope="col" class="text-center align-middle">implementation</th>
               <th colspan=1 class="text-center"><span class="text-muted">cases ({{ summary.total_cases }})</span></th>
@@ -543,24 +543,29 @@
     var light = !window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     var navbar = document.querySelector('.navbar');
-    var tableHeader = document.querySelector('.table-header');
+    const tables = document.getElementsByClassName('table');
+    console.log(tables);
     var body = document.querySelector('body');
     var sunIcon = document.querySelector('.bi-sun');
     var moonIcon = document.querySelector('.bi-moon-stars-fill');
     const toggler = document.querySelector('#theme-toggler');
 
     body.setAttribute('data-bs-theme', light ? 'light' : 'dark');
-    tableHeader.classList.add( light ? 'table-light' : 'table-dark');
     navbar.classList.add( light ? 'navbar-light' : 'navbar-dark');
     navbar.classList.add( light ? 'bg-light' : 'bg-dark');
+    for(let i = 0; i < tables.length; i++){
+      tables[i].classList.add( light ? 'table-light' : 'table-dark');
+    }
     light ? (moonIcon.classList.add('d-none')) : (sunIcon.classList.add('d-none'));
 
     toggler.addEventListener('click', ()=>{
       body.setAttribute('data-bs-theme', light ? 'dark' : 'light');
       light = !light;
 
-      tableHeader.classList.toggle('table-dark', !light);
-      tableHeader.classList.toggle('table-light', light);
+      for(let i = 0; i < tables.length; i++){
+      tables[i].classList.toggle('table-dark', !light);
+      tables[i].classList.toggle('table-light', light);
+    }
 
       navbar.classList.toggle('navbar-dark', !light);
       navbar.classList.toggle('bg-dark', !light);
