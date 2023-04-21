@@ -110,9 +110,7 @@
               </tr>
             </thead>
 
-            <tbody id="tbody" class="table-group-divider">
-             
-            </tbody>
+            <tbody id="tbody" class="table-group-divider"></tbody>
 
             <tfoot>
               <tr>
@@ -188,6 +186,7 @@
           //updating summary table
           tbody = document.getElementById("tbody");
           for (i = 0; i < data.summary.implementation.length; i++) {
+            //th section of summary table's data
             var tr = document.createElement("tr");
             var th = document.createElement("th");
             th.setAttribute("scope", "row");
@@ -199,33 +198,83 @@
             );
             a.textContent = `${data.summary.implementation[i].name} `;
 
-            const small = document.createElement("small");
-            small.setAttribute(
+            const smallTH = document.createElement("small");
+            smallTH.setAttribute(
               "id",
               `implementation-${data.summary.implementation[i].language}`
             );
-            small.setAttribute("class", "text-muted");
-            small.textContent = `${data.summary.implementation[i].language}`;
+            smallTH.setAttribute("class", "text-muted");
+            smallTH.textContent = `${data.summary.implementation[i].language}`;
 
             th.appendChild(a);
-            th.appendChild(small);
+            th.appendChild(smallTH);
             tr.appendChild(th);
+            
+
+            //td section of summary table's data
+            var td = document.createElement("td");
+            const smallTD = document.createElement("small");
+            smallTD.setAttribute("class", "font-monospace text-muted");
+            smallTD.textContent = `${data.summary.implementation[i].version}`;
+
+            const buttonTD = document.createElement("button");
+            buttonTD.setAttribute("class", "btn border-0");
+
+            const svgTD = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg"
+            );
+            svgTD.setAttribute("width", "16");
+            svgTD.setAttribute("height", "16");
+            svgTD.setAttribute("fill", "currentColor");
+            svgTD.setAttribute("class", "bi bi-info-circle-fill");
+            svgTD.setAttribute("viewBox", "0 0 16 16");
+            svgTD.setAttribute("data-bs-toggle", "modal");
+            svgTD.setAttribute(
+              "data-bs-target",
+              `#implementation-runtime-info`
+            );
+
+            const pathTD = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            pathTD.setAttribute(
+              "d",
+              "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+            );
+
+            svgTD.appendChild(pathTD);
+            buttonTD.appendChild(svgTD);
+
+            var td = document.createElement("td");
+            td.appendChild(smallTD);
+            td.appendChild(buttonTD);
+
+            tr.appendChild(td);
+
+
+            //final section of table body
+            var td2 = document.createElement('td');
+            td2.setAttribute('class', 'text-center');
+            td2.textContent = `${data.summary.counts.errored_cases}`;
+
+            var td3 = document.createElement('td');
+            td3.setAttribute('class', 'text-center');
+            td3.textContent += `${data.summary.counts.skipped_tests}`;
+
+            var td4 = document.createElement('td');
+            td4.setAttribute('class', 'text-center');
+            td4.textContent += `${
+              data.summary.counts.errored_cases +
+              data.summary.counts.skipped_tests
+            }`;
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
+            
             tbody.appendChild(tr);
           }
-
-          var countsErroredCases = document.getElementById(
-            "counts-errored_cases"
-          );
-          countsErroredCases.textContent = `${data.summary.counts.errored_cases}`;
-          var countsSkippedTests = document.getElementById(
-            "counts-skipped_tests"
-          );
-          countsSkippedTests.textContent += `${data.summary.counts.skipped_tests}`;
-          var countsTotalCases = document.getElementById("counts-total-tests");
-          countsTotalCases.textContent += `${
-            data.summary.counts.errored_cases +
-            data.summary.counts.skipped_tests
-          }`;
 
           //summary total
           var summaryErroredCases = document.getElementById(
