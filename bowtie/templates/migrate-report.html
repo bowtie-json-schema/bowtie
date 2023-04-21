@@ -50,7 +50,26 @@
         </a>
       </div>
     </nav>
-    <div id="report"></div>
+
+    <div class="container p-4">
+      <div class="card mx-auto mb-3 w-75" id="run-info">
+        <div class="card-header">Run Info</div>
+        <div class="card-body">
+          <table class="table table-sm table-hover">
+            <tr>
+              <td>Dialect</td>
+              <td id="dialect-link"></td>
+            </tr>
+            <tr>
+              <td>Ran</td>
+              <td>
+                <time id="run-started"></time>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <script>
       let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -59,14 +78,48 @@
       fetch("data.json")
         .then((response) => response.json())
         .then((data) => {
-          console.log(data);
           const titleElement = document.querySelector("title");
           titleElement.textContent += ` ${data.dialect}`;
 
           //adding bowtie version
           var bowtieVersion = document.getElementById("bowtie-version");
           bowtieVersion.textContent += `${data.version}`;
+
+          //adding dialect link in #run-info
+          var dialectLink = document.querySelector("#dialect-link");
+          dialectLink.textContent = `${data.dialectLink}`;
+
+          let ago = (Date.now() - Date.parse(`${data.runStarted}`)) / 1000;
+          console.log(ago);
+          let agoUnits = "seconds";
+          if (ago > 60) {
+            ago /= 60;
+            agoUnits = "minutes";
+            if (ago > 60) {
+              ago /= 60;
+              agoUnits = "hours";
+              if (ago > 24) {
+                ago /= 24;
+                agoUnits = "days";
+                if (ago > 7) {
+                  ago /= 7;
+                  agoUnits = "weeks";
+                }
+              }
+            }
+          }
+          const roundedAgo = Math.round(ago);
+          const formattedAgo = Number.isFinite(roundedAgo)
+            ? new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+                -roundedAgo,
+                agoUnits
+              )
+            : "";
+          console.log(roundedAgo);
+          document.getElementById("run-started").textContent = formattedAgo;
         });
+
+      //setting datetime attribute
 
       //changing theme icon
       //moon icon
