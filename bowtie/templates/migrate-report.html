@@ -69,6 +69,68 @@
           </table>
         </div>
       </div>
+
+      <div class="card mx-auto mb-3 w-75" id="summary">
+        <div class="card-header">Summary</div>
+
+        <div class="card-body">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th
+                  colspan="2"
+                  rowspan="2"
+                  scope="col"
+                  class="text-center align-middle"
+                >
+                  implementation
+                </th>
+                <th colspan="1" class="text-center">
+                  <span id="total_cases" class="text-muted">cases</span>
+                </th>
+                <th colspan="3" class="text-center">
+                  <span id="total_tests" class="text-muted">tests</span>
+                </th>
+                <th colspan="1"></th>
+              </tr>
+
+              <tr>
+                <th scope="col" class="text-center">errors</th>
+
+                <th scope="col" class="table-bordered text-center">skipped</th>
+                <th
+                  scope="col"
+                  class="table-bordered text-center details-required"
+                >
+                  <div class="hover-details details-desc text-center"></div>
+                  unsuccessful
+                </th>
+
+                <th scope="col"></th>
+              </tr>
+            </thead>
+
+            <tbody id="tbody" class="table-group-divider">
+             
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="2">total</th>
+
+                <td id="summary-errored_cases" class="text-center"></td>
+
+                <td id="summary-skipped_tests" class="text-center"></td>
+                <td
+                  id="summary-total-tests"
+                  class="text-center details-required"
+                ></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -79,18 +141,17 @@
         .then((response) => response.json())
         .then((data) => {
           const titleElement = document.querySelector("title");
-          titleElement.textContent += ` ${data.dialect}`;
+          titleElement.textContent += ` ${data.run_info.dialect_shortname}`;
 
           //adding bowtie version
           var bowtieVersion = document.getElementById("bowtie-version");
-          bowtieVersion.textContent += `${data.version}`;
+          bowtieVersion.textContent += `${data.run_info.bowtie_version}`;
 
           //adding dialect link in #run-info
           var dialectLink = document.querySelector("#dialect-link");
-          dialectLink.textContent = `${data.dialectLink}`;
+          dialectLink.textContent = `${data.run_info.dialect}`;
 
           let ago = (Date.now() - Date.parse(`${data.runStarted}`)) / 1000;
-          console.log(ago);
           let agoUnits = "seconds";
           if (ago > 60) {
             ago /= 60;
@@ -115,8 +176,72 @@
                 agoUnits
               )
             : "";
-          console.log(roundedAgo);
           document.getElementById("run-started").textContent = formattedAgo;
+
+          //summary section
+          var totalCases = document.getElementById("total_cases");
+          totalCases.textContent += ` (${data.summary.total_cases})`;
+
+          var totalTests = document.getElementById("total_tests");
+          totalTests.textContent += ` (${data.summary.total_tests})`;
+
+          //updating summary table
+          tbody = document.getElementById("tbody");
+          for (i = 0; i < data.summary.implementation.length; i++) {
+            var tr = document.createElement("tr");
+            var th = document.createElement("th");
+            th.setAttribute("scope", "row");
+
+            const a = document.createElement("a");
+            a.setAttribute(
+              "id",
+              `implementation-${data.summary.implementation[i].name}`
+            );
+            a.textContent = `${data.summary.implementation[i].name} `;
+
+            const small = document.createElement("small");
+            small.setAttribute(
+              "id",
+              `implementation-${data.summary.implementation[i].language}`
+            );
+            small.setAttribute("class", "text-muted");
+            small.textContent = `${data.summary.implementation[i].language}`;
+
+            th.appendChild(a);
+            th.appendChild(small);
+            tr.appendChild(th);
+            tbody.appendChild(tr);
+          }
+
+          var countsErroredCases = document.getElementById(
+            "counts-errored_cases"
+          );
+          countsErroredCases.textContent = `${data.summary.counts.errored_cases}`;
+          var countsSkippedTests = document.getElementById(
+            "counts-skipped_tests"
+          );
+          countsSkippedTests.textContent += `${data.summary.counts.skipped_tests}`;
+          var countsTotalCases = document.getElementById("counts-total-tests");
+          countsTotalCases.textContent += `${
+            data.summary.counts.errored_cases +
+            data.summary.counts.skipped_tests
+          }`;
+
+          //summary total
+          var summaryErroredCases = document.getElementById(
+            "summary-errored_cases"
+          );
+          summaryErroredCases.textContent = `${data.summary.errored_cases}`;
+          var summarySkippedTests = document.getElementById(
+            "summary-skipped_tests"
+          );
+          summarySkippedTests.textContent = `${data.summary.skipped_tests}`;
+          var summaryTotalTests = document.getElementById(
+            "summary-total-tests"
+          );
+          summaryTotalTests.textContent = `${
+            data.summary.errored_cases + data.summary.skipped_tests
+          }`;
         });
 
       //setting datetime attribute
