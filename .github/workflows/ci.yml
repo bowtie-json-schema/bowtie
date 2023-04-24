@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up nox
-        uses: wntrblm/nox@2022.11.21
+        uses: wntrblm/nox@2023.04.22
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -61,7 +61,7 @@ jobs:
         with:
           python-version: "3.x"
       - name: Set up nox
-        uses: wntrblm/nox@2022.11.21
+        uses: wntrblm/nox@2023.04.22
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}"
 
@@ -80,7 +80,7 @@ jobs:
       - name: Create packages
         run: python -m build .
       - name: Set up nox
-        uses: wntrblm/nox@2022.11.21
+        uses: wntrblm/nox@2023.04.22
       - name: Create shiv
         run: mkdir shiv/ && nox -s shiv -- shiv/bowtie && chmod +x shiv/bowtie
       - name: Tar files
