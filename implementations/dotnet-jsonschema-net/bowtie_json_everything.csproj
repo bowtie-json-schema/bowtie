@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JsonSchema.Net" Version="4.0.5" />
+    <PackageReference Include="JsonSchema.Net" Version="4.0.6" />
   </ItemGroup>
 
   <ItemGroup>
