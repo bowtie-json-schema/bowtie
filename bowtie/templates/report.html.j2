@@ -377,10 +377,7 @@
                   <p class="card-text">{{ test.description }}</p>
                 </div>
                 <div class="card-footer text-muted text-center">
-                  Unexpectedly {{
-                  "valid" if implementation_result.valid == True
-                  else "invalid" if implementation_result.valid == False
-                  else "errored" }}
+                  {{ implementation_result }}
                 </div>
               </div>
             </div>
