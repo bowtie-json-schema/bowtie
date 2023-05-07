@@ -146,6 +146,14 @@
             const inflated = pako.inflate(buffer, { to: "string" });
             const dataObjects = inflated.trim().split("\n");
             const data = dataObjects.map((line) => JSON.parse(line));
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            function jsonData(data) {
+              let lines = input.map(line = JSON.parse(line));
+              
+            }
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             const titleElement = document.querySelector("title");
             titleElement.textContent += ` ${data[0].dialect_shortname}`;
