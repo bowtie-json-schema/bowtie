@@ -189,9 +189,9 @@ class Count:
 @attrs.mutable
 class _Summary:
     implementations: Iterable[dict[str, Any]] = attrs.field(
-        converter=lambda value: sorted(
-            value,
-            key=lambda each: (each["language"], each["name"]),
+        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            value,  # type: ignore[reportUnknownArgumentType]
+            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
         ),
     )
     _combined: dict[int, Any] = attrs.field(factory=dict)

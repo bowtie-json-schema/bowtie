@@ -190,7 +190,7 @@ class Implementation:
     _stream: Stream = field(default=None, repr=False, alias="stream")
     _read_timeout_sec: float | None = field(
         default=2.0,
-        converter=lambda value: value or None,
+        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]  # noqa: E501
         repr=False,
     )
 
