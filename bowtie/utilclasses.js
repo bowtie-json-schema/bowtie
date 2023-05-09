@@ -52,7 +52,7 @@ class _Summary {
 }
 
 //////////////////////////////////
-// Sunnary class
+// Summary class
 
 
 class Summary {
@@ -230,5 +230,54 @@ class CaseSkipped {
 
   report(reporter) {
     reporter.skipped(this);
+  }
+}
+
+// class CaseResult
+class CaseResult {
+  errored = false;
+  implementation;
+  seq;
+  results;
+  expected;
+  static from_dict(data, kwargs) {
+    return new CaseResult({
+      results: data.results.map((t) => TestResult.from_dict(t)),
+      ...data,
+      ...kwargs,
+    });
+  }
+
+  get failed() {
+    return Array.from(this.compare()).some(([, failed]) => failed);
+  }
+
+  report(reporter) {
+    reporter.got_results(this);
+  }
+
+  *compare() {
+    for (let i = 0; i < this.results.length; i++) {
+      const test = this.results[i];
+      const expected = this.expected[i];
+      const failed =
+        !test.skipped &&
+        !test.errored &&
+        expected !== null &&
+        expected !== test.valid;
+      yield [test, failed];
+    }
+  }
+
+  constructor({ implementation, seq, results, expected }) {
+    this.errored = false;
+
+    this.implementation = implementation;
+
+    this.seq = seq;
+
+    this.results = results;
+
+    this.expected = expected;
   }
 }
