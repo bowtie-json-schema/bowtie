@@ -215,3 +215,20 @@ class Summary {
     }
   }
 }
+
+// class ClaseSkipped
+
+class CaseSkipped {
+  constructor(implementation, seq, message = null, issue_url = null) {
+    this.errored = false;
+    this.implementation = implementation;
+    this.seq = seq;
+    this.message = message;
+    this.issue_url = issue_url;
+    this.skipped = true;
+  }
+
+  report(reporter) {
+    reporter.skipped(this);
+  }
+}
