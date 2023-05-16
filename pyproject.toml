@@ -43,6 +43,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: File Formats :: JSON :: JSON Schema",
 ]
 dynamic = ["version"]
 
@@ -63,9 +64,15 @@ dependencies = [
 bowtie = "bowtie._cli:main"
 
 [project.urls]
+Documentation = "https://bowtie-json-schema.readthedocs.io/"
 Homepage = "https://github.com/bowtie-json-schema/bowtie"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Source = "https://github.com/bowtie-json-schema/bowtie"
+
+[tool.coverage.run]
+branch = true
+source = ["bowtie"]
+dynamic_context = "test_function"
 
 [tool.djlint]
 # H008: Single and double quotes don't mean the same thing in Jinja, so it's
