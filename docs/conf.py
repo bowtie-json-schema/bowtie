@@ -89,6 +89,11 @@ extlinks = {
 }
 extlinks_detect_hardcoded_links = True
 
+# -- sphinx-copybutton --
+
+copybutton_prompt_text = r">>> |\.\.\. |\$"
+copybutton_prompt_is_regexp = True
+
 # -- sphinxcontrib-spelling --
 
 spelling_word_list_filename = "spelling-wordlist.txt"
