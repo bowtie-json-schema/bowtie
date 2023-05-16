@@ -162,6 +162,25 @@
             </td>
           </tr>
         </table>
+
+        {% if run_info.metadata %}
+        <hr>
+        <table id="run-metadata" class="table table-sm table-hover">
+        {% for label, value in run_info.metadata.items() %}
+          {% if value is string %}
+            <tr>
+              <td>{{ label }}</td>
+              <td>{{ value }}</td>
+            </tr>
+          {% elif value is mapping and "href" in value and "text" in value %}
+            <tr>
+              <td>{{ label }}</td>
+              <td><a href="{{ value.href }}">{{ value.text }}</a></td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        </table>
+        {% endif %}
       </div>
     </div>
 
