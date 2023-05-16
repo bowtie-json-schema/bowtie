@@ -1,5 +1,6 @@
 FROM python:3.11.3-alpine as builder
 RUN apk add --no-cache cargo
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN python -m pip wheel --wheel-dir /wheels 'jsonschema>=4.18.0a3'
 
 FROM python:3.11.3-alpine
