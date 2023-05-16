@@ -144,7 +144,7 @@ class _CaseReporter:
         write: Callable[..., None],
         case: _commands.TestCase,
         seq: int,
-    ):
+    ) -> _CaseReporter:
         self = cls(log=log, write=write)
         self._write(case=attrs.asdict(case), seq=seq)
         return self
@@ -198,7 +198,7 @@ class _Summary:
     did_fail_fast: bool = False
     counts: dict[str, Count] = attrs.field(init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         self.counts = {each["image"]: Count() for each in self.implementations}
 
     @property
@@ -358,7 +358,7 @@ class RunInfo:
         cls,
         implementations: Iterable[Implementation],
         dialect: str,
-    ):
+    ) -> RunInfo:
         return cls(
             dialect=dialect,
             bowtie_version=importlib.metadata.version("bowtie-json-schema"),

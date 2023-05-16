@@ -105,8 +105,15 @@ exclude = [
 [tool.ruff]
 line-length = 79
 target-version = "py38"
-select = ["B", "D", "D204", "E", "F", "Q", "SIM", "UP", "W"]
+select = ["ANN", "B", "D", "D204", "E", "F", "Q", "SIM", "UP", "W"]
 ignore = [
+  # Wat, type annotations for self and cls, why is this a thing?
+  "ANN101",
+  "ANN102",
+  # Private annotations are fine to leave out.
+  "ANN202",
+  # I don't know how to more properly annotate "pass along all arguments".
+  "ANN401",
   # It's totally OK to call functions for default arguments.
   "B008",
   # raise SomeException(...) is fine.
@@ -138,9 +145,9 @@ extend-exclude = ["json"]
 docstring-quotes = "double"
 
 [tool.ruff.per-file-ignores]
-"noxfile.py" = ["D"]
-"docs/*" = ["D"]
-"tests/*" = ["D"]
+"docs/*" = ["ANN", "D"]
+"noxfile.py" = ["ANN", "D"]
+"tests/*" = ["ANN", "D"]
 "implementations/*" = ["D"]
 "bowtie/schemas/__init__.py" = ["D"]
 
