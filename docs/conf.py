@@ -2,13 +2,13 @@ from pathlib import Path
 import importlib.metadata
 import re
 
-from hyperlink import URL
+from yarl import URL
 
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
-GITHUB = URL.from_text("https://github.com/")
-HOMEPAGE = GITHUB.child("bowtie-json-schema", "bowtie")
+GITHUB = URL("https://github.com/")
+HOMEPAGE = GITHUB / "bowtie-json-schema/bowtie"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -47,20 +47,32 @@ rst_prolog = """
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501
 
-# -- Extension configuration -------------------------------------------------
 
-# -- Options for autodoc extension -------------------------------------------
+def entire_domain(host):
+    return r"http.?://" + re.escape(host) + r"($|/.*)"
+
+
+linkcheck_ignore = [
+    entire_domain("img.shields.io"),
+    f"{GITHUB}.*#.*",
+    str(HOMEPAGE / "actions"),
+    str(HOMEPAGE / "workflows/CI/badge.svg"),
+]
+
+# = Extensions =
+
+# -- autodoc --
 
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
 }
 
-# -- Options for autosectionlabel extension ----------------------------------
+# -- autosectionlabel --
 
 autosectionlabel_prefix_document = True
 
-# -- Options for intersphinx extension ---------------------------------------
+# -- intersphinx --
 
 intersphinx_mapping = {
     "nox": ("https://nox.thea.codes/en/stable/", None),
@@ -69,29 +81,15 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/", None),
 }
 
-# -- Options for extlinks extension ------------------------------------------
+# -- extlinks --
 
 extlinks = {
-    "gh": (str(HOMEPAGE.child("%s")), None),
-    "github": (str(GITHUB.child("%s")), None),
+    "gh": (str(HOMEPAGE) + "/%s", None),
+    "github": (str(GITHUB) + "/%s", None),
 }
 extlinks_detect_hardcoded_links = True
 
-# -- Options for the linkcheck builder ---------------------------------------
+# -- sphinxcontrib-spelling --
 
-
-def entire_domain(host):
-    return r"http.?://" + re.escape(host) + r"($|/.*)"
-
-
-linkcheck_ignore = [
-    entire_domain("codecov.io"),
-    entire_domain("img.shields.io"),
-    f"{GITHUB}.*#.*",
-    str(HOMEPAGE.child("actions")),
-    str(HOMEPAGE.child("bowtie/workflows/CI/badge.svg")),
-]
-
-# -- Options for spelling extension ------------------------------------------
-
+spelling_word_list_filename = "spelling-wordlist.txt"
 spelling_show_suggestions = True

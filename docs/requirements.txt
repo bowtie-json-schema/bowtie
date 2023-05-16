@@ -57,11 +57,8 @@ furo==2023.3.27
     # via -r docs/requirements.in
 github3-py==4.0.1
     # via bowtie-json-schema
-hyperlink==21.0.0
-    # via -r docs/requirements.in
 idna==3.4
     # via
-    #   hyperlink
     #   requests
     #   yarl
 imagesize==1.4.1
@@ -175,4 +172,6 @@ uritemplate==4.1.1
 urllib3==2.0.2
     # via requests
 yarl==1.9.2
-    # via aiohttp
+    # via
+    #   -r docs/requirements.in
+    #   aiohttp
