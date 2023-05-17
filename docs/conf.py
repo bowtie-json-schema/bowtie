@@ -79,6 +79,7 @@ intersphinx_mapping = {
     "podman": ("https://docs.podman.io/en/latest", None),
     "pip": ("https://pip.pypa.io/en/stable/", None),
     "python": ("https://docs.python.org/", None),
+    "shiv": ("https://shiv.readthedocs.io/en/stable", None),
 }
 
 # -- extlinks --
