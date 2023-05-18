@@ -339,7 +339,7 @@ class _Summary:
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            comp_dir = target_dir / "compliance" / f"{lang}-{name}"
+            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
             comp_dir.mkdir(parents=True, exist_ok=True)
             badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
             badge_path_per_draft.write_text(json.dumps(badge_per_draft))
@@ -349,10 +349,10 @@ class _Summary:
                 "message": supported_drafts,
                 "color": "lightgreen",
             }
-            supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
+            supp_dir = target_dir / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
             badge_path_supp_drafts = (
-                supp_dir / f"{label.replace(' ', '_')}.json"
+                supp_dir / "supported_versions.json"
             )
             badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
