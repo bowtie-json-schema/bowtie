@@ -600,19 +600,21 @@ class _TestSuiteCases(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], str]:
+    ) -> tuple[Iterable[TestCase], str, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
         is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
+            run_metadata = {}
         else:
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
                 GitHub,  # type: ignore[reportUnknownVariableType]
             )
+            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]  # noqa: E501
 
             # isort: on
 
@@ -632,8 +634,18 @@ class _TestSuiteCases(click.ParamType):
                 cases, dialect = self._cases_and_dialect(path=path)
                 cases = list(cases)
 
+            try:
+                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+            except NotFoundError:
+                commit_info = ref
+            else:
+                # TODO: Make this the tree URL maybe, but I see tree(...)
+                #       doesn't come with an html_url
+                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+            run_metadata: dict[str, Any] = {"Commit": commit_info}
+
         if dialect is not None:
-            return cases, dialect
+            return cases, dialect, run_metadata
 
         self.fail(
             f"{value} does not contain JSON Schema Test Suite cases.",
@@ -665,7 +677,7 @@ class _TestSuiteCases(click.ParamType):
 @click.argument("input", type=_TestSuiteCases())
 def suite(
     context: click.Context,
-    input: tuple[Iterable[TestCase], str],
+    input: tuple[Iterable[TestCase], str, dict[str, Any]],
     filter: str,
     **kwargs: Any,
 ):
@@ -684,11 +696,12 @@ def suite(
         * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
           to run a single file directly from a branch which exists in GitHub
     """  # noqa: E501
-    cases, dialect = input
+    cases, dialect, metadata = input
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
 
-    exit_code = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
+    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
+    exit_code = asyncio.run(task)
     context.exit(exit_code)
 
 
@@ -698,6 +711,7 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
+    run_metadata: dict[str, Any] = {},  # noqa: B006
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
 ) -> int:
@@ -753,6 +767,7 @@ async def _run(
                 _report.RunInfo.from_implementations(
                     implementations=acknowledged,
                     dialect=dialect,
+                    metadata=run_metadata,
                 ),
             )
 

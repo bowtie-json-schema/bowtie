@@ -51,7 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y libenchant-2-dev
         if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
       - name: Install dependencies
         run: brew install enchant podman
@@ -68,6 +70,12 @@ jobs:
   packaging:
     needs: ci
     runs-on: ubuntu-latest
+    environment:
+      name: PyPI
+      url: https://pypi.org/p/bowtie-json-schema
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v3
@@ -92,8 +100,6 @@ jobs:
       - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.pypi_password }}
       - name: Create a Release
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: softprops/action-gh-release@v1

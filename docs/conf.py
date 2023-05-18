@@ -2,13 +2,13 @@ from pathlib import Path
 import importlib.metadata
 import re
 
-from hyperlink import URL
+from yarl import URL
 
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
-GITHUB = URL.from_text("https://github.com/")
-HOMEPAGE = GITHUB.child("bowtie-json-schema", "bowtie")
+GITHUB = URL("https://github.com/")
+HOMEPAGE = GITHUB / "bowtie-json-schema/bowtie"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -47,51 +47,55 @@ rst_prolog = """
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501
 
-# -- Extension configuration -------------------------------------------------
-
-# -- Options for autodoc extension -------------------------------------------
-
-autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource",
-}
-
-# -- Options for autosectionlabel extension ----------------------------------
-
-autosectionlabel_prefix_document = True
-
-# -- Options for intersphinx extension ---------------------------------------
-
-intersphinx_mapping = {
-    "nox": ("https://nox.thea.codes/en/stable/", None),
-    "podman": ("https://docs.podman.io/en/latest", None),
-    "pip": ("https://pip.pypa.io/en/stable/", None),
-    "python": ("https://docs.python.org/", None),
-}
-
-# -- Options for extlinks extension ------------------------------------------
-
-extlinks = {
-    "gh": (str(HOMEPAGE.child("%s")), None),
-    "github": (str(GITHUB.child("%s")), None),
-}
-extlinks_detect_hardcoded_links = True
-
-# -- Options for the linkcheck builder ---------------------------------------
-
 
 def entire_domain(host):
     return r"http.?://" + re.escape(host) + r"($|/.*)"
 
 
 linkcheck_ignore = [
-    entire_domain("codecov.io"),
     entire_domain("img.shields.io"),
     f"{GITHUB}.*#.*",
-    str(HOMEPAGE.child("actions")),
-    str(HOMEPAGE.child("bowtie/workflows/CI/badge.svg")),
+    str(HOMEPAGE / "actions"),
+    str(HOMEPAGE / "workflows/CI/badge.svg"),
 ]
 
-# -- Options for spelling extension ------------------------------------------
+# = Extensions =
 
+# -- autodoc --
+
+autodoc_default_options = {
+    "members": True,
+    "member-order": "bysource",
+}
+
+# -- autosectionlabel --
+
+autosectionlabel_prefix_document = True
+
+# -- intersphinx --
+
+intersphinx_mapping = {
+    "nox": ("https://nox.thea.codes/en/stable/", None),
+    "podman": ("https://docs.podman.io/en/latest", None),
+    "pip": ("https://pip.pypa.io/en/stable/", None),
+    "python": ("https://docs.python.org/", None),
+    "shiv": ("https://shiv.readthedocs.io/en/stable", None),
+}
+
+# -- extlinks --
+
+extlinks = {
+    "gh": (str(HOMEPAGE) + "/%s", None),
+    "github": (str(GITHUB) + "/%s", None),
+}
+extlinks_detect_hardcoded_links = True
+
+# -- sphinx-copybutton --
+
+copybutton_prompt_text = r">>> |\.\.\. |\$"
+copybutton_prompt_is_regexp = True
+
+# -- sphinxcontrib-spelling --
+
+spelling_word_list_filename = "spelling-wordlist.txt"
 spelling_show_suggestions = True

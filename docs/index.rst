@@ -36,12 +36,23 @@ Bowtie is available in a `tap <https://docs.brew.sh/Taps>`_ which is located :gi
 
     brew install bowtie-json-schema/tap/bowtie
 
+As a ``shiv`` / ``pyapp``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is an experimental `shiv` of Bowtie published to GitHub on each release.
+
+You can find the :gh:`latest one here <releases/latest/>`.
+
+Once downloading it, run ``chmod +x`` on it and you should be able to use it as-is if you have an existing Python installation.
+
+If you use it (successfully or otherwise) please provide feedback.
+
 Manual Installation via PyPI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bowtie is written in Python, and uses a container runtime to execute JSON Schema implementations, so you'll need both Python and a suitable container runtime installed.
 
-If you have no previous container runtime installed (e.g. Docker), follow the `installation instructions for podman <https://podman.io/getting-started/installation>`_ specific to your operating system.
+If you have no previous container runtime installed (e.g. Docker), follow the `installation instructions for podman <https://podman.io/docs/installation>`_ specific to your operating system.
 Ensure you've started a Podman VM if you are on macOS.
 
 Then follow the `pipx installation process <https://pypa.github.io/pipx/installation/>`_ to install ``pipx``, and finally use it to install Bowtie via:
