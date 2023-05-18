@@ -317,11 +317,9 @@ class _Summary:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
                 continue
-                
             supported_drafts  = ", ".join(
                 _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ") for each in reversed(dialect_versions)
             )
-            
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
@@ -340,7 +338,7 @@ class _Summary:
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            badge_supported_draft = {
+            badge_supp_draft = {
                 "schemaVersion": 1,
                 "label": "JSON Schema Versions",
                 "message": supported_drafts,
@@ -348,15 +346,12 @@ class _Summary:
             }
             comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
             comp_dir.mkdir(parents=True, exist_ok=True)
-            
             supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
-            
-            badge_path_per_draft_compliance = comp_dir / f"{label.replace(' ', '_')}.json"
-            badge_path2_supported_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
-            
-            badge_path_per_draft_compliance.write_text(json.dumps(badge_per_draft))
-            badge_path2_supported_drafts.write_text(json.dumps(badge_supported_draft))
+            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_supp_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
+            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
 @frozen
 class RunInfo:
