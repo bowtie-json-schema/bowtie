@@ -333,8 +333,6 @@ class _Summary:
                 - counts.skipped_tests
             )
             pct = (passed / total) * 100
-            impl_dir = target_dir / f"{lang}-{name}"
-            impl_dir.mkdir(parents=True, exist_ok=True)
             r, g, b = 100 - int(pct), int(pct), 0
             badge_per_draft = {
                 "schemaVersion": 1,
@@ -348,8 +346,15 @@ class _Summary:
                 "message": supported_drafts,
                 "color": "lightgreen",
             }
-            badge_path_per_draft_compliance = impl_dir / f"{label.replace(' ', '_')}_perDraftCompliance.json"
-            badge_path2_supported_drafts = impl_dir / f"{label.replace(' ', '_')}_supportedVersions.json"
+            comp_dir = target_dir / "compliance" / f"{lang}-{name}"
+            comp_dir.mkdir(parents=True, exist_ok=True)
+            
+            supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
+            supp_dir.mkdir(parents=True, exist_ok=True)
+            
+            badge_path_per_draft_compliance = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path2_supported_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
+            
             badge_path_per_draft_compliance.write_text(json.dumps(badge_per_draft))
             badge_path2_supported_drafts.write_text(json.dumps(badge_supported_draft))
 
