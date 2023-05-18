@@ -314,20 +314,20 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
-            dialectVersions = impl["dialects"]
-            if dialect not in dialectVersions:
+            dialect_versions = impl["dialects"]
+            if dialect not in dialect_versions:
                 continue
             
-            SupportedVersions: str = []
-            for each in dialectVersions:
+            supported_versions: str = []
+            for each in dialect_versions:
                 temp = _DIALECT_URI_TO_SHORTNAME[each]
-                SupportedVersions.append(temp.removeprefix("Draft "))
+                supported_versions.append(temp.removeprefix("Draft "))
             
-            SupportedDrafts = ""
-            for each in reversed(SupportedVersions):
-                SupportedDrafts += each + ", "
+            supported_drafts = ""
+            for each in reversed(supported_versions):
+                supported_drafts += each + ", "
             
-            SupportedDrafts = SupportedDrafts.rstrip(", ")
+            supported_drafts = supported_drafts.rstrip(", ")
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
@@ -342,22 +342,22 @@ class _Summary:
             impl_dir = target_dir / f"{lang}-{name}"
             impl_dir.mkdir(parents=True, exist_ok=True)
             r, g, b = 100 - int(pct), int(pct), 0
-            badgePerDraft = {
+            badge_per_draft = {
                 "schemaVersion": 1,
                 "label": label,
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            badgeSupportedDraft = {
+            badge_supported_draft = {
                 "schemaVersion": 1,
                 "label": "JSON Schema Versions",
-                "message": SupportedDrafts,
+                "message": supported_drafts,
                 "color": "lightgreen",
             }
             badge_path1 = impl_dir / f"{label.replace(' ', '_')}_perDraftCompliance.json"
             badge_path2 = impl_dir / f"{label.replace(' ', '_')}_supportedVersions.json"
-            badge_path1.write_text(json.dumps(badgePerDraft))
-            badge_path2.write_text(json.dumps(badgeSupportedDraft))
+            badge_path1.write_text(json.dumps(badge_per_draft))
+            badge_path2.write_text(json.dumps(badge_supported_draft))
 
 
 @frozen
