@@ -346,7 +346,7 @@ class _Summary:
                 "message": supported_drafts,
                 "color": "lightgreen",
             }
-            comp_dir = target_dir / "compliance" / f"{lang}-{name}"
+            comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
             comp_dir.mkdir(parents=True, exist_ok=True)
             
             supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
@@ -357,7 +357,6 @@ class _Summary:
             
             badge_path_per_draft_compliance.write_text(json.dumps(badge_per_draft))
             badge_path2_supported_drafts.write_text(json.dumps(badge_supported_draft))
-
 
 @frozen
 class RunInfo:
