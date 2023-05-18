@@ -94,5 +94,5 @@ jobs:
       - name: Smoke Test
         run: |
           python3 -m pip install bowtie-json-schema
-          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}"
+          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image }}"
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
