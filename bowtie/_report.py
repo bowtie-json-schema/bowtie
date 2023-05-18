@@ -317,11 +317,12 @@ class _Summary:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
                 continue
-                
-            supported_drafts  = ", ".join(
-                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ") for each in reversed(dialect_versions)
+
+            supported_drafts = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                for each in reversed(dialect_versions)
             )
-            
+
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
@@ -346,17 +347,26 @@ class _Summary:
                 "message": supported_drafts,
                 "color": "lightgreen",
             }
-            comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
+            comp_dir = target_dir / "compliance" / f"{lang}-{name}"
             comp_dir.mkdir(parents=True, exist_ok=True)
-            
+
             supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
-            
-            badge_path_per_draft_compliance = comp_dir / f"{label.replace(' ', '_')}.json"
-            badge_path2_supported_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
-            
-            badge_path_per_draft_compliance.write_text(json.dumps(badge_per_draft))
-            badge_path2_supported_drafts.write_text(json.dumps(badge_supported_draft))
+
+            badge_path_per_draft_compliance = (
+                comp_dir / f"{label.replace(' ', '_')}.json"
+            )
+            badge_path2_supported_drafts = (
+                supp_dir / f"{label.replace(' ', '_')}.json"
+            )
+
+            badge_path_per_draft_compliance.write_text(
+                json.dumps(badge_per_draft)
+            )
+            badge_path2_supported_drafts.write_text(
+                json.dumps(badge_supported_draft)
+            )
+
 
 @frozen
 class RunInfo:
