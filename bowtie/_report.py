@@ -351,9 +351,7 @@ class _Summary:
             }
             supp_dir = target_dir / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
-            badge_path_supp_drafts = (
-                supp_dir / "supported_versions.json"
-            )
+            badge_path_supp_drafts = supp_dir / "supported_versions.json"
             badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
 
