@@ -18,12 +18,12 @@ repositories {
 def harnessImplementation = [
         group: 'dev.harrel',
         name: 'json-schema',
-        version: '1.0.0-beta.3'
+        version: '1.0.0-beta.4'
 ]
 def jsonProvider = [
         group: 'com.fasterxml.jackson.core',
         name: 'jackson-databind',
-        version: '2.15.0'
+        version: '2.15.1'
 ]
 
 dependencies {
