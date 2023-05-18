@@ -338,19 +338,19 @@ class _Summary:
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
+            comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
+            comp_dir.mkdir(parents=True, exist_ok=True)
+            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
             badge_supp_draft = {
                 "schemaVersion": 1,
                 "label": "JSON Schema Versions",
                 "message": supported_drafts,
                 "color": "lightgreen",
             }
-            comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
-            comp_dir.mkdir(parents=True, exist_ok=True)
             supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
-            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
             badge_path_supp_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
-            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
             badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
 @frozen
