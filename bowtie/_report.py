@@ -317,16 +317,16 @@ class _Summary:
             dialectVersions = impl["dialects"]
             if dialect not in impl["dialects"]:
                 continue
-            
+
             SupportedVersions: str = []
             for each in dialectVersions:
                 temp = _DIALECT_URI_TO_SHORTNAME[each]
                 SupportedVersions.append(temp.removeprefix("Draft "))
-            
+
             SupportedDrafts = ""
             for each in reversed(SupportedVersions):
                 SupportedDrafts += each + ", "
-            
+
             SupportedDrafts = SupportedDrafts.rstrip(", ")
             name = impl["name"]
             lang = impl["language"]
@@ -354,8 +354,12 @@ class _Summary:
                 "message": SupportedDrafts,
                 "color": "lightgreen",
             }
-            badge_path1 = impl_dir / f"{label.replace(' ', '_')}_perDraftCompliance.json"
-            badge_path2 = impl_dir / f"{label.replace(' ', '_')}_supportedVersions.json"
+            badge_path1 = (
+                impl_dir / f"{label.replace(' ', '_')}_perDraftCompliance.json"
+            )
+            badge_path2 = (
+                impl_dir / f"{label.replace(' ', '_')}_supportedVersions.json"
+            )
             badge_path1.write_text(json.dumps(badgePerDraft))
             badge_path2.write_text(json.dumps(badgeSupportedDraft))
 
