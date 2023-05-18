@@ -315,7 +315,7 @@ class _Summary:
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
             dialectVersions = impl["dialects"]
-            if dialect not in impl["dialects"]:
+            if dialect not in dialectVersions:
                 continue
             
             SupportedVersions: str = []
