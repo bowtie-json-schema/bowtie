@@ -317,17 +317,11 @@ class _Summary:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
                 continue
+                
+            supported_drafts  = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ") for each in reversed(dialect_versions)
+            )
             
-            supported_versions: str = []
-            for each in dialect_versions:
-                temp = _DIALECT_URI_TO_SHORTNAME[each]
-                supported_versions.append(temp.removeprefix("Draft "))
-            
-            supported_drafts = ""
-            for each in reversed(supported_versions):
-                supported_drafts += each + ", "
-            
-            supported_drafts = supported_drafts.rstrip(", ")
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
