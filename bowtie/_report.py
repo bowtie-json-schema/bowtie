@@ -314,8 +314,13 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
-            if dialect not in impl["dialects"]:
+            dialect_versions = impl["dialects"]
+            if dialect not in dialect_versions:
                 continue
+            supported_drafts = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                for each in reversed(dialect_versions)
+            )
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
@@ -327,17 +332,26 @@ class _Summary:
                 - counts.skipped_tests
             )
             pct = (passed / total) * 100
-            impl_dir = target_dir / f"{lang}-{name}"
-            impl_dir.mkdir(parents=True, exist_ok=True)
             r, g, b = 100 - int(pct), int(pct), 0
-            badge = {
+            badge_per_draft = {
                 "schemaVersion": 1,
                 "label": label,
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            badge_path = impl_dir / f"{label.replace(' ', '_')}.json"
-            badge_path.write_text(json.dumps(badge))
+            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
+            comp_dir.mkdir(parents=True, exist_ok=True)
+            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
+            badge_supp_draft = {
+                "schemaVersion": 1,
+                "label": "JSON Schema Versions",
+                "message": supported_drafts,
+                "color": "lightgreen",
+            }
+            supp_dir = target_dir / f"{lang}-{name}"
+            badge_path_supp_drafts = supp_dir / "supported_versions.json"
+            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
 
 @frozen
