@@ -317,8 +317,9 @@ class _Summary:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
                 continue
-            supported_drafts  = ", ".join(
-                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ") for each in reversed(dialect_versions)
+            supported_drafts = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                for each in reversed(dialect_versions)
             )
             name = impl["name"]
             lang = impl["language"]
@@ -338,7 +339,7 @@ class _Summary:
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            comp_dir = target_dir / "compliance"/ f"{lang}-{name}"
+            comp_dir = target_dir / "compliance" / f"{lang}-{name}"
             comp_dir.mkdir(parents=True, exist_ok=True)
             badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
             badge_path_per_draft.write_text(json.dumps(badge_per_draft))
@@ -350,8 +351,11 @@ class _Summary:
             }
             supp_dir = target_dir / "supported_versions" / f"{lang}-{name}"
             supp_dir.mkdir(parents=True, exist_ok=True)
-            badge_path_supp_drafts = supp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_supp_drafts = (
+                supp_dir / f"{label.replace(' ', '_')}.json"
+            )
             badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
+
 
 @frozen
 class RunInfo:
