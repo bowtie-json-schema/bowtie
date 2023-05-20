@@ -157,43 +157,21 @@
         //console.log(lines)
         //console.log(RunInfo)
   
+        let data = [1,2,3,4]
+
+
         let run_info = new RunInfo(...Object.values(lines[0]));
         console.log(run_info)
-        console.log(run_info)
+        console.log(run_info.bowtie_version)
         let summary = run_info.create_summary();
         <!-- console.log(summary) -->
-      };
 
-    </script>
-    <script>
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js";
-      document.head.appendChild(script);
-
-      let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      let themeTogglerButton = document.getElementById("theme-toggler");
-      script.onload = () => {
-        //fetching json data
-        
-        fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
-          .then((response) => response.arrayBuffer())
-          .then((buffer) => {
-             const inflated = pako.inflate(buffer, { to: "string" });
-             const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
-              //console.log(dataObjectsArray)
-            const data = dataObjectsArray.map((line) => JSON.parse(line)); 
-            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            
-            jsonData(dataObjectsArray);
-
-            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            const titleElement = document.querySelector("title");
+        const titleElement = document.querySelector("title");
             titleElement.textContent += ` ${data[0].dialect_shortname}`;
 
             //adding bowtie version
             var bowtieVersion = document.getElementById("bowtie-version");
-            bowtieVersion.textContent += `${data[0].bowtie_version}`;
+            bowtieVersion.textContent += `${run_info.bowtie_version}`;
 
             //adding dialect link in #run-info
             var dialectLink = document.querySelector("#dialect-link");
@@ -339,6 +317,33 @@
             summaryTotalTests.textContent = `${
               data.summary.errored_cases + data.summary.skipped_tests
             }`;
+      };
+
+    </script>
+    <script>
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js";
+      document.head.appendChild(script);
+
+      let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      let themeTogglerButton = document.getElementById("theme-toggler");
+      script.onload = () => {
+        //fetching json data
+        
+        fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
+          .then((response) => response.arrayBuffer())
+          .then((buffer) => {
+             const inflated = pako.inflate(buffer, { to: "string" });
+             const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
+              //console.log(dataObjectsArray)
+            const data = dataObjectsArray.map((line) => JSON.parse(line)); 
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+            jsonData(dataObjectsArray);
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            
           });
       };
 
