@@ -46,8 +46,9 @@ export class RunInfo {
       ]))
     );
   }
-
+  
   create_summary() {
+    console.log(Object.values(this._implementations))
     return new _Summary({ implementations: Object.values(this._implementations) });
   }
 }
@@ -97,42 +98,45 @@ class _Summary {
       return result;
     }, {});
     // for (let i = 0; i < this.implementations.length; i++) {
-    //   this.counts[this.implementations[i]["image"]] = new Count();
-    // }
-  }
+      //   this.counts[this.implementations[i]["image"]] = new Count();
+      // }
+    }
 
-  total_cases() {
-    const counts = new Set(Object.values(this.counts).map((count) => count.total_cases));
+  get total_cases() {
+    const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
+    // console.log(typeof(counts.size))
     if (counts.size !== 1) {
       const summary = Object.entries(this.counts)
-        .map(([key, count]) => `${each.split('/')[2]}: ${count.total_cases}`)
+        .map(([key, count]) => `  ${key.split('/')[2]}: ${count.total_cases}`)
         .join("\n");
-      throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
+      throw new Error(`Inconsistent number of cases run:\n\n${summary}`);
+    }
+    // console.log(counts.values().next().value)
+    return counts.values().next().value;
+  }
+
+  get errored_cases() {
+    return Object.values(this.counts).reduce((sum, count) => sum + count.errored_cases, 0);
+  }
+
+  get total_tests() {
+    const counts = new Set(Object.values(this.counts).map(count => count.total_tests));
+    // console.log(counts)
+    if (counts.size !== 1) {
+      throw new InvalidBowtieReport(`Inconsistent number of tests run: ${JSON.stringify(this.counts)}`);
     }
     return counts.values().next().value;
   }
 
-  errored_cases() {
-    return Object.values(this.counts).reduce((sum, count) => sum + count.errored_cases, 0);
-  }
-
-  total_tests() {
-    const counts = new Set(Object.values(this.counts).map((count) => count.total_tests));
-    if (counts.size !== 1) {
-      throw new InvalidBowtieReport(`Inconsistent number of tests run: ${this.counts}`);
-    }
-    return counts[0];
-  }
-
-  failed_tests() {
+  get failed_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.failed_tests, 0);
   }
 
-  errored_tests() {
+  get errored_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.errored_tests, 0);
   }
 
-  skipped_tests() {
+  get skipped_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.skipped_tests, 0);
   }
 
@@ -254,7 +258,7 @@ class Count {
     this.skipped_tests = 0;
   }
 
-  get unsuccessful_tests() {
+  unsuccessful_tests() {
     return this.errored_tests + this.failed_tests + this.skipped_tests;
   }
 }

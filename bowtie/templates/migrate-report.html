@@ -164,7 +164,8 @@
         //console.log(run_info)
         //console.log(run_info._implementations)
         let summary = run_info.create_summary();
-        console.log(summary)
+        //console.log(summary)
+        //console.log(summary.counts)
 
         const titleElement = document.querySelector("title");
             titleElement.textContent += ` ${run_info.dialect_shortname}`;
@@ -209,12 +210,20 @@
             totalCases.textContent += ` (${summary.total_cases})`;
 
             var totalTests = document.getElementById("total_tests");
-            totalTests.textContent += ` (${data.summary.total_tests})`;
+            totalTests.textContent += ` (${summary.total_tests})`;
 
             //updating summary table
             tbody = document.getElementById("tbody");
-            for (i = 0; i < data.summary.implementation.length; i++) {
+            //console.log(typeof(summary.implementations))
+            let implementations = summary.implementations[0].implementations;
+            //console.log(summary.implementations[0].implementations.length)
+            for (i = 0; i < implementations.length; i++) {
               //th section of summary table's data
+              let implementation = implementations[i];
+              console.log(implementation.dialects)
+              let counts = summary.counts[implementation.image];
+              console.log(counts)
+
               var tr = document.createElement("tr");
               var th = document.createElement("th");
               th.setAttribute("scope", "row");
