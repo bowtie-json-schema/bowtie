@@ -134,19 +134,19 @@
     <script type="module" src="../utilclasses.js"></script>
     <script type="module" src="../functions.js"></script>
   
-    ////////////////////// Testing Script ////////////////////////////
+    <!-- ////////////////////// Testing Script //////////////////////////// -->
     <script>
         async function loadFunctions() {
             const module = await import("../functions.js");
             const Calculator = module.Calculator;
 
             const calculator = new Calculator();
-            console.log(calculator.sum(4, 55));
-            <!-- console.log(calculator.greet(4)); -->
+            //console.log(calculator.sum(4, 55));
+            //console.log(calculator.greet(4));
         }
       document.addEventListener("DOMContentLoaded", loadFunctions);
     </script>
-    /////////////////////////////////////////////////////////////////
+    <!-- ///////////////////////////////////////////////////////////////// -->
 
     <script>
       async function jsonData(dataObjectsArray) {
@@ -161,10 +161,10 @@
 
 
         let run_info = new RunInfo(...Object.values(lines[0]));
-        console.log(run_info)
-        //console.log(run_info.bowtie_version)
+        //console.log(run_info)
+        //console.log(run_info._implementations)
         let summary = run_info.create_summary();
-        //console.log(summary)
+        console.log(summary)
 
         const titleElement = document.querySelector("title");
             titleElement.textContent += ` ${run_info.dialect_shortname}`;
@@ -206,7 +206,7 @@
 
             //summary section
             var totalCases = document.getElementById("total_cases");
-            totalCases.textContent += ` (${data.summary.total_cases})`;
+            totalCases.textContent += ` (${summary.total_cases})`;
 
             var totalTests = document.getElementById("total_tests");
             totalTests.textContent += ` (${data.summary.total_tests})`;

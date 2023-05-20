@@ -2,6 +2,14 @@
 
 // import * as importlib from 'https://unpkg.com/importlib';
 
+class InvalidBowtieReport extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InvalidBowtieReport';
+  }
+}
+
+
 const _DIALECT_URI_TO_SHORTNAME = {
   "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
   "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
@@ -60,57 +68,71 @@ RunInfo._implementations = {
 
 
 class _Summary {
-  implementations = [];
-  _combined = {};
-  did_fail_fast = false;
-  counts = {};
+  // implementations = [];
+  // _combined = {};
+  // did_fail_fast = false;
+  // counts = {};
 
-  constructor() {
-    this.implementations = [];
+  constructor(implementations) {
+    // console.log(typeof(implementations))
+    if (!Array.isArray(implementations)) {
+      implementations = [implementations];
+    }
+
+    this.implementations = implementations.sort((a, b) =>{
+      if(a.language === b.language){
+        return a.language.localCompare(b.name);
+      }
+      return a.language.localCompare(b.language);
+    })
     this._combined = {};
     this.did_fail_fast = false;
     this.counts = {};
+    this.__attrs_post_init__();
   }
 
   __attrs_post_init__() {
-    this.counts = {};
-    for (let i = 0; i < this.implementations.length; i++) {
-      this.counts[this.implementations[i]["image"]] = new Count();
-    }
+    this.counts = this.implementations.reduce((result, each) =>{
+      result[each.image] = new Count();
+      return result;
+    }, {});
+    // for (let i = 0; i < this.implementations.length; i++) {
+    //   this.counts[this.implementations[i]["image"]] = new Count();
+    // }
   }
 
-  get total_cases() {
-    const counts = Object.values(this.counts).map((count) => count.total_cases);
-    if (new Set(counts).size !== 1) {
+  total_cases() {
+    const counts = new Set(Object.values(this.counts).map((count) => count.total_cases));
+    if (counts.size !== 1) {
       const summary = Object.entries(this.counts)
-        .map(([key, count]) => `  ${key.split("/").pop()}: ${count.total_cases}`)
+        .map(([key, count]) => `${each.split('/')[2]}: ${count.total_cases}`)
         .join("\n");
       throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
     }
-    return counts[0];
+    return counts.values().next().value;
   }
 
-  get errored_cases() {
+  errored_cases() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.errored_cases, 0);
   }
 
-  get total_tests() {
-    const counts = Object.values(this.counts).map((count) => count.total_tests);
-    if (new Set(counts).size !== 1) {
+  total_tests() {
+    const counts = new Set(Object.values(this.counts).map((count) => count.total_tests));
+    if (counts.size !== 1) {
       throw new InvalidBowtieReport(`Inconsistent number of tests run: ${this.counts}`);
     }
     return counts[0];
   }
 
-  get failed_tests() {
+  failed_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.failed_tests, 0);
   }
 
-  get errored_tests() {
+  errored_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.errored_tests, 0);
   }
 
-  get skipped_tests() {
+  skipped_tests() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.skipped_tests, 0);
   }
 
@@ -124,7 +146,7 @@ class _Summary {
     count.total_cases += 1;
     count.errored_cases += 1;
 
-    const caseMetadata = this._combined[seq]["case"];
+    const caseMetadata = this._combined[seq].case;
     count.total_tests += caseMetadata.tests.length;
     count.errored_tests += caseMetadata.tests.length;
   }
@@ -133,7 +155,7 @@ class _Summary {
     const count = this.counts[result.implementation];
     count.total_cases += 1;
 
-    const combined = this._combined[result.seq]["results"];
+    const combined = this._combined[result.seq].results;
 
     for (let i = 0; i < result.compare().length; i++) {
       const [test, failed] = result.compare()[i];
@@ -158,31 +180,31 @@ class _Summary {
     const count = this.counts[skipped.implementation];
     count.total_cases += 1;
   
-    const case_data = this._combined[skipped.seq]['case'];
+    const case_data = this._combined[skipped.seq].case;
     count.total_tests += case_data.tests.length;
     count.skipped_tests += case_data.tests.length;
   
-    for (const [_, seen] of this._combined[skipped.seq]['results']) {
+    for (const [, seen] of this._combined[skipped.seq].results) {
       const message = skipped.issue_url || skipped.message || 'skipped';
       seen[skipped.implementation] = [message, 'skipped'];
     }
   }
   
   see_maybe_fail_fast(did_fail_fast) {
-    this.didFailFast = did_fail_fast;
+    this.did_fail_fast = did_fail_fast;
   }
   
   case_results() {
-    const result = [];
-    for (const each of Object.values(this._combined)) {
-      result.push([each['case'], each['registry'] || {}, each['results']]);
-    }
-    return result;
+    return Object.values(this._combined).map(each => ({
+      case: each.case,
+      registry: each.registry || {},
+      results: each.results
+    }));
   }
   
   *flat_results() {
     for (const [seq, each] of Object.entries(this._combined).sort(([seq1], [seq2]) => seq1 - seq2)) {
-      const case_data = each['case'];
+      const case_data = each.case;
       yield [
         seq,
         case_data.description,
@@ -196,11 +218,11 @@ class _Summary {
   generate_badges(target_dir, dialect) {
     const label = _DIALECT_URI_TO_SHORTNAME[dialect];
     for (const impl of this.implementations) {
-      if (!impl['dialects'].includes(dialect)) continue;
+      if (!impl.dialects.includes(dialect)) continue;
   
-      const name = impl['name'];
-      const lang = impl['language'];
-      const counts = this.counts[impl['image']];
+      const name = impl.name;
+      const lang = impl.language;
+      const counts = this.counts[impl.image];
       const total = counts.total_tests;
       const passed = total - counts.failed_tests - counts.errored_tests - counts.skipped_tests;
       const pct = (passed / total) * 100;
@@ -210,15 +232,17 @@ class _Summary {
       const [r, g, b] = [100 - Math.floor(pct), Math.floor(pct), 0];
       const badge = {
         schemaVersion: 1,
-        label,
+        label: label,
         message: `${Math.floor(pct)}% Passing`,
         color: `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
       };
-      const badgePath = implDir.join(`${label.replace(' ', '_')}.json`);
-      fs.writeFileSync(badgePath, JSON.stringify(badge));
+      const badge_path = impl_dir.join(`${label.replace(' ', '_')}.json`);
+      fs.writeFileSync(badge_path, JSON.stringify(badge));
     }
   }
 }
+
+
 
 // class ClaseSkipped
 
