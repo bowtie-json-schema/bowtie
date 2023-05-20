@@ -242,7 +242,22 @@ class _Summary {
   }
 }
 
+// class Counts
 
+class Count {
+  constructor() {
+    this.total_cases = 0;
+    this.errored_cases = 0;
+    this.total_tests = 0;
+    this.failed_tests = 0;
+    this.errored_tests = 0;
+    this.skipped_tests = 0;
+  }
+
+  get unsuccessful_tests() {
+    return this.errored_tests + this.failed_tests + this.skipped_tests;
+  }
+}
 
 // class ClaseSkipped
 
