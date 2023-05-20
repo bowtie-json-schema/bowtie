@@ -131,6 +131,40 @@
       </div>
     </div>
 
+    <script type="module" src="../utilclasses.js"></script>
+    <script type="module" src="../functions.js"></script>
+  
+    ////////////////////// Testing Script ////////////////////////////
+    <script>
+        async function loadFunctions() {
+            const module = await import("../functions.js");
+            const Calculator = module.Calculator;
+
+            const calculator = new Calculator();
+            console.log(calculator.sum(4, 55));
+            <!-- console.log(calculator.greet(4)); -->
+        }
+      document.addEventListener("DOMContentLoaded", loadFunctions);
+    </script>
+    /////////////////////////////////////////////////////////////////
+
+    <script>
+      async function jsonData(dataObjectsArray) {
+        const module = await import("../utilclasses.js");
+        const RunInfo = module.RunInfo;
+
+        let lines = dataObjectsArray.map(line => JSON.parse(line));
+        //console.log(lines)
+        //console.log(RunInfo)
+  
+        let run_info = new RunInfo(...Object.values(lines[0]));
+        console.log(run_info)
+        console.log(run_info)
+        let summary = run_info.create_summary();
+        <!-- console.log(summary) -->
+      };
+
+    </script>
     <script>
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js";
@@ -140,18 +174,17 @@
       let themeTogglerButton = document.getElementById("theme-toggler");
       script.onload = () => {
         //fetching json data
+        
         fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
           .then((response) => response.arrayBuffer())
           .then((buffer) => {
-            const inflated = pako.inflate(buffer, { to: "string" });
-            const dataObjects = inflated.trim().split("\n");
-            const data = dataObjects.map((line) => JSON.parse(line));
+             const inflated = pako.inflate(buffer, { to: "string" });
+             const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
+              //console.log(dataObjectsArray)
+            const data = dataObjectsArray.map((line) => JSON.parse(line)); 
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            function jsonData(data) {
-              let lines = input.map(line = JSON.parse(line));
-              
-            }
+            
+            jsonData(dataObjectsArray);
 
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

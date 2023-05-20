@@ -1,5 +1,6 @@
-const attrs = require('attrs');
-const importlib = require('importlib');
+// import attrs from 'https://cdn.jsdelivr.net/npm/attrs@2.2.0/dist/attrs.min.js';
+
+// import * as importlib from 'https://unpkg.com/importlib';
 
 const _DIALECT_URI_TO_SHORTNAME = {
   "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
@@ -10,7 +11,7 @@ const _DIALECT_URI_TO_SHORTNAME = {
   "http://json-schema.org/draft-03/schema#": "Draft 3",
 };
 
-class RunInfo {
+export class RunInfo {
   constructor(started, bowtie_version, dialect, _implementations) {
     this.started = started;
     this.bowtie_version = bowtie_version;
@@ -43,19 +44,22 @@ class RunInfo {
   }
 }
 
-RunInfo._implementations = attrs.field({ alias: 'implementations' });
-
-class _Summary {
-  constructor(implementations) {
-    this.implementations = implementations;
+RunInfo._implementations = {
+  alias: 'implementations',
+  validate: (value) => {
+    if (!Array.isArray(value)) {
+      throw new Error('The "implementations" attribute must be an array.');
+    }
+    return true;
   }
-}
+};
+
 
 //////////////////////////////////
 // Summary class
 
 
-class Summary {
+class _Summary {
   implementations = [];
   _combined = {};
   did_fail_fast = false;
@@ -279,5 +283,16 @@ class CaseResult {
     this.results = results;
 
     this.expected = expected;
+  }
+}
+
+
+//class ReportData
+
+class ReportData {
+  constructor(summary, run_info, generate_dialect_navigation) {
+    this.summary = summary;
+    this.run_info = run_info;
+    this.generate_dialect_navigation = generate_dialect_navigation;
   }
 }
