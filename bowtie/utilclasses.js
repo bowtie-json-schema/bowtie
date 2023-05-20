@@ -20,7 +20,7 @@ export class RunInfo {
   }
 
   get dialect_shortname() {
-    return _DIALECT_URI_TO_SHORTNAME.get(this.dialect, this.dialect);
+    return _DIALECT_URI_TO_SHORTNAME[this.dialect] || this.dialect;
   }
 
   static from_implementations(implementations, dialect) {

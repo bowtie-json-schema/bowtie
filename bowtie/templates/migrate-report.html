@@ -45,7 +45,7 @@
           class="link-secondary"
         >
           <span class="navbar-text">
-            <small id="bowtie-version">Bowtie v</small>
+            <small id="bowtie-version">Bowtie v - </small>
           </span>
         </a>
       </div>
@@ -162,12 +162,12 @@
 
         let run_info = new RunInfo(...Object.values(lines[0]));
         console.log(run_info)
-        console.log(run_info.bowtie_version)
+        //console.log(run_info.bowtie_version)
         let summary = run_info.create_summary();
-        <!-- console.log(summary) -->
+        //console.log(summary)
 
         const titleElement = document.querySelector("title");
-            titleElement.textContent += ` ${data[0].dialect_shortname}`;
+            titleElement.textContent += ` ${run_info.dialect_shortname}`;
 
             //adding bowtie version
             var bowtieVersion = document.getElementById("bowtie-version");
@@ -175,9 +175,9 @@
 
             //adding dialect link in #run-info
             var dialectLink = document.querySelector("#dialect-link");
-            dialectLink.textContent = `${data[0].dialect}`;
+            dialectLink.textContent = `${run_info.dialect}`;
 
-            let ago = (Date.now() - Date.parse(`${data[0].started}`)) / 1000;
+            let ago = (Date.now() - Date.parse(`${run_info.started}`)) / 1000;
             let agoUnits = "seconds";
             if (ago > 60) {
               ago /= 60;
