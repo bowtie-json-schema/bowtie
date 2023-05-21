@@ -313,8 +313,8 @@ class _Summary:
 
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
-        total_pct : float = 0
-        num_of_implementations : int = 0
+        total_pct: float = 0
+        num_of_implementations: int = 0
         for impl in self.implementations:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
@@ -364,7 +364,7 @@ class _Summary:
             "message": "%d%% Passing" % int(overall_pct),
             "color": f"{r:02x}{g:02x}{b:02x}",
         }
-        over_dir = target_dir 
+        over_dir = target_dir
         badge_path_over_drafts = over_dir / "overall_compliance.json"
         badge_path_over_drafts.write_text(json.dumps(badge_over_draft))
 
