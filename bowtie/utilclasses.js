@@ -48,7 +48,7 @@ export class RunInfo {
   }
   
   create_summary() {
-    console.log(Object.values(this._implementations))
+    // console.log(Object.values(this._implementations))
     return new _Summary({ implementations: Object.values(this._implementations) });
   }
 }
@@ -69,51 +69,45 @@ RunInfo._implementations = {
 
 
 class _Summary {
-  // implementations = [];
+  implementations = [];
   // _combined = {};
   // did_fail_fast = false;
   // counts = {};
 
   constructor(implementations) {
     // console.log(typeof(implementations))
-    if (!Array.isArray(implementations)) {
-      implementations = [implementations];
-    }
+    // console.log(implementations.implementations)
 
-    this.implementations = implementations.sort((a, b) =>{
-      if(a.language === b.language){
-        return a.language.localCompare(b.name);
-      }
-      return a.language.localCompare(b.language);
-    })
+    this.implementations = implementations.implementations;
     this._combined = {};
     this.did_fail_fast = false;
     this.counts = {};
     this.__attrs_post_init__();
+    // console.log(this.counts)
   }
 
   __attrs_post_init__() {
-    this.counts = this.implementations.reduce((result, each) =>{
-      result[each.image] = new Count();
-      return result;
-    }, {});
-    // for (let i = 0; i < this.implementations.length; i++) {
-      //   this.counts[this.implementations[i]["image"]] = new Count();
-      // }
+    for (let each of this.implementations) {
+      this.counts[each.image] = new Count();
     }
+    console.log(this.counts)
+  }  
 
   get total_cases() {
-    const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
-    // console.log(typeof(counts.size))
-    if (counts.size !== 1) {
-      const summary = Object.entries(this.counts)
-        .map(([key, count]) => `  ${key.split('/')[2]}: ${count.total_cases}`)
-        .join("\n");
-      throw new Error(`Inconsistent number of cases run:\n\n${summary}`);
+    let counts = new Set();
+    for (let count of Object.values(this.counts)) {
+        counts.add(count.total_cases);
     }
-    // console.log(counts.values().next().value)
+    if (counts.size !== 1) {
+        let summary = "";
+        for (let [each, count] of Object.entries(this.counts)) {
+            summary += `  ${each.split('/').pop()}: ${count.total_cases}\n`;
+        }
+        throw new Error(`Inconsistent number of cases run:\n\n${summary}`);
+    }
     return counts.values().next().value;
-  }
+}
+
 
   get errored_cases() {
     return Object.values(this.counts).reduce((sum, count) => sum + count.errored_cases, 0);
@@ -263,6 +257,8 @@ class Count {
   }
 }
 
+
+// Unused classes till now
 // class ClaseSkipped
 
 class CaseSkipped {

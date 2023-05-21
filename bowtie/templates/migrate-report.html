@@ -215,12 +215,12 @@
             //updating summary table
             tbody = document.getElementById("tbody");
             //console.log(typeof(summary.implementations))
-            let implementations = summary.implementations[0].implementations;
-            //console.log(summary.implementations[0].implementations.length)
+            let implementations = summary.implementations;
+            //console.log(implementations)
             for (i = 0; i < implementations.length; i++) {
               //th section of summary table's data
               let implementation = implementations[i];
-              console.log(implementation.dialects)
+              //console.log(implementation.dialects)
               let counts = summary.counts[implementation.image];
               console.log(counts)
 
