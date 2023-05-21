@@ -133,17 +133,17 @@
 
     <script type="module" src="../utilclasses.js"></script>
     <script type="module" src="../functions.js"></script>
-  
+
     <!-- ////////////////////// Testing Script //////////////////////////// -->
     <script>
-        async function loadFunctions() {
-            const module = await import("../functions.js");
-            const Calculator = module.Calculator;
+      async function loadFunctions() {
+        const module = await import("../functions.js");
+        const Calculator = module.Calculator;
 
-            const calculator = new Calculator();
-            //console.log(calculator.sum(4, 55));
-            //console.log(calculator.greet(4));
-        }
+        const calculator = new Calculator();
+        //console.log(calculator.sum(4, 55));
+        //console.log(calculator.greet(4));
+      }
       document.addEventListener("DOMContentLoaded", loadFunctions);
     </script>
     <!-- ///////////////////////////////////////////////////////////////// -->
@@ -156,7 +156,7 @@
         let lines = dataObjectsArray.map(line => JSON.parse(line));
         //console.log(lines)
         //console.log(RunInfo)
-  
+
         let data = [1,2,3,4]
 
 
@@ -246,7 +246,7 @@
             th.appendChild(a);
             th.appendChild(smallTH);
             tr.appendChild(th);
-            
+
 
             //td section of summary table's data
             var td = document.createElement("td");
@@ -309,7 +309,7 @@
             tr.appendChild(td2);
             tr.appendChild(td3);
             tr.appendChild(td4);
-            
+
             tbody.appendChild(tr);
           }
 
