@@ -364,8 +364,7 @@ class _Summary:
             "message": "%d%% Passing" % int(overall_pct),
             "color": f"{r:02x}{g:02x}{b:02x}",
         }
-        over_dir = target_dir
-        badge_path_over_drafts = over_dir / "overall_compliance.json"
+        badge_path_over_drafts = target_dir / "overall_compliance.json"
         badge_path_over_drafts.write_text(json.dumps(badge_over_draft))
 
 
