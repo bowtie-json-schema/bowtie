@@ -8,7 +8,7 @@ import importlib.metadata
 import json
 import sys
 
-import attrs
+from attrs import asdict, field, frozen, mutable
 import structlog.stdlib
 
 from bowtie import _commands
@@ -35,10 +35,10 @@ def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")
 
 
-@attrs.frozen
+@frozen
 class Reporter:
-    _write: Callable[..., Any] = attrs.field(default=writer())
-    _log: structlog.stdlib.BoundLogger = attrs.field(
+    _write: Callable[..., Any] = field(default=writer())
+    _log: structlog.stdlib.BoundLogger = field(
         factory=structlog.stdlib.get_logger,
     )
 
@@ -72,7 +72,7 @@ class Reporter:
 
     def ready(self, run_info: RunInfo):
         self._write(
-            **{k.lstrip("_"): v for k, v in attrs.asdict(run_info).items()},
+            **{k.lstrip("_"): v for k, v in asdict(run_info).items()},
         )
 
     def will_speak(self, dialect: str):
@@ -132,10 +132,10 @@ class Reporter:
         )
 
 
-@attrs.frozen
+@frozen
 class _CaseReporter:
-    _write: Callable[..., Any] = attrs.field(alias="write")
-    _log: structlog.stdlib.BoundLogger = attrs.field(alias="log")
+    _write: Callable[..., Any] = field(alias="write")
+    _log: structlog.stdlib.BoundLogger = field(alias="log")
 
     @classmethod
     def case_started(
@@ -144,19 +144,19 @@ class _CaseReporter:
         write: Callable[..., None],
         case: _commands.TestCase,
         seq: int,
-    ):
+    ) -> _CaseReporter:
         self = cls(log=log, write=write)
-        self._write(case=attrs.asdict(case), seq=seq)
+        self._write(case=asdict(case), seq=seq)
         return self
 
     def got_results(
         self,
         results: _commands.CaseResult | _commands.CaseErrored,
     ):
-        self._write(**attrs.asdict(results))
+        self._write(**asdict(results))
 
     def skipped(self, skipped: _commands.CaseSkipped):
-        self._write(**attrs.asdict(skipped))
+        self._write(**asdict(skipped))
 
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
@@ -168,7 +168,7 @@ class _CaseReporter:
         self.got_results(results)
 
 
-@attrs.mutable
+@mutable
 class Count:
     total_cases: int = 0
     errored_cases: int = 0
@@ -186,19 +186,19 @@ class Count:
         return self.errored_tests + self.failed_tests + self.skipped_tests
 
 
-@attrs.mutable
+@mutable
 class _Summary:
-    implementations: Iterable[dict[str, Any]] = attrs.field(
-        converter=lambda value: sorted(
-            value,
-            key=lambda each: (each["language"], each["name"]),
+    implementations: Iterable[dict[str, Any]] = field(
+        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            value,  # type: ignore[reportUnknownArgumentType]
+            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
         ),
     )
-    _combined: dict[int, Any] = attrs.field(factory=dict)
+    _combined: dict[int, Any] = field(factory=dict)
     did_fail_fast: bool = False
-    counts: dict[str, Count] = attrs.field(init=False)
+    counts: dict[str, Count] = field(init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         self.counts = {each["image"]: Count() for each in self.implementations}
 
     @property
@@ -314,8 +314,13 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
-            if dialect not in impl["dialects"]:
+            dialect_versions = impl["dialects"]
+            if dialect not in dialect_versions:
                 continue
+            supported_drafts = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                for each in reversed(dialect_versions)
+            )
             name = impl["name"]
             lang = impl["language"]
             counts = self.counts[impl["image"]]
@@ -327,27 +332,37 @@ class _Summary:
                 - counts.skipped_tests
             )
             pct = (passed / total) * 100
-            impl_dir = target_dir / f"{lang}-{name}"
-            impl_dir.mkdir(parents=True, exist_ok=True)
             r, g, b = 100 - int(pct), int(pct), 0
-            badge = {
+            badge_per_draft = {
                 "schemaVersion": 1,
                 "label": label,
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            badge_path = impl_dir / f"{label.replace(' ', '_')}.json"
-            badge_path.write_text(json.dumps(badge))
+            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
+            comp_dir.mkdir(parents=True, exist_ok=True)
+            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
+            badge_supp_draft = {
+                "schemaVersion": 1,
+                "label": "JSON Schema Versions",
+                "message": supported_drafts,
+                "color": "lightgreen",
+            }
+            supp_dir = target_dir / f"{lang}-{name}"
+            badge_path_supp_drafts = supp_dir / "supported_versions.json"
+            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
 
 
-@attrs.frozen
+@frozen
 class RunInfo:
     started: str
     bowtie_version: str
     dialect: str
-    _implementations: dict[str, dict[str, Any]] = attrs.field(
+    _implementations: dict[str, dict[str, Any]] = field(
         alias="implementations",
     )
+    metadata: dict[str, Any] = field(factory=dict)
 
     @property
     def dialect_shortname(self):
@@ -357,10 +372,9 @@ class RunInfo:
     def from_implementations(
         cls,
         implementations: Iterable[Implementation],
-        dialect: str,
-    ):
+        **kwargs: Any,
+    ) -> RunInfo:
         return cls(
-            dialect=dialect,
             bowtie_version=importlib.metadata.version("bowtie-json-schema"),
             started=datetime.now(timezone.utc).isoformat(),
             implementations={
@@ -370,6 +384,7 @@ class RunInfo:
                 )
                 for implementation in implementations
             },
+            **kwargs,
         )
 
     def create_summary(self) -> _Summary:

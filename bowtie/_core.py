@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
@@ -29,7 +29,7 @@ class StartupFailed(Exception):
     name: str
     stderr: str = ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.stderr:
             return f"{self.name}'s stderr contained: {self.stderr}"
         return self.name
@@ -61,7 +61,7 @@ class Stream:
         cls,
         container: aiodocker.containers.DockerContainer,
         **kwargs: Any,
-    ):
+    ) -> Stream:
         stream = container.attach(stdin=True, stdout=True, stderr=True)
         return cls(stream=stream, container=container, **kwargs)
 
@@ -126,7 +126,7 @@ class DialectRunner:
         send: Callable[[_commands.Command[Any]], Awaitable[Any]],
         dialect: str,
         name: str,
-    ):
+    ) -> DialectRunner:
         return cls(
             name=name,
             send=send,
@@ -190,7 +190,7 @@ class Implementation:
     _stream: Stream = field(default=None, repr=False, alias="stream")
     _read_timeout_sec: float | None = field(
         default=2.0,
-        converter=lambda value: value or None,
+        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]  # noqa: E501
         repr=False,
     )
 
@@ -206,7 +206,7 @@ class Implementation:
         image_name: str,
         make_validator: _MakeValidator,
         **kwargs: Any,
-    ):
+    ) -> AsyncIterator[Implementation]:
         self = cls(
             name=image_name,
             make_validator=make_validator,
