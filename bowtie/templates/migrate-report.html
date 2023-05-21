@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -133,17 +133,17 @@
 
     <script type="module" src="../utilclasses.js"></script>
     <script type="module" src="../functions.js"></script>
-  
+
     <!-- ////////////////////// Testing Script //////////////////////////// -->
     <script>
-        async function loadFunctions() {
-            const module = await import("../functions.js");
-            const Calculator = module.Calculator;
+      async function loadFunctions() {
+        const module = await import("../functions.js");
+        const Calculator = module.Calculator;
 
-            const calculator = new Calculator();
-            //console.log(calculator.sum(4, 55));
-            //console.log(calculator.greet(4));
-        }
+        const calculator = new Calculator();
+        //console.log(calculator.sum(4, 55));
+        //console.log(calculator.greet(4));
+      }
       document.addEventListener("DOMContentLoaded", loadFunctions);
     </script>
     <!-- ///////////////////////////////////////////////////////////////// -->
@@ -156,7 +156,7 @@
         let lines = dataObjectsArray.map(line => JSON.parse(line));
         //console.log(lines)
         //console.log(RunInfo)
-  
+
         let data = [1,2,3,4]
 
 
@@ -200,7 +200,7 @@
             const formattedAgo = Number.isFinite(roundedAgo)
               ? new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
                   -roundedAgo,
-                  agoUnits
+                  agoUnits,
                 )
               : "";
             document.getElementById("run-started").textContent = formattedAgo;
@@ -228,57 +228,58 @@
               var th = document.createElement("th");
               th.setAttribute("scope", "row");
 
-              const a = document.createElement("a");
-              a.setAttribute(
-                "id",
-                `implementation-${data.summary.implementation[i].name}`
-              );
-              a.textContent = `${data.summary.implementation[i].name} `;
+            const a = document.createElement("a");
+            a.setAttribute(
+              "id",
+              `implementation-${data.summary.implementation[i].name}`
+            );
+            a.textContent = `${data.summary.implementation[i].name} `;
 
-              const smallTH = document.createElement("small");
-              smallTH.setAttribute(
-                "id",
-                `implementation-${data.summary.implementation[i].language}`
-              );
-              smallTH.setAttribute("class", "text-muted");
-              smallTH.textContent = `${data.summary.implementation[i].language}`;
+            const smallTH = document.createElement("small");
+            smallTH.setAttribute(
+              "id",
+              `implementation-${data.summary.implementation[i].language}`
+            );
+            smallTH.setAttribute("class", "text-muted");
+            smallTH.textContent = `${data.summary.implementation[i].language}`;
 
-              th.appendChild(a);
-              th.appendChild(smallTH);
-              tr.appendChild(th);
+            th.appendChild(a);
+            th.appendChild(smallTH);
+            tr.appendChild(th);
 
-              //td section of summary table's data
-              var td = document.createElement("td");
-              const smallTD = document.createElement("small");
-              smallTD.setAttribute("class", "font-monospace text-muted");
-              smallTD.textContent = `${data.summary.implementation[i].version}`;
+
+            //td section of summary table's data
+            var td = document.createElement("td");
+            const smallTD = document.createElement("small");
+            smallTD.setAttribute("class", "font-monospace text-muted");
+            smallTD.textContent = `${data.summary.implementation[i].version}`;
 
               const buttonTD = document.createElement("button");
               buttonTD.setAttribute("class", "btn border-0");
 
-              const svgTD = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "svg"
-              );
-              svgTD.setAttribute("width", "16");
-              svgTD.setAttribute("height", "16");
-              svgTD.setAttribute("fill", "currentColor");
-              svgTD.setAttribute("class", "bi bi-info-circle-fill");
-              svgTD.setAttribute("viewBox", "0 0 16 16");
-              svgTD.setAttribute("data-bs-toggle", "modal");
-              svgTD.setAttribute(
-                "data-bs-target",
-                `#implementation-runtime-info`
-              );
+            const svgTD = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg"
+            );
+            svgTD.setAttribute("width", "16");
+            svgTD.setAttribute("height", "16");
+            svgTD.setAttribute("fill", "currentColor");
+            svgTD.setAttribute("class", "bi bi-info-circle-fill");
+            svgTD.setAttribute("viewBox", "0 0 16 16");
+            svgTD.setAttribute("data-bs-toggle", "modal");
+            svgTD.setAttribute(
+              "data-bs-target",
+              `#implementation-runtime-info`
+            );
 
-              const pathTD = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "path"
-              );
-              pathTD.setAttribute(
-                "d",
-                "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
-              );
+            const pathTD = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            pathTD.setAttribute(
+              "d",
+              "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+            );
 
               svgTD.appendChild(pathTD);
               buttonTD.appendChild(svgTD);
@@ -289,72 +290,45 @@
 
               tr.appendChild(td);
 
-              //final section of table body
-              var td2 = document.createElement("td");
-              td2.setAttribute("class", "text-center");
-              td2.textContent = `${data.summary.counts.errored_cases}`;
 
-              var td3 = document.createElement("td");
-              td3.setAttribute("class", "text-center");
-              td3.textContent += `${data.summary.counts.skipped_tests}`;
+            //final section of table body
+            var td2 = document.createElement('td');
+            td2.setAttribute('class', 'text-center');
+            td2.textContent = `${data.summary.counts.errored_cases}`;
 
-              var td4 = document.createElement("td");
-              td4.setAttribute("class", "text-center");
-              td4.textContent += `${
-                data.summary.counts.errored_cases +
-                data.summary.counts.skipped_tests
-              }`;
-              tr.appendChild(td2);
-              tr.appendChild(td3);
-              tr.appendChild(td4);
+            var td3 = document.createElement('td');
+            td3.setAttribute('class', 'text-center');
+            td3.textContent += `${data.summary.counts.skipped_tests}`;
 
-              tbody.appendChild(tr);
-            }
-
-            //summary total
-            var summaryErroredCases = document.getElementById(
-              "summary-errored_cases"
-            );
-            summaryErroredCases.textContent = `${data.summary.errored_cases}`;
-            var summarySkippedTests = document.getElementById(
-              "summary-skipped_tests"
-            );
-            summarySkippedTests.textContent = `${data.summary.skipped_tests}`;
-            var summaryTotalTests = document.getElementById(
-              "summary-total-tests"
-            );
-            summaryTotalTests.textContent = `${
-              data.summary.errored_cases + data.summary.skipped_tests
+            var td4 = document.createElement('td');
+            td4.setAttribute('class', 'text-center');
+            td4.textContent += `${
+              data.summary.counts.errored_cases +
+              data.summary.counts.skipped_tests
             }`;
-      };
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
 
-    </script>
-    <script>
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js";
-      document.head.appendChild(script);
+            tbody.appendChild(tr);
+          }
 
-      let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      let themeTogglerButton = document.getElementById("theme-toggler");
-      script.onload = () => {
-        //fetching json data
-        
-        fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
-          .then((response) => response.arrayBuffer())
-          .then((buffer) => {
-             const inflated = pako.inflate(buffer, { to: "string" });
-             const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
-              //console.log(dataObjectsArray)
-            const data = dataObjectsArray.map((line) => JSON.parse(line)); 
-            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            
-            jsonData(dataObjectsArray);
-
-            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            
-          });
-      };
+          //summary total
+          var summaryErroredCases = document.getElementById(
+            "summary-errored_cases"
+          );
+          summaryErroredCases.textContent = `${data.summary.errored_cases}`;
+          var summarySkippedTests = document.getElementById(
+            "summary-skipped_tests"
+          );
+          summarySkippedTests.textContent = `${data.summary.skipped_tests}`;
+          var summaryTotalTests = document.getElementById(
+            "summary-total-tests"
+          );
+          summaryTotalTests.textContent = `${
+            data.summary.errored_cases + data.summary.skipped_tests
+          }`;
+        });
 
       //setting datetime attribute
 
@@ -362,7 +336,7 @@
       //moon icon
       var themeSvgMoon = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "svg"
+        "svg",
       );
       themeSvgMoon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       themeSvgMoon.setAttribute("width", "20");
@@ -372,18 +346,18 @@
       themeSvgMoon.setAttribute("viewBox", "0 0 16 16");
       const pathMoon = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "path"
+        "path",
       );
       pathMoon.setAttribute(
         "d",
-        "M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"
+        "M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z",
       );
       themeSvgMoon.appendChild(pathMoon);
 
       //Sun Icon
       var themeSvgSun = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "svg"
+        "svg",
       );
       themeSvgSun.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       themeSvgSun.setAttribute("width", "20");
@@ -394,11 +368,11 @@
 
       const pathSun = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "path"
+        "path",
       );
       pathSun.setAttribute(
         "d",
-        "M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"
+        "M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z",
       );
       themeSvgSun.appendChild(pathSun);
 
