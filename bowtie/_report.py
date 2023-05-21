@@ -313,6 +313,8 @@ class _Summary:
 
     def generate_badges(self, target_dir: Path, dialect: str):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
+        total_pct : float = 0
+        num_of_implementations : int = 0
         for impl in self.implementations:
             dialect_versions = impl["dialects"]
             if dialect not in dialect_versions:
@@ -332,6 +334,8 @@ class _Summary:
                 - counts.skipped_tests
             )
             pct = (passed / total) * 100
+            total_pct += pct
+            num_of_implementations += 1
             r, g, b = 100 - int(pct), int(pct), 0
             badge_per_draft = {
                 "schemaVersion": 1,
@@ -352,6 +356,17 @@ class _Summary:
             supp_dir = target_dir / f"{lang}-{name}"
             badge_path_supp_drafts = supp_dir / "supported_versions.json"
             badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
+        overall_pct = total_pct / num_of_implementations
+        r, g, b = 100 - int(overall_pct), int(overall_pct), 0
+        badge_over_draft = {
+            "schemaVersion": 1,
+            "label": "Overall Compliance",
+            "message": "%d%% Passing" % int(overall_pct),
+            "color": f"{r:02x}{g:02x}{b:02x}",
+        }
+        over_dir = target_dir 
+        badge_path_over_drafts = over_dir / "overall_compliance.json"
+        badge_path_over_drafts.write_text(json.dumps(badge_over_draft))
 
 
 @frozen
