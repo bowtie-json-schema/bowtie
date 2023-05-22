@@ -14,5 +14,5 @@ runs:
         update-environment: false
 
     - name: "Install Bowtie"
-      run: pipx install --python "${{ steps.localpython.outputs.python-path }}" '${{ github.action_path }}'
+      run: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema
       shell: bash
