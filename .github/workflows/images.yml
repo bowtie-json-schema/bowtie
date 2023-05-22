@@ -86,13 +86,10 @@ jobs:
           password: ${{ github.token }}
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-        if: steps.changes.outputs.impl == 'true'
+      - name: Install Bowtie
+        uses: bowtie-json-schema/bowtie@v2023.05.8
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Smoke Test
-        run: |
-          python3 -m pip install bowtie-json-schema
-          bowtie smoke -i "${{ steps.build_image.outputs.image-with-tag }}"
+        run: bowtie smoke -i "${{ steps.build_image.outputs.image-with-tag }}"
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
