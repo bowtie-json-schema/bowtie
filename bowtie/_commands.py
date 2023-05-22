@@ -243,6 +243,7 @@ class ErroredTest:
 
 class ReportableResult(Protocol):
     errored: bool
+    failed: bool
 
     def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]  # noqa: E501
         pass
@@ -287,7 +288,12 @@ class CaseResult:
 
 @frozen
 class CaseErrored:
+    """
+    A full test case errored.
+    """
+
     errored = True
+    failed = False
 
     implementation: str
     seq: int
@@ -315,7 +321,12 @@ class CaseErrored:
 
 @frozen
 class CaseSkipped:
+    """
+    A full test case was skipped.
+    """
+
     errored = False
+    failed = False
 
     implementation: str
     seq: int
@@ -335,6 +346,7 @@ class Empty:
     """
 
     errored = True
+    failed = False
 
     implementation: str
 

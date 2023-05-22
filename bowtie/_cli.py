@@ -5,7 +5,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from io import BytesIO
 from pathlib import Path
-from typing import Any, TextIO, Union
+from typing import Any, AsyncIterator, TextIO, Union
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -76,6 +76,16 @@ LATEST_DIALECT_NAME = "draft2020-12"
 #: Should match the magic value used to validate `schema`s in `io-schema.json`
 CURRENT_DIALECT_URI = "urn:current-dialect"
 
+FORMAT = click.option(
+    "--format",
+    "-f",
+    "format",
+    help="What format to use for the output",
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
+    type=click.Choice(["json", "pretty"]),
+)
+
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
@@ -136,14 +146,7 @@ def report(
 
 
 @main.command()
-@click.option(
-    "--format",
-    "-f",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
-)
+@FORMAT
 @click.option(
     "--show",
     "-s",
@@ -453,15 +456,8 @@ def validate(
 
 @main.command()
 @click.pass_context
+@FORMAT
 @IMPLEMENTATION
-@click.option(
-    "--format",
-    "-f",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
-)
 def info(context: click.Context, **kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
@@ -519,6 +515,7 @@ async def _info(image_names: list[str], format: str):
 
 @main.command()
 @click.pass_context
+@FORMAT
 @IMPLEMENTATION
 def smoke(context: click.Context, **kwargs: Any):
     """
@@ -528,7 +525,7 @@ def smoke(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _smoke(image_names: list[str]):
+async def _smoke(image_names: list[str], format: str):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -542,14 +539,15 @@ async def _smoke(image_names: list[str]):
                 exit_code |= os.EX_CONFIG
                 click.echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                    file=sys.stderr,
                 )
                 continue
 
-            click.echo(f"Testing {implementation.name!r}...")
+            click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= os.EX_CONFIG
-                click.echo("  ❗ (error): startup failed")
+                click.echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
             dialect = implementation.dialects[0]
@@ -572,22 +570,39 @@ async def _smoke(image_names: list[str]):
                     ],
                 ),
             ]
-            for seq, case in enumerate(cases):
-                response = await runner.run_case(seq=seq, case=case)
-                if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                    exit_code |= os.EX_DATAERR
-                    message = "❗ (error)"
-                elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                    exit_code |= os.EX_DATAERR
-                    message = "✗ (failed)"
-                else:
-                    message = "✓"
-                click.echo(f"  {message}: {case.description}")
+            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                (case, await runner.run_case(seq=seq, case=case))
+                for seq, case in enumerate(cases)
+            )
+
+            if format == "json":
+                serializable = [
+                    {
+                        "case": case.without_expected_results(),
+                        "response": dict(
+                            errored=response.errored,
+                            failed=response.failed,
+                        ),
+                    }
+                    async for case, response in responses
+                ]
+                click.echo(json.dumps(serializable, indent=2))
+            else:
+                async for case, response in responses:
+                    if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        exit_code |= os.EX_DATAERR
+                        message = "❗ (error)"
+                    elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        exit_code |= os.EX_DATAERR
+                        message = "✗ (failed)"
+                    else:
+                        message = "✓"
+                    click.echo(f"  {message}: {case.description}")
 
     if exit_code:
-        click.echo("\n❌ some failures")
+        click.echo("\n❌ some failures", file=sys.stderr)
     else:
-        click.echo("\n✅ all passed")
+        click.echo("\n✅ all passed", file=sys.stderr)
 
     return exit_code
 
