@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
-
 import java.io.*;
 import java.util.List;
 import java.util.Map;
@@ -16,39 +15,43 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 public class BowtieJsonSchema {
-    private static final String DRAFT_2020 = "https://json-schema.org/draft/2020-12/schema";
-    private static final String RECOGNIZING_IDENTIFIERS = "Determining if a specific location is a schema or not is not supported.";
-    private static final Map<String, String> UNSUPPORTED = Map.of(
-            "$id inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS,
-            "$id inside an unknown keyword is not a real identifier", RECOGNIZING_IDENTIFIERS,
-            "$anchor inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS,
-            "schema that uses custom metaschema with with no validation vocabulary", "Vocabularies are not yet supported.",
-            "ignore unrecognized optional vocabulary", "Vocabularies are not yet supported."
-    );
+  private static final String DRAFT_2020 =
+      "https://json-schema.org/draft/2020-12/schema";
+  private static final String RECOGNIZING_IDENTIFIERS =
+      "Determining if a specific location is a schema or not is not supported.";
+  private static final Map<String, String> UNSUPPORTED = Map.of(
+      "$id inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS,
+      "$id inside an unknown keyword is not a real identifier",
+      RECOGNIZING_IDENTIFIERS,
+      "$anchor inside an enum is not a real identifier",
+      RECOGNIZING_IDENTIFIERS,
+      "schema that uses custom metaschema with with no validation vocabulary",
+      "Vocabularies are not yet supported.",
+      "ignore unrecognized optional vocabulary",
+      "Vocabularies are not yet supported.");
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    private final ValidatorFactory validatorFactory = new ValidatorFactory();
-    private final PrintStream output;
+  private final ObjectMapper objectMapper = new ObjectMapper().configure(
+      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private final ValidatorFactory validatorFactory = new ValidatorFactory();
+  private final PrintStream output;
 
-    public static void main(String[] args) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        new BowtieJsonSchema(System.out).run(reader);
-    }
+  public static void main(String[] args) {
+    BufferedReader reader =
+        new BufferedReader(new InputStreamReader(System.in));
+    new BowtieJsonSchema(System.out).run(reader);
+  }
 
-    public BowtieJsonSchema(PrintStream output) {
-        this.output = output;
-    }
+  public BowtieJsonSchema(PrintStream output) { this.output = output; }
 
-    private void run(BufferedReader reader) {
-        reader.lines().forEach(this::handle);
-    }
+  private void run(BufferedReader reader) {
+    reader.lines().forEach(this::handle);
+  }
 
-    private void handle(String data) {
-        try {
-            JsonNode node = objectMapper.readTree(data);
-            String cmd = node.get("cmd").asText();
-            switch (cmd) {
+  private void handle(String data) {
+    try {
+      JsonNode node = objectMapper.readTree(data);
+      String cmd = node.get("cmd").asText();
+      switch (cmd) {
                 case "start" -> start(node);
                 case "dialect" -> dialect(node);
                 case "run" -> run(node);
