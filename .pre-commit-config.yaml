@@ -77,6 +77,6 @@ repos:
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v16.0.3
     hooks:
-      - name: clang-format (c/c++/c# implementations)
+      - name: clang-format (c/c++/c#/java implementations)
         id: clang-format
-        types_or: [c++, c, c#, objective-c]
+        types_or: [c++, c, c#, java, objective-c]

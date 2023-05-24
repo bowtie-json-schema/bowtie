@@ -108,7 +108,9 @@ public class BowtieJsonSchema {
                 return;
             }
 
-            validatorFactory.withSchemaResolver(new RegistrySchemaResolver(runRequest.testCase().registry()));
+            if (runRequest.testCase().registry() != null) {
+                validatorFactory.withSchemaResolver(new RegistrySchemaResolver(runRequest.testCase().registry()));
+            }
             List<TestResult> results = runRequest.testCase().tests().stream().map(test -> {
                 Validator.Result result = validatorFactory.validate(runRequest.testCase().schema(), test.instance());
                 return new TestResult(result.isValid());
