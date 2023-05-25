@@ -17,6 +17,7 @@ from attrs import asdict
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
+from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
 import jinja2
@@ -87,6 +88,7 @@ FORMAT = click.option(
 )
 
 
+@tui()
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
