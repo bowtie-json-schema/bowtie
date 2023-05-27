@@ -202,14 +202,14 @@ class _Summary {
   }
   
   *flat_results() {
-    for (const [seq, each] of Object.entries(this._combined).sort(([seq1], [seq2]) => seq1 - seq2)) {
-      const case_data = each.case;
+    for (const [seq, each] of Object.entries(this._combined).sort()) {
+      const caseData = each.case;
       yield [
         seq,
-        case_data.description,
-        case_data.schema,
-        each['registry'] || {},
-        each['results'],
+        caseData.description,
+        caseData.schema,
+        caseData.registry,
+        each.results,
       ];
     }
   }

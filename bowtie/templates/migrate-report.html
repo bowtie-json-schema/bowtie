@@ -73,7 +73,7 @@
       <div class="card mx-auto mb-3 w-75" id="summary">
         <div class="card-header">Summary</div>
 
-        < class="card-body">
+        <div class="card-body">
           <table class="table table-sm table-hover">
             <thead>
               <tr>
@@ -135,7 +135,11 @@
           </div>
         </div>
       </div>
+      <div class="accordion pt-5" id="cases">
+        <div id="accordion-item" class="accordion-item">
 
+        </div>
+      </div>
     </div>
 
     <script type="module" src="../utilclasses.js"></script>
@@ -349,6 +353,85 @@
             if (summary.did_fail_fast){
               didFailFast.textContent = "This run failed fast, so some input cases may not have been run.";
             };
+
+
+            // cases section (accordions)
+            
+            var flatResults = Array.from(summary.flat_results());
+            //console.log(flatResults)
+            flatResults.forEach(function(item) {
+              var seq = item[0];
+              var description = item[1];
+              var schema = item[2];
+              var registry = item[3];
+              var results = item[4];
+              
+              const accordionCases = document.getElementById('cases');
+              const accordionItems = document.getElementById('accordion-item');
+
+              // creating h2 element
+              const accordionItemsH2 = document.createElement('h2');
+              accordionItemsH2.setAttribute("class", "accordion-header");
+              accordionItemsH2.setAttribute("id", `case-${ seq }-heading`);
+
+              const accordionItemsButton = document.createElement("button");
+              accordionItemsButton.setAttribute("class", "accordion-button collapsed");
+              accordionItemsButton.setAttribute("type", "button");
+              button.setAttribute('data-bs-toggle', 'collapse');
+              button.setAttribute('data-bs-target', `#case-${ seq }`);
+              button.setAttribute('aria-expanded', 'false');
+              button.setAttribute('aria-controls', 'case-${ seq }');
+
+              button.onclick = function() {
+                schemaDisplay(`accordion-body${ seq }`, JSON.stringify(schema, null, 2), "schema-code", `row-${ seq }`);
+              };
+
+              const accordionItemsA = document.createElement("a");
+              accordionItemsA.setAttribute("href", "#schema");
+              accordionItemsA.setAttribute("class", "text-decoration-none");
+              accordionItemsA.textContent += description;
+
+              // appending the elements to create 'h2' element
+              accordionItemsButton.appendChild(accordionItemsA);
+              accordionItemsH2.appendChild(accordionItemsButton);
+              console.log(accordionItemsH2)
+
+
+              // creating the div element
+              const accordionItemsDiv = document.createElement("div");
+              accordionItemsDiv.setAttribute("id", `case-${ seq }`);
+              accordionItemsDiv.setAttribute("class", "accordion-collapse collapse");
+              accordionItemsDiv.setAttribute("aria-labelledby", `case-${ seq }-heading`);
+              accordionItemsDiv.setAttribute("data-bs-parent", "#cases");
+
+              const accordionItemsChildDiv = document.createElement("div");
+              accordionItemsChildDiv.setAttribute("id", `accordion-body${ seq }`);
+              accordionItemsChildDiv.setAttribute("class", "accordion-body");
+              accordionItemsChildDiv.setAttribute();
+
+              accordionItemsDivTable = document.createElement('table');
+              accordionItemsDivTable.setAttribute("class", "table table-hover");
+
+              const accordionItemsDivTHead = document.createElement('thead');
+              const accordionItemsDivTR = document.createElement('tr');
+
+              const accordionItemsDivTD = document.createElement('td');
+              accordionItemsDivTD.setAttribute("scope", "col");
+              accordionItemsDivTD.textContent = "Tests";
+
+              for(const implementation of summary.implementations) {
+                const accordionItemsDivTD2 = document.createElement('td');
+                accordionItemsDivTD2.setAttribute("class", "text-center");
+                accordionItemsDivTD2.setAttribute("scope", "col");
+                accordionItemsDivTD2.textContent += implementation.name;
+
+                const accordionItemsDivSmall = document.createElement('small');
+                accordionItemsDivSmall.setAttribute("class", "text-muted");
+                accordionItemsDivSmall.textContent += implementation.language;
+              }
+
+
+            });
       };
 
 
