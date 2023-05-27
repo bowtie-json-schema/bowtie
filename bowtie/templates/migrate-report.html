@@ -531,13 +531,13 @@
             for (var i = 0; i < summary.implementations.length; i++) {
               var implementation = summary.implementations[i];
 
-              // Creating modal element
-              var modal = document.createElement("div");
-              modal.className = "modal fade";
-              modal.id = "implementation-" + (i + 1) + "-details";
-              modal.setAttribute("tabindex", "-1");
-              modal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-details-label");
-              modal.setAttribute("aria-hidden", "true");
+              //Details Modal
+              var detailsModal = document.createElement("div");
+              detailsModal.className = "modal fade";
+              detailsModal.id = "implementation-" + (i + 1) + "-details";
+              detailsModal.setAttribute("tabindex", "-1");
+              detailsModal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-details-label");
+              detailsModal.setAttribute("aria-hidden", "true");
 
               var modalDialog = document.createElement("div");
               modalDialog.className = "modal-dialog modal-fullscreen";
@@ -643,9 +643,100 @@
               modalContent.appendChild(modalFooter);
 
               modalDialog.appendChild(modalContent);
-              modal.appendChild(modalDialog);
+              detailsModal.appendChild(modalDialog);
 
-            }
+              /////////////////////
+              //runtime-info Modal
+              var runtimeInfoModal = document.createElement("div");
+              runtimeInfoModal.className = "modal fade";
+              runtimeInfoModal.setAttribute("role", "dialog");
+              runtimeInfoModal.id = "implementation-" + (i + 1) + "-runtime-info";
+              runtimeInfoModal.setAttribute("tabindex", "-1");
+              runtimeInfoModal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-runtime-info-label");
+              runtimeInfoModal.setAttribute("aria-hidden", "true");
+
+              var runtimeInfoDialog = document.createElement("div");
+              runtimeInfoDialog.className = "modal-dialog";
+              runtimeInfoDialog.setAttribute("role", "document");
+
+              var runtimeInfoContent = document.createElement("div");
+              runtimeInfoContent.className = "modal-content";
+
+              // Creating runtime info modal header
+              var runtimeInfoHeader = document.createElement("div");
+              runtimeInfoHeader.className = "modal-header";
+
+              var runtimeInfoTitle = document.createElement("h5");
+              runtimeInfoTitle.className = "modal-title";
+              runtimeInfoTitle.id = "implementation-" + (i + 1) + "-runtime-info-label";
+
+              var titleText = document.createElement("b");
+              titleText.textContent = implementation.name;
+
+              var small = document.createElement("small");
+              small.className = "text-muted";
+              small.textContent = implementation.language;
+
+              runtimeInfoTitle.appendChild(titleText);
+              runtimeInfoTitle.appendChild(small);
+              runtimeInfoHeader.appendChild(runtimeInfoTitle);
+
+              var closeButton = document.createElement("button");
+              closeButton.type = "button";
+              closeButton.className = "btn-close";
+              closeButton.setAttribute("data-bs-dismiss", "modal");
+              closeButton.setAttribute("aria-label", "Close");
+
+              runtimeInfoHeader.appendChild(closeButton);
+              runtimeInfoContent.appendChild(runtimeInfoHeader);
+
+              // Creating runtime info modal body
+              var runtimeInfoBody = document.createElement("div");
+              runtimeInfoBody.className = "modal-body";
+
+              // Checking and appending runtime info if available
+              if (implementation.os_version) {
+                var osVersion = document.createElement("p");
+                osVersion.innerHTML = "<strong>OS Version: </strong>" + implementation.os_version;
+                runtimeInfoBody.appendChild(osVersion);
+              }
+
+              if (implementation.os) {
+                var os = document.createElement("p");
+                os.innerHTML = "<strong>OS: </strong>" + implementation.os;
+                runtimeInfoBody.appendChild(os);
+              }
+
+              if (implementation.language) {
+                var language = document.createElement("p");
+                language.innerHTML = "<strong>Language: </strong>" + implementation.language;
+                runtimeInfoBody.appendChild(language);
+              }
+
+              if (implementation.language_version) {
+                var languageVersion = document.createElement("p");
+                languageVersion.innerHTML = "<strong>Language Version: </strong>" + implementation.language_version;
+                runtimeInfoBody.appendChild(languageVersion);
+              }
+
+              runtimeInfoContent.appendChild(runtimeInfoBody);
+
+              // Crating runtime info modal footer
+              var runtimeInfoFooter = document.createElement("div");
+              runtimeInfoFooter.className = "modal-footer m-2 p-0";
+
+              var closeButton = document.createElement("button");
+              closeButton.type = "button";
+              closeButton.className = "btn btn-sm btn-secondary";
+              closeButton.setAttribute("data-bs-dismiss", "modal");
+              closeButton.textContent = "Close";
+
+              runtimeInfoFooter.appendChild(closeButton);
+              runtimeInfoContent.appendChild(runtimeInfoFooter);
+
+              runtimeInfoDialog.appendChild(runtimeInfoContent);
+              runtimeInfoModal.appendChild(runtimeInfoDialog);
+            };
 
       };
 
