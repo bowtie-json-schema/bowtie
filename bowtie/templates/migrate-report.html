@@ -214,14 +214,13 @@
 
             //updating summary table
             tbody = document.getElementById("tbody");
-            //console.log(typeof(summary.implementations))
+            //console.log(typeof(summary.implementations.length))
             let implementations = summary.implementations;
             //console.log(implementations)
-            for (i = 0; i < implementations.length; i++) {
+            for (const implementation of summary.implementations) {
               //th section of summary table's data
-              let implementation = implementations[i];
-              //console.log(implementation.dialects)
               let counts = summary.counts[implementation.image];
+              //console.log(implementation)
               //console.log(counts)
 
               var tr = document.createElement("tr");
@@ -230,28 +229,31 @@
 
               const a = document.createElement("a");
               a.setAttribute(
-                "id",
-                `implementation-${data.summary.implementation[i].name}`
+                //"id",
+                //`implementation-${data.summary.implementation[i].name}`
+                "href", `${implementation.homepage || implementation.issue}`
               );
-              a.textContent = `${data.summary.implementation[i].name} `;
+              a.textContent = `${implementation.name} `;
 
               const smallTH = document.createElement("small");
-              smallTH.setAttribute(
-                "id",
-                `implementation-${data.summary.implementation[i].language}`
-              );
+              //smallTH.setAttribute(
+                //"id",
+                //`implementation-${data.summary.implementation[i].language}`
+              //);
               smallTH.setAttribute("class", "text-muted");
-              smallTH.textContent = `${data.summary.implementation[i].language}`;
+              smallTH.textContent = `${implementation.language}`;
 
               th.appendChild(a);
               th.appendChild(smallTH);
               tr.appendChild(th);
+              //console.log(tr)
 
               //td section of summary table's data
               var td = document.createElement("td");
               const smallTD = document.createElement("small");
               smallTD.setAttribute("class", "font-monospace text-muted");
-              smallTD.textContent = `${data.summary.implementation[i].version}`;
+              //console.log(implementation.version || "")
+              smallTD.textContent = implementation.version || "";
 
               const buttonTD = document.createElement("button");
               buttonTD.setAttribute("class", "btn border-0");
@@ -292,18 +294,19 @@
               //final section of table body
               var td2 = document.createElement("td");
               td2.setAttribute("class", "text-center");
-              td2.textContent = `${data.summary.counts.errored_cases}`;
+              td2.textContent = `${counts.errored_cases}`;
 
               var td3 = document.createElement("td");
               td3.setAttribute("class", "text-center");
-              td3.textContent += `${data.summary.counts.skipped_tests}`;
+              td3.textContent += `${counts.skipped_tests}`;
 
               var td4 = document.createElement("td");
-              td4.setAttribute("class", "text-center");
+              td4.setAttribute("class", "text-center details-required");
               td4.textContent += `${
-                data.summary.counts.errored_cases +
-                data.summary.counts.skipped_tests
+                counts.failed_tests + counts.errored_tests
               }`;
+              //console.log(typeof(counts.failed_tests))
+
               tr.appendChild(td2);
               tr.appendChild(td3);
               tr.appendChild(td4);
