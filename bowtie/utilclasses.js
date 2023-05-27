@@ -96,16 +96,17 @@ class _Summary {
       this.counts[each.image] = new Count();
     }
   }
- 
-
+  
   get total_cases() {
-    const counts = Object.values(this.counts).map(count => count.total_cases);
+    const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
     console.log(counts)
-    if (counts.length !== 1) {
-      const summary = counts.map(count => `  ${count.image}: ${count.total_cases}`).join("\n");
+    if (counts.size !== 1) {
+      const summary = Object.entries(this.counts)
+        .map(([each, count]) => `  ${each.split('/').pop()}: ${count.total_cases}`)
+        .join('\n');
       throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
     }
-    return counts.pop();
+    return counts.values().next().value;;
   }
 
 
