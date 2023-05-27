@@ -203,7 +203,7 @@
             `;
           }
         };
-                
+
         const titleElement = document.querySelector("title");
             titleElement.textContent += ` ${run_info.dialect_shortname}`;
 
@@ -519,6 +519,134 @@
               accordionItemsDiv.appendChild(accordionItemsChildDiv);
             });
             accordionCases.appendChild(accordionItems);
+
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Retrieve the container element where the modals will be inserted
+            var container = document.getElementById("modal-container");
+
+            // Iterate over the implementations data
+            for (var i = 0; i < summary.implementations.length; i++) {
+              var implementation = summary.implementations[i];
+
+              // Creating modal element
+              var modal = document.createElement("div");
+              modal.className = "modal fade";
+              modal.id = "implementation-" + (i + 1) + "-details";
+              modal.setAttribute("tabindex", "-1");
+              modal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-details-label");
+              modal.setAttribute("aria-hidden", "true");
+
+              var modalDialog = document.createElement("div");
+              modalDialog.className = "modal-dialog modal-fullscreen";
+
+              var modalContent = document.createElement("div");
+              modalContent.className = "modal-content";
+
+              // Creating modal header
+              var modalHeader = document.createElement("div");
+              modalHeader.className = "modal-header";
+
+              var modalTitle = document.createElement("h1");
+              modalTitle.className = "modal-title fs-5";
+              modalTitle.id = "implementation-" + (i + 1) + "-details-label";
+              modalTitle.textContent = implementation.name;
+
+              var small = document.createElement("small");
+              small.className = "text-muted";
+              small.textContent = implementation.language;
+
+              modalTitle.appendChild(small);
+              modalHeader.appendChild(modalTitle);
+
+              var closeButton = document.createElement("button");
+              closeButton.type = "button";
+              closeButton.className = "btn-close";
+              closeButton.setAttribute("data-bs-dismiss", "modal");
+              closeButton.setAttribute("aria-label", "Close");
+
+              modalHeader.appendChild(closeButton);
+              modalContent.appendChild(modalHeader);
+
+              // Creating modal body
+              var modalBody = document.createElement("div");
+              modalBody.className = "modal-body";
+
+              var row = document.createElement("div");
+              row.className = "row row-cols-1 row-cols-md-2 g-4";
+
+              var flatResults = Array.from(summary.flat_results());
+              for (var j = 0; j < flatResults.length; j++) {
+                var result = flatResults[j];
+                var test = result[0];
+                var testResults = result[1];
+                var implementationResult = testResults.get(implementation.image);
+
+                // Creating card element
+                var col = document.createElement("div");
+                col.className = "col";
+
+                var card = document.createElement("div");
+                card.className = "card";
+
+                var cardBody = document.createElement("div");
+                cardBody.className = "card-body";
+
+                var cardTitle = document.createElement("h5");
+                cardTitle.className = "card-title";
+                cardTitle.textContent = test[1];
+
+                var cardText = document.createElement("p");
+                cardText.className = "card-text";
+                cardText.textContent = test[0].description;
+
+                cardBody.appendChild(cardTitle);
+                cardBody.appendChild(cardText);
+                card.appendChild(cardBody);
+
+                var cardFooter = document.createElement("div");
+                cardFooter.className = "card-footer text-muted text-center";
+
+                if (implementationResult[1] === "skipped") {
+                  card.className += " border-warning";
+                  cardFooter.textContent = implementationResult[0];
+                } else if (implementationResult[1] === "errored") {
+                  card.className += " border-danger";
+                  cardFooter.textContent = implementationResult[0];
+                } else if (implementationResult[1]) {
+                  card.className += " border-danger";
+                  var validText = implementationResult[0].valid ? "valid" : "invalid";
+                  cardFooter.textContent = "Unexpectedly " + validText;
+                }
+
+                card.appendChild(cardFooter);
+                col.appendChild(card);
+                row.appendChild(col);
+              }
+
+              modalBody.appendChild(row);
+              modalContent.appendChild(modalBody);
+
+              // Creating modal footer
+              var modalFooter = document.createElement("div");
+              modalFooter.className = "modal-footer";
+
+              var closeButton = document.createElement("button");
+              closeButton.type = "button";
+              closeButton.className = "btn btn-secondary";
+              closeButton.setAttribute("data-bs-dismiss", "modal");
+              closeButton.textContent = "Close";
+
+              modalFooter.appendChild(closeButton);
+              modalContent.appendChild(modalFooter);
+
+              modalDialog.appendChild(modalContent);
+              modal.appendChild(modalDialog);
+
+            }
+
       };
 
 
