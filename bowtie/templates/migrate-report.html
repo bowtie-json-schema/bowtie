@@ -73,7 +73,7 @@
       <div class="card mx-auto mb-3 w-75" id="summary">
         <div class="card-header">Summary</div>
 
-        <div class="card-body">
+        < class="card-body">
           <table class="table table-sm table-hover">
             <thead>
               <tr>
@@ -130,8 +130,12 @@
               </tr>
             </tfoot>
           </table>
+          <div id="did_fail_fast" class="alert alert-warning" role="alert">
+
+          </div>
         </div>
       </div>
+
     </div>
 
     <script type="module" src="../utilclasses.js"></script>
@@ -339,7 +343,14 @@
               "summary-unsuccessful_tests"
             );
             unsuccessfulTests.textContent = `${summary.errored_cases + summary.skipped_tests}`;
+
+
+            const didFailFast = document.getElementById("did_fail_fast");
+            if (summary.did_fail_fast){
+              didFailFast.textContent = "This run failed fast, so some input cases may not have been run.";
+            };
       };
+
 
     </script>
     <script>
