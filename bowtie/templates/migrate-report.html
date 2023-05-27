@@ -82,6 +82,7 @@
                   rowspan="2"
                   scope="col"
                   class="text-center align-middle"
+                  style="color: white;"
                 >
                   implementation
                 </th>
@@ -95,14 +96,15 @@
               </tr>
 
               <tr>
-                <th scope="col" class="text-center">errors</th>
+                <th scope="col" class="text-center" style="color: white;">errors</th>
 
-                <th scope="col" class="table-bordered text-center">skipped</th>
+                <th scope="col" class="table-bordered text-center" style="color: white;">skipped</th>
                 <th
                   scope="col"
                   class="table-bordered text-center details-required"
+                  style="color: white;"
                 >
-                  <div class="hover-details details-desc text-center"></div>
+                  <div class="hover-details details-desc text-center" ></div>
                   unsuccessful
                 </th>
 
@@ -234,7 +236,7 @@
                 //`implementation-${data.summary.implementation[i].name}`
                 "href", `${implementation.homepage || implementation.issue}`
               );
-              a.textContent = `${implementation.name} `;
+              a.textContent = `${implementation.name}`;
 
               const smallTH = document.createElement("small");
               //smallTH.setAttribute(
@@ -242,7 +244,7 @@
                 //`implementation-${data.summary.implementation[i].language}`
               //);
               smallTH.setAttribute("class", "text-muted");
-              smallTH.textContent = `${implementation.language}`;
+              smallTH.textContent += " " + `${ implementation.language}`;
 
               th.appendChild(a);
               th.appendChild(smallTH);
@@ -419,6 +421,8 @@
 
       //adding dark theme
       const body = document.querySelector("body");
+      const nav = document.querySelector("nav");
+      nav.classList.add(dark ? ("navbar-dark", "bg-dark") : ("navbar-light", "bg-light"))
       body.setAttribute("data-bs-theme", dark ? "dark" : "light");
 
       themeTogglerButton.addEventListener("click", () => {
@@ -430,7 +434,12 @@
             themeTogglerButton.removeChild(themeSvgSun))
           : (themeTogglerButton.appendChild(themeSvgSun),
             themeTogglerButton.removeChild(themeSvgMoon));
-      });
+            
+            nav.classList.toggle("navbar-dark", dark);
+            nav.classList.toggle("bg-dark", dark);
+            nav.classList.toggle("bg-light", !dark);
+            nav.classList.toggle("navbar-light", !dark);
+          });
     </script>
   </body>
 </html>
