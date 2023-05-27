@@ -419,6 +419,9 @@
               accordionItemsDivTD.setAttribute("scope", "col");
               accordionItemsDivTD.textContent = "Tests";
 
+              //appending Child
+              accordionItemsDivTR.appendChild(accordionItemsDivTD);
+
               for(const implementation of summary.implementations) {
                 const accordionItemsDivTD2 = document.createElement('td');
                 accordionItemsDivTD2.setAttribute("class", "text-center");
@@ -428,9 +431,13 @@
                 const accordionItemsDivSmall = document.createElement('small');
                 accordionItemsDivSmall.setAttribute("class", "text-muted");
                 accordionItemsDivSmall.textContent += implementation.language;
-              }
 
-
+                accordionItemsDivTD2.appendChild(accordionItemsDivSmall);
+                accordionItemsDivTR.appendChild(accordionItemsDivTD2);
+              };
+              // thead appending to table
+              accordionItemsDivTHead.appendChild(accordionItemsDivTR);
+              accordionItemsDivTable.appendChild(accordionItemsDivTHead);
             });
       };
 
