@@ -407,7 +407,6 @@
               const accordionItemsChildDiv = document.createElement("div");
               accordionItemsChildDiv.setAttribute("id", `accordion-body${ seq }`);
               accordionItemsChildDiv.setAttribute("class", "accordion-body");
-              accordionItemsChildDiv.setAttribute();
 
               accordionItemsDivTable = document.createElement('table');
               accordionItemsDivTable.setAttribute("class", "table table-hover");
@@ -484,13 +483,13 @@
 
                   cell.className = classNames;
                   testsTR.appendChild(cell);
-                }
-
-                // Append the row to the desired HTML table
-                const table = document.getElementById('your-table-id');
-                table.appendChild(tableRow);
-
+                };
+                accordionItemsDivTable.appendChild(testsTR);
               };
+
+              //updating the child div elements
+              accordionItemsChildDiv.append(accordionItemsDivTable);
+              accordionItemsDiv.appendChild(accordionItemsChildDiv);
 
             });
       };
