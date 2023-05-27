@@ -120,9 +120,10 @@
 
                 <td id="summary-skipped_tests" class="text-center"></td>
                 <td
-                  id="summary-total-tests"
+                  id="summary-unsuccessful_tests"
                   class="text-center details-required"
-                ></td>
+                >
+                </td>
                 <td></td>
               </tr>
             </tfoot>
@@ -217,7 +218,7 @@
             //console.log(typeof(summary.implementations.length))
             let implementations = summary.implementations;
             //console.log(implementations)
-            for (const implementation of summary.implementations) {
+            for (const [index, implementation] of summary.implementations.entries()) {
               //th section of summary table's data
               let counts = summary.counts[implementation.image];
               //console.log(implementation)
@@ -307,9 +308,20 @@
               }`;
               //console.log(typeof(counts.failed_tests))
 
+              var td5 = document.createElement("td");
+              var detailButton = document.createElement("button");
+              detailButton.setAttribute("type", "button");
+              detailButton.setAttribute("class", "btn btn-sm btn-primary");
+              detailButton.setAttribute("data-bs-toggle", "modal");
+              detailButton.setAttribute("data-bs-target", `#implementation-${index}-details`);
+              detailButton.textContent += "Details";
+
+              td5.appendChild(detailButton);
+
               tr.appendChild(td2);
               tr.appendChild(td3);
               tr.appendChild(td4);
+              tr.appendChild(td5);
 
               tbody.appendChild(tr);
             }
