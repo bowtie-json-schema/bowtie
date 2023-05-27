@@ -49,6 +49,7 @@ export class RunInfo {
   
   create_summary() {
     // console.log(Object.values(this._implementations))
+    // console.log((this._implementations))
     return new _Summary({ implementations: Object.values(this._implementations) });
   }
 }
@@ -69,44 +70,43 @@ RunInfo._implementations = {
 
 
 class _Summary {
-  implementations = [];
-  // _combined = {};
-  // did_fail_fast = false;
-  // counts = {};
-
   constructor(implementations) {
-    // console.log(typeof(implementations))
-    // console.log(implementations.implementations)
+    // console.log(typeof(implementations.implementations))
+    // console.log((implementations['implementations']))
+    const implementationArray = Object.values(implementations);
+    // console.log(implementationArray[0])
 
-    this.implementations = implementations.implementations;
+    this.implementations = implementationArray[0].sort((each, other) => {
+      const key = `${each.language}${each.name}`;
+      const otherKey = `${other.language}${other.name}`;
+      return key < otherKey ? -1 : 1;
+    });
+    // console.log(this.implementations)
+  
     this._combined = {};
     this.did_fail_fast = false;
     this.counts = {};
-    this.__attrs_post_init__();
-    // console.log(this.counts)
-  }
 
-  __attrs_post_init__() {
-    for (let each of this.implementations) {
+    this.initializeCounts();
+    console.log(this.counts)
+  }
+  
+  initializeCounts() {
+    for (const each of this.implementations) {
       this.counts[each.image] = new Count();
     }
-    console.log(this.counts)
-  }  
+  }
+ 
 
   get total_cases() {
-    let counts = new Set();
-    for (let count of Object.values(this.counts)) {
-        counts.add(count.total_cases);
+    const counts = Object.values(this.counts).map(count => count.total_cases);
+    console.log(counts)
+    if (counts.length !== 1) {
+      const summary = counts.map(count => `  ${count.image}: ${count.total_cases}`).join("\n");
+      throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
     }
-    if (counts.size !== 1) {
-        let summary = "";
-        for (let [each, count] of Object.entries(this.counts)) {
-            summary += `  ${each.split('/').pop()}: ${count.total_cases}\n`;
-        }
-        throw new Error(`Inconsistent number of cases run:\n\n${summary}`);
-    }
-    return counts.values().next().value;
-}
+    return counts.pop();
+  }
 
 
   get errored_cases() {
