@@ -377,12 +377,12 @@
               const accordionItemsButton = document.createElement("button");
               accordionItemsButton.setAttribute("class", "accordion-button collapsed");
               accordionItemsButton.setAttribute("type", "button");
-              button.setAttribute('data-bs-toggle', 'collapse');
-              button.setAttribute('data-bs-target', `#case-${ seq }`);
-              button.setAttribute('aria-expanded', 'false');
-              button.setAttribute('aria-controls', 'case-${ seq }');
+              accordionItemsButton.setAttribute('data-bs-toggle', 'collapse');
+              accordionItemsButton.setAttribute('data-bs-target', `#case-${ seq }`);
+              accordionItemsButton.setAttribute('aria-expanded', 'false');
+              accordionItemsButton.setAttribute('aria-controls', 'case-${ seq }');
 
-              button.onclick = function() {
+              accordionItemsButton.onclick = function() {
                 schemaDisplay(`accordion-body${ seq }`, JSON.stringify(schema, null, 2), "schema-code", `row-${ seq }`);
               };
 
@@ -438,6 +438,60 @@
               // thead appending to table
               accordionItemsDivTHead.appendChild(accordionItemsDivTR);
               accordionItemsDivTable.appendChild(accordionItemsDivTHead);
+
+              ///////////////////////////
+              for (let test in results) {
+                let test_results = results[test];
+
+                const testsTR = document.createElement('tr');
+                testsTR.setAttribute("class", `row-${ seq }`);
+                testsTR.addEventListener('click', function() {
+                  const instanceInfo = document.getElementById('instance-info');
+                  instanceInfo.textContent = JSON.stringify(test.instance, null, 2);
+                });
+
+                const testsTD = document.createElement("td");
+
+                const testsA = document.createElement("a");
+                testsA.setAttribute("href", "#schema");
+                testsA.setAttribute("class", "text-decoration-none");
+                testsA.textContent += test.description;
+
+                testsTD.appendChild(testsA);
+                testsTR.appendChild(testsTD);
+
+                for (let implementation of summary.implementations) {
+                  let implementation_result, incorrect;
+                  [implementation_result, incorrect] = test_results.get(implementation.image, { valid: null }, true);
+
+                  let cell = document.createElement('td');
+                  let classNames = 'text-center';
+
+                  if (incorrect === 'skipped') {
+                    classNames += ' text-bg-warning';
+                    cell.innerHTML = to_icon(null);
+                  } else if (incorrect === 'errored') {
+                    classNames += ' text-bg-danger';
+                    cell.innerHTML = to_icon(null);
+                  } else {
+                    if (implementation_result.valid !== true && implementation_result.valid !== false) {
+                      classNames += ' text-bg-warning';
+                    } else if (incorrect) {
+                      classNames += ' text-bg-danger';
+                    }
+                    cell.innerHTML = to_icon(implementation_result.valid);
+                  }
+
+                  cell.className = classNames;
+                  testsTR.appendChild(cell);
+                }
+
+                // Append the row to the desired HTML table
+                const table = document.getElementById('your-table-id');
+                table.appendChild(tableRow);
+
+              };
+
             });
       };
 
