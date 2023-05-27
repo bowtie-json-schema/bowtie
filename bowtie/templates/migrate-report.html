@@ -326,21 +326,17 @@
               tbody.appendChild(tr);
             }
 
-            //summary total
-            var summaryErroredCases = document.getElementById(
-              "summary-errored_cases"
+            // summary table footer (total)
+            erroredCases = document.getElementById('summary-errored_cases');
+            erroredCases.textContent = `${summary.errored_cases}`;
+
+            skippedTests = document.getElementById("summary-skipped_tests");
+            skippedTests.textContent = `${summary.skipped_tests}`;
+
+            unsuccessfulTests = document.getElementById(
+              "summary-unsuccessful_tests"
             );
-            summaryErroredCases.textContent = `${data.summary.errored_cases}`;
-            var summarySkippedTests = document.getElementById(
-              "summary-skipped_tests"
-            );
-            summarySkippedTests.textContent = `${data.summary.skipped_tests}`;
-            var summaryTotalTests = document.getElementById(
-              "summary-total-tests"
-            );
-            summaryTotalTests.textContent = `${
-              data.summary.errored_cases + data.summary.skipped_tests
-            }`;
+            unsuccessfulTests.textContent = `${summary.errored_cases + summary.skipped_tests}`;
       };
 
     </script>
