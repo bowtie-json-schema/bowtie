@@ -163,6 +163,7 @@
       async function jsonData(dataObjectsArray, generate_dialect_navigation = false) {
         const module = await import("../utilclasses.js");
         const RunInfo = module.RunInfo;
+        const CaseResult = module.CaseResult;
 
         let lines = dataObjectsArray.map(line => JSON.parse(line));
         //console.log(lines)

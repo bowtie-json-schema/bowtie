@@ -141,6 +141,7 @@ class _Summary {
     this._combined[caseObject.seq] = { case: caseObject.case, results: results };
   }
 
+  // see_error(implementation, seq, context, caught)
   see_error(implementation, seq, context, caught) {
     const count = this.counts[implementation];
     count.total_cases += 1;
@@ -279,7 +280,7 @@ class CaseSkipped {
 }
 
 // class CaseResult
-class CaseResult {
+export class CaseResult {
   errored = false;
   implementation;
   seq;
@@ -326,6 +327,28 @@ class CaseResult {
     this.expected = expected;
   }
 }
+
+//class TestResult 
+
+class TestResult {
+  static errored = false;
+  static skipped = false;
+  valid;
+  
+  constructor(valid) {
+    this.valid = valid;
+  }
+
+  static fromDict(data) {
+    if (data.skipped) {
+      return new SkippedTest(data);
+    } else if (data.errored) {
+      return new ErroredTest(data);
+    }
+    return new TestResult(data.valid);
+  }
+}
+
 
 
 //class ReportData
