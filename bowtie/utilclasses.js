@@ -264,11 +264,12 @@ class Count {
 // Unused classes till now
 // class ClaseSkipped
 
-class CaseSkipped {
-  constructor(implementation, seq, message = null, issue_url = null) {
+export class CaseSkipped {
+  // constructor(implementation, seq, message = null, issue_url = null)
+  constructor(object, message = null, issue_url = null) {
     this.errored = false;
-    this.implementation = implementation;
-    this.seq = seq;
+    this.implementation = object.implementation;
+    this.seq = object.seq;
     this.message = message;
     this.issue_url = issue_url;
     this.skipped = true;
@@ -353,9 +354,9 @@ class TestResult {
 //class SkippedTest
 
 class SkippedTest {
-  constructor(message = null, issueUrl = null) {
+  constructor(message = null, issue_url = null) {
     this.message = message;
-    this.issueUrl = issueUrl;
+    this.issue_url = issue_url;
     this.errored = false;
     this.skipped = true;
   }
@@ -364,10 +365,29 @@ class SkippedTest {
     if (this.message !== null) {
       return this.message;
     }
-    if (this.issueUrl !== null) {
-      return this.issueUrl;
+    if (this.issue_url !== null) {
+      return this.issue_url;
     }
     return "skipped";
+  }
+}
+
+
+//class ErroredTest
+
+class ErroredTest {
+  constructor(context = {}) {
+    this.context = context;
+    this.errored = true;
+    this.skipped = false;
+  }
+
+  get reason() {
+    const message = this.context["message"];
+    if (message) {
+      return message;
+    }
+    return "Encountered an error.";
   }
 }
 

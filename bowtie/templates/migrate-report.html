@@ -164,6 +164,7 @@
         const module = await import("../utilclasses.js");
         const RunInfo = module.RunInfo;
         const CaseResult = module.CaseResult;
+        const CaseSkipped = module.CaseSkipped;
 
         let lines = dataObjectsArray.map(line => JSON.parse(line));
         //console.log(lines)
