@@ -384,7 +384,8 @@
             // cases section (accordions)
             
             var flatResults = Array.from(summary.flat_results());
-            //console.log(flatResults)
+            console.log(flatResults)
+            console.log(summary.flat_results())
             const accordionCases = document.getElementById('cases');
             const accordionItems = document.getElementById('accordion-item');
 
@@ -736,6 +737,122 @@
 
               runtimeInfoDialog.appendChild(runtimeInfoContent);
               runtimeInfoModal.appendChild(runtimeInfoDialog);
+
+
+              ////////////////////////////////
+              // Creating schema display element
+              var schemaDisplay = document.createElement("div");
+              schemaDisplay.id = "display-body";
+              schemaDisplay.className = "card mb-3 d-none mw-100";
+
+              var row = document.createElement("div");
+              row.className = "row";
+              schemaDisplay.appendChild(row);
+
+              var col8 = document.createElement("div");
+              col8.className = "col-8 pe-0";
+              row.appendChild(col8);
+
+              var highlightToolbar = document.createElement("div");
+              highlightToolbar.className = "d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom";
+              col8.appendChild(highlightToolbar);
+
+              var schemaLabel = document.createElement("small");
+              schemaLabel.className = "font-monospace text-body-secondary text-uppercase";
+              schemaLabel.textContent = "Schema";
+              highlightToolbar.appendChild(schemaLabel);
+
+              var schemaCopyButtonContainer = document.createElement("div");
+              schemaCopyButtonContainer.className = "d-flex ms-auto";
+              highlightToolbar.appendChild(schemaCopyButtonContainer);
+
+              var schemaCopyButton = document.createElement("button");
+              schemaCopyButton.type = "button";
+              schemaCopyButton.id = "copy-button-schema-" + (i + 1);
+              schemaCopyButton.className = "btn mt-0 me-0";
+              schemaCopyButton.setAttribute("onclick", 'copyToClipboard("schema-code-' + (i + 1) + '","copy-button-schema-' + (i + 1) + '")');
+              schemaCopyButton.setAttribute("aria-label", "Copy to clipboard");
+              schemaCopyButton.setAttribute("data-bs-toggle", "tooltip");
+              schemaCopyButton.setAttribute("data-bs-placement", "top");
+              schemaCopyButton.setAttribute("data-bs-custom-class", "custom-tooltip");
+              schemaCopyButton.setAttribute("data-bs-title", "Copy to clipboard");
+
+              // Clipboard SVG Icon
+              var clipboardIcon = document.createElement("svg");
+              clipboardIcon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+              clipboardIcon.setAttribute("width", "16");
+              clipboardIcon.setAttribute("height", "16");
+              clipboardIcon.setAttribute("fill", "currentColor");
+              clipboardIcon.setAttribute("class", "bi bi-clipboard");
+              clipboardIcon.setAttribute("viewBox", "0 0 16 16");
+              var clipboardIconPath1 = document.createElement("path");
+              clipboardIconPath1.setAttribute("d", "M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z");
+              var clipboardIconPath2 = document.createElement("path");
+              clipboardIconPath2.setAttribute("d", "M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z");
+              clipboardIcon.appendChild(clipboardIconPath1);
+              clipboardIcon.appendChild(clipboardIconPath2);
+
+              schemaCopyButton.appendChild(clipboardIcon);
+              schemaCopyButtonContainer.appendChild(schemaCopyButton);
+
+              var col8CardBody = document.createElement("div");
+              col8CardBody.className = "card-body";
+              col8CardBody.id = "schema-code-" + (i + 1);
+              col8.appendChild(col8CardBody);
+
+              var col4 = document.createElement("div");
+              col4.className = "col-4 border-start ps-0";
+              row.appendChild(col4);
+
+              var instanceHighlightToolbar = document.createElement("div");
+              instanceHighlightToolbar.className = "d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom";
+              col4.appendChild(instanceHighlightToolbar);
+
+              var instanceLabel = document.createElement("small");
+              instanceLabel.className = "font-monospace text-body-secondary text-uppercase";
+              instanceLabel.textContent = "Instance";
+              instanceHighlightToolbar.appendChild(instanceLabel);
+
+              var instanceCopyButtonContainer = document.createElement("div");
+              instanceCopyButtonContainer.className = "d-flex ms-auto";
+              instanceHighlightToolbar.appendChild(instanceCopyButtonContainer);
+
+              var instanceCopyButton = document.createElement("button");
+              instanceCopyButton.type = "button";
+              instanceCopyButton.id = "copy-button-instance-" + (i + 1);
+              instanceCopyButton.setAttribute("onclick", 'copyToClipboard("instance-info-' + (i + 1) + '","copy-button-instance-' + (i + 1) + '")');
+              instanceCopyButton.className = "btn mt-0 me-0";
+              instanceCopyButton.setAttribute("aria-label", "Copy to clipboard");
+              instanceCopyButton.setAttribute("data-bs-toggle", "tooltip");
+              instanceCopyButton.setAttribute("data-bs-placement", "top");
+              instanceCopyButton.setAttribute("data-bs-custom-class", "custom-tooltip");
+              instanceCopyButton.setAttribute("data-bs-title", "Copy to clipboard");
+
+              // Clipboard SVG Icon
+              var clipboardIcon2 = document.createElement("svg");
+              clipboardIcon2.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+              clipboardIcon2.setAttribute("width", "16");
+              clipboardIcon2.setAttribute("height", "16");
+              clipboardIcon2.setAttribute("fill", "currentColor");
+              clipboardIcon2.setAttribute("class", "bi bi-clipboard");
+              clipboardIcon2.setAttribute("viewBox", "0 0 16 16");
+              var clipboardIconPath3 = document.createElement("path");
+              clipboardIconPath3.setAttribute("d", "M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z");
+              var clipboardIconPath4 = document.createElement("path");
+              clipboardIconPath4.setAttribute("d", "M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z");
+              clipboardIcon2.appendChild(clipboardIconPath3);
+              clipboardIcon2.appendChild(clipboardIconPath4);
+
+              instanceCopyButton.appendChild(clipboardIcon2);
+              instanceCopyButtonContainer.appendChild(instanceCopyButton);
+
+              var col4CardBody = document.createElement("div");
+              col4CardBody.className = "card-body";
+              col4CardBody.id = "instance-info-" + (i + 1);
+              col4.appendChild(col4CardBody);
+
+              row.appendChild(col4);
+
             };
 
       };
