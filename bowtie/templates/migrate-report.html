@@ -160,7 +160,7 @@
     <!-- ///////////////////////////////////////////////////////////////// -->
 
     <script>
-      async function jsonData(dataObjectsArray) {
+      async function jsonData(dataObjectsArray, generate_dialect_navigation = false) {
         const module = await import("../utilclasses.js");
         const RunInfo = module.RunInfo;
 
@@ -177,6 +177,23 @@
         let summary = run_info.create_summary();
         //console.log(summary)
         //console.log(summary.counts)
+
+
+        for (let i = 1; i < lines.length; i++) {
+          let each = lines[i];
+          if ("case" in each) {
+              summary.add_case_metadata(each);
+          } else if ("caught" in each) {
+              summary.see_error(each);
+          } else if ("skipped" in each) {
+              delete each["skipped"];
+              summary.see_skip(new CaseSkipped(each));
+          } else if ("did_fail_fast" in each) {
+              summary.see_maybe_fail_fast(each);
+          } else {
+              summary.see_result(CaseResult.from_dict(each));
+          }
+      }
         
         function to_icon(valid) {
           if (valid === true) {

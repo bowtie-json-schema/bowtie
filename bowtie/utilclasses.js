@@ -135,9 +135,10 @@ class _Summary {
     return Object.values(this.counts).reduce((sum, count) => sum + count.skipped_tests, 0);
   }
 
-  add_case_metadata(seq, caseMetadata) {
-    const results = caseMetadata.tests.map((test) => [test, {}]);
-    this._combined[seq] = { case: caseMetadata, results: results };
+  // add_case_metadata(seq, caseMetadata)
+  add_case_metadata(caseObject) {
+    const results = caseObject.case.tests.map((test) => [test, {}]);
+    this._combined[caseObject.seq] = { case: caseObject.case, results: results };
   }
 
   see_error(implementation, seq, context, caught) {
