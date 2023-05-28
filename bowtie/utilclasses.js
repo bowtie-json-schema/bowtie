@@ -350,6 +350,28 @@ class TestResult {
 }
 
 
+//class SkippedTest
+
+class SkippedTest {
+  constructor(message = null, issueUrl = null) {
+    this.message = message;
+    this.issueUrl = issueUrl;
+    this.errored = false;
+    this.skipped = true;
+  }
+
+  get reason() {
+    if (this.message !== null) {
+      return this.message;
+    }
+    if (this.issueUrl !== null) {
+      return this.issueUrl;
+    }
+    return "skipped";
+  }
+}
+
+
 
 //class ReportData
 
