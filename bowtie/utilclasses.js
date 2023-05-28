@@ -142,12 +142,12 @@ class _Summary {
   }
 
   // see_error(implementation, seq, context, caught)
-  see_error(implementation, seq, context, caught) {
-    const count = this.counts[implementation];
+  see_error(implementationObject) {
+    const count = this.counts[implementationObject.implementation];
     count.total_cases += 1;
     count.errored_cases += 1;
 
-    const caseMetadata = this._combined[seq].case;
+    const caseMetadata = this._combined[implementationObject.seq].case;
     count.total_tests += caseMetadata.tests.length;
     count.errored_tests += caseMetadata.tests.length;
   }
@@ -339,7 +339,7 @@ class TestResult {
     this.valid = valid;
   }
 
-  static fromDict(data) {
+  static from_dict(data) {
     if (data.skipped) {
       return new SkippedTest(data);
     } else if (data.errored) {
