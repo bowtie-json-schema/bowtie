@@ -9,7 +9,55 @@
       integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
       crossorigin="anonymous"
     />
+    <style>
+      .details-required {
+        position: relative;
+      }
+
+      .details-required div {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transition: visibility 0s, opacity 0.5s linear;
+        transition: visibility 0s, opacity 0.5s linear;
+      }
+
+      .details-required:hover {
+        cursor: tooltip;
+      }
+
+      .details-required:hover div {
+        padding: 1rem;
+        padding-bottom: 0rem;
+        margin-right: 8rem;
+        visibility: visible;
+        border-radius: 1rem;
+        background-color: rgba(242, 242, 242, 0.892);
+        opacity: 1;
+      }
+
+      .details-required:hover div .details-desc {
+        right: -40%;
+      }
+
+      .hover-details {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 0.7rem;
+      }
+
+      .hover-details span {
+        font-style: italic;
+        font-weight: 500;
+        color: rgb(112, 112, 112);
+        font-size: 0.8rem;
+      }
+    </style>
   </head>
+
   <body>
     <nav class="navbar navbar-expand-lg sticky-top mb-4">
       <div class="container-fluid">
@@ -104,7 +152,14 @@
                   class="table-bordered text-center details-required"
                   style="color: white;"
                 >
-                  <div class="hover-details details-desc text-center" ></div>
+                  <div class="hover-details details-desc text-center" >
+                    <p>failed
+                      <br><span>implementation worked successfully but got the wrong answer</span>
+                    </p>
+                    <p>errored
+                      <br><span>implementation crashed when trying to calculate an answer</span>
+                    </p>
+                  </div>
                   unsuccessful
                 </th>
 
@@ -241,21 +296,6 @@
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
     <script type="module" src="../utilclasses.js"></script>
-    <script type="module" src="../functions.js"></script>
-  
-    <!-- ////////////////////// Testing Script //////////////////////////// -->
-    <script>
-        async function loadFunctions() {
-            const module = await import("../functions.js");
-            const Calculator = module.Calculator;
-
-            const calculator = new Calculator();
-            //console.log(calculator.sum(4, 55));
-            //console.log(calculator.greet(4));
-        }
-      document.addEventListener("DOMContentLoaded", loadFunctions);
-    </script>
-    <!-- ///////////////////////////////////////////////////////////////// -->
 
     <script>
       async function jsonData(dataObjectsArray, generate_dialect_navigation = false) {
@@ -267,9 +307,6 @@
         let lines = dataObjectsArray.map(line => JSON.parse(line));
         //console.log(lines)
         //console.log(RunInfo)
-  
-        let data = [1,2,3,4]
-
 
         let run_info = new RunInfo(...Object.values(lines[0]));
         //console.log(run_info)
@@ -294,7 +331,7 @@
               summary.see_result(CaseResult.from_dict(each));
           }
       }
-        
+        console.log(to_icon())
         function to_icon(valid) {
           if (valid === true) {
             // Circular Checkmark SVG Icon
@@ -382,18 +419,10 @@
               th.setAttribute("scope", "row");
 
               const a = document.createElement("a");
-              a.setAttribute(
-                //"id",
-                //`implementation-${data.summary.implementation[i].name}`
-                "href", `${implementation.homepage || implementation.issue}`
-              );
+              a.setAttribute("href", `${implementation.homepage || implementation.issue}`);
               a.textContent = `${implementation.name}`;
 
               const smallTH = document.createElement("small");
-              //smallTH.setAttribute(
-                //"id",
-                //`implementation-${data.summary.implementation[i].language}`
-              //);
               smallTH.setAttribute("class", "text-muted");
               smallTH.textContent += " " + `${ implementation.language}`;
 
@@ -439,7 +468,6 @@
               svgTD.appendChild(pathTD);
               buttonTD.appendChild(svgTD);
 
-              var td = document.createElement("td");
               td.appendChild(smallTD);
               td.appendChild(buttonTD);
 
@@ -456,10 +484,14 @@
 
               var td4 = document.createElement("td");
               td4.setAttribute("class", "text-center details-required");
-              td4.textContent += `${
-                counts.failed_tests + counts.errored_tests
-              }`;
+              td4.textContent += counts.failed_tests + counts.errored_tests;
               //console.log(typeof(counts.failed_tests))
+
+              var td4a = document.createElement('div');
+              td4a.classList = 'hover-details text-center';
+              td4a.innerHTML = '<p><b>failed</b>: ' + counts.failed_tests + '</p><p><b>errored</b>: ' + counts.errored_tests + '</p>';
+
+              td4.appendChild(td4a);
 
               var td5 = document.createElement("td");
               var detailButton = document.createElement("button");
@@ -837,7 +869,7 @@
       };
     </script>
 
-    
+
     <script>
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako.min.js";
@@ -847,7 +879,7 @@
       let themeTogglerButton = document.getElementById("theme-toggler");
       script.onload = () => {
         //fetching json data
-        
+
         fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
           .then((response) => response.arrayBuffer())
           .then((buffer) => {
@@ -856,16 +888,12 @@
               //console.log(dataObjectsArray)
             const data = dataObjectsArray.map((line) => JSON.parse(line)); 
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            
+
             jsonData(dataObjectsArray);
 
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            
           });
       };
-
-      //setting datetime attribute
 
       //changing theme icon
       //moon icon
@@ -930,7 +958,7 @@
             themeTogglerButton.removeChild(themeSvgSun))
           : (themeTogglerButton.appendChild(themeSvgSun),
             themeTogglerButton.removeChild(themeSvgMoon));
-            
+
             nav.classList.toggle("navbar-dark", dark);
             nav.classList.toggle("bg-dark", dark);
             nav.classList.toggle("bg-light", !dark);
