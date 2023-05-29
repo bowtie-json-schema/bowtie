@@ -746,38 +746,51 @@
 
               /////////////////
               // details Modal
-              var ModalContainerDetails = document.getElementsByName("modal-details")[0];
-              ModalContainerDetails.id = `implementation-${i+1}-details`;
-              ModalContainerDetails.setAttribute("aria-labelledby", `implementation-${i+1}-details-label`);
-              //console.log(`implementation-${i+1}-details`)
+              const modalDetails = document.createElement("div");
+              modalDetails.classList.add("modal", "fade");
+              modalDetails.id = `implementation-${i+1}-details`;
+              modalDetails.setAttribute("tabindex", "-1");
+              modalDetails.setAttribute("aria-labelledby", `implementation-${i+1}-details-label`);
+              modalDetails.setAttribute("aria-hidden", "true");
 
-              // Creating modal header for 'details'
-              var modalHeaderDetails = document.getElementsByName('modal-header-details')[0];
-              //console.log(modalHeaderDetails)
-
-              var modalTitleDetails = document.createElement("h1");
-              modalTitleDetails.className = "modal-title fs-5";
+              const modalDialogDetails = document.createElement("div");
+              modalDialogDetails.classList.add("modal-dialog", "modal-fullscreen");
+            
+              const modalContentDetails = document.createElement("div");
+              modalContentDetails.classList.add("modal-content");
+            
+              const modalHeaderDetails = document.createElement("div");
+              modalHeaderDetails.classList.add("modal-header");
+            
+              const modalTitleDetails = document.createElement("h1");
+              modalTitleDetails.classList.add("modal-title", "fs-5");
               modalTitleDetails.id = `implementation-${i+1}-details-label`;
-              modalTitleDetails.textContent = implementation.name;
 
-              var modalSmallDetails = document.createElement("small");
-              modalSmallDetails.className = "text-muted";
-              modalSmallDetails.textContent = implementation.language;
+              const implementationNameDetails = document.createElement("span");
+              implementationNameDetails.textContent = implementation.name + " ";
+            
+              const implementationLanguageDetails = document.createElement("small");
+              implementationLanguageDetails.classList.add("text-muted");
+              implementationLanguageDetails.textContent = implementation.language;
+            
+              modalTitleDetails.appendChild(implementationNameDetails);
+              modalTitleDetails.appendChild(implementationLanguageDetails);
 
-              modalTitleDetails.appendChild(modalSmallDetails);
-
-              var modalCloseButtonDetails = document.createElement("button");
-              modalCloseButtonDetails.type = "button";
-              modalCloseButtonDetails.className = "btn-close";
-              modalCloseButtonDetails.setAttribute("data-bs-dismiss", "modal");
-              modalCloseButtonDetails.setAttribute("aria-label", "Close");
-
+              const closeButtonDetails = document.createElement("button");
+              closeButtonDetails.type = "button";
+              closeButtonDetails.classList.add("btn-close");
+              closeButtonDetails.setAttribute("data-bs-dismiss", "modal");
+              closeButtonDetails.setAttribute("aria-label", "Close");
+            
               modalHeaderDetails.appendChild(modalTitleDetails);
-              modalHeaderDetails.appendChild(modalCloseButtonDetails);
+              modalHeaderDetails.appendChild(closeButtonDetails);
 
-              // Creating modal body
-              var modalBodyChildDetails = document.getElementsByName('modal-body-details-child')[0];
-              //console.log(modalBodyDetails)
+              const modalBodyDetails = document.createElement("div");
+              modalBodyDetails.classList.add("modal-body");
+            
+              const rowContainerDetails = document.createElement("div");
+              rowContainerDetails.classList.add("row", "row-cols-1", "row-cols-md-2", "g-4");
+
 
               let flatResults = summary.flat_results();
               for (let [seq, description, schema, registry, results] of flatResults) {
@@ -844,76 +857,123 @@
                   card.appendChild(cardFooter);
 
                   col.appendChild(card);
-                  modalBodyChildDetails.appendChild(col);
+                  rowContainerDetails.appendChild(col);
                 };
               };
 
-             
+              modalBodyDetails.appendChild(rowContainerDetails);
+
+              const modalFooterDetails = document.createElement("div");
+              modalFooterDetails.classList.add("modal-footer");
+            
+              const closeButton2Details = document.createElement("button");
+              closeButton2Details.type = "button";
+              closeButton2Details.classList.add("btn", "btn-secondary");
+              closeButton2Details.setAttribute("data-bs-dismiss", "modal");
+              closeButton2Details.textContent = "Close";
+
+              modalFooterDetails.appendChild(closeButton2Details);
+
+              modalContentDetails.appendChild(modalHeaderDetails);
+              modalContentDetails.appendChild(modalBodyDetails);
+              modalContentDetails.appendChild(modalFooterDetails);
+            
+              modalDialogDetails.appendChild(modalContentDetails);
+              modalDetails.appendChild(modalDialogDetails);
+
+              document.body.appendChild(modalDetails);
 
 
               /////////////////////
               //runtime-info Modal
-              var ModalContainerRuntimeInfo = document.getElementsByName('modal-runtime-info')[0];
-              ModalContainerRuntimeInfo.id = `implementation-${i+1}-runtime-info`;
-              ModalContainerRuntimeInfo.setAttribute("aria-labelledby", `implementation-${i+1}-runtime-info-label`);
-              //console.log(ModalContainerRuntimeInfo)
+              const modalRunInfo = document.createElement("div");
+              modalRunInfo.classList.add("modal", "fade");
+              modalRunInfo.setAttribute("role", "dialog");
+              modalRunInfo.id = `implementation-${i+1}-runtime-info`;
+              modalRunInfo.setAttribute("tabindex", "-1");
+              modalRunInfo.setAttribute("aria-labelledby", `implementation-${i+1}-runtime-info-label`);
+              modalRunInfo.setAttribute("aria-hidden", "true");
+            
+              const modalDialogRunInfo = document.createElement("div");
+              modalDialogRunInfo.classList.add("modal-dialog");
+              modalDialogRunInfo.setAttribute("role", "document");
+            
+              const modalContentRunInfo = document.createElement("div");
+              modalContentRunInfo.classList.add("modal-content");
 
-              // Creating runtime info modal header
-              var modalHeaderRuntimeInfo = document.getElementsByName('modal-header-runtime-info')[0];
-              //console.log(modalHeaderRuntimeInfo)
+              const modalHeaderRunInfo = document.createElement("div");
+              modalHeaderRunInfo.classList.add("modal-header");
+            
+              const modalTitleRunInfo = document.createElement("h5");
+              modalTitleRunInfo.classList.add("modal-title");
+              modalTitleRunInfo.id = `implementation-${i+1}-runtime-info-label`;
+            
+              const implementationNameRunInfo = document.createElement("b");
+              implementationNameRunInfo.textContent = implementation.name;
+            
+              const implementationLanguageRunInfo = document.createElement("small");
+              implementationLanguageRunInfo.classList.add("text-muted");
+              implementationLanguageRunInfo.textContent = implementation.language;
 
-              var modalTitleRuntimeInfo = document.createElement("h5");
-              modalTitleRuntimeInfo.className = "modal-title";
-              modalTitleRuntimeInfo.id = `implementation-${i+1}-runtime-info-label`;
+              modalTitleRunInfo.appendChild(implementationNameRunInfo);
+              modalTitleRunInfo.appendChild(implementationLanguageRunInfo);
+            
+              const closeButtonRunInfo = document.createElement("button");
+              closeButtonRunInfo.type = "button";
+              closeButtonRunInfo.classList.add("btn-close");
+              closeButtonRunInfo.setAttribute("data-bs-dismiss", "modal");
+              closeButtonRunInfo.setAttribute("aria-label", "Close");
+            
+              modalHeaderRunInfo.appendChild(modalTitleRunInfo);
+              modalHeaderRunInfo.appendChild(closeButtonRunInfo);
 
-              var titleTextRuntimeInfo = document.createElement("b");
-              titleTextRuntimeInfo.textContent = implementation.name;
+              const modalBodyRunInfo = document.createElement("div");
+              modalBodyRunInfo.classList.add("modal-body");
 
-              var smallRuntimeInfo = document.createElement("small");
-              smallRuntimeInfo.className = "text-muted";
-              smallRuntimeInfo.textContent = implementation.language;
-
-              modalTitleRuntimeInfo.appendChild(titleTextRuntimeInfo);
-              modalTitleRuntimeInfo.appendChild(smallRuntimeInfo);
-
-              var closeButtonRuntimeInfo = document.createElement("button");
-              closeButtonRuntimeInfo.type = "button";
-              closeButtonRuntimeInfo.className = "btn-close";
-              closeButtonRuntimeInfo.setAttribute("data-bs-dismiss", "modal");
-              closeButtonRuntimeInfo.setAttribute("aria-label", "Close");
-
-              modalHeaderRuntimeInfo.appendChild(modalTitleRuntimeInfo);
-              modalHeaderRuntimeInfo.appendChild(closeButtonRuntimeInfo);
-
-              // Creating runtime info modal body
-              var modalBodyRuntimeInfo = document.getElementsByName('modal-body-runtime-info')[0];
-              //console.log(modalBodyRuntimeInfo)
-
-              // Checking and appending runtime info if available
               if (implementation.os_version) {
-                var osVersion = document.createElement("p");
-                osVersion.innerHTML = "<strong>OS Version: </strong>" + implementation.os_version;
-                modalBodyRuntimeInfo.appendChild(osVersion);
+                const osVersion = document.createElement("p");
+                osVersion.innerHTML = `<strong>OS Version:</strong> ${implementation.os_version}`;
+                modalBodyRunInfo.appendChild(osVersion);
               }
-
+            
               if (implementation.os) {
-                var os = document.createElement("p");
-                os.innerHTML = "<strong>OS: </strong>" + implementation.os;
-                modalBodyRuntimeInfo.appendChild(os);
+                const os = document.createElement("p");
+                os.innerHTML = `<strong>OS:</strong> ${implementation.os}`;
+                modalBodyRunInfo.appendChild(os);
               }
-
+            
               if (implementation.language) {
-                var language = document.createElement("p");
-                language.innerHTML = "<strong>Language: </strong>" + implementation.language;
-                modalBodyRuntimeInfo.appendChild(language);
+                const language = document.createElement("p");
+                language.innerHTML = `<strong>Language:</strong> ${implementation.language}`;
+                modalBodyRunInfo.appendChild(language);
               }
-
+            
               if (implementation.language_version) {
-                var languageVersion = document.createElement("p");
-                languageVersion.innerHTML = "<strong>Language Version: </strong>" + implementation.language_version;
-                modalBodyRuntimeInfo.appendChild(languageVersion);
+                const languageVersion = document.createElement("p");
+                languageVersion.innerHTML = `<strong>Language Version:</strong> ${implementation.language_version}`;
+                modalBodyRunInfo.appendChild(languageVersion);
               }
 
+              
+              const modalFooterRunInfo = document.createElement("div");
+              modalFooterRunInfo.classList.add("modal-footer", "m-2", "p-0");
+            
+              const closeButtonFooterRunInfo = document.createElement("button");
+              closeButtonFooterRunInfo.type = "button";
+              closeButtonFooterRunInfo.classList.add("btn", "btn-sm", "btn-secondary");
+              closeButtonFooterRunInfo.setAttribute("data-bs-dismiss", "modal");
+              closeButtonFooterRunInfo.textContent = "Close";
+
+              modalFooterRunInfo.appendChild(closeButtonFooterRunInfo);
+
+              modalContentRunInfo.appendChild(modalHeaderRunInfo);
+              modalContentRunInfo.appendChild(modalBodyRunInfo);
+              modalContentRunInfo.appendChild(modalFooterRunInfo);
+            
+              modalDialogRunInfo.appendChild(modalContentRunInfo);
+              modalRunInfo.appendChild(modalDialogRunInfo);
+            
+              document.body.appendChild(modalRunInfo);
             };
 
       };
