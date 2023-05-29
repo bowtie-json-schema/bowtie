@@ -709,7 +709,68 @@
                 };
               };
 
+              /////////////////////
+              //runtime-info Modal
+              var ModalContainerRuntimeInfo = document.getElementsByName('modal-runtime-info')[0];
+              ModalContainerRuntimeInfo.id = `implementation-${i}-runtime-info`;
+              ModalContainerRuntimeInfo.setAttribute("aria-labelledby", `implementation-${i}-runtime-info-label`);
+              //console.log(ModalContainerRuntimeInfo)
 
+              // Creating runtime info modal header
+              var modalHeaderRuntimeInfo = document.getElementsByName('modal-header-runtime-info')[0];
+              //console.log(modalHeaderRuntimeInfo)
+
+              var modalTitleRuntimeInfo = document.createElement("h5");
+              modalTitleRuntimeInfo.className = "modal-title";
+              modalTitleRuntimeInfo.id = `implementation-${i}-runtime-info-label`;
+
+              var titleTextRuntimeInfo = document.createElement("b");
+              titleTextRuntimeInfo.textContent = implementation.name;
+
+              var smallRuntimeInfo = document.createElement("small");
+              smallRuntimeInfo.className = "text-muted";
+              smallRuntimeInfo.textContent = implementation.language;
+
+              modalTitleRuntimeInfo.appendChild(titleTextRuntimeInfo);
+              modalTitleRuntimeInfo.appendChild(smallRuntimeInfo);
+
+              var closeButtonRuntimeInfo = document.createElement("button");
+              closeButtonRuntimeInfo.type = "button";
+              closeButtonRuntimeInfo.className = "btn-close";
+              closeButtonRuntimeInfo.setAttribute("data-bs-dismiss", "modal");
+              closeButtonRuntimeInfo.setAttribute("aria-label", "Close");
+
+              modalHeaderRuntimeInfo.appendChild(modalTitleRuntimeInfo);
+              modalHeaderRuntimeInfo.appendChild(closeButtonRuntimeInfo);
+
+              // Creating runtime info modal body
+              var modalBodyRuntimeInfo = document.getElementsByName('modal-body-runtime-info')[0];
+              //console.log(modalBodyRuntimeInfo)
+
+              // Checking and appending runtime info if available
+              if (implementation.os_version) {
+                var osVersion = document.createElement("p");
+                osVersion.innerHTML = "<strong>OS Version: </strong>" + implementation.os_version;
+                modalBodyRuntimeInfo.appendChild(osVersion);
+              }
+
+              if (implementation.os) {
+                var os = document.createElement("p");
+                os.innerHTML = "<strong>OS: </strong>" + implementation.os;
+                modalBodyRuntimeInfo.appendChild(os);
+              }
+
+              if (implementation.language) {
+                var language = document.createElement("p");
+                language.innerHTML = "<strong>Language: </strong>" + implementation.language;
+                modalBodyRuntimeInfo.appendChild(language);
+              }
+
+              if (implementation.language_version) {
+                var languageVersion = document.createElement("p");
+                languageVersion.innerHTML = "<strong>Language Version: </strong>" + implementation.language_version;
+                modalBodyRuntimeInfo.appendChild(languageVersion);
+              }
 
 
               ////////////////////////////////
