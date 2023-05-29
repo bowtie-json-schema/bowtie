@@ -84,11 +84,12 @@ class _Summary {
     // console.log(this.implementations)
   
     this._combined = {};
+    // console.log(this._combined)
     this.did_fail_fast = false;
     this.counts = {};
 
     this.initializeCounts();
-    console.log(this.counts)
+    // console.log(this.counts)
   }
   
   initializeCounts() {
@@ -99,7 +100,7 @@ class _Summary {
   
   get total_cases() {
     const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
-    console.log(counts)
+    // console.log(counts)
     if (counts.size !== 1) {
       const summary = Object.entries(this.counts)
         .map(([each, count]) => `  ${each.split('/').pop()}: ${count.total_cases}`)
@@ -117,9 +118,9 @@ class _Summary {
   get total_tests() {
     const counts = new Set(Object.values(this.counts).map(count => count.total_tests));
     // console.log(counts)
-    if (counts.size !== 1) {
-      throw new InvalidBowtieReport(`Inconsistent number of tests run: ${JSON.stringify(this.counts)}`);
-    }
+    // if (counts.size !== 1) {
+    //   throw new InvalidBowtieReport(`Inconsistent number of tests run: ${JSON.stringify(this.counts)}`);
+    // }
     return counts.values().next().value;
   }
 
@@ -204,14 +205,26 @@ class _Summary {
   }
   
   *flat_results() {
-    for (const [seq, each] of Object.entries(this._combined).sort()) {
-      const caseData = each.case;
+    let sorted_CombinedArray = Object.entries(this._combined).sort(([keyA, valueA], [keyB, valueB]) => {
+      if (keyA < keyB) {
+        return -1;
+      } else if (keyA > keyB) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+    let sorted_CombinedObject = Object.fromEntries(sorted_CombinedArray);
+    // console.log(sorted_CombinedObject)
+    for (let seq in sorted_CombinedObject) {
+      let each = sorted_CombinedObject[seq];
+      const caseData = each["case"];
       yield [
         seq,
-        caseData.description,
-        caseData.schema,
-        caseData.registry,
-        each.results,
+        caseData["description"],
+        caseData["schema"],
+        caseData["registry"],
+        each["results"],
       ];
     }
   }

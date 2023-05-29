@@ -136,12 +136,50 @@
         </div>
       </div>
       <div class="accordion pt-5" id="cases">
-        <div id="accordion-item" class="accordion-item">
 
+      </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Modal- Details  -->
+    <div name="modal-details" class="modal fade" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+          <div name="modal-header-details" class="modal-header">
+            <!-- some content through JS  -->
+          </div>
+          <div class="modal-body">
+            <div name="modal-body-details-child" class="row row-cols-1 row-cols-md-2 g-4">
+              <!-- some content through JS  -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Modal- run-info  -->
+    <div name="modal-runtime-info" class="modal fade" role="dialog" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div name="modal-header-runtime-info" class="modal-header">
+            <!-- some content through JS  -->
+          </div>
+          <div name="modal-body-runtime-info" class="modal-body">
+
+          </div>
+          <div class="modal-footer m-2 p-0">
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
     <script type="module" src="../utilclasses.js"></script>
     <script type="module" src="../functions.js"></script>
   
@@ -326,7 +364,7 @@
               svgTD.setAttribute("data-bs-toggle", "modal");
               svgTD.setAttribute(
                 "data-bs-target",
-                `#implementation-runtime-info`
+                `#implementation-${index}-runtime-info`
               );
 
               const pathTD = document.createElementNS(
@@ -402,20 +440,19 @@
 
             // cases section (accordions)
             
-            var flatResults = Array.from(summary.flat_results());
-            console.log(flatResults)
-            console.log(summary.flat_results())
+            var flatResults = summary.flat_results();
+            //console.log((summary.flat_results()))
             const accordionCases = document.getElementById('cases');
-            const accordionItems = document.getElementById('accordion-item');
 
-            flatResults.forEach(function(item) {
-              var seq = item[0];
-              var description = item[1];
-              var schema = item[2];
-              var registry = item[3];
-              var results = item[4];
+            for (let [seq, description, schema, registry, results] of flatResults) {
+
+              //console.log((seq))
+              //console.log((results))
+
+              //creating item div
+              var item = document.createElement("div");
+              item.classList.add("accordion-item");
               
-
               // creating h2 element
               const accordionItemsH2 = document.createElement('h2');
               accordionItemsH2.setAttribute("class", "accordion-header");
@@ -441,7 +478,8 @@
               // appending the elements to create 'h2' element
               accordionItemsButton.appendChild(accordionItemsA);
               accordionItemsH2.appendChild(accordionItemsButton);
-              console.log(accordionItemsH2)
+              item.appendChild(accordionItemsH2);
+              //console.log(accordionItemsH2)
 
 
               // creating the div element
@@ -461,34 +499,41 @@
               const accordionItemsDivTHead = document.createElement('thead');
               const accordionItemsDivTR = document.createElement('tr');
 
-              const accordionItemsDivTD = document.createElement('td');
-              accordionItemsDivTD.setAttribute("scope", "col");
-              accordionItemsDivTD.textContent = "Tests";
+              const accordionItemsDivTH = document.createElement('th');
+              accordionItemsDivTH.setAttribute("scope", "col");
+              accordionItemsDivTH.innerHTML = "Tests";
 
               //appending Child
-              accordionItemsDivTR.appendChild(accordionItemsDivTD);
+              accordionItemsDivTR.appendChild(accordionItemsDivTH);
 
               for(const implementation of summary.implementations) {
-                const accordionItemsDivTD2 = document.createElement('td');
-                accordionItemsDivTD2.setAttribute("class", "text-center");
-                accordionItemsDivTD2.setAttribute("scope", "col");
-                accordionItemsDivTD2.textContent += implementation.name;
+                const accordionItemsDivTH2 = document.createElement('th');
+                accordionItemsDivTH2.setAttribute("class", "text-center");
+                accordionItemsDivTH2.setAttribute("scope", "col");
+                accordionItemsDivTH2.textContent += implementation.name;
+
+                const implementationName = document.createTextNode(implementation.name);
 
                 const accordionItemsDivSmall = document.createElement('small');
                 accordionItemsDivSmall.setAttribute("class", "text-muted");
-                accordionItemsDivSmall.textContent += implementation.language;
+                accordionItemsDivSmall.innerHTML = implementation.language;
 
-                accordionItemsDivTD2.appendChild(accordionItemsDivSmall);
-                accordionItemsDivTR.appendChild(accordionItemsDivTD2);
+                accordionItemsDivTH2.appendChild(implementationName);
+                accordionItemsDivTH2.appendChild(accordionItemsDivSmall);
+                accordionItemsDivTR.appendChild(accordionItemsDivTH2);
               };
               // thead appending to table
               accordionItemsDivTHead.appendChild(accordionItemsDivTR);
               accordionItemsDivTable.appendChild(accordionItemsDivTHead);
 
+              //console.log(results)
               ///////////////////////////
-              for (let test in results) {
-                let test_results = results[test];
+              for (let [test, test_result] of results) {
 
+
+                //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
+                test_result["myImage"] = "abcdefg";
+                //console.log((test_result))
                 const testsTR = document.createElement('tr');
                 testsTR.setAttribute("class", `row-${ seq }`);
                 testsTR.addEventListener('click', function() {
@@ -501,261 +546,170 @@
                 const testsA = document.createElement("a");
                 testsA.setAttribute("href", "#schema");
                 testsA.setAttribute("class", "text-decoration-none");
-                testsA.textContent += test.description;
+                testsA.innerHTML = test.description;
 
                 testsTD.appendChild(testsA);
                 testsTR.appendChild(testsTD);
 
-                for (let implementation of summary.implementations) {
-                  let implementation_result, incorrect;
-                  [implementation_result, incorrect] = test_results.get(implementation.image, { valid: null }, true);
+                //for (let implementation of summary.implementations) {
+                summary.implementations.forEach(function(implementation) {
+                  //console.log(implementation.image)
+                  //const result = test_results[implementation.image];
+                  //const implementation_result = result ? result[0] : { valid: null };
+                  //const incorrect = result ? result[1] : true;
 
-                  let cell = document.createElement('td');
-                  let classNames = 'text-center';
+                  var implementationCell = document.createElement("td");
+                  implementationCell.classList.add("text-center");
+
+                  //🛑🛑 Most modify below variable. This is just temporary 🛑🛑
+                  //original -->> var implementationResult = test_result[implementation.image];
+                  var implementationResult = test_result["myImage"];
+
+                  //console.log(typeof(implementationResult))
+                  var incorrect = implementationResult ? implementationResult.valid === null : true;
+
 
                   if (incorrect === 'skipped') {
-                    classNames += ' text-bg-warning';
-                    cell.innerHTML = to_icon(null);
+                    implementationCell.classList.add("text-bg-warning");
+                    implementationCell.innerHTML = to_icon(null);
                   } else if (incorrect === 'errored') {
-                    classNames += ' text-bg-danger';
-                    cell.innerHTML = to_icon(null);
+                    implementationCell.classList.add("text-bg-danger");
+                    implementationCell.innerHTML = to_icon(null);
                   } else {
-                    if (implementation_result.valid !== true && implementation_result.valid !== false) {
-                      classNames += ' text-bg-warning';
-                    } else if (incorrect) {
-                      classNames += ' text-bg-danger';
-                    }
-                    cell.innerHTML = to_icon(implementation_result.valid);
-                  }
+                    implementationCell.classList.add(
+                      "text-center",
+                      incorrect ? "text-bg-danger" : implementationResult[0].valid !== true && implementationResult[0].valid !== false ? "text-bg-warning" : ""
+                    );
+                    implementationCell.innerHTML = to_icon(implementationResult[0].valid);
+                  };
 
-                  cell.className = classNames;
-                  testsTR.appendChild(cell);
-                };
+                  testsTR.appendChild(implementationCell);
+                });
+
                 accordionItemsDivTable.appendChild(testsTR);
-              };
+                };
 
               //updating the child div elements
               accordionItemsChildDiv.append(accordionItemsDivTable);
               accordionItemsDiv.appendChild(accordionItemsChildDiv);
-            });
-            accordionCases.appendChild(accordionItems);
+              item.appendChild(accordionItemsDiv);
+              accordionCases.appendChild(item);
+            };
 
 
+            ///////////////////////////////////////////////////////// Modals //////////////////////////////////////////////////////
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            // Retrieve the container element where the modals will be inserted
-            var container = document.getElementById("modal-container");
 
             // Iterate over the implementations data
             for (var i = 0; i < summary.implementations.length; i++) {
               var implementation = summary.implementations[i];
 
-              //Details Modal
-              var detailsModal = document.createElement("div");
-              detailsModal.className = "modal fade";
-              detailsModal.id = "implementation-" + (i + 1) + "-details";
-              detailsModal.setAttribute("tabindex", "-1");
-              detailsModal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-details-label");
-              detailsModal.setAttribute("aria-hidden", "true");
+              /////////////////
+              // details Modal
+              var ModalContainerDetails = document.getElementsByName("modal-details")[0];
+              ModalContainerDetails.id = `implementation-${i}-details`;
+              ModalContainerDetails.setAttribute("aria-labelledby", `implementation-${i}-details-label`);
+              //console.log(ModalContainerDetails)
 
-              var modalDialog = document.createElement("div");
-              modalDialog.className = "modal-dialog modal-fullscreen";
+              // Creating modal header for 'details'
+              var modalHeaderDetails = document.getElementsByName('modal-header-details')[0];
+              //console.log(modalHeaderDetails)
 
-              var modalContent = document.createElement("div");
-              modalContent.className = "modal-content";
+              var modalTitleDetails = document.createElement("h1");
+              modalTitleDetails.className = "modal-title fs-5";
+              modalTitleDetails.id = `implementation-${i}-details-label`;
+              modalTitleDetails.textContent = implementation.name;
 
-              // Creating modal header
-              var modalHeader = document.createElement("div");
-              modalHeader.className = "modal-header";
+              var modalSmallDetails = document.createElement("small");
+              modalSmallDetails.className = "text-muted";
+              modalSmallDetails.textContent = implementation.language;
 
-              var modalTitle = document.createElement("h1");
-              modalTitle.className = "modal-title fs-5";
-              modalTitle.id = "implementation-" + (i + 1) + "-details-label";
-              modalTitle.textContent = implementation.name;
+              modalTitleDetails.appendChild(modalSmallDetails);
 
-              var small = document.createElement("small");
-              small.className = "text-muted";
-              small.textContent = implementation.language;
+              var modalCloseButtonDetails = document.createElement("button");
+              modalCloseButtonDetails.type = "button";
+              modalCloseButtonDetails.className = "btn-close";
+              modalCloseButtonDetails.setAttribute("data-bs-dismiss", "modal");
+              modalCloseButtonDetails.setAttribute("aria-label", "Close");
 
-              modalTitle.appendChild(small);
-              modalHeader.appendChild(modalTitle);
-
-              var closeButton = document.createElement("button");
-              closeButton.type = "button";
-              closeButton.className = "btn-close";
-              closeButton.setAttribute("data-bs-dismiss", "modal");
-              closeButton.setAttribute("aria-label", "Close");
-
-              modalHeader.appendChild(closeButton);
-              modalContent.appendChild(modalHeader);
+              modalHeaderDetails.appendChild(modalTitleDetails);
+              modalHeaderDetails.appendChild(modalCloseButtonDetails);
 
               // Creating modal body
-              var modalBody = document.createElement("div");
-              modalBody.className = "modal-body";
+              var modalBodyChildDetails = document.getElementsByName('modal-body-details-child')[0];
+              //console.log(modalBodyDetails)
 
-              var row = document.createElement("div");
-              row.className = "row row-cols-1 row-cols-md-2 g-4";
+              let flatResults = summary.flat_results();
+              for (let [seq, description, schema, registry, results] of flatResults) {
 
-              var flatResults = Array.from(summary.flat_results());
-              for (var j = 0; j < flatResults.length; j++) {
-                var result = flatResults[j];
-                var test = result[0];
-                var testResults = result[1];
-                var implementationResult = testResults.get(implementation.image);
+                for (let [test, test_results] of results){
+                  //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
+                  test_results["yourImage"] = "wxyz";
+                  //console.log(test_result)
 
-                // Creating card element
-                var col = document.createElement("div");
-                col.className = "col";
+                  if (test_results.hasOwnProperty(implementation.image)) {
+                    var testResult = test_results[implementation.image];
+                    implementationResult = testResult[0];
+                    incorrect = testResult[1];
+                  } else {
+                    implementationResult = { valid: null };
+                    incorrect = true;
+                  }
 
-                var card = document.createElement("div");
-                card.className = "card";
+                  // Creating card element
+                  var col = document.createElement("div");
+                  col.className = "col";
 
-                var cardBody = document.createElement("div");
-                cardBody.className = "card-body";
+                  var card = document.createElement("div");
+                  card.className = "card mb-3";
+                  if (incorrect === "skipped") {
+                    card.classList.add("border-warning");
+                  } else if (incorrect === "errored") {
+                    card.classList.add("border-danger");
+                  } else if (incorrect) {
+                    card.classList.add("border-danger");
+                  }
 
-                var cardTitle = document.createElement("h5");
-                cardTitle.className = "card-title";
-                cardTitle.textContent = test[1];
+                  var cardBody = document.createElement("div");
+                  cardBody.className = "card-body";
 
-                var cardText = document.createElement("p");
-                cardText.className = "card-text";
-                cardText.textContent = test[0].description;
+                  var cardTitle = document.createElement("h5");
+                  cardTitle.className = "card-title";
+                  cardTitle.textContent = description;
 
-                cardBody.appendChild(cardTitle);
-                cardBody.appendChild(cardText);
-                card.appendChild(cardBody);
+                  var cardText = document.createElement("p");
+                  cardText.className = "card-text";
+                  cardText.textContent = test.description;
 
-                var cardFooter = document.createElement("div");
-                cardFooter.className = "card-footer text-muted text-center";
+                  cardBody.appendChild(cardTitle);
+                  cardBody.appendChild(cardText);
 
-                if (implementationResult[1] === "skipped") {
-                  card.className += " border-warning";
-                  cardFooter.textContent = implementationResult[0];
-                } else if (implementationResult[1] === "errored") {
-                  card.className += " border-danger";
-                  cardFooter.textContent = implementationResult[0];
-                } else if (implementationResult[1]) {
-                  card.className += " border-danger";
-                  var validText = implementationResult[0].valid ? "valid" : "invalid";
-                  cardFooter.textContent = "Unexpectedly " + validText;
-                }
+                  var cardFooter = document.createElement("div");
+                  cardFooter.className = "card-footer text-muted text-center";
 
-                card.appendChild(cardFooter);
-                col.appendChild(card);
-                row.appendChild(col);
-              }
+                  if (incorrect === "skipped" || incorrect === "errored") {
+                    cardFooter.innerHTML = implementationResult;
+                  } else if (incorrect) {
+                    var implementationValid = implementationResult.valid;
+                    var implementationStatus =
+                      implementationValid === true
+                        ? "valid"
+                        : implementationValid === false
+                        ? "invalid"
+                        : "errored";
+                    cardFooter.innerHTML = "Unexpectedly " + implementationStatus;
+                  }
 
-              modalBody.appendChild(row);
-              modalContent.appendChild(modalBody);
+                  card.appendChild(cardBody);
+                  card.appendChild(cardFooter);
 
-              // Creating modal footer
-              var modalFooter = document.createElement("div");
-              modalFooter.className = "modal-footer";
+                  col.appendChild(card);
+                  modalBodyChildDetails.appendChild(col);
+                };
+              };
 
-              var closeButton = document.createElement("button");
-              closeButton.type = "button";
-              closeButton.className = "btn btn-secondary";
-              closeButton.setAttribute("data-bs-dismiss", "modal");
-              closeButton.textContent = "Close";
 
-              modalFooter.appendChild(closeButton);
-              modalContent.appendChild(modalFooter);
-
-              modalDialog.appendChild(modalContent);
-              detailsModal.appendChild(modalDialog);
-
-              /////////////////////
-              //runtime-info Modal
-              var runtimeInfoModal = document.createElement("div");
-              runtimeInfoModal.className = "modal fade";
-              runtimeInfoModal.setAttribute("role", "dialog");
-              runtimeInfoModal.id = "implementation-" + (i + 1) + "-runtime-info";
-              runtimeInfoModal.setAttribute("tabindex", "-1");
-              runtimeInfoModal.setAttribute("aria-labelledby", "implementation-" + (i + 1) + "-runtime-info-label");
-              runtimeInfoModal.setAttribute("aria-hidden", "true");
-
-              var runtimeInfoDialog = document.createElement("div");
-              runtimeInfoDialog.className = "modal-dialog";
-              runtimeInfoDialog.setAttribute("role", "document");
-
-              var runtimeInfoContent = document.createElement("div");
-              runtimeInfoContent.className = "modal-content";
-
-              // Creating runtime info modal header
-              var runtimeInfoHeader = document.createElement("div");
-              runtimeInfoHeader.className = "modal-header";
-
-              var runtimeInfoTitle = document.createElement("h5");
-              runtimeInfoTitle.className = "modal-title";
-              runtimeInfoTitle.id = "implementation-" + (i + 1) + "-runtime-info-label";
-
-              var titleText = document.createElement("b");
-              titleText.textContent = implementation.name;
-
-              var small = document.createElement("small");
-              small.className = "text-muted";
-              small.textContent = implementation.language;
-
-              runtimeInfoTitle.appendChild(titleText);
-              runtimeInfoTitle.appendChild(small);
-              runtimeInfoHeader.appendChild(runtimeInfoTitle);
-
-              var closeButton = document.createElement("button");
-              closeButton.type = "button";
-              closeButton.className = "btn-close";
-              closeButton.setAttribute("data-bs-dismiss", "modal");
-              closeButton.setAttribute("aria-label", "Close");
-
-              runtimeInfoHeader.appendChild(closeButton);
-              runtimeInfoContent.appendChild(runtimeInfoHeader);
-
-              // Creating runtime info modal body
-              var runtimeInfoBody = document.createElement("div");
-              runtimeInfoBody.className = "modal-body";
-
-              // Checking and appending runtime info if available
-              if (implementation.os_version) {
-                var osVersion = document.createElement("p");
-                osVersion.innerHTML = "<strong>OS Version: </strong>" + implementation.os_version;
-                runtimeInfoBody.appendChild(osVersion);
-              }
-
-              if (implementation.os) {
-                var os = document.createElement("p");
-                os.innerHTML = "<strong>OS: </strong>" + implementation.os;
-                runtimeInfoBody.appendChild(os);
-              }
-
-              if (implementation.language) {
-                var language = document.createElement("p");
-                language.innerHTML = "<strong>Language: </strong>" + implementation.language;
-                runtimeInfoBody.appendChild(language);
-              }
-
-              if (implementation.language_version) {
-                var languageVersion = document.createElement("p");
-                languageVersion.innerHTML = "<strong>Language Version: </strong>" + implementation.language_version;
-                runtimeInfoBody.appendChild(languageVersion);
-              }
-
-              runtimeInfoContent.appendChild(runtimeInfoBody);
-
-              // Crating runtime info modal footer
-              var runtimeInfoFooter = document.createElement("div");
-              runtimeInfoFooter.className = "modal-footer m-2 p-0";
-
-              var closeButton = document.createElement("button");
-              closeButton.type = "button";
-              closeButton.className = "btn btn-sm btn-secondary";
-              closeButton.setAttribute("data-bs-dismiss", "modal");
-              closeButton.textContent = "Close";
-
-              runtimeInfoFooter.appendChild(closeButton);
-              runtimeInfoContent.appendChild(runtimeInfoFooter);
-
-              runtimeInfoDialog.appendChild(runtimeInfoContent);
-              runtimeInfoModal.appendChild(runtimeInfoDialog);
 
 
               ////////////////////////////////
