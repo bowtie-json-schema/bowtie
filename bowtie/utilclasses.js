@@ -5,10 +5,9 @@
 class InvalidBowtieReport extends Error {
   constructor(message) {
     super(message);
-    this.name = 'InvalidBowtieReport';
+    this.name = "InvalidBowtieReport";
   }
 }
-
 
 const _DIALECT_URI_TO_SHORTNAME = {
   "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
@@ -37,16 +36,18 @@ export class RunInfo {
       now.toISOString(),
       importlib.metadata.version("bowtie-json-schema"),
       dialect,
-      Object.fromEntries(implementations.map((implementation) => [
-        implementation.name,
-        {
-          ...implementation.metadata,
-          image: implementation.name,
-        }
-      ]))
+      Object.fromEntries(
+        implementations.map((implementation) => [
+          implementation.name,
+          {
+            ...implementation.metadata,
+            image: implementation.name,
+          },
+        ]),
+      ),
     );
   }
-  
+
   create_summary() {
     // console.log(Object.values(this._implementations))
     // console.log((this._implementations))
@@ -55,19 +56,17 @@ export class RunInfo {
 }
 
 RunInfo._implementations = {
-  alias: 'implementations',
+  alias: "implementations",
   validate: (value) => {
     if (!Array.isArray(value)) {
       throw new Error('The "implementations" attribute must be an array.');
     }
     return true;
-  }
+  },
 };
-
 
 //////////////////////////////////
 // Summary class
-
 
 class _Summary {
   constructor(implementations) {
@@ -110,13 +109,17 @@ class _Summary {
     return counts.values().next().value;;
   }
 
-
   get errored_cases() {
-    return Object.values(this.counts).reduce((sum, count) => sum + count.errored_cases, 0);
+    return Object.values(this.counts).reduce(
+      (sum, count) => sum + count.errored_cases,
+      0,
+    );
   }
 
   get total_tests() {
-    const counts = new Set(Object.values(this.counts).map(count => count.total_tests));
+    const counts = new Set(
+      Object.values(this.counts).map((count) => count.total_tests),
+    );
     // console.log(counts)
     // if (counts.size !== 1) {
     //   throw new InvalidBowtieReport(`Inconsistent number of tests run: ${JSON.stringify(this.counts)}`);
@@ -125,15 +128,24 @@ class _Summary {
   }
 
   get failed_tests() {
-    return Object.values(this.counts).reduce((sum, count) => sum + count.failed_tests, 0);
+    return Object.values(this.counts).reduce(
+      (sum, count) => sum + count.failed_tests,
+      0,
+    );
   }
 
   get errored_tests() {
-    return Object.values(this.counts).reduce((sum, count) => sum + count.errored_tests, 0);
+    return Object.values(this.counts).reduce(
+      (sum, count) => sum + count.errored_tests,
+      0,
+    );
   }
 
   get skipped_tests() {
-    return Object.values(this.counts).reduce((sum, count) => sum + count.skipped_tests, 0);
+    return Object.values(this.counts).reduce(
+      (sum, count) => sum + count.skipped_tests,
+      0,
+    );
   }
 
   // add_case_metadata(seq, caseMetadata)
@@ -181,29 +193,29 @@ class _Summary {
   see_skip(skipped) {
     const count = this.counts[skipped.implementation];
     count.total_cases += 1;
-  
+
     const case_data = this._combined[skipped.seq].case;
     count.total_tests += case_data.tests.length;
     count.skipped_tests += case_data.tests.length;
-  
+
     for (const [, seen] of this._combined[skipped.seq].results) {
-      const message = skipped.issue_url || skipped.message || 'skipped';
-      seen[skipped.implementation] = [message, 'skipped'];
+      const message = skipped.issue_url || skipped.message || "skipped";
+      seen[skipped.implementation] = [message, "skipped"];
     }
   }
-  
+
   see_maybe_fail_fast(did_fail_fast) {
     this.did_fail_fast = did_fail_fast;
   }
-  
+
   case_results() {
-    return Object.values(this._combined).map(each => ({
+    return Object.values(this._combined).map((each) => ({
       case: each.case,
       registry: each.registry || {},
-      results: each.results
+      results: each.results,
     }));
   }
-  
+
   *flat_results() {
     let sorted_CombinedArray = Object.entries(this._combined).sort(([keyA, valueA], [keyB, valueB]) => {
       if (keyA < keyB) {
@@ -228,29 +240,35 @@ class _Summary {
       ];
     }
   }
-  
+
   generate_badges(target_dir, dialect) {
     const label = _DIALECT_URI_TO_SHORTNAME[dialect];
     for (const impl of this.implementations) {
       if (!impl.dialects.includes(dialect)) continue;
-  
+
       const name = impl.name;
       const lang = impl.language;
       const counts = this.counts[impl.image];
       const total = counts.total_tests;
-      const passed = total - counts.failed_tests - counts.errored_tests - counts.skipped_tests;
+      const passed =
+        total -
+        counts.failed_tests -
+        counts.errored_tests -
+        counts.skipped_tests;
       const pct = (passed / total) * 100;
       const impl_dir = target_dir.join(`${lang}-${name}`);
       fs.mkdirSync(impl_dir, { recursive: true });
-  
+
       const [r, g, b] = [100 - Math.floor(pct), Math.floor(pct), 0];
       const badge = {
         schemaVersion: 1,
         label: label,
         message: `${Math.floor(pct)}% Passing`,
-        color: `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
+        color: `${r.toString(16).padStart(2, "0")}${g
+          .toString(16)
+          .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`,
       };
-      const badge_path = impl_dir.join(`${label.replace(' ', '_')}.json`);
+      const badge_path = impl_dir.join(`${label.replace(" ", "_")}.json`);
       fs.writeFileSync(badge_path, JSON.stringify(badge));
     }
   }
@@ -272,7 +290,6 @@ class Count {
     return this.errored_tests + this.failed_tests + this.skipped_tests;
   }
 }
-
 
 // Unused classes till now
 // class ClaseSkipped
