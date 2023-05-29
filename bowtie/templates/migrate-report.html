@@ -409,7 +409,7 @@
 
             let implementations = summary.implementations;
             //console.log(implementations)
-            for (const [index, implementation] of summary.implementations.entries()) {
+            for (const [i, implementation] of summary.implementations.entries()) {
               //th section of summary table's data
               let counts = summary.counts[implementation.image];
               //console.log(implementation)
@@ -452,11 +452,7 @@
               svgTD.setAttribute("class", "bi bi-info-circle-fill");
               svgTD.setAttribute("viewBox", "0 0 16 16");
               svgTD.setAttribute("data-bs-toggle", "modal");
-              svgTD.setAttribute(
-                "data-bs-target",
-                `#implementation-${index}-runtime-info`
-              );
-
+              svgTD.setAttribute("data-bs-target", `#implementation-${i+1}-runtime-info`);
               const pathTD = document.createElementNS(
                 "http://www.w3.org/2000/svg",
                 "path"
@@ -499,7 +495,7 @@
               detailButton.setAttribute("type", "button");
               detailButton.setAttribute("class", "btn btn-sm btn-primary");
               detailButton.setAttribute("data-bs-toggle", "modal");
-              detailButton.setAttribute("data-bs-target", `#implementation-${index}-details`);
+              detailButton.setAttribute("data-bs-target", `#implementation-${i+1}-details`);
               detailButton.textContent += "Details";
 
               td5.appendChild(detailButton);
@@ -651,15 +647,12 @@
                 const accordionItemsDivTH2 = document.createElement('th');
                 accordionItemsDivTH2.setAttribute("class", "text-center");
                 accordionItemsDivTH2.setAttribute("scope", "col");
-                accordionItemsDivTH2.textContent += implementation.name;
-
-                const implementationName = document.createTextNode(implementation.name);
+                accordionItemsDivTH2.textContent += implementation.name + " ";
 
                 const accordionItemsDivSmall = document.createElement('small');
                 accordionItemsDivSmall.setAttribute("class", "text-muted");
                 accordionItemsDivSmall.innerHTML = implementation.language;
 
-                accordionItemsDivTH2.appendChild(implementationName);
                 accordionItemsDivTH2.appendChild(accordionItemsDivSmall);
                 accordionItemsDivTR.appendChild(accordionItemsDivTH2);
               };
@@ -667,19 +660,18 @@
               accordionItemsDivTHead.appendChild(accordionItemsDivTR);
               accordionItemsDivTable.appendChild(accordionItemsDivTHead);
 
-              //console.log(results)
+
               ///////////////////////////
               for (let [test, test_result] of results) {
 
 
                 //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
-                test_result["myImage"] = "abcdefg";
+                test_result["myImage"] = {"valid" : true};
                 //console.log((test_result))
                 const testsTR = document.createElement('tr');
                 testsTR.setAttribute("class", `row-${ seq }`);
                 testsTR.addEventListener('click', function() {
-                  const instanceInfo = document.getElementById('instance-info');
-                  instanceInfo.textContent = JSON.stringify(test.instance, null, 2);
+                  displayCode(JSON.stringify(test.instance, null, 2), 'instance-info');
                 });
 
                 const testsTD = document.createElement("td");
@@ -687,7 +679,7 @@
                 const testsA = document.createElement("a");
                 testsA.setAttribute("href", "#schema");
                 testsA.setAttribute("class", "text-decoration-none");
-                testsA.innerHTML = test.description;
+                testsA.textContent = test.description;
 
                 testsTD.appendChild(testsA);
                 testsTR.appendChild(testsTD);
@@ -706,9 +698,13 @@
                   //original -->> var implementationResult = test_result[implementation.image];
                   var implementationResult = test_result["myImage"];
 
-                  //console.log(typeof(implementationResult))
-                  var incorrect = implementationResult ? implementationResult.valid === null : true;
-
+                  //console.log((implementationResult.valid))
+                  var incorrect;
+                  if (!implementationResult || implementationResult.valid === null) {
+                    incorrect = true;
+                  } else {
+                    incorrect = false;
+                  }
 
                   if (incorrect === 'skipped') {
                     implementationCell.classList.add("text-bg-warning");
@@ -717,18 +713,20 @@
                     implementationCell.classList.add("text-bg-danger");
                     implementationCell.innerHTML = to_icon(null);
                   } else {
-                    implementationCell.classList.add(
-                      "text-center",
-                      incorrect ? "text-bg-danger" : implementationResult[0].valid !== true && implementationResult[0].valid !== false ? "text-bg-warning" : ""
-                    );
-                    implementationCell.innerHTML = to_icon(implementationResult[0].valid);
+                    implementationCell.classList.add("text-center");
+                    if (incorrect) {
+                      implementationCell.classList.add('text-bg-danger');
+                    } else if (test_result.valid !== true && test_result.valid !== false) {
+                      implementationCell.classList.add('text-bg-warning');
+                    }
+                    implementationCell.innerHTML = to_icon(implementationResult.valid);
                   };
 
                   testsTR.appendChild(implementationCell);
                 });
 
                 accordionItemsDivTable.appendChild(testsTR);
-                };
+              };
 
               //updating the child div elements
               accordionItemsChildDiv.append(accordionItemsDivTable);
@@ -749,9 +747,9 @@
               /////////////////
               // details Modal
               var ModalContainerDetails = document.getElementsByName("modal-details")[0];
-              ModalContainerDetails.id = `implementation-${i}-details`;
-              ModalContainerDetails.setAttribute("aria-labelledby", `implementation-${i}-details-label`);
-              //console.log(ModalContainerDetails)
+              ModalContainerDetails.id = `implementation-${i+1}-details`;
+              ModalContainerDetails.setAttribute("aria-labelledby", `implementation-${i+1}-details-label`);
+              //console.log(`implementation-${i+1}-details`)
 
               // Creating modal header for 'details'
               var modalHeaderDetails = document.getElementsByName('modal-header-details')[0];
@@ -759,7 +757,7 @@
 
               var modalTitleDetails = document.createElement("h1");
               modalTitleDetails.className = "modal-title fs-5";
-              modalTitleDetails.id = `implementation-${i}-details-label`;
+              modalTitleDetails.id = `implementation-${i+1}-details-label`;
               modalTitleDetails.textContent = implementation.name;
 
               var modalSmallDetails = document.createElement("small");
@@ -850,11 +848,14 @@
                 };
               };
 
+             
+
+
               /////////////////////
               //runtime-info Modal
               var ModalContainerRuntimeInfo = document.getElementsByName('modal-runtime-info')[0];
-              ModalContainerRuntimeInfo.id = `implementation-${i}-runtime-info`;
-              ModalContainerRuntimeInfo.setAttribute("aria-labelledby", `implementation-${i}-runtime-info-label`);
+              ModalContainerRuntimeInfo.id = `implementation-${i+1}-runtime-info`;
+              ModalContainerRuntimeInfo.setAttribute("aria-labelledby", `implementation-${i+1}-runtime-info-label`);
               //console.log(ModalContainerRuntimeInfo)
 
               // Creating runtime info modal header
@@ -863,7 +864,7 @@
 
               var modalTitleRuntimeInfo = document.createElement("h5");
               modalTitleRuntimeInfo.className = "modal-title";
-              modalTitleRuntimeInfo.id = `implementation-${i}-runtime-info-label`;
+              modalTitleRuntimeInfo.id = `implementation-${i+1}-runtime-info-label`;
 
               var titleTextRuntimeInfo = document.createElement("b");
               titleTextRuntimeInfo.textContent = implementation.name;
@@ -1013,6 +1014,19 @@
             nav.classList.toggle("bg-light", !dark);
             nav.classList.toggle("navbar-light", !dark);
           });
+
+        //copyToClipboard function
+        const clipBoardIcon = document.querySelector('.bi-clipboard');
+        function copyToClipboard(targetTextToCopy, btnId) {
+          const textToCopy = document.getElementById(targetTextToCopy).innerText;
+          navigator.clipboard.writeText(textToCopy)
+          document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+                                                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                                                              </svg>`;
+          setTimeout(() => {
+            document.getElementById(btnId).innerHTML = clipBoardIcon.outerHTML;
+          }, 2000);
+        }
     </script>
   </body>
 </html>
