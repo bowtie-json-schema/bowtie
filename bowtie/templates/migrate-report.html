@@ -121,7 +121,7 @@
       <div class="card mx-auto mb-3 w-75" id="summary">
         <div class="card-header">Summary</div>
 
-        <div class="card-body">
+        <div id="summary-card" class="card-body">
           <table class="table table-sm table-hover">
             <thead>
               <tr>
@@ -185,9 +185,7 @@
               </tr>
             </tfoot>
           </table>
-          <div id="did_fail_fast" class="alert alert-warning" role="alert">
-
-          </div>
+          <!-- some content by JS  -->
         </div>
       </div>
       <div class="accordion pt-5" id="cases">
@@ -365,6 +363,8 @@
             var bowtieVersion = document.getElementById("bowtie-version");
             bowtieVersion.textContent += `${run_info.bowtie_version}`;
 
+            /////////////////////////////////////////////////////////
+            // runinfo section
             //adding dialect link in #run-info
             var dialectLink = document.querySelector("#dialect-link");
             dialectLink.textContent = `${run_info.dialect}`;
@@ -406,6 +406,7 @@
             //updating summary table
             tbody = document.getElementById("tbody");
             //console.log(typeof(summary.implementations.length))
+
             let implementations = summary.implementations;
             //console.log(implementations)
             for (const [index, implementation] of summary.implementations.entries()) {
@@ -509,28 +510,33 @@
               tr.appendChild(td5);
 
               tbody.appendChild(tr);
-            }
+            };
 
             // summary table footer (total)
             erroredCases = document.getElementById('summary-errored_cases');
-            erroredCases.textContent = `${summary.errored_cases}`;
+            erroredCases.textContent = summary.errored_cases;
 
             skippedTests = document.getElementById("summary-skipped_tests");
-            skippedTests.textContent = `${summary.skipped_tests}`;
+            skippedTests.textContent = summary.skipped_tests;
 
             unsuccessfulTests = document.getElementById(
               "summary-unsuccessful_tests"
             );
-            unsuccessfulTests.textContent = `${summary.errored_cases + summary.skipped_tests}`;
+            unsuccessfulTests.textContent = summary.errored_cases + summary.skipped_tests;
 
-
-            const didFailFast = document.getElementById("did_fail_fast");
-            if (summary.did_fail_fast){
+            var summaryCard = document.getElementById('summary-card');
+            if (summary.did_fail_fast.did_fail_fast) {
+              var didFailFast = document.createElement('div');
+              didFailFast.className = "alert alert-warning";
+              didFailFast.setAttribute("role", "alert");
               didFailFast.textContent = "This run failed fast, so some input cases may not have been run.";
+
+              summaryCard.appendChild(didFailFast);
             };
 
 
-            // cases section (accordions)
+            //////////////////////////////////////////////////////
+            // Cases section (accordions)
             
             var flatResults = summary.flat_results();
             //console.log((summary.flat_results()))
