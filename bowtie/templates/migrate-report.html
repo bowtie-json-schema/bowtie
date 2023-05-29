@@ -20,8 +20,12 @@
         right: 0;
         opacity: 0;
         visibility: hidden;
-        -webkit-transition: visibility 0s, opacity 0.5s linear;
-        transition: visibility 0s, opacity 0.5s linear;
+        -webkit-transition:
+          visibility 0s,
+          opacity 0.5s linear;
+        transition:
+          visibility 0s,
+          opacity 0.5s linear;
       }
 
       .details-required:hover {
@@ -130,7 +134,7 @@
                   rowspan="2"
                   scope="col"
                   class="text-center align-middle"
-                  style="color: white;"
+                  style="color: white"
                 >
                   implementation
                 </th>
@@ -144,20 +148,34 @@
               </tr>
 
               <tr>
-                <th scope="col" class="text-center" style="color: white;">errors</th>
+                <th scope="col" class="text-center" style="color: white">
+                  errors
+                </th>
 
-                <th scope="col" class="table-bordered text-center" style="color: white;">skipped</th>
+                <th
+                  scope="col"
+                  class="table-bordered text-center"
+                  style="color: white"
+                >
+                  skipped
+                </th>
                 <th
                   scope="col"
                   class="table-bordered text-center details-required"
-                  style="color: white;"
+                  style="color: white"
                 >
-                  <div class="hover-details details-desc text-center" >
-                    <p>failed
-                      <br><span>implementation worked successfully but got the wrong answer</span>
+                  <div class="hover-details details-desc text-center">
+                    <p>
+                      failed <br /><span
+                        >implementation worked successfully but got the wrong
+                        answer</span
+                      >
                     </p>
-                    <p>errored
-                      <br><span>implementation crashed when trying to calculate an answer</span>
+                    <p>
+                      errored <br /><span
+                        >implementation crashed when trying to calculate an
+                        answer</span
+                      >
                     </p>
                   </div>
                   unsuccessful
@@ -179,8 +197,7 @@
                 <td
                   id="summary-unsuccessful_tests"
                   class="text-center details-required"
-                >
-                </td>
+                ></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -196,36 +213,60 @@
     <!-- Modals -->
 
     <!-- Modal- Details  -->
-    <div name="modal-details" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div
+      name="modal-details"
+      class="modal fade"
+      tabindex="-1"
+      aria-hidden="true"
+    >
       <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
           <div name="modal-header-details" class="modal-header">
             <!-- some content through JS  -->
           </div>
           <div class="modal-body">
-            <div name="modal-body-details-child" class="row row-cols-1 row-cols-md-2 g-4">
+            <div
+              name="modal-body-details-child"
+              class="row row-cols-1 row-cols-md-2 g-4"
+            >
               <!-- some content through JS  -->
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Modal- run-info  -->
-    <div name="modal-runtime-info" class="modal fade" role="dialog" tabindex="-1" aria-hidden="true">
+    <div
+      name="modal-runtime-info"
+      class="modal fade"
+      role="dialog"
+      tabindex="-1"
+      aria-hidden="true"
+    >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div name="modal-header-runtime-info" class="modal-header">
             <!-- some content through JS  -->
           </div>
-          <div name="modal-body-runtime-info" class="modal-body">
-
-          </div>
+          <div name="modal-body-runtime-info" class="modal-body"></div>
           <div class="modal-footer m-2 p-0">
-            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -235,9 +276,11 @@
     <div id="display-body" class="card mb-3 d-none mw-100">
       <div class="row">
         <div class="col-8 pe-0">
-          <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+          <div
+            class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom"
+          >
             <small class="font-monospace text-body-secondary text-uppercase">
-                Schema
+              Schema
             </small>
             <div class="d-flex ms-auto">
               <button
@@ -251,9 +294,20 @@
                 data-bs-custom-class="custom-tooltip"
                 data-bs-title="Copy to clipboard"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-                  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-                  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-clipboard"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"
+                  />
+                  <path
+                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"
+                  />
                 </svg>
               </button>
             </div>
@@ -261,9 +315,11 @@
           <div id="schema-code" class="card-body"></div>
         </div>
         <div class="col-4 border-start ps-0">
-          <div class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+          <div
+            class="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom"
+          >
             <small class="font-monospace text-body-secondary text-uppercase">
-                Instance
+              Instance
             </small>
             <div class="d-flex ms-auto">
               <button
@@ -277,9 +333,20 @@
                 data-bs-custom-class="custom-tooltip"
                 data-bs-title="Copy to clipboard"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16" >
-                  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-                  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-clipboard"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"
+                  />
+                  <path
+                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"
+                  />
                 </svg>
               </button>
             </div>
@@ -289,20 +356,25 @@
       </div>
     </div>
 
-
     <!-- Script -->
     <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+      crossorigin="anonymous"
+    ></script>
     <script type="module" src="../utilclasses.js"></script>
 
     <script>
-      async function jsonData(dataObjectsArray, generate_dialect_navigation = false) {
+      async function jsonData(
+        dataObjectsArray,
+        generate_dialect_navigation = false,
+      ) {
         const module = await import("../utilclasses.js");
         const RunInfo = module.RunInfo;
         const CaseResult = module.CaseResult;
         const CaseSkipped = module.CaseSkipped;
 
-        let lines = dataObjectsArray.map(line => JSON.parse(line));
+        let lines = dataObjectsArray.map((line) => JSON.parse(line));
         //console.log(lines)
         //console.log(RunInfo)
 
@@ -313,23 +385,22 @@
         //console.log(summary)
         //console.log(summary.counts)
 
-
         for (let i = 1; i < lines.length; i++) {
           let each = lines[i];
           if ("case" in each) {
-              summary.add_case_metadata(each);
+            summary.add_case_metadata(each);
           } else if ("caught" in each) {
-              summary.see_error(each);
+            summary.see_error(each);
           } else if ("skipped" in each) {
-              delete each["skipped"];
-              summary.see_skip(new CaseSkipped(each));
+            delete each["skipped"];
+            summary.see_skip(new CaseSkipped(each));
           } else if ("did_fail_fast" in each) {
-              summary.see_maybe_fail_fast(each);
+            summary.see_maybe_fail_fast(each);
           } else {
-              summary.see_result(CaseResult.from_dict(each));
+            summary.see_result(CaseResult.from_dict(each));
           }
-      }
-        console.log(to_icon())
+        }
+        console.log(to_icon());
         function to_icon(valid) {
           if (valid === true) {
             // Circular Checkmark SVG Icon
@@ -354,631 +425,687 @@
               </svg>
             `;
           }
-        };
+        }
 
         const titleElement = document.querySelector("title");
-            titleElement.textContent += ` ${run_info.dialect_shortname}`;
+        titleElement.textContent += ` ${run_info.dialect_shortname}`;
 
-            //adding bowtie version
-            var bowtieVersion = document.getElementById("bowtie-version");
-            bowtieVersion.textContent += `${run_info.bowtie_version}`;
+        //adding bowtie version
+        var bowtieVersion = document.getElementById("bowtie-version");
+        bowtieVersion.textContent += `${run_info.bowtie_version}`;
 
-            /////////////////////////////////////////////////////////
-            // runinfo section
-            //adding dialect link in #run-info
-            var dialectLink = document.querySelector("#dialect-link");
-            dialectLink.textContent = `${run_info.dialect}`;
+        /////////////////////////////////////////////////////////
+        // runinfo section
+        //adding dialect link in #run-info
+        var dialectLink = document.querySelector("#dialect-link");
+        dialectLink.textContent = `${run_info.dialect}`;
 
-            let ago = (Date.now() - Date.parse(`${run_info.started}`)) / 1000;
-            let agoUnits = "seconds";
-            if (ago > 60) {
-              ago /= 60;
-              agoUnits = "minutes";
-              if (ago > 60) {
-                ago /= 60;
-                agoUnits = "hours";
-                if (ago > 24) {
-                  ago /= 24;
-                  agoUnits = "days";
-                  if (ago > 7) {
-                    ago /= 7;
-                    agoUnits = "weeks";
-                  }
-                }
+        let ago = (Date.now() - Date.parse(`${run_info.started}`)) / 1000;
+        let agoUnits = "seconds";
+        if (ago > 60) {
+          ago /= 60;
+          agoUnits = "minutes";
+          if (ago > 60) {
+            ago /= 60;
+            agoUnits = "hours";
+            if (ago > 24) {
+              ago /= 24;
+              agoUnits = "days";
+              if (ago > 7) {
+                ago /= 7;
+                agoUnits = "weeks";
               }
             }
-            const roundedAgo = Math.round(ago);
-            const formattedAgo = Number.isFinite(roundedAgo)
-              ? new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
-                  -roundedAgo,
-                  agoUnits,
-                )
-              : "";
-            document.getElementById("run-started").textContent = formattedAgo;
+          }
+        }
+        const roundedAgo = Math.round(ago);
+        const formattedAgo = Number.isFinite(roundedAgo)
+          ? new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+              -roundedAgo,
+              agoUnits,
+            )
+          : "";
+        document.getElementById("run-started").textContent = formattedAgo;
 
-            //summary section
-            var totalCases = document.getElementById("total_cases");
-            totalCases.textContent += ` (${summary.total_cases})`;
+        //summary section
+        var totalCases = document.getElementById("total_cases");
+        totalCases.textContent += ` (${summary.total_cases})`;
 
-            var totalTests = document.getElementById("total_tests");
-            totalTests.textContent += ` (${summary.total_tests})`;
+        var totalTests = document.getElementById("total_tests");
+        totalTests.textContent += ` (${summary.total_tests})`;
 
-            //updating summary table
-            tbody = document.getElementById("tbody");
-            //console.log(typeof(summary.implementations.length))
+        //updating summary table
+        tbody = document.getElementById("tbody");
+        //console.log(typeof(summary.implementations.length))
 
-            let implementations = summary.implementations;
-            //console.log(implementations)
-            for (const [i, implementation] of summary.implementations.entries()) {
-              //th section of summary table's data
-              let counts = summary.counts[implementation.image];
-              //console.log(implementation)
-              //console.log(counts)
+        let implementations = summary.implementations;
+        //console.log(implementations)
+        for (const [i, implementation] of summary.implementations.entries()) {
+          //th section of summary table's data
+          let counts = summary.counts[implementation.image];
+          //console.log(implementation)
+          //console.log(counts)
 
-              var tr = document.createElement("tr");
-              var th = document.createElement("th");
-              th.setAttribute("scope", "row");
+          var tr = document.createElement("tr");
+          var th = document.createElement("th");
+          th.setAttribute("scope", "row");
 
-              const a = document.createElement("a");
-              a.setAttribute("href", `${implementation.homepage || implementation.issue}`);
-              a.textContent = `${implementation.name}`;
+          const a = document.createElement("a");
+          a.setAttribute(
+            "href",
+            `${implementation.homepage || implementation.issue}`,
+          );
+          a.textContent = `${implementation.name}`;
 
-              const smallTH = document.createElement("small");
-              smallTH.setAttribute("class", "text-muted");
-              smallTH.textContent += " " + `${ implementation.language}`;
+          const smallTH = document.createElement("small");
+          smallTH.setAttribute("class", "text-muted");
+          smallTH.textContent += " " + `${implementation.language}`;
 
-              th.appendChild(a);
-              th.appendChild(smallTH);
-              tr.appendChild(th);
-              //console.log(tr)
+          th.appendChild(a);
+          th.appendChild(smallTH);
+          tr.appendChild(th);
+          //console.log(tr)
 
-              //td section of summary table's data
-              var td = document.createElement("td");
-              const smallTD = document.createElement("small");
-              smallTD.setAttribute("class", "font-monospace text-muted");
-              //console.log(implementation.version || "")
-              smallTD.textContent = implementation.version || "";
+          //td section of summary table's data
+          var td = document.createElement("td");
+          const smallTD = document.createElement("small");
+          smallTD.setAttribute("class", "font-monospace text-muted");
+          //console.log(implementation.version || "")
+          smallTD.textContent = implementation.version || "";
 
-              const buttonTD = document.createElement("button");
-              buttonTD.setAttribute("class", "btn border-0");
+          const buttonTD = document.createElement("button");
+          buttonTD.setAttribute("class", "btn border-0");
 
-              const svgTD = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "svg"
-              );
-              svgTD.setAttribute("width", "16");
-              svgTD.setAttribute("height", "16");
-              svgTD.setAttribute("fill", "currentColor");
-              svgTD.setAttribute("class", "bi bi-info-circle-fill");
-              svgTD.setAttribute("viewBox", "0 0 16 16");
-              svgTD.setAttribute("data-bs-toggle", "modal");
-              svgTD.setAttribute("data-bs-target", `#implementation-${i+1}-runtime-info`);
-              const pathTD = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "path"
-              );
-              pathTD.setAttribute(
-                "d",
-                "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
-              );
+          const svgTD = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          svgTD.setAttribute("width", "16");
+          svgTD.setAttribute("height", "16");
+          svgTD.setAttribute("fill", "currentColor");
+          svgTD.setAttribute("class", "bi bi-info-circle-fill");
+          svgTD.setAttribute("viewBox", "0 0 16 16");
+          svgTD.setAttribute("data-bs-toggle", "modal");
+          svgTD.setAttribute(
+            "data-bs-target",
+            `#implementation-${i + 1}-runtime-info`,
+          );
+          const pathTD = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          pathTD.setAttribute(
+            "d",
+            "M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z",
+          );
 
-              svgTD.appendChild(pathTD);
-              buttonTD.appendChild(svgTD);
+          svgTD.appendChild(pathTD);
+          buttonTD.appendChild(svgTD);
 
-              td.appendChild(smallTD);
-              td.appendChild(buttonTD);
+          td.appendChild(smallTD);
+          td.appendChild(buttonTD);
 
-              tr.appendChild(td);
+          tr.appendChild(td);
 
-              //final section of table body
-              var td2 = document.createElement("td");
-              td2.setAttribute("class", "text-center");
-              td2.textContent = `${counts.errored_cases}`;
+          //final section of table body
+          var td2 = document.createElement("td");
+          td2.setAttribute("class", "text-center");
+          td2.textContent = `${counts.errored_cases}`;
 
-              var td3 = document.createElement("td");
-              td3.setAttribute("class", "text-center");
-              td3.textContent += `${counts.skipped_tests}`;
+          var td3 = document.createElement("td");
+          td3.setAttribute("class", "text-center");
+          td3.textContent += `${counts.skipped_tests}`;
 
-              var td4 = document.createElement("td");
-              td4.setAttribute("class", "text-center details-required");
-              td4.textContent += counts.failed_tests + counts.errored_tests;
-              //console.log(typeof(counts.failed_tests))
+          var td4 = document.createElement("td");
+          td4.setAttribute("class", "text-center details-required");
+          td4.textContent += counts.failed_tests + counts.errored_tests;
+          //console.log(typeof(counts.failed_tests))
 
-              var td4a = document.createElement('div');
-              td4a.classList = 'hover-details text-center';
-              td4a.innerHTML = '<p><b>failed</b>: ' + counts.failed_tests + '</p><p><b>errored</b>: ' + counts.errored_tests + '</p>';
+          var td4a = document.createElement("div");
+          td4a.classList = "hover-details text-center";
+          td4a.innerHTML =
+            "<p><b>failed</b>: " +
+            counts.failed_tests +
+            "</p><p><b>errored</b>: " +
+            counts.errored_tests +
+            "</p>";
 
-              td4.appendChild(td4a);
+          td4.appendChild(td4a);
 
-              var td5 = document.createElement("td");
-              var detailButton = document.createElement("button");
-              detailButton.setAttribute("type", "button");
-              detailButton.setAttribute("class", "btn btn-sm btn-primary");
-              detailButton.setAttribute("data-bs-toggle", "modal");
-              detailButton.setAttribute("data-bs-target", `#implementation-${i+1}-details`);
-              detailButton.textContent += "Details";
+          var td5 = document.createElement("td");
+          var detailButton = document.createElement("button");
+          detailButton.setAttribute("type", "button");
+          detailButton.setAttribute("class", "btn btn-sm btn-primary");
+          detailButton.setAttribute("data-bs-toggle", "modal");
+          detailButton.setAttribute(
+            "data-bs-target",
+            `#implementation-${i + 1}-details`,
+          );
+          detailButton.textContent += "Details";
 
-              td5.appendChild(detailButton);
+          td5.appendChild(detailButton);
 
-              tr.appendChild(td2);
-              tr.appendChild(td3);
-              tr.appendChild(td4);
-              tr.appendChild(td5);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+          tr.appendChild(td5);
 
-              tbody.appendChild(tr);
-            };
+          tbody.appendChild(tr);
+        }
 
-            // summary table footer (total)
-            erroredCases = document.getElementById('summary-errored_cases');
-            erroredCases.textContent = summary.errored_cases;
+        // summary table footer (total)
+        erroredCases = document.getElementById("summary-errored_cases");
+        erroredCases.textContent = summary.errored_cases;
 
-            skippedTests = document.getElementById("summary-skipped_tests");
-            skippedTests.textContent = summary.skipped_tests;
+        skippedTests = document.getElementById("summary-skipped_tests");
+        skippedTests.textContent = summary.skipped_tests;
 
-            unsuccessfulTests = document.getElementById(
-              "summary-unsuccessful_tests"
+        unsuccessfulTests = document.getElementById(
+          "summary-unsuccessful_tests",
+        );
+        unsuccessfulTests.textContent =
+          summary.errored_cases + summary.skipped_tests;
+
+        var summaryCard = document.getElementById("summary-card");
+        if (summary.did_fail_fast.did_fail_fast) {
+          var didFailFast = document.createElement("div");
+          didFailFast.className = "alert alert-warning";
+          didFailFast.setAttribute("role", "alert");
+          didFailFast.textContent =
+            "This run failed fast, so some input cases may not have been run.";
+
+          summaryCard.appendChild(didFailFast);
+        }
+
+        //////////////////////////////////////////////////////
+        // Cases section (accordions)
+
+        const accordionCases = document.getElementById("cases");
+        var flatResults = summary.flat_results();
+        //console.log((summary.flat_results()))
+
+        for (let [seq, description, schema, registry, results] of flatResults) {
+          //console.log((seq))
+          //console.log((results))
+
+          //creating item div
+          var item = document.createElement("div");
+          item.classList.add("accordion-item");
+
+          // creating h2 element
+          const accordionItemsH2 = document.createElement("h2");
+          accordionItemsH2.setAttribute("class", "accordion-header");
+          accordionItemsH2.setAttribute("id", `case-${seq}-heading`);
+
+          const accordionItemsButton = document.createElement("button");
+          accordionItemsButton.setAttribute(
+            "class",
+            "accordion-button collapsed",
+          );
+          accordionItemsButton.setAttribute("type", "button");
+          accordionItemsButton.setAttribute("data-bs-toggle", "collapse");
+          accordionItemsButton.setAttribute("data-bs-target", `#case-${seq}`);
+          accordionItemsButton.setAttribute("aria-expanded", "false");
+          accordionItemsButton.setAttribute("aria-controls", "case-${ seq }");
+
+          accordionItemsButton.onclick = function () {
+            schemaDisplay(
+              `accordion-body${seq}`,
+              JSON.stringify(schema, null, 2),
+              "schema-code",
+              `row-${seq}`,
             );
-            unsuccessfulTests.textContent = summary.errored_cases + summary.skipped_tests;
+          };
 
-            var summaryCard = document.getElementById('summary-card');
-            if (summary.did_fail_fast.did_fail_fast) {
-              var didFailFast = document.createElement('div');
-              didFailFast.className = "alert alert-warning";
-              didFailFast.setAttribute("role", "alert");
-              didFailFast.textContent = "This run failed fast, so some input cases may not have been run.";
+          //schemaDisplay function
+          let currentParrentBodyId = "";
+          const displayBody = document.querySelector("#display-body");
+          function schemaDisplay(parentBodyId, code, targetId, rowClass) {
+            if (parentBodyId != currentParrentBodyId) {
+              currentParrentBodyId = parentBodyId;
+              displayBody.classList.remove("d-none");
+              displayBody.classList.add("d-block");
+              document.getElementById("instance-info").innerHTML = "";
+              const isDisplayed =
+                displayBody.parentElement ===
+                document.getElementById(parentBodyId);
+              if (isDisplayed) {
+                displayBody.parentElement.removeChild(displayBody);
+              } else {
+                rowHighlightListener(rowClass);
+                displayCode(code, targetId);
+                const accordionBody = document.querySelector(
+                  `#${parentBodyId}`,
+                );
+                accordionBody.insertBefore(
+                  displayBody,
+                  accordionBody.firstChild,
+                );
+              }
+            }
+          }
 
-              summaryCard.appendChild(didFailFast);
-            };
+          function displayCode(code, targetId) {
+            const targetDisplay = document.getElementById(targetId);
+            displayBody.classList.remove("d-none");
+            displayBody.classList.add("d-block");
+            targetDisplay.innerHTML = `<pre>${code}</pre>`;
+          }
 
-
-            //////////////////////////////////////////////////////
-            // Cases section (accordions)
-            
-            const accordionCases = document.getElementById('cases');
-            var flatResults = summary.flat_results();
-            //console.log((summary.flat_results()))
-
-            for (let [seq, description, schema, registry, results] of flatResults) {
-
-              //console.log((seq))
-              //console.log((results))
-
-              //creating item div
-              var item = document.createElement("div");
-              item.classList.add("accordion-item");
-              
-              // creating h2 element
-              const accordionItemsH2 = document.createElement('h2');
-              accordionItemsH2.setAttribute("class", "accordion-header");
-              accordionItemsH2.setAttribute("id", `case-${ seq }-heading`);
-
-              const accordionItemsButton = document.createElement("button");
-              accordionItemsButton.setAttribute("class", "accordion-button collapsed");
-              accordionItemsButton.setAttribute("type", "button");
-              accordionItemsButton.setAttribute('data-bs-toggle', 'collapse');
-              accordionItemsButton.setAttribute('data-bs-target', `#case-${ seq }`);
-              accordionItemsButton.setAttribute('aria-expanded', 'false');
-              accordionItemsButton.setAttribute('aria-controls', 'case-${ seq }');
-
-              accordionItemsButton.onclick = function() {
-                schemaDisplay(`accordion-body${ seq }`, JSON.stringify(schema, null, 2), "schema-code", `row-${ seq }`);
-              };
-
-              //schemaDisplay function
-              let currentParrentBodyId = '';
-              const displayBody = document.querySelector("#display-body");
-              function schemaDisplay(parentBodyId, code, targetId, rowClass) {
-                if (parentBodyId != currentParrentBodyId) {
-                  currentParrentBodyId = parentBodyId;
-                  displayBody.classList.remove("d-none");
-                  displayBody.classList.add("d-block");
-                  document.getElementById('instance-info').innerHTML = '';
-                  const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
-                  if (isDisplayed) {
-                    displayBody.parentElement.removeChild(displayBody);
-                  } else {
-                    rowHighlightListener(rowClass);
-                    displayCode(code, targetId);
-                    const accordionBody = document.querySelector(`#${parentBodyId}`);
-                    accordionBody.insertBefore(displayBody, accordionBody.firstChild);
-                  }
+          //rowHighlightListener function
+          function rowHighlightListener(rowClass) {
+            const instanceRows = document.getElementsByClassName(rowClass);
+            for (let i = 0; i < instanceRows.length; i++) {
+              const currentInstanceRow = instanceRows[i];
+              currentInstanceRow.addEventListener("click", function () {
+                const activeElements =
+                  document.getElementsByClassName("table-active");
+                for (let j = 0; j < activeElements.length; j++) {
+                  activeElements[j].classList.remove("table-active");
                 }
-              };
+                currentInstanceRow.classList.add("table-active");
+              });
+            }
+          }
 
-              function displayCode(code, targetId) {
-                const targetDisplay = document.getElementById(targetId);
-                displayBody.classList.remove("d-none");
-                displayBody.classList.add("d-block");
-                targetDisplay.innerHTML = `<pre>${code}</pre>`;
+          const accordionItemsA = document.createElement("a");
+          accordionItemsA.setAttribute("href", "#schema");
+          accordionItemsA.setAttribute("class", "text-decoration-none");
+          accordionItemsA.textContent += description;
+
+          // appending the elements to create 'h2' element
+          accordionItemsButton.appendChild(accordionItemsA);
+          accordionItemsH2.appendChild(accordionItemsButton);
+          item.appendChild(accordionItemsH2);
+          //console.log(accordionItemsH2)
+
+          // creating the div element
+          const accordionItemsDiv = document.createElement("div");
+          accordionItemsDiv.setAttribute("id", `case-${seq}`);
+          accordionItemsDiv.setAttribute(
+            "class",
+            "accordion-collapse collapse",
+          );
+          accordionItemsDiv.setAttribute(
+            "aria-labelledby",
+            `case-${seq}-heading`,
+          );
+          accordionItemsDiv.setAttribute("data-bs-parent", "#cases");
+
+          const accordionItemsChildDiv = document.createElement("div");
+          accordionItemsChildDiv.setAttribute("id", `accordion-body${seq}`);
+          accordionItemsChildDiv.setAttribute("class", "accordion-body");
+
+          accordionItemsDivTable = document.createElement("table");
+          accordionItemsDivTable.setAttribute("class", "table table-hover");
+
+          const accordionItemsDivTHead = document.createElement("thead");
+          const accordionItemsDivTR = document.createElement("tr");
+
+          const accordionItemsDivTH = document.createElement("th");
+          accordionItemsDivTH.setAttribute("scope", "col");
+          accordionItemsDivTH.innerHTML = "Tests";
+
+          //appending Child
+          accordionItemsDivTR.appendChild(accordionItemsDivTH);
+
+          for (const implementation of summary.implementations) {
+            const accordionItemsDivTH2 = document.createElement("th");
+            accordionItemsDivTH2.setAttribute("class", "text-center");
+            accordionItemsDivTH2.setAttribute("scope", "col");
+            accordionItemsDivTH2.textContent += implementation.name + " ";
+
+            const accordionItemsDivSmall = document.createElement("small");
+            accordionItemsDivSmall.setAttribute("class", "text-muted");
+            accordionItemsDivSmall.innerHTML = implementation.language;
+
+            accordionItemsDivTH2.appendChild(accordionItemsDivSmall);
+            accordionItemsDivTR.appendChild(accordionItemsDivTH2);
+          }
+          // thead appending to table
+          accordionItemsDivTHead.appendChild(accordionItemsDivTR);
+          accordionItemsDivTable.appendChild(accordionItemsDivTHead);
+
+          ///////////////////////////
+          for (let [test, test_result] of results) {
+            //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
+            test_result["myImage"] = { valid: true };
+            //console.log((test_result))
+            const testsTR = document.createElement("tr");
+            testsTR.setAttribute("class", `row-${seq}`);
+            testsTR.addEventListener("click", function () {
+              displayCode(
+                JSON.stringify(test.instance, null, 2),
+                "instance-info",
+              );
+            });
+
+            const testsTD = document.createElement("td");
+
+            const testsA = document.createElement("a");
+            testsA.setAttribute("href", "#schema");
+            testsA.setAttribute("class", "text-decoration-none");
+            testsA.textContent = test.description;
+
+            testsTD.appendChild(testsA);
+            testsTR.appendChild(testsTD);
+
+            //for (let implementation of summary.implementations) {
+            summary.implementations.forEach(function (implementation) {
+              //console.log(implementation.image)
+              //const result = test_results[implementation.image];
+              //const implementation_result = result ? result[0] : { valid: null };
+              //const incorrect = result ? result[1] : true;
+
+              var implementationCell = document.createElement("td");
+              implementationCell.classList.add("text-center");
+
+              //🛑🛑 Most modify below variable. This is just temporary 🛑🛑
+              //original -->> var implementationResult = test_result[implementation.image];
+              var implementationResult = test_result["myImage"];
+
+              //console.log((implementationResult.valid))
+              var incorrect;
+              if (
+                !implementationResult ||
+                implementationResult.valid === null
+              ) {
+                incorrect = true;
+              } else {
+                incorrect = false;
               }
 
-              //rowHighlightListener function
-              function rowHighlightListener(rowClass) {
-                const instanceRows = document.getElementsByClassName(rowClass);
-                for (let i = 0; i < instanceRows.length; i++) {
-                  const currentInstanceRow = instanceRows[i];
-                  currentInstanceRow.addEventListener('click', function () {
-                    const activeElements = document.getElementsByClassName('table-active');
-                    for (let j = 0; j < activeElements.length; j++) {
-                      activeElements[j].classList.remove('table-active');
-                    }
-                    currentInstanceRow.classList.add('table-active');
-                  });
+              if (incorrect === "skipped") {
+                implementationCell.classList.add("text-bg-warning");
+                implementationCell.innerHTML = to_icon(null);
+              } else if (incorrect === "errored") {
+                implementationCell.classList.add("text-bg-danger");
+                implementationCell.innerHTML = to_icon(null);
+              } else {
+                implementationCell.classList.add("text-center");
+                if (incorrect) {
+                  implementationCell.classList.add("text-bg-danger");
+                } else if (
+                  test_result.valid !== true &&
+                  test_result.valid !== false
+                ) {
+                  implementationCell.classList.add("text-bg-warning");
                 }
+                implementationCell.innerHTML = to_icon(
+                  implementationResult.valid,
+                );
               }
 
-              const accordionItemsA = document.createElement("a");
-              accordionItemsA.setAttribute("href", "#schema");
-              accordionItemsA.setAttribute("class", "text-decoration-none");
-              accordionItemsA.textContent += description;
+              testsTR.appendChild(implementationCell);
+            });
 
-              // appending the elements to create 'h2' element
-              accordionItemsButton.appendChild(accordionItemsA);
-              accordionItemsH2.appendChild(accordionItemsButton);
-              item.appendChild(accordionItemsH2);
-              //console.log(accordionItemsH2)
+            accordionItemsDivTable.appendChild(testsTR);
+          }
 
+          //updating the child div elements
+          accordionItemsChildDiv.append(accordionItemsDivTable);
+          accordionItemsDiv.appendChild(accordionItemsChildDiv);
+          item.appendChild(accordionItemsDiv);
+          accordionCases.appendChild(item);
+        }
 
-              // creating the div element
-              const accordionItemsDiv = document.createElement("div");
-              accordionItemsDiv.setAttribute("id", `case-${ seq }`);
-              accordionItemsDiv.setAttribute("class", "accordion-collapse collapse");
-              accordionItemsDiv.setAttribute("aria-labelledby", `case-${ seq }-heading`);
-              accordionItemsDiv.setAttribute("data-bs-parent", "#cases");
+        ///////////////////////////////////////////////////////// Modals //////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-              const accordionItemsChildDiv = document.createElement("div");
-              accordionItemsChildDiv.setAttribute("id", `accordion-body${ seq }`);
-              accordionItemsChildDiv.setAttribute("class", "accordion-body");
+        // Iterate over the implementations data
+        for (var i = 0; i < summary.implementations.length; i++) {
+          var implementation = summary.implementations[i];
 
-              accordionItemsDivTable = document.createElement('table');
-              accordionItemsDivTable.setAttribute("class", "table table-hover");
+          /////////////////
+          // details Modal
+          const modalDetails = document.createElement("div");
+          modalDetails.classList.add("modal", "fade");
+          modalDetails.id = `implementation-${i + 1}-details`;
+          modalDetails.setAttribute("tabindex", "-1");
+          modalDetails.setAttribute(
+            "aria-labelledby",
+            `implementation-${i + 1}-details-label`,
+          );
+          modalDetails.setAttribute("aria-hidden", "true");
 
-              const accordionItemsDivTHead = document.createElement('thead');
-              const accordionItemsDivTR = document.createElement('tr');
+          const modalDialogDetails = document.createElement("div");
+          modalDialogDetails.classList.add("modal-dialog", "modal-fullscreen");
 
-              const accordionItemsDivTH = document.createElement('th');
-              accordionItemsDivTH.setAttribute("scope", "col");
-              accordionItemsDivTH.innerHTML = "Tests";
+          const modalContentDetails = document.createElement("div");
+          modalContentDetails.classList.add("modal-content");
 
-              //appending Child
-              accordionItemsDivTR.appendChild(accordionItemsDivTH);
+          const modalHeaderDetails = document.createElement("div");
+          modalHeaderDetails.classList.add("modal-header");
 
-              for(const implementation of summary.implementations) {
-                const accordionItemsDivTH2 = document.createElement('th');
-                accordionItemsDivTH2.setAttribute("class", "text-center");
-                accordionItemsDivTH2.setAttribute("scope", "col");
-                accordionItemsDivTH2.textContent += implementation.name + " ";
+          const modalTitleDetails = document.createElement("h1");
+          modalTitleDetails.classList.add("modal-title", "fs-5");
+          modalTitleDetails.id = `implementation-${i + 1}-details-label`;
 
-                const accordionItemsDivSmall = document.createElement('small');
-                accordionItemsDivSmall.setAttribute("class", "text-muted");
-                accordionItemsDivSmall.innerHTML = implementation.language;
+          const implementationNameDetails = document.createElement("span");
+          implementationNameDetails.textContent = implementation.name + " ";
 
-                accordionItemsDivTH2.appendChild(accordionItemsDivSmall);
-                accordionItemsDivTR.appendChild(accordionItemsDivTH2);
-              };
-              // thead appending to table
-              accordionItemsDivTHead.appendChild(accordionItemsDivTR);
-              accordionItemsDivTable.appendChild(accordionItemsDivTHead);
+          const implementationLanguageDetails = document.createElement("small");
+          implementationLanguageDetails.classList.add("text-muted");
+          implementationLanguageDetails.textContent = implementation.language;
 
+          modalTitleDetails.appendChild(implementationNameDetails);
+          modalTitleDetails.appendChild(implementationLanguageDetails);
 
-              ///////////////////////////
-              for (let [test, test_result] of results) {
+          const closeButtonDetails = document.createElement("button");
+          closeButtonDetails.type = "button";
+          closeButtonDetails.classList.add("btn-close");
+          closeButtonDetails.setAttribute("data-bs-dismiss", "modal");
+          closeButtonDetails.setAttribute("aria-label", "Close");
 
+          modalHeaderDetails.appendChild(modalTitleDetails);
+          modalHeaderDetails.appendChild(closeButtonDetails);
 
-                //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
-                test_result["myImage"] = {"valid" : true};
-                //console.log((test_result))
-                const testsTR = document.createElement('tr');
-                testsTR.setAttribute("class", `row-${ seq }`);
-                testsTR.addEventListener('click', function() {
-                  displayCode(JSON.stringify(test.instance, null, 2), 'instance-info');
-                });
+          const modalBodyDetails = document.createElement("div");
+          modalBodyDetails.classList.add("modal-body");
 
-                const testsTD = document.createElement("td");
+          const rowContainerDetails = document.createElement("div");
+          rowContainerDetails.classList.add(
+            "row",
+            "row-cols-1",
+            "row-cols-md-2",
+            "g-4",
+          );
 
-                const testsA = document.createElement("a");
-                testsA.setAttribute("href", "#schema");
-                testsA.setAttribute("class", "text-decoration-none");
-                testsA.textContent = test.description;
+          let flatResults = summary.flat_results();
+          for (let [
+            seq,
+            description,
+            schema,
+            registry,
+            results,
+          ] of flatResults) {
+            for (let [test, test_results] of results) {
+              //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
+              test_results["yourImage"] = "wxyz";
+              //console.log(test_result)
 
-                testsTD.appendChild(testsA);
-                testsTR.appendChild(testsTD);
-
-                //for (let implementation of summary.implementations) {
-                summary.implementations.forEach(function(implementation) {
-                  //console.log(implementation.image)
-                  //const result = test_results[implementation.image];
-                  //const implementation_result = result ? result[0] : { valid: null };
-                  //const incorrect = result ? result[1] : true;
-
-                  var implementationCell = document.createElement("td");
-                  implementationCell.classList.add("text-center");
-
-                  //🛑🛑 Most modify below variable. This is just temporary 🛑🛑
-                  //original -->> var implementationResult = test_result[implementation.image];
-                  var implementationResult = test_result["myImage"];
-
-                  //console.log((implementationResult.valid))
-                  var incorrect;
-                  if (!implementationResult || implementationResult.valid === null) {
-                    incorrect = true;
-                  } else {
-                    incorrect = false;
-                  }
-
-                  if (incorrect === 'skipped') {
-                    implementationCell.classList.add("text-bg-warning");
-                    implementationCell.innerHTML = to_icon(null);
-                  } else if (incorrect === 'errored') {
-                    implementationCell.classList.add("text-bg-danger");
-                    implementationCell.innerHTML = to_icon(null);
-                  } else {
-                    implementationCell.classList.add("text-center");
-                    if (incorrect) {
-                      implementationCell.classList.add('text-bg-danger');
-                    } else if (test_result.valid !== true && test_result.valid !== false) {
-                      implementationCell.classList.add('text-bg-warning');
-                    }
-                    implementationCell.innerHTML = to_icon(implementationResult.valid);
-                  };
-
-                  testsTR.appendChild(implementationCell);
-                });
-
-                accordionItemsDivTable.appendChild(testsTR);
-              };
-
-              //updating the child div elements
-              accordionItemsChildDiv.append(accordionItemsDivTable);
-              accordionItemsDiv.appendChild(accordionItemsChildDiv);
-              item.appendChild(accordionItemsDiv);
-              accordionCases.appendChild(item);
-            };
-
-
-            ///////////////////////////////////////////////////////// Modals //////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-            // Iterate over the implementations data
-            for (var i = 0; i < summary.implementations.length; i++) {
-              var implementation = summary.implementations[i];
-
-              /////////////////
-              // details Modal
-              const modalDetails = document.createElement("div");
-              modalDetails.classList.add("modal", "fade");
-              modalDetails.id = `implementation-${i+1}-details`;
-              modalDetails.setAttribute("tabindex", "-1");
-              modalDetails.setAttribute("aria-labelledby", `implementation-${i+1}-details-label`);
-              modalDetails.setAttribute("aria-hidden", "true");
-
-              const modalDialogDetails = document.createElement("div");
-              modalDialogDetails.classList.add("modal-dialog", "modal-fullscreen");
-            
-              const modalContentDetails = document.createElement("div");
-              modalContentDetails.classList.add("modal-content");
-            
-              const modalHeaderDetails = document.createElement("div");
-              modalHeaderDetails.classList.add("modal-header");
-            
-              const modalTitleDetails = document.createElement("h1");
-              modalTitleDetails.classList.add("modal-title", "fs-5");
-              modalTitleDetails.id = `implementation-${i+1}-details-label`;
-
-              const implementationNameDetails = document.createElement("span");
-              implementationNameDetails.textContent = implementation.name + " ";
-            
-              const implementationLanguageDetails = document.createElement("small");
-              implementationLanguageDetails.classList.add("text-muted");
-              implementationLanguageDetails.textContent = implementation.language;
-            
-              modalTitleDetails.appendChild(implementationNameDetails);
-              modalTitleDetails.appendChild(implementationLanguageDetails);
-
-              const closeButtonDetails = document.createElement("button");
-              closeButtonDetails.type = "button";
-              closeButtonDetails.classList.add("btn-close");
-              closeButtonDetails.setAttribute("data-bs-dismiss", "modal");
-              closeButtonDetails.setAttribute("aria-label", "Close");
-            
-              modalHeaderDetails.appendChild(modalTitleDetails);
-              modalHeaderDetails.appendChild(closeButtonDetails);
-
-              const modalBodyDetails = document.createElement("div");
-              modalBodyDetails.classList.add("modal-body");
-            
-              const rowContainerDetails = document.createElement("div");
-              rowContainerDetails.classList.add("row", "row-cols-1", "row-cols-md-2", "g-4");
-
-
-              let flatResults = summary.flat_results();
-              for (let [seq, description, schema, registry, results] of flatResults) {
-
-                for (let [test, test_results] of results){
-                  //🛑🛑 this is just temporary. Must need to be changed!🛑🛑
-                  test_results["yourImage"] = "wxyz";
-                  //console.log(test_result)
-
-                  if (test_results.hasOwnProperty(implementation.image)) {
-                    var testResult = test_results[implementation.image];
-                    implementationResult = testResult[0];
-                    incorrect = testResult[1];
-                  } else {
-                    implementationResult = { valid: null };
-                    incorrect = true;
-                  }
-
-                  // Creating card element
-                  var col = document.createElement("div");
-                  col.className = "col";
-
-                  var card = document.createElement("div");
-                  card.className = "card mb-3";
-                  if (incorrect === "skipped") {
-                    card.classList.add("border-warning");
-                  } else if (incorrect === "errored") {
-                    card.classList.add("border-danger");
-                  } else if (incorrect) {
-                    card.classList.add("border-danger");
-                  }
-
-                  var cardBody = document.createElement("div");
-                  cardBody.className = "card-body";
-
-                  var cardTitle = document.createElement("h5");
-                  cardTitle.className = "card-title";
-                  cardTitle.textContent = description;
-
-                  var cardText = document.createElement("p");
-                  cardText.className = "card-text";
-                  cardText.textContent = test.description;
-
-                  cardBody.appendChild(cardTitle);
-                  cardBody.appendChild(cardText);
-
-                  var cardFooter = document.createElement("div");
-                  cardFooter.className = "card-footer text-muted text-center";
-
-                  if (incorrect === "skipped" || incorrect === "errored") {
-                    cardFooter.innerHTML = implementationResult;
-                  } else if (incorrect) {
-                    var implementationValid = implementationResult.valid;
-                    var implementationStatus =
-                      implementationValid === true
-                        ? "valid"
-                        : implementationValid === false
-                        ? "invalid"
-                        : "errored";
-                    cardFooter.innerHTML = "Unexpectedly " + implementationStatus;
-                  }
-
-                  card.appendChild(cardBody);
-                  card.appendChild(cardFooter);
-
-                  col.appendChild(card);
-                  rowContainerDetails.appendChild(col);
-                };
-              };
-
-              modalBodyDetails.appendChild(rowContainerDetails);
-
-              const modalFooterDetails = document.createElement("div");
-              modalFooterDetails.classList.add("modal-footer");
-            
-              const closeButton2Details = document.createElement("button");
-              closeButton2Details.type = "button";
-              closeButton2Details.classList.add("btn", "btn-secondary");
-              closeButton2Details.setAttribute("data-bs-dismiss", "modal");
-              closeButton2Details.textContent = "Close";
-
-              modalFooterDetails.appendChild(closeButton2Details);
-
-              modalContentDetails.appendChild(modalHeaderDetails);
-              modalContentDetails.appendChild(modalBodyDetails);
-              modalContentDetails.appendChild(modalFooterDetails);
-            
-              modalDialogDetails.appendChild(modalContentDetails);
-              modalDetails.appendChild(modalDialogDetails);
-
-              document.body.appendChild(modalDetails);
-
-
-              /////////////////////
-              //runtime-info Modal
-              const modalRunInfo = document.createElement("div");
-              modalRunInfo.classList.add("modal", "fade");
-              modalRunInfo.setAttribute("role", "dialog");
-              modalRunInfo.id = `implementation-${i+1}-runtime-info`;
-              modalRunInfo.setAttribute("tabindex", "-1");
-              modalRunInfo.setAttribute("aria-labelledby", `implementation-${i+1}-runtime-info-label`);
-              modalRunInfo.setAttribute("aria-hidden", "true");
-            
-              const modalDialogRunInfo = document.createElement("div");
-              modalDialogRunInfo.classList.add("modal-dialog");
-              modalDialogRunInfo.setAttribute("role", "document");
-            
-              const modalContentRunInfo = document.createElement("div");
-              modalContentRunInfo.classList.add("modal-content");
-
-              const modalHeaderRunInfo = document.createElement("div");
-              modalHeaderRunInfo.classList.add("modal-header");
-            
-              const modalTitleRunInfo = document.createElement("h5");
-              modalTitleRunInfo.classList.add("modal-title");
-              modalTitleRunInfo.id = `implementation-${i+1}-runtime-info-label`;
-            
-              const implementationNameRunInfo = document.createElement("b");
-              implementationNameRunInfo.textContent = implementation.name;
-            
-              const implementationLanguageRunInfo = document.createElement("small");
-              implementationLanguageRunInfo.classList.add("text-muted");
-              implementationLanguageRunInfo.textContent = implementation.language;
-
-              modalTitleRunInfo.appendChild(implementationNameRunInfo);
-              modalTitleRunInfo.appendChild(implementationLanguageRunInfo);
-            
-              const closeButtonRunInfo = document.createElement("button");
-              closeButtonRunInfo.type = "button";
-              closeButtonRunInfo.classList.add("btn-close");
-              closeButtonRunInfo.setAttribute("data-bs-dismiss", "modal");
-              closeButtonRunInfo.setAttribute("aria-label", "Close");
-            
-              modalHeaderRunInfo.appendChild(modalTitleRunInfo);
-              modalHeaderRunInfo.appendChild(closeButtonRunInfo);
-
-              const modalBodyRunInfo = document.createElement("div");
-              modalBodyRunInfo.classList.add("modal-body");
-
-              if (implementation.os_version) {
-                const osVersion = document.createElement("p");
-                osVersion.innerHTML = `<strong>OS Version:</strong> ${implementation.os_version}`;
-                modalBodyRunInfo.appendChild(osVersion);
-              }
-            
-              if (implementation.os) {
-                const os = document.createElement("p");
-                os.innerHTML = `<strong>OS:</strong> ${implementation.os}`;
-                modalBodyRunInfo.appendChild(os);
-              }
-            
-              if (implementation.language) {
-                const language = document.createElement("p");
-                language.innerHTML = `<strong>Language:</strong> ${implementation.language}`;
-                modalBodyRunInfo.appendChild(language);
-              }
-            
-              if (implementation.language_version) {
-                const languageVersion = document.createElement("p");
-                languageVersion.innerHTML = `<strong>Language Version:</strong> ${implementation.language_version}`;
-                modalBodyRunInfo.appendChild(languageVersion);
+              if (test_results.hasOwnProperty(implementation.image)) {
+                var testResult = test_results[implementation.image];
+                implementationResult = testResult[0];
+                incorrect = testResult[1];
+              } else {
+                implementationResult = { valid: null };
+                incorrect = true;
               }
 
-              
-              const modalFooterRunInfo = document.createElement("div");
-              modalFooterRunInfo.classList.add("modal-footer", "m-2", "p-0");
-            
-              const closeButtonFooterRunInfo = document.createElement("button");
-              closeButtonFooterRunInfo.type = "button";
-              closeButtonFooterRunInfo.classList.add("btn", "btn-sm", "btn-secondary");
-              closeButtonFooterRunInfo.setAttribute("data-bs-dismiss", "modal");
-              closeButtonFooterRunInfo.textContent = "Close";
+              // Creating card element
+              var col = document.createElement("div");
+              col.className = "col";
 
-              modalFooterRunInfo.appendChild(closeButtonFooterRunInfo);
+              var card = document.createElement("div");
+              card.className = "card mb-3";
+              if (incorrect === "skipped") {
+                card.classList.add("border-warning");
+              } else if (incorrect === "errored") {
+                card.classList.add("border-danger");
+              } else if (incorrect) {
+                card.classList.add("border-danger");
+              }
 
-              modalContentRunInfo.appendChild(modalHeaderRunInfo);
-              modalContentRunInfo.appendChild(modalBodyRunInfo);
-              modalContentRunInfo.appendChild(modalFooterRunInfo);
-            
-              modalDialogRunInfo.appendChild(modalContentRunInfo);
-              modalRunInfo.appendChild(modalDialogRunInfo);
-            
-              document.body.appendChild(modalRunInfo);
-            };
+              var cardBody = document.createElement("div");
+              cardBody.className = "card-body";
 
-      };
+              var cardTitle = document.createElement("h5");
+              cardTitle.className = "card-title";
+              cardTitle.textContent = description;
+
+              var cardText = document.createElement("p");
+              cardText.className = "card-text";
+              cardText.textContent = test.description;
+
+              cardBody.appendChild(cardTitle);
+              cardBody.appendChild(cardText);
+
+              var cardFooter = document.createElement("div");
+              cardFooter.className = "card-footer text-muted text-center";
+
+              if (incorrect === "skipped" || incorrect === "errored") {
+                cardFooter.innerHTML = implementationResult;
+              } else if (incorrect) {
+                var implementationValid = implementationResult.valid;
+                var implementationStatus =
+                  implementationValid === true
+                    ? "valid"
+                    : implementationValid === false
+                    ? "invalid"
+                    : "errored";
+                cardFooter.innerHTML = "Unexpectedly " + implementationStatus;
+              }
+
+              card.appendChild(cardBody);
+              card.appendChild(cardFooter);
+
+              col.appendChild(card);
+              rowContainerDetails.appendChild(col);
+            }
+          }
+
+          modalBodyDetails.appendChild(rowContainerDetails);
+
+          const modalFooterDetails = document.createElement("div");
+          modalFooterDetails.classList.add("modal-footer");
+
+          const closeButton2Details = document.createElement("button");
+          closeButton2Details.type = "button";
+          closeButton2Details.classList.add("btn", "btn-secondary");
+          closeButton2Details.setAttribute("data-bs-dismiss", "modal");
+          closeButton2Details.textContent = "Close";
+
+          modalFooterDetails.appendChild(closeButton2Details);
+
+          modalContentDetails.appendChild(modalHeaderDetails);
+          modalContentDetails.appendChild(modalBodyDetails);
+          modalContentDetails.appendChild(modalFooterDetails);
+
+          modalDialogDetails.appendChild(modalContentDetails);
+          modalDetails.appendChild(modalDialogDetails);
+
+          document.body.appendChild(modalDetails);
+
+          /////////////////////
+          //runtime-info Modal
+          const modalRunInfo = document.createElement("div");
+          modalRunInfo.classList.add("modal", "fade");
+          modalRunInfo.setAttribute("role", "dialog");
+          modalRunInfo.id = `implementation-${i + 1}-runtime-info`;
+          modalRunInfo.setAttribute("tabindex", "-1");
+          modalRunInfo.setAttribute(
+            "aria-labelledby",
+            `implementation-${i + 1}-runtime-info-label`,
+          );
+          modalRunInfo.setAttribute("aria-hidden", "true");
+
+          const modalDialogRunInfo = document.createElement("div");
+          modalDialogRunInfo.classList.add("modal-dialog");
+          modalDialogRunInfo.setAttribute("role", "document");
+
+          const modalContentRunInfo = document.createElement("div");
+          modalContentRunInfo.classList.add("modal-content");
+
+          const modalHeaderRunInfo = document.createElement("div");
+          modalHeaderRunInfo.classList.add("modal-header");
+
+          const modalTitleRunInfo = document.createElement("h5");
+          modalTitleRunInfo.classList.add("modal-title");
+          modalTitleRunInfo.id = `implementation-${i + 1}-runtime-info-label`;
+
+          const implementationNameRunInfo = document.createElement("b");
+          implementationNameRunInfo.textContent = implementation.name;
+
+          const implementationLanguageRunInfo = document.createElement("small");
+          implementationLanguageRunInfo.classList.add("text-muted");
+          implementationLanguageRunInfo.textContent = implementation.language;
+
+          modalTitleRunInfo.appendChild(implementationNameRunInfo);
+          modalTitleRunInfo.appendChild(implementationLanguageRunInfo);
+
+          const closeButtonRunInfo = document.createElement("button");
+          closeButtonRunInfo.type = "button";
+          closeButtonRunInfo.classList.add("btn-close");
+          closeButtonRunInfo.setAttribute("data-bs-dismiss", "modal");
+          closeButtonRunInfo.setAttribute("aria-label", "Close");
+
+          modalHeaderRunInfo.appendChild(modalTitleRunInfo);
+          modalHeaderRunInfo.appendChild(closeButtonRunInfo);
+
+          const modalBodyRunInfo = document.createElement("div");
+          modalBodyRunInfo.classList.add("modal-body");
+
+          if (implementation.os_version) {
+            const osVersion = document.createElement("p");
+            osVersion.innerHTML = `<strong>OS Version:</strong> ${implementation.os_version}`;
+            modalBodyRunInfo.appendChild(osVersion);
+          }
+
+          if (implementation.os) {
+            const os = document.createElement("p");
+            os.innerHTML = `<strong>OS:</strong> ${implementation.os}`;
+            modalBodyRunInfo.appendChild(os);
+          }
+
+          if (implementation.language) {
+            const language = document.createElement("p");
+            language.innerHTML = `<strong>Language:</strong> ${implementation.language}`;
+            modalBodyRunInfo.appendChild(language);
+          }
+
+          if (implementation.language_version) {
+            const languageVersion = document.createElement("p");
+            languageVersion.innerHTML = `<strong>Language Version:</strong> ${implementation.language_version}`;
+            modalBodyRunInfo.appendChild(languageVersion);
+          }
+
+          const modalFooterRunInfo = document.createElement("div");
+          modalFooterRunInfo.classList.add("modal-footer", "m-2", "p-0");
+
+          const closeButtonFooterRunInfo = document.createElement("button");
+          closeButtonFooterRunInfo.type = "button";
+          closeButtonFooterRunInfo.classList.add(
+            "btn",
+            "btn-sm",
+            "btn-secondary",
+          );
+          closeButtonFooterRunInfo.setAttribute("data-bs-dismiss", "modal");
+          closeButtonFooterRunInfo.textContent = "Close";
+
+          modalFooterRunInfo.appendChild(closeButtonFooterRunInfo);
+
+          modalContentRunInfo.appendChild(modalHeaderRunInfo);
+          modalContentRunInfo.appendChild(modalBodyRunInfo);
+          modalContentRunInfo.appendChild(modalFooterRunInfo);
+
+          modalDialogRunInfo.appendChild(modalContentRunInfo);
+          modalRunInfo.appendChild(modalDialogRunInfo);
+
+          document.body.appendChild(modalRunInfo);
+        }
+      }
     </script>
-
 
     <script>
       const script = document.createElement("script");
@@ -993,10 +1120,10 @@
         fetch("https://bowtie-json-schema.github.io/bowtie/draft7.json.gz")
           .then((response) => response.arrayBuffer())
           .then((buffer) => {
-             const inflated = pako.inflate(buffer, { to: "string" });
-             const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
-              //console.log(dataObjectsArray)
-            const data = dataObjectsArray.map((line) => JSON.parse(line)); 
+            const inflated = pako.inflate(buffer, { to: "string" });
+            const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
+            //console.log(dataObjectsArray)
+            const data = dataObjectsArray.map((line) => JSON.parse(line));
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             jsonData(dataObjectsArray);
@@ -1056,7 +1183,9 @@
       //adding dark theme
       const body = document.querySelector("body");
       const nav = document.querySelector("nav");
-      nav.classList.add(dark ? ("navbar-dark", "bg-dark") : ("navbar-light", "bg-light"))
+      nav.classList.add(
+        dark ? ("navbar-dark", "bg-dark") : ("navbar-light", "bg-light"),
+      );
       body.setAttribute("data-bs-theme", dark ? "dark" : "light");
 
       themeTogglerButton.addEventListener("click", () => {
@@ -1069,24 +1198,26 @@
           : (themeTogglerButton.appendChild(themeSvgSun),
             themeTogglerButton.removeChild(themeSvgMoon));
 
-            nav.classList.toggle("navbar-dark", dark);
-            nav.classList.toggle("bg-dark", dark);
-            nav.classList.toggle("bg-light", !dark);
-            nav.classList.toggle("navbar-light", !dark);
-          });
+        nav.classList.toggle("navbar-dark", dark);
+        nav.classList.toggle("bg-dark", dark);
+        nav.classList.toggle("bg-light", !dark);
+        nav.classList.toggle("navbar-light", !dark);
+      });
 
-        //copyToClipboard function
-        const clipBoardIcon = document.querySelector('.bi-clipboard');
-        function copyToClipboard(targetTextToCopy, btnId) {
-          const textToCopy = document.getElementById(targetTextToCopy).innerText;
-          navigator.clipboard.writeText(textToCopy)
-          document.getElementById(btnId).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+      //copyToClipboard function
+      const clipBoardIcon = document.querySelector(".bi-clipboard");
+      function copyToClipboard(targetTextToCopy, btnId) {
+        const textToCopy = document.getElementById(targetTextToCopy).innerText;
+        navigator.clipboard.writeText(textToCopy);
+        document.getElementById(
+          btnId,
+        ).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
                                                                 <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                                                               </svg>`;
-          setTimeout(() => {
-            document.getElementById(btnId).innerHTML = clipBoardIcon.outerHTML;
-          }, 2000);
-        }
+        setTimeout(() => {
+          document.getElementById(btnId).innerHTML = clipBoardIcon.outerHTML;
+        }, 2000);
+      }
     </script>
   </body>
 </html>

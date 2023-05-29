@@ -51,7 +51,9 @@ export class RunInfo {
   create_summary() {
     // console.log(Object.values(this._implementations))
     // console.log((this._implementations))
-    return new _Summary({ implementations: Object.values(this._implementations) });
+    return new _Summary({
+      implementations: Object.values(this._implementations),
+    });
   }
 }
 
@@ -81,7 +83,7 @@ class _Summary {
       return key < otherKey ? -1 : 1;
     });
     // console.log(this.implementations)
-  
+
     this._combined = {};
     // console.log(this._combined)
     this.did_fail_fast = false;
@@ -90,23 +92,29 @@ class _Summary {
     this.initializeCounts();
     // console.log(this.counts)
   }
-  
+
   initializeCounts() {
     for (const each of this.implementations) {
       this.counts[each.image] = new Count();
     }
   }
-  
+
   get total_cases() {
-    const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
+    const counts = new Set(
+      Object.values(this.counts).map((count) => count.total_cases),
+    );
     // console.log(counts)
     if (counts.size !== 1) {
       const summary = Object.entries(this.counts)
-        .map(([each, count]) => `  ${each.split('/').pop()}: ${count.total_cases}`)
-        .join('\n');
-      throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
+        .map(
+          ([each, count]) => `  ${each.split("/").pop()}: ${count.total_cases}`,
+        )
+        .join("\n");
+      throw new InvalidBowtieReport(
+        `Inconsistent number of cases run:\n\n${summary}`,
+      );
     }
-    return counts.values().next().value;;
+    return counts.values().next().value;
   }
 
   get errored_cases() {
@@ -151,7 +159,10 @@ class _Summary {
   // add_case_metadata(seq, caseMetadata)
   add_case_metadata(caseObject) {
     const results = caseObject.case.tests.map((test) => [test, {}]);
-    this._combined[caseObject.seq] = { case: caseObject.case, results: results };
+    this._combined[caseObject.seq] = {
+      case: caseObject.case,
+      results: results,
+    };
   }
 
   // see_error(implementation, seq, context, caught)
@@ -217,15 +228,17 @@ class _Summary {
   }
 
   *flat_results() {
-    let sorted_CombinedArray = Object.entries(this._combined).sort(([keyA, valueA], [keyB, valueB]) => {
-      if (keyA < keyB) {
-        return -1;
-      } else if (keyA > keyB) {
-        return 1;
-      } else {
-        return 0;
-      }
-    });
+    let sorted_CombinedArray = Object.entries(this._combined).sort(
+      ([keyA, valueA], [keyB, valueB]) => {
+        if (keyA < keyB) {
+          return -1;
+        } else if (keyA > keyB) {
+          return 1;
+        } else {
+          return 0;
+        }
+      },
+    );
     let sorted_CombinedObject = Object.fromEntries(sorted_CombinedArray);
     // console.log(sorted_CombinedObject)
     for (let seq in sorted_CombinedObject) {
@@ -359,13 +372,13 @@ export class CaseResult {
   }
 }
 
-//class TestResult 
+//class TestResult
 
 class TestResult {
   static errored = false;
   static skipped = false;
   valid;
-  
+
   constructor(valid) {
     this.valid = valid;
   }
@@ -379,7 +392,6 @@ class TestResult {
     return new TestResult(data.valid);
   }
 }
-
 
 //class SkippedTest
 
@@ -402,7 +414,6 @@ class SkippedTest {
   }
 }
 
-
 //class ErroredTest
 
 class ErroredTest {
@@ -420,8 +431,6 @@ class ErroredTest {
     return "Encountered an error.";
   }
 }
-
-
 
 //class ReportData
 
