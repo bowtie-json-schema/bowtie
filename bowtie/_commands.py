@@ -22,7 +22,7 @@ except ImportError:
 
 import json
 
-import attrs
+from attrs import asdict, field, frozen
 
 from bowtie import exceptions
 
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from bowtie import _report
 
 
-@attrs.frozen
+@frozen
 class Test:
     description: str
     instance: Any
@@ -38,7 +38,7 @@ class Test:
     valid: bool | None = None
 
 
-@attrs.frozen
+@frozen
 class TestCase:
     description: str
     schema: Any
@@ -47,14 +47,18 @@ class TestCase:
     registry: dict[str, Any] | None = None
 
     @classmethod
-    def from_dict(cls, tests: Iterable[dict[str, Any]], **kwargs: Any):
+    def from_dict(
+        cls,
+        tests: Iterable[dict[str, Any]],
+        **kwargs: Any,
+    ) -> TestCase:
         kwargs["tests"] = [Test(**test) for test in tests]
         return cls(**kwargs)
 
     def without_expected_results(self) -> dict[str, Any]:
         as_dict = {
             "tests": [
-                attrs.asdict(
+                asdict(
                     test,
                     filter=lambda k, v: k.name != "valid"
                     and (k.name != "comment" or v is not None),
@@ -63,7 +67,7 @@ class TestCase:
             ],
         }
         as_dict.update(
-            attrs.asdict(
+            asdict(
                 self,
                 filter=lambda k, v: k.name != "tests"
                 and (k.name not in {"comment", "registry"} or v is not None),
@@ -72,19 +76,19 @@ class TestCase:
         return as_dict
 
 
-@attrs.frozen
+@frozen
 class Started:
     implementation: dict[str, Any]
-    ready: bool = attrs.field()
-    version: int = attrs.field()
+    ready: bool = field()
+    version: int = field()
 
     @ready.validator  # type: ignore[reportGeneralTypeIssues]
-    def _check_ready(self, _, ready: bool):
+    def _check_ready(self, _: Any, ready: bool):
         if not ready:
             raise exceptions.ImplementationNotReady()
 
     @version.validator  # type: ignore[reportGeneralTypeIssues]
-    def _check_version(self, _, version: int):
+    def _check_version(self, _: Any, version: int):
         if version != 1:
             raise exceptions.VersionMismatch(expected=1, got=version)
 
@@ -117,7 +121,7 @@ def command(
             self: Command[_R],
             validate: Callable[..., None],
         ) -> dict[str, Any]:
-            request = dict(cmd=name, **attrs.asdict(self))
+            request = dict(cmd=name, **asdict(self))
             validate(instance=request, schema=request_schema)
             return request
 
@@ -136,7 +140,7 @@ def command(
         cls = cast(Type[Command[_R]], cls)
         cls.to_request = to_request
         cls.from_response = from_response
-        return attrs.frozen(cls)
+        return frozen(cls)
 
     return _command
 
@@ -149,7 +153,7 @@ class Start:
 START_V1 = Start(version=1)
 
 
-@attrs.frozen
+@frozen
 class StartedDialect:
     ok: bool
 
@@ -186,7 +190,7 @@ def _case_result(
     )
 
 
-@attrs.frozen
+@frozen
 class TestResult:
     errored = False
     skipped = False
@@ -205,13 +209,13 @@ class TestResult:
         return cls(valid=data["valid"])
 
 
-@attrs.frozen
+@frozen
 class SkippedTest:
-    message: str | None = attrs.field(default=None)
-    issue_url: str | None = attrs.field(default=None)
+    message: str | None = field(default=None)
+    issue_url: str | None = field(default=None)
 
     errored = False
-    skipped: bool = attrs.field(init=False, default=True)
+    skipped: bool = field(init=False, default=True)
 
     @property
     def reason(self) -> str:
@@ -222,11 +226,11 @@ class SkippedTest:
         return "skipped"
 
 
-@attrs.frozen
+@frozen
 class ErroredTest:
-    context: dict[str, Any] = attrs.field(factory=dict)
+    context: dict[str, Any] = field(factory=dict)
 
-    errored: bool = attrs.field(init=False, default=True)
+    errored: bool = field(init=False, default=True)
     skipped: bool = False
 
     @property
@@ -239,12 +243,13 @@ class ErroredTest:
 
 class ReportableResult(Protocol):
     errored: bool
+    failed: bool
 
     def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]  # noqa: E501
         pass
 
 
-@attrs.frozen
+@frozen
 class CaseResult:
     errored = False
 
@@ -254,7 +259,7 @@ class CaseResult:
     expected: list[bool | None]
 
     @classmethod
-    def from_dict(cls, data: Any, **kwargs: Any):
+    def from_dict(cls, data: Any, **kwargs: Any) -> CaseResult:
         return cls(
             results=[TestResult.from_dict(t) for t in data.pop("results")],
             **data,
@@ -281,9 +286,14 @@ class CaseResult:
             yield test, failed
 
 
-@attrs.frozen
+@frozen
 class CaseErrored:
+    """
+    A full test case errored.
+    """
+
     errored = True
+    failed = False
 
     implementation: str
     seq: int
@@ -295,7 +305,12 @@ class CaseErrored:
         reporter.errored(self)
 
     @classmethod
-    def uncaught(cls, implementation: str, seq: int, **context: Any):
+    def uncaught(
+        cls,
+        implementation: str,
+        seq: int,
+        **context: Any,
+    ) -> CaseErrored:
         return cls(
             implementation=implementation,
             seq=seq,
@@ -304,28 +319,34 @@ class CaseErrored:
         )
 
 
-@attrs.frozen
+@frozen
 class CaseSkipped:
+    """
+    A full test case was skipped.
+    """
+
     errored = False
+    failed = False
 
     implementation: str
     seq: int
 
     message: str | None = None
     issue_url: str | None = None
-    skipped: bool = attrs.field(init=False, default=True)
+    skipped: bool = field(init=False, default=True)
 
     def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]  # noqa: E501
         reporter.skipped(self)
 
 
-@attrs.frozen
+@frozen
 class Empty:
     """
     An implementation didn't send a response.
     """
 
     errored = True
+    failed = False
 
     implementation: str
 

@@ -68,6 +68,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "gradle"
+    directory: "implementations/java-json-schema"
+    schedule:
+      interval: "daily"
+
   # Dependabot for Dockerfiles
   # --------------------------
 
@@ -136,6 +141,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/rust-boon"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-json-schema"
     schedule:
       interval: "daily"
 

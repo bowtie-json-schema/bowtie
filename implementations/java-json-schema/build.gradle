@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '.'
+            include 'BowtieJsonSchema.java'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def harnessImplementation = [
+        group: 'dev.harrel',
+        name: 'json-schema',
+        version: '1.0.0-beta.4'
+]
+def jsonProvider = [
+        group: 'com.fasterxml.jackson.core',
+        name: 'jackson-databind',
+        version: '2.15.1'
+]
+
+dependencies {
+    /* Verbose dependency notation for dependabot */
+    implementation "$harnessImplementation.group:$harnessImplementation.name:$harnessImplementation.version"
+    implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
+}
+
+jar {
+    archiveBaseName = 'harness'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes "Main-Class": "BowtieJsonSchema"
+        attributes "Implementation-Group": harnessImplementation.group
+        attributes "Implementation-Name": harnessImplementation.name
+        attributes "Implementation-Version": harnessImplementation.version
+        attributes "Provider-Group": jsonProvider.group
+        attributes "Provider-Name": jsonProvider.name
+        attributes "Provider-Version": jsonProvider.version
+    }
+}

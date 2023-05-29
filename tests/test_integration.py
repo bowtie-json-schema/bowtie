@@ -412,12 +412,14 @@ async def test_filter(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_smoke(envsonschema):
+async def test_smoke_pretty(envsonschema):
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
         "smoke",
+        "--format",
+        "pretty",
         "-i",
         envsonschema,
         stdout=asyncio.subprocess.PIPE,
@@ -427,6 +429,52 @@ async def test_smoke(envsonschema):
     # FIXME: This != 0 is because indeed envsonschema gets answers wrong
     #        Change to asserting about the smoke stdout once that's there.
     assert proc.returncode != 0
+
+
+@pytest.mark.asyncio
+async def test_smoke_json(envsonschema):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "smoke",
+        "--format",
+        "json",
+        "-i",
+        envsonschema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
+    #        Change to asserting about the smoke stdout once that's there.
+    assert proc.returncode == 0, (stdout, stderr)
+    assert json.loads(stdout) == [
+        {
+            "case": {
+                "description": "allow-everything schema",
+                "schema": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                },
+                "tests": [
+                    {"description": "First", "instance": 1},
+                    {"description": "Second", "instance": "foo"},
+                ],
+            },
+            "response": {"errored": False, "failed": True},
+        },
+        {
+            "case": {
+                "description": "allow-nothing schema",
+                "schema": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "not": {},
+                },
+                "tests": [{"description": "First", "instance": 12}],
+            },
+            "response": {"errored": False, "failed": False},
+        },
+    ]
 
 
 @pytest.mark.asyncio
@@ -676,7 +724,7 @@ async def test_no_such_image():
     stdout, stderr = await proc.communicate()
     assert (
         b"'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
-        in stdout
+        in stderr
     )
     assert proc.returncode != 0
 

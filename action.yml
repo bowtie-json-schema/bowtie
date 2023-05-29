@@ -1,0 +1,18 @@
+name: Setup Bowtie
+description: "Install Bowtie, hooray!"
+branding:
+  icon: package
+  color: blue
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v4
+      id: localpython
+      with:
+        python-version: "3.8 - 3.11"
+        update-environment: false
+
+    - name: "Install Bowtie"
+      run: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema
+      shell: bash

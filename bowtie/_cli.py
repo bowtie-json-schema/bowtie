@@ -5,7 +5,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from io import BytesIO
 from pathlib import Path
-from typing import Any, TextIO, Union
+from typing import Any, AsyncIterator, TextIO, Union
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -17,6 +17,7 @@ from attrs import asdict
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
+from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
 import jinja2
@@ -76,7 +77,18 @@ LATEST_DIALECT_NAME = "draft2020-12"
 #: Should match the magic value used to validate `schema`s in `io-schema.json`
 CURRENT_DIALECT_URI = "urn:current-dialect"
 
+FORMAT = click.option(
+    "--format",
+    "-f",
+    "format",
+    help="What format to use for the output",
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
+    type=click.Choice(["json", "pretty"]),
+)
 
+
+@tui()
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
@@ -136,14 +148,7 @@ def report(
 
 
 @main.command()
-@click.option(
-    "--format",
-    "-f",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
-)
+@FORMAT
 @click.option(
     "--show",
     "-s",
@@ -453,15 +458,8 @@ def validate(
 
 @main.command()
 @click.pass_context
+@FORMAT
 @IMPLEMENTATION
-@click.option(
-    "--format",
-    "-f",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
-)
 def info(context: click.Context, **kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
@@ -519,6 +517,7 @@ async def _info(image_names: list[str], format: str):
 
 @main.command()
 @click.pass_context
+@FORMAT
 @IMPLEMENTATION
 def smoke(context: click.Context, **kwargs: Any):
     """
@@ -528,7 +527,7 @@ def smoke(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _smoke(image_names: list[str]):
+async def _smoke(image_names: list[str], format: str):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -542,14 +541,15 @@ async def _smoke(image_names: list[str]):
                 exit_code |= os.EX_CONFIG
                 click.echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                    file=sys.stderr,
                 )
                 continue
 
-            click.echo(f"Testing {implementation.name!r}...")
+            click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= os.EX_CONFIG
-                click.echo("  ❗ (error): startup failed")
+                click.echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
             dialect = implementation.dialects[0]
@@ -572,22 +572,39 @@ async def _smoke(image_names: list[str]):
                     ],
                 ),
             ]
-            for seq, case in enumerate(cases):
-                response = await runner.run_case(seq=seq, case=case)
-                if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                    exit_code |= os.EX_DATAERR
-                    message = "❗ (error)"
-                elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                    exit_code |= os.EX_DATAERR
-                    message = "✗ (failed)"
-                else:
-                    message = "✓"
-                click.echo(f"  {message}: {case.description}")
+            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                (case, await runner.run_case(seq=seq, case=case))
+                for seq, case in enumerate(cases)
+            )
+
+            if format == "json":
+                serializable = [
+                    {
+                        "case": case.without_expected_results(),
+                        "response": dict(
+                            errored=response.errored,
+                            failed=response.failed,
+                        ),
+                    }
+                    async for case, response in responses
+                ]
+                click.echo(json.dumps(serializable, indent=2))
+            else:
+                async for case, response in responses:
+                    if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        exit_code |= os.EX_DATAERR
+                        message = "❗ (error)"
+                    elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        exit_code |= os.EX_DATAERR
+                        message = "✗ (failed)"
+                    else:
+                        message = "✓"
+                    click.echo(f"  {message}: {case.description}")
 
     if exit_code:
-        click.echo("\n❌ some failures")
+        click.echo("\n❌ some failures", file=sys.stderr)
     else:
-        click.echo("\n✅ all passed")
+        click.echo("\n✅ all passed", file=sys.stderr)
 
     return exit_code
 
@@ -600,19 +617,21 @@ class _TestSuiteCases(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], str]:
+    ) -> tuple[Iterable[TestCase], str, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
         is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
+            run_metadata = {}
         else:
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
                 GitHub,  # type: ignore[reportUnknownVariableType]
             )
+            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]  # noqa: E501
 
             # isort: on
 
@@ -632,8 +651,18 @@ class _TestSuiteCases(click.ParamType):
                 cases, dialect = self._cases_and_dialect(path=path)
                 cases = list(cases)
 
+            try:
+                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+            except NotFoundError:
+                commit_info = ref
+            else:
+                # TODO: Make this the tree URL maybe, but I see tree(...)
+                #       doesn't come with an html_url
+                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+            run_metadata: dict[str, Any] = {"Commit": commit_info}
+
         if dialect is not None:
-            return cases, dialect
+            return cases, dialect, run_metadata
 
         self.fail(
             f"{value} does not contain JSON Schema Test Suite cases.",
@@ -665,7 +694,7 @@ class _TestSuiteCases(click.ParamType):
 @click.argument("input", type=_TestSuiteCases())
 def suite(
     context: click.Context,
-    input: tuple[Iterable[TestCase], str],
+    input: tuple[Iterable[TestCase], str, dict[str, Any]],
     filter: str,
     **kwargs: Any,
 ):
@@ -684,11 +713,12 @@ def suite(
         * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
           to run a single file directly from a branch which exists in GitHub
     """  # noqa: E501
-    cases, dialect = input
+    cases, dialect, metadata = input
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
 
-    exit_code = asyncio.run(_run(**kwargs, dialect=dialect, cases=cases))
+    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
+    exit_code = asyncio.run(task)
     context.exit(exit_code)
 
 
@@ -698,6 +728,7 @@ async def _run(
     dialect: str,
     fail_fast: bool,
     set_schema: bool,
+    run_metadata: dict[str, Any] = {},  # noqa: B006
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
 ) -> int:
@@ -753,6 +784,7 @@ async def _run(
                 _report.RunInfo.from_implementations(
                     implementations=acknowledged,
                     dialect=dialect,
+                    metadata=run_metadata,
                 ),
             )
 
