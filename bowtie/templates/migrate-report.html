@@ -185,11 +185,11 @@
               </tr>
             </tfoot>
           </table>
-          <!-- some content by JS  -->
+          <!-- some content through JS  -->
         </div>
       </div>
       <div class="accordion pt-5" id="cases">
-
+        <!-- some content through JS  -->
       </div>
     </div>
 
@@ -538,9 +538,9 @@
             //////////////////////////////////////////////////////
             // Cases section (accordions)
             
+            const accordionCases = document.getElementById('cases');
             var flatResults = summary.flat_results();
             //console.log((summary.flat_results()))
-            const accordionCases = document.getElementById('cases');
 
             for (let [seq, description, schema, registry, results] of flatResults) {
 
@@ -567,6 +567,49 @@
               accordionItemsButton.onclick = function() {
                 schemaDisplay(`accordion-body${ seq }`, JSON.stringify(schema, null, 2), "schema-code", `row-${ seq }`);
               };
+
+              //schemaDisplay function
+              let currentParrentBodyId = '';
+              const displayBody = document.querySelector("#display-body");
+              function schemaDisplay(parentBodyId, code, targetId, rowClass) {
+                if (parentBodyId != currentParrentBodyId) {
+                  currentParrentBodyId = parentBodyId;
+                  displayBody.classList.remove("d-none");
+                  displayBody.classList.add("d-block");
+                  document.getElementById('instance-info').innerHTML = '';
+                  const isDisplayed = displayBody.parentElement === document.getElementById(parentBodyId);
+                  if (isDisplayed) {
+                    displayBody.parentElement.removeChild(displayBody);
+                  } else {
+                    rowHighlightListener(rowClass);
+                    displayCode(code, targetId);
+                    const accordionBody = document.querySelector(`#${parentBodyId}`);
+                    accordionBody.insertBefore(displayBody, accordionBody.firstChild);
+                  }
+                }
+              };
+
+              function displayCode(code, targetId) {
+                const targetDisplay = document.getElementById(targetId);
+                displayBody.classList.remove("d-none");
+                displayBody.classList.add("d-block");
+                targetDisplay.innerHTML = `<pre>${code}</pre>`;
+              }
+
+              //rowHighlightListener function
+              function rowHighlightListener(rowClass) {
+                const instanceRows = document.getElementsByClassName(rowClass);
+                for (let i = 0; i < instanceRows.length; i++) {
+                  const currentInstanceRow = instanceRows[i];
+                  currentInstanceRow.addEventListener('click', function () {
+                    const activeElements = document.getElementsByClassName('table-active');
+                    for (let j = 0; j < activeElements.length; j++) {
+                      activeElements[j].classList.remove('table-active');
+                    }
+                    currentInstanceRow.classList.add('table-active');
+                  });
+                }
+              }
 
               const accordionItemsA = document.createElement("a");
               accordionItemsA.setAttribute("href", "#schema");
