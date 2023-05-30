@@ -74,9 +74,8 @@ def style(session):
 
 @session()
 def typing(session):
-    # FIXME: Don't repeat dependencies.
-    session.install("pyright", "types-jsonschema", ROOT)
-    session.run("python", "-m", "pyright", BOWTIE)
+    session.install("pyright", ROOT)
+    session.run("pyright", BOWTIE)
 
 
 @session(tags=["docs"])
