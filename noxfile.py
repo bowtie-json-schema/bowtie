@@ -63,7 +63,7 @@ def readme(session):
     session.install("build", "twine")
     tmpdir = session.create_tmp()
     session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
-    session.run("python", "-m", "twine", "check", tmpdir + "/*")
+    session.run("python", "-m", "twine", "check", "--strict", tmpdir + "/*")
 
 
 @session(tags=["style"])
