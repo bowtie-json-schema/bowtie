@@ -1,8 +1,13 @@
 class Summary {
-  constructor(implementations) {
+  constructor(lines) {
     // console.log((implementations))
 
-    this.implementations = implementations.sort((each, other) => {
+    this.lines = lines;
+    const runInfoData = this.lines[0];
+    const implementationsArray = Object.values(runInfoData.implementations);
+    // console.log(implementationsArray)
+
+    this.implementations = implementationsArray.sort((each, other) => {
       const key = `${each.language}${each.name}`;
       const otherKey = `${other.language}${other.name}`;
       return key < otherKey ? -1 : 1;
@@ -19,26 +24,25 @@ class Summary {
   }
 
     get total_cases() {
-    const counts = new Set(Object.values(this.counts).map(count => count.total_cases));
-    // console.log(counts)
-    if (counts.size !== 1) {
-      const summary = Object.entries(this.counts)
-        .map(([each, count]) => `  ${each.split('/').pop()}: ${count.total_cases}`)
-        .join('\n');
-      throw new InvalidBowtieReport(`Inconsistent number of cases run:\n\n${summary}`);
-    }
-    return counts.values().next().value;
+      var count  = 0;
+      this.lines.forEach(element => {
+        const firstKey = Object.keys(element)[0];
+        if (firstKey == 'case'){
+          count+=1;
+        }
+      });
+      return count;
   }
 
   get total_tests() {
-    const counts = new Set(
-      Object.values(this.counts).map((count) => count.total_tests),
-    );
-    // console.log(counts)
-    // if (counts.size !== 1) {
-    //   throw new InvalidBowtieReport(`Inconsistent number of tests run: ${JSON.stringify(this.counts)}`);
-    // }
-    return counts.values().next().value;
+    var count = 0;
+    this.lines.forEach(element => {
+      const firstKey = Object.keys(element)[0];
+      if (firstKey == 'case'){
+        count += element['case']['tests'].length;
+      }
+    });
+    return count;
   }
 
   get failed_tests() {
@@ -69,6 +73,7 @@ class Summary {
     );
   }
 }
+
 
 
 class Count {
