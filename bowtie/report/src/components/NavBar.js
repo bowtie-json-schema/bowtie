@@ -1,9 +1,23 @@
+import { useState } from 'react';
+import moonIcon from '../assets/svg/moonIcon.svg';
+import sunIcon from '../assets/svg/sunIcon.svg';
+
 const NavBar = ({ runInfo }) => {
   const generate_dialect_navigation = true;
+  const body = document.querySelector("body");
+  const [mode, setMode] = useState(window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  body.setAttribute("data-bs-theme", mode ? "dark" : "light");
+  function toggleMode() {
+    const newMode = !mode;
+    setMode(newMode);
+  
+  }
+
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg sticky-top mb-4">
+      <nav className={`navbar navbar-expand-lg sticky-top mb-4 ${mode ? 'navbar-dark bg-dark' : 'navbar-light-bg-light'}`}>
         <div className="container-fluid">
           <a className="navbar-brand mb-0 h1" href="#">Bowtie</a>
           <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -38,8 +52,10 @@ const NavBar = ({ runInfo }) => {
               )}
             </ul>
           </div>
-          <button id="theme-toggler" className="btn border-0 me-1">
-            {/* SVG code for theme toggler */}
+          <button id="theme-toggler" className="btn border-0 me-1" onClick={toggleMode}>
+            {
+                mode ? <img src={moonIcon} /> : <img src={sunIcon} />
+            }
           </button>
           <a href="https://github.com/bowtie-json-schema/bowtie/" className="link-secondary">
             <span className="navbar-text">

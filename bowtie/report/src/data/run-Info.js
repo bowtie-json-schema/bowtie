@@ -1,3 +1,12 @@
+const _DIALECT_URI_TO_SHORTNAME = {
+  "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
+  "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
+  "http://json-schema.org/draft-07/schema#": "Draft 7",
+  "http://json-schema.org/draft-06/schema#": "Draft 6",
+  "http://json-schema.org/draft-04/schema#": "Draft 4",
+  "http://json-schema.org/draft-03/schema#": "Draft 3",
+};
+
 export class RunInfo {
   constructor(runInfoData) {
     // console.log(runInfoData.metadata)
