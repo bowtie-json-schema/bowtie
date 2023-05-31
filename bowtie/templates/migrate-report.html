@@ -474,6 +474,7 @@
               var td2 = document.createElement("td");
               td2.setAttribute("class", "text-center");
               td2.textContent = `${counts.errored_cases}`;
+              //console.log(counts.skipped_tests)
 
               var td3 = document.createElement("td");
               td3.setAttribute("class", "text-center");
@@ -909,7 +910,7 @@
               modalTitleRunInfo.id = `implementation-${i+1}-runtime-info-label`;
             
               const implementationNameRunInfo = document.createElement("b");
-              implementationNameRunInfo.textContent = implementation.name;
+              implementationNameRunInfo.textContent = implementation.name +" ";
             
               const implementationLanguageRunInfo = document.createElement("small");
               implementationLanguageRunInfo.classList.add("text-muted");

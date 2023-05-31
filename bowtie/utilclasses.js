@@ -18,6 +18,13 @@ const _DIALECT_URI_TO_SHORTNAME = {
   "http://json-schema.org/draft-03/schema#": "Draft 3",
 };
 
+function writer(file = process.stdout) {
+  return (result) => {
+    file.write(`${JSON.stringify(result)}\n`);
+  };
+}
+
+
 export class RunInfo {
   constructor(started, bowtie_version, dialect, _implementations) {
     this.started = started;
@@ -309,6 +316,43 @@ export class CaseSkipped {
     reporter.skipped(this);
   }
 }
+
+
+// class _CaseReport
+
+class _CaseReporter {
+  constructor(write, log) {
+      this.write = write;
+      this.log = log;
+  }
+
+  static case_started(log, write, caseObj, seq) {
+      const self = new _CaseReporter(write, log);
+      self.write({ case: caseObj, seq });
+      return self;
+  }
+
+  got_results(results) {
+      this.write(results);
+  }
+
+  skipped(skipped) {
+      this.write(skipped);
+  }
+
+  no_response(implementation) {
+      this.log.error("No response", { logger_name: implementation });
+  }
+
+  errored(results) {
+      const { implementation, context } = results;
+      const message = results.caught ? "" : "uncaught error";
+      this.log.error(message, { logger_name: implementation, ...context });
+      this.got_results(results);
+  }
+}
+
+
 
 // class CaseResult
 export class CaseResult {
