@@ -16,7 +16,7 @@ const NavBar = ({ runInfo }) => {
 
   return (
     <>
-      <nav className={`navbar navbar-expand-lg sticky-top mb-4 ${mode ? 'navbar-dark bg-dark' : 'navbar-light-bg-light'}`}>
+      <nav className={`navbar navbar-expand-lg sticky-top mb-4 ${mode ? 'navbar-dark bg-dark' : 'navbar-light bg-light'}`}>
         <div className="container-fluid">
           <a className="navbar-brand mb-0 h1" href="#">Bowtie</a>
           <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"

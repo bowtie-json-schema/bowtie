@@ -1,9 +1,5 @@
 const RunInfoSection = (props) => {
 
-  const horizontalLine = {
-      borderBottom: '0.01px solid #383a3b',
-  }
-
   let ago = (Date.now() - Date.parse(props.runInfo.started)) / 1000;
   let agoUnits = 'seconds';
   if (ago > 60) {
@@ -24,11 +20,11 @@ const RunInfoSection = (props) => {
       <div className="card-body">
         <table className="table table-sm table-hover">
         <thead>
-          <tr style={horizontalLine}>
+          <tr>
             <td>Dialect</td> 
             <td>{props.runInfo.dialect}</td>
           </tr>
-          <tr style={horizontalLine}>
+          <tr>
             <td>Ran</td>
             <td>
               <time dateTime={props.runInfo.started}>

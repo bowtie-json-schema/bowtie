@@ -1,3 +1,5 @@
+import Summary from './report';
+
 const _DIALECT_URI_TO_SHORTNAME = {
   "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
   "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
@@ -9,7 +11,7 @@ const _DIALECT_URI_TO_SHORTNAME = {
 
 export class RunInfo {
   constructor(runInfoData) {
-    // console.log(runInfoData.metadata)
+    // console.log(runInfoData.implementations)
     this.started = runInfoData.started;
     this.bowtie_version = runInfoData.bowtie_version;
     this.dialect = runInfoData.dialect;
@@ -40,9 +42,6 @@ export class RunInfo {
   }
 
   create_summary() {
-    console.log(Object.values(this._implementations));
-    return new _Summary({
-      implementations: Object.values(this._implementations),
-    });
+    return new Summary(Object.values(this.implementations));
   }
 }
