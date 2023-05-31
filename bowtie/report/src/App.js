@@ -1,10 +1,12 @@
+import RawData from "./data/RawData";
 
-function App() {
+function App(props) {
+  // console.log(props.dataObjectsArray)
   return (
     <div>
-      <div className="container">
+      Hello World!
+      <RawData data = {props.dataObjectsArray} />
       </div>
-    </div>
   );
 }
 
