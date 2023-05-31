@@ -13,7 +13,6 @@ function App(props) {
 
   return (
     <div>
-
       <NavBar runInfo={runInfo} />
 
       <div className="container p-4">

@@ -1,4 +1,4 @@
-import ImplementationRow from './ImplementationRow';
+import ImplementationRow from "./ImplementationRow";
 
 const SummaryTable = ({ summary }) => {
   return (
@@ -58,7 +58,7 @@ const SummaryTable = ({ summary }) => {
           <ImplementationRow
             key={index}
             implementation={implementation}
-            // counts={summary.counts[implementation.image]}
+            counts={summary.counts[implementation.image]}
             index={index}
           />
         ))}
@@ -71,7 +71,7 @@ const SummaryTable = ({ summary }) => {
           <td className="text-center">{summary.errored_cases}</td>
           <td className="text-center">{summary.skipped_tests}</td>
           <td className="text-center details-required">
-            {/* {summary.failed_tests + summary.errored_tests} */}
+            {summary.failed_tests + summary.errored_tests}
             <div className="hover-details text-center">
               <p>
                 <b>failed</b>: {summary.failed_tests}
