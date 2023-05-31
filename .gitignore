@@ -158,3 +158,17 @@ cython_debug/
 # User defined
 _cache
 _templates
+
+
+
+# files to be ignored within report directory
+
+/bowtie/report/node_modules
+
+/bowtie/report/build
+
+.vscode
+.idea
+
+/bowtie/report/lib/
+/bowtie/report/dist/
