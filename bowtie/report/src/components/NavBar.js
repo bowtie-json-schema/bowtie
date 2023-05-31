@@ -8,12 +8,11 @@ const NavBar = ({ runInfo }) => {
   const [mode, setMode] = useState(window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   body.setAttribute("data-bs-theme", mode ? "dark" : "light");
+
   function toggleMode() {
     const newMode = !mode;
     setMode(newMode);
-  
   }
-
 
   return (
     <>
