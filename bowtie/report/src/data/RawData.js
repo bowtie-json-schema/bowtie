@@ -1,12 +1,9 @@
+import { RunInfo } from "./run-Info";
 
-const RawData = (props) => {
-
-  return (
-    <div>RawData
-    
-    {console.log(props.data)}
-    </div>
-  )
+function rawData(data) {
+  let lines = data.map(line => JSON.parse(line));
+  // console.log(lines)
+  new RunInfo(lines[0]);
 }
 
-export default RawData
+export default rawData;

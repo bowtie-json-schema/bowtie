@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import rawData from "./data/RawData";
 
 script.onload = () => {
 
@@ -14,9 +15,10 @@ script.onload = () => {
       //console.log(dataObjectsArray)
       const data = dataObjectsArray.map((line) => JSON.parse(line));
 
-      const root = createRoot(document.getElementById("root"));
-  
-      root.render(<App dataObjectsArray = {dataObjectsArray} />);
+      rawData(dataObjectsArray)
     });
 
 };
+
+const root = createRoot(document.getElementById("root"));
+root.render(<App />);

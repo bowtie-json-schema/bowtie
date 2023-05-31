@@ -1,11 +1,7 @@
-import RawData from "./data/RawData";
-
-function App(props) {
-  // console.log(props.dataObjectsArray)
+function App() {
   return (
     <div>
       Hello World!
-      <RawData data = {props.dataObjectsArray} />
       </div>
   );
 }
