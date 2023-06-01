@@ -1,8 +1,8 @@
 import "./ImplementationRow.css";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
+
   function skipped_tests(implementationImage) {
-    // console.log(implementationImage);
     let count = 0;
     // console.log(lines);
     lines.map((element) => {
@@ -12,7 +12,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
           if (element.results) {
             // console.log(element['results'])
             element["results"].map((each) => {
-              if (each.hasOwnProperty("skipped")) {
+              if (each.hasOwnProperty("skipped") && each.skipped == true) {
                 count += 1;
               }
             });
@@ -20,7 +20,25 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
-    // console.log(count)
+    return count;
+  }
+
+  function failed_tests(implementationImage) {
+    var count = 0;
+    lines.map(element => {
+      const propertyObjectArray = Object.keys(element);
+      if (propertyObjectArray[0] == "implementation") {
+        if (element.implementation == implementationImage) {
+          if (element.results && element.expected) {
+            for (let i = 0; i < element.results.length; i++){
+              if (element.results[i].valid !== element.expected[i]){
+                count +=1;
+              };
+            }
+          }
+        }
+      }
+    });
     return count;
   }
 
@@ -59,10 +77,10 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         {skipped_tests(implementation.image)}
       </td>
       <td className="text-center details-required">
-        {counts.failed_tests + counts.errored_tests}
+        {failed_tests(implementation.image) + counts.errored_tests}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>:{counts.failed_tests}
+            <b>failed</b>:{failed_tests(implementation.image)}
           </p>
           <p>
             <b>errored</b>:{counts.errored_tests}
