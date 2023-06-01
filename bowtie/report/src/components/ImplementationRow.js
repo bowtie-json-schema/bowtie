@@ -1,7 +1,6 @@
 import "./ImplementationRow.css";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
-
   function skipped_tests(implementationImage) {
     let count = 0;
     // console.log(lines);
@@ -25,19 +24,41 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
 
   function failed_tests(implementationImage) {
     var count = 0;
-    lines.map(element => {
+    lines.map((element) => {
       const propertyObjectArray = Object.keys(element);
       if (propertyObjectArray[0] == "implementation") {
         if (element.implementation == implementationImage) {
           if (element.results && element.expected) {
-            for (let i = 0; i < element.results.length; i++){
-              if (element.results[i].valid !== element.expected[i]){
-                count +=1;
-              };
+            for (let i = 0; i < element.results.length; i++) {
+              if (element.results[i].valid !== element.expected[i]) {
+                count += 1;
+              }
             }
           }
         }
       }
+    });
+    return count;
+  }
+
+  function errored_tests(implementationImage) {
+    var count = 0;
+    lines.map((element) => {
+      if (element.implementation == implementationImage) {
+      const cases = element.case;
+      // console.log(cases);
+      if (element.implementation) {
+        if (element.caught) {
+          var seq = element.seq;
+          // console.log(seq)
+          lines.map((each) => {
+            if (each.case && each.seq == seq) {
+              count += each.case.tests.length;
+            }
+          });
+        }
+      }
+    }
     });
     return count;
   }
@@ -73,17 +94,16 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
       </td>
 
       <td className="text-center">{}</td>
-      <td className="text-center">
-        {skipped_tests(implementation.image)}
-      </td>
+      <td className="text-center">{skipped_tests(implementation.image)}</td>
       <td className="text-center details-required">
-        {failed_tests(implementation.image) + counts.errored_tests}
+        {failed_tests(implementation.image) +
+          errored_tests(implementation.image)}
         <div className="hover-details text-center">
           <p>
             <b>failed</b>:{failed_tests(implementation.image)}
           </p>
           <p>
-            <b>errored</b>:{counts.errored_tests}
+            <b>errored</b>:{errored_tests(implementation.image)}
           </p>
         </div>
       </td>
