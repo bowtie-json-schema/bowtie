@@ -1,10 +1,11 @@
 import CasesSection from "./components/CasesSection";
-import { RunTimeInfoModal } from "./components/Modals";
+import { RunTimeInfoModal } from "./components/RunTimeInfoModal";
 import NavBar from "./components/NavBar";
 import RunInfoSection from "./components/RunInfoSection";
 import SummarySection from "./components/SummarySection";
 import { CountsDataProvider } from "./data/CountsDataContext";
 import { RunInfo } from "./data/run-Info";
+import { DetailsButtonModal } from "./components/DetailsButtonModal";
 
 function App(props) {
   const runInfo = new RunInfo(props.lines);
@@ -24,6 +25,7 @@ function App(props) {
         <CasesSection lines={props.lines} />
       </div>
       <RunTimeInfoModal lines={props.lines} summary={summary} />
+      <DetailsButtonModal lines={props.lines} summary={summary} />
     </div>
   );
 }

@@ -3,7 +3,34 @@ import App from "./App";
 import { CountsDataProvider } from "./data/CountsDataContext";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const Dialect = "2020-12";
+  let Dialect = "2020-12";
+  let dialect;
+
+  const url = window.location.href;
+  const urlParts = url.split("/");
+  let draftPart;
+  for (const part of urlParts) {
+    if (part.includes("draft")) {
+      draftPart = part;
+      break;
+    }
+  }
+  if (draftPart) {
+    dialect = draftPart.substring(draftPart.indexOf("draft") + "draft".length);
+  }
+
+  switch (dialect) {
+    case "2020-12":
+    case "2019-09":
+    case "7":
+    case "6":
+    case "4":
+    case "3":
+      Dialect = dialect;
+      break;
+  }
+
+  // console.log(dialect);
 
   //fetching json data from url
   fetch(`https://bowtie-json-schema.github.io/bowtie/draft${Dialect}.json.gz`)
@@ -19,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       root.render(
         <CountsDataProvider>
           <App lines={lines} />
-        </CountsDataProvider>,
+        </CountsDataProvider>
       );
     });
 });
