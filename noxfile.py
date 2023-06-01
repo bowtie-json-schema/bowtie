@@ -63,7 +63,7 @@ def readme(session):
     session.install("build", "twine")
     tmpdir = session.create_tmp()
     session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
-    session.run("python", "-m", "twine", "check", tmpdir + "/*")
+    session.run("python", "-m", "twine", "check", "--strict", tmpdir + "/*")
 
 
 @session(tags=["style"])
@@ -74,9 +74,8 @@ def style(session):
 
 @session()
 def typing(session):
-    # FIXME: Don't repeat dependencies.
-    session.install("pyright", "types-jsonschema", ROOT)
-    session.run("python", "-m", "pyright", BOWTIE)
+    session.install("pyright", ROOT)
+    session.run("pyright", BOWTIE)
 
 
 @session(tags=["docs"])

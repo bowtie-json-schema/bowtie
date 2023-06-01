@@ -23,7 +23,7 @@ def harnessImplementation = [
 def jsonProvider = [
         group: 'com.fasterxml.jackson.core',
         name: 'jackson-databind',
-        version: '2.15.1'
+        version: '2.15.2'
 ]
 
 dependencies {
