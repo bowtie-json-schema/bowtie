@@ -1,3 +1,5 @@
+import AccordionSvg from "./AccordionSvg";
+
 const AccordionItem = ({ eachCase, implementations, lines }) => {
   // console.log(implementations)
   const seq = eachCase.seq;
@@ -59,7 +61,7 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
                   <td
                     className="text-center"
                     scope="col"
-                    key={implementation.name+implementation.language}
+                    key={implementation.name + implementation.language}
                   >
                     <b>{implementation.name + " "}</b>
                     <small className="text-muted">
@@ -86,6 +88,13 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
                       {test.description}
                     </a>
                   </td>
+                  {implementations.map((implementation, index) => (
+                    <AccordionSvg
+                      key={index}
+                      lines={lines}
+                      implementation={implementation.image}
+                    />
+                  ))}
                 </tr>
               ))}
             </tbody>
