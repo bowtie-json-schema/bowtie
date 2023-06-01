@@ -89,7 +89,22 @@ export class Count {
     this.total_tests = 0;
     this.failed_tests = 0;
     this.errored_tests = 0;
-    this.total_skipped_tests = 0;
+    this.skipped_tests = 0;
+  }
+
+  addTotalErroredCases(value) {
+    this.errored_cases += value;
+  }
+
+  addTotalFailedTests(value) {
+    this.failed_tests += value;
+  }
+
+  addTotalErroredTests(value) {
+    this.errored_tests += value;
+  }
+  addTotalSkippedTests(value) {
+    this.skipped_tests += value;
   }
 
   unsuccessful_tests() {
