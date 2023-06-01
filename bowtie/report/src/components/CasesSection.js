@@ -1,21 +1,21 @@
-import AccordionItem from "./AccordionItem";
+import { RunInfo } from "../data/run-Info";
+import AccordionItem from './AccordionItem';
 
-const CasesSection = ({ summary }) => {
-    return (
-      <div className="accordion pt-5" id="cases">
-        {/* {summary.flat_results().map(([seq, description, schema, registry, results], index) => (
-          <AccordionItem
-             key={index}
-             seq={seq}
-             description={description}
-             schema={schema}
-             registry={registry}
-             results={results}
-             implementations={summary.implementations}
-            />
-        ))} */}
-      </div>
-    );
-  };
+const CasesSection = ({ lines }) => {
+    const CaseObjectArray = lines.filter((obj) => obj.hasOwnProperty("case"));
+
   
-  export default CasesSection;
+
+    const runInfo = new RunInfo(lines);
+    const summary = runInfo.create_summary()
+
+  return (
+    <div className="accordion pt-5" id="cases">
+    {CaseObjectArray.map((eachCase, index) => (
+      <AccordionItem key={index}  lines ={lines} eachCase={eachCase} implementations={summary.implementations} />
+    ))}
+    </div>
+  );
+};
+
+export default CasesSection;

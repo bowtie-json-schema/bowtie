@@ -1,7 +1,8 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { CountsDataProvider } from "./data/CountsDataContext";
 
-script.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
   const Dialect = "2020-12";
 
   //fetching json data from url
@@ -15,6 +16,10 @@ script.onload = () => {
 
       const root = createRoot(document.getElementById("root"));
 
-      root.render(<App lines = {lines} />);
+      root.render(
+        <CountsDataProvider>
+          <App lines={lines} />
+        </CountsDataProvider>
+      );
     });
-};
+});

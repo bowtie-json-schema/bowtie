@@ -72,13 +72,9 @@ class Summary {
       0,
     );
   }
+
 }
 
-export class ErroredCase {
- errored_cases(){
-
-  }
-}
 
 
 

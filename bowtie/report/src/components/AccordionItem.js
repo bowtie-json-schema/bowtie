@@ -1,11 +1,11 @@
-const AccordionItem = ({
-  seq,
-  description,
-  schema,
-  registry,
-  results,
-  implementations,
-}) => {
+const AccordionItem = ({ eachCase, implementations, lines }) => {
+  // console.log(implementations)
+  const seq = eachCase.seq;
+  const description = eachCase.case.description;
+  const schema = eachCase.case.schema;
+  const registry = eachCase.case.registry;
+  const tests = eachCase.case.tests;
+
   const schemaDisplay = (id, schema, codeId, rowId) => {
     // Implementation for schemaDisplay function
   };
@@ -42,7 +42,6 @@ const AccordionItem = ({
           </a>
         </button>
       </h2>
-
       <div
         id={`case-${seq}`}
         className="accordion-collapse collapse"
@@ -53,14 +52,16 @@ const AccordionItem = ({
           <table className="table table-hover">
             <thead>
               <tr>
-                <td scope="col">Tests</td>
+                <td scope="col">
+                  <b>Tests</b>
+                </td>
                 {implementations.map((implementation) => (
                   <td
                     className="text-center"
                     scope="col"
-                    key={implementation.name}
+                    key={implementation.name+implementation.language}
                   >
-                    {implementation.name}
+                    <b>{implementation.name + " "}</b>
                     <small className="text-muted">
                       {implementation.language}
                     </small>
@@ -68,68 +69,26 @@ const AccordionItem = ({
                 ))}
               </tr>
             </thead>
-
-            {results.map((testResult, index) => (
-              <tr
-                className={`row-${seq}`}
-                key={index}
-                onClick={() =>
-                  displayCode(
-                    JSON.stringify(testResult.instance, null, 2),
-                    "instance-info"
-                  )
-                }
-              >
-                <td>
-                  <a href="#schema" className="text-decoration-none">
-                    {testResult.test.description}
-                  </a>
-                </td>
-                {implementations.map((implementation) => {
-                  const [implementationResult, incorrect] =
-                    testResult.test_results.get(implementation.image, {
-                      valid: null,
-                      incorrect: true,
-                    });
-
-                  if (incorrect === "skipped") {
-                    return (
-                      <td
-                        className="text-center text-bg-warning"
-                        key={implementation.name}
-                      >
-                        {toIcon(null)}
-                      </td>
-                    );
-                  } else if (incorrect === "errored") {
-                    return (
-                      <td
-                        className="text-center text-bg-danger"
-                        key={implementation.name}
-                      >
-                        {toIcon(null)}
-                      </td>
-                    );
-                  } else {
-                    return (
-                      <td
-                        className={`text-center ${
-                          incorrect
-                            ? "text-bg-danger"
-                            : implementationResult.valid !== true &&
-                              implementationResult.valid !== false
-                            ? "text-bg-warning"
-                            : ""
-                        }`}
-                        key={implementation.name}
-                      >
-                        {toIcon(implementationResult.valid)}
-                      </td>
-                    );
+            <tbody>
+              {tests.map((test, index) => (
+                <tr
+                  className={`row-${seq}`}
+                  key={index}
+                  onClick={() =>
+                    displayCode(
+                      JSON.stringify(testResult.instance, null, 2),
+                      "instance-info"
+                    )
                   }
-                })}
-              </tr>
-            ))}
+                >
+                  <td>
+                    <a href="#schema" className="text-decoration-none">
+                      {test.description}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>

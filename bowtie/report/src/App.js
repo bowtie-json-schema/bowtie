@@ -2,6 +2,7 @@ import CasesSection from "./components/CasesSection";
 import NavBar from "./components/NavBar";
 import RunInfoSection from "./components/RunInfoSection";
 import SummarySection from "./components/SummarySection";
+import { CountsDataProvider } from "./data/CountsDataContext";
 import { RunInfo } from "./data/run-Info";
 
 function App(props) {
@@ -19,7 +20,7 @@ function App(props) {
       <div className="container p-4">
         <RunInfoSection runInfo={runInfo} />
         <SummarySection lines={props.lines} />
-        <CasesSection summary={summary} />
+        <CasesSection lines={props.lines} />
       </div>
 
     </div>

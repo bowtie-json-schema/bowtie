@@ -1,7 +1,18 @@
+import { useContext } from "react";
 import { CountsDataContext } from "../data/CountsDataContext";
 import "./ImplementationRow.css";
+import { Count } from "../data/report";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
+//   const {
+//     updateTotalErroredCases,
+//     updateTotalErroredTests,
+//     updateTotalFailedTests,
+//     updateTotalSkippedTests,
+//   } = useContext(CountsDataContext);
+
+  // updateTotalErroredCases(10)
+  const countss = new Count();
 
   function skipped_tests(implementationImage) {
     let count = 0;
@@ -22,6 +33,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
+    // updateTotalSkippedTests(count);
     return count;
   }
 
@@ -41,6 +53,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
+    // updateTotalFailedTests(count);
     return count;
   }
 
@@ -48,7 +61,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
     var count = 0;
     lines.map((element) => {
       if (element.implementation == implementationImage) {
-      // console.log(cases);
+        // console.log(cases);
         if (element.caught) {
           var seq = element.seq;
           // console.log(seq)
@@ -60,6 +73,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
+    // updateTotalErroredTests(count);
     return count;
   }
 
@@ -78,8 +92,9 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
+    // updateTotalErroredCases(count);
     return count;
-}
+  }
 
   return (
     <tr>

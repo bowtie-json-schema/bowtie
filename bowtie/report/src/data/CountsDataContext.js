@@ -7,7 +7,6 @@ export const CountsDataProvider = ({ children }) => {
   const [totalFailedTests, setTotalFailedTests] = useState(0);
   const [totalErroredTests, setTotalErroredTests] = useState(0);
   const [totalSkippedTests, setTotalSkippedTests] =useState(0);
-  const [failedTotal, setFailedTotal] = useState(0);
 
   const updateTotalErroredCases = (value) => {
     setTotalErroredCases((prevTotal) => prevTotal + value);
@@ -27,12 +26,12 @@ export const CountsDataProvider = ({ children }) => {
 
   const contextValue = {
     totalErroredCases,
-    totalErroredTests,
     totalFailedTests,
+    totalErroredTests,
     totalSkippedTests,
     updateTotalErroredCases,
-    updateTotalErroredTests,
     updateTotalFailedTests,
+    updateTotalErroredTests,
     updateTotalSkippedTests
   };
 
