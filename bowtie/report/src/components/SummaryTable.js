@@ -7,14 +7,14 @@ const SummaryTable = ({ lines }) => {
   const runInfo = new RunInfo(lines);
   const summary = runInfo.create_summary();
 
-    const {
-      updateTotalErroredCases,
-      updateTotalErroredTests,
-      updateTotalFailedTests,
-      updateTotalSkippedTests,
-    } = useContext(CountsDataContext);
-  
-    // updateTotalErroredCases(10)
+  const {
+    updateTotalErroredCases,
+    updateTotalErroredTests,
+    updateTotalFailedTests,
+    updateTotalSkippedTests,
+  } = useContext(CountsDataContext);
+
+  // updateTotalErroredCases(10)
 
   const {
     totalErroredCases,

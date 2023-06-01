@@ -1,9 +1,7 @@
 import { RunInfo } from "../data/run-Info";
 import SummaryTable from "./SummaryTable";
 
-
 const SummarySection = (props) => {
-
   const lines = props.lines;
   const runInfo = new RunInfo(lines);
   const summary = runInfo.create_summary();
