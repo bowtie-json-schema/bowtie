@@ -229,7 +229,7 @@ class _Summary:
 
     @property
     def failed_tests(self):
-        return sum(count.failed_tests for count in self.counts.values())
+        return sum(count.failed_tests for count in self.counts.values())add_case_metadata
 
     @property
     def errored_tests(self):

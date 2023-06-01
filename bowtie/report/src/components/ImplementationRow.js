@@ -1,6 +1,7 @@
 import "./ImplementationRow.css";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
+
   function skipped_tests(implementationImage) {
     let count = 0;
     // console.log(lines);
@@ -8,11 +9,12 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
       const propertyObjectArray = Object.keys(element);
       if (propertyObjectArray[0] == "implementation") {
         if (element.implementation == implementationImage) {
-          if (element.results) {
+          if (element.skipped) {
             // console.log(element['results'])
-            element["results"].map((each) => {
-              if (each.hasOwnProperty("skipped") && each.skipped == true) {
-                count += 1;
+            var seq = element.seq;
+            lines.map((each) => {
+              if (each.case && each.seq == seq) {
+                count += each.case.tests.length;
               }
             });
           }
@@ -45,9 +47,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
     var count = 0;
     lines.map((element) => {
       if (element.implementation == implementationImage) {
-      const cases = element.case;
       // console.log(cases);
-      if (element.implementation) {
         if (element.caught) {
           var seq = element.seq;
           // console.log(seq)
@@ -58,10 +58,27 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
           });
         }
       }
-    }
     });
     return count;
   }
+
+  function errored_cases(implementationImage) {
+    var count = 0;
+    lines.map((element) => {
+      if (element.implementation == implementationImage) {
+        if (element.caught) {
+          var seq = element.seq;
+          // console.log(seq)
+          lines.map((each) => {
+            if (each.case && each.seq == seq) {
+              count += 1;
+            }
+          });
+        }
+      }
+    });
+    return count;
+}
 
   return (
     <tr>
@@ -93,7 +110,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         </button>
       </td>
 
-      <td className="text-center">{}</td>
+      <td className="text-center">{errored_cases(implementation.image)}</td>
       <td className="text-center">{skipped_tests(implementation.image)}</td>
       <td className="text-center details-required">
         {failed_tests(implementation.image) +
