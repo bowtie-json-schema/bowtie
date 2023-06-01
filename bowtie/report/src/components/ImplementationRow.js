@@ -1,6 +1,29 @@
 import "./ImplementationRow.css";
 
-const ImplementationRow = ({ implementation, counts, index }) => {
+const ImplementationRow = ({ lines, implementation, counts, index }) => {
+  function skipped_tests(implementationImage) {
+    // console.log(implementationImage);
+    let count = 0;
+    // console.log(lines);
+    lines.map((element) => {
+      const propertyObjectArray = Object.keys(element);
+      if (propertyObjectArray[0] == "implementation") {
+        if (element.implementation == implementationImage) {
+          if (element.results) {
+            // console.log(element['results'])
+            element["results"].map((each) => {
+              if (each.hasOwnProperty("skipped")) {
+                count += 1;
+              }
+            });
+          }
+        }
+      }
+    });
+    // console.log(count)
+    return count;
+  }
+
   return (
     <tr>
       <th scope="row">
@@ -31,9 +54,10 @@ const ImplementationRow = ({ implementation, counts, index }) => {
         </button>
       </td>
 
-      <td className="text-center">{counts.errored_cases}</td>
-
-      <td className="text-center">{counts.skipped_tests}</td>
+      <td className="text-center">{}</td>
+      <td className="text-center">
+        {skipped_tests(implementation.image)}
+      </td>
       <td className="text-center details-required">
         {counts.failed_tests + counts.errored_tests}
         <div className="hover-details text-center">

@@ -74,16 +74,22 @@ class Summary {
   }
 }
 
+export class ErroredCase {
+ errored_cases(){
+
+  }
+}
 
 
-class Count {
+
+export class Count {
   constructor() {
     this.total_cases = 0;
     this.errored_cases = 0;
     this.total_tests = 0;
     this.failed_tests = 0;
     this.errored_tests = 0;
-    this.skipped_tests = 0;
+    this.total_skipped_tests = 0;
   }
 
   unsuccessful_tests() {

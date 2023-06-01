@@ -18,7 +18,7 @@ function App(props) {
 
       <div className="container p-4">
         <RunInfoSection runInfo={runInfo} />
-        <SummarySection summary={summary} />
+        <SummarySection lines={props.lines} />
         <CasesSection summary={summary} />
       </div>
 

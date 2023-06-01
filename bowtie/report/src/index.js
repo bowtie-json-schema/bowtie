@@ -10,7 +10,7 @@ script.onload = () => {
     .then((buffer) => {
       const inflated = pako.inflate(buffer, { to: "string" });
       const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
-      //console.log(dataObjectsArray)
+      // console.log(inflated)
       const lines = dataObjectsArray.map((line) => JSON.parse(line));
 
       const root = createRoot(document.getElementById("root"));

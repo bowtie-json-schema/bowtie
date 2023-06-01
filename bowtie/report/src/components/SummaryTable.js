@@ -1,6 +1,11 @@
+import { RunInfo } from "../data/run-Info";
+import { Count } from "../data/report";
 import ImplementationRow from "./ImplementationRow";
 
-const SummaryTable = ({ summary }) => {
+const SummaryTable = ({ lines }) => {
+  const runInfo = new RunInfo(lines);
+  const summary = runInfo.create_summary();
+
   return (
     <table className="table table-sm table-hover">
       <thead>
@@ -54,12 +59,13 @@ const SummaryTable = ({ summary }) => {
         </tr>
       </thead>
       <tbody className="table-group-divider">
+      {/* {(summary.implementations.forEach(each => console.log(each.language)))} */}
         {summary.implementations.map((implementation, index) => (
           <ImplementationRow
-            key={index}
+            lines={lines}
             implementation={implementation}
+            key={index}
             counts={summary.counts[implementation.image]}
-            index={index}
           />
         ))}
       </tbody>
@@ -69,7 +75,7 @@ const SummaryTable = ({ summary }) => {
             total
           </th>
           <td className="text-center">{summary.errored_cases}</td>
-          <td className="text-center">{summary.skipped_tests}</td>
+          <td className="text-center">{new Count().total_skipped_tests}</td>
           <td className="text-center details-required">
             {summary.failed_tests + summary.errored_tests}
             <div className="hover-details text-center">
