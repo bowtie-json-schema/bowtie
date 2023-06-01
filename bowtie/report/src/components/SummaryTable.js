@@ -83,6 +83,7 @@ const SummaryTable = ({ lines }) => {
             implementation={implementation}
             key={index}
             counts={summary.counts[implementation.image]}
+            index = {index}
           />
         ))}
       </tbody>

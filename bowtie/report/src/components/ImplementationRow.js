@@ -11,8 +11,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
   //     updateTotalSkippedTests,
   //   } = useContext(CountsDataContext);
 
-  // updateTotalErroredCases(10)
-  const countss = new Count();
+  // updateTotalErroredCases(10))
 
   function skipped_tests(implementationImage) {
     let count = 0;

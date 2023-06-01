@@ -31,7 +31,7 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
               `accordion-body${seq}`,
               JSON.stringify(schema, null, 2),
               "schema-code",
-              `row-${seq}`,
+              `row-${seq}`
             )
           }
           data-bs-toggle="collapse"
@@ -76,25 +76,37 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
                 <tr
                   className={`row-${seq}`}
                   key={index}
-                  onClick={() =>
-                    displayCode(
-                      JSON.stringify(testResult.instance, null, 2),
-                      "instance-info",
-                    )
-                  }
+                  // onClick={() =>
+                  //   displayCode(
+                  //     JSON.stringify(testResult.instance, null, 2),
+                  //     "instance-info"
+                  //   )
+                  // }
                 >
                   <td>
                     <a href="#schema" className="text-decoration-none">
                       {test.description}
                     </a>
                   </td>
-                  {implementations.map((implementation, index) => (
-                    <AccordionSvg
-                      key={index}
-                      lines={lines}
-                      implementation={implementation.image}
-                    />
-                  ))}
+                  {/* //{implementations.map((implementation) => { */}
+                  {/* //  var testCase = ""; */}
+                  {/* //  lines.map((element) => { */}
+                  {/* //    console.log(element.hasOwnProperty('implementation')) */}
+                  {/* //    if (element.hasOwnProperty('implementation')) { */}
+                  {/* //      if ( */}
+                  {/* //        seq === element.seq && */}
+                  {/* //        element.implementation === implementation.image */}
+                  {/* //      ) { */}
+                  {/* //        if ( */}
+                  {/* //          element.results[index].valid !== element.expected[index] */}
+                  {/* //        ) { */}
+                  {/* //          testCase = "failed"; */}
+                  {/* //        } */}
+                  {/* //      } */}
+                  {/* //    } */}
+                  {/* //  }); */}
+                  {/* //  return <td>{testCase}</td>; */}
+                  {/* //})} */}
                 </tr>
               ))}
             </tbody>

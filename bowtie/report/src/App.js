@@ -22,6 +22,7 @@ function App(props) {
         <SummarySection lines={props.lines} />
         <CasesSection lines={props.lines} />
       </div>
+      
     </div>
   );
 }
