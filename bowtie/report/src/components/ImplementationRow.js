@@ -4,12 +4,12 @@ import "./ImplementationRow.css";
 import { Count } from "../data/report";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
-//   const {
-//     updateTotalErroredCases,
-//     updateTotalErroredTests,
-//     updateTotalFailedTests,
-//     updateTotalSkippedTests,
-//   } = useContext(CountsDataContext);
+  //   const {
+  //     updateTotalErroredCases,
+  //     updateTotalErroredTests,
+  //     updateTotalFailedTests,
+  //     updateTotalSkippedTests,
+  //   } = useContext(CountsDataContext);
 
   // updateTotalErroredCases(10)
   const countss = new Count();

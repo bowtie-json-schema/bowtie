@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
       root.render(
         <CountsDataProvider>
           <App lines={lines} />
-        </CountsDataProvider>
+        </CountsDataProvider>,
       );
     });
 });

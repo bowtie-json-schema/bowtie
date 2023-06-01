@@ -31,7 +31,7 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
               `accordion-body${seq}`,
               JSON.stringify(schema, null, 2),
               "schema-code",
-              `row-${seq}`
+              `row-${seq}`,
             )
           }
           data-bs-toggle="collapse"
@@ -79,7 +79,7 @@ const AccordionItem = ({ eachCase, implementations, lines }) => {
                   onClick={() =>
                     displayCode(
                       JSON.stringify(testResult.instance, null, 2),
-                      "instance-info"
+                      "instance-info",
                     )
                   }
                 >

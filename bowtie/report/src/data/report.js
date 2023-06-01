@@ -17,29 +17,29 @@ class Summary {
     // console.log(this.counts)
     this.initializeCounts();
   }
-  initializeCounts(){
+  initializeCounts() {
     for (const each of this.implementations) {
       this.counts[each.image] = new Count();
     }
   }
 
-    get total_cases() {
-      var count  = 0;
-      this.lines.forEach(element => {
-        const firstKey = Object.keys(element)[0];
-        if (firstKey == 'case'){
-          count+=1;
-        }
-      });
-      return count;
+  get total_cases() {
+    var count = 0;
+    this.lines.forEach((element) => {
+      const firstKey = Object.keys(element)[0];
+      if (firstKey == "case") {
+        count += 1;
+      }
+    });
+    return count;
   }
 
   get total_tests() {
     var count = 0;
-    this.lines.forEach(element => {
+    this.lines.forEach((element) => {
       const firstKey = Object.keys(element)[0];
-      if (firstKey == 'case'){
-        count += element['case']['tests'].length;
+      if (firstKey == "case") {
+        count += element["case"]["tests"].length;
       }
     });
     return count;
@@ -72,11 +72,7 @@ class Summary {
       0,
     );
   }
-
 }
-
-
-
 
 export class Count {
   constructor() {

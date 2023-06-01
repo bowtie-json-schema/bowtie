@@ -10,8 +10,8 @@ function App(props) {
 
   const summary = runInfo.create_summary();
 
-  document.getElementsByTagName("title")[0].textContent += ' ' +
-    runInfo.dialect_shortname;
+  document.getElementsByTagName("title")[0].textContent +=
+    " " + runInfo.dialect_shortname;
 
   return (
     <div>
@@ -22,7 +22,6 @@ function App(props) {
         <SummarySection lines={props.lines} />
         <CasesSection lines={props.lines} />
       </div>
-
     </div>
   );
 }
