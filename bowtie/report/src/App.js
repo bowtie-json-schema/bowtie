@@ -1,4 +1,5 @@
 import CasesSection from "./components/CasesSection";
+import { RunTimeInfoModal } from "./components/Modals";
 import NavBar from "./components/NavBar";
 import RunInfoSection from "./components/RunInfoSection";
 import SummarySection from "./components/SummarySection";
@@ -22,7 +23,7 @@ function App(props) {
         <SummarySection lines={props.lines} />
         <CasesSection lines={props.lines} />
       </div>
-      
+      <RunTimeInfoModal lines={props.lines} summary={summary} />
     </div>
   );
 }
