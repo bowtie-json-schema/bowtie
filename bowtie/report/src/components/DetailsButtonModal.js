@@ -9,12 +9,19 @@ export const DetailsButtonModal = ({ lines, summary }) => {
     implementationArray.forEach((seqImplementation) => {
       if (seqImplementation.implementation === implementationImage) {
         // var caseResults = [];
-        if (seqImplementation.results) {
+        if (seqImplementation.skipped) {
+          var seq = seqImplementation.seq;
+          caseArray.forEach((seqCase) => {
+            if (seqCase.seq == seq) {
+              testStatus = "skipped";
+            }
+          });
+        } else if (seqImplementation.results) {
           var caseResults = seqImplementation.results.filter(
             (element) => element.skipped
           );
           // console.log(caseResults)
-          if (caseResults.length > 0 || seqImplementation.skipped) {
+          if (caseResults.length > 0) {
             let seq = seqImplementation.seq;
             caseArray.forEach((seqCase) => {
               if (seqCase.seq === seq) {
@@ -32,7 +39,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
     <>
       {summary.implementations.map((implementation, index) => {
         const testStatus = TestStatus(implementation.image);
-        console.log(implementation.image)
+        {/* console.log(implementation.image); */}
         console.log(testStatus);
 
         return (
