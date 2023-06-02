@@ -5,7 +5,8 @@ export const DetailsButtonModal = ({ lines, summary }) => {
   // console.log(implementationArray)
   // console.log(caseArray)
   function TestStatus(implementationImage) {
-    let testStatus;
+    let testStatusArray;
+    var arrayOfSeqCases = [];
     implementationArray.forEach((seqImplementation) => {
       if (seqImplementation.implementation === implementationImage) {
         // var caseResults = [];
@@ -13,7 +14,9 @@ export const DetailsButtonModal = ({ lines, summary }) => {
           var seq = seqImplementation.seq;
           caseArray.forEach((seqCase) => {
             if (seqCase.seq == seq) {
-              testStatus = "skipped";
+              var hasResultsArray = false;
+              arrayOfSeqCases.push(seqCase);
+              testStatusArray = ["skipped", seqImplementation, hasResultsArray];
             }
           });
         } else if (seqImplementation.results) {
@@ -22,90 +25,93 @@ export const DetailsButtonModal = ({ lines, summary }) => {
           );
           // console.log(caseResults)
           if (caseResults.length > 0) {
-            let seq = seqImplementation.seq;
+            var seq = seqImplementation.seq;
             caseArray.forEach((seqCase) => {
-              if (seqCase.seq === seq) {
-                testStatus = "skipped";
+              if (seqCase.seq == seq) {
+                var hasResultsArray = true;
+                arrayOfSeqCases.push(seqCase);
+                testStatusArray = [
+                  "skipped",
+                  seqImplementation,
+                  hasResultsArray,
+                ];
               }
             });
           }
         }
       }
     });
-    return testStatus;
+    return [testStatusArray, arrayOfSeqCases];
   }
 
   return (
     <>
       {summary.implementations.map((implementation, index) => {
-        const testStatus = TestStatus(implementation.image);
-        {/* console.log(implementation.image); */}
-        console.log(testStatus);
-
-        return (
-          <div
-            className="modal fade"
-            id={`implementation-${index}-details`}
-            tabIndex="-1"
-            aria-labelledby={`implementation-${index}-details-label`}
-            aria-hidden="true"
-            key={index}
-          >
-            <div className="modal-dialog modal-fullscreen">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h1
-                    className="modal-title fs-5"
-                    id={`implementation-${index}-details-label`}
-                  >
-                    <b>{implementation.name + " "}</b>
-                    <small className="text-muted">
-                      {implementation.language}
-                    </small>
-                  </h1>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <div className="row row-cols-1 row-cols-md-2 g-4">
-                    {caseArray.map((eachCase, index) => {
-                      const seq = eachCase.seq;
-                      const description = eachCase.case.description;
-                      const schema = eachCase.case.schema;
-                      const registry = eachCase.case.registry;
-                      const results = eachCase.case.tests.map((test) => [
-                        test,
-                        {},
-                      ]);
-
-                      return results.map(([test, testResult]) => {
-                        if (testStatus === "skipped") {
-                          return (
-                            <div className="col" key={seq}>
-                              <div className="card border-warning mb-3">
-                                <div className="card-body">
-                                  <h5 className="card-title">
-                                    aaaa{description}
-                                  </h5>
-                                  <p className="card-text">
-                                    bbbb{test.description}
-                                  </p>
-                                </div>
-                                <div className="card-footer text-muted text-center">
-                                  {/* {implementation_result} */} Result
+        const result = TestStatus(implementation.image);
+        const [testStatusArray, arrayOfSeqCases] = result;
+        console.log(arrayOfSeqCases);
+        if (Array.isArray(testStatusArray)) {
+          const [testStatus, seqImplementation, hasResultsArray] =
+            testStatusArray;
+          console.log(seqImplementation);
+          return (
+            <div
+              className="modal fade"
+              id={`implementation-${index}-details`}
+              tabIndex="-1"
+              aria-labelledby={`implementation-${index}-details-label`}
+              aria-hidden="true"
+              key={index}
+            >
+              <div className="modal-dialog modal-fullscreen">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h1
+                      className="modal-title fs-5"
+                      id={`implementation-${index}-details-label`}
+                    >
+                      <b>{implementation.name + " "}</b>
+                      <small className="text-muted">
+                        {implementation.language}
+                      </small>
+                    </h1>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="row row-cols-1 row-cols-md-2 g-4">
+                      {arrayOfSeqCases.map((seqCase, i) =>
+                        seqCase.case.tests.map((eachTest, index) => {
+                          if (testStatus === "skipped") {
+                            return (
+                              <div
+                                className="col"
+                                key={`${seqCase.seq}${index}`}
+                              >
+                                <div className="card border-warning mb-3">
+                                  <div className="card-body">
+                                    <h5 className="card-title">
+                                      {seqCase.case.description}
+                                    </h5>
+                                    <p className="card-text">
+                                      {eachTest.description}
+                                    </p>
+                                  </div>
+                                  <div className="card-footer text-muted text-center">
+                                    {seqImplementation.message}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      });
-                    })}
-                    {/* {summary
+                            );
+                          }
+                          return null;
+                        })
+                      )}
+                      {/* {summary
                     .flat_results()
                     .map(([seq, description, schema, registry, results]) =>
                       results.map(([test, test_results]) => {
@@ -171,21 +177,22 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                         }
                       })
                     )} */}
+                    </div>
                   </div>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    data-bs-dismiss="modal"
-                  >
-                    Close
-                  </button>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
+          );
+        }
       })}
     </>
   );
