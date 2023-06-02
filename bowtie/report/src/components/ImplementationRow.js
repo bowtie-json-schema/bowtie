@@ -4,6 +4,8 @@ import "./ImplementationRow.css";
 import { Count } from "../data/report";
 
 const ImplementationRow = ({ lines, implementation, counts, index }) => {
+  const implementationArray = lines.filter((element) => element.implementation);
+  const caseArray = lines.filter((element) => element.case);
   //   const {
   //     updateTotalErroredCases,
   //     updateTotalErroredTests,
@@ -13,18 +15,26 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
 
   // updateTotalErroredCases(10))
 
-  function skipped_tests(implementationImage) {
+  function skippedTests(implementationImage) {
     let count = 0;
-    // console.log(lines);
-    lines.map((element) => {
-      const propertyObjectArray = Object.keys(element);
-      if (propertyObjectArray[0] == "implementation") {
-        if (element.implementation == implementationImage) {
-          if (element.skipped) {
-            // console.log(element['results'])
-            var seq = element.seq;
-            lines.map((each) => {
-              if (each.case && each.seq == seq) {
+
+    implementationArray.forEach((element) => {
+      if (element.implementation === implementationImage) {
+        if (element.skipped) {
+          var seq = element.seq;
+          caseArray.forEach((each) => {
+            if (each.seq == seq) {
+              count += each.case.tests.length;
+            }
+          });
+        } else if (element.results) {
+          var caseResults = element.results.filter(
+            (element) => element.skipped
+          );
+          if (caseResults.length > 0) {
+            let seq = element.seq;
+            caseArray.forEach((each) => {
+              if (each.seq === seq) {
                 count += each.case.tests.length;
               }
             });
@@ -32,7 +42,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         }
       }
     });
-    // updateTotalSkippedTests(count);
+
     return count;
   }
 
@@ -126,7 +136,7 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
       </td>
 
       <td className="text-center">{errored_cases(implementation.image)}</td>
-      <td className="text-center">{skipped_tests(implementation.image)}</td>
+      <td className="text-center">{skippedTests(implementation.image)}</td>
       <td className="text-center details-required">
         {failed_tests(implementation.image) +
           errored_tests(implementation.image)}

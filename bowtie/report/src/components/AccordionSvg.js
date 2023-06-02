@@ -15,8 +15,7 @@ const AccordionSvg = ({ lines, implementationImage }) => {
     }
   });
 
-  return (
-    aa
+  return (a
 //     testCase == "failed" && (
 //       <div>
 //         <svg

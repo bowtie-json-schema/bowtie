@@ -62,7 +62,7 @@ const NavBar = ({ runInfo }) => {
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                   >
-                    Dialects
+                    Dialects {" "}
                   </a>
                   <ul className="dropdown-menu">
                     <li>
