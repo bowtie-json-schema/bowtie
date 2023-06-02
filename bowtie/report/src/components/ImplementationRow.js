@@ -46,17 +46,14 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
     return count;
   }
 
-  function failed_tests(implementationImage) {
+  function failedTests(implementationImage) {
     var count = 0;
-    lines.map((element) => {
-      const propertyObjectArray = Object.keys(element);
-      if (propertyObjectArray[0] == "implementation") {
-        if (element.implementation == implementationImage) {
-          if (element.results && element.expected) {
-            for (let i = 0; i < element.results.length; i++) {
-              if (element.results[i].valid !== element.expected[i]) {
-                count += 1;
-              }
+    implementationArray.forEach((element) => {
+      if (element.implementation == implementationImage) {
+        if (element.results && element.expected) {
+          for (let i = 0; i < element.results.length; i++) {
+            if (element.results[i].valid !== element.expected[i]) {
+              count += 1;
             }
           }
         }
@@ -66,19 +63,32 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
     return count;
   }
 
-  function errored_tests(implementationImage) {
-    var count = 0;
-    lines.map((element) => {
-      if (element.implementation == implementationImage) {
+  function erroredTests(implementationImage) {
+    let count = 0;
+    implementationArray.forEach((element) => {
+      if (element.implementation === implementationImage) {
         // console.log(cases);
         if (element.caught) {
-          var seq = element.seq;
+          let seq = element.seq;
           // console.log(seq)
-          lines.map((each) => {
-            if (each.case && each.seq == seq) {
+          caseArray.forEach((each) => {
+            if (each.seq == seq) {
               count += each.case.tests.length;
             }
           });
+        } else if (element.results) {
+          var caseResults = element.results.filter(
+            (element) => element.context
+          );
+          // console.log(caseResults);
+          if (caseResults.errored) {
+            let seq = element.seq;
+            caseArray.forEach((each) => {
+              if (each.seq === seq) {
+                count += each.case.tests.length;
+              }
+            });
+          }
         }
       }
     });
@@ -86,14 +96,14 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
     return count;
   }
 
-  function errored_cases(implementationImage) {
+  function erroredCases(implementationImage) {
     var count = 0;
-    lines.map((element) => {
+    lines.forEach((element) => {
       if (element.implementation == implementationImage) {
         if (element.caught) {
           var seq = element.seq;
           // console.log(seq)
-          lines.map((each) => {
+          lines.forEach((each) => {
             if (each.case && each.seq == seq) {
               count += 1;
             }
@@ -135,17 +145,16 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         </button>
       </td>
 
-      <td className="text-center">{errored_cases(implementation.image)}</td>
+      <td className="text-center">{erroredCases(implementation.image)}</td>
       <td className="text-center">{skippedTests(implementation.image)}</td>
       <td className="text-center details-required">
-        {failed_tests(implementation.image) +
-          errored_tests(implementation.image)}
+        {failedTests(implementation.image) + erroredTests(implementation.image)}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>:{failed_tests(implementation.image)}
+            <b>failed</b>:{failedTests(implementation.image)}
           </p>
           <p>
-            <b>errored</b>:{errored_tests(implementation.image)}
+            <b>errored</b>:{erroredTests(implementation.image)}
           </p>
         </div>
       </td>

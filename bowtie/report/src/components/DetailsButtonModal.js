@@ -38,6 +38,35 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               }
             });
           }
+        } else if (seqImplementation.caught) {
+          let seq = seqImplementation.seq;
+          // console.log(seq)
+          caseArray.forEach((seqCase) => {
+            if (seqCase.seq == seq) {
+              var hasResultsArray = true;
+              arrayOfSeqCases.push(seqCase);
+              testStatusArray = ["errored", seqImplementation, hasResultsArray];
+            }
+          });
+        } else if (seqImplementation.results) {
+          var caseResults = seqImplementation.results.filter(
+            (seqImplementation) => seqImplementation.context
+          );
+          // console.log(caseResults);
+          if (caseResults.errored) {
+            let seq = seqImplementation.seq;
+            caseArray.forEach((each) => {
+              if (each.seq === seq) {
+                var hasResultsArray = true;
+                arrayOfSeqCases.push(seqCase);
+                testStatusArray = [
+                  "errored",
+                  seqImplementation,
+                  hasResultsArray,
+                ];
+              }
+            });
+          }
         }
       }
     });
@@ -49,11 +78,15 @@ export const DetailsButtonModal = ({ lines, summary }) => {
       {summary.implementations.map((implementation, index) => {
         const result = TestStatus(implementation.image);
         const [testStatusArray, arrayOfSeqCases] = result;
-        console.log(arrayOfSeqCases);
+        {
+          /* console.log(arrayOfSeqCases); */
+        }
         if (Array.isArray(testStatusArray)) {
           const [testStatus, seqImplementation, hasResultsArray] =
             testStatusArray;
-          console.log(seqImplementation);
+          {
+            /* console.log(seqImplementation); */
+          }
           return (
             <div
               className="modal fade"
@@ -120,23 +153,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                             implementation.image,
                             ({ valid: null }, true)
                           );
-
-                        if (incorrect === "skipped") {
-                          return (
-                            <div className="col" key={seq}>
-                              <div className="card border-warning mb-3">
-                                <div className="card-body">
-                                  <h5 className="card-title">{description}</h5>
-                                  <p className="card-text">
-                                    {test.description}
-                                  </p>
-                                </div>
-                                <div className="card-footer text-muted text-center">
-                                  {implementation_result}
-                                </div>
-                              </div>
-                            </div>
-                          );
+                          
                         } else if (incorrect === "errored") {
                           return (
                             <div className="col" key={seq}>
