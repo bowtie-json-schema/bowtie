@@ -140,8 +140,28 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                                 </div>
                               </div>
                             );
+                          } else if (testStatus === "errored") {
+                            return (
+                              <div
+                                className="col"
+                                key={`${seqCase.seq}${index}`}
+                              >
+                                <div className="card border-danger mb-3">
+                                  <div className="card-body">
+                                    <h5 className="card-title">
+                                      {seqCase.case.description}
+                                    </h5>
+                                    <p className="card-text">
+                                      {eachTest.description}
+                                    </p>
+                                  </div>
+                                  <div className="card-footer text-muted text-center">
+                                    {seqImplementation.message}
+                                  </div>
+                                </div>
+                              </div>
+                            );
                           }
-                          return null;
                         })
                       )}
                       {/* {summary
