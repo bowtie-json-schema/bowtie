@@ -44,7 +44,7 @@ module BowtieJsonSchemer
     when 'dialect'
       raise NotStarted unless @started
 
-      @draft = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[request['dialect']]
+      @draft = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[request['dialect']]
       response = { ok: true }
       puts "#{JSON.generate(response)}\n"
     when 'run'
