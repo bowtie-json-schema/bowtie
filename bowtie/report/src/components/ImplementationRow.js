@@ -74,34 +74,26 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
 
   function erroredTests(implementationImage) {
     let count = 0;
+
     implementationArray.forEach((element) => {
       if (element.implementation === implementationImage) {
-        // console.log(cases);
-        if (element.caught) {
-          let seq = element.seq;
-          // console.log(seq)
-          caseArray.forEach((each) => {
-            if (each.seq == seq) {
-              count += each.case.tests.length;
-            }
-          });
-        } else if (element.results) {
-          var caseResults = element.results.filter(
-            (element) => element.context
-          );
-          // console.log(caseResults);
-          if (caseResults.errored) {
-            let seq = element.seq;
-            caseArray.forEach((each) => {
-              if (each.seq === seq) {
-                count += each.case.tests.length;
-              }
-            });
+        const seq = element.seq;
+        const caseImplementation = caseArray.find((each) => each.seq === seq);
+        if (
+          element.caught ||
+          (element.results &&
+            element.results.every(
+              (each) =>
+                typeof each === "object" && each.hasOwnProperty("errored")
+            ))
+        ) {
+          if (caseImplementation) {
+            count += caseImplementation.case.tests.length;
           }
         }
       }
     });
-    // updateTotalErroredTests(count);
+
     return count;
   }
 
