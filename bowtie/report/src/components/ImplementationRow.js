@@ -104,8 +104,8 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
         if (element.caught) {
           var seq = element.seq;
           // console.log(seq)
-          lines.forEach((each) => {
-            if (each.case && each.seq == seq) {
+          caseArray.forEach((each) => {
+            if (each.seq == seq) {
               count += 1;
             }
           });

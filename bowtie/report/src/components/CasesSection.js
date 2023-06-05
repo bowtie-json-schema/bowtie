@@ -14,15 +14,10 @@ const CasesSection = ({ lines }) => {
         const caseImplementation = ImplementationObjectArray.filter(
           (implementation) => implementation.seq === eachCase.seq
         );
-        const ccaseImplementation = caseImplementation.find(
-          (implementation) => implementation.implementation === summary.implementations[0].image
-        );
-        {/* console.log(ccaseImplementation)
-        console.log(caseImplementation)
-        console.log(summary.implementations) */}
         return (
           <AccordionItem
             key={index}
+            lines ={lines}
             implementations = {summary.implementations}
             eachCase={eachCase}
             caseImplementation={caseImplementation}

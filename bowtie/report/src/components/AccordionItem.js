@@ -1,13 +1,42 @@
 import AccordionSvg from "./AccordionSvg";
 
-const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
+const AccordionItem = ({
+  lines,
+  eachCase,
+  implementations,
+  caseImplementation,
+}) => {
+  const caseArray = lines.filter((obj) => obj.case);
+  const implementationArray = lines.filter((obj) => obj.implementation);
   const seq = eachCase.seq;
   const description = eachCase.case.description;
   const schema = eachCase.case.schema;
   const registry = eachCase.case.registry;
   const tests = eachCase.case.tests;
-  let testCase;
-  // console.log(caseImplementation)
+
+  function result(implementation) {
+    var testResult;
+    if (implementation.skipped && implementation.skipped == true) {
+      return (testResult = "skipped");
+    } else if (implementation.results) {
+      var caseResults = implementation.results.filter(
+        (element) => element.skipped
+      );
+      if (caseResults.length > 0) {
+        return (testResult = "skipped");
+      }
+    } else if (implementation.caught && implementation.caught == true) {
+      return (testResult = "errored");
+    } else if (implementation.results) {
+      if (implementation.results.every((each) =>
+          typeof each === "object" && each.hasOwnProperty("errored")
+      )) {
+        return (testResult = "errored");
+      }
+    } else {
+      
+    }
+  }
   return (
     <div className="accordion-item">
       <h2 className="accordion-header" id={`case-${seq}-heading`}>
@@ -76,41 +105,79 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                       {test.description}
                     </a>
                   </td>
-                  {implementations.map((element, index) => {
+                  {implementations.map((impl, i) => {
+                    let testCase;
                     var implementation = caseImplementation.find(
-                      (each) => each.implementation === element.image
+                      (each) => each.implementation === impl.image
                     );
-                    if (implementation.results && implementation.expected) {
-                      for (let i = 0; i < implementation.results.length; i++) {
-                        if (
-                          implementation.results[i].valid !==
-                          implementation.expected[i]
-                        ) {
-                          testCase = "failed";
-                        }
-                      }
-                    }
-                    if (implementation.results && implementation.expected) {
-                      for (let i = 0; i < implementation.results.length; i++) {
-                        if (
-                          implementation.results[i].valid ===
-                          implementation.expected[i]
-                        ) {
-                          testCase = "passed";
-                        }
-                      }
-                    }
-                    if (element.skipped) {
-                      testCase = "skipped";
-                    } else if (element.results) {
-                      var caseResults = element.results.filter(
-                        (element) => element.skipped
+                    var testResult = result(implementation);
+                    if (testResult == "skipped") {
+                      return (
+                        <td key={i} className="text-center text-bg-warning">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-exclamation-octagon"
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1H5.1z" />
+                            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
+                          </svg>
+                        </td>
                       );
-                      if (caseResults.length > 0) {
-                        testCase = "skipped";
-                      }
+                    } else if (testResult == "errored") {
+                      return (
+                        <td key={i} className="text-center text-bg-danger">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-exclamation-octagon"
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1H5.1z" />
+                            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
+                          </svg>
+                        </td>
+                      );
+                    } else {
+                      return <td key={i}>Agni</td>;
                     }
-                    if (testCase === "faileds") {
+
+                    {
+                      /* console.log(testCase) */
+                    }
+                    {
+                      /* return testCase; */
+                    }
+
+                    {
+                      /* if (implementation.results && implementation.expected ) {
+                      if (
+                        implementation.results.every((element) => typeof element === "object" && Object.keys(element).length === 1 && "valid" in element)) {
+                        for ( let i = 0; i < implementation.results.length; i++) {
+                          if ( implementation.results[i].valid === implementation.expected[i]) {
+                            testCase = "passed";
+                          }
+                        }
+                      }
+
+                    } else if (implementation.results && implementation.expected ) {
+                      if (
+                        implementation.results.every((element) => typeof element === "object" && Object.keys(element).length === 1 && "valid" in element)) {
+                        for ( let i = 0; i < implementation.results.length; i++) {
+                          if ( implementation.results[i].valid === implementation.expected[i]) {
+                            testCase = "passed";
+                          }
+                        }
+                      }
+                    } */
+                    }
+                    {
+                      /* if (testCase === "faileds") {
                       return (
                         <td key={index} className="text-center">
                           <svg
@@ -125,8 +192,10 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                           </svg>
                         </td>
                       );
+                    } */
                     }
-                    if (testCase === "passeds") {
+                    {
+                      /* if (testCase === "passed") {
                       return (
                         <td key={index} className="text-center">
                           <svg
@@ -141,10 +210,11 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                           </svg>
                         </td>
                       );
+                    } */
                     }
                     if (testCase === "skipped") {
                       return (
-                        <td key={index} className="text-center text-bg-warning">
+                        <td key={i} className="text-center text-bg-warning">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
