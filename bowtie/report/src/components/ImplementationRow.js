@@ -47,19 +47,28 @@ const ImplementationRow = ({ lines, implementation, counts, index }) => {
   }
 
   function failedTests(implementationImage) {
-    var count = 0;
-    implementationArray.forEach((element) => {
-      if (element.implementation == implementationImage) {
-        if (element.results && element.expected) {
-          for (let i = 0; i < element.results.length; i++) {
-            if (element.results[i].valid !== element.expected[i]) {
-              count += 1;
+    let count = 0;
+
+    implementationArray.forEach(({ implementation, results, expected }) => {
+      if (implementation === implementationImage && results && expected) {
+        if (
+          results.every(
+            (element) =>
+              typeof element === "object" &&
+              Object.keys(element).length === 1 &&
+              "valid" in element
+          )
+        ) {
+          count += results.reduce((acc, result, index) => {
+            if (result.valid !== expected[index]) {
+              return acc + 1;
             }
-          }
+            return acc;
+          }, 0);
         }
       }
     });
-    // updateTotalFailedTests(count);
+
     return count;
   }
 
