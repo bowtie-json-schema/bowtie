@@ -7,6 +7,14 @@ const SummaryTable = ({ lines }) => {
   const runInfo = new RunInfo(lines);
   const summary = runInfo.createSummary();
 
+  const caseArray = lines.filter((each) => each.case);
+  const totalCases = caseArray.length;
+  const totalTests = caseArray.reduce((total, eachCase) => {
+    const caseTests = eachCase.case.tests;
+    const caseTestCount = caseTests.length;
+    return total + caseTestCount;
+  }, 0);
+
   const {
     updateTotalErroredCases,
     updateTotalErroredTests,
@@ -36,10 +44,10 @@ const SummaryTable = ({ lines }) => {
             implementation
           </th>
           <th colSpan={1} className="text-center">
-            <span className="text-muted">cases ({summary.total_cases})</span>
+            <span className="text-muted">cases ({totalCases})</span>
           </th>
           <th colSpan={3} className="text-center">
-            <span className="text-muted">tests ({summary.total_tests})</span>
+            <span className="text-muted">tests ({totalTests})</span>
           </th>
           <th colSpan={1}></th>
         </tr>
