@@ -2,6 +2,11 @@
 bowtie-report.html
 /badges/
 
+/bowtie/report/node_modules
+/bowtie/report/build
+/bowtie/report/lib/
+/bowtie/report/dist/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
