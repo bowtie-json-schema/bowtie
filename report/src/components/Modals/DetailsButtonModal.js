@@ -23,12 +23,16 @@ export const DetailsButtonModal = ({ lines, summary }) => {
             if (seqCase.seq == seq) {
               var hasResultsArray = true;
               arrayOfSeqCases.push(seqCase);
-              testStatusArray = ["unexpectedlyErrored", seqImplementation, hasResultsArray];
+              testStatusArray = [
+                "unexpectedlyErrored",
+                seqImplementation,
+                hasResultsArray,
+              ];
             }
           });
         } else if (seqImplementation.results && seqImplementation.expected) {
           var caseResults = seqImplementation.results.filter(
-            (element) => element.skipped
+            (element) => element.skipped,
           );
           if (caseResults.length > 0) {
             var seq = seqImplementation.seq;
@@ -50,14 +54,13 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               (element) =>
                 typeof element === "object" &&
                 Object.keys(element).length === 1 &&
-                "valid" in element
+                "valid" in element,
             )
           ) {
-
           }
         } else if (seqImplementation.results) {
           var caseResults = seqImplementation.results.filter(
-            (seqImplementation) => seqImplementation.context
+            (seqImplementation) => seqImplementation.context,
           );
           // console.log(caseResults);
           if (caseResults.errored) {
@@ -169,7 +172,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                               </div>
                             );
                           }
-                        })
+                        }),
                       )}
                       {/* {summary
                     .flat_results()
@@ -180,7 +183,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                             implementation.image,
                             ({ valid: null }, true)
                           );
-                          
+
                         } else if (incorrect === "errored") {
                           return (
                             <div className="col" key={seq}>
