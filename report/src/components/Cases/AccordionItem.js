@@ -1,4 +1,5 @@
 import AccordionSvg from "./AccordionSvg";
+import { schemaDisplay } from "../../utilities/utilFunctions";
 
 const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
   const seq = eachCase.seq;
@@ -60,14 +61,14 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
         <button
           className="accordion-button collapsed"
           type="button"
-          // onClick={() =>
-          //   schemaDisplay(
-          //     `accordion-body${seq}`,
-          //     JSON.stringify(schema, null, 2),
-          //     "schema-code",
-          //     `row-${seq}`
-          //   )
-          // }
+          onClick={() =>
+            schemaDisplay(
+              `accordion-body${seq}`,
+              JSON.stringify(schema, null, 2),
+              "schema-code",
+              `row-${seq}`
+            )
+          }
           data-bs-toggle="collapse"
           data-bs-target={`#case-${seq}`}
           aria-expanded="false"
@@ -110,12 +111,12 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                 <tr
                   className={`row-${seq}`}
                   key={index}
-                  // onClick={() =>
-                  //   displayCode(
-                  //     JSON.stringify(testResult.instance, null, 2),
-                  //     "instance-info"
-                  //   )
-                  // }
+                  onClick={() =>
+                    displayCode(
+                      JSON.stringify(test.instance, null, 2),
+                      "instance-info"
+                    )
+                  }
                 >
                   <td>
                     <a href="#schema" className="text-decoration-none">
@@ -133,6 +134,77 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div id="display-body" className="card mb-3 d-none mw-100">
+        <div className="row">
+          <div className="col-8 pe-0">
+            <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+              <small className="font-monospace text-body-secondary text-uppercase">
+                Schema
+              </small>
+              <div className="d-flex ms-auto">
+                <button
+                  type="button"
+                  id="copy-button-schema"
+                  className="btn mt-0 me-0"
+                  onClick= { () => copyToClipboard("schema-code","copy-button-schema")}
+                  aria-label="Copy to clipboard"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="Copy to clipboard"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    className="bi bi-clipboard"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="schema-code" className="card-body"></div>
+          </div>
+          <div className="col-4 border-start ps-0">
+            <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
+              <small className="font-monospace text-body-secondary text-uppercase">
+                Instance
+              </small>
+              <div className="d-flex ms-auto">
+                <button
+                  type="button"
+                  id="copy-button-instance"
+                  onClick={ () => copyToClipboard("instance-info","copy-button-instance")}
+                  className="btn mt-0 me-0"
+                  aria-label="Copy to clipboard"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="Copy to clipboard"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    className="bi bi-clipboard"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="instance-info" className="card-body"></div>
+          </div>
         </div>
       </div>
     </div>

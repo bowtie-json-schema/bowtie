@@ -30,8 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
       break;
   }
 
-  // console.log(dialect);
-
   //fetching json data from url
   fetch(`https://bowtie-json-schema.github.io/bowtie/draft${Dialect}.json.gz`)
     .then((response) => response.arrayBuffer())
