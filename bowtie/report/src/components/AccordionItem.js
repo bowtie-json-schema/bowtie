@@ -137,7 +137,7 @@ const AccordionItem = ({
                       (each) => each.implementation === impl.image
                     );
                     var testResult = result(index, implementation);
-                     return <AccordionSvg testResult={testResult} />
+                     return <AccordionSvg key={i} testResult={testResult} />
                   })}
                 </tr>
               ))}

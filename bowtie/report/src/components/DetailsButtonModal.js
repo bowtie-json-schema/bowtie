@@ -2,8 +2,6 @@ export const DetailsButtonModal = ({ lines, summary }) => {
   const implementationArray = lines.filter((element) => element.implementation);
   const caseArray = lines.filter((element) => element.case);
 
-  // console.log(implementationArray)
-  // console.log(caseArray)
   function TestStatus(implementationImage) {
     let testStatusArray;
     var arrayOfSeqCases = [];
