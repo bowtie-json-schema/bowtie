@@ -1,11 +1,11 @@
-import { CountsDataContext } from "../data/CountsDataContext";
-import { RunInfo } from "../data/run-Info";
+import { CountsDataContext } from "../../data/CountsDataContext";
+import { RunInfo } from "../../data/run-Info";
 import ImplementationRow from "./ImplementationRow";
 import { useContext } from "react";
 
 const SummaryTable = ({ lines }) => {
   const runInfo = new RunInfo(lines);
-  const summary = runInfo.create_summary();
+  const summary = runInfo.createSummary();
 
   const {
     updateTotalErroredCases,
@@ -76,14 +76,12 @@ const SummaryTable = ({ lines }) => {
         </tr>
       </thead>
       <tbody className="table-group-divider">
-        {/* {(summary.implementations.forEach(each => console.log(each.language)))} */}
         {summary.implementations.map((implementation, index) => (
           <ImplementationRow
             lines={lines}
             implementation={implementation}
             key={index}
-            counts={summary.counts[implementation.image]}
-            index = {index}
+            index={index}
           />
         ))}
       </tbody>

@@ -71,7 +71,7 @@ const RunInfoSection = (props) => {
                       );
                     }
                     return null;
-                  },
+                  }
                 )}
               </thead>
             </table>

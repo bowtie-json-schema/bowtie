@@ -1,4 +1,4 @@
-import { RunInfo } from "../data/run-Info";
+import { RunInfo } from "../../data/run-Info";
 import AccordionItem from "./AccordionItem";
 
 const CasesSection = ({ lines }) => {
@@ -6,7 +6,7 @@ const CasesSection = ({ lines }) => {
   const ImplementationObjectArray = lines.filter((obj) => obj.implementation);
 
   const runInfo = new RunInfo(lines);
-  const summary = runInfo.create_summary();
+  const summary = runInfo.createSummary();
 
   return (
     <div className="accordion pt-5" id="cases">

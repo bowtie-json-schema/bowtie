@@ -1,11 +1,10 @@
-import { RunInfo } from "../data/run-Info";
+import { RunInfo } from "../../data/run-Info";
 import SummaryTable from "./SummaryTable";
 
 const SummarySection = (props) => {
   const lines = props.lines;
   const runInfo = new RunInfo(lines);
-  const summary = runInfo.create_summary();
-  // console.log(props.summary)
+  const summary = runInfo.createSummary();
   return (
     <div className="card mx-auto mb-3 w-75" id="summary">
       <div className="card-header">Summary</div>

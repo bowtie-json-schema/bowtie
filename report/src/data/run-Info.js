@@ -11,11 +11,10 @@ const _DIALECT_URI_TO_SHORTNAME = {
 
 export class RunInfo {
   constructor(lines) {
-    // console.log(runInfoData.implementations)
     this.lines = lines;
     const runInfoData = this.lines[0];
     this.started = runInfoData.started;
-    this.bowtie_version = runInfoData.bowtie_version;
+    this.bowtieVersion = runInfoData.bowtie_version;
     this.dialect = runInfoData.dialect;
     this.implementations = runInfoData.implementations;
     this.metadata = runInfoData.metadata;
@@ -43,9 +42,7 @@ export class RunInfo {
     );
   }
 
-  create_summary() {
-    // console.log(this.lines)
+  createSummary() {
     return new Summary(this.lines);
-    // return new Summary(Object.values(this.implementations));
   }
 }

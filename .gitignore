@@ -153,7 +153,7 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+# .idea/
 
 # User defined
 _cache
@@ -163,12 +163,6 @@ _templates
 
 # files to be ignored within report directory
 
-/bowtie/report/node_modules
-
-/bowtie/report/build
-
+/report/node_modules
+/report/build
 .vscode
-.idea
-
-/bowtie/report/lib/
-/bowtie/report/dist/

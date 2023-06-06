@@ -1,16 +1,16 @@
-import CasesSection from "./components/CasesSection";
-import { RunTimeInfoModal } from "./components/RunTimeInfoModal";
+import CasesSection from "./components/Cases/CasesSection";
+import { RunTimeInfoModal } from "./components/Modals/RunTimeInfoModal";
 import NavBar from "./components/NavBar";
-import RunInfoSection from "./components/RunInfoSection";
-import SummarySection from "./components/SummarySection";
+import RunInfoSection from "./components/RunInfo/RunInfoSection";
+import SummarySection from "./components/Summary/SummarySection";
 import { CountsDataProvider } from "./data/CountsDataContext";
 import { RunInfo } from "./data/run-Info";
-import { DetailsButtonModal } from "./components/DetailsButtonModal";
+import { DetailsButtonModal } from "./components/Modals/DetailsButtonModal";
 
 function App(props) {
   const runInfo = new RunInfo(props.lines);
 
-  const summary = runInfo.create_summary();
+  const summary = runInfo.createSummary();
 
   document.getElementsByTagName("title")[0].textContent +=
     " " + runInfo.dialect_shortname;

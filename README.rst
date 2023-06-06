@@ -41,3 +41,10 @@ Looks like a bowtie, no?
 Also because it's elegant – we hope.
 
 For more information, see `Bowtie's documentation <https://bowtie-json-schema.readthedocs.io/>`_.
+
+
+To run the bowtie UI locally, follow the below steps.
+
+Make sure you have node and npm installed in your system.
+Navigate to path_to_bowtie/report
+Run `npm start` in the terminal.

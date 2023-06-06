@@ -17,11 +17,19 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               testStatusArray = ["skipped", seqImplementation, hasResultsArray];
             }
           });
-        } else if (seqImplementation.results) {
+        } else if (seqImplementation.caught) {
+          let seq = seqImplementation.seq;
+          caseArray.forEach((seqCase) => {
+            if (seqCase.seq == seq) {
+              var hasResultsArray = true;
+              arrayOfSeqCases.push(seqCase);
+              testStatusArray = ["unexpectedlyErrored", seqImplementation, hasResultsArray];
+            }
+          });
+        } else if (seqImplementation.results && seqImplementation.expected) {
           var caseResults = seqImplementation.results.filter(
             (element) => element.skipped
           );
-          // console.log(caseResults)
           if (caseResults.length > 0) {
             var seq = seqImplementation.seq;
             caseArray.forEach((seqCase) => {
@@ -36,16 +44,17 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               }
             });
           }
-        } else if (seqImplementation.caught) {
-          let seq = seqImplementation.seq;
-          // console.log(seq)
-          caseArray.forEach((seqCase) => {
-            if (seqCase.seq == seq) {
-              var hasResultsArray = true;
-              arrayOfSeqCases.push(seqCase);
-              testStatusArray = ["errored", seqImplementation, hasResultsArray];
-            }
-          });
+
+          if (
+            seqImplementation.results.every(
+              (element) =>
+                typeof element === "object" &&
+                Object.keys(element).length === 1 &&
+                "valid" in element
+            )
+          ) {
+
+          }
         } else if (seqImplementation.results) {
           var caseResults = seqImplementation.results.filter(
             (seqImplementation) => seqImplementation.context

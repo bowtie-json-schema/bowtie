@@ -1,10 +1,6 @@
 import AccordionSvg from "./AccordionSvg";
 
-const AccordionItem = ({
-  eachCase,
-  implementations,
-  caseImplementation,
-}) => {
+const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
   const seq = eachCase.seq;
   const description = eachCase.case.description;
   const schema = eachCase.case.schema;
