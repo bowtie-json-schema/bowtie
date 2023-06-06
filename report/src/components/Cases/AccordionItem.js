@@ -1,5 +1,5 @@
 import AccordionSvg from "./AccordionSvg";
-import { schemaDisplay } from "../../utilities/utilFunctions";
+import { schemaDisplay, copyToClipboard } from "../../utilities/utilFunctions";
 
 const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
   const seq = eachCase.seq;
