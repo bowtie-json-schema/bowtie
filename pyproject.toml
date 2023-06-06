@@ -17,7 +17,7 @@ exclude = [
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 readme = "README.rst"
 license = {text = "MIT"}
 keywords = [
@@ -37,8 +37,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3",
@@ -57,7 +55,6 @@ dependencies = [
   "rich",
   "structlog",
   "trogon>=0.4.0",
-  "importlib-resources; python_version<'3.9'",
   "typing-extensions; python_version<'3.11'",
 ]
 

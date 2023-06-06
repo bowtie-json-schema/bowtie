@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
+from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
 from typing import Any, AsyncIterator, TextIO, Union
@@ -36,11 +37,6 @@ from bowtie._core import (
 from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
 )
-
-try:
-    from importlib.resources import files
-except ImportError:
-    from importlib_resources import files  # type: ignore
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
@@ -183,11 +179,12 @@ def summary(input: Iterable[str], format: str, show: str):
         to_table = _validation_results_table
         to_serializable = list  # type: ignore[reportGeneralTypeIssues]
 
-    if format == "json":
-        click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-    else:
-        table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-        console.Console().print(table)
+    match format:
+        case "json":
+            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+        case "pretty":
+            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            console.Console().print(table)
 
 
 def _ordered_failures(
@@ -503,15 +500,17 @@ async def _info(image_names: list[str], format: str):
                     ),
                 )
             }
-            if format == "json":
-                click.echo(json.dumps(metadata, indent=2))
-            else:
-                click.echo(
-                    "\n".join(
-                        f"{k}: {json.dumps(v, indent=2)}"
-                        for k, v in metadata.items()
-                    ),
-                )
+
+            match format:
+                case "json":
+                    click.echo(json.dumps(metadata, indent=2))
+                case "pretty":
+                    click.echo(
+                        "\n".join(
+                            f"{k}: {json.dumps(v, indent=2)}"
+                            for k, v in metadata.items()
+                        ),
+                    )
     return exit_code
 
 
@@ -577,29 +576,30 @@ async def _smoke(image_names: list[str], format: str):
                 for seq, case in enumerate(cases)
             )
 
-            if format == "json":
-                serializable = [
-                    {
-                        "case": case.without_expected_results(),
-                        "response": dict(
-                            errored=response.errored,
-                            failed=response.failed,
-                        ),
-                    }
-                    async for case, response in responses
-                ]
-                click.echo(json.dumps(serializable, indent=2))
-            else:
-                async for case, response in responses:
-                    if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                        exit_code |= os.EX_DATAERR
-                        message = "❗ (error)"
-                    elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-                        exit_code |= os.EX_DATAERR
-                        message = "✗ (failed)"
-                    else:
-                        message = "✓"
-                    click.echo(f"  {message}: {case.description}")
+            match format:
+                case "json":
+                    serializable = [
+                        {
+                            "case": case.without_expected_results(),
+                            "response": dict(
+                                errored=response.errored,
+                                failed=response.failed,
+                            ),
+                        }
+                        async for case, response in responses
+                    ]
+                    click.echo(json.dumps(serializable, indent=2))
+                case "pretty":
+                    async for case, response in responses:
+                        if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                            exit_code |= os.EX_DATAERR
+                            message = "❗ (error)"
+                        elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                            exit_code |= os.EX_DATAERR
+                            message = "✗ (failed)"
+                        else:
+                            message = "✓"
+                        click.echo(f"  {message}: {case.description}")
 
     if exit_code:
         click.echo("\n❌ some failures", file=sys.stderr)
