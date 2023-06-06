@@ -14,6 +14,9 @@ const CasesSection = ({ lines }) => {
         const caseImplementation = ImplementationObjectArray.filter(
           (implementation) => implementation.seq === eachCase.seq
         );
+
+        {/* console.log(eachCase)
+        console.log(caseImplementation) */}
         return (
           <AccordionItem
             key={index}
