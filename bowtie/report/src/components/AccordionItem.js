@@ -1,23 +1,17 @@
 import AccordionSvg from "./AccordionSvg";
 
 const AccordionItem = ({
-  lines,
   eachCase,
   implementations,
   caseImplementation,
 }) => {
-  const caseArray = lines.filter((obj) => obj.case);
-  const implementationArray = lines.filter((obj) => obj.implementation);
   const seq = eachCase.seq;
   const description = eachCase.case.description;
   const schema = eachCase.case.schema;
-  const registry = eachCase.case.registry;
   const tests = eachCase.case.tests;
 
   function result(index, implementation) {
     var testResult;
-    // console.log(implementation)
-
     if (implementation.skipped && implementation.skipped == true) {
       return (testResult = "skipped");
     } else if (implementation.caught && implementation.caught == true) {
@@ -137,7 +131,7 @@ const AccordionItem = ({
                       (each) => each.implementation === impl.image
                     );
                     var testResult = result(index, implementation);
-                     return <AccordionSvg key={i} testResult={testResult} />
+                    return <AccordionSvg key={i} testResult={testResult} />;
                   })}
                 </tr>
               ))}

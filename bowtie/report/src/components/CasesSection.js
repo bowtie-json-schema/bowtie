@@ -14,15 +14,11 @@ const CasesSection = ({ lines }) => {
         const caseImplementation = ImplementationObjectArray.filter(
           (implementation) => implementation.seq === eachCase.seq
         );
-
-        {/* console.log(eachCase)
-        console.log(caseImplementation) */}
         return (
           <AccordionItem
             key={index}
-            lines ={lines}
-            implementations = {summary.implementations}
             eachCase={eachCase}
+            implementations={summary.implementations}
             caseImplementation={caseImplementation}
           />
         );
