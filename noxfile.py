@@ -1,4 +1,7 @@
+from contextlib import ExitStack
 from pathlib import Path
+from tempfile import TemporaryDirectory
+import os
 import shlex
 
 import nox
@@ -26,50 +29,67 @@ def session(default=True, **kwargs):
 @session(python=["3.8", "3.9", "3.10", "3.11"])
 def tests(session):
     session.install("-r", ROOT / "test-requirements.txt")
-    session.run("pytest", "--verbosity=3")
+
+    if session.posargs and session.posargs[0] == "coverage":
+        if len(session.posargs) > 1 and session.posargs[1] == "github":
+            github = os.environ["GITHUB_STEP_SUMMARY"]
+        else:
+            github = None
+
+        session.install("coverage[toml]")
+        session.run("coverage", "run", "-m", "pytest", TESTS)
+        if github is None:
+            session.run("coverage", "report")
+        else:
+            with open(github, "a") as summary:
+                summary.write("### Coverage\n\n")
+                summary.flush()  # without a flush, output seems out of order.
+                session.run(
+                    "coverage",
+                    "report",
+                    "--format=markdown",
+                    stdout=summary,
+                )
+    else:
+        session.run("pytest", *session.posargs, TESTS)
 
 
 @session(tags=["build"])
 def build(session):
-    session.install("build")
-    tmpdir = session.create_tmp()
-    session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
+    session.install("build", "twine")
+    with TemporaryDirectory() as tmpdir:
+        session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
+        session.run("twine", "check", "--strict", tmpdir + "/*")
 
 
 @session(tags=["build"])
 def shiv(session):
     session.install("shiv")
-    if session.posargs:
-        out = session.posargs[0]
-    else:
-        tmpdir = Path(session.create_tmp())
-        out = tmpdir / "bowtie"
-    session.run(
-        "python",
-        "-m",
-        "shiv",
-        "--reproducible",
-        "-c",
-        "bowtie",
-        ROOT,
-        "-o",
-        out,
-    )
-    print(f"Outputted a shiv to {out}.")
 
-
-@session(tags=["style"])
-def readme(session):
-    session.install("build", "twine")
-    tmpdir = session.create_tmp()
-    session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
-    session.run("python", "-m", "twine", "check", "--strict", tmpdir + "/*")
+    with ExitStack() as stack:
+        if session.posargs:
+            out = session.posargs[0]
+        else:
+            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
+            out = tmpdir / "bowtie"
+        session.run(
+            "python",
+            "-m",
+            "shiv",
+            "--reproducible",
+            "-c",
+            "bowtie",
+            ROOT,
+            "-o",
+            out,
+        )
+        print(f"Outputted a shiv to {out}.")
 
 
 @session(tags=["style"])
 def style(session):
     session.install("ruff")
-    session.run("python", "-m", "ruff", "check", BOWTIE, TESTS, __file__)
+    session.run("ruff", "check", BOWTIE, TESTS, __file__)
 
 
 @session()
@@ -94,20 +114,21 @@ def typing(session):
 )
 def docs(session, builder):
     session.install("-r", DOCS / "requirements.txt")
-    tmpdir = Path(session.create_tmp())
-    argv = ["-n", "-T", "-W"]
-    if builder != "spelling":
-        argv += ["-q"]
-    session.run(
-        "python",
-        "-m",
-        "sphinx",
-        "-b",
-        builder,
-        DOCS,
-        tmpdir / builder,
-        *argv,
-    )
+    with TemporaryDirectory() as tmpdir_str:
+        tmpdir = Path(tmpdir_str)
+        argv = ["-n", "-T", "-W"]
+        if builder != "spelling":
+            argv += ["-q"]
+        session.run(
+            "python",
+            "-m",
+            "sphinx",
+            "-b",
+            builder,
+            DOCS,
+            tmpdir / builder,
+            *argv,
+        )
 
 
 @session(tags=["docs", "style"], name="docs(style)")
