@@ -572,7 +572,7 @@ async def _smoke(image_names: list[str], format: str):
                     ],
                 ),
             ]
-            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (
                 (case, await runner.run_case(seq=seq, case=case))
                 for seq, case in enumerate(cases)
             )
