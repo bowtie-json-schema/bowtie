@@ -20,6 +20,7 @@ GEM
     unf_ext (0.0.8.2)
 
 PLATFORMS
+  arm64-darwin-22
   universal-darwin-21
   x86_64-linux
 
@@ -27,4 +28,4 @@ DEPENDENCIES
   bowtie_json_schemer!
 
 BUNDLED WITH
-   2.3.22
+   2.4.10
