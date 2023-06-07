@@ -45,14 +45,14 @@ jobs:
 
       - name: Generate the Report
         run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee >(gzip >${{ matrix.version }}.json.gz) | bowtie report --badges badges --generate-dialect-navigation --out ${{ matrix.version }}.html
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | > ${{ matrix.version }}.jsonl | bowtie report --badges badges --generate-dialect-navigation --out ${{ matrix.version }}.html
 
       - uses: actions/upload-artifact@v3
         with:
           name: report
           path: |
             ${{ matrix.version }}.html
-            ${{ matrix.version }}.json.gz
+            ${{ matrix.version }}.jsonl
             badges/
 
   collect:
