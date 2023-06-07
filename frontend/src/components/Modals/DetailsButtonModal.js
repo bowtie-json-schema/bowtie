@@ -1,5 +1,3 @@
-import DetailsModalCard from "../DetailsModalCard";
-
 export const DetailsButtonModal = ({ lines, summary }) => {
   const implementationArray = lines.filter((element) => element.implementation);
   const caseArray = lines.filter((element) => element.case);
