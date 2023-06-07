@@ -2,10 +2,11 @@
 bowtie-report.html
 /badges/
 
-/bowtie/report/node_modules
-/bowtie/report/build
-/bowtie/report/lib/
-/bowtie/report/dist/
+# files to be ignored within report directory
+
+/frontend/node_modules
+/frontend/build
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -163,11 +164,3 @@ cython_debug/
 # User defined
 _cache
 _templates
-
-
-
-# files to be ignored within report directory
-
-/report/node_modules
-/report/build
-.vscode
