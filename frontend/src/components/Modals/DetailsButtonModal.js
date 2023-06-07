@@ -4,7 +4,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
 
   function results(implementationImage) {
     var implementationTests = implementationArray.filter(
-      (obj) => obj.implementation === implementationImage
+      (obj) => obj.implementation === implementationImage,
     );
 
     var dataArray = [];
@@ -12,14 +12,14 @@ export const DetailsButtonModal = ({ lines, summary }) => {
       if (testImplementation.skipped && testImplementation.skipped === true) {
         var testResult = "directSkipped";
         var testCase = caseArray.find(
-          (obj) => obj.seq === testImplementation.seq
+          (obj) => obj.seq === testImplementation.seq,
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
       if (testImplementation.caught && testImplementation.caught === true) {
         var testResult = "caught";
         var testCase = caseArray.find(
-          (obj) => obj.seq === testImplementation.seq
+          (obj) => obj.seq === testImplementation.seq,
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
@@ -27,7 +27,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
         if (testImplementation.results.every((obj) => obj.skipped === true)) {
           var testResult = "skipped";
           var testCase = caseArray.find(
-            (obj) => obj.seq === testImplementation.seq
+            (obj) => obj.seq === testImplementation.seq,
           );
           dataArray.push([testResult, testCase, testImplementation]);
         }
@@ -36,7 +36,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
             (element) =>
               typeof element === "object" &&
               Object.keys(element).length === 1 &&
-              "valid" in element
+              "valid" in element,
           )
         ) {
           for (
@@ -53,7 +53,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 validity.push(index);
                 var testResult = "unexpectedlyValid";
                 var testCase = caseArray.find(
-                  (obj) => obj.seq === testImplementation.seq
+                  (obj) => obj.seq === testImplementation.seq,
                 );
                 dataArray.push([
                   testResult,
@@ -65,7 +65,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 validity.push(index);
                 var testResult = "unexpectedlyInvalid";
                 var testCase = caseArray.find(
-                  (obj) => obj.seq === testImplementation.seq
+                  (obj) => obj.seq === testImplementation.seq,
                 );
                 dataArray.push([
                   testResult,

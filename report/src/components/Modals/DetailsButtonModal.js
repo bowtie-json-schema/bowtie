@@ -244,4 +244,3 @@ export const DetailsButtonModal = ({ lines, summary }) => {
     </>
   );
 };
-
