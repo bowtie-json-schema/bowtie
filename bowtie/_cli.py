@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncIterator, TextIO, Union
+from typing import Any, AsyncIterator, Literal, TextIO, Union
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -82,6 +82,7 @@ FORMAT = click.option(
     show_default="pretty if stdout is a tty, otherwise JSON",
     type=click.Choice(["json", "pretty"]),
 )
+_F = Literal["json", "pretty"]
 
 
 @tui()
@@ -160,7 +161,7 @@ def report(
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: str, show: str):
+def summary(input: Iterable[str], format: _F, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
@@ -465,7 +466,7 @@ def info(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _info(image_names: list[str], format: str):
+async def _info(image_names: list[str], format: _F):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -526,7 +527,7 @@ def smoke(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _smoke(image_names: list[str], format: str):
+async def _smoke(image_names: list[str], format: _F):
     exit_code = 0
     async with _start(
         image_names=image_names,
