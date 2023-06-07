@@ -17,6 +17,15 @@ export const DetailsButtonModal = ({ lines, summary }) => {
           (obj) => obj.seq === testImplementation.seq
         );
         dataArray.push([testResult, testCase, testImplementation]);
+      } else if (
+        testImplementation.caught &&
+        testImplementation.caught === true
+      ) {
+        var testResult = "caught";
+        var testCase = caseArray.find(
+          (obj) => obj.seq === testImplementation.seq
+        );
+        dataArray.push([testResult, testCase, testImplementation]);
       } else if (testImplementation.results && testImplementation.expected) {
         if (testImplementation.results.every((obj) => obj.skipped === true)) {
           var testResult = "skipped";
@@ -111,6 +120,29 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                                 </div>
                                 <div className="card-footer text-muted text-center">
                                   {testImplementation.message}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      } else if (testResult === "caught") {
+                        return testCase.case.tests.map((test, index) => {
+                          return (
+                            <div
+                              className="col"
+                              key={`${testCase.seq}${index}`}
+                            >
+                              <div className="card border-danger mb-3">
+                                <div className="card-body">
+                                  <h5 className="card-title">
+                                    {testCase.case.description}
+                                  </h5>
+                                  <p className="card-text">
+                                    {test.description}
+                                  </p>
+                                </div>
+                                <div className="card-footer text-muted text-center">
+                                  Unexpectedly errored
                                 </div>
                               </div>
                             </div>
