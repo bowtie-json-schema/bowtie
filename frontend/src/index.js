@@ -4,7 +4,6 @@ import pako from "pako";
 
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { CountsDataProvider } from "./data/CountsDataContext";
 
 document.addEventListener("DOMContentLoaded", () => {
   let Dialect = "2020-12";
@@ -45,10 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const root = createRoot(document.getElementById("root"));
 
-      root.render(
-        <CountsDataProvider>
-          <App lines={lines} />
-        </CountsDataProvider>
-      );
+      root.render(<App lines={lines} />);
     });
 });

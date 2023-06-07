@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import { CountsDataContext } from "../../data/CountsDataContext";
 import "./ImplementationRow.css";
 import Svg from "../../assets/svg/Svg";
 

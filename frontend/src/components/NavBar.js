@@ -106,7 +106,7 @@ const NavBar = ({ runInfo }) => {
             className="btn border-0 me-1"
             onClick={toggleMode}
           >
-            {mode ? <Svg icon="moon" /> : <Svg incon="sun" />}
+            {mode ? <Svg icon="moon" /> : <Svg icon="sun" />}
           </button>
           <a
             href="https://github.com/bowtie-json-schema/bowtie/"

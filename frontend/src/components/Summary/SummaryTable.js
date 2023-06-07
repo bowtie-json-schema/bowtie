@@ -1,13 +1,12 @@
-import { CountsDataContext } from "../../data/CountsDataContext";
 import { RunInfo } from "../../data/run-Info";
 import ImplementationRow from "./ImplementationRow";
-import { useContext } from "react";
 
 const SummaryTable = ({ lines }) => {
   const runInfo = new RunInfo(lines);
   const summary = runInfo.createSummary();
-
+  const implementationArray = lines.filter((element) => element.implementation);
   const caseArray = lines.filter((each) => each.case);
+
   const totalCases = caseArray.length;
   const totalTests = caseArray.reduce((total, eachCase) => {
     const caseTests = eachCase.case.tests;
@@ -15,21 +14,67 @@ const SummaryTable = ({ lines }) => {
     return total + caseTestCount;
   }, 0);
 
-  const {
-    updateTotalErroredCases,
-    updateTotalErroredTests,
-    updateTotalFailedTests,
-    updateTotalSkippedTests,
-  } = useContext(CountsDataContext);
+  function getTotal() {
+    let erroredCases = 0;
+    let skippedTests = 0;
+    let failedTests = 0;
+    let erroredTests = 0;
 
-  // updateTotalErroredCases(10)
+    implementationArray.forEach((element) => {
+      if (element.skipped) {
+        var seq = element.seq;
+        caseArray.forEach((each) => {
+          if (each.seq == seq) {
+            skippedTests += each.case.tests.length;
+          }
+        });
+      } else if (element.results) {
+        var caseResults = element.results.filter((element) => element.skipped);
+        if (caseResults.length > 0) {
+          let seq = element.seq;
+          caseArray.forEach((each) => {
+            if (each.seq === seq) {
+              skippedTests += each.case.tests.length;
+            }
+          });
+        }
+      }
+      if (
+        element.results &&
+        element.results.every(
+          (each) =>
+            typeof each === "object" &&
+            Object.keys(each).length === 1 &&
+            "valid" in each
+        )
+      ) {
+        failedTests += element.results.reduce((acc, result, index) => {
+          if (result.valid !== element.expected[index]) {
+            return acc + 1;
+          }
+          return acc;
+        }, 0);
+      }
+      var seq = element.seq;
+      const caseImplementation = caseArray.find((each) => each.seq === seq);
+      if (
+        element.caught ||
+        (element.results &&
+          element.results.every(
+            (each) => typeof each === "object" && each.hasOwnProperty("errored")
+          ))
+      ) {
+        if (caseImplementation) {
+          erroredTests += caseImplementation.case.tests.length;
+        }
+      }
+      erroredCases = implementationArray.filter(
+        (element) => element.caught
+      ).length;
+    });
 
-  const {
-    totalErroredCases,
-    totalErroredTests,
-    totalFailedTests,
-    totalSkippedTests,
-  } = useContext(CountsDataContext);
+    return { erroredCases, skippedTests, failedTests, erroredTests };
+  }
 
   return (
     <table className="table table-sm table-hover">
@@ -98,16 +143,16 @@ const SummaryTable = ({ lines }) => {
           <th scope="row" colSpan={2}>
             total
           </th>
-          <td className="text-center">{totalErroredCases}</td>
-          <td className="text-center">{totalSkippedTests}</td>
+          <td className="text-center">{getTotal().erroredCases}</td>
+          <td className="text-center">{getTotal().skippedTests}</td>
           <td className="text-center details-required">
-            {totalFailedTests + totalErroredTests}
+            {getTotal().failedTests + getTotal().erroredTests}
             <div className="hover-details text-center">
               <p>
-                <b>failed</b>: {summary.failed_tests}
+                <b>failed</b>: {getTotal().failedTests}
               </p>
               <p>
-                <b>errored</b>: {summary.errored_tests}
+                <b>errored</b>: {getTotal().erroredTests}
               </p>
             </div>
           </td>

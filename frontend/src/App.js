@@ -3,7 +3,6 @@ import { RunTimeInfoModal } from "./components/Modals/RunTimeInfoModal";
 import NavBar from "./components/NavBar";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
-import { CountsDataProvider } from "./data/CountsDataContext";
 import { RunInfo } from "./data/run-Info";
 import { DetailsButtonModal } from "./components/Modals/DetailsButtonModal";
 
