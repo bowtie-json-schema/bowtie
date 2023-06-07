@@ -12,7 +12,7 @@ const CasesSection = ({ lines }) => {
     <div className="accordion pt-5" id="cases">
       {CaseObjectArray.map((eachCase, index) => {
         const caseImplementation = ImplementationObjectArray.filter(
-          (implementation) => implementation.seq === eachCase.seq
+          (implementation) => implementation.seq === eachCase.seq,
         );
         return (
           <AccordionItem

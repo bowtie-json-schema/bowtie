@@ -5,7 +5,7 @@ const NavBar = ({ runInfo }) => {
   const generateDialectNavigation = true;
   const body = document.querySelector("body");
   const [mode, setMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
   body.setAttribute("data-bs-theme", mode ? "dark" : "light");

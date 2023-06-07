@@ -16,14 +16,14 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
       return (testResult = "errored");
     } else if (implementation.results && implementation.expected) {
       var caseResults = implementation.results.filter(
-        (element) => element.skipped
+        (element) => element.skipped,
       );
       if (caseResults.length > 0) {
         return (testResult = "skipped");
       }
       if (
         implementation.results.every(
-          (each) => each.hasOwnProperty("errored") && typeof each === "object"
+          (each) => each.hasOwnProperty("errored") && typeof each === "object",
         )
       ) {
         return (testResult = "errored");
@@ -33,7 +33,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
           (element) =>
             typeof element === "object" &&
             Object.keys(element).length === 1 &&
-            "valid" in element
+            "valid" in element,
         )
       ) {
         if (
@@ -67,7 +67,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
               `accordion-body${seq}`,
               JSON.stringify(schema, null, 2),
               "schema-code",
-              `row-${seq}`
+              `row-${seq}`,
             )
           }
           data-bs-toggle="collapse"
@@ -115,7 +115,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   onClick={() =>
                     displayCode(
                       JSON.stringify(test.instance, null, 2),
-                      "instance-info"
+                      "instance-info",
                     )
                   }
                 >
@@ -126,7 +126,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   </td>
                   {implementations.map((impl, i) => {
                     var implementation = caseImplementation.find(
-                      (each) => each.implementation === impl.image
+                      (each) => each.implementation === impl.image,
                     );
                     var testResult = result(index, implementation);
                     return <AccordionSvg key={i} testResult={testResult} />;
