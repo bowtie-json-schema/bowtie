@@ -4,7 +4,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
 
   function results(implementationImage) {
     let implementationTests = implementationArray.filter(
-      (obj) => obj.implementation === implementationImage
+      (obj) => obj.implementation === implementationImage,
     );
 
     let dataArray = [];
@@ -12,14 +12,14 @@ export const DetailsButtonModal = ({ lines, summary }) => {
       if (testImplementation.skipped === true) {
         const testResult = "directSkipped";
         const testCase = caseArray.find(
-          (obj) => obj.seq === testImplementation.seq
+          (obj) => obj.seq === testImplementation.seq,
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
       if (testImplementation.caught === true) {
         const testResult = "caught";
         const testCase = caseArray.find(
-          (obj) => obj.seq === testImplementation.seq
+          (obj) => obj.seq === testImplementation.seq,
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
@@ -27,7 +27,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
         if (testImplementation.results.every((obj) => obj.skipped === true)) {
           const testResult = "skipped";
           const testCase = caseArray.find(
-            (obj) => obj.seq === testImplementation.seq
+            (obj) => obj.seq === testImplementation.seq,
           );
           dataArray.push([testResult, testCase, testImplementation]);
         }
@@ -53,7 +53,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 validity.push(index);
                 const testResult = "unexpectedlyValid";
                 const testCase = caseArray.find(
-                  (obj) => obj.seq === testImplementation.seq
+                  (obj) => obj.seq === testImplementation.seq,
                 );
                 dataArray.push([
                   testResult,
@@ -65,7 +65,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 validity.push(index);
                 const testResult = "unexpectedlyInvalid";
                 const testCase = caseArray.find(
-                  (obj) => obj.seq === testImplementation.seq
+                  (obj) => obj.seq === testImplementation.seq,
                 );
                 dataArray.push([
                   testResult,
