@@ -3,12 +3,18 @@ export const DetailsButtonModal = ({ lines, summary }) => {
   const caseArray = lines.filter((element) => element.case);
 
   function results(implementationImage) {
+<<<<<<< HEAD
     let implementationTests = implementationArray.filter(
       (obj) => obj.implementation === implementationImage
+=======
+    var implementationTests = implementationArray.filter(
+      (obj) => obj.implementation === implementationImage,
+>>>>>>> 5eaef71457822d4cdda3ee0874b8dd4c0bc1669e
     );
 
     let dataArray = [];
     implementationTests.forEach((testImplementation) => {
+<<<<<<< HEAD
       if (testImplementation.skipped === true) {
         const testResult = "directSkipped";
         const testCase = caseArray.find(
@@ -20,14 +26,33 @@ export const DetailsButtonModal = ({ lines, summary }) => {
         const testResult = "caught";
         const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq
+=======
+      if (testImplementation.skipped && testImplementation.skipped === true) {
+        var testResult = "directSkipped";
+        var testCase = caseArray.find(
+          (obj) => obj.seq === testImplementation.seq,
+        );
+        dataArray.push([testResult, testCase, testImplementation]);
+      }
+      if (testImplementation.caught && testImplementation.caught === true) {
+        var testResult = "caught";
+        var testCase = caseArray.find(
+          (obj) => obj.seq === testImplementation.seq,
+>>>>>>> 5eaef71457822d4cdda3ee0874b8dd4c0bc1669e
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
       if (testImplementation.results && testImplementation.expected) {
         if (testImplementation.results.every((obj) => obj.skipped === true)) {
+<<<<<<< HEAD
           const testResult = "skipped";
           const testCase = caseArray.find(
             (obj) => obj.seq === testImplementation.seq
+=======
+          var testResult = "skipped";
+          var testCase = caseArray.find(
+            (obj) => obj.seq === testImplementation.seq,
+>>>>>>> 5eaef71457822d4cdda3ee0874b8dd4c0bc1669e
           );
           dataArray.push([testResult, testCase, testImplementation]);
         }
@@ -36,7 +61,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
             (element) =>
               typeof element === "object" &&
               Object.keys(element).length === 1 &&
-              "valid" in element
+              "valid" in element,
           )
         ) {
           for (
@@ -51,9 +76,15 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               let validity = [];
               if (testImplementation.expected[index] === false) {
                 validity.push(index);
+<<<<<<< HEAD
                 const testResult = "unexpectedlyValid";
                 const testCase = caseArray.find(
                   (obj) => obj.seq === testImplementation.seq
+=======
+                var testResult = "unexpectedlyValid";
+                var testCase = caseArray.find(
+                  (obj) => obj.seq === testImplementation.seq,
+>>>>>>> 5eaef71457822d4cdda3ee0874b8dd4c0bc1669e
                 );
                 dataArray.push([
                   testResult,
@@ -63,9 +94,15 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 ]);
               } else if (testImplementation.expected[index] === true) {
                 validity.push(index);
+<<<<<<< HEAD
                 const testResult = "unexpectedlyInvalid";
                 const testCase = caseArray.find(
                   (obj) => obj.seq === testImplementation.seq
+=======
+                var testResult = "unexpectedlyInvalid";
+                var testCase = caseArray.find(
+                  (obj) => obj.seq === testImplementation.seq,
+>>>>>>> 5eaef71457822d4cdda3ee0874b8dd4c0bc1669e
                 );
                 dataArray.push([
                   testResult,

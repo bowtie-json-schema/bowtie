@@ -45,7 +45,7 @@ const SummaryTable = ({ lines }) => {
           (each) =>
             typeof each === "object" &&
             Object.keys(each).length === 1 &&
-            "valid" in each
+            "valid" in each,
         )
       ) {
         failedTests += element.results.reduce((acc, result, index) => {
@@ -61,7 +61,8 @@ const SummaryTable = ({ lines }) => {
         element.caught ||
         (element.results &&
           element.results.every(
-            (each) => typeof each === "object" && each.hasOwnProperty("errored")
+            (each) =>
+              typeof each === "object" && each.hasOwnProperty("errored"),
           ))
       ) {
         if (caseImplementation) {
@@ -69,7 +70,7 @@ const SummaryTable = ({ lines }) => {
         }
       }
       erroredCases = implementationArray.filter(
-        (element) => element.caught
+        (element) => element.caught,
       ).length;
     });
 
