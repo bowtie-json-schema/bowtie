@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Svg from "../assets/svg/Svg";
+import { Sun, MoonStarsFill } from 'react-bootstrap-icons';
 
 const NavBar = ({ runInfo }) => {
   const generateDialectNavigation = true;
@@ -106,7 +106,7 @@ const NavBar = ({ runInfo }) => {
             className="btn border-0 me-1"
             onClick={toggleMode}
           >
-            {mode ? <Svg icon="moon" /> : <Svg icon="sun" />}
+            { mode ? <MoonStarsFill size={20} /> : <Sun size={20} /> }
           </button>
           <a
             href="https://github.com/bowtie-json-schema/bowtie/"

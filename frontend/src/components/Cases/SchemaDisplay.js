@@ -1,6 +1,4 @@
-import Svg from "../../assets/svg/Svg";
-import { copyToClipboard } from "../../utilities/utilFunctions";
-
+import CopyToClipboard from "../../utilities/utilFunctions";
 
 const SchemaDisplay = ({ schema, id }) => {
   return (
@@ -12,24 +10,10 @@ const SchemaDisplay = ({ schema, id }) => {
               Schema
             </small>
             <div className="d-flex ms-auto">
-              <button
-                type="button"
+              <CopyToClipboard
                 id={`schema${id}`}
-                className="btn mt-0 me-0"
-                onClick={() =>
-                  copyToClipboard(
-                    JSON.stringify(schema, null, 2),
-                    `schema${id}`
-                  )
-                }
-                aria-label="Copy to clipboard"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                data-bs-custom-class="custom-tooltip"
-                data-bs-title="Copy to clipboard"
-              >
-                <Svg icon="copyIcon" />
-              </button>
+                textToCopy={JSON.stringify(schema, null, 2)}
+              />
             </div>
           </div>
           <div className="card-body">
@@ -42,21 +26,10 @@ const SchemaDisplay = ({ schema, id }) => {
               Instance
             </small>
             <div className="d-flex ms-auto">
-              <button
-                type="button"
+              <CopyToClipboard
                 id={`instance${id}`}
-                onClick={() =>
-                  copyToClipboard("instance-info", `instance${id}`)
-                }
-                className="btn mt-0 me-0"
-                aria-label="Copy to clipboard"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                data-bs-custom-class="custom-tooltip"
-                data-bs-title="Copy to clipboard"
-              >
-                <Svg icon="copyIcon" />
-              </button>
+                textToCopy={JSON.stringify("instance", null, 2)}
+              />
             </div>
           </div>
           <div id="instance-info" className="card-body"></div>

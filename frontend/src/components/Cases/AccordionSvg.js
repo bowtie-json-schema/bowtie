@@ -1,40 +1,40 @@
-import Svg from "../../assets/svg/Svg";
+import { CheckCircleFill, ExclamationOctagon, XCircleFill } from 'react-bootstrap-icons';
 
 const AccordionSvg = ({ testResult }) => {
   if (testResult === "skipped") {
     return (
       <td className="text-center text-bg-warning">
-        <Svg icon="exclamation" />
+        <ExclamationOctagon />
       </td>
     );
   } else if (testResult === "errored") {
     return (
       <td className="text-center text-bg-danger">
-        <Svg icon="exclamation" />
+        <ExclamationOctagon />
       </td>
     );
   } else if (testResult === "passed") {
     return (
       <td className="text-center">
-        <Svg icon="check" />
+        <CheckCircleFill />
       </td>
     );
   } else if (testResult === "failed") {
     return (
       <td className="text-center">
-        <Svg icon="cross" />
+        <XCircleFill />
       </td>
     );
   } else if (testResult === "unexpectedlyValid") {
     return (
       <td className="text-center text-bg-danger">
-        <Svg icon="check" />
+        <CheckCircleFill />
       </td>
     );
   } else if (testResult === "unexpectedlyInvalid") {
     return (
       <td className="text-center text-bg-danger">
-        <Svg icon="cross" />
+        <XCircleFill />
       </td>
     );
   }

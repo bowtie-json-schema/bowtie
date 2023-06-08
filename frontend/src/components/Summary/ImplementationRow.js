@@ -1,5 +1,5 @@
 import "./ImplementationRow.css";
-import Svg from "../../assets/svg/Svg";
+import { InfoCircleFill } from 'react-bootstrap-icons';
 
 const ImplementationRow = ({ lines, implementation, index }) => {
   const implementationArray = lines.filter((element) => element.implementation);
@@ -127,7 +127,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
           data-bs-toggle="modal"
           data-bs-target={`#implementation-${index}-runtime-info`}
         >
-          <Svg icon="info" />
+          <InfoCircleFill />
         </button>
       </td>
 
