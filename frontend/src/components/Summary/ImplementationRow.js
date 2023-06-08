@@ -1,17 +1,9 @@
 import "./ImplementationRow.css";
-import { InfoCircleFill } from 'react-bootstrap-icons';
+import { InfoCircleFill } from "react-bootstrap-icons";
 
 const ImplementationRow = ({ lines, implementation, index }) => {
   const implementationArray = lines.filter((element) => element.implementation);
   const caseArray = lines.filter((element) => element.case);
-  //   const {
-  //     updateTotalErroredCases,
-  //     updateTotalErroredTests,
-  //     updateTotalFailedTests,
-  //     updateTotalSkippedTests,
-  //   } = useContext(CountsDataContext);
-
-  // updateTotalErroredCases(10))
 
   function skippedTests(implementationImage) {
     let count = 0;
@@ -27,7 +19,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
           });
         } else if (element.results) {
           let caseResults = element.results.filter(
-            (element) => element.skipped,
+            (element) => element.skipped
           );
           if (caseResults.length > 0) {
             let seq = element.seq;
@@ -53,7 +45,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
             (element) =>
               typeof element === "object" &&
               Object.keys(element).length === 1 &&
-              "valid" in element,
+              "valid" in element
           )
         ) {
           count += results.reduce((acc, result, index) => {
@@ -80,7 +72,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
           (element.results &&
             element.results.every(
               (each) =>
-                typeof each === "object" && each.hasOwnProperty("errored"),
+                typeof each === "object" && each.hasOwnProperty("errored")
             ))
         ) {
           if (caseImplementation) {
@@ -106,7 +98,6 @@ const ImplementationRow = ({ lines, implementation, index }) => {
         }
       }
     });
-    // updateTotalErroredCases(count);
     return count;
   }
 
