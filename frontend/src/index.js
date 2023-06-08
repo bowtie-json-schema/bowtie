@@ -34,12 +34,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   //fetching json data from url
-  fetch(`https://bowtie-json-schema.github.io/bowtie/draft${Dialect}.json.gz`)
-    .then((response) => response.arrayBuffer())
-    .then((buffer) => {
-      const inflated = pako.inflate(buffer, { to: "string" });
-      const dataObjectsArray = inflated.trim().split(/\n(?=\{)/);
-      // console.log(inflated)
+  fetch(`https://bowtie-json-schema.github.io/bowtie/draft${Dialect}.jsonl`)
+    .then((response) => response.text())
+    .then((jsonl) => {
+      const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
       const lines = dataObjectsArray.map((line) => JSON.parse(line));
 
       const root = createRoot(document.getElementById("root"));
