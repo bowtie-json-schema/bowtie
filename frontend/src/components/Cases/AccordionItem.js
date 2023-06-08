@@ -9,9 +9,9 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
 
   function result(index, implementation) {
     let testResult;
-    if (implementation.skipped && implementation.skipped == true) {
+    if (implementation.skipped == true) {
       return (testResult = "skipped");
-    } else if (implementation.caught && implementation.caught == true) {
+    } else if (implementation.caught == true) {
       return (testResult = "errored");
     } else if (implementation.results && implementation.expected) {
       let caseResults = implementation.results.filter(

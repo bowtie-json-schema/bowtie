@@ -9,14 +9,14 @@ export const DetailsButtonModal = ({ lines, summary }) => {
 
     let dataArray = [];
     implementationTests.forEach((testImplementation) => {
-      if (testImplementation.skipped && testImplementation.skipped === true) {
+      if (testImplementation.skipped === true) {
         const testResult = "directSkipped";
         const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
-      if (testImplementation.caught && testImplementation.caught === true) {
+      if (testImplementation.caught === true) {
         const testResult = "caught";
         const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq
