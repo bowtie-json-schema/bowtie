@@ -21,7 +21,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
       }
       if (
         implementation.results.every(
-          (each) => each.hasOwnProperty("errored") && typeof each === "object"
+          (each) => typeof each === "object" && each.hasOwnProperty("errored")
         )
       ) {
         return "errored";
