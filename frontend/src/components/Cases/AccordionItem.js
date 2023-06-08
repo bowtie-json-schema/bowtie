@@ -78,7 +78,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
         data-bs-parent="#cases"
       >
         <div id={`accordion-body${seq}`} className="accordion-body">
-        <SchemaDisplay schema={schema} />
+        <SchemaDisplay schema={schema} id={seq} />
           <table className="table table-hover">
             <thead>
               <tr>

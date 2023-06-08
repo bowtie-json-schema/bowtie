@@ -1,7 +1,8 @@
 import Svg from "../../assets/svg/Svg";
 import { copyToClipboard } from "../../utilities/utilFunctions";
 
-const SchemaDisplay = ({ schema }) => {
+
+const SchemaDisplay = ({ schema, id }) => {
   return (
     <div className="card mb-3 mw-100">
       <div className="row">
@@ -13,10 +14,13 @@ const SchemaDisplay = ({ schema }) => {
             <div className="d-flex ms-auto">
               <button
                 type="button"
-                id="copy-button-schema"
+                id={`schema${id}`}
                 className="btn mt-0 me-0"
                 onClick={() =>
-                  copyToClipboard("schema-code", "copy-button-schema")
+                  copyToClipboard(
+                    JSON.stringify(schema, null, 2),
+                    `schema${id}`
+                  )
                 }
                 aria-label="Copy to clipboard"
                 data-bs-toggle="tooltip"
@@ -29,7 +33,7 @@ const SchemaDisplay = ({ schema }) => {
             </div>
           </div>
           <div className="card-body">
-            <pre>{JSON.stringify(schema, null, 2)}</pre>
+            <pre id="schema-code">{JSON.stringify(schema, null, 2)}</pre>
           </div>
         </div>
         <div className="col-4 border-start ps-0">
@@ -40,9 +44,9 @@ const SchemaDisplay = ({ schema }) => {
             <div className="d-flex ms-auto">
               <button
                 type="button"
-                id="copy-button-instance"
+                id={`instance${id}`}
                 onClick={() =>
-                  copyToClipboard("instance-info", "copy-button-instance")
+                  copyToClipboard("instance-info", `instance${id}`)
                 }
                 className="btn mt-0 me-0"
                 aria-label="Copy to clipboard"

@@ -1,13 +1,5 @@
-const tooltipTriggerList = document.querySelectorAll(
-  '[data-bs-toggle="tooltip"]',
-);
-const tooltipList = [...tooltipTriggerList].map(
-  (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
-);
-
-export function copyToClipboard(targetTextToCopy, btnId) {
+export function copyToClipboard(textToCopy, btnId) {
   const clipBoardIcon = document.querySelector(".bi-clipboard");
-  const textToCopy = document.getElementById(targetTextToCopy).innerText;
   navigator.clipboard.writeText(textToCopy);
   document.getElementById(
     btnId,
