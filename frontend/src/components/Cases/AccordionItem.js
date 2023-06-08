@@ -8,48 +8,47 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
   const tests = eachCase.case.tests;
 
   function result(index, implementation) {
-    let testResult;
     if (implementation.skipped == true) {
-      return (testResult = "skipped");
+      return "skipped";
     } else if (implementation.caught == true) {
-      return (testResult = "errored");
+      return "errored";
     } else if (implementation.results && implementation.expected) {
       let caseResults = implementation.results.filter(
-        (element) => element.skipped,
+        (element) => element.skipped
       );
       if (caseResults.length > 0) {
-        return (testResult = "skipped");
+        return "skipped";
       }
       if (
         implementation.results.every(
-          (each) => each.hasOwnProperty("errored") && typeof each === "object",
+          (each) => each.hasOwnProperty("errored") && typeof each === "object"
         )
       ) {
-        return (testResult = "errored");
+        return "errored";
       }
       if (
         implementation.results.every(
           (element) =>
             typeof element === "object" &&
             Object.keys(element).length === 1 &&
-            "valid" in element,
+            "valid" in element
         )
       ) {
         if (
           implementation.results[index].valid === implementation.expected[index]
         ) {
           if (implementation.expected[index] === true) {
-            return (testResult = "passed");
+            return "passed";
           } else {
-            return (testResult = "failed");
+            return "failed";
           }
         } else if (
           implementation.results[index].valid !== implementation.expected[index]
         ) {
           if (implementation.expected[index] === false) {
-            return (testResult = "unexpectedlyValid");
+            return "unexpectedlyValid";
           } else {
-            return (testResult = "unexpectedlyInvalid");
+            return "unexpectedlyInvalid";
           }
         }
       }
@@ -78,7 +77,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
         data-bs-parent="#cases"
       >
         <div id={`accordion-body${seq}`} className="accordion-body">
-        <SchemaDisplay schema={schema} id={seq} />
+          <SchemaDisplay schema={schema} id={seq} />
           <table className="table table-hover">
             <thead>
               <tr>
@@ -107,7 +106,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   onClick={() =>
                     displayCode(
                       JSON.stringify(test.instance, null, 2),
-                      "instance-info",
+                      "instance-info"
                     )
                   }
                 >
@@ -118,7 +117,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   </td>
                   {implementations.map((impl, i) => {
                     let implementation = caseImplementation.find(
-                      (each) => each.implementation === impl.image,
+                      (each) => each.implementation === impl.image
                     );
                     let testResult = result(index, implementation);
                     return <AccordionSvg key={i} testResult={testResult} />;
