@@ -1,22 +1,11 @@
+import moment from "moment";
+
 const RunInfoSection = (props) => {
-  let ago = (Date.now() - Date.parse(props.runInfo.started)) / 1000;
-  let agoUnits = "seconds";
-  if (ago > 60) {
-    ago /= 60;
-    agoUnits = "minutes";
-    if (ago > 60) {
-      ago /= 60;
-      agoUnits = "hours";
-      if (ago > 24) {
-        ago /= 24;
-        agoUnits = "days";
-        if (ago > 7) {
-          ago /= 7;
-          agoUnits = "weeks";
-        }
-      }
-    }
-  }
+  const ranTime = (startTime) => {
+    const currentTime = moment();
+    const duration = moment.duration(currentTime.diff(startTime));
+    return duration.humanize();
+  };
 
   return (
     <div className="card mx-auto mb-3 w-75" id="run-info">
@@ -31,13 +20,7 @@ const RunInfoSection = (props) => {
             </tr>
             <tr>
               <td>Ran</td>
-              <td>
-                <time dateTime={props.runInfo.started}>
-                  {new Intl.RelativeTimeFormat("en", {
-                    numeric: "auto",
-                  }).format(-Math.round(ago), agoUnits)}
-                </time>
-              </td>
+              <td>{ranTime(props.runInfo.started)} ago</td>
             </tr>
           </thead>
         </table>
@@ -71,7 +54,7 @@ const RunInfoSection = (props) => {
                       );
                     }
                     return null;
-                  },
+                  }
                 )}
               </thead>
             </table>

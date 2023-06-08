@@ -12,7 +12,7 @@ function App(props) {
   const summary = runInfo.createSummary();
 
   document.getElementsByTagName("title")[0].textContent +=
-    " " + runInfo.dialect_shortname;
+    " " + runInfo.dialectShortName;
 
   return (
     <div>

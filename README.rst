@@ -46,5 +46,5 @@ For more information, see `Bowtie's documentation <https://bowtie-json-schema.re
 To run the bowtie UI locally, follow the below steps.
 
 Make sure you have node and npm installed in your system.
-Navigate to path_to_bowtie/report
+Navigate to path_to_bowtie/frontend/
 Run `npm start` in the terminal.
