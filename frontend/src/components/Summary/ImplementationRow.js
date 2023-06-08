@@ -19,7 +19,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
           });
         } else if (element.results) {
           let caseResults = element.results.filter(
-            (element) => element.skipped
+            (element) => element.skipped,
           );
           if (caseResults.length > 0) {
             let seq = element.seq;
@@ -45,7 +45,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
             (element) =>
               typeof element === "object" &&
               Object.keys(element).length === 1 &&
-              "valid" in element
+              "valid" in element,
           )
         ) {
           count += results.reduce((acc, result, index) => {
@@ -72,7 +72,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
           (element.results &&
             element.results.every(
               (each) =>
-                typeof each === "object" && each.hasOwnProperty("errored")
+                typeof each === "object" && each.hasOwnProperty("errored"),
             ))
         ) {
           if (caseImplementation) {

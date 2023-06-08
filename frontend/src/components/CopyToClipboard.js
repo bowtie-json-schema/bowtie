@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Check, Clipboard } from 'react-bootstrap-icons';
+import React, { useState } from "react";
+import { Check, Clipboard } from "react-bootstrap-icons";
 
 function CopyToClipboard({ id, textToCopy }) {
   const [copied, setCopied] = useState(false);
