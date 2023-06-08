@@ -1,4 +1,4 @@
-import Summary from "./report";
+import Summary from "./summary";
 
 const _DIALECT_URI_TO_SHORTNAME = {
   "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
