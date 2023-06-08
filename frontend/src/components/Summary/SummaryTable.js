@@ -1,4 +1,4 @@
-import { RunInfo } from "../../data/run-Info";
+import { RunInfo } from "../../data/runInfo";
 import ImplementationRow from "./ImplementationRow";
 
 const SummaryTable = ({ lines }) => {
@@ -22,14 +22,14 @@ const SummaryTable = ({ lines }) => {
 
     implementationArray.forEach((element) => {
       if (element.skipped) {
-        var seq = element.seq;
+        let seq = element.seq;
         caseArray.forEach((each) => {
           if (each.seq == seq) {
             skippedTests += each.case.tests.length;
           }
         });
       } else if (element.results) {
-        var caseResults = element.results.filter((element) => element.skipped);
+        let caseResults = element.results.filter((element) => element.skipped);
         if (caseResults.length > 0) {
           let seq = element.seq;
           caseArray.forEach((each) => {
@@ -55,7 +55,7 @@ const SummaryTable = ({ lines }) => {
           return acc;
         }, 0);
       }
-      var seq = element.seq;
+      let seq = element.seq;
       const caseImplementation = caseArray.find((each) => each.seq === seq);
       if (
         element.caught ||

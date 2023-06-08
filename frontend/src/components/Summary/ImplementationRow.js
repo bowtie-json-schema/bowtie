@@ -19,14 +19,14 @@ const ImplementationRow = ({ lines, implementation, index }) => {
     implementationArray.forEach((element) => {
       if (element.implementation === implementationImage) {
         if (element.skipped) {
-          var seq = element.seq;
+          let seq = element.seq;
           caseArray.forEach((each) => {
             if (each.seq == seq) {
               count += each.case.tests.length;
             }
           });
         } else if (element.results) {
-          var caseResults = element.results.filter(
+          let caseResults = element.results.filter(
             (element) => element.skipped,
           );
           if (caseResults.length > 0) {
@@ -93,11 +93,11 @@ const ImplementationRow = ({ lines, implementation, index }) => {
   }
 
   function erroredCases(implementationImage) {
-    var count = 0;
+    let count = 0;
     lines.forEach((element) => {
       if (element.implementation == implementationImage) {
         if (element.caught) {
-          var seq = element.seq;
+          let seq = element.seq;
           caseArray.forEach((each) => {
             if (each.seq == seq) {
               count += 1;

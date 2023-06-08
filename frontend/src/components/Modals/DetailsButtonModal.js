@@ -3,30 +3,30 @@ export const DetailsButtonModal = ({ lines, summary }) => {
   const caseArray = lines.filter((element) => element.case);
 
   function results(implementationImage) {
-    var implementationTests = implementationArray.filter(
+    let implementationTests = implementationArray.filter(
       (obj) => obj.implementation === implementationImage
     );
 
-    var dataArray = [];
+    let dataArray = [];
     implementationTests.forEach((testImplementation) => {
       if (testImplementation.skipped && testImplementation.skipped === true) {
-        var testResult = "directSkipped";
-        var testCase = caseArray.find(
+        const testResult = "directSkipped";
+        const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
       if (testImplementation.caught && testImplementation.caught === true) {
-        var testResult = "caught";
-        var testCase = caseArray.find(
+        const testResult = "caught";
+        const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
       if (testImplementation.results && testImplementation.expected) {
         if (testImplementation.results.every((obj) => obj.skipped === true)) {
-          var testResult = "skipped";
-          var testCase = caseArray.find(
+          const testResult = "skipped";
+          const testCase = caseArray.find(
             (obj) => obj.seq === testImplementation.seq
           );
           dataArray.push([testResult, testCase, testImplementation]);
@@ -51,8 +51,8 @@ export const DetailsButtonModal = ({ lines, summary }) => {
               let validity = [];
               if (testImplementation.expected[index] === false) {
                 validity.push(index);
-                var testResult = "unexpectedlyValid";
-                var testCase = caseArray.find(
+                const testResult = "unexpectedlyValid";
+                const testCase = caseArray.find(
                   (obj) => obj.seq === testImplementation.seq
                 );
                 dataArray.push([
@@ -63,8 +63,8 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 ]);
               } else if (testImplementation.expected[index] === true) {
                 validity.push(index);
-                var testResult = "unexpectedlyInvalid";
-                var testCase = caseArray.find(
+                const testResult = "unexpectedlyInvalid";
+                const testCase = caseArray.find(
                   (obj) => obj.seq === testImplementation.seq
                 );
                 dataArray.push([
@@ -85,7 +85,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
   return (
     <>
       {summary.implementations.map((implementation, index) => {
-        var result = results(implementation.image);
+        let result = results(implementation.image);
         return (
           <div
             className="modal fade"
@@ -117,7 +117,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 <div className="modal-body">
                   <div className="row row-cols-1 row-cols-md-2 g-4">
                     {result.map((eachResult, i) => {
-                      var [testResult, testCase, testImplementation, validity] =
+                      let [testResult, testCase, testImplementation, validity] =
                         eachResult;
                       if (testResult === "skipped") {
                         return testCase.case.tests.map((test, index) => {

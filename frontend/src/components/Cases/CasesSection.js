@@ -1,4 +1,4 @@
-import { RunInfo } from "../../data/run-Info";
+import { RunInfo } from "../../data/runInfo";
 import AccordionItem from "./AccordionItem";
 
 const CasesSection = ({ lines }) => {

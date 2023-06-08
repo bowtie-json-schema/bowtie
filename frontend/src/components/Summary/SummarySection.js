@@ -1,4 +1,4 @@
-import { RunInfo } from "../../data/run-Info";
+import { RunInfo } from "../../data/runInfo";
 import SummaryTable from "./SummaryTable";
 
 const SummarySection = (props) => {

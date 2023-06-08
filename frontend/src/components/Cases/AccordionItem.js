@@ -8,13 +8,13 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
   const tests = eachCase.case.tests;
 
   function result(index, implementation) {
-    var testResult;
+    let testResult;
     if (implementation.skipped && implementation.skipped == true) {
       return (testResult = "skipped");
     } else if (implementation.caught && implementation.caught == true) {
       return (testResult = "errored");
     } else if (implementation.results && implementation.expected) {
-      var caseResults = implementation.results.filter(
+      let caseResults = implementation.results.filter(
         (element) => element.skipped,
       );
       if (caseResults.length > 0) {
@@ -117,10 +117,10 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                     </a>
                   </td>
                   {implementations.map((impl, i) => {
-                    var implementation = caseImplementation.find(
+                    let implementation = caseImplementation.find(
                       (each) => each.implementation === impl.image,
                     );
-                    var testResult = result(index, implementation);
+                    let testResult = result(index, implementation);
                     return <AccordionSvg key={i} testResult={testResult} />;
                   })}
                 </tr>
