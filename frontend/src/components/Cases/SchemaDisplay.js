@@ -1,4 +1,4 @@
-import CopyToClipboard from "../../utilities/utilFunctions";
+import CopyToClipboard from "../CopyToClipboard";
 
 const SchemaDisplay = ({ schema, id }) => {
   return (
