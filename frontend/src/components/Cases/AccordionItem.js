@@ -14,14 +14,14 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
       return "errored";
     } else if (implementation.results && implementation.expected) {
       let caseResults = implementation.results.filter(
-        (element) => element.skipped
+        (element) => element.skipped,
       );
       if (caseResults.length > 0) {
         return "skipped";
       }
       if (
         implementation.results.every(
-          (each) => typeof each === "object" && each.hasOwnProperty("errored")
+          (each) => typeof each === "object" && each.hasOwnProperty("errored"),
         )
       ) {
         return "errored";
@@ -31,7 +31,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
           (element) =>
             typeof element === "object" &&
             Object.keys(element).length === 1 &&
-            "valid" in element
+            "valid" in element,
         )
       ) {
         if (
@@ -106,7 +106,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   onClick={() =>
                     displayCode(
                       JSON.stringify(test.instance, null, 2),
-                      "instance-info"
+                      "instance-info",
                     )
                   }
                 >
@@ -117,7 +117,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
                   </td>
                   {implementations.map((impl, i) => {
                     let implementation = caseImplementation.find(
-                      (each) => each.implementation === impl.image
+                      (each) => each.implementation === impl.image,
                     );
                     let testResult = result(index, implementation);
                     return <AccordionSvg key={i} testResult={testResult} />;
