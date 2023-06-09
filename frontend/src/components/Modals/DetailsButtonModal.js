@@ -16,7 +16,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
         );
         dataArray.push([testResult, testCase, testImplementation]);
       }
-      if (testImplementation.caught === true) {
+      if (testImplementation.caught === true || testImplementation.caught === false) {
         const testResult = "caught";
         const testCase = caseArray.find(
           (obj) => obj.seq === testImplementation.seq

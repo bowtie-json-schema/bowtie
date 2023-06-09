@@ -70,7 +70,7 @@ const SummaryTable = ({ lines }) => {
         }
       }
       erroredCases = implementationArray.filter(
-        (element) => element.caught,
+        (element) => element.caught === true || element.caught === false,
       ).length;
     });
 

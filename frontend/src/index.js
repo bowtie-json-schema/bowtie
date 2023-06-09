@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((jsonl) => {
       const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
       const lines = dataObjectsArray.map((line) => JSON.parse(line));
-
+      console.log(jsonl)
       const root = createRoot(document.getElementById("root"));
 
       root.render(<App lines={lines} />);

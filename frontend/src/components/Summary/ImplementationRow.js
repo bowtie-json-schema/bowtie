@@ -88,7 +88,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
     let count = 0;
     lines.forEach((element) => {
       if (element.implementation == implementationImage) {
-        if (element.caught) {
+        if (element.caught === true || element.caught === false) {
           let seq = element.seq;
           caseArray.forEach((each) => {
             if (each.seq == seq) {
