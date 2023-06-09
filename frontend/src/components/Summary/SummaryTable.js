@@ -58,7 +58,7 @@ const SummaryTable = ({ lines }) => {
       let seq = element.seq;
       const caseImplementation = caseArray.find((each) => each.seq === seq);
       if (
-        element.caught ||
+        element.caught === true || element.caught === false ||
         (element.results &&
           element.results.every(
             (each) =>

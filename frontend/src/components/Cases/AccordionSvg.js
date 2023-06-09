@@ -35,7 +35,7 @@ const AccordionSvg = ({ testResult }) => {
       className={`text-center ${
         testResult === "skipped" || testResult === "errored"
           ? "text-bg-warning"
-          : ""
+          : testResult === "unexpectedlyValid" || testResult === "unexpectedlyInvalid" ? "text-bg-danger" : ""
       }`}
     >
       {svgComponent}
