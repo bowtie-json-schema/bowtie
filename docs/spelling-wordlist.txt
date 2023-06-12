@@ -19,4 +19,6 @@ runtime
 schemas
 shortname
 shortnames
+# this "word" (tui) appears nowhere but oh god as usual who wants to debug Sphinx
+tui
 validator
