@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
-import {NavLink} from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const NavBar = ({ runInfo }) => {
   const generateDialectNavigation = true;
