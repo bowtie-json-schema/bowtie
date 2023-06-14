@@ -1,22 +1,24 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
-import {Link, NavLink, useLocation} from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 
 const NavBar = ({ runInfo }) => {
   const [mode, setMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
-  const {hash, key} = useLocation()
+  const { hash, key } = useLocation();
 
-  useEffect(()=>{
-    if (hash){
-      const targetElement = document.getElementById(hash.substring(1))
-      targetElement?.scrollIntoView({behavior: 'smooth'})
-    }
-  }, [key, hash])
   useEffect(() => {
-    document.querySelector("body").setAttribute("data-bs-theme", mode ? "dark" : "light")
-  }, [mode])
+    if (hash) {
+      const targetElement = document.getElementById(hash.substring(1));
+      targetElement?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [key, hash]);
+  useEffect(() => {
+    document
+      .querySelector("body")
+      .setAttribute("data-bs-theme", mode ? "dark" : "light");
+  }, [mode]);
 
   return (
     <>
@@ -43,62 +45,62 @@ const NavBar = ({ runInfo }) => {
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
               <li className="nav-item">
-                <Link className="nav-link" to={{hash: 'run-info'}}>
+                <Link className="nav-link" to={{ hash: "run-info" }}>
                   Run Info
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to={{hash: 'summary'}}>
+                <Link className="nav-link" to={{ hash: "summary" }}>
                   Summary
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to={{hash: 'cases'}}>
+                <Link className="nav-link" to={{ hash: "cases" }}>
                   Details
                 </Link>
               </li>
-                <li className="nav-item dropdown">
-                  <a
-                    className="nav-link dropdown-toggle"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    Dialects{" "}
-                  </a>
-                  <ul className="dropdown-menu">
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft2020-12">
-                        2020-12
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft2019-09">
-                        2019-09
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft7">
-                        7
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft6">
-                        6
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft4">
-                        4
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink className="dropdown-item" to="/draft3">
-                        3
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
+              <li className="nav-item dropdown">
+                <a
+                  className="nav-link dropdown-toggle"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Dialects{" "}
+                </a>
+                <ul className="dropdown-menu">
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft2020-12">
+                      2020-12
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft2019-09">
+                      2019-09
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft7">
+                      7
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft6">
+                      6
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft4">
+                      4
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/draft3">
+                      3
+                    </NavLink>
+                  </li>
+                </ul>
+              </li>
             </ul>
           </div>
           <button
