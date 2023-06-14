@@ -5,27 +5,39 @@ import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { RunInfo } from "./data/runInfo";
 import { DetailsButtonModal } from "./components/Modals/DetailsButtonModal";
+import { useEffect, useState } from "react";
 
-function App(props) {
-  const runInfo = new RunInfo(props.lines);
+function App({ draftName }) {
+  const [lines, setLines] = useState([]);
+  useEffect(() => {
+    document.getElementsByTagName("title")[0].textContent += " " + draftName;
+    fetch(`https://bowtie-json-schema.github.io/bowtie/${draftName}.jsonl`)
+      .then((response) => response.text())
+      .then((jsonl) => {
+        const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
+        setLines(dataObjectsArray.map((line) => JSON.parse(line)));
+      });
+  }, [draftName]);
 
+  if (!lines.length) {
+    return null;
+  }
+
+  const runInfo = new RunInfo(lines);
   const summary = runInfo.createSummary();
-
-  document.getElementsByTagName("title")[0].textContent +=
-    " " + runInfo.dialectShortName;
-
   return (
     <div>
       <NavBar runInfo={runInfo} />
 
       <div className="container p-4">
         <RunInfoSection runInfo={runInfo} />
-        <SummarySection lines={props.lines} />
-        <CasesSection lines={props.lines} />
+        <SummarySection lines={lines} />
+        <CasesSection lines={lines} />
       </div>
-      <RunTimeInfoModal lines={props.lines} summary={summary} />
-      <DetailsButtonModal lines={props.lines} summary={summary} />
+      <RunTimeInfoModal lines={lines} summary={summary} />
+      <DetailsButtonModal lines={lines} summary={summary} />
     </div>
   );
 }
+
 export default App;
