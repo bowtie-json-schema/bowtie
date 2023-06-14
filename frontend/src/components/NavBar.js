@@ -3,26 +3,20 @@ import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import {Link, NavLink, useLocation} from "react-router-dom";
 
 const NavBar = ({ runInfo }) => {
-  const generateDialectNavigation = true;
-  const body = document.querySelector("body");
   const [mode, setMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
+    window.matchMedia("(prefers-color-scheme: dark)").matches
   );
-
   const {hash, key} = useLocation()
+
   useEffect(()=>{
-    if(hash){
+    if (hash){
       const targetElement = document.getElementById(hash.substring(1))
       targetElement?.scrollIntoView({behavior: 'smooth'})
     }
   }, [key, hash])
-
-  body.setAttribute("data-bs-theme", mode ? "dark" : "light");
-
-  function toggleMode() {
-    const newMode = !mode;
-    setMode(newMode);
-  }
+  useEffect(() => {
+    document.querySelector("body").setAttribute("data-bs-theme", mode ? "dark" : "light")
+  }, [mode])
 
   return (
     <>
@@ -63,7 +57,6 @@ const NavBar = ({ runInfo }) => {
                   Details
                 </Link>
               </li>
-              {generateDialectNavigation && (
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle"
@@ -106,13 +99,12 @@ const NavBar = ({ runInfo }) => {
                     </li>
                   </ul>
                 </li>
-              )}
             </ul>
           </div>
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={toggleMode}
+            onClick={() => setMode(!mode)}
           >
             {mode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>
