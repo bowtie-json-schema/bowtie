@@ -1,6 +1,6 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
-import { NavLink } from "react-router-dom";
+import {Link, NavLink, useLocation} from "react-router-dom";
 
 const NavBar = ({ runInfo }) => {
   const generateDialectNavigation = true;
@@ -8,6 +8,14 @@ const NavBar = ({ runInfo }) => {
   const [mode, setMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
+
+  const {hash, key} = useLocation()
+  useEffect(()=>{
+    if(hash){
+      const targetElement = document.getElementById(hash.substring(1))
+      targetElement?.scrollIntoView({behavior: 'smooth'})
+    }
+  }, [key, hash])
 
   body.setAttribute("data-bs-theme", mode ? "dark" : "light");
 
@@ -41,25 +49,24 @@ const NavBar = ({ runInfo }) => {
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
               <li className="nav-item">
-                <a className="nav-link" href="#run-info">
+                <Link className="nav-link" to={{hash: 'run-info'}}>
                   Run Info
-                </a>
+                </Link>
               </li>
               <li className="nav-item">
-                <a className="nav-link" href="#summary">
+                <Link className="nav-link" to={{hash: 'summary'}}>
                   Summary
-                </a>
+                </Link>
               </li>
               <li className="nav-item">
-                <a className="nav-link" href="#cases">
+                <Link className="nav-link" to={{hash: 'cases'}}>
                   Details
-                </a>
+                </Link>
               </li>
               {generateDialectNavigation && (
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle"
-                    href="#"
                     role="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
