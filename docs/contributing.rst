@@ -33,6 +33,17 @@ to run the tests using Python 3.11 (or any other version you'd like).
 
 Before submitting a PR you may want to run the full suite of tests by running ``nox`` with no arguments to run all environments.
 
+Running the UI
+--------------
+
+Bowtie has a frontend interface which can be used to view or query results of Bowtie test runs.
+
+A hosted version of this UI will live at |site|.
+If you are making changes to the UI, you can run it locally by:
+
+    * ensuring you have ``node`` and ``npm`` installed
+    * running ``npm start`` in the ``frontend/`` directory within your repository checkout of Bowtie
+
 
 For Implementers
 ----------------

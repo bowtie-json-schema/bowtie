@@ -44,6 +44,8 @@ html_logo = str(STATIC / "dreamed.png")
 html_static_path = [str(STATIC)]
 
 rst_prolog = """
+.. |site| replace:: https://bowtie-json-schema.github.io/bowtie/
+
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501
 
