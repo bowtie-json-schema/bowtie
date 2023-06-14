@@ -1,45 +1,42 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-import { createRoot } from "react-dom/client";
+import {createRoot} from "react-dom/client";
 import App from "./App";
+import {createHashRouter, RouterProvider} from "react-router-dom";
+
+const router = createHashRouter([
+    {
+        path: '/',
+        element: <App draftName='draft2020-12'/>
+    },
+    {
+        path: '/draft2020-12',
+        element: <App draftName='draft2020-12'/>
+    },
+    {
+        path: '/draft2019-09',
+        element: <App draftName='draft2019-09'/>
+    },
+    {
+        path: '/draft7',
+        element: <App draftName='draft7'/>
+    },
+    {
+        path: '/draft6',
+        element: <App draftName='draft6'/>
+    },
+    {
+        path: '/draft4',
+        element: <App draftName='draft4'/>
+    },
+    {
+        path: '/draft3',
+        element: <App draftName='draft3'/>
+    }
+])
 
 document.addEventListener("DOMContentLoaded", () => {
-  let Dialect = "2020-12";
-  let dialect;
-
-  const url = window.location.href;
-  const urlParts = url.split("/");
-  let draftPart;
-  for (const part of urlParts) {
-    if (part.includes("draft")) {
-      draftPart = part;
-      break;
-    }
-  }
-  if (draftPart) {
-    dialect = draftPart.substring(draftPart.indexOf("draft") + "draft".length);
-  }
-
-  switch (dialect) {
-    case "2020-12":
-    case "2019-09":
-    case "7":
-    case "6":
-    case "4":
-    case "3":
-      Dialect = dialect;
-      break;
-  }
-
-  //fetching json data from url
-  fetch(`https://bowtie-json-schema.github.io/bowtie/draft${Dialect}.jsonl`)
-    .then((response) => response.text())
-    .then((jsonl) => {
-      const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
-      const lines = dataObjectsArray.map((line) => JSON.parse(line));
-      const root = createRoot(document.getElementById("root"));
-
-      root.render(<App lines={lines} />);
-    });
+    const root = createRoot(document.getElementById("root"));
+    root.render(<RouterProvider router={router}/>)
 });

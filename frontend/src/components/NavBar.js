@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
+import {NavLink} from "react-router-dom";
 
 const NavBar = ({ runInfo }) => {
   const generateDialectNavigation = true;
@@ -67,34 +68,34 @@ const NavBar = ({ runInfo }) => {
                   </a>
                   <ul className="dropdown-menu">
                     <li>
-                      <a className="dropdown-item" href="draft2020-12">
+                      <NavLink className="dropdown-item" to="/draft2020-12">
                         2020-12
-                      </a>
+                      </NavLink>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="draft2019-09">
+                      <NavLink className="dropdown-item" to="/draft2019-09">
                         2019-09
-                      </a>
+                      </NavLink>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="draft7">
+                      <NavLink className="dropdown-item" to="/draft7">
                         7
-                      </a>
+                      </NavLink>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="draft6">
+                      <NavLink className="dropdown-item" to="/draft6">
                         6
-                      </a>
+                      </NavLink>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="draft4">
+                      <NavLink className="dropdown-item" to="/draft4">
                         4
-                      </a>
+                      </NavLink>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="draft3">
+                      <NavLink className="dropdown-item" to="/draft3">
                         3
-                      </a>
+                      </NavLink>
                     </li>
                   </ul>
                 </li>
