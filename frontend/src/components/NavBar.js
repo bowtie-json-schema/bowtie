@@ -99,6 +99,11 @@ const NavBar = ({ runInfo }) => {
                       3
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/">
+                      Local report
+                    </NavLink>
+                  </li>
                 </ul>
               </li>
             </ul>
