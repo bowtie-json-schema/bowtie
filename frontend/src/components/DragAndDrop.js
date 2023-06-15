@@ -6,7 +6,6 @@ import { CloudArrowUpFill } from "react-bootstrap-icons";
 function DragAndDrop() {
   const [dragActive, setDragActive] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
-  const [fileReceived, setFileReceived] = useState(false);
   const [invalidJson, setInvalidJson] = useState(false);
   const [lines, setLines] = useState();
   const inputRef = useRef(null);
@@ -41,6 +40,7 @@ function DragAndDrop() {
 
   const handleChange = function (e) {
     e.preventDefault();
+    e.stopPropagation();
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       handleFiles(file);
@@ -52,6 +52,7 @@ function DragAndDrop() {
   };
 
   const onButtonClick = () => {
+    inputRef.current.value = "";
     inputRef.current.click();
   };
 
@@ -61,15 +62,13 @@ function DragAndDrop() {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const jsonData = JSON.parse(e.target.result);
-          console.log("JSON data:", jsonData);
-          const dataObjectsArray = e.target.result
-            .trim()
-            .split(/\n(?=\{)/)
-            .map((line) => JSON.parse(line));
-          setLines(dataObjectsArray);
+          const dataObjectsArray = e.target.result.trim().split(/\n(?=\{)/);
+          setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
-          console.error("Error parsing JSON:", error);
+          console.error(" :", error);
+          setDragActive(false);
+          setFileUploaded(false);
+          setInvalidJson(false);
         }
       };
       reader.readAsText(file);
@@ -101,7 +100,6 @@ function DragAndDrop() {
               id="input-file-upload"
               className="d-none"
               accept=".json,.jsonl"
-              multiple={false}
               onChange={handleChange}
             />
 
@@ -119,7 +117,11 @@ function DragAndDrop() {
                 <button className="btn btn-primary" onClick={onButtonClick}>
                   Upload report
                 </button>
-                <h5 className={`pt-3 text-danger ${!invalidJson ? 'd-none' : ''}`}>Please upload a json file!</h5>
+                <h5
+                  className={`pt-3 text-danger ${!invalidJson ? "d-none" : ""}`}
+                >
+                  Please upload a json file!
+                </h5>
               </div>
             </label>
             {dragActive && (
