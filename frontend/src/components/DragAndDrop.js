@@ -1,10 +1,16 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSpring, animated } from "react-spring";
 import "./DragAndDrop.css";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 
 function DragAndDrop() {
   const [dragActive, setDragActive] = useState(false);
+  const [fileUploaded, setFileUploaded] = useState(false);
   const inputRef = useRef(null);
+
+  const flyingAnimation = useSpring({
+    transform: fileUploaded ? "translateY(-100%)" : "translateY(0%)",
+  });
 
   const handleDrag = function (e) {
     e.preventDefault();
@@ -22,6 +28,10 @@ function DragAndDrop() {
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
+      setFileUploaded(true);
+      setTimeout(() => {
+        setFileUploaded(false);
+      }, 1000);
       console.log(e.dataTransfer.files[0]);
     }
   };
@@ -30,6 +40,10 @@ function DragAndDrop() {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       handleFiles(e.target.files);
+      setFileUploaded(true);
+      setTimeout(() => {
+        setFileUploaded(false);
+      }, 1000);
       console.log(e.target.files[0]);
     }
   };
@@ -63,7 +77,9 @@ function DragAndDrop() {
           className={dragActive ? "drag-active" : ""}
         >
           <div className="text-center">
-            <CloudArrowUpFill size={80} />
+            <animated.div style={flyingAnimation}>
+              <CloudArrowUpFill size={80} />
+            </animated.div>
             <p className="card-text">Drag your local report here!</p>
             <button className="btn btn-primary" onClick={onButtonClick}>
               Upload report
