@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import { useSpring, animated } from "react-spring";
-import RunInfoSection from "./RunInfo/RunInfoSection";
-import SummarySection from "./Summary/SummarySection";
-import CasesSection from "./Cases/CasesSection";
-import { RunTimeInfoModal } from "./Modals/RunTimeInfoModal";
-import { DetailsButtonModal } from "./Modals/DetailsButtonModal";
-import { RunInfo } from "../data/runInfo";
+import RunInfoSection from "../RunInfo/RunInfoSection";
+import SummarySection from "../Summary/SummarySection";
+import CasesSection from "../Cases/CasesSection";
+import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
+import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
+import { RunInfo } from "../../data/runInfo";
 import "./DragAndDrop.css";
-import NavBar from "./NavBar";
+import NavBar from "../NavBar";
 
 function DragAndDrop() {
   const [dragActive, setDragActive] = useState(false);

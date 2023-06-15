@@ -5,7 +5,7 @@ import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { RunInfo } from "./data/runInfo";
 import { DetailsButtonModal } from "./components/Modals/DetailsButtonModal";
-import DragAndDrop from "./components/DragAndDrop";
+import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
 import { useEffect, useState } from "react";
 
 function App({ draftName }) {
