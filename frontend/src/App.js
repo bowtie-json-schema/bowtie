@@ -44,6 +44,7 @@ function App({ draftName }) {
       </div>
     );
   } else {
+    document.getElementsByTagName("title")[0].textContent += " " + draftName;
     return <DragAndDrop />;
   }
 }
