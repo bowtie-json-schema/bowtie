@@ -9,7 +9,7 @@ import DragAndDrop, {Appp} from "./components/DragAndDrop";
 const router = createHashRouter([
   {
     path: "/",
-    element: <DragAndDrop />,
+    element: <App draftName="local-report" />,
   },
   {
     path: "/draft2020-12",
