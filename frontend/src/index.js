@@ -4,7 +4,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { createHashRouter, RouterProvider } from "react-router-dom";
-import DragAndDrop from "./components/DragAndDrop";
+import DragAndDrop, {Appp} from "./components/DragAndDrop";
 
 const router = createHashRouter([
   {

@@ -1,19 +1,14 @@
+.center-content {
+  display: grid;
+  margin-top: 60px;
+  align-items: center;
+  justify-content: center;
+}
 
-  
-  .card {
-    width: 80%;
-    max-width: 400px; /* Optional: Set a maximum width for larger screens */
-  }
-  
-  .center-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-  }
-  
-  .cloud-icon {
-    /* Add styles for the cloud icon, such as font-size and color */
-  }
-  
+.card {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  width: 90vw;
+  height: 80vh;
+}

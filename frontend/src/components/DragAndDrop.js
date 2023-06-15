@@ -1,19 +1,18 @@
-import React from 'react';
-import './DragAndDrop.css'; // Import the CSS file
+import React from "react";
+import "./DragAndDrop.css";
+import { CloudArrowUpFill } from "react-bootstrap-icons";
 
 const DragAndDrop = () => {
   return (
-    <div className="d-flex align-items-center justify-content-center">
-      <div className="card p-5" data-bs-theme="dark" id="dragAndDrop">
-        <div className="card-body border">
-          <div className="center-content">
-            <i className="fas fa-cloud cloud-icon"></i>
-            <p className="card-text">Drag and drop your report here</p>
-          </div>
+    <div className="center-content">
+      <div className="card" data-bs-theme="dark" id="dragAndDrop">
+        <div className="card-body d-flex flex-column align-items-center justify-content-center">
+          <CloudArrowUpFill size={80} />
+          <h5 className="card-text">Drag your local report here!</h5>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default DragAndDrop;
