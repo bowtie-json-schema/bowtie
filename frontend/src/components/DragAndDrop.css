@@ -1,14 +1,28 @@
-.center-content {
-  display: grid;
-  margin-top: 60px;
-  align-items: center;
-  justify-content: center;
-}
-
-.card {
-  display: grid;
-  align-items: center;
-  justify-content: center;
+#form-file-upload {
   width: 90vw;
   height: 80vh;
+}
+
+#label-file-upload {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.5rem;
+  border-style: dashed;
+}
+
+#label-file-upload.drag-active {
+  background-color: #b6b5b5;
+}
+
+#drag-file-element {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
 }
