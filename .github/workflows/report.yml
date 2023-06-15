@@ -3,10 +3,6 @@ name: Test Suite Report
 on:
   release:
     types: [published]
-  pull_request:
-    paths:
-      - "frontend/**"
-      - ".github/workflows/report.yml"
   push:
     paths:
       - "frontend/**"
@@ -65,22 +61,7 @@ jobs:
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-
-      - run: npm ci
-        working-directory: ./frontend
-
-      - run: npm run build
-        working-directory: ./frontend
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: frontend-build
-          path: frontend/build
+      - uses: bowtie-json-schema/bowtie/.github/workflows/build-frontend.yml@main
 
   collect:
     runs-on: ubuntu-latest
