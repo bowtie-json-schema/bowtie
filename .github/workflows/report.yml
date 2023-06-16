@@ -41,5 +41,7 @@ jobs:
             ${{ matrix.version }}.jsonl
 
   deploy-frontend:
-    uses: ./.github/workflows/deploy-frontend.yml
     needs: test
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      report_artifact_in_scope: true
