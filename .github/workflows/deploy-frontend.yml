@@ -4,6 +4,8 @@ on:
   workflow_call:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
@@ -20,10 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-frontend
     steps:
+      - name: Create _site directory
+        run: mkdir _site
       - name: Download frontend build
         uses: actions/download-artifact@v3
         with:
           name: frontend-build
+          path: _site
 
       - name: Download latest test report
         uses: dawidd6/action-download-artifact@v2
@@ -32,11 +37,10 @@ jobs:
           workflow_conclusion: completed
           branch: main
           name: report
+          path: _site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
-        with:
-          path: '.'
 
   deploy:
     environment:
