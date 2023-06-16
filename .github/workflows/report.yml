@@ -3,6 +3,9 @@ name: Test Suite Report
 on:
   release:
     types: [published]
+  push:
+    paths:
+      - ".github/workflows/report.yml"
   workflow_dispatch:
   schedule:
     # Daily at 2:15
@@ -51,41 +54,8 @@ jobs:
         with:
           name: report
           path: |
-            ${{ matrix.version }}.html
             ${{ matrix.version }}.jsonl
             badges/
 
-  collect:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v3
-
-      - run: mkdir _site
-
-      - name: Download the reports
-        uses: actions/download-artifact@v3
-        with:
-          name: report
-          path: _site
-
-      - name: Finish the site structure setup
-        run: |
-          cp _site/draft2020-12.html _site/index.html
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: collect
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+  deploy-frontend:
+    uses: bowtie-json-schema/bowtie/.github/workflows/deploy-frontend.yml@main
