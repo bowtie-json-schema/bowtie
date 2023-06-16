@@ -3,9 +3,6 @@ name: Test Suite Report
 on:
   release:
     types: [published]
-  push:
-    paths:
-      - ".github/workflows/report.yml"
   workflow_dispatch:
   schedule:
     # Daily at 2:15
