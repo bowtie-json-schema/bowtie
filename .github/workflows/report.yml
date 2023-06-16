@@ -56,3 +56,4 @@ jobs:
 
   deploy-frontend:
     uses: ./.github/workflows/deploy-frontend.yml
+    needs: test
