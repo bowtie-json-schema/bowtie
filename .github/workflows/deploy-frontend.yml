@@ -20,12 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-frontend:
+    uses: bowtie-json-schema/bowtie/.github/workflows/build-frontend.yml@main
+  collect:
     runs-on: ubuntu-latest
+    needs: build-frontend
     steps:
-      - name: Build frontend
-        uses: bowtie-json-schema/bowtie/.github/workflows/build-frontend.yml@main
-
       - name: Download frontend build
         uses: actions/download-artifact@v3
         with:
@@ -47,7 +47,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: collect
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

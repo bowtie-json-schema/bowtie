@@ -58,7 +58,4 @@ jobs:
             badges/
 
   deploy-frontend:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: bowtie-json-schema/bowtie/.github/workflows/deploy-frontend.yml@main
+    uses: bowtie-json-schema/bowtie/.github/workflows/deploy-frontend.yml@main
