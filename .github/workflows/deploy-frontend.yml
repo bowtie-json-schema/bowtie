@@ -26,15 +26,20 @@ jobs:
           name: frontend-build
           path: _site
 
-      - name: Download latest test report
-        uses: dawidd6/action-download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
-          workflow: report.yml
-          branch: main
           name: report
           path: _site
-          # empty string for any conclusion
-          workflow_conclusion: ""
+
+#      - name: Download latest test report
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+#          workflow: report.yml
+#          branch: main
+#          name: report
+#          path: _site
+#          # empty string for any conclusion
+#          workflow_conclusion: ""
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
