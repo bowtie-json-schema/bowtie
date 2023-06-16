@@ -34,7 +34,7 @@ jobs:
           name: report
           path: _site
           # empty string for any conclusion
-          workflow_conclusion: ''
+          workflow_conclusion: ""
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
