@@ -1,0 +1,57 @@
+name: Deploy frontend UI with test reports to GH pages
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  # temporary for PRs
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/build-frontend.yml"
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+      - ".github/workflows/build-frontend.yml"
+
+permissions:
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build frontend
+        uses: bowtie-json-schema/bowtie/.github/workflows/build-frontend.yml@main
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+
+      - name: Download latest test report
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: report.yml
+          workflow_conclusion: success
+          branch: main
+          name: report
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
