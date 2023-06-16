@@ -3,9 +3,6 @@ name: Test Suite Report
 on:
   release:
     types: [published]
-  push:
-    paths:
-      - ".github/workflows/report.yml"
   workflow_dispatch:
   schedule:
     # Daily at 2:15
@@ -58,4 +55,4 @@ jobs:
             badges/
 
   deploy-frontend:
-    uses: bowtie-json-schema/bowtie/.github/workflows/deploy-frontend.yml@main
+    uses: ./.github/workflows/deploy-frontend.yml
