@@ -11,10 +11,6 @@ on:
       - ".github/workflows/deploy-frontend.yml"
       - ".github/workflows/build-frontend.yml"
 
-permissions:
-  pages: write
-  id-token: write
-
 jobs:
   build-frontend:
     uses: ./.github/workflows/build-frontend.yml
@@ -34,7 +30,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: report.yml
-          workflow_conclusion: completed
           branch: main
           name: report
           path: _site
@@ -43,6 +38,9 @@ jobs:
         uses: actions/upload-pages-artifact@v1
 
   deploy:
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
