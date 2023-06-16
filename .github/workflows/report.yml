@@ -32,7 +32,8 @@ jobs:
           - draft3
 
     steps:
-      - run: touch ${{ matrix.version }}.jsonl
+      - run: |
+          echo "1" >> ${{ matrix.version }}.jsonl
 
       - uses: actions/upload-artifact@v3
         with:
