@@ -58,4 +58,4 @@ jobs:
             badges/
 
   deploy-frontend:
-    uses: ./.github/workflows/deploy-frontend.yml@main
+    uses: ./.github/workflows/deploy-frontend.yml

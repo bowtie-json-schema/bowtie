@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build-frontend:
-    uses: ./.github/workflows/build-frontend.yml@main
+    uses: ./.github/workflows/build-frontend.yml
   collect:
     runs-on: ubuntu-latest
     needs: build-frontend
