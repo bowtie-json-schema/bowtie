@@ -11,7 +11,7 @@ function App({ draftName }) {
   const [lines, setLines] = useState([]);
   useEffect(() => {
     document.getElementsByTagName("title")[0].textContent += " " + draftName;
-    fetch(`https://bowtie-json-schema.github.io/bowtie/${draftName}.jsonl`)
+    fetch(`/bowtie/${draftName}.json`)
       .then((response) => response.text())
       .then((jsonl) => {
         const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
