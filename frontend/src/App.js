@@ -11,10 +11,10 @@ function App({ draftName }) {
   const [lines, setLines] = useState([]);
   useEffect(() => {
     document.getElementsByTagName("title")[0].textContent += " " + draftName;
-    fetch(`/bowtie/${draftName}.json`)
+    fetch(`${process.env.PUBLIC_URL}/${draftName}.json`)
       .then((response) => response.text())
       .then((jsonl) => {
-        const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
+        const dataObjectsArray = jsonl.trim().split(/\r?\n/);
         setLines(dataObjectsArray.map((line) => JSON.parse(line)));
       });
   }, [draftName]);
