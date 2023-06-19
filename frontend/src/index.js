@@ -5,37 +5,28 @@ import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
-import LoadingAnimation from "./components/LoadingAnimation";
 
 const router = createHashRouter([
   {
     path: "/",
     element: <DragAndDrop />,
-    // element: <LoadingAnimation />,
   },
   {
-    path: "/draft2020-12",
-    element: <ReportDataHandler draftName="draft2020-12" />,
-  },
-  {
-    path: "/draft2019-09",
-    element: <ReportDataHandler draftName="draft2019-09" />,
-  },
-  {
-    path: "/draft7",
-    element: <ReportDataHandler draftName="draft7" />,
-  },
-  {
-    path: "/draft6",
-    element: <ReportDataHandler draftName="draft6" />,
-  },
-  {
-    path: "/draft4",
-    element: <ReportDataHandler draftName="draft4" />,
-  },
-  {
-    path: "/draft3",
-    element: <ReportDataHandler draftName="draft3" />,
+    path: "/:draftName",
+    element: <ReportDataHandler />,
+    loader: ({ params }) => {
+      document.getElementsByTagName("title")[0].textContent =
+        " Bowtie-" + params.draftName;
+      return fetch(
+        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.jsonl`
+      )
+        .then((response) => response.text())
+        .then((jsonl) => {
+          const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
+          const lines = dataObjectsArray.map((line) => JSON.parse(line));
+          return lines;
+        });
+    },
   },
 ]);
 

@@ -1,37 +1,22 @@
 import { useState, useEffect } from "react";
+import { useLoaderData } from "react-router";
+
 import App from "./App";
-import NavBar from "./components/NavBar";
-import { RunInfo } from "./data/runInfo";
 import LoadingAnimation from "./components/LoadingAnimation";
 
-const ReportDataHandler = ({ draftName }) => {
-  const [lines, setLines] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+const ReportDataHandler = () => {
+  const [loading, setLoading] = useState(true);
+  let [lines, setLines] = useState([]);
+  const loaderData = useLoaderData("draftName");
 
   useEffect(() => {
-    document.getElementsByTagName("title")[0].textContent =
-      " Bowtie-" + draftName;
-    setIsLoading(true);
-    fetch(`https://bowtie-json-schema.github.io/bowtie/${draftName}.jsonl`)
-      .then((response) => response.text())
-      .then((jsonl) => {
-        const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
-        setLines(dataObjectsArray.map((line) => JSON.parse(line)));
-        setIsLoading(false);
-      });
-  }, [draftName]);
+    setLoading(true);
+    setLines(loaderData);
 
-  return (
-    <>
-      {isLoading ? (
-        <>
-          <NavBar /> <LoadingAnimation />
-        </>
-      ) : (
-        <App lines={lines} />
-      )}
-    </>
-  );
+    setLoading(false);
+  }, [loaderData]);
+
+  return <>{loading ? <LoadingAnimation /> : <App lines={lines} />}</>;
 };
 
 export default ReportDataHandler;
