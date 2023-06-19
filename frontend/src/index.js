@@ -2,18 +2,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
-import App from "./App";
 import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
+import LoadingAnimation from "./components/LoadingAnimation";
 
 const router = createHashRouter([
   {
     path: "/",
-    // element: <ReportDataHandler draftName="local-report" />,
-    // element: <ReportDataHandler draftName="draft2020-12" />,
-    element: <DragAndDrop />,
-    
+    // element: <DragAndDrop />,
+    element: <LoadingAnimation />,
   },
   {
     path: "/draft2020-12",
