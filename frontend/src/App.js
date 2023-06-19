@@ -20,7 +20,6 @@ function App({ lines }) {
           <CasesSection lines={lines} />
         </div>
       </div>
-
       <RunTimeInfoModal lines={lines} summary={summary} />
       <DetailsButtonModal lines={lines} summary={summary} />
     </div>

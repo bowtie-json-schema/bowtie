@@ -1,14 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import { useSpring, animated } from "react-spring";
-import RunInfoSection from "../RunInfo/RunInfoSection";
-import SummarySection from "../Summary/SummarySection";
-import CasesSection from "../Cases/CasesSection";
-import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
-import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
-import { RunInfo } from "../../data/runInfo";
 import "./DragAndDrop.css";
 import NavBar from "../NavBar";
+import App from "../../App";
 
 function DragAndDrop() {
   const [dragActive, setDragActive] = useState(false);
@@ -87,25 +82,7 @@ function DragAndDrop() {
   return (
     <div>
       {lines ? (
-        <div>
-          <div>
-            <NavBar runInfo={new RunInfo(lines)} />
-            <div className="container p-4">
-              <RunInfoSection runInfo={new RunInfo(lines)} />
-              <SummarySection lines={lines} />
-              <CasesSection lines={lines} />
-            </div>
-          </div>
-
-          <RunTimeInfoModal
-            lines={lines}
-            summary={new RunInfo(lines).createSummary()}
-          />
-          <DetailsButtonModal
-            lines={lines}
-            summary={new RunInfo(lines).createSummary()}
-          />
-        </div>
+        <App lines={lines} />
       ) : (
         <>
           <NavBar runInfo={{ bowtieVersion: "XX" }} />

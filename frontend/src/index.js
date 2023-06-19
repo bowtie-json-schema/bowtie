@@ -5,12 +5,15 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, RouterProvider } from "react-router-dom";
+import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
 
 const router = createHashRouter([
   {
     path: "/",
     // element: <ReportDataHandler draftName="local-report" />,
-    element: <ReportDataHandler draftName="draft2020-12" />,
+    // element: <ReportDataHandler draftName="draft2020-12" />,
+    element: <DragAndDrop />,
+    
   },
   {
     path: "/draft2020-12",

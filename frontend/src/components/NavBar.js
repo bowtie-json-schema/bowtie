@@ -28,9 +28,9 @@ const NavBar = ({ runInfo }) => {
         }`}
       >
         <div className="container-fluid">
-          <Link className="navbar-brand mb-0 h1" to="/#">
+          <a className="navbar-brand mb-0 h1" href="/">
             Bowtie
-          </Link>
+          </a>
           <button
             className="navbar-toggler"
             type="button"
