@@ -85,7 +85,7 @@ function DragAndDrop() {
         <App lines={lines} />
       ) : (
         <>
-          <NavBar runInfo={{ bowtieVersion: "XX" }} />
+          <NavBar />
           <div className="card-body d-grid justify-content-center mt-5 ">
             <form
               id="form-file-upload"

@@ -10,8 +10,8 @@ import LoadingAnimation from "./components/LoadingAnimation";
 const router = createHashRouter([
   {
     path: "/",
-    // element: <DragAndDrop />,
-    element: <LoadingAnimation />,
+    element: <DragAndDrop />,
+    // element: <LoadingAnimation />,
   },
   {
     path: "/draft2020-12",

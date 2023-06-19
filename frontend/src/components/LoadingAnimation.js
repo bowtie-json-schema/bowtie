@@ -16,7 +16,7 @@ const LoadingAnimation = () => {
           <span className="sr-only"></span>
         </div>
       </div>
-      <h4>Loading report data. Please wait!</h4>
+      <h4>Loading... Please wait!</h4>
     </div>
   );
 };
