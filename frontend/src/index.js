@@ -18,7 +18,7 @@ const router = createHashRouter([
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + params.draftName;
       return fetch(
-        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.jsonl`
+        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.jsonl`,
       )
         .then((response) => response.text())
         .then((jsonl) => {
