@@ -4,7 +4,7 @@ export const ThemeContext = createContext();
 
 const ThemeContextProvider = ({ children }) => {
   const [theme, setTheme] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
   useEffect(() => {
@@ -19,9 +19,7 @@ const ThemeContextProvider = ({ children }) => {
 
   const value = { theme, handleTheme };
   return (
-    <ThemeContext.Provider value={value}>
-        { children }
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 
