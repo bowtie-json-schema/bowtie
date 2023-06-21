@@ -15,18 +15,16 @@ const router = createHashRouter([
   {
     path: "/:draftName",
     element: <ReportDataHandler />,
-    loader: ({ params }) => {
+    loader: async ({ params }) => {
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + params.draftName;
-      return fetch(
+      const response = await fetch(
         `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
-      )
-        .then((response) => response.text())
-        .then((jsonl) => {
-          const dataObjectsArray = jsonl.trim().split(/\n/);
-          const lines = dataObjectsArray.map((line) => JSON.parse(line));
-          return lines;
-        });
+      );
+      const jsonl = await response.text();
+      const dataObjectsArray = jsonl.trim().split(/\n/);
+      const lines = dataObjectsArray.map((line) => JSON.parse(line));
+      return lines;
     },
   },
 ]);
