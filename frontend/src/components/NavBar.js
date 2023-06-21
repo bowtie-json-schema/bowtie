@@ -5,7 +5,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { ThemeContext } from "../context/ThemeContext";
 
 const NavBar = ({ runInfo }) => {
-  const { theme, setTheme } = useContext(ThemeContext);
+  const { theme, handleTheme } = useContext(ThemeContext);
   const { hash, key } = useLocation();
 
   useEffect(() => {
@@ -106,7 +106,7 @@ const NavBar = ({ runInfo }) => {
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={() => setTheme()}
+            onClick={() => handleTheme()}
           >
             {theme ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>

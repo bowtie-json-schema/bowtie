@@ -1,5 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import NavBar from "./NavBar";
 
 const LoadingAnimation = () => {
   const spinnerStyle = {
@@ -7,17 +8,20 @@ const LoadingAnimation = () => {
     height: "8rem",
   };
   return (
-    <div className="d-grid justify-content-center ">
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "50vh" }}
-      >
-        <div className="spinner-border" style={spinnerStyle} role="status">
-          <span className="sr-only"></span>
+    <>
+      <NavBar />
+      <div className="d-grid justify-content-center ">
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "50vh" }}
+        >
+          <div className="spinner-border" style={spinnerStyle} role="status">
+            <span className="sr-only"></span>
+          </div>
         </div>
+        <h4>Loading... Please wait!</h4>
       </div>
-      <h4>Loading... Please wait!</h4>
-    </div>
+    </>
   );
 };
 

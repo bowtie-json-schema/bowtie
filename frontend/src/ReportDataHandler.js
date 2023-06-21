@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigation } from "react-router-dom";
 
 import App from "./App";
 import LoadingAnimation from "./components/LoadingAnimation";
 
 const ReportDataHandler = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const loaderData = useLoaderData("draftName");
+  const [isLoading, setIsLoading] = useState(true);
+  const loaderData = useLoaderData();
 
-  useEffect(()=>{
-    setIsLoaded(true)
-  }, [loaderData])
-  console.log(loaderData)
+  useEffect(() => {
+    setIsLoading(!isLoading);
+  }, [useNavigation().state === "loading"]);
 
-  return <App lines={loaderData} />;
-  // return <>{!loaderData ? <LoadingAnimation /> : <App lines={loaderData} />}</>;
+  return isLoading ? <LoadingAnimation /> : <App lines={loaderData} />;
 };
 
 export default ReportDataHandler;
