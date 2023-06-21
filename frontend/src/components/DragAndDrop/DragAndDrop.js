@@ -6,6 +6,7 @@ import NavBar from "../NavBar";
 import App from "../../App";
 
 function DragAndDrop() {
+  const [showToast, setShowToast] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [invalidJson, setInvalidJson] = useState(false);
@@ -15,6 +16,10 @@ function DragAndDrop() {
   const flyingAnimation = useSpring({
     transform: fileUploaded ? "translateY(-100%)" : "translateY(0%)",
   });
+
+  const handleShowToast = () => {
+    setShowToast(!showToast);
+  };
 
   const handleDrag = function (e) {
     e.preventDefault();
@@ -61,6 +66,7 @@ function DragAndDrop() {
           const dataObjectsArray = e.target.result.trim().split(/\n(?=\{)/);
           setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
+          handleShowToast();
           console.error(" :", error);
           setDragActive(false);
           setFileUploaded(false);
@@ -84,9 +90,47 @@ function DragAndDrop() {
       {lines ? (
         <App lines={lines} />
       ) : (
-        <>
+        <div>
           <NavBar />
-          <div className="card-body d-grid justify-content-center mt-5 ">
+          <div
+            aria-live="polite"
+            aria-atomic="true"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginTop: "10vh",
+            }}
+          >
+            <div
+              className={`bg-danger toast ${showToast ? "show" : ""}`}
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+            >
+              <div className="toast-body d-flex justify-content-between">
+                Something went wrong! Make sure you have uploaded a valid json
+                file.{" "}
+                <button
+                  type="button"
+                  className="ml-2 mb-1 close"
+                  data-dismiss="toast"
+                  aria-label="Close"
+                  onClick={handleShowToast}
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            className="card-body d-grid justify-content-center"
+            style={{
+              position: "absolute",
+              left: "50%",
+              right: "50%",
+              top: "12vh",
+            }}
+          >
             <form
               id="form-file-upload"
               onDragEnter={handleDrag}
@@ -135,7 +179,7 @@ function DragAndDrop() {
               )}
             </form>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

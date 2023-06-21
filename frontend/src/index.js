@@ -23,7 +23,7 @@ const router = createHashRouter([
       )
         .then((response) => response.text())
         .then((jsonl) => {
-          const dataObjectsArray = jsonl.trim().split(/\n(?=\{)/);
+          const dataObjectsArray = jsonl.trim().split(/\n/);
           const lines = dataObjectsArray.map((line) => JSON.parse(line));
           return lines;
         });
