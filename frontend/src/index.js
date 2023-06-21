@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
+import ThemeContextProvider from "./context/ThemeContext";
 
 const router = createHashRouter([
   {
@@ -18,7 +19,7 @@ const router = createHashRouter([
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + params.draftName;
       return fetch(
-        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.jsonl`,
+        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
       )
         .then((response) => response.text())
         .then((jsonl) => {
@@ -32,5 +33,9 @@ const router = createHashRouter([
 
 document.addEventListener("DOMContentLoaded", () => {
   const root = createRoot(document.getElementById("root"));
-  root.render(<RouterProvider router={router} />);
+  root.render(
+    <ThemeContextProvider>
+      <RouterProvider router={router} />
+    </ThemeContextProvider>
+  );
 });

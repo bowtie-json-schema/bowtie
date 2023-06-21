@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
+import { ThemeContext } from "../context/ThemeContext";
+
 const NavBar = ({ runInfo }) => {
-  const [mode, setMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
-  );
+  const { theme, setTheme } = useContext(ThemeContext);
   const { hash, key } = useLocation();
 
   useEffect(() => {
@@ -14,17 +14,12 @@ const NavBar = ({ runInfo }) => {
       targetElement?.scrollIntoView({ behavior: "smooth" });
     }
   }, [key, hash]);
-  useEffect(() => {
-    document
-      .querySelector("body")
-      .setAttribute("data-bs-theme", mode ? "dark" : "light");
-  }, [mode]);
 
   return (
     <>
       <nav
         className={`navbar navbar-expand-lg sticky-top mb-4 ${
-          mode ? "navbar-dark bg-dark" : "navbar-light bg-light"
+          theme ? "navbar-dark bg-dark" : "navbar-light bg-light"
         }`}
       >
         <div className="container-fluid">
@@ -111,9 +106,9 @@ const NavBar = ({ runInfo }) => {
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={() => setMode(!mode)}
+            onClick={() => setTheme()}
           >
-            {mode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
+            {theme ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>
           <a
             href="https://github.com/bowtie-json-schema/bowtie/"
