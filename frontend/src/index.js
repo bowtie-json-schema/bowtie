@@ -19,10 +19,12 @@ const router = createHashRouter([
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + params.draftName;
       const response = await fetch(
-        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
+        `${process.env.PUBLIC_URL}/${params.draftName}.json`
+        // FOR DEVELOPMENT PUROPOSE,COMMET THE ABOVE LINE AND UNCOMMENT THE BELOW LINE
+        // `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
       );
       const jsonl = await response.text();
-      const dataObjectsArray = jsonl.trim().split(/\n/);
+      const dataObjectsArray = jsonl.trim().split(/\r?\n/);
       const lines = dataObjectsArray.map((line) => JSON.parse(line));
       return lines;
     },

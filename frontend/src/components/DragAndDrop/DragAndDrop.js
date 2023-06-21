@@ -74,7 +74,7 @@ function DragAndDrop() {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const dataObjectsArray = e.target.result.trim().split(/\n/);
+          const dataObjectsArray = e.target.result.trim().split(/\r?\n/);
           setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
           handleShowToast();
