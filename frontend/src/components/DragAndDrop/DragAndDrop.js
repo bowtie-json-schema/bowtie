@@ -21,14 +21,22 @@ function DragAndDrop() {
     setShowToast(!showToast);
   };
 
-  const handleDrag = function (e) {
+  const handleDragEnter = function (e) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(true);
+  };
+
+  const handleDragOver = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
   };
 
   const handleDrop = function (e) {
@@ -53,6 +61,7 @@ function DragAndDrop() {
   };
 
   const onButtonClick = () => {
+    console.log(inputRef);
     inputRef.current.value = "";
     inputRef.current.click();
   };
@@ -63,7 +72,7 @@ function DragAndDrop() {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const dataObjectsArray = e.target.result.trim().split(/\n(?=\{)/);
+          const dataObjectsArray = e.target.result.trim().split(/\n/);
           setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
           handleShowToast();
@@ -132,8 +141,11 @@ function DragAndDrop() {
             }}
           >
             <form
-              id="form-file-upload"
-              onDragEnter={handleDrag}
+              className="form-file-upload"
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               onSubmit={(e) => e.preventDefault()}
             >
               <input
@@ -168,15 +180,6 @@ function DragAndDrop() {
                   </h5>
                 </div>
               </label>
-              {dragActive && (
-                <div
-                  id="drag-file-element"
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                ></div>
-              )}
             </form>
           </div>
         </div>
