@@ -61,11 +61,10 @@ function DragAndDrop() {
       reader.onload = (e) => {
         try {
           const dataObjectsArray = e.target.result.trim().split(/\r?\n/);
-          if(dataObjectsArray.find(obj => obj))
           setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
           handleShowToast();
-          console.error(" :", error);
+          console.error("Error :", error);
           setDragActive(false);
           setInvalidJson(false);
         }
@@ -99,7 +98,7 @@ function DragAndDrop() {
           >
             {showToast ? (
               <div
-                className={"bg-danger toast"}
+                className={"bg-danger toast show"}
                 role="alert"
                 aria-live="assertive"
                 aria-atomic="true"
@@ -119,7 +118,7 @@ function DragAndDrop() {
                   </button>
                 </div>
               </div>
-            ) : null}
+            ) : <></>}
           </div>
           <div
             className="card-body d-grid justify-content-center"

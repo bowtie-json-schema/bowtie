@@ -6,7 +6,6 @@ import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import DragAndDrop from "./components/DragAndDrop/DragAndDrop";
 import ThemeContextProvider from "./context/ThemeContext";
-import { CodeSlash } from "react-bootstrap-icons";
 
 const router = createHashRouter([
   {
@@ -16,9 +15,9 @@ const router = createHashRouter([
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + "draft2020-12";
       const response = await fetch(
-        // `${process.env.PUBLIC_URL}/${params.draftName}.json`,
+        `${process.env.PUBLIC_URL}/${params.draftName}.json`,
         // FOR DEVELOPMENT PUROPOSE,COMMET THE ABOVE LINE AND UNCOMMENT THE BELOW LINE
-        `https://bowtie-json-schema.github.io/bowtie/draft2020-12.json`
+        // `https://bowtie-json-schema.github.io/bowtie/draft2020-12.json`
       );
       const jsonl = await response.text();
       const dataObjectsArray = jsonl.trim().split(/\r?\n/);
@@ -32,11 +31,10 @@ const router = createHashRouter([
     loader: async ({ params }) => {
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + params.draftName;
-      console.log(params.draftName);
       const response = await fetch(
-        // `${process.env.PUBLIC_URL}/${params.draftName}.json`,
+        `${process.env.PUBLIC_URL}/${params.draftName}.json`,
         // FOR DEVELOPMENT PUROPOSE,COMMET THE ABOVE LINE AND UNCOMMENT THE BELOW LINE
-        `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
+        // `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
       );
       const jsonl = await response.text();
       const dataObjectsArray = jsonl.trim().split(/\r?\n/);
