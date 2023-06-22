@@ -23,9 +23,9 @@ const NavBar = ({ runInfo }) => {
         }`}
       >
         <div className="container-fluid">
-          <a className="navbar-brand mb-0 h1" href="/">
+          <Link className="navbar-brand mb-0 h1" to="/">
             Bowtie
-          </a>
+          </Link>
           <button
             className="navbar-toggler"
             type="button"
@@ -95,7 +95,7 @@ const NavBar = ({ runInfo }) => {
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/">
+                    <NavLink className="dropdown-item" to="/local-report">
                       Local report
                     </NavLink>
                   </li>

@@ -7,10 +7,11 @@ import LoadingAnimation from "./components/LoadingAnimation";
 const ReportDataHandler = () => {
   const [isLoading, setIsLoading] = useState(true);
   const loaderData = useLoaderData();
+  const state = useNavigation().state === "loading";
 
   useEffect(() => {
     setIsLoading(!isLoading);
-  }, [useNavigation().state === "loading"]);
+  }, [state]);
 
   return isLoading ? <LoadingAnimation /> : <App lines={loaderData} />;
 };

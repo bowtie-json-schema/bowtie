@@ -7,7 +7,6 @@ import App from "../../App";
 function DragAndDrop() {
   const [showToast, setShowToast] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [fileUploaded, setFileUploaded] = useState(false);
   const [invalidJson, setInvalidJson] = useState(false);
   const [lines, setLines] = useState();
   const inputRef = useRef(null);
@@ -38,7 +37,6 @@ function DragAndDrop() {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       handleFiles(file);
-      setFileUploaded(true);
     }
   };
 
@@ -48,7 +46,6 @@ function DragAndDrop() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       handleFiles(file);
-      setFileUploaded(true);
     }
   };
 
@@ -64,12 +61,12 @@ function DragAndDrop() {
       reader.onload = (e) => {
         try {
           const dataObjectsArray = e.target.result.trim().split(/\r?\n/);
+          if(dataObjectsArray.find(obj => obj))
           setLines(dataObjectsArray.map((line) => JSON.parse(line)));
         } catch (error) {
           handleShowToast();
           console.error(" :", error);
           setDragActive(false);
-          setFileUploaded(false);
           setInvalidJson(false);
         }
       };
@@ -79,7 +76,6 @@ function DragAndDrop() {
       setInvalidJson(true);
       setTimeout(() => {
         setDragActive(false);
-        setFileUploaded(false);
         setInvalidJson(false);
       }, 2500);
     }
@@ -101,27 +97,29 @@ function DragAndDrop() {
               marginTop: "10vh",
             }}
           >
-            <div
-              className={`bg-danger toast ${showToast ? "show" : ""}`}
-              role="alert"
-              aria-live="assertive"
-              aria-atomic="true"
-              style={{ zIndex: "1" }}
-            >
-              <div className="toast-body d-flex justify-content-between">
-                Something went wrong! Make sure you have uploaded a valid json
-                file.{" "}
-                <button
-                  type="button"
-                  className="ml-2 mb-1 close"
-                  data-dismiss="toast"
-                  aria-label="Close"
-                  onClick={() => setShowToast(false)}
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
+            {showToast ? (
+              <div
+                className={"bg-danger toast"}
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+                style={{ zIndex: "1" }}
+              >
+                <div className="toast-body d-flex justify-content-between">
+                  Something went wrong! Make sure you have uploaded a valid json
+                  file.{" "}
+                  <button
+                    type="button"
+                    className="ml-2 mb-1 close"
+                    data-dismiss="toast"
+                    aria-label="Close"
+                    onClick={() => setShowToast(false)}
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
           <div
             className="card-body d-grid justify-content-center"
