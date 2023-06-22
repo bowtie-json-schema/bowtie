@@ -54,7 +54,7 @@ const router = checkIsLocalhost()
             // `https://bowtie-json-schema.github.io/bowtie/${params.draftName}.json`
           );
           const jsonl = await response.text();
-          const dataObjectsArray = jsonl.trim().split(/\n(?={)/);
+          const dataObjectsArray = jsonl.trim().split(/\r?\n/);
           const lines = dataObjectsArray.map((line) => JSON.parse(line));
           return lines;
         },
