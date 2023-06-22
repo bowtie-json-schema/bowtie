@@ -14,7 +14,7 @@ const ThemeContextProvider = ({ children }) => {
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {
-    setDarkMode(isDarkMode => !isDarkMode);
+    setDarkMode((isDarkMode) => !isDarkMode);
   };
 
   const value = { isDarkMode, toggleDarkMode };
