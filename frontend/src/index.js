@@ -15,7 +15,7 @@ const router = createHashRouter([
       document.getElementsByTagName("title")[0].textContent =
         " Bowtie-" + "draft2020-12";
       const response = await fetch(
-        `${process.env.PUBLIC_URL}/${params.draftName}.json`,
+        `${process.env.PUBLIC_URL}/draft2020-12.json`,
         // FOR DEVELOPMENT PUROPOSE,COMMET THE ABOVE LINE AND UNCOMMENT THE BELOW LINE
         // `https://bowtie-json-schema.github.io/bowtie/draft2020-12.json`
       );
