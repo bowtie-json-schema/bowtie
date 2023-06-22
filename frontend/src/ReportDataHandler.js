@@ -5,9 +5,13 @@ import LoadingAnimation from "./components/LoadingAnimation";
 
 const ReportDataHandler = () => {
   const loaderData = useLoaderData();
-  const {state} = useNavigation();
+  const { state } = useNavigation();
 
-  return state === "loading" ? <LoadingAnimation /> : <App lines={loaderData} />;
+  return state === "loading" ? (
+    <LoadingAnimation />
+  ) : (
+    <App lines={loaderData} />
+  );
 };
 
 export default ReportDataHandler;
