@@ -118,7 +118,9 @@ function DragAndDrop() {
                   </button>
                 </div>
               </div>
-            ) : <></>}
+            ) : (
+              <></>
+            )}
           </div>
           <div
             className="card-body d-grid justify-content-center"

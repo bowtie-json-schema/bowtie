@@ -53,6 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
   root.render(
     <ThemeContextProvider>
       <RouterProvider router={router} />
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
