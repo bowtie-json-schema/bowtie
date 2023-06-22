@@ -5,7 +5,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { ThemeContext } from "../context/ThemeContext";
 
 const NavBar = ({ runInfo }) => {
-  const { theme, handleTheme } = useContext(ThemeContext);
+  const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { hash, key } = useLocation();
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const NavBar = ({ runInfo }) => {
     <>
       <nav
         className={`navbar navbar-expand-lg sticky-top mb-4 ${
-          theme ? "navbar-dark bg-dark" : "navbar-light bg-light"
+          isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
         }`}
       >
         <div className="container-fluid">
@@ -106,9 +106,9 @@ const NavBar = ({ runInfo }) => {
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={() => handleTheme()}
+            onClick={() => toggleDarkMode()}
           >
-            {theme ? <MoonStarsFill size={20} /> : <Sun size={20} />}
+            {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>
           <a
             href="https://github.com/bowtie-json-schema/bowtie/"

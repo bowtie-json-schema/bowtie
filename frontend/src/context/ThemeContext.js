@@ -3,21 +3,21 @@ import { createContext, useState, useEffect } from "react";
 export const ThemeContext = createContext();
 
 const ThemeContextProvider = ({ children }) => {
-  const [theme, setTheme] = useState(
+  const [isDarkMode, setDarkMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
   useEffect(() => {
     document
       .querySelector("body")
-      .setAttribute("data-bs-theme", theme ? "dark" : "light");
-  }, [theme]);
+      .setAttribute("data-bs-theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
-  const handleTheme = () => {
-    setTheme(!theme);
+  const toggleDarkMode = () => {
+    setDarkMode(!isDarkMode);
   };
 
-  const value = { theme, handleTheme };
+  const value = { isDarkMode, toggleDarkMode };
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
