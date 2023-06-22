@@ -23,7 +23,7 @@ const NavBar = ({ runInfo }) => {
         }`}
       >
         <div className="container-fluid">
-          <Link className="navbar-brand mb-0 h1" to="/">
+          <Link className="navbar-brand mb-0 h1" to="/draft2020-12">
             Bowtie
           </Link>
           <button
