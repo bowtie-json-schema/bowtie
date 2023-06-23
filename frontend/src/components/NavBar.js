@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
+import { ThemeContext } from "../context/ThemeContext";
+
 const NavBar = ({ runInfo }) => {
-  const [mode, setMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
-  );
+  const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { hash, key } = useLocation();
 
   useEffect(() => {
@@ -14,23 +14,18 @@ const NavBar = ({ runInfo }) => {
       targetElement?.scrollIntoView({ behavior: "smooth" });
     }
   }, [key, hash]);
-  useEffect(() => {
-    document
-      .querySelector("body")
-      .setAttribute("data-bs-theme", mode ? "dark" : "light");
-  }, [mode]);
 
   return (
     <>
       <nav
         className={`navbar navbar-expand-lg sticky-top mb-4 ${
-          mode ? "navbar-dark bg-dark" : "navbar-light bg-light"
+          isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
         }`}
       >
         <div className="container-fluid">
-          <a className="navbar-brand mb-0 h1" href="#">
+          <Link className="navbar-brand mb-0 h1" to="/draft2020-12">
             Bowtie
-          </a>
+          </Link>
           <button
             className="navbar-toggler"
             type="button"
@@ -99,6 +94,11 @@ const NavBar = ({ runInfo }) => {
                       3
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/local-report">
+                      Local report
+                    </NavLink>
+                  </li>
                 </ul>
               </li>
             </ul>
@@ -106,16 +106,16 @@ const NavBar = ({ runInfo }) => {
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={() => setMode(!mode)}
+            onClick={() => toggleDarkMode()}
           >
-            {mode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
+            {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>
           <a
             href="https://github.com/bowtie-json-schema/bowtie/"
             className="link-secondary"
           >
             <span className="navbar-text">
-              <small>Bowtie v - {runInfo.bowtieVersion}</small>
+              {runInfo ? <small>Bowtie v{runInfo.bowtieVersion}</small> : null}
             </span>
           </a>
         </div>

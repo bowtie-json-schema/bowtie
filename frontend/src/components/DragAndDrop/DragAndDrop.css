@@ -1,0 +1,18 @@
+.form-file-upload {
+  width: 90vw;
+  height: 80vh;
+}
+
+#label-file-upload {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.5rem;
+  border-style: dashed;
+  box-shadow: 0 4px 8px #00000039;
+}
+
+#label-file-upload.drag-active {
+  background-color: #b6b5b5;
+}
