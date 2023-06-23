@@ -6,6 +6,7 @@ export default defineConfig({
     base: '/bowtie',
     build: {
         sourcemap: true,
-        target: ['es2022']
+        target: ['es2022'],
+        outDir: 'build'
     }
 })
