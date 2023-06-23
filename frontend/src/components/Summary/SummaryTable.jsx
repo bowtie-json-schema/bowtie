@@ -40,8 +40,7 @@ const SummaryTable = ({ lines }) => {
         }
       }
       if (
-        element.results &&
-        element.results.every(
+        element.results?.every(
           (each) =>
             typeof each === "object" &&
             Object.keys(each).length === 1 &&
@@ -57,14 +56,7 @@ const SummaryTable = ({ lines }) => {
       }
       let seq = element.seq;
       const caseImplementation = caseArray.find((each) => each.seq === seq);
-      if (
-        element.caught === true ||
-        element.caught === false ||
-        (element.results &&
-          element.results.every(
-            (each) =>
-              typeof each === "object" && each.hasOwnProperty("errored"),
-          ))
+      if (element.results?.every((each) => each.errored)
       ) {
         if (caseImplementation) {
           erroredTests += caseImplementation.case.tests.length;

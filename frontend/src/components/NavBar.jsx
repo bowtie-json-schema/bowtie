@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 

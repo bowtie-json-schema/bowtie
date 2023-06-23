@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Check, Clipboard } from "react-bootstrap-icons";
 
-function CopyToClipboard({ id, textToCopy }) {
+function CopyToClipboard({ textToCopy }) {
   const [copied, setCopied] = useState(false);
 
   const handleClick = () => {
@@ -15,7 +15,6 @@ function CopyToClipboard({ id, textToCopy }) {
   return (
     <button
       type="button"
-      id={`schema${id}`}
       className="btn mt-0 me-0"
       onClick={handleClick}
       aria-label="Copy to clipboard"
