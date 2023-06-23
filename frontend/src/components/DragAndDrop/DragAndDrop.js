@@ -72,13 +72,8 @@ function DragAndDrop() {
       ) : (
         <div>
           <NavBar />
-          <div
-            aria-live="polite"
-            aria-atomic="true"
-          ></div>
-          <div
-            className="card-body d-grid justify-content-center"
-          >
+          <div aria-live="polite" aria-atomic="true"></div>
+          <div className="card-body d-grid justify-content-center">
             <form
               className="form-file-upload"
               onDragEnter={handleDragEnter}
