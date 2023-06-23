@@ -75,20 +75,9 @@ function DragAndDrop() {
           <div
             aria-live="polite"
             aria-atomic="true"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "10vh",
-            }}
           ></div>
           <div
             className="card-body d-grid justify-content-center"
-            style={{
-              position: "absolute",
-              left: "50%",
-              right: "50%",
-              top: "12vh",
-            }}
           >
             <form
               className="form-file-upload"
