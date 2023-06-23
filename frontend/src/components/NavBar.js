@@ -115,9 +115,7 @@ const NavBar = ({ runInfo }) => {
             className="link-secondary"
           >
             <span className="navbar-text">
-              {runInfo ? (
-                <small>Bowtie v - {runInfo.bowtieVersion}</small>
-              ) : null}
+              {runInfo ? <small>Bowtie v{runInfo.bowtieVersion}</small> : null}
             </span>
           </a>
         </div>
