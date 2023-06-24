@@ -3,7 +3,7 @@ import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
-import {BowtieVersionContext} from "../context/BowtieVersionContext";
+import { BowtieVersionContext } from "../context/BowtieVersionContext";
 
 const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
