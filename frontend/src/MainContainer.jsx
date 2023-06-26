@@ -1,5 +1,5 @@
 import NavBar from "./components/NavBar";
-import {useNavigation, useOutlet} from 'react-router-dom'
+import { useNavigation, useOutlet } from "react-router-dom";
 import LoadingAnimation from "./components/LoadingAnimation";
 
 export const MainContainer = () => {
