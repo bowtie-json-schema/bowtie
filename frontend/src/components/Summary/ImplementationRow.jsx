@@ -68,8 +68,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
         const seq = element.seq;
         const caseImplementation = caseArray.find((each) => each.seq === seq);
         if (
-          element.caught === true ||
-          element.caught === false ||
+          element.caught !== undefined ||
           (element.results && element.results.every((each) => each.errored))
         ) {
           if (caseImplementation) {
@@ -85,7 +84,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
     let count = 0;
     lines.forEach((element) => {
       if (element.implementation == implementationImage) {
-        if (element.caught === true || element.caught === false) {
+        if (element.caught !== undefined) {
           let seq = element.seq;
           caseArray.forEach((each) => {
             if (each.seq == seq) {

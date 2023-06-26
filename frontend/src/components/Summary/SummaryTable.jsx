@@ -57,7 +57,7 @@ const SummaryTable = ({ lines }) => {
       let seq = element.seq;
       const caseImplementation = caseArray.find((each) => each.seq === seq);
       if (
-        element.caught !== null ||
+        element.caught !== undefined ||
         element.results?.every((each) => each.errored)
       ) {
         if (caseImplementation) {
@@ -65,7 +65,7 @@ const SummaryTable = ({ lines }) => {
         }
       }
       erroredCases = implementationArray.filter(
-        (element) => element.caught === true || element.caught === false,
+        (element) => element.caught !== undefined,
       ).length;
     });
 
