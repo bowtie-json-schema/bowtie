@@ -1,10 +1,10 @@
 import AccordionSvg from "./AccordionSvg";
 import SchemaDisplay from "./SchemaDisplay";
-import {useState} from "react";
+import { useState } from "react";
 
 const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
-  const {seq, case: caseObject} = eachCase;
-  const {description, schema, tests} = caseObject;
+  const { seq, case: caseObject } = eachCase;
+  const { description, schema, tests } = caseObject;
   const [instance, setInstance] = useState();
 
   function result(index, implementation) {
@@ -61,9 +61,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
           aria-expanded="false"
           aria-controls={`case-${seq}`}
         >
-          <p className="m-0">
-            {description}
-          </p>
+          <p className="m-0">{description}</p>
         </button>
       </h2>
       <div
@@ -96,15 +94,9 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
             </thead>
             <tbody>
               {tests.map((test, index) => (
-                <tr
-                  key={index}
-                  onClick={() => setInstance(test.instance)
-                  }
-                >
+                <tr key={index} onClick={() => setInstance(test.instance)}>
                   <td>
-                    <p className="m-0">
-                      {test.description}
-                    </p>
+                    <p className="m-0">{test.description}</p>
                   </td>
                   {implementations.map((impl, i) => {
                     const implementation = caseImplementation.find(
