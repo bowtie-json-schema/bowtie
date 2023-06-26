@@ -85,7 +85,7 @@ repos:
     hooks:
       - name: eslint
         id: eslint
-        files: ^frontend/.*\.jsx?$
+        files: ^frontend/src/.*\.jsx?$
         types: [file]
         additional_dependencies:
           - eslint@8.43.0
