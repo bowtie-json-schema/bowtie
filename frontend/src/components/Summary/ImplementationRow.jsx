@@ -70,11 +70,7 @@ const ImplementationRow = ({ lines, implementation, index }) => {
         if (
           element.caught === true ||
           element.caught === false ||
-          (element.results &&
-            element.results.every(
-              (each) =>
-                typeof each === "object" && each.hasOwnProperty("errored"),
-            ))
+          (element.results && element.results.every((each) => each.errored))
         ) {
           if (caseImplementation) {
             count += caseImplementation.case.tests.length;

@@ -1,6 +1,8 @@
 import CopyToClipboard from "../CopyToClipboard";
 
-const SchemaDisplay = ({ schema, id }) => {
+const SchemaDisplay = ({ schema, instance }) => {
+  const schemaFormatted = JSON.stringify(schema, null, 2);
+  const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
     <div className="card mb-3 mw-100">
       <div className="row">
@@ -10,14 +12,11 @@ const SchemaDisplay = ({ schema, id }) => {
               Schema
             </small>
             <div className="d-flex ms-auto">
-              <CopyToClipboard
-                id={`schema${id}`}
-                textToCopy={JSON.stringify(schema, null, 2)}
-              />
+              <CopyToClipboard textToCopy={schemaFormatted} />
             </div>
           </div>
           <div className="card-body">
-            <pre id="schema-code">{JSON.stringify(schema, null, 2)}</pre>
+            <pre id="schema-code">{schemaFormatted}</pre>
           </div>
         </div>
         <div className="col-4 border-start ps-0">
@@ -26,13 +25,12 @@ const SchemaDisplay = ({ schema, id }) => {
               Instance
             </small>
             <div className="d-flex ms-auto">
-              <CopyToClipboard
-                id={`instance${id}`}
-                textToCopy={JSON.stringify("instance", null, 2)}
-              />
+              <CopyToClipboard textToCopy={instanceFormatted} />
             </div>
           </div>
-          <div id="instance-info" className="card-body"></div>
+          <div id="instance-info" className="card-body">
+            <pre id="schema-code">{instanceFormatted}</pre>
+          </div>
         </div>
       </div>
     </div>

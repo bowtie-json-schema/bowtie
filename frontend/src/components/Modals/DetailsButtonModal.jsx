@@ -119,7 +119,7 @@ export const DetailsButtonModal = ({ lines, summary }) => {
                 </div>
                 <div className="modal-body">
                   <div className="row row-cols-1 row-cols-md-2 g-4">
-                    {result.map((eachResult, i) => {
+                    {result.map((eachResult) => {
                       let [testResult, testCase, testImplementation, validity] =
                         eachResult;
                       if (testResult === "skipped") {

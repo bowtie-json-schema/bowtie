@@ -1,16 +1,16 @@
 import AccordionSvg from "./AccordionSvg";
 import SchemaDisplay from "./SchemaDisplay";
+import { useState } from "react";
 
 const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
-  const seq = eachCase.seq;
-  const description = eachCase.case.description;
-  const schema = eachCase.case.schema;
-  const tests = eachCase.case.tests;
+  const { seq, case: caseObject } = eachCase;
+  const { description, schema, tests } = caseObject;
+  const [instance, setInstance] = useState();
 
   function result(index, implementation) {
-    if (implementation.skipped == true) {
+    if (implementation.skipped) {
       return "skipped";
-    } else if (implementation.caught == true) {
+    } else if (implementation.caught) {
       return "errored";
     } else if (implementation.results && implementation.expected) {
       let caseResults = implementation.results.filter(
@@ -19,11 +19,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
       if (caseResults.length > 0) {
         return "skipped";
       }
-      if (
-        implementation.results.every(
-          (each) => typeof each === "object" && each.hasOwnProperty("errored"),
-        )
-      ) {
+      if (implementation.results.every((each) => each.errored)) {
         return "errored";
       }
       if (
@@ -65,9 +61,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
           aria-expanded="false"
           aria-controls={`case-${seq}`}
         >
-          <a href="#schema" className="text-decoration-none">
-            {description}
-          </a>
+          <p className="m-0">{description}</p>
         </button>
       </h2>
       <div
@@ -77,7 +71,7 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
         data-bs-parent="#cases"
       >
         <div id={`accordion-body${seq}`} className="accordion-body">
-          <SchemaDisplay schema={schema} id={seq} />
+          <SchemaDisplay schema={schema} instance={instance} />
           <table className="table table-hover">
             <thead>
               <tr>
@@ -100,26 +94,15 @@ const AccordionItem = ({ eachCase, implementations, caseImplementation }) => {
             </thead>
             <tbody>
               {tests.map((test, index) => (
-                <tr
-                  className={`row-${seq}`}
-                  key={index}
-                  onClick={() =>
-                    displayCode(
-                      JSON.stringify(test.instance, null, 2),
-                      "instance-info",
-                    )
-                  }
-                >
+                <tr key={index} onClick={() => setInstance(test.instance)}>
                   <td>
-                    <a href="#schema" className="text-decoration-none">
-                      {test.description}
-                    </a>
+                    <p className="m-0">{test.description}</p>
                   </td>
                   {implementations.map((impl, i) => {
-                    let implementation = caseImplementation.find(
+                    const implementation = caseImplementation.find(
                       (each) => each.implementation === impl.image,
                     );
-                    let testResult = result(index, implementation);
+                    const testResult = result(index, implementation);
                     return <AccordionSvg key={i} testResult={testResult} />;
                   })}
                 </tr>
