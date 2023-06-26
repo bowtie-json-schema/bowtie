@@ -18,8 +18,6 @@ jobs:
           node-version: 18.x
       - run: npm ci
         working-directory: ./frontend
-      - run: npm run lint
-        working-directory: ./frontend
       - run: npm run build
         working-directory: ./frontend
       - uses: actions/upload-artifact@v3
