@@ -1,14 +1,15 @@
 import NavBar from "./components/NavBar";
-import { useNavigation } from "react-router-dom";
+import {useNavigation, useOutlet} from 'react-router-dom'
 import LoadingAnimation from "./components/LoadingAnimation";
 
-export const MainContainer = ({ children }) => {
+export const MainContainer = () => {
   const { state } = useNavigation();
+  const outlet = useOutlet();
 
   return (
     <div>
       <NavBar />
-      {state === "loading" ? <LoadingAnimation /> : children}
+      {state === "loading" ? <LoadingAnimation /> : outlet}
     </div>
   );
 };

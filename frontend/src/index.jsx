@@ -28,30 +28,25 @@ const fetchReportData = async (dialect) => {
 const router = createHashRouter([
   {
     path: "/",
-    element: (
-      <MainContainer>
-        <ReportDataHandler />
-      </MainContainer>
-    ),
-    loader: async () => fetchReportData("draft2020-12"),
-  },
-  {
-    path: "/:draftName",
-    element: (
-      <MainContainer>
-        <ReportDataHandler />
-      </MainContainer>
-    ),
-    loader: async ({ params }) => fetchReportData(params.draftName),
-  },
-  {
-    path: "/local-report",
-    element: (
-      <MainContainer>
-        <DragAndDrop />
-      </MainContainer>
-    ),
-  },
+    Component: MainContainer,
+
+    children: [
+      {
+        index: true,
+        Component: ReportDataHandler,
+        loader: async () => fetchReportData("draft2020-12"),
+      },
+      {
+        path: "/:draftName",
+        Component: ReportDataHandler,
+        loader: async ({ params }) => fetchReportData(params.draftName),
+      },
+      {
+        path: "/local-report",
+        Component: DragAndDrop,
+      },
+    ]
+  }
 ]);
 
 document.addEventListener("DOMContentLoaded", () => {
