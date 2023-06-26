@@ -9,6 +9,7 @@ import { DetailsButtonModal } from "./components/Modals/DetailsButtonModal";
 function App({ lines }) {
   const runInfo = new RunInfo(lines);
   const summary = runInfo.createSummary();
+  const unused = 1
 
   return (
     <div>
