@@ -21,11 +21,11 @@ repos:
     hooks:
       - id: pyupgrade
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.272"
+    rev: "v0.0.275"
     hooks:
       - id: ruff
   - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.31.0
+    rev: v1.31.1
     hooks:
       - id: djlint-jinja
   - repo: https://github.com/psf/black
