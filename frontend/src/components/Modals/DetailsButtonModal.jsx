@@ -1,4 +1,4 @@
-export const DetailsButtonModal = ({ lines, summary }) => {
+export const DetailsButtonModal = ({ reportData }) => {
   const implementationArray = lines.filter((element) => element.implementation);
   const caseArray = lines.filter((element) => element.case);
 

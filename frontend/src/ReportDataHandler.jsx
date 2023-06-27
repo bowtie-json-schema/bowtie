@@ -4,7 +4,7 @@ import { ReportView } from "./ReportView";
 const ReportDataHandler = () => {
   const loaderData = useLoaderData();
 
-  return <ReportView lines={loaderData} />;
+  return <ReportView reportData={loaderData} />;
 };
 
 export default ReportDataHandler;

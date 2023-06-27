@@ -14,11 +14,8 @@ const AccordionSvg = ({ testResult }) => {
     case "errored":
       svgComponent = <ExclamationOctagon />;
       break;
-    case "passed":
+    case "successful":
       svgComponent = <CheckCircleFill />;
-      break;
-    case "failed":
-      svgComponent = <XCircleFill />;
       break;
     case "unexpectedlyValid":
       svgComponent = <CheckCircleFill />;

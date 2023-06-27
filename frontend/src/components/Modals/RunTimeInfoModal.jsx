@@ -1,4 +1,4 @@
-export const RunTimeInfoModal = ({ summary }) => {
+export const RunTimeInfoModal = ({ reportData }) => {
   return (
     <>
       {summary.implementations.map((implementation, index) => (
