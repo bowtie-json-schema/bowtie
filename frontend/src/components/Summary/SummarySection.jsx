@@ -6,12 +6,11 @@ const SummarySection = ({reportData}) => {
       <div className='card-header'>Summary</div>
       <div className='card-body'>
         <SummaryTable reportData={reportData}/>
-        // TODO: handle fail fast
-        {/*{summary.did_fail_fast && (*/}
-        {/*  <div className="alert alert-warning" role="alert">*/}
-        {/*    This run failed fast, so some input cases may not have been run.*/}
-        {/*  </div>*/}
-        {/*)}*/}
+        {reportData.didFailFast && (
+          <div className="alert alert-warning" role="alert">
+            This run failed fast, so some input cases may not have been run.
+          </div>
+        )}
       </div>
     </div>
   )

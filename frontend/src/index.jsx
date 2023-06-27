@@ -8,7 +8,7 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
-import {parseReportData} from './data/summary'
+import {parseReportData} from './data/parseReportData'
 
 const reportUrl =
   import.meta.env.MODE === "development"

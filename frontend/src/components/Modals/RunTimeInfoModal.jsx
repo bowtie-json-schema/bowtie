@@ -1,75 +1,47 @@
-export const RunTimeInfoModal = ({ reportData }) => {
+import {Button, Modal} from 'react-bootstrap'
+
+export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
   return (
-    <>
-      {summary.implementations.map((implementation, index) => (
-        <div
-          className="modal fade"
-          role="dialog"
-          id={`implementation-${index}-runtime-info`}
-          tabIndex="-1"
-          aria-labelledby={`implementation-${index}-runtime-info-label`}
-          aria-hidden="true"
-          key={index}
-        >
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5
-                  className="modal-title"
-                  id={`implementation-${index}-runtime-info-label`}
-                >
-                  <b>{implementation.name + " "}</b>
-                  <small className="text-muted">
-                    {" "}
-                    {implementation.language}
-                  </small>
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                ></button>
-              </div>
-              <div className="modal-body">
-                {implementation.os_version && (
-                  <p>
-                    <strong>OS Version: </strong>
-                    {implementation.os_version || ""}
-                  </p>
-                )}
-                {implementation.os && (
-                  <p>
-                    <strong>OS: </strong>
-                    {implementation.os || ""}
-                  </p>
-                )}
-                {implementation.language && (
-                  <p>
-                    <strong>Language: </strong>
-                    {implementation.language}
-                  </p>
-                )}
-                {implementation.language_version && (
-                  <p>
-                    <strong>Language Version: </strong>
-                    {implementation.language_version || ""}
-                  </p>
-                )}
-              </div>
-              <div className="modal-footer m-2 p-0">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-secondary"
-                  data-bs-dismiss="modal"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </>
+    <Modal show={show} onHide={handleClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <b>{implementation.metadata.name + ' '}</b>
+          <small className='text-muted'>
+            {implementation.metadata.language}
+          </small>
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {implementation.metadata.os_version && (
+          <p>
+            <strong>OS Version: </strong>
+            {implementation.metadata.os_version || ''}
+          </p>
+        )}
+        {implementation.metadata.os && (
+          <p>
+            <strong>OS: </strong>
+            {implementation.metadata.os || ''}
+          </p>
+        )}
+        {implementation.metadata.language && (
+          <p>
+            <strong>Language: </strong>
+            {implementation.metadata.language}
+          </p>
+        )}
+        {implementation.metadata.language_version && (
+          <p>
+            <strong>Language Version: </strong>
+            {implementation.metadata.language_version || ''}
+          </p>
+        )}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant='secondary' onClick={handleClose}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 };

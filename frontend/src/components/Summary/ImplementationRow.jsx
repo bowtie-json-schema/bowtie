@@ -1,7 +1,13 @@
 import './ImplementationRow.css'
 import {InfoCircleFill} from 'react-bootstrap-icons'
+import {useState} from 'react'
+import {DetailsButtonModal} from '../Modals/DetailsButtonModal'
+import {RunTimeInfoModal} from '../Modals/RunTimeInfoModal'
 
-const ImplementationRow = ({implementation, index}) => {
+const ImplementationRow = ({cases, implementation}) => {
+  const [showDetails, setShowDetails] = useState(false)
+  const [showRunTimeInfo, setShowRunTimeInfo] = useState(false)
+
   return (
     <tr>
       <th scope='row'>
@@ -16,8 +22,7 @@ const ImplementationRow = ({implementation, index}) => {
         </small>
         <button
           className='btn border-0'
-          data-bs-toggle='modal'
-          data-bs-target={`#implementation-${index}-runtime-info`}
+          onClick={() => setShowRunTimeInfo(true)}
         >
           <InfoCircleFill/>
         </button>
@@ -41,12 +46,13 @@ const ImplementationRow = ({implementation, index}) => {
         <button
           type='button'
           className='btn btn-sm btn-primary'
-          data-bs-toggle='modal'
-          data-bs-target={`#implementation-${index}-details`}
+          onClick={() => setShowDetails(true)}
         >
           Details
         </button>
       </td>
+      <RunTimeInfoModal show={showRunTimeInfo} handleClose={() => setShowRunTimeInfo(false)} implementation={implementation} />
+      <DetailsButtonModal show={showDetails} handleClose={() => setShowDetails(false)} cases={cases} implementation={implementation} />
     </tr>
   )
 }

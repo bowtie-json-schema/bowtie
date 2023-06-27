@@ -15,6 +15,7 @@ export const parseReportData = (lines: any[]): ReportData => {
     erroredTests: 0
   }))
 
+  let didFailFast = false;
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i]
 
@@ -36,7 +37,7 @@ export const parseReportData = (lines: any[]): ReportData => {
         implementationData.cases.set(line.seq, new Array(caseData.tests.length).fill({
           state: 'skipped'
         }))
-      } else {
+      } else if (line.implementation) {
         const caseResults = line.results.map((res, idx) => {
           if (res.errored) {
             const errorMessage = res.context?.message ?? res.context?.stderr
@@ -56,10 +57,13 @@ export const parseReportData = (lines: any[]): ReportData => {
           }
         })
         implementationData.cases.set(line.seq, caseResults)
+      } else if (line.did_fail_fast !== undefined) {
+        didFailFast = line.did_fail_fast
       }
     }
   }
 
+  const totalTests = Array.from(caseMap.values()).reduce((prev, curr) => prev + curr.tests.length, 0)
   const totals = Array.from(implementationMap.values()).reduce((prev, curr) => ({
     erroredCases: prev.erroredCases + curr.erroredCases,
     skippedTests: prev.skippedTests + curr.skippedTests,
@@ -72,15 +76,16 @@ export const parseReportData = (lines: any[]): ReportData => {
     erroredTests: 0
   })
 
-  console.log('done')
   return {
     runInfo: runInfoData,
     cases: caseMap,
     implementations: implementationMap,
+    totalTests: totalTests,
     erroredCases: totals.erroredCases,
     skippedTests: totals.skippedTests,
     unsuccessfulTests: totals.unsuccessfulTests,
     erroredTests: totals.erroredTests,
+    didFailFast: didFailFast
   }
 }
 
@@ -88,10 +93,12 @@ interface ReportData {
   runInfo: RunInfo
   cases: Map<number, Case>
   implementations: Map<string, ImplementationData>
+  totalTests: number
   erroredCases: number
   skippedTests: number
   unsuccessfulTests: number
-  erroredTests: number
+  erroredTests: number,
+  didFailFast: boolean
 }
 
 interface RunInfo {

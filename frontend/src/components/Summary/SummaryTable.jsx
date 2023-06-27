@@ -17,7 +17,7 @@ const SummaryTable = ({reportData}) => {
           <span className='text-muted'>cases ({reportData.cases.size})</span>
         </th>
         <th colSpan={3} className='text-center'>
-          <span className='text-muted'>tests ({'fixme'})</span>
+          <span className='text-muted'>tests ({reportData.totalTests})</span>
         </th>
         <th colSpan={1}></th>
       </tr>
@@ -56,6 +56,7 @@ const SummaryTable = ({reportData}) => {
       <tbody className='table-group-divider'>
       {Array.from(reportData.implementations.values()).map((implementation, index) => (
         <ImplementationRow
+          cases={reportData.cases}
           implementation={implementation}
           key={index}
           index={index}
