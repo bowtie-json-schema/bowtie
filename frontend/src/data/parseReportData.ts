@@ -35,7 +35,8 @@ export const parseReportData = (lines: any[]): ReportData => {
       } else if (line.skipped) {
         implementationData.skippedTests += caseData.tests.length
         implementationData.cases.set(line.seq, new Array(caseData.tests.length).fill({
-          state: 'skipped'
+          state: 'skipped',
+          message: line.message
         }))
       } else if (line.implementation) {
         const caseResults = line.results.map((res, idx) => {
