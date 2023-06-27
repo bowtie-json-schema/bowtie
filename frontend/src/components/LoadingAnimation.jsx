@@ -1,5 +1,3 @@
-import NavBar from "./NavBar";
-
 const LoadingAnimation = () => {
   const spinnerStyle = {
     width: "8rem",
@@ -7,7 +5,6 @@ const LoadingAnimation = () => {
   };
   return (
     <>
-      <NavBar />
       <div className="d-grid justify-content-center ">
         <div
           className="d-flex justify-content-center align-items-center"

@@ -3,9 +3,11 @@ import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
+import { BowtieVersionContext } from "../context/BowtieVersionContext";
 
-const NavBar = ({ runInfo }) => {
+const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
+  const { version } = useContext(BowtieVersionContext);
   const { hash, key } = useLocation();
 
   useEffect(() => {
@@ -115,7 +117,7 @@ const NavBar = ({ runInfo }) => {
             className="link-secondary"
           >
             <span className="navbar-text">
-              {runInfo ? <small>Bowtie v{runInfo.bowtieVersion}</small> : null}
+              {version && <small>Bowtie v{version}</small>}
             </span>
           </a>
         </div>
