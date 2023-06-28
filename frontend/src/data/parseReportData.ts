@@ -22,8 +22,8 @@ export const parseReportData = (lines: any[]): ReportData => {
     if (line.case) {
       caseMap.set(line.seq, line.case as Case)
     } else if (line.implementation) {
-      const caseData = caseMap.get(line.seq)
-      const implementationData = implementationMap.get(line.implementation)
+      const caseData = caseMap.get(line.seq)!
+      const implementationData = implementationMap.get(line.implementation)!
       if (line.caught !== undefined) {
         const errorMessage = line.context?.message ?? line.context?.stderr
         implementationData.erroredCases++
@@ -39,7 +39,7 @@ export const parseReportData = (lines: any[]): ReportData => {
           message: line.message
         }))
       } else if (line.implementation) {
-        const caseResults = line.results.map((res, idx) => {
+        const caseResults = (line.results as any[]).map<CaseResult>((res, idx) => {
           if (res.errored) {
             const errorMessage = res.context?.message ?? res.context?.stderr
             implementationData.erroredTests++
