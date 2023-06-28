@@ -1,12 +1,12 @@
-import {Button, Modal} from 'react-bootstrap'
+import { Button, Modal } from "react-bootstrap";
 
 export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
         <Modal.Title>
-          <b>{implementation.metadata.name + ' '}</b>
-          <small className='text-muted'>
+          <b>{implementation.metadata.name + " "}</b>
+          <small className="text-muted">
             {implementation.metadata.language}
           </small>
         </Modal.Title>
@@ -15,13 +15,13 @@ export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
         {implementation.metadata.os_version && (
           <p>
             <strong>OS Version: </strong>
-            {implementation.metadata.os_version || ''}
+            {implementation.metadata.os_version || ""}
           </p>
         )}
         {implementation.metadata.os && (
           <p>
             <strong>OS: </strong>
-            {implementation.metadata.os || ''}
+            {implementation.metadata.os || ""}
           </p>
         )}
         {implementation.metadata.language && (
@@ -33,12 +33,12 @@ export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
         {implementation.metadata.language_version && (
           <p>
             <strong>Language Version: </strong>
-            {implementation.metadata.language_version || ''}
+            {implementation.metadata.language_version || ""}
           </p>
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant='secondary' onClick={handleClose}>
+        <Button variant="secondary" onClick={handleClose}>
           Close
         </Button>
       </Modal.Footer>

@@ -1,38 +1,44 @@
-import './ImplementationRow.css'
-import {InfoCircleFill} from 'react-bootstrap-icons'
-import {useState} from 'react'
-import {DetailsButtonModal} from '../Modals/DetailsButtonModal'
-import {RunTimeInfoModal} from '../Modals/RunTimeInfoModal'
+import "./ImplementationRow.css";
+import { InfoCircleFill } from "react-bootstrap-icons";
+import { useState } from "react";
+import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
+import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
 
-const ImplementationRow = ({cases, implementation}) => {
-  const [showDetails, setShowDetails] = useState(false)
-  const [showRunTimeInfo, setShowRunTimeInfo] = useState(false)
+const ImplementationRow = ({ cases, implementation }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
 
   return (
     <tr>
-      <th scope='row'>
-        <a href={implementation.metadata.homepage ?? implementation.metadata.issues}>
+      <th scope="row">
+        <a
+          href={
+            implementation.metadata.homepage ?? implementation.metadata.issues
+          }
+        >
           {implementation.metadata.name}
         </a>
-        <small className='text-muted'>{' ' + implementation.metadata.language}</small>
+        <small className="text-muted">
+          {" " + implementation.metadata.language}
+        </small>
       </th>
       <td>
-        <small className='font-monospace text-muted'>
-          {implementation.metadata.version ?? ''}
+        <small className="font-monospace text-muted">
+          {implementation.metadata.version ?? ""}
         </small>
         <button
-          className='btn border-0'
+          className="btn border-0"
           onClick={() => setShowRunTimeInfo(true)}
         >
-          <InfoCircleFill/>
+          <InfoCircleFill />
         </button>
       </td>
 
-      <td className='text-center'>{implementation.erroredCases}</td>
-      <td className='text-center'>{implementation.skippedTests}</td>
-      <td className='text-center details-required'>
+      <td className="text-center">{implementation.erroredCases}</td>
+      <td className="text-center">{implementation.skippedTests}</td>
+      <td className="text-center details-required">
         {implementation.unsuccessfulTests + implementation.erroredTests}
-        <div className='hover-details text-center'>
+        <div className="hover-details text-center">
           <p>
             <b>failed</b>:{implementation.unsuccessfulTests}
           </p>
@@ -44,17 +50,26 @@ const ImplementationRow = ({cases, implementation}) => {
 
       <td>
         <button
-          type='button'
-          className='btn btn-sm btn-primary'
+          type="button"
+          className="btn btn-sm btn-primary"
           onClick={() => setShowDetails(true)}
         >
           Details
         </button>
       </td>
-      <RunTimeInfoModal show={showRunTimeInfo} handleClose={() => setShowRunTimeInfo(false)} implementation={implementation} />
-      <DetailsButtonModal show={showDetails} handleClose={() => setShowDetails(false)} cases={cases} implementation={implementation} />
+      <RunTimeInfoModal
+        show={showRunTimeInfo}
+        handleClose={() => setShowRunTimeInfo(false)}
+        implementation={implementation}
+      />
+      <DetailsButtonModal
+        show={showDetails}
+        handleClose={() => setShowDetails(false)}
+        cases={cases}
+        implementation={implementation}
+      />
     </tr>
-  )
-}
+  );
+};
 
-export default ImplementationRow
+export default ImplementationRow;

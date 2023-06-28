@@ -36,7 +36,10 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
                   <td
                     className="text-center"
                     scope="col"
-                    key={implementation.metadata.name + implementation.metadata.language}
+                    key={
+                      implementation.metadata.name +
+                      implementation.metadata.language
+                    }
                   >
                     <b>{implementation.metadata.name + " "}</b>
                     <small className="text-muted">
@@ -52,9 +55,12 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
                   <td>
                     <p className="m-0">{test.description}</p>
                   </td>
-                  {implementations.map((impl, i) =>
-                    <AccordionSvg key={i} testResult={impl.cases.get(seq)[index].state} />
-                  )}
+                  {implementations.map((impl, i) => (
+                    <AccordionSvg
+                      key={i}
+                      testResult={impl.cases.get(seq)[index].state}
+                    />
+                  ))}
                 </tr>
               ))}
             </tbody>
