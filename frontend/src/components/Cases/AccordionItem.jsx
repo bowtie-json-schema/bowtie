@@ -58,7 +58,7 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
                   {implementations.map((impl, i) => (
                     <AccordionSvg
                       key={i}
-                      testResult={impl.cases.get(seq)[index].state}
+                      result={impl.cases.get(seq)[index]}
                     />
                   ))}
                 </tr>

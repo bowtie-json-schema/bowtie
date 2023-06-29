@@ -62,14 +62,10 @@ export const parseReportData = (lines: any[]): ReportData => {
             } else {
               const successful = res.valid === caseData.tests[idx].valid;
               if (successful) {
-                return { state: "successful" };
+                return { state: "successful", valid: res.valid };
               } else {
                 implementationData.unsuccessfulTests++;
-                return {
-                  state: res.valid
-                    ? "unexpectedlyValid"
-                    : "unexpectedlyInvalid",
-                };
+                return { state: "failed", valid: res.valid };
               }
             }
           },
@@ -146,10 +142,10 @@ interface ImplementationData {
 interface CaseResult {
   state:
     | "successful"
-    | "unexpectedlyValid"
-    | "unexpectedlyInvalid"
+    | "failed"
     | "skipped"
     | "errored";
+  valid?: boolean
   message?: string;
 }
 

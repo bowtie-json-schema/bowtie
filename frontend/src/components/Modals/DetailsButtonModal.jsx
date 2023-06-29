@@ -10,27 +10,29 @@ export const DetailsButtonModal = ({
   Array.from(implementation.cases.entries()).forEach(([seq, results]) => {
     const caseData = cases.get(seq);
     for (let i = 0; i < results.length; i++) {
-      const state = results[i].state;
-      if (state !== "successful") {
-        let message;
-        if (state === "unexpectedlyValid") {
-          message = "Unexpectedly valid";
-        } else if (state === "unexpectedlyInvalid") {
-          message = "Unexpectedly invalid";
-        } else {
-          message = implementation.cases.get(seq)[i].message;
-        }
-        const borderClass =
-          state === "skipped" ? "border-warning" : "border-danger";
-        failedResults.push(
-          <DetailItem
-            title={caseData.description}
-            description={caseData.tests[i].description}
-            message={message}
-            borderClass={borderClass}
-          />,
-        );
+      const result = results[i];
+      if (result.state === "successful") {
+        continue;
       }
+
+      let message;
+      if (result.state === "skipped" || result.state === "errored") {
+        message = implementation.cases.get(seq)[i].message;
+      } else if (result.valid) {
+        message = "Unexpectedly valid";
+      } else {
+        message = "Unexpectedly invalid";
+      }
+      const borderClass =
+      result.state === "skipped" ? "border-warning" : "border-danger";
+      failedResults.push(
+        <DetailItem
+          title={caseData.description}
+          description={caseData.tests[i].description}
+          message={message}
+          borderClass={borderClass}
+        />,
+      );
     }
   });
   return (
