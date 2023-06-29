@@ -56,10 +56,7 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
                     <p className="m-0">{test.description}</p>
                   </td>
                   {implementations.map((impl, i) => (
-                    <AccordionSvg
-                      key={i}
-                      result={impl.cases.get(seq)[index]}
-                    />
+                    <AccordionSvg key={i} result={impl.cases.get(seq)[index]} />
                   ))}
                 </tr>
               ))}

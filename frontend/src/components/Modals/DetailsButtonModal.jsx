@@ -24,7 +24,7 @@ export const DetailsButtonModal = ({
         message = "Unexpectedly invalid";
       }
       const borderClass =
-      result.state === "skipped" ? "border-warning" : "border-danger";
+        result.state === "skipped" ? "border-warning" : "border-danger";
       failedResults.push(
         <DetailItem
           title={caseData.description}

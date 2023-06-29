@@ -140,12 +140,8 @@ interface ImplementationData {
 }
 
 interface CaseResult {
-  state:
-    | "successful"
-    | "failed"
-    | "skipped"
-    | "errored";
-  valid?: boolean
+  state: "successful" | "failed" | "skipped" | "errored";
+  valid?: boolean;
   message?: string;
 }
 
