@@ -6,7 +6,7 @@ sourceSets {
     main {
         java {
             srcDir '.'
-            include 'bowtieJsonSchemaValidator.java'
+            include 'BowtieJsonSchemaValidator.java'
         }
     }
 }
@@ -31,6 +31,8 @@ def jsonProvider = [
 dependencies {
     implementation "$harnessImplementation.group:$harnessImplementation.name:$harnessImplementation.version"
     implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
+    implementation 'dev.harrel:json-schema:1.1.0'
+     implementation 'org.json:json:20210307'
 }
 
 jar {
