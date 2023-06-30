@@ -15,8 +15,14 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private static final String DRAFT_2020 =
-    "https://json-schema.org/draft/2020-12/schema";
+  private static final List<String> DIALECTS = List.of(
+    "https://json-schema.org/draft/2020-12/schema",
+    "https://json-schema.org/draft/2019-09/schema",
+    "http://json-schema.org/draft-07/schema#",
+    "http://json-schema.org/draft-06/schema#",
+    "http://json-schema.org/draft-04/schema#"
+  );
+
   private static final String RECOGNIZING_IDENTIFIERS =
     "Determining if a specific location is a schema or not is not supported.";
   private static final Map<String, String> UNSUPPORTED = Map.of(
@@ -91,7 +97,7 @@ public class BowtieJsonSchemaValidator {
         "java",
         attributes.getValue("Implementation-Name"),
         attributes.getValue("Implementation-Version"),
-        List.of(DRAFT_2020),
+        DIALECTS,
         "https://github.com/networknt/json-schema-validator/",
         "https://github.com/networknt/json-schema-validator/issues",
         System.getProperty("os.name"),
@@ -107,7 +113,7 @@ public class BowtieJsonSchemaValidator {
       node,
       DialectRequest.class
     );
-    if (DRAFT_2020.equals(dialectRequest.dialect())) {
+    if (DIALECTS.contains(dialectRequest.dialect())) {
       output.println(
         objectMapper.writeValueAsString(new DialectResponse(true))
       );
