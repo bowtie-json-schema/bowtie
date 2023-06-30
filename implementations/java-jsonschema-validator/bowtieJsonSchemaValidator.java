@@ -7,10 +7,8 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import java.io.*;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -120,6 +118,65 @@ public class BowtieJsonSchemaValidator {
     }
   }
 
+  private void run(JsonNode node) throws JsonProcessingException {
+    RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+    try {
+      if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
+        RunSkippedResponse response = new RunSkippedResponse(
+          runRequest.seq(),
+          true,
+          UNSUPPORTED.get(runRequest.testCase().description()),
+          null
+        );
+        output.println(objectMapper.writeValueAsString(response));
+        return;
+      }
+
+      if (runRequest.testCase().registry() != null) {
+        JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
+        JsonSchema schema = schemaFactory.getSchema(
+          runRequest.testCase().registry()
+        );
+      }
+      List<TestResult> results = runRequest
+        .testCase()
+        .tests()
+        .stream()
+        .map(test -> {
+          JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
+          JsonSchema schema = schemaFactory.getSchema(
+            runRequest.testCase().schema()
+          );
+
+          ObjectMapper objectMapper = new ObjectMapper();
+          JsonNode instanceJson = test.instance();
+
+          Set<ValidationMessage> validationMessages = schema.validate(
+            test.instance()
+          );
+
+          boolean isValid = validationMessages.isEmpty();
+          return new TestResult(isValid);
+        })
+        .toList();
+      output.println(
+        objectMapper.writeValueAsString(
+          new RunResponse(runRequest.seq(), results)
+        )
+      );
+    } catch (Exception e) {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      e.printStackTrace(printWriter);
+      RunErroredResponse response = new RunErroredResponse(
+        runRequest.seq(),
+        true,
+        new ErrorContext(e.getMessage(), stackTraceToString(e))
+      );
+      output.println(objectMapper.writeValueAsString(response));
+    }
+  }
+
   private String stackTraceToString(Exception e) {
     StringWriter stringWriter = new StringWriter();
     e.printStackTrace(new PrintWriter(stringWriter));
@@ -186,109 +243,3 @@ record Implementation(
   String os_version,
   String language_version
 ) {}
-// public class BowtieJsonSchemaValidator {
-//   private static final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
-//   private static boolean STARTED = false;
-//   private static final List<String> DIALECTS = List.of(
-//     "https://json-schema.org/draft/2020-12/schema",
-//     "https://json-schema.org/draft/2019-09/schema",
-//     "http://json-schema.org/draft-07/schema#",
-//     "http://json-schema.org/draft-06/schema#",
-//     "http://json-schema.org/draft-04/schema#"
-//   );
-//   public static void main(String[] args) throws IOException {
-//     BufferedReader reader = new BufferedReader(
-//       new InputStreamReader(System.in)
-//     );
-//     Map<String, Command> commands = new HashMap<>();
-//     commands.put(
-//       "start",
-//       request -> {
-//         assert request.getInt("version") == 1 : "Wrong version!";
-//         STARTED = true;
-//         Manifest manifest = getManifest();
-//         Attributes attributes = manifest.getMainAttributes();
-//         JSONObject implementation = new JSONObject();
-//         implementation.put("language", "java");
-//         implementation.put("name", attributes.getValue("Implementation-Name"));
-//         implementation.put(
-//           "version",
-//           attributes.getValue("Implementation-Version")
-//         );
-//         implementation.put(
-//           "homepage",
-//           "https://github.com/networknt/json-schema-validator/"
-//         );
-//         implementation.put(
-//           "issues",
-//           "https://github.com/networknt/json-schema-validator/issues"
-//         );
-//         implementation.put("os_name", System.getProperty("os.name"));
-//         implementation.put("os_version", System.getProperty("os.version"));
-//         implementation.put(
-//           "language_version",
-//           System.getProperty("java.vendor.version")
-//         );
-//         implementation.put("dialects", DIALECTS);
-//         JSONObject response = new JSONObject();
-//         response.put("ready", true);
-//         response.put("version", 1);
-//         response.put("implementation", implementation);
-//         return response;
-//       }
-//     );
-//     commands.put(
-//       "run",
-//       request -> {
-//         assert STARTED : "Not started!";
-//         JSONObject caseObj = request.getJSONObject("case");
-//         JsonSchema schema = schemaFactory.getSchema(
-//           caseObj.getJSONObject("schema")
-//         );
-//         JSONArray tests = caseObj.getJSONArray("tests");
-//         List<Object> results = new ArrayList<>();
-//         for (Object testObj : tests) {
-//           JSONObject test = (JSONObject) testObj;
-//           boolean valid = schema.validate(test.get("instance")).isEmpty();
-//           results.add(new JSONObject().put("valid", valid));
-//         }
-//         return new JSONObject()
-//           .put("seq", request.get("seq"))
-//           .put("results", results);
-//       }
-//     );
-//     commands.put(
-//       "stop",
-//       request -> {
-//         assert STARTED : "Not started!";
-//         System.exit(0);
-//         return null;
-//       }
-//     );
-//     String line;
-//     while ((line = reader.readLine()) != null) {
-//       JSONObject json = new JSONObject(line);
-//       String cmd = json.getString("cmd");
-//       if (commands.containsKey(cmd)) {
-//         Command command = commands.get(cmd);
-//         JSONObject response = command.execute(json);
-//         System.out.println(response.toString());
-//       }
-//     }
-//   }
-//   private static Manifest getManifest() {
-//     try {
-//       ClassLoader classLoader =
-//         BowtieJsonSchemaValidator.class.getClassLoader();
-//       return new Manifest(
-//         classLoader.getResourceAsStream("META-INF/MANIFEST.MF")
-//       );
-//     } catch (IOException e) {
-//       e.printStackTrace();
-//       throw new RuntimeException("Failed to load manifest");
-//     }
-//   }
-//   interface Command {
-//     JSONObject execute(JSONObject request);
-//   }
-// }
