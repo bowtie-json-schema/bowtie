@@ -4,15 +4,17 @@
 // import com.fasterxml.jackson.databind.DeserializationFeature;
 // import com.fasterxml.jackson.databind.JsonNode;
 // import com.fasterxml.jackson.databind.ObjectMapper;
-// import com.networknt.schema.JsonSchema;
-// import com.networknt.schema.JsonSchemaFactory;
-// import com.networknt.schema.ValidationMessage;
-// import java.io.*;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.Optional;
-// import java.util.jar.Attributes;
-// import java.util.jar.Manifest;
+import com.networknt.schema.JsonSchemaFactory;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 // public class BowtieJsonSchemaValidator {
 
@@ -240,57 +242,85 @@
 //                       String os_version,
 //                       String language_version) {}
 
-
-
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.ValidationMessage;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONObject;
-
 public class BowtieJsonSchemaValidator {
 
-  private static final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
+    private static final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
+    private static boolean STARTED = false;
 
-  public static void main(String[] args) throws IOException {
-    BufferedReader reader = new BufferedReader(
-      new InputStreamReader(System.in)
+    private static final List<String> DIALECTS = List.of(
+            "https://json-schema.org/draft/2020-12/schema",
+            "https://json-schema.org/draft/2019-09/schema",
+            "http://json-schema.org/draft-07/schema#",
+            "http://json-schema.org/draft-06/schema#",
+            "http://json-schema.org/draft-04/schema#"
     );
 
-    Map<String, Command> commands = new HashMap<>();
-    commands.put(
-      "start",
-      request -> {
-        System.err.println("STARTING");
-        return new JSONObject();
-      }
-    );
-    commands.put(
-      "stop",
-      request -> {
-        System.err.println("STOPPING");
-        return new JSONObject();
-      }
-    );
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(System.in)
+        );
 
-    String line;
-    while ((line = reader.readLine()) != null) {
-      JSONObject json = new JSONObject(line);
-      String cmd = json.getString("cmd");
+        Map<String, Command> commands = new HashMap<>();
+        commands.put(
+                "start",
+                request -> {
+                    assert request.getInt("version") == 1 : "Wrong version!";
+                    STARTED = true;
 
-      if (commands.containsKey(cmd)) {
-        Command command = commands.get(cmd);
-        JSONObject response = command.execute(json);
-        System.out.println(response.toString());
-      }
+                    Manifest manifest = getManifest();
+                    Attributes attributes = manifest.getMainAttributes();
+
+                    JSONObject implementation = new JSONObject();
+                    implementation.put("language", "java");
+                    implementation.put("name", attributes.getValue("Implementation-Name"));
+                    implementation.put("version", attributes.getValue("Implementation-Version"));
+                    implementation.put("homepage", "https://github.com/networknt/json-schema-validator/");
+                    implementation.put("issues", "https://github.com/networknt/json-schema-validator/issues");
+                    implementation.put("os_name", System.getProperty("os.name"));
+                    implementation.put("os_version", System.getProperty("os.version"));
+                    implementation.put("language_version", System.getProperty("java.vendor.version"));
+                    implementation.put("dialects", DIALECTS);
+
+                    JSONObject response = new JSONObject();
+                    response.put("ready", true);
+                    response.put("version", 1);
+                    response.put("implementation", implementation);
+                    return response;
+                }
+        );
+        commands.put(
+                "stop",
+                request -> {
+                    assert STARTED : "Not started!";
+                    System.exit(0);
+                    return null;
+                }
+        );
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            JSONObject json = new JSONObject(line);
+            String cmd = json.getString("cmd");
+
+            if (commands.containsKey(cmd)) {
+                Command command = commands.get(cmd);
+                JSONObject response = command.execute(json);
+                System.out.println(response.toString());
+            }
+        }
     }
-  }
 
-  interface Command {
-    JSONObject execute(JSONObject request);
-  }
+    private static Manifest getManifest() {
+        try {
+            ClassLoader classLoader = BowtieJsonSchemaValidator.class.getClassLoader();
+            return new Manifest(classLoader.getResourceAsStream("META-INF/MANIFEST.MF"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load manifest");
+        }
+    }
+
+    interface Command {
+        JSONObject execute(JSONObject request);
+    }
 }
