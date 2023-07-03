@@ -23,21 +23,6 @@ public class BowtieJsonSchemaValidator {
     "http://json-schema.org/draft-04/schema#"
   );
 
-  private static final String RECOGNIZING_IDENTIFIERS =
-    "Determining if a specific location is a schema or not is not supported.";
-  private static final Map<String, String> UNSUPPORTED = Map.of(
-    "$id inside an enum is not a real identifier",
-    RECOGNIZING_IDENTIFIERS,
-    "$id inside an unknown keyword is not a real identifier",
-    RECOGNIZING_IDENTIFIERS,
-    "$anchor inside an enum is not a real identifier",
-    RECOGNIZING_IDENTIFIERS,
-    "schema that uses custom metaschema with with no validation vocabulary",
-    "Vocabularies are not yet supported.",
-    "ignore unrecognized optional vocabulary",
-    "Vocabularies are not yet supported."
-  );
-
   private final ObjectMapper objectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
@@ -127,17 +112,6 @@ public class BowtieJsonSchemaValidator {
   private void run(JsonNode node) throws JsonProcessingException {
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     try {
-      if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
-        RunSkippedResponse response = new RunSkippedResponse(
-          runRequest.seq(),
-          true,
-          UNSUPPORTED.get(runRequest.testCase().description()),
-          null
-        );
-        output.println(objectMapper.writeValueAsString(response));
-        return;
-      }
-
       if (runRequest.testCase().registry() != null) {
         JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
         JsonSchema schema = schemaFactory.getSchema(
@@ -205,13 +179,6 @@ record DialectResponse(boolean ok) {}
 record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
 
 record RunResponse(JsonNode seq, List<TestResult> results) {}
-
-record RunSkippedResponse(
-  JsonNode seq,
-  boolean skipped,
-  String message,
-  String issue_url
-) {}
 
 record RunErroredResponse(
   JsonNode seq,
