@@ -8,21 +8,32 @@ const stateToTile = {
   successful: "Correct result",
   failed: "Incorrect result",
   skipped: "Case skipped",
-  errored: "Case errored"
-}
+  errored: "Case errored",
+};
 
 const AccordionSvg = ({ result }) => {
   if (result.state === "skipped" || result.state === "errored") {
-    const borderClass = result.state === "skipped" ? "text-bg-warning" : "text-bg-danger";
+    const borderClass =
+      result.state === "skipped" ? "text-bg-warning" : "text-bg-danger";
     return (
-      <td className={`text-center align-middle ${borderClass}`} title={stateToTile[result.state]}>
+      <td
+        className={`text-center align-middle ${borderClass}`}
+        title={stateToTile[result.state]}
+      >
         <ExclamationOctagon />
       </td>
     );
   } else {
     const borderClass = result.state === "successful" ? "" : "text-bg-danger";
     const svgComponent = result.valid ? <CheckCircleFill /> : <XCircleFill />;
-    return <td className={`text-center align-middle ${borderClass}`} title={stateToTile[result.state]}>{svgComponent}</td>;
+    return (
+      <td
+        className={`text-center align-middle ${borderClass}`}
+        title={stateToTile[result.state]}
+      >
+        {svgComponent}
+      </td>
+    );
   }
 };
 
