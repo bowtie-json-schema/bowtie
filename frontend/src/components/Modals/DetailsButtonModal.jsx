@@ -27,6 +27,7 @@ export const DetailsButtonModal = ({
         result.state === "skipped" ? "border-warning" : "border-danger";
       failedResults.push(
         <DetailItem
+          key={`${seq}-${i}`}
           title={caseData.description}
           description={caseData.tests[i].description}
           message={message}
