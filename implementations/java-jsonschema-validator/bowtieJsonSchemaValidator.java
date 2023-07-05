@@ -8,9 +8,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import java.io.*;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
@@ -25,7 +23,6 @@ public class BowtieJsonSchemaValidator {
 
   private final ObjectMapper objectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  private final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
   private final PrintStream output;
 
   public static void main(String[] args) {
@@ -127,10 +124,7 @@ public class BowtieJsonSchemaValidator {
           JsonSchema schema = schemaFactory.getSchema(
             runRequest.testCase().schema()
           );
-
-          ObjectMapper objectMapper = new ObjectMapper();
-          JsonNode instanceJson = test.instance();
-
+          
           Set<ValidationMessage> validationMessages = schema.validate(
             test.instance()
           );
