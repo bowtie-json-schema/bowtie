@@ -8,6 +8,7 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
+import { parseReportData } from "./data/parseReportData";
 
 const reportUrl =
   import.meta.env.MODE === "development"
@@ -28,10 +29,11 @@ const fetchReportData = async (dialect) => {
   titleTag.textContent = `Bowtie - ${dialectName}`;
   const response = await fetch(`${reportUrl}/${dialect}.json`);
   const jsonl = await response.text();
-  return jsonl
+  const lines = jsonl
     .trim()
     .split(/\r?\n/)
     .map((line) => JSON.parse(line));
+  return parseReportData(lines);
 };
 
 const router = createHashRouter([
