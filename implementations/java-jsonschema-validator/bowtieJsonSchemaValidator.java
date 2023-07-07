@@ -14,20 +14,20 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private static final JsonSchemaFactory factory = JsonSchemaFactory.getInstance();
+  private static final JsonSchemaFactory factory =
+      JsonSchemaFactory.getInstance();
 
-  private static final List<String> DIALECTS = List.of(
-    "https://json-schema.org/draft/2020-12/schema",
-    "https://json-schema.org/draft/2019-09/schema",
-    "http://json-schema.org/draft-07/schema#",
-    "http://json-schema.org/draft-06/schema#",
-    "http://json-schema.org/draft-04/schema#"
-  );
+  private static final List<String> DIALECTS =
+      List.of("https://json-schema.org/draft/2020-12/schema",
+              "https://json-schema.org/draft/2019-09/schema",
+              "http://json-schema.org/draft-07/schema#",
+              "http://json-schema.org/draft-06/schema#",
+              "http://json-schema.org/draft-04/schema#");
 
   private String dialect;
 
-  private final ObjectMapper objectMapper = new ObjectMapper()
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private final ObjectMapper objectMapper = new ObjectMapper().configure(
+      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
   private boolean started = false;
 
@@ -127,81 +127,59 @@ public class BowtieJsonSchemaValidator {
 
       List<TestResult> results = new ArrayList<>();
       for (Test test : testCase.tests()) {
-        JsonSchema jsonSchema = factory.getSchema(schema);
-        Set<ValidationMessage> errors = jsonSchema.validate(test.instance());
-        boolean valid = (errors == null || errors.size() == 0);
-        results.add(new TestResult(valid));
-      }
+            JsonSchema jsonSchema = factory.getSchema(schema);
+            Set<ValidationMessage> errors =
+                jsonSchema.validate(test.instance());
+            boolean valid = (errors == null || errors.size() == 0);
+            results.add(new TestResult(valid));
+          }
 
-      RunResponse runResponse = new RunResponse(runRequest.seq(), results);
-      output.println(objectMapper.writeValueAsString(runResponse));
-    } catch (Exception e) {
-      String stackTrace = stackTraceToString(e);
-      RunErroredResponse erroredResponse = new RunErroredResponse(
-        runRequest.seq(),
-        true,
-        new ErrorContext(e.getMessage(), stackTrace)
-      );
-      output.println(objectMapper.writeValueAsString(erroredResponse));
+          RunResponse runResponse = new RunResponse(runRequest.seq(), results);
+          output.println(objectMapper.writeValueAsString(runResponse));
+        }
+        catch (Exception e) {
+          String stackTrace = stackTraceToString(e);
+          RunErroredResponse erroredResponse = new RunErroredResponse(
+              runRequest.seq(), true,
+              new ErrorContext(e.getMessage(), stackTrace));
+          output.println(objectMapper.writeValueAsString(erroredResponse));
+        }
+    }
+
+    private String stackTraceToString(Exception e) {
+        StringWriter stringWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stringWriter));
+        return stringWriter.toString();
     }
   }
 
-  private String stackTraceToString(Exception e) {
-    StringWriter stringWriter = new StringWriter();
-    e.printStackTrace(new PrintWriter(stringWriter));
-    return stringWriter.toString();
+  record StartRequest(int version) {}
+
+  record StartResponse(int version, boolean ready,
+                       Implementation implementation) {}
+
+  record DialectRequest(String dialect) {}
+
+  record DialectResponse(boolean ok) {}
+
+  record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+
+  record RunResponse(JsonNode seq, List<TestResult> results) {}
+
+  record RunErroredResponse(JsonNode seq, boolean errored,
+                            ErrorContext context) {}
+
+  record ErrorContext(String message, String traceback) {}
+
+  record TestCase(String description, String comment, JsonNode schema,
+                  JsonNode registry, List<Test> tests) {}
+
+  record Test(String description, String comment, JsonNode instance,
+              boolean valid) {}
+
+  record TestResult(boolean valid) {}
+
+  record Implementation(String language, String name, String version,
+                        List<String> dialects, String homepage, String issues,
+                        String os, String os_version, String language_version) {
   }
-}
-
-record StartRequest(int version) {}
-
-record StartResponse(
-  int version,
-  boolean ready,
-  Implementation implementation
-) {}
-
-record DialectRequest(String dialect) {}
-
-record DialectResponse(boolean ok) {}
-
-record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
-
-record RunResponse(JsonNode seq, List<TestResult> results) {}
-
-record RunErroredResponse(
-  JsonNode seq,
-  boolean errored,
-  ErrorContext context
-) {}
-
-record ErrorContext(String message, String traceback) {}
-
-record TestCase(
-  String description,
-  String comment,
-  JsonNode schema,
-  JsonNode registry,
-  List<Test> tests
-) {}
-
-record Test(
-  String description,
-  String comment,
-  JsonNode instance,
-  boolean valid
-) {}
-
-record TestResult(boolean valid) {}
-
-record Implementation(
-  String language,
-  String name,
-  String version,
-  List<String> dialects,
-  String homepage,
-  String issues,
-  String os,
-  String os_version,
-  String language_version
-) {}
