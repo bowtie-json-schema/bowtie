@@ -1,22 +1,20 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.CustomUriFetcher;
-import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import java.io.*;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
+
+  private static final JsonSchemaFactory factory = JsonSchemaFactory.getInstance();
 
   private static final List<String> DIALECTS = List.of(
     "https://json-schema.org/draft/2020-12/schema",
@@ -117,42 +115,37 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void run(JsonNode node) throws JsonProcessingException {
+  private void run(JsonNode node)
+    throws JsonProcessingException, IllegalArgumentException {
+    if (!started) {
+      throw new RuntimeException("Not started!");
+    }
+
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+
     try {
-      List<TestResult> results = runRequest
-        .testCase()
-        .tests()
-        .stream()
-        .map(test -> {
-          JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
-          JsonSchema schema = schemaFactory.getSchema(
-            runRequest.testCase().schema()
-          );
+      TestCase testCase = runRequest.testCase();
 
-          Set<ValidationMessage> validationMessages = schema.validate(
-            test.instance()
-          );
+      JsonNode schema = testCase.schema();
 
-          boolean isValid = validationMessages.isEmpty();
-          return new TestResult(isValid);
-        })
-        .toList();
-      output.println(
-        objectMapper.writeValueAsString(
-          new RunResponse(runRequest.seq(), results)
-        )
-      );
+      List<TestResult> results = new ArrayList<>();
+      for (Test test : testCase.tests()) {
+        JsonSchema jsonSchema = factory.getSchema(schema);
+        Set<ValidationMessage> errors = jsonSchema.validate(test.instance());
+        boolean valid = (errors == null || errors.size() == 0);
+        results.add(new TestResult(valid));
+      }
+
+      RunResponse runResponse = new RunResponse(runRequest.seq(), results);
+      output.println(objectMapper.writeValueAsString(runResponse));
     } catch (Exception e) {
-      StringWriter stringWriter = new StringWriter();
-      PrintWriter printWriter = new PrintWriter(stringWriter);
-      e.printStackTrace(printWriter);
-      RunErroredResponse response = new RunErroredResponse(
+      String stackTrace = stackTraceToString(e);
+      RunErroredResponse erroredResponse = new RunErroredResponse(
         runRequest.seq(),
         true,
-        new ErrorContext(e.getMessage(), stackTraceToString(e))
+        new ErrorContext(e.getMessage(), stackTrace)
       );
-      output.println(objectMapper.writeValueAsString(response));
+      output.println(objectMapper.writeValueAsString(erroredResponse));
     }
   }
 
