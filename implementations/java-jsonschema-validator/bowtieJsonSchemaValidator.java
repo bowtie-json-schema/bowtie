@@ -32,15 +32,12 @@ public class BowtieJsonSchemaValidator {
   private boolean started = false;
 
   public static void main(String[] args) {
-    BufferedReader reader = new BufferedReader(
-      new InputStreamReader(System.in)
-    );
+    BufferedReader reader =
+        new BufferedReader(new InputStreamReader(System.in));
     new BowtieJsonSchemaValidator(System.out).run(reader);
   }
 
-  public BowtieJsonSchemaValidator(PrintStream output) {
-    this.output = output;
-  }
+  public BowtieJsonSchemaValidator(PrintStream output) { this.output = output; }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
