@@ -1,13 +1,18 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.CustomUriFetcher;
+import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
 
@@ -21,9 +26,12 @@ public class BowtieJsonSchemaValidator {
     "http://json-schema.org/draft-04/schema#"
   );
 
+  private String dialect;
+
   private final ObjectMapper objectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
+  private boolean started = false;
 
   public static void main(String[] args) {
     BufferedReader reader = new BufferedReader(
@@ -59,6 +67,7 @@ public class BowtieJsonSchemaValidator {
   }
 
   private void start(JsonNode node) throws IOException {
+    started = true;
     StartRequest startRequest = objectMapper.treeToValue(
       node,
       StartRequest.class
@@ -95,26 +104,22 @@ public class BowtieJsonSchemaValidator {
       node,
       DialectRequest.class
     );
-    if (DIALECTS.contains(dialectRequest.dialect())) {
-      output.println(
-        objectMapper.writeValueAsString(new DialectResponse(true))
-      );
-    } else {
-      output.println(
-        objectMapper.writeValueAsString(new DialectResponse(false))
-      );
+
+    if (!started) {
+      throw new RuntimeException("Not started!");
     }
+
+    dialect = dialectRequest.dialect();
+    if (dialect == null) {
+      throw new RuntimeException("Bad dialect!");
+    }
+    DialectResponse dialectResponse = new DialectResponse(true);
+    output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
   private void run(JsonNode node) throws JsonProcessingException {
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     try {
-      if (runRequest.testCase().registry() != null) {
-        JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
-        JsonSchema schema = schemaFactory.getSchema(
-          runRequest.testCase().registry()
-        );
-      }
       List<TestResult> results = runRequest
         .testCase()
         .tests()
@@ -124,7 +129,7 @@ public class BowtieJsonSchemaValidator {
           JsonSchema schema = schemaFactory.getSchema(
             runRequest.testCase().schema()
           );
-          
+
           Set<ValidationMessage> validationMessages = schema.validate(
             test.instance()
           );
