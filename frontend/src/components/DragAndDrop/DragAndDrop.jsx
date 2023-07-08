@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import "./DragAndDrop.css";
 import { ReportView } from "../../ReportView";
+import { parseReportData } from "../../data/parseReportData";
 
 export const DragAndDrop = () => {
   const [dragActive, setDragActive] = useState(false);
@@ -51,7 +52,7 @@ export const DragAndDrop = () => {
       try {
         const dataObjectsArray = e.target.result.trim().split(/\r?\n/);
         const lines = dataObjectsArray.map((line) => JSON.parse(line));
-        setLines(lines);
+        setLines(parseReportData(lines));
       } catch (error) {
         setInvalidFile(true);
         setTimeout(() => {
@@ -65,7 +66,7 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <ReportView lines={lines} />;
+    return <ReportView reportData={lines} />;
   }
 
   return (
