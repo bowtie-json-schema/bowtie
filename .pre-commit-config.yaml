@@ -38,6 +38,7 @@ repos:
     rev: "v3.0.0-alpha.9-for-vscode"
     hooks:
       - name: prettier (javascript implementations & bowtie internals)
+        exclude: frontend/pnpm-lock.yaml
         id: prettier
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"
