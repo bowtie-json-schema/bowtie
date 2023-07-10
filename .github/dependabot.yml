@@ -73,6 +73,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "gradle"
+    directory: "implementations/java-json-schema-validator"
+    schedule:
+      interval: "daily"
+
   # Dependabot for Dockerfiles
   # --------------------------
 
@@ -146,6 +151,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-json-schema-validator"
     schedule:
       interval: "daily"
 

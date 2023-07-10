@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '.'
+            include 'BowtieJsonSchemaValidator.java'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+def harnessImplementation = [
+    group: 'com.networknt',
+    name: 'json-schema-validator',
+    version: '1.0.85'
+]
+
+dependencies {
+    implementation "$harnessImplementation.group:$harnessImplementation.name:$harnessImplementation.version"
+}
+
+jar {
+    archiveBaseName = 'harness'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes "Main-Class": "BowtieJsonSchemaValidator"
+        attributes "Implementation-Name": harnessImplementation.name
+        attributes "Implementation-Version": harnessImplementation.version
+    }
+}
