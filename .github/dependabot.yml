@@ -74,7 +74,7 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "implementations/java-jsonschema-validator"
+    directory: "implementations/java-json-schema-validator"
     schedule:
       interval: "daily"
 
@@ -155,6 +155,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
+    directory: "/implementations/java-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/tests/fauxmplementations/badsonschema"
     schedule:
       interval: "daily"
@@ -166,10 +171,5 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/tests/fauxmplementations/lintsonschema"
-    schedule:
-      interval: "daily"
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/java-jsonschema-validator"
     schedule:
       interval: "daily"
