@@ -9,20 +9,32 @@ import json
 import os
 import sys
 
+from jsonschema_specifications import REGISTRY as SPECIFICATIONS
+from referencing import Registry, Resource
 import jsonschema.validators
 
 SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/io-schema.json"))
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
-RESOLVER = jsonschema.validators.RefResolver.from_schema(SCHEMA)
-RESOLVER.store["urn:current-dialect"] = {"$ref": SCHEMA["$schema"]}
+SCHEMA_RESOURCE = Resource.from_contents(SCHEMA)
+
+METASCHEMA_ID = SPECIFICATIONS[SCHEMA["$schema"]].id()
+CURRENT_DIALECT = Resource.from_contents(
+    {
+        "$schema": METASCHEMA_ID,
+        "$id": "urn:current-dialect",
+        "$ref": METASCHEMA_ID,
+    },
+)
+REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
+
 Validator = jsonschema.validators.validator_for(SCHEMA)
 REQUEST_VALIDATOR = Validator(
     schema={"$ref": f"{SCHEMA['$id']}#/$defs/command"},
-    resolver=RESOLVER,
+    registry=REGISTRY,
 )
 RESPONSE_VALIDATORS = {
     k: Validator(
-        resolver=RESOLVER,
+        registry=REGISTRY,
         schema={
             "$ref": f"{SCHEMA['$id']}#/$defs/command/$defs/{k}/$defs/response",
         },

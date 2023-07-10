@@ -85,8 +85,8 @@ FORMAT = click.option(
 _F = Literal["json", "pretty"]
 
 
-@tui()
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
+@tui()  # type: ignore[reportGeneralTypeIssues]
+@click.group(context_settings=dict(help_option_names=["--help", "-h"]))  # type: ignore[reportUntypedFunctionDecorator]  # noqa: E501
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
     """

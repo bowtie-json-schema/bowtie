@@ -4,46 +4,37 @@ import {
   XCircleFill,
 } from "react-bootstrap-icons";
 
-const AccordionSvg = ({ testResult }) => {
-  let svgComponent;
+const stateToTile = {
+  successful: "Correct result",
+  failed: "Incorrect result",
+  skipped: "Case skipped",
+  errored: "Case errored",
+};
 
-  switch (testResult) {
-    case "skipped":
-      svgComponent = <ExclamationOctagon />;
-      break;
-    case "errored":
-      svgComponent = <ExclamationOctagon />;
-      break;
-    case "passed":
-      svgComponent = <CheckCircleFill />;
-      break;
-    case "failed":
-      svgComponent = <XCircleFill />;
-      break;
-    case "unexpectedlyValid":
-      svgComponent = <CheckCircleFill />;
-      break;
-    case "unexpectedlyInvalid":
-      svgComponent = <XCircleFill />;
-      break;
-    default:
-      return null;
+const AccordionSvg = ({ result }) => {
+  if (result.state === "skipped" || result.state === "errored") {
+    const borderClass =
+      result.state === "skipped" ? "text-bg-warning" : "text-bg-danger";
+    return (
+      <td
+        className={`text-center align-middle ${borderClass}`}
+        title={stateToTile[result.state]}
+      >
+        <ExclamationOctagon />
+      </td>
+    );
+  } else {
+    const borderClass = result.state === "successful" ? "" : "text-bg-danger";
+    const svgComponent = result.valid ? <CheckCircleFill /> : <XCircleFill />;
+    return (
+      <td
+        className={`text-center align-middle ${borderClass}`}
+        title={stateToTile[result.state]}
+      >
+        {svgComponent}
+      </td>
+    );
   }
-
-  return (
-    <td
-      className={`text-center ${
-        testResult === "skipped" || testResult === "errored"
-          ? "text-bg-warning"
-          : testResult === "unexpectedlyValid" ||
-            testResult === "unexpectedlyInvalid"
-          ? "text-bg-danger"
-          : ""
-      }`}
-    >
-      {svgComponent}
-    </td>
-  );
 };
 
 export default AccordionSvg;
