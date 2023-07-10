@@ -120,7 +120,7 @@ const cmds = {
           args.dialect === "http://json-schema.org/draft-04/schema#"
             ? "id"
             : "$id";
-        const host = testCase.schema?.[idToken].startsWith("file:")
+        const host = testCase.schema?.[idToken]?.startsWith("file:")
           ? "file://"
           : "https://example.com";
         const fakeURI = `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
