@@ -14,9 +14,6 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private static final JsonSchemaFactory factory =
-      JsonSchemaFactory.getInstance();
-
   private static final List<String> DIALECTS =
       List.of("https://json-schema.org/draft/2020-12/schema",
               "https://json-schema.org/draft/2019-09/schema",
@@ -24,6 +21,7 @@ public class BowtieJsonSchemaValidator {
               "http://json-schema.org/draft-06/schema#",
               "http://json-schema.org/draft-04/schema#");
 
+  private final JsonSchemaFactory factory = JsonSchemaFactory.getInstance();
   private String dialect;
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
@@ -37,7 +35,9 @@ public class BowtieJsonSchemaValidator {
     new BowtieJsonSchemaValidator(System.out).run(reader);
   }
 
-  public BowtieJsonSchemaValidator(PrintStream output) { this.output = output; }
+  public BowtieJsonSchemaValidator(PrintStream output) {
+    this.output = output;
+  }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
@@ -130,14 +130,13 @@ public class BowtieJsonSchemaValidator {
             JsonSchema jsonSchema = factory.getSchema(schema);
             Set<ValidationMessage> errors =
                 jsonSchema.validate(test.instance());
-            boolean valid = (errors == null || errors.size() == 0);
+            boolean valid = (errors == null || errors.isEmpty());
             results.add(new TestResult(valid));
           }
 
           RunResponse runResponse = new RunResponse(runRequest.seq(), results);
           output.println(objectMapper.writeValueAsString(runResponse));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
           String stackTrace = stackTraceToString(e);
           RunErroredResponse erroredResponse = new RunErroredResponse(
               runRequest.seq(), true,
