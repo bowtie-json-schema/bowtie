@@ -85,6 +85,7 @@ repos:
     rev: v0.2.9
     hooks:
       - id: checkstyle
+        args: ["-c", "checkstyle-config.xml"]
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.44.0
     hooks:
