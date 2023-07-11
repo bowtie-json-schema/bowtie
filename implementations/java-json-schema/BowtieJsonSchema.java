@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.harrel.jsonschema.Dialects;
 import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
@@ -24,11 +25,7 @@ public class BowtieJsonSchema {
       "$id inside an unknown keyword is not a real identifier",
       RECOGNIZING_IDENTIFIERS,
       "$anchor inside an enum is not a real identifier",
-      RECOGNIZING_IDENTIFIERS,
-      "schema that uses custom metaschema with with no validation vocabulary",
-      "Vocabularies are not yet supported.",
-      "ignore unrecognized optional vocabulary",
-      "Vocabularies are not yet supported.");
+      RECOGNIZING_IDENTIFIERS);
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -94,12 +91,9 @@ public class BowtieJsonSchema {
     private void dialect(JsonNode node) throws JsonProcessingException {
         DialectRequest dialectRequest = objectMapper.treeToValue(node, DialectRequest.class);
         if (DRAFT_2020.equals(dialectRequest.dialect())) {
-            validatorFactory.withDefaultMetaSchemaUri(DRAFT_2020);
-            output.println(objectMapper.writeValueAsString(new DialectResponse(true)));
-        } else {
-            validatorFactory.withDefaultMetaSchemaUri(null);
-            output.println(objectMapper.writeValueAsString(new DialectResponse(false)));
+            validatorFactory.withDialect(new Dialects.Draft2020Dialect());
         }
+        output.println(objectMapper.writeValueAsString(new DialectResponse(true)));
     }
 
     private void run(JsonNode node) throws JsonProcessingException {
