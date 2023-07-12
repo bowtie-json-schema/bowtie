@@ -19,3 +19,6 @@ jobs:
       - uses: pmd/pmd-github-action@v1
         with:
           rulesets: 'pmd-ruleset.xml'
+      - name: Fail build if there are lint errors
+        if: steps.pmd.outputs.violations != 0
+        run: exit 1
