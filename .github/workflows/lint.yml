@@ -17,7 +17,9 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
       - uses: pmd/pmd-github-action@v1
+        id: pmd
         with:
+          sourcePath: 'implementations/'
           rulesets: 'pmd-ruleset.xml'
       - name: Fail build if there are lint errors
         if: steps.pmd.outputs.violations != 0
