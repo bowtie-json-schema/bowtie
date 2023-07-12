@@ -38,9 +38,7 @@ public class BowtieJsonSchema {
     new BowtieJsonSchema(System.out).run(reader);
   }
 
-  public BowtieJsonSchema(PrintStream output) {
-    this.output = output;
-  }
+  public BowtieJsonSchema(PrintStream output) { this.output = output; }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);

@@ -34,9 +34,7 @@ public class BowtieJsonSchemaValidator {
     new BowtieJsonSchemaValidator(System.out).run(reader);
   }
 
-  public BowtieJsonSchemaValidator(PrintStream output) {
-    this.output = output;
-  }
+  public BowtieJsonSchemaValidator(PrintStream output) { this.output = output; }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
@@ -135,7 +133,8 @@ public class BowtieJsonSchemaValidator {
 
           RunResponse runResponse = new RunResponse(runRequest.seq(), results);
           output.println(objectMapper.writeValueAsString(runResponse));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
           String stackTrace = stackTraceToString(e);
           RunErroredResponse erroredResponse = new RunErroredResponse(
               runRequest.seq(), true,
