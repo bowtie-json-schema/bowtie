@@ -14,13 +14,13 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: "temurin"
+          java-version: "11"
       - uses: pmd/pmd-github-action@v1
         id: pmd
         with:
-          sourcePath: 'implementations/'
-          rulesets: 'pmd-ruleset.xml'
+          sourcePath: "implementations/"
+          rulesets: "pmd-ruleset.xml"
       - name: Fail build if there are lint errors
         if: steps.pmd.outputs.violations != 0
         run: |
