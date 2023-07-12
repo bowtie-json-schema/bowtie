@@ -22,12 +22,11 @@ public class BowtieJsonSchemaValidator {
               "http://json-schema.org/draft-04/schema#");
 
   private final JsonSchemaFactory factory = JsonSchemaFactory.getInstance();
-  private String dialect;
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
-  private boolean started = false;
+  private boolean started;
 
   public static void main(String[] args) {
     BufferedReader reader =
@@ -95,27 +94,27 @@ public class BowtieJsonSchemaValidator {
   }
 
   private void dialect(JsonNode node) throws JsonProcessingException {
+    String dialect;
     DialectRequest dialectRequest = objectMapper.treeToValue(
       node,
       DialectRequest.class
     );
 
     if (!started) {
-      throw new RuntimeException("Not started!");
+      throw new IllegalArgumentException("Not started!");
     }
 
     dialect = dialectRequest.dialect();
     if (dialect == null) {
-      throw new RuntimeException("Bad dialect!");
+      throw new IllegalArgumentException("Bad dialect!");
     }
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void run(JsonNode node)
-    throws JsonProcessingException, IllegalArgumentException {
+  private void run(JsonNode node) throws JsonProcessingException {
     if (!started) {
-      throw new RuntimeException("Not started!");
+      throw new IllegalArgumentException("Not started!");
     }
 
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
@@ -130,7 +129,7 @@ public class BowtieJsonSchemaValidator {
             JsonSchema jsonSchema = factory.getSchema(schema);
             Set<ValidationMessage> errors =
                 jsonSchema.validate(test.instance());
-            boolean valid = (errors == null || errors.isEmpty());
+            boolean valid = errors == null || errors.isEmpty();
             results.add(new TestResult(valid));
           }
 

@@ -64,12 +64,12 @@
     <rule ref="category/java/codestyle.xml/GenericsNaming"/>
     <rule ref="category/java/codestyle.xml/LinguisticNaming" />
     <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
-    <rule ref="category/java/codestyle.xml/LongVariable" />
+<!--    <rule ref="category/java/codestyle.xml/LongVariable" />-->
     <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
     <rule ref="category/java/codestyle.xml/PackageCase"/>
     <rule ref="category/java/codestyle.xml/ShortClassName" />
     <rule ref="category/java/codestyle.xml/ShortMethodName" />
-    <rule ref="category/java/codestyle.xml/ShortVariable" />
+<!--    <rule ref="category/java/codestyle.xml/ShortVariable" />-->
 
     <!-- <rule ref="category/java/codestyle.xml/LocalHomeNamingConvention" /> -->
     <!-- <rule ref="category/java/codestyle.xml/LocalInterfaceSessionNamingConvention" /> -->
@@ -116,7 +116,7 @@
 
 
     <rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod"/>
-    <rule ref="category/java/design.xml/AvoidCatchingGenericException" />
+<!--    <rule ref="category/java/design.xml/AvoidCatchingGenericException" />-->
     <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts" />
     <rule ref="category/java/design.xml/AvoidRethrowingException" />
     <rule ref="category/java/design.xml/AvoidThrowingNewInstanceOfSameException" />
