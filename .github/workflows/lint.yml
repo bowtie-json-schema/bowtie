@@ -23,4 +23,6 @@ jobs:
           rulesets: 'pmd-ruleset.xml'
       - name: Fail build if there are lint errors
         if: steps.pmd.outputs.violations != 0
-        run: echo "::error pmd analysis failed with {steps.pmd.outputs.violations} lint errors"
+        run: |
+          echo "::error ::PMD analysis completed with lint errors"
+          exit 1
