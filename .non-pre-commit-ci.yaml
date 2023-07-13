@@ -3,4 +3,12 @@ repos:
     rev: v0.2.9
     hooks:
       - id: pmd
-        args: ["-R", "implementations/java-implementations-pmd-ruleset.xml", "-d", "implementations/", "--force-language", "java"]
+        args:
+          [
+            "-R",
+            "implementations/java-implementations-pmd-ruleset.xml",
+            "-d",
+            "implementations/",
+            "--force-language",
+            "java",
+          ]
