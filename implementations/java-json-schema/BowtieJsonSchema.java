@@ -11,6 +11,7 @@ import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
