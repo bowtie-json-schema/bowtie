@@ -8,7 +8,5 @@ repos:
         args:
           [
             "--rulesets",
-            "implementations/java-implementations-pmd-ruleset.xml",
-            "--dir",
-            "implementations/",
+            "implementations/java-implementations-pmd-ruleset.xml"
           ]
