@@ -2,5 +2,6 @@ repos:
   - repo: https://github.com/gherynos/pre-commit-java
     rev: v0.2.9
     hooks:
-      - id: pmd
-        args: ["-R", "implementations/java-implementations-pmd-ruleset.xml"]
+      - name: PMD (java implementations)
+        id: pmd
+        args: ["--rulesets", "implementations/java-implementations-pmd-ruleset.xml", "--dir", "."]
