@@ -7,8 +7,6 @@ repos:
           [
             "-R",
             "implementations/java-implementations-pmd-ruleset.xml",
-            "-d",
-            "implementations/",
             "--force-language",
             "java",
           ]
