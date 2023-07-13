@@ -4,9 +4,4 @@ repos:
     hooks:
       - id: pmd
         args:
-          [
-            "-R",
-            "implementations/java-implementations-pmd-ruleset.xml",
-            "--force-language",
-            "java",
-          ]
+          ["-R", "implementations/java-implementations-pmd-ruleset.xml"]
