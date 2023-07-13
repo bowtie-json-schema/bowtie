@@ -4,6 +4,7 @@ repos:
     hooks:
       - name: PMD (java implementations)
         id: pmd
+        types_or: [java]
         args:
           [
             "--rulesets",
