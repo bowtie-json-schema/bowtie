@@ -6,7 +6,4 @@ repos:
         id: pmd
         types_or: [java]
         args:
-          [
-            "--rulesets",
-            "implementations/java-implementations-pmd-ruleset.xml"
-          ]
+          ["--rulesets", "implementations/java-implementations-pmd-ruleset.xml"]
