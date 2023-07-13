@@ -1,9 +1,8 @@
 repos:
-  - repo: https://github.com/gherynos/pre-commit-java
-    rev: v0.2.9
+  - repo: https://github.com/dustinsand/pre-commit-jvm
+    rev: v0.7.0
     hooks:
       - name: PMD (java implementations)
         id: pmd
-        types_or: [java]
         args:
-          ["--rulesets", "implementations/java-implementations-pmd-ruleset.xml"]
+          ["--rulesets", "implementations/java-implementations-pmd-ruleset.xml", "implementations"]
