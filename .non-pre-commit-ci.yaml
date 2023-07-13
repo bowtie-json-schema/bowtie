@@ -5,4 +5,8 @@ repos:
       - name: PMD (java implementations)
         id: pmd
         args:
-          ["--rulesets", "implementations/java-implementations-pmd-ruleset.xml", "implementations"]
+          [
+            "--rulesets",
+            "implementations/java-implementations-pmd-ruleset.xml",
+            "implementations",
+          ]
