@@ -19,27 +19,48 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private static final List<String> DIALECTS =
-      List.of("https://json-schema.org/draft/2020-12/schema",
-              "https://json-schema.org/draft/2019-09/schema",
-              "http://json-schema.org/draft-07/schema#",
-              "http://json-schema.org/draft-06/schema#",
-              "http://json-schema.org/draft-04/schema#");
+  private static final List<String> DIALECTS = List.of(
+    "https://json-schema.org/draft/2020-12/schema",
+    "https://json-schema.org/draft/2019-09/schema",
+    "http://json-schema.org/draft-07/schema#",
+    "http://json-schema.org/draft-06/schema#",
+    "http://json-schema.org/draft-04/schema#"
+  );
+
+  private JsonMetaSchema getVersionFromDialect(String dialect) {
+    switch (dialect) {
+      case "https://json-schema.org/draft/2020-12/schema":
+        return JsonMetaSchema.getV202012();
+      case "https://json-schema.org/draft/2019-09/schema":
+        return JsonMetaSchema.getV201909();
+      case "http://json-schema.org/draft-07/schema#":
+        return JsonMetaSchema.getV7();
+      case "http://json-schema.org/draft-06/schema#":
+        return JsonMetaSchema.getV6();
+      case "http://json-schema.org/draft-04/schema#":
+        return JsonMetaSchema.getV4();
+      default:
+        return JsonMetaSchema.getV202012();
+    }
+  }
 
   private String dialect;
 
-  private final ObjectMapper objectMapper = new ObjectMapper().configure(
-      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private final ObjectMapper objectMapper = new ObjectMapper()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
   private boolean started = false;
 
   public static void main(String[] args) {
-    BufferedReader reader =
-        new BufferedReader(new InputStreamReader(System.in));
+    BufferedReader reader = new BufferedReader(
+      new InputStreamReader(System.in)
+    );
     new BowtieJsonSchemaValidator(System.out).run(reader);
   }
 
-  public BowtieJsonSchemaValidator(PrintStream output) { this.output = output; }
+  public BowtieJsonSchemaValidator(PrintStream output) {
+    this.output = output;
+  }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
@@ -129,8 +150,8 @@ public class BowtieJsonSchemaValidator {
         .builder()
         .uriFetcher(uriFetcher, "http")
         .uriFetcher(uriFetcher, "https")
-        .addMetaSchema(JsonMetaSchema.getV202012())
-        .defaultMetaSchemaURI(JsonMetaSchema.getV202012().getUri())
+        .addMetaSchema(getVersionFromDialect(dialect))
+        .defaultMetaSchemaURI(getVersionFromDialect(dialect).getUri())
         .build();
       try {
         List<TestResult> results = runRequest
