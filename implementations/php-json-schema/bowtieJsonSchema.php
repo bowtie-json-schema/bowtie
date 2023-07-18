@@ -1,8 +1,5 @@
 <?php
 
-$stdout = fopen('php://stdout', 'w');
-fwrite($stdout, "Hello, Docker!\n");
-fwrite($stdout, "This is printed to the terminal.\n");
-fclose($stdout);
+echo "Hello, world! It is currently " . date('Y-m-d H:i:s') . " PST.";
 
-echo "Hello, Docker!";
+?>
