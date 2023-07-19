@@ -31,7 +31,7 @@ Setup Bowtie
             uses: bowtie-json-schema/bowtie@v2023.05.12
 
 
-`This will install bowtie every time you push onto the repository.`
+`The code snippet will install bowtie every time you push onto the repository.`
 
 2. Verification Steps
 ^^^^^^^^^^^^^^^^^^^^^
