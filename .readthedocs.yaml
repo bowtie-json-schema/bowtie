@@ -1,5 +1,12 @@
 version: 2
 
+build:
+  os: ubuntu-22.04
+  apt_packages:
+    - inkscape
+  tools:
+    python: "3.11"
+
 sphinx:
   builder: dirhtml
   configuration: docs/conf.py
@@ -8,8 +15,5 @@ sphinx:
 formats: all
 
 python:
-  version: 3.8
   install:
     - requirements: docs/requirements.txt
-    - method: pip
-      path: .
