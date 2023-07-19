@@ -44,7 +44,7 @@ Setup Bowtie
           run: bowtie --version
 
 
-* The YAML file will look something like this: 
+* The YAML file will look something like this:
 
 .. code:: yaml
 
@@ -69,14 +69,14 @@ Setup Bowtie
 * If the run was successful, you will see a green circle with a tick.
 * Click on the Workflow and then click on the ``sets-up-bowtie`` Job.
 * Open the drop down of the ``Run Bowtie`` step.
-* If it shows something like this, bowtie is running successfully: 
+* If it shows something like this, bowtie is running successfully:
 
 .. code:: sh
 
     bowtie, version 2023.6.4
 
 .. admonition:: Note
-    
+
     IF THE RUN WAS NOT SUCCESSFUL, YOU WILL SEE A RED CIRCLE WITH A CROSS. RECHECK THE CODE YOU HAVE WRITTEN, AND CORRECT IN CASE OF ANY DISCREPANCY.
 
 `This will help us to test if bowtie is working in the GitHub action.`
