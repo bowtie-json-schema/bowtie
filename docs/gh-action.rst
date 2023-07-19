@@ -33,7 +33,7 @@ Setup Bowtie
 
 *The code snippet will install bowtie every time you push onto the repository.*
 
-1. Verification Steps
+2. Verification Steps
 ^^^^^^^^^^^^^^^^^^^^^
 
 * Append the following code in the already created YAML file:
@@ -108,7 +108,7 @@ Let's break down this command:
 *You will see that the implementation is skipped and thus does not validate the instances. This is because the lua implementation does not support the default 2020-12 draft.*
 
 
-1. Change the Dialect
+2. Change the Dialect
 ^^^^^^^^^^^^^^^^^^^^^
 
 * To change the dialect used by the implementation, change the validate command to this:
