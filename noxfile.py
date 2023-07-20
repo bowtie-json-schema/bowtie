@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import os
@@ -141,16 +142,29 @@ def docs_style(session):
     session.run("python", "-m", "doc8", "--config", PYPROJECT, DOCS)
 
 
-@session(default=False, tags=["perf"], name="bench(info)")
-def bench_info(session):
+def benchmark(fn):
+    """
+    A non-default noxenv to run a specific benchmark.
+    """
+
+    name = fn.__name__.removeprefix("bench_")
+
+    @session(default=False, tags=["perf"], name=f"bench({name})")
+    @wraps(fn)
+    def _benchmark(session):
+        session.install(ROOT)
+        bowtie = Path(session.bin) / "bowtie"
+        hyperfine_args, command = fn(session=session, bowtie=bowtie)
+        session.run("hyperfine", *hyperfine_args, command, external=True)
+
+    return _benchmark
+
+
+@benchmark
+def bench_info(session, bowtie):
     """
     Time how long ``bowtie info`` takes to run (effectively startup time).
     """
-    session.install(ROOT)
-    executable = Path(session.bin) / "bowtie"
-
-    cmd = f"{executable} info -i {{implementation}}"
-
     if session.posargs:
         args = session.posargs
     else:
@@ -161,20 +175,14 @@ def bench_info(session):
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
         ]
+    return args, f"{bowtie} info -i {{implementation}}"
 
-    session.run("hyperfine", *args, cmd, external=True)
 
-
-@session(default=False, tags=["perf"], name="bench(smoke)")
-def bench_smoke(session):
+@benchmark
+def bench_smoke(session, bowtie):
     """
     Time how long ``bowtie smoke`` takes to run (startup + ~2 simple examples).
     """
-    session.install(ROOT)
-    executable = Path(session.bin) / "bowtie"
-
-    cmd = f"{executable} smoke -i {{implementation}}"
-
     if session.posargs:
         args = session.posargs
     else:
@@ -185,17 +193,16 @@ def bench_smoke(session):
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
         ]
+    return args, f"{bowtie} smoke -i {{implementation}}"
 
-    session.run("hyperfine", *args, cmd, external=True)
 
-
-@session(default=False, tags=["perf"], name="bench(suite)")
-def bench_suite(session):
+@benchmark
+def bench_suite(session, bowtie):
+    """
+    Time how long ``bowtie suite`` takes to run a version of the test suite.
+    """
     if not session.posargs:
         session.error("Provide a test suite to benchmark")
-
-    session.install(ROOT)
-    bowtie = Path(session.bin) / "bowtie"
 
     posargs = shlex.join(session.posargs)
     if "-i" not in session.posargs:
@@ -203,11 +210,11 @@ def bench_suite(session):
             "-L",
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
-            f"{bowtie} suite -i {{implementation}} {posargs}",
         ]
+        command = f"{bowtie} suite -i {{implementation}} {posargs}"
     else:
-        args = [f"{bowtie} suite {posargs}"]
-    session.run("hyperfine", "--warmup", "1", *args, external=True)
+        args, command = [], f"{bowtie} suite {posargs}"
+    return args, command
 
 
 @session(default=False)
