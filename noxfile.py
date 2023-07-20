@@ -207,6 +207,10 @@ def bench_suite(session, bowtie):
     posargs = shlex.join(session.posargs)
     if "-i" not in session.posargs:
         args = [
+            "--warmup",
+            "1",
+            # because not all implementations will likely support the dialect
+            "--ignore-failure",
             "-L",
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
