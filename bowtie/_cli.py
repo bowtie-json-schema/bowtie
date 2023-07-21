@@ -38,6 +38,8 @@ from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
 )
 
+_EX_CONFIG = getattr(os, "EX_CONFIG", 1)
+
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
 
@@ -477,14 +479,14 @@ async def _info(image_names: list[str], format: _F):
             try:
                 implementation = await each
             except NoSuchImage as error:
-                exit_code |= os.EX_CONFIG
+                exit_code |= _EX_CONFIG
                 click.echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
                 )
                 continue
 
             if implementation.metadata is None:
-                exit_code |= os.EX_CONFIG
+                exit_code |= _EX_CONFIG
                 click.echo("  ❗ (error): startup failed")
                 continue
 
@@ -538,7 +540,7 @@ async def _smoke(image_names: list[str], format: _F):
             try:
                 implementation = await each
             except NoSuchImage as error:
-                exit_code |= os.EX_CONFIG
+                exit_code |= _EX_CONFIG
                 click.echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
                     file=sys.stderr,
@@ -548,7 +550,7 @@ async def _smoke(image_names: list[str], format: _F):
             click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
-                exit_code |= os.EX_CONFIG
+                exit_code |= _EX_CONFIG
                 click.echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
@@ -746,11 +748,11 @@ async def _run(
             try:
                 implementation = await each
             except StartupFailed as error:
-                exit_code = os.EX_CONFIG
+                exit_code = _EX_CONFIG
                 reporter.startup_failed(name=error.name, stderr=error.stderr)
                 continue
             except NoSuchImage as error:
-                exit_code = os.EX_CONFIG
+                exit_code = _EX_CONFIG
                 reporter.no_such_image(name=error.name)
                 continue
 
@@ -759,7 +761,7 @@ async def _run(
                     try:
                         runner = await implementation.start_speaking(dialect)
                     except GotStderr as error:
-                        exit_code = os.EX_CONFIG
+                        exit_code = _EX_CONFIG
                         reporter.dialect_error(
                             implementation=implementation,
                             stderr=error.stderr.decode(),
@@ -774,11 +776,11 @@ async def _run(
                         dialect=dialect,
                     )
             except StartupFailed as error:
-                exit_code = os.EX_CONFIG
+                exit_code = _EX_CONFIG
                 reporter.startup_failed(name=error.name, stderr=error.stderr)
 
         if not runners:
-            exit_code = os.EX_CONFIG
+            exit_code = _EX_CONFIG
             reporter.no_implementations()
         else:
             reporter.ready(
