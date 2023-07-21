@@ -22,7 +22,7 @@ Contents
     cli
     implementers
     contributing
-    gh-action
+    github-actions
 
 
 Installation
