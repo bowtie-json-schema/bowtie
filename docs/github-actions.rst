@@ -49,4 +49,3 @@ Add the ``validate`` Command
 
 For breakdown of this command,
 refer to the :doc:`CLI <cli>` page.
-
