@@ -48,5 +48,5 @@ Add the ``validate`` Command
           run: bowtie validate -i lua-jsonschema schema.json instance.json
 
 For breakdown of this command,
-refer to the CLI page.
+refer to the :doc:`CLI <cli>` page.
 
