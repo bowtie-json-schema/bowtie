@@ -50,5 +50,3 @@ Add the ``validate`` Command
 For breakdown of this command,
 refer to the CLI page.
 
-*You will see that the implementation is skipped and thus does not validate the instances.
-This is because the lua implementation does not support the default 2020-12 draft.*
