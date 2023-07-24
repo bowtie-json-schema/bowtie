@@ -97,7 +97,7 @@ and build the image (below using ``podman`` but if you're using ``docker``, just
 
 .. code:: sh
 
-    podman build --quiet -f Dockerfile -t bowtie-lua-jsonschema
+    podman build --quiet -f Dockerfile -t bowtie-lua-jsonschema .
 
 If everything went well, running:
 
@@ -141,7 +141,7 @@ Let's start filling out a real test harness implementation by at least reacting 
 
     .. code:: sh
 
-        podman build -f Dockerfile -t localhost/tutorial-lua-jsonschema
+        podman build -f Dockerfile -t localhost/tutorial-lua-jsonschema .
 
 Change your harness to contain:
 
