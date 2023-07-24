@@ -97,7 +97,7 @@ and build the image (below using ``podman`` but if you're using ``docker``, just
 
 .. code:: sh
 
-    podman build --quiet -f Dockerfile -t bowtie-lua-jsonschema
+    podman build --quiet -f Dockerfile -t bowtie-lua-jsonschema .
 
 If everything went well, running:
 
