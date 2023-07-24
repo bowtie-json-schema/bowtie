@@ -141,7 +141,7 @@ Let's start filling out a real test harness implementation by at least reacting 
 
     .. code:: sh
 
-        podman build -f Dockerfile -t localhost/tutorial-lua-jsonschema
+        podman build -f Dockerfile -t localhost/tutorial-lua-jsonschema .
 
 Change your harness to contain:
 
