@@ -3,9 +3,13 @@
 require_once 'vendor/autoload.php';
 
 use Opis\JsonSchema\{
-    Validator,
-    SchemaLoader,
+    Validator
 };
+
+$STARTED = false;
+
+$validator = new Validator();
+$resolver = $validator->loader()->resolver();
 
 function start($request)
 {
@@ -37,6 +41,38 @@ function start($request)
     return json_encode($response);
 }
 
+function dialect($request)
+{
+    if (!$GLOBALS['STARTED']) {
+        throw new Exception('Not started!');
+    }
+    return json_encode(['ok' => true]);
+}
+
+function run($request)
+{
+    if (!$GLOBALS['STARTED']) {
+        throw new Exception('Not started!');
+    }
+
+    $registry = json_decode($request->case->registry);
+
+    if ($registry != null) {
+        foreach ($registry as $key => $value) {
+            $GLOBALS['resolver']->registerRaw($value, $key);
+        }
+    }
+
+    $results = [];
+
+    foreach ($request->case->tests as $test) {
+        $result = $GLOBALS['validator']->validate(json_decode($test->instance), json_decode($request->case->schema));
+        $results[] = ['valid' => $result->isValid()];
+    }
+    $response = ['seq' => $request->seq, 'results' => $results];
+    return json_encode($response);
+}
+
 function stop($request)
 {
     if (!$GLOBALS['STARTED']) {
@@ -48,10 +84,10 @@ function stop($request)
 
 $cmds = [
     'start' => 'start',
-    'stop' => 'stop',
+    'dialect' => 'dialect',
+    'run' => 'run',
+    'stop' => 'stop'
 ];
-
-$STARTED = false;
 
 while (($line = fgets(STDIN)) !== false) {
     $request = json_decode($line);
@@ -63,7 +99,7 @@ while (($line = fgets(STDIN)) !== false) {
     $cmd = $request->cmd;
 
     try {
-        $response = $cmd($request);
+        $response = $cmds[$cmd]($request);
         echo $response . "\n";
     } catch (Exception $e) {
         echo json_encode(['error' => $e->getMessage()]) . "\n";
