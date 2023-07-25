@@ -8,6 +8,9 @@ use Opis\JsonSchema\{
 
 $STARTED = false;
 
+$validator = new Validator();
+$resolver = $validator->loader()->resolver();
+
 function start($request)
 {
     if ($request->version !== 1) {
@@ -25,8 +28,8 @@ function start($request)
             'homepage' => 'https://opis.io/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
-                'https://json-schema.org/draft/2020-12/schema',
-                'https://json-schema.org/draft-2019-09/schema',
+                'http://json-schema.org/draft/2020-12/schema#',
+                'http://json-schema.org/draft-2019-09/schema#',
                 'http://json-schema.org/draft-07/schema#',
                 'http://json-schema.org/draft-06/schema#',
             ],
@@ -43,14 +46,11 @@ function dialect($request)
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
-    return json_encode(['ok' => false]);
+    return json_encode(['ok' => true]);
 }
 
 function run($request)
 {
-    $validator = new Validator();
-    $resolver = $validator->loader()->resolver();
-
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
@@ -59,14 +59,14 @@ function run($request)
 
     if ($registry != null) {
         foreach ($registry as $key => $value) {
-            $resolver->registerRaw($value, $key);
+            $GLOBALS['resolver']->registerRaw($value, $key);
         }
     }
 
     $results = [];
 
     foreach ($request->case->tests as $test) {
-        $result = $validator->validate(json_decode($test->instance), json_decode($request->case->schema));
+        $result = $GLOBALS['validator']->validate(json_decode($test->instance), json_decode($request->case->schema));
         $results[] = ['valid' => $result->isValid()];
     }
     $response = ['seq' => $request->seq, 'results' => $results];
@@ -92,7 +92,7 @@ $cmds = [
 while (($line = fgets(STDIN)) !== false) {
     $request = json_decode($line);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['error' => json_last_error_msg()]) . "\n";
+        echo json_encode(['error' => 'Invalid JSON']) . "\n";
         continue;
     }
 
