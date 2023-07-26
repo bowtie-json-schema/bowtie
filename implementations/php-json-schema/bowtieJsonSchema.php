@@ -25,8 +25,8 @@ function start($request)
             'homepage' => 'https://opis.io/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
-                'http://json-schema.org/draft/2020-12/schema#',
-                'http://json-schema.org/draft-2019-09/schema#',
+                'https://json-schema.org/draft/2020-12/schema',
+                'https://json-schema.org/draft-2019-09/schema',
                 'http://json-schema.org/draft-07/schema#',
                 'http://json-schema.org/draft-06/schema#',
             ],
@@ -66,7 +66,7 @@ function run($request)
     $results = [];
 
     foreach ($request->case->tests as $test) {
-        $result = $validator->validate(json_decode($test->instance), ($request->case->schema));
+        $result = $validator->validate(json_decode($test->instance), json_decode($request->case->schema));
         $results[] = ['valid' => $result->isValid()];
     }
     $response = ['seq' => $request->seq, 'results' => $results];
