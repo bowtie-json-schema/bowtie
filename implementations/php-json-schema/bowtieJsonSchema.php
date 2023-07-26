@@ -8,9 +8,6 @@ use Opis\JsonSchema\{
 
 $STARTED = false;
 
-$validator = new Validator();
-$resolver = $validator->loader()->resolver();
-
 function start($request)
 {
     if ($request->version !== 1) {
@@ -46,11 +43,14 @@ function dialect($request)
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
-    return json_encode(['ok' => true]);
+    return json_encode(['ok' => false]);
 }
 
 function run($request)
 {
+    $validator = new Validator();
+    $resolver = $validator->loader()->resolver();
+
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
@@ -59,14 +59,14 @@ function run($request)
 
     if ($registry != null) {
         foreach ($registry as $key => $value) {
-            $GLOBALS['resolver']->registerRaw($value, $key);
+            $resolver->registerRaw($value, $key);
         }
     }
 
     $results = [];
 
     foreach ($request->case->tests as $test) {
-        $result = $GLOBALS['validator']->validate(json_decode($test->instance), json_decode($request->case->schema));
+        $result = $validator->validate(json_decode($test->instance), ($request->case->schema));
         $results[] = ['valid' => $result->isValid()];
     }
     $response = ['seq' => $request->seq, 'results' => $results];
@@ -92,7 +92,7 @@ $cmds = [
 while (($line = fgets(STDIN)) !== false) {
     $request = json_decode($line);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['error' => 'Invalid JSON']) . "\n";
+        echo json_encode(['error' => json_last_error_msg()]) . "\n";
         continue;
     }
 
