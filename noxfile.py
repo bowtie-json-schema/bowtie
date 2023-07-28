@@ -243,6 +243,29 @@ def bench_suite(session, bowtie):
 
 
 @session(default=False)
+def develop_harness(session):
+    """
+    Build a local version of an implementation harness.
+
+    This is used / useful during development of a new harness.
+
+    For "real" versions of harnesses, rely on the built version from GitHub
+    packages.
+    """
+    for each in session.posargs:
+        name = Path(each).name
+        session.run(
+            "podman",
+            "build",
+            "-f",
+            IMPLEMENTATIONS / name / "Dockerfile",
+            "-t",
+            f"ghcr.io/bowtie-jsonschema/{name}",
+            external=True,
+        )
+
+
+@session(default=False)
 def requirements(session):
     """
     Update bowtie's requirements.txt files.
