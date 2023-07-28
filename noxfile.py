@@ -29,6 +29,9 @@ def session(default=True, **kwargs):
 
 @session(python=["3.10", "3.11"])
 def tests(session):
+    """
+    Run Bowtie's test suite.
+    """
     session.install("-r", ROOT / "test-requirements.txt")
 
     if session.posargs and session.posargs[0] == "coverage":
@@ -57,6 +60,9 @@ def tests(session):
 
 @session(tags=["build"])
 def build(session):
+    """
+    Build Bowtie (via a PEP517 builder), and check the built artifact is valid.
+    """
     session.install("build", "twine")
     with TemporaryDirectory() as tmpdir:
         session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
@@ -65,6 +71,9 @@ def build(session):
 
 @session(tags=["build"])
 def shiv(session):
+    """
+    Build a shiv which will run Bowtie.
+    """
     session.install("shiv")
 
     with ExitStack() as stack:
@@ -89,12 +98,18 @@ def shiv(session):
 
 @session(tags=["style"])
 def style(session):
+    """
+    Lint for style on Bowtie's Python codebase.
+    """
     session.install("ruff")
     session.run("ruff", "check", BOWTIE, TESTS, __file__)
 
 
 @session()
 def typing(session):
+    """
+    Check Bowtie's codebase using pyright.
+    """
     session.install("pyright", ROOT)
     session.run("pyright", BOWTIE)
 
@@ -114,6 +129,9 @@ def typing(session):
     ],
 )
 def docs(session, builder):
+    """
+    Build Bowtie's documentation.
+    """
     session.install("-r", DOCS / "requirements.txt")
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
@@ -134,6 +152,9 @@ def docs(session, builder):
 
 @session(tags=["docs", "style"], name="docs(style)")
 def docs_style(session):
+    """
+    Check Bowtie's documentation style.
+    """
     session.install(
         "doc8",
         "pygments",
@@ -223,6 +244,9 @@ def bench_suite(session, bowtie):
 
 @session(default=False)
 def requirements(session):
+    """
+    Update bowtie's requirements.txt files.
+    """
     session.install("pip-tools")
     for each in [DOCS / "requirements.in", ROOT / "test-requirements.in"]:
         session.run(
