@@ -38,7 +38,7 @@ function start($request)
             'language_version' => PHP_VERSION,
         ],
     ];
-    return json_encode($response);
+    return json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }
 
 function dialect($request)
@@ -46,7 +46,7 @@ function dialect($request)
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
-    return json_encode(['ok' => true]);
+    return json_encode(['ok' => false], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }
 
 function run($request)
@@ -55,22 +55,20 @@ function run($request)
         throw new Exception('Not started!');
     }
 
-    $registry = json_decode($request->case->registry);
-
-    if ($registry != null) {
-        foreach ($registry as $key => $value) {
-            $GLOBALS['resolver']->registerRaw($value, $key);
+    if (isset($request->case->registry)) {
+        foreach ($request->case->registry as $key => $value) {
+            $resolver->registerRaw($value, $key);
         }
     }
 
     $results = [];
 
     foreach ($request->case->tests as $test) {
-        $result = $GLOBALS['validator']->validate(json_decode($test->instance), json_decode($request->case->schema));
+        $result = $validator->validate($test->instance, $request->case->schema);
         $results[] = ['valid' => $result->isValid()];
     }
     $response = ['seq' => $request->seq, 'results' => $results];
-    return json_encode($response);
+    return json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }
 
 function stop($request)
@@ -92,7 +90,7 @@ $cmds = [
 while (($line = fgets(STDIN)) !== false) {
     $request = json_decode($line);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['error' => 'Invalid JSON']) . "\n";
+        echo json_encode(['error' => json_last_error_msg()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
         continue;
     }
 
@@ -102,6 +100,6 @@ while (($line = fgets(STDIN)) !== false) {
         $response = $cmds[$cmd]($request);
         echo $response . "\n";
     } catch (Exception $e) {
-        echo json_encode(['error' => $e->getMessage()]) . "\n";
+        echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
     }
 }
