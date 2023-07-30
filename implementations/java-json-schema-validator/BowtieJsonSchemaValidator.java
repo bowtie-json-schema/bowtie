@@ -48,7 +48,7 @@ public class BowtieJsonSchemaValidator {
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
-  private boolean started = false;
+  private boolean started;
 
   public static void main(String[] args) {
     BufferedReader reader =
@@ -120,21 +120,21 @@ public class BowtieJsonSchemaValidator {
     );
 
     if (!started) {
-      throw new RuntimeException("Not started!");
+      throw new IllegalArgumentException("Not started!");
     }
 
     dialect = dialectRequest.dialect();
     if (dialect == null) {
-      throw new RuntimeException("Bad dialect!");
+      throw new IllegalArgumentException("Bad dialect!");
     }
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
   private void run(JsonNode node)
-    throws JsonProcessingException, IllegalArgumentException {
+    throws JsonProcessingException {
     if (!started) {
-      throw new RuntimeException("Not started!");
+      throw new IllegalArgumentException("Not started!");
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     if (runRequest.testCase().registry() != null) {
@@ -161,7 +161,7 @@ public class BowtieJsonSchemaValidator {
             Set<ValidationMessage> errors = jsonSchema.validate(
               test.instance()
             );
-            boolean isValid = (errors == null || errors.size() == 0);
+            boolean isValid = errors == null || errors.isEmpty();
             return new TestResult(isValid);
           })
           .toList();

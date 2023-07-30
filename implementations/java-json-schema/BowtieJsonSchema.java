@@ -9,7 +9,6 @@ import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,8 +46,6 @@ public class BowtieJsonSchema {
 
   private void handle(String data) {
     try {
-      String hello = "";
-      String hello2 = "";
       JsonNode node = objectMapper.readTree(data);
       String cmd = node.get("cmd").asText();
       switch (cmd) {
