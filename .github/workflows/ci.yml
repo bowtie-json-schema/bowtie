@@ -24,7 +24,7 @@ jobs:
       - name: Run standard pre-commit action
         uses: pre-commit/action@v3.0.0
         with:
-          extra_args: --config .non-pre-commit-ci.yaml
+          extra_args: --config .non-pre-commit-ci.yaml --all-files
   list:
     runs-on: ubuntu-latest
     outputs:
