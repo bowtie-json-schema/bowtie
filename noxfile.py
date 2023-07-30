@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import os
@@ -28,6 +29,9 @@ def session(default=True, **kwargs):
 
 @session(python=["3.10", "3.11"])
 def tests(session):
+    """
+    Run Bowtie's test suite.
+    """
     session.install("-r", ROOT / "test-requirements.txt")
 
     if session.posargs and session.posargs[0] == "coverage":
@@ -56,6 +60,9 @@ def tests(session):
 
 @session(tags=["build"])
 def build(session):
+    """
+    Build Bowtie (via a PEP517 builder), and check the built artifact is valid.
+    """
     session.install("build", "twine")
     with TemporaryDirectory() as tmpdir:
         session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
@@ -64,6 +71,9 @@ def build(session):
 
 @session(tags=["build"])
 def shiv(session):
+    """
+    Build a shiv which will run Bowtie.
+    """
     session.install("shiv")
 
     with ExitStack() as stack:
@@ -88,12 +98,18 @@ def shiv(session):
 
 @session(tags=["style"])
 def style(session):
+    """
+    Lint for style on Bowtie's Python codebase.
+    """
     session.install("ruff")
     session.run("ruff", "check", BOWTIE, TESTS, __file__)
 
 
 @session()
 def typing(session):
+    """
+    Check Bowtie's codebase using pyright.
+    """
     session.install("pyright", ROOT)
     session.run("pyright", BOWTIE)
 
@@ -113,6 +129,9 @@ def typing(session):
     ],
 )
 def docs(session, builder):
+    """
+    Build Bowtie's documentation.
+    """
     session.install("-r", DOCS / "requirements.txt")
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
@@ -133,6 +152,9 @@ def docs(session, builder):
 
 @session(tags=["docs", "style"], name="docs(style)")
 def docs_style(session):
+    """
+    Check Bowtie's documentation style.
+    """
     session.install(
         "doc8",
         "pygments",
@@ -141,16 +163,29 @@ def docs_style(session):
     session.run("python", "-m", "doc8", "--config", PYPROJECT, DOCS)
 
 
-@session(default=False, tags=["perf"], name="bench(info)")
-def bench_info(session):
+def benchmark(fn):
+    """
+    A non-default noxenv to run a specific benchmark.
+    """
+
+    name = fn.__name__.removeprefix("bench_")
+
+    @session(default=False, tags=["perf"], name=f"bench({name})")
+    @wraps(fn)
+    def _benchmark(session):
+        session.install(ROOT)
+        bowtie = Path(session.bin) / "bowtie"
+        hyperfine_args, command = fn(session=session, bowtie=bowtie)
+        session.run("hyperfine", *hyperfine_args, command, external=True)
+
+    return _benchmark
+
+
+@benchmark
+def bench_info(session, bowtie):
     """
     Time how long ``bowtie info`` takes to run (effectively startup time).
     """
-    session.install(ROOT)
-    executable = Path(session.bin) / "bowtie"
-
-    cmd = f"{executable} info -i {{implementation}}"
-
     if session.posargs:
         args = session.posargs
     else:
@@ -161,20 +196,14 @@ def bench_info(session):
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
         ]
+    return args, f"{bowtie} info -i {{implementation}}"
 
-    session.run("hyperfine", *args, cmd, external=True)
 
-
-@session(default=False, tags=["perf"], name="bench(smoke)")
-def bench_smoke(session):
+@benchmark
+def bench_smoke(session, bowtie):
     """
     Time how long ``bowtie smoke`` takes to run (startup + ~2 simple examples).
     """
-    session.install(ROOT)
-    executable = Path(session.bin) / "bowtie"
-
-    cmd = f"{executable} smoke -i {{implementation}}"
-
     if session.posargs:
         args = session.posargs
     else:
@@ -185,33 +214,62 @@ def bench_smoke(session):
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
         ]
+    return args, f"{bowtie} smoke -i {{implementation}}"
 
-    session.run("hyperfine", *args, cmd, external=True)
 
-
-@session(default=False, tags=["perf"], name="bench(suite)")
-def bench_suite(session):
+@benchmark
+def bench_suite(session, bowtie):
+    """
+    Time how long ``bowtie suite`` takes to run a version of the test suite.
+    """
     if not session.posargs:
         session.error("Provide a test suite to benchmark")
-
-    session.install(ROOT)
-    bowtie = Path(session.bin) / "bowtie"
 
     posargs = shlex.join(session.posargs)
     if "-i" not in session.posargs:
         args = [
+            "--warmup",
+            "1",
+            # because not all implementations will likely support the dialect
+            "--ignore-failure",
             "-L",
             "implementation",
             ",".join(p.name for p in IMPLEMENTATIONS.iterdir() if p.is_dir()),
-            f"{bowtie} suite -i {{implementation}} {posargs}",
         ]
+        command = f"{bowtie} suite -i {{implementation}} {posargs}"
     else:
-        args = [f"{bowtie} suite {posargs}"]
-    session.run("hyperfine", "--warmup", "1", *args, external=True)
+        args, command = [], f"{bowtie} suite {posargs}"
+    return args, command
+
+
+@session(default=False)
+def develop_harness(session):
+    """
+    Build a local version of an implementation harness.
+
+    This is used / useful during development of a new harness.
+
+    For "real" versions of harnesses, rely on the built version from GitHub
+    packages.
+    """
+    for each in session.posargs:
+        name = Path(each).name
+        session.run(
+            "podman",
+            "build",
+            "-f",
+            IMPLEMENTATIONS / name / "Dockerfile",
+            "-t",
+            f"ghcr.io/bowtie-jsonschema/{name}",
+            external=True,
+        )
 
 
 @session(default=False)
 def requirements(session):
+    """
+    Update bowtie's requirements.txt files.
+    """
     session.install("pip-tools")
     for each in [DOCS / "requirements.in", ROOT / "test-requirements.in"]:
         session.run(

@@ -1,14 +1,19 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.uri.URIFetcher;
 import java.io.*;
-import java.util.ArrayList;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
 
@@ -21,12 +26,29 @@ public class BowtieJsonSchemaValidator {
               "http://json-schema.org/draft-06/schema#",
               "http://json-schema.org/draft-04/schema#");
 
-  private final JsonSchemaFactory factory = JsonSchemaFactory.getInstance();
+  private JsonMetaSchema getVersionFromDialect(String dialect) {
+    switch (dialect) {
+    case "https://json-schema.org/draft/2020-12/schema":
+      return JsonMetaSchema.getV202012();
+    case "https://json-schema.org/draft/2019-09/schema":
+      return JsonMetaSchema.getV201909();
+    case "http://json-schema.org/draft-07/schema#":
+      return JsonMetaSchema.getV7();
+    case "http://json-schema.org/draft-06/schema#":
+      return JsonMetaSchema.getV6();
+    case "http://json-schema.org/draft-04/schema#":
+      return JsonMetaSchema.getV4();
+    default:
+      return JsonMetaSchema.getV202012();
+    }
+  }
+
+  private String dialect;
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
-  private boolean started;
+  private boolean started = false;
 
   public static void main(String[] args) {
     BufferedReader reader =
@@ -92,91 +114,160 @@ public class BowtieJsonSchemaValidator {
   }
 
   private void dialect(JsonNode node) throws JsonProcessingException {
-    String dialect;
     DialectRequest dialectRequest = objectMapper.treeToValue(
       node,
       DialectRequest.class
     );
 
     if (!started) {
-      throw new IllegalArgumentException("Not started!");
+      throw new RuntimeException("Not started!");
     }
 
     dialect = dialectRequest.dialect();
     if (dialect == null) {
-      throw new IllegalArgumentException("Bad dialect!");
+      throw new RuntimeException("Bad dialect!");
     }
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void run(JsonNode node) throws JsonProcessingException {
+  private void run(JsonNode node)
+    throws JsonProcessingException, IllegalArgumentException {
     if (!started) {
-      throw new IllegalArgumentException("Not started!");
+      throw new RuntimeException("Not started!");
     }
-
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+    if (runRequest.testCase().registry() != null) {
+      CustomURIFetcher uriFetcher = new CustomURIFetcher(
+        runRequest.testCase().registry()
+      );
 
-    try {
-      TestCase testCase = runRequest.testCase();
-
-      JsonNode schema = testCase.schema();
-
-      List<TestResult> results = new ArrayList<>();
-      for (Test test : testCase.tests()) {
-            JsonSchema jsonSchema = factory.getSchema(schema);
-            Set<ValidationMessage> errors =
-                jsonSchema.validate(test.instance());
-            boolean valid = errors == null || errors.isEmpty();
-            results.add(new TestResult(valid));
-          }
-
-          RunResponse runResponse = new RunResponse(runRequest.seq(), results);
-          output.println(objectMapper.writeValueAsString(runResponse));
-        }
-        catch (Exception e) {
-          String stackTrace = stackTraceToString(e);
-          RunErroredResponse erroredResponse = new RunErroredResponse(
-              runRequest.seq(), true,
-              new ErrorContext(e.getMessage(), stackTrace));
-          output.println(objectMapper.writeValueAsString(erroredResponse));
-        }
-    }
-
-    private String stackTraceToString(Exception e) {
+      JsonSchemaFactory factory = JsonSchemaFactory
+        .builder()
+        .uriFetcher(uriFetcher, "http")
+        .uriFetcher(uriFetcher, "https")
+        .addMetaSchema(getVersionFromDialect(dialect))
+        .defaultMetaSchemaURI(getVersionFromDialect(dialect).getUri())
+        .build();
+      try {
+        List<TestResult> results = runRequest
+          .testCase()
+          .tests()
+          .stream()
+          .map(test -> {
+            JsonSchema jsonSchema = factory.getSchema(
+              runRequest.testCase().schema()
+            );
+            Set<ValidationMessage> errors = jsonSchema.validate(
+              test.instance()
+            );
+            boolean isValid = (errors == null || errors.size() == 0);
+            return new TestResult(isValid);
+          })
+          .toList();
+        output.println(
+          objectMapper.writeValueAsString(
+            new RunResponse(runRequest.seq(), results)
+          )
+        );
+      } catch (Exception e) {
         StringWriter stringWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stringWriter));
-        return stringWriter.toString();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        e.printStackTrace(printWriter);
+        RunErroredResponse response = new RunErroredResponse(
+          runRequest.seq(),
+          true,
+          new ErrorContext(e.getMessage(), stackTraceToString(e))
+        );
+        output.println(objectMapper.writeValueAsString(response));
+      }
     }
   }
 
-  record StartRequest(int version) {}
-
-  record StartResponse(int version, boolean ready,
-                       Implementation implementation) {}
-
-  record DialectRequest(String dialect) {}
-
-  record DialectResponse(boolean ok) {}
-
-  record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
-
-  record RunResponse(JsonNode seq, List<TestResult> results) {}
-
-  record RunErroredResponse(JsonNode seq, boolean errored,
-                            ErrorContext context) {}
-
-  record ErrorContext(String message, String traceback) {}
-
-  record TestCase(String description, String comment, JsonNode schema,
-                  JsonNode registry, List<Test> tests) {}
-
-  record Test(String description, String comment, JsonNode instance,
-              boolean valid) {}
-
-  record TestResult(boolean valid) {}
-
-  record Implementation(String language, String name, String version,
-                        List<String> dialects, String homepage, String issues,
-                        String os, String os_version, String language_version) {
+  private String stackTraceToString(Exception e) {
+    StringWriter stringWriter = new StringWriter();
+    e.printStackTrace(new PrintWriter(stringWriter));
+    return stringWriter.toString();
   }
+
+  public class CustomURIFetcher implements URIFetcher {
+
+    private final Map<String, JsonNode> registry;
+
+    public CustomURIFetcher(JsonNode registryNode) {
+      this.registry =
+        objectMapper.convertValue(registryNode, new TypeReference<>() {});
+    }
+
+    @Override
+    public InputStream fetch(URI uri) throws IOException {
+      String uriString = uri.toString();
+
+      if (registry.containsKey(uriString)) {
+        JsonNode mappingSchema = registry.get(uriString);
+        String mappingSchemaString = mappingSchema.toString();
+        return new ByteArrayInputStream(
+          mappingSchemaString.getBytes(StandardCharsets.UTF_8)
+        );
+      }
+
+      String emptySchema = "{}";
+      return new ByteArrayInputStream(
+        emptySchema.getBytes(StandardCharsets.UTF_8)
+      );
+    }
+  }
+}
+
+record StartRequest(int version) {}
+
+record StartResponse(
+  int version,
+  boolean ready,
+  Implementation implementation
+) {}
+
+record DialectRequest(String dialect) {}
+
+record DialectResponse(boolean ok) {}
+
+record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+
+record RunResponse(JsonNode seq, List<TestResult> results) {}
+
+record RunErroredResponse(
+  JsonNode seq,
+  boolean errored,
+  ErrorContext context
+) {}
+
+record ErrorContext(String message, String traceback) {}
+
+record TestCase(
+  String description,
+  String comment,
+  JsonNode schema,
+  JsonNode registry,
+  List<Test> tests
+) {}
+
+record Test(
+  String description,
+  String comment,
+  JsonNode instance,
+  boolean valid
+) {}
+
+record TestResult(boolean valid) {}
+
+record Implementation(
+  String language,
+  String name,
+  String version,
+  List<String> dialects,
+  String homepage,
+  String issues,
+  String os,
+  String os_version,
+  String language_version
+) {}
