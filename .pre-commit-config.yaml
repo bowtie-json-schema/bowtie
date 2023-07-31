@@ -17,11 +17,11 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.9.0
+    rev: v3.10.1
     hooks:
       - id: pyupgrade
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.0.280"
+    rev: "v0.0.281"
     hooks:
       - id: ruff
   - repo: https://github.com/Riverside-Healthcare/djLint
@@ -82,7 +82,7 @@ repos:
         id: clang-format
         types_or: [c++, c, c#, java, objective-c]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.45.0
+    rev: v8.46.0
     hooks:
       - name: eslint
         id: eslint
