@@ -12,7 +12,7 @@ import { parseReportData } from "./data/parseReportData";
 
 const reportUrl =
   import.meta.env.MODE === "development"
-    ? "https://bowtie.report/"
+    ? "https://bowtie.report"
     : import.meta.env.BASE_URL;
 const titleTag = document.getElementsByTagName("title")[0];
 const dialectToName = {
