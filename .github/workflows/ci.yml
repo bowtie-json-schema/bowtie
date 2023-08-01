@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
-      - name: Run standard pre-commit action
+      - name: Run pre-commit action
         uses: pre-commit/action@v3.0.0
         with:
           extra_args: --config .non-pre-commit-ci.yaml --all-files
