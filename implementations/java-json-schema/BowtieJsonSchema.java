@@ -100,7 +100,8 @@ public class BowtieJsonSchema {
         RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
         try {
             if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
-                RunSkippedResponse response = new RunSkippedResponse(runRequest.seq(), true, UNSUPPORTED.get(runRequest.testCase().description()), null);
+                RunSkippedResponse response = new RunSkippedResponse(runRequest.seq(), true,
+                        UNSUPPORTED.get(runRequest.testCase().description()), null);
                 output.println(objectMapper.writeValueAsString(response));
                 return;
             }
@@ -139,7 +140,7 @@ public class BowtieJsonSchema {
     class RegistrySchemaResolver implements SchemaResolver {
         private final Map<String, JsonNode> registry;
 
-        public RegistrySchemaResolver(JsonNode registryNode) {
+        RegistrySchemaResolver(JsonNode registryNode) {
             this.registry = objectMapper.convertValue(registryNode, new TypeReference<>() {});
         }
 
