@@ -15,6 +15,7 @@ implementers
 linter
 linters
 positionally
+providable
 runtime
 schemas
 shortname

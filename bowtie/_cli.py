@@ -70,6 +70,14 @@ DIALECT_SHORTNAMES = {
     "3": DRAFT3,
     "draft3": DRAFT3,
 }
+TEST_SUITE_DIALECT_URLS = {
+    DRAFT2020: f"{TEST_SUITE_URL}/tree/main/tests/draft2020-12",
+    DRAFT2019: f"{TEST_SUITE_URL}/tree/main/tests/draft2019-09",
+    DRAFT7: f"{TEST_SUITE_URL}/tree/main/tests/draft7",
+    DRAFT6: f"{TEST_SUITE_URL}/tree/main/tests/draft6",
+    DRAFT4: f"{TEST_SUITE_URL}/tree/main/tests/draft4",
+    DRAFT3: f"{TEST_SUITE_URL}/tree/main/tests/draft3",
+}
 LATEST_DIALECT_NAME = "draft2020-12"
 
 #: Should match the magic value used to validate `schema`s in `io-schema.json`
@@ -624,6 +632,10 @@ class _TestSuiteCases(click.ParamType):
         if not isinstance(value, str):
             return value
 
+        # Convert dialect URIs or shortnames to test suite URIs
+        value = DIALECT_SHORTNAMES.get(value, value)
+        value = TEST_SUITE_DIALECT_URLS.get(value, value)
+
         is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
         if is_local_path:
             cases, dialect = self._cases_and_dialect(path=Path(value))
@@ -704,17 +716,28 @@ def suite(
     """
     Run test cases from the official JSON Schema test suite.
 
-    Supports file or URL inputs like:
+    Supports a number of possible inputs:
 
-        * ``{ROOT}/tests/draft7`` to run a version's tests
+        * file paths found on the local file system containing tests, e.g.:
 
-        * ``{ROOT}/tests/draft7/foo.json`` to run just one file
+            - ``{PATH}/tests/draft7`` to run the draft 7 version's tests out of a local checkout of the test suite
 
-        * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/``
-          to run a version directly from a branch which exists in GitHub
+            - ``{PATH}/tests/draft7/foo.json`` to run just one file from a checkout
 
-        * ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
-          to run a single file directly from a branch which exists in GitHub
+        * URLs to the test suite repository hosted on GitHub, e.g.:
+
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/``
+              to run a version directly from any branch which exists in GitHub
+
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
+              to run a single file directly from a branch which exists in GitHub
+
+        * short name versions of the previous URLs (similar to those providable
+          to ``bowtie validate`` via its ``--dialect`` option), e.g.:
+
+            - ``7``, to run the draft 7 tests directly from GitHub (as in the
+              URL example above)
+
     """  # noqa: E501
     cases, dialect, metadata = input
     if filter:
