@@ -8,7 +8,6 @@ import java.io.InputStreamReader
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
-
 fun main() {
     val input = BufferedReader(InputStreamReader(System.`in`))
     val outputWriter = System.out.bufferedWriter()
@@ -43,7 +42,7 @@ private val IGNORED_CASES: Set<String> = hashSetOf(
     "base URI change - change folder in subschema",
     "base URI change",
     "retrieved nested refs resolve relative to their URI not \$id",
-    "\$ref to \$ref finds location-independent \$id"
+    "\$ref to \$ref finds location-independent \$id",
 )
 
 enum class Result { CONTINUE, STOP }
@@ -107,9 +106,9 @@ class BowtieSampsonSchemaValidatorLauncher(
                 json.encodeToString(
                     RunResponse.Skipped(
                         seq = command.seq,
-                        message = "case ${command.case.description} in the list of ignored cases: $reason"
-                    )
-                )
+                        message = "case ${command.case.description} in the list of ignored cases: $reason",
+                    ),
+                ),
             )
             return
         }
@@ -140,7 +139,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                 } else {
                     val valid = schema.validate(test.instance, ErrorCollector.EMPTY)
                     TestResult.Executed(
-                        valid = test.valid?.let { it == valid } ?: valid
+                        valid = test.valid?.let { it == valid } ?: valid,
                     )
                 }
             }.getOrElse {
@@ -148,7 +147,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                     context = ErrorContext(
                         message = "cannot execute test ${test.description}",
                         traceback = it.stackTraceToString(),
-                    )
+                    ),
                 )
             }
         }
@@ -157,8 +156,8 @@ class BowtieSampsonSchemaValidatorLauncher(
                 RunResponse.Result(
                     seq = command.seq,
                     results = results,
-                )
-            )
+                ),
+            ),
         )
     }
 
@@ -197,7 +196,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                         issues = libraryIssues,
                     ),
                 ),
-            )
+            ),
         )
         return Result.CONTINUE
     }

@@ -25,12 +25,14 @@ dependencies {
 
 tasks.withType<Jar> {
     manifest {
-        attributes(buildMap {
-            put("Implementation-Name", implementationName)
-            put("Implementation-Version", implementationVersion)
-            put("Implementation-Homepage", "https://github.com/OptimumCode/json-schema-validator")
-            put("Implementation-Issues", "https://github.com/OptimumCode/json-schema-validator/issues")
-        })
+        attributes(
+            buildMap {
+                put("Implementation-Name", implementationName)
+                put("Implementation-Version", implementationVersion)
+                put("Implementation-Homepage", "https://github.com/OptimumCode/json-schema-validator")
+                put("Implementation-Issues", "https://github.com/OptimumCode/json-schema-validator/issues")
+            },
+        )
     }
 }
 

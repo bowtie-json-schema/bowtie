@@ -40,7 +40,7 @@ sealed class RunResponse {
     class Skipped(
         override val seq: JsonElement,
         val skipped: Boolean = true,
-        val message: String
+        val message: String,
     ) : RunResponse()
 
     @Serializable
@@ -56,7 +56,7 @@ sealed class TestResult {
 
     @Serializable
     class Executed(
-        val valid: Boolean
+        val valid: Boolean,
     ) : TestResult()
 
     @Serializable

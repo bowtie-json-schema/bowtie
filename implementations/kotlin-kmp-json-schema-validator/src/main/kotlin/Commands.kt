@@ -69,5 +69,4 @@ private class CommandSerializer : JsonContentPolymorphicSerializer<Command>(Comm
             else -> error("unsupported command '$command'")
         }
     }
-
 }
