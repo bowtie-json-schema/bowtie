@@ -93,9 +93,8 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
     }
 
-    private fun shouldSkipTest(caseDescription: String, testDescription: String): Boolean {
-        // TODO: check tests to skip
-        return false
+    private fun shouldSkipTest(caseDescription: String, testDescription: String): String? {
+        return null
     }
 
     private fun handleRun(command: Command.Run) {
@@ -106,7 +105,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                 json.encodeToString(
                     RunResponse.Skipped(
                         seq = command.seq,
-                        message = "case ${command.case.description} in the list of ignored cases: $reason",
+                        message = "case '${command.case.description}' in the list of ignored cases: $reason",
                     ),
                 ),
             )
@@ -132,11 +131,11 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
         val results: List<TestResult> = command.case.tests.map { test ->
             runCatching {
-                if (shouldSkipTest(command.case.description, test.description)) {
+                shouldSkipTest(command.case.description, test.description)?.let { reason ->
                     TestResult.Skipped(
-                        message = "test ${test.description} in the list of ignored tests",
+                        message = "test '${test.description}' in the list of ignored tests: $reason",
                     )
-                } else {
+                } ?: run {
                     val valid = schema.validate(test.instance, ErrorCollector.EMPTY)
                     TestResult.Executed(
                         valid = test.valid?.let { it == valid } ?: valid,
