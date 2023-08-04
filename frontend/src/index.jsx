@@ -17,7 +17,6 @@ const reportHost =
     : window.location.href;
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
-const titleTag = document.getElementsByTagName("title")[0];
 const dialectToName = {
   "draft2020-12": "Draft 2020-12",
   "draft2019-09": "Draft 2019-09",
@@ -29,7 +28,7 @@ const dialectToName = {
 
 const fetchReportData = async (dialect) => {
   const dialectName = dialectToName[dialect] ?? dialect;
-  titleTag.textContent = `Bowtie - ${dialectName}`;
+  document.title = `Bowtie - ${dialectName}`;
   const url = reportUri.clone().filename(dialect).suffix("json").href();
   const response = await fetch(url);
   const jsonl = await response.text();
