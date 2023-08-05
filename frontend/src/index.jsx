@@ -11,9 +11,9 @@ import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
 
 const reportUrl =
-    import.meta.env.MODE === "development"
-            ? "https://bowtie.report"
-            : import.meta.env.BASE_URL;
+  import.meta.env.MODE === "development"
+    ? "https://bowtie.report"
+    : import.meta.env.BASE_URL;
 const titleTag = document.getElementsByTagName("title")[0];
 const dialectToName = {
   "draft2020-12": "Draft 2020-12",
