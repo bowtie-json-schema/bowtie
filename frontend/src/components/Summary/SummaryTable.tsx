@@ -1,6 +1,41 @@
+// @ts-ignore
 import ImplementationRow from "./ImplementationRow";
+import {useMemo} from 'react'
+import {ReportData} from '../../data/parseReportData'
 
-const SummaryTable = ({ reportData }) => {
+export interface Totals {
+  totalTests: number;
+  erroredCases: number;
+  skippedTests: number;
+  unsuccessfulTests: number;
+  erroredTests: number;
+}
+
+const calculateTotals = (data: ReportData): Totals => {
+  const totalTests = Array.from(data.cases.values()).reduce(
+    (prev, curr) => prev + curr.tests.length,
+    0,
+  );
+  return Array.from(data.implementations.values()).reduce(
+    (prev, curr) => ({
+      totalTests,
+      erroredCases: prev.erroredCases + curr.erroredCases,
+      skippedTests: prev.skippedTests + curr.skippedTests,
+      unsuccessfulTests: prev.unsuccessfulTests + curr.unsuccessfulTests,
+      erroredTests: prev.erroredTests + curr.erroredTests,
+    }),
+    {
+      totalTests: totalTests,
+      erroredCases: 0,
+      skippedTests: 0,
+      unsuccessfulTests: 0,
+      erroredTests: 0,
+    },
+  );
+}
+
+const SummaryTable = ({ reportData }: {reportData: ReportData}) => {
+  const totals = useMemo(() => calculateTotals(reportData), [reportData])
   return (
     <table className="table table-sm table-hover">
       <thead>
@@ -17,7 +52,7 @@ const SummaryTable = ({ reportData }) => {
             <span className="text-muted">cases ({reportData.cases.size})</span>
           </th>
           <th colSpan={3} className="text-center">
-            <span className="text-muted">tests ({reportData.totalTests})</span>
+            <span className="text-muted">tests ({totals.totalTests})</span>
           </th>
           <th colSpan={1}></th>
         </tr>
@@ -70,16 +105,16 @@ const SummaryTable = ({ reportData }) => {
           <th scope="row" colSpan={2}>
             total
           </th>
-          <td className="text-center">{reportData.erroredCases}</td>
-          <td className="text-center">{reportData.skippedTests}</td>
+          <td className="text-center">{totals.erroredCases}</td>
+          <td className="text-center">{totals.skippedTests}</td>
           <td className="text-center details-required">
-            {reportData.unsuccessfulTests + reportData.erroredTests}
+            {totals.unsuccessfulTests + totals.erroredTests}
             <div className="hover-details text-center">
               <p>
-                <b>failed</b>: {reportData.unsuccessfulTests}
+                <b>failed</b>: {totals.unsuccessfulTests}
               </p>
               <p>
-                <b>errored</b>: {reportData.erroredTests}
+                <b>errored</b>: {totals.erroredTests}
               </p>
             </div>
           </td>
