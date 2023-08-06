@@ -99,7 +99,6 @@ class BowtieSampsonSchemaValidatorLauncher(
 
     private fun handleRun(command: Command.Run) {
         requireStarted()
-        requireDialect()
         shouldSkipCase(command.case.description)?.also { reason ->
             writer.writeLine(
                 json.encodeToString(
@@ -163,10 +162,6 @@ class BowtieSampsonSchemaValidatorLauncher(
                 ),
             ),
         )
-    }
-
-    private fun requireDialect() {
-        require(currentDialect.isNotEmpty()) { "dialect is not set" }
     }
 
     private fun handleDialect(command: Command.Dialect): Result {
