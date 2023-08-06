@@ -9,6 +9,7 @@ import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
+import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
 
 const reportUrl = "https://bowtie.report";
 const titleTag = document.getElementsByTagName("title")[0];
@@ -81,9 +82,10 @@ const router = createHashRouter([
       },
       {
         path: "/implementations/:langImplementation",
-        element: <>Hello</>,
-        loader: async ({ params }) => getImplementation(params.langImplementation),
-      }
+        Component: PerImplementationPage,
+        loader: async ({ params }) =>
+          getImplementation(params.langImplementation),
+      },
     ],
   },
 ]);
