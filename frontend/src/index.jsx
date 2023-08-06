@@ -12,11 +12,11 @@ import { parseReportData } from "./data/parseReportData";
 
 const getReportUrl = () => {
   return import.meta.env.MODE === "development"
-      ? "https://bowtie.report"
-      : import.meta.env.BASE_URL;
-}
+    ? "https://bowtie.report"
+    : import.meta.env.BASE_URL;
+};
 
-const removeTrailingSlash = (path) => path.replace(/\/$/, '');
+const removeTrailingSlash = (path) => path.replace(/\/$/, "");
 
 const reportUrl = removeTrailingSlash(getReportUrl());
 const titleTag = document.getElementsByTagName("title")[0];
