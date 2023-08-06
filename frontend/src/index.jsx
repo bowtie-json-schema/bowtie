@@ -33,6 +33,32 @@ const fetchReportData = async (dialect) => {
   return parseReportData(lines);
 };
 
+const implementations = [
+  "clojure-json-schema",
+  "cpp-valijson",
+  "dotnet-jsonschema-net",
+  "go-gojsonschema",
+  "go-jsonschema",
+  "java-json-schema",
+  "java-json-schema-validator",
+  "js-ajv",
+  "js-hyperjump",
+  "lua-josnschema",
+  "python-fastjsonschema",
+  "python-jschon",
+  "python-jsonschema",
+  "ruby-json_schemer",
+  "rust-boon",
+  "rust-jsonschema",
+  "ts-vscode-json-languageservice",
+];
+
+const getImplementation = (implementationName) => {
+  if (implementations.includes(implementationName)) {
+    return implementationName;
+  }
+};
+
 const router = createHashRouter([
   {
     path: "/",
@@ -53,6 +79,11 @@ const router = createHashRouter([
         path: "/local-report",
         Component: DragAndDrop,
       },
+      {
+        path: "/implementations/:langImplementation",
+        element: <>Hello</>,
+        loader: async ({ params }) => getImplementation(params.langImplementation),
+      }
     ],
   },
 ]);
@@ -64,6 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
