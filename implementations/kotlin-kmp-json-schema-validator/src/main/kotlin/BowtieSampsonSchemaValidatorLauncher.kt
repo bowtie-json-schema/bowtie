@@ -31,7 +31,6 @@ private val SUPPORTED_DIALECTS: Set<String> = hashSetOf(
     "http://json-schema.org/draft-07/schema#",
 )
 
-// TODO: remove when remote ref support is added
 /**
  * All these cases are ignored because they contain remote refs
  * Library does not support them yet.
@@ -73,7 +72,7 @@ class BowtieSampsonSchemaValidatorLauncher(
 
     fun handle(command: Command): Result {
         return when (command) {
-            is Command.Start -> handleStart(command)
+            is Command.Start -> handleStart()
             is Command.Dialect -> handleDialect(command)
             is Command.Run -> {
                 handleRun(command)
@@ -93,6 +92,7 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
     }
 
+    @Suppress("detekt:style:UnusedParameter", "detekt:style:FunctionOnlyReturningConstant")
     private fun shouldSkipTest(caseDescription: String, testDescription: String): String? {
         return null
     }
@@ -112,7 +112,8 @@ class BowtieSampsonSchemaValidatorLauncher(
             return
         }
         val schemaDefinition = command.case.schema
-        // TODO: ability to specify certain dialect
+
+        @Suppress("detekt:exceptions:TooGenericExceptionCaught")
         val schema = try {
             JsonSchema.fromJsonElement(schemaDefinition)
         } catch (ex: Exception) {
@@ -129,6 +130,10 @@ class BowtieSampsonSchemaValidatorLauncher(
             )
             return
         }
+        runCase(command, schema)
+    }
+
+    private fun runCase(command: Command.Run, schema: JsonSchema) {
         val results: List<TestResult> = command.case.tests.map { test ->
             runCatching {
                 shouldSkipTest(command.case.description, test.description)?.let { reason ->
@@ -180,7 +185,7 @@ class BowtieSampsonSchemaValidatorLauncher(
         return Result.CONTINUE
     }
 
-    private fun handleStart(command: Command.Start): Result {
+    private fun handleStart(): Result {
         started = true
         writer.writeLine(
             json.encodeToString(
