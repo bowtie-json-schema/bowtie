@@ -65,12 +65,6 @@ const implementations = [
   "ts-vscode-json-languageservice",
 ];
 
-const getImplementation = (implementationName, dialectName) => {
-  if (implementations.includes(implementationName)) {
-    return [implementationName, dialectName];
-  }
-};
-
 const router = createHashRouter([
   {
     path: "/",
@@ -96,6 +90,14 @@ const router = createHashRouter([
         Component: PerImplementationPage,
         loader: async ({ params }) =>
           fetchReportData(params.dialectName, params.langImplementation),
+      },
+      {
+        path: "/docs",
+        Component: () => {
+          window.location.href =
+            "https://bowtie-json-schema.readthedocs.io/en/latest/";
+          return null;
+        },
       },
     ],
   },
