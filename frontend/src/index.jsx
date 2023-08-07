@@ -9,8 +9,14 @@ import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
+import URI from "urijs";
 
-const reportUrl = "https://bowtie.report";
+const reportHost =
+  import.meta.env.MODE === "development"
+    ? "https://bowtie.report"
+    : window.location.href;
+const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
+
 const titleTag = document.getElementsByTagName("title")[0];
 const dialectToName = {
   "draft2020-12": "Draft 2020-12",
@@ -24,7 +30,8 @@ const dialectToName = {
 const fetchReportData = async (dialect) => {
   const dialectName = dialectToName[dialect] ?? dialect;
   titleTag.textContent = `Bowtie - ${dialectName}`;
-  const response = await fetch(`${reportUrl}/${dialect}.json`);
+  const url = reportUri.clone().filename(dialect).suffix("json").href();
+  const response = await fetch(url);
   const jsonl = await response.text();
   const lines = jsonl
     .trim()
