@@ -67,12 +67,18 @@ const NavBar = () => {
                 </a>
                 <ul className="dropdown-menu">
                   <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft2020-12">
+                    <NavLink
+                      className="dropdown-item"
+                      to="/dialects/draft2020-12"
+                    >
                       2020-12
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft2019-09">
+                    <NavLink
+                      className="dropdown-item"
+                      to="/dialects/draft2019-09"
+                    >
                       2019-09
                     </NavLink>
                   </li>
