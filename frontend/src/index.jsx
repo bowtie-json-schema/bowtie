@@ -22,15 +22,26 @@ const dialectToName = {
   draft3: "Draft 3",
 };
 
-const fetchReportData = async (dialect) => {
-  const dialectName = dialectToName[dialect] ?? dialect;
+const fetchReportData = async (dialect, implementation) => {
+  const dialectName = dialectToName[dialect] || dialect;
   titleTag.textContent = `Bowtie - ${dialectName}`;
   const response = await fetch(`${reportUrl}/${dialect}.json`);
   const jsonl = await response.text();
-  const lines = jsonl
-    .trim()
-    .split(/\r?\n/)
-    .map((line) => JSON.parse(line));
+  const lines = jsonl.trim().split(/\r?\n/).map(JSON.parse);
+
+  if (implementation) {
+    const filteredData = lines.filter(
+      (obj) =>
+        !obj.implementation || obj.implementation.includes(implementation)
+    );
+    for (const key in filteredData[0]?.implementations) {
+      if (!key.includes(implementation)) {
+        delete filteredData[0].implementations[key];
+      }
+    }
+    return parseReportData(filteredData);
+  }
+
   return parseReportData(lines);
 };
 
@@ -54,9 +65,9 @@ const implementations = [
   "ts-vscode-json-languageservice",
 ];
 
-const getImplementation = (implementationName) => {
+const getImplementation = (implementationName, dialectName) => {
   if (implementations.includes(implementationName)) {
-    return implementationName;
+    return [implementationName, dialectName];
   }
 };
 
@@ -81,10 +92,10 @@ const router = createHashRouter([
         Component: DragAndDrop,
       },
       {
-        path: "/implementations/:langImplementation",
+        path: "/implementations/:langImplementation/dialects/:dialectName",
         Component: PerImplementationPage,
         loader: async ({ params }) =>
-          getImplementation(params.langImplementation),
+          fetchReportData(params.dialectName, params.langImplementation),
       },
     ],
   },
