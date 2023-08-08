@@ -55,7 +55,7 @@
                     "name": {
                       "description": "The name of the implementation itself",
                       "type": "string",
-                      "pattern": "^[A-Za-z][\\w.]*[A-Za-z]$"
+                      "pattern": "^[A-Za-z][\\w\\-.]*[A-Za-z]$"
                     },
                     "version": {
                       "description": "The implementation version",
