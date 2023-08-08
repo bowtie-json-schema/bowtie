@@ -1,7 +1,7 @@
 // @ts-ignore
 import ImplementationRow from "./ImplementationRow";
-import {useMemo} from 'react'
-import {ReportData} from '../../data/parseReportData'
+import { useMemo } from "react";
+import { ReportData } from "../../data/parseReportData";
 
 export interface Totals {
   totalTests: number;
@@ -32,10 +32,10 @@ const calculateTotals = (data: ReportData): Totals => {
       erroredTests: 0,
     },
   );
-}
+};
 
-const SummaryTable = ({ reportData }: {reportData: ReportData}) => {
-  const totals = useMemo(() => calculateTotals(reportData), [reportData])
+const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
+  const totals = useMemo(() => calculateTotals(reportData), [reportData]);
   return (
     <table className="table table-sm table-hover">
       <thead>
