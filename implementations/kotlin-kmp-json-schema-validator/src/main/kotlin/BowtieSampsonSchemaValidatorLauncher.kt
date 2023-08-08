@@ -186,7 +186,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                     ready = true,
                     version = 1,
                     implementation = Implementation(
-                        name = 'kmp-json-schema-validator',
+                        name = "kmp-json-schema-validator",
                         version = libraryVersion,
                         homepage = libraryHomepage,
                         dialects = SUPPORTED_DIALECTS,
