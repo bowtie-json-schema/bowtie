@@ -52,7 +52,6 @@ class BowtieSampsonSchemaValidatorLauncher(
 ) {
     private var started: Boolean = false
     private var currentDialect: String = ""
-    private val libraryName: String
     private val libraryVersion: String
     private val libraryHomepage: String
     private val libraryIssues: String
@@ -63,7 +62,6 @@ class BowtieSampsonSchemaValidatorLauncher(
             Manifest(it).mainAttributes
         }
         with(attributes) {
-            libraryName = getValue("Implementation-Name")
             libraryVersion = getValue("Implementation-Version")
             libraryHomepage = getValue("Implementation-Homepage")
             libraryIssues = getValue("Implementation-Issues")
@@ -188,7 +186,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                     ready = true,
                     version = 1,
                     implementation = Implementation(
-                        name = libraryName,
+                        name = 'kmp-json-schema-validator',
                         version = libraryVersion,
                         homepage = libraryHomepage,
                         dialects = SUPPORTED_DIALECTS,

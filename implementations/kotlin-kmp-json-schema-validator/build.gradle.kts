@@ -25,7 +25,6 @@ tasks.withType<Jar> {
     manifest {
         attributes(
             buildMap {
-                put("Implementation-Name", "${lib.group}:${lib.module}")
                 put("Implementation-Version", lib.version)
                 put("Implementation-Homepage", "https://github.com/OptimumCode/json-schema-validator")
                 put("Implementation-Issues", "https://github.com/OptimumCode/json-schema-validator/issues")
