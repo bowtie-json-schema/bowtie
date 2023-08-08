@@ -1,9 +1,10 @@
 import AccordionItem from "./AccordionItem";
+import {Accordion} from 'react-bootstrap'
 
 const CasesSection = ({ reportData }) => {
   const implementations = Array.from(reportData.implementations.values());
   return (
-    <div className="accordion pt-5" id="cases">
+    <Accordion>
       {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
         <AccordionItem
           key={index}
@@ -12,7 +13,7 @@ const CasesSection = ({ reportData }) => {
           implementations={implementations}
         />
       ))}
-    </div>
+    </Accordion>
   );
 };
 

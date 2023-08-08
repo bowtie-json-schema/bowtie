@@ -2,12 +2,13 @@ import AccordionSvg from "./AccordionSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import {useEffect, useState, useTransition} from 'react'
 import LoadingAnimation from '../LoadingAnimation'
+import {Accordion} from 'react-bootstrap'
 
 const Content = ({ seq, caseData, implementations }) => {
   const [instance, setInstance] = useState();
 
   return (
-  <div id={`accordion-body${seq}`} className="accordion-body">
+  <>
     <SchemaDisplay schema={caseData.schema} instance={instance} />
     <table className="table table-hover">
       <thead>
@@ -45,7 +46,7 @@ const Content = ({ seq, caseData, implementations }) => {
       ))}
       </tbody>
     </table>
-  </div>
+  </>
 )
 }
 
@@ -56,28 +57,14 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
     startTransition(() => setContent(<Content seq={seq} caseData={caseData} implementations={implementations}/> ))
   }, [seq, caseData, implementations])
   return (
-    <div className="accordion-item">
-      <h2 className="accordion-header" id={`case-${seq}-heading`}>
-        <button
-          className="accordion-button collapsed"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target={`#case-${seq}`}
-          aria-expanded="false"
-          aria-controls={`case-${seq}`}
-        >
-          <p className="m-0">{caseData.description}</p>
-        </button>
-      </h2>
-      <div
-        id={`case-${seq}`}
-        className="accordion-collapse collapse"
-        aria-labelledby={`case-${seq}-heading`}
-        data-bs-parent="#cases"
-      >
+    <Accordion.Item eventKey={seq}>
+      <Accordion.Header>
+          {caseData.description}
+      </Accordion.Header>
+      <Accordion.Body>
         {content}
-      </div>
-    </div>
+      </Accordion.Body>
+    </Accordion.Item>
   );
 };
 
