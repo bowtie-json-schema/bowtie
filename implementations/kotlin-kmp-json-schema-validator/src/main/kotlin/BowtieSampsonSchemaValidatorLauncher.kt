@@ -92,7 +92,7 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
     }
 
-    @Suppress("detekt:style:UnusedParameter", "detekt:style:FunctionOnlyReturningConstant")
+    @Suppress("detekt:UnusedPrivateMember", "detekt:FunctionOnlyReturningConstant")
     private fun shouldSkipTest(caseDescription: String, testDescription: String): String? {
         return null
     }
@@ -112,7 +112,7 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
         val schemaDefinition = command.case.schema
 
-        @Suppress("detekt:exceptions:TooGenericExceptionCaught")
+        @Suppress("detekt:TooGenericExceptionCaught")
         val schema = try {
             JsonSchema.fromJsonElement(schemaDefinition)
         } catch (ex: Exception) {
