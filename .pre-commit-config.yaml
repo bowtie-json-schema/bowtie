@@ -103,3 +103,11 @@ repos:
             "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
             "implementations/kotlin-kmp-json-schema-validator/*.kts",
           ]
+      - name: detekt
+        id: detekt
+        args:
+          [
+            "--build-upon-default-config",
+            "--input",
+            "implementations/kotlin-kmp-json-schema-validator",
+          ]

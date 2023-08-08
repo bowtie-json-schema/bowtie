@@ -11,14 +11,3 @@ repos:
             "-d",
             "implementations",
           ]
-  - repo: https://github.com/dustinsand/pre-commit-jvm
-    rev: v0.8.0
-    hooks:
-      - name: detekt
-        id: detekt
-        args:
-          [
-            "--build-upon-default-config",
-            "--input",
-            "implementations/kotlin-kmp-json-schema-validator",
-          ]
