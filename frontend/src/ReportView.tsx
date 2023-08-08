@@ -7,10 +7,10 @@ import SummarySection from "./components/Summary/SummarySection";
 import {useMemo} from 'react'
 import {ReportData} from './data/parseReportData.ts'
 import {FilterSection} from './components/FilterSection.tsx'
-import {useQueryParams} from './hooks/useQueryParams.ts'
+import {useSearchParams} from './hooks/useSearchParams.ts'
 
 export const ReportView = ({ reportData }: {reportData: ReportData}) => {
-  const {language} = useQueryParams()
+  const params = useSearchParams()
 
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(impl => impl.metadata.language)
@@ -19,12 +19,12 @@ export const ReportView = ({ reportData }: {reportData: ReportData}) => {
 
   const filteredData = useMemo(() => {
     let filteredData = reportData
-    if (language) {
-      const filteredArray = Array.from(reportData.implementations.entries()).filter(([, data]) => data.metadata.language === language)
+    if (params.size) {
+      const filteredArray = Array.from(reportData.implementations.entries()).filter(([, data]) => params.getAll('language').includes(data.metadata.language))
       filteredData = {...reportData, implementations: new Map(filteredArray)}
     }
     return filteredData
-  }, [reportData, language])
+  }, [reportData, params])
 
   return (
     <div>
