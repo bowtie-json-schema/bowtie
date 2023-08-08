@@ -51,7 +51,7 @@ const CaseContent = ({ seq, caseData, implementations }) => {
 }
 
 const CaseItem = ({ seq, caseData, implementations }) => {
-  const [content, setContent] = useState(<LoadingAnimation/>);
+  const [content, setContent] = useState(null);
   const [, startTransition] = useTransition();
   useEffect(() => {
     startTransition(() => setContent(<CaseContent seq={seq} caseData={caseData} implementations={implementations}/> ))
