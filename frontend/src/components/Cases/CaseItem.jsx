@@ -1,10 +1,10 @@
-import AccordionSvg from "./AccordionSvg";
+import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import {useEffect, useState, useTransition} from 'react'
 import LoadingAnimation from '../LoadingAnimation'
 import {Accordion} from 'react-bootstrap'
 
-const Content = ({ seq, caseData, implementations }) => {
+const CaseContent = ({ seq, caseData, implementations }) => {
   const [instance, setInstance] = useState();
 
   return (
@@ -40,7 +40,7 @@ const Content = ({ seq, caseData, implementations }) => {
             <p className="m-0">{test.description}</p>
           </td>
           {implementations.map((impl, i) => (
-            <AccordionSvg key={i} result={impl.cases.get(seq)[index]} />
+            <CaseResultSvg key={i} result={impl.cases.get(seq)[index]} />
           ))}
         </tr>
       ))}
@@ -50,11 +50,11 @@ const Content = ({ seq, caseData, implementations }) => {
 )
 }
 
-const AccordionItem = ({ seq, caseData, implementations }) => {
+const CaseItem = ({ seq, caseData, implementations }) => {
   const [content, setContent] = useState(<LoadingAnimation/>);
   const [, startTransition] = useTransition();
   useEffect(() => {
-    startTransition(() => setContent(<Content seq={seq} caseData={caseData} implementations={implementations}/> ))
+    startTransition(() => setContent(<CaseContent seq={seq} caseData={caseData} implementations={implementations}/> ))
   }, [seq, caseData, implementations])
   return (
     <Accordion.Item eventKey={seq}>
@@ -68,4 +68,4 @@ const AccordionItem = ({ seq, caseData, implementations }) => {
   );
 };
 
-export default AccordionItem;
+export default CaseItem;

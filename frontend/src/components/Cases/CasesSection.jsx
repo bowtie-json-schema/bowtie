@@ -1,4 +1,4 @@
-import AccordionItem from "./AccordionItem";
+import CaseItem from "./CaseItem";
 import {Accordion} from 'react-bootstrap'
 
 const CasesSection = ({ reportData }) => {
@@ -6,7 +6,7 @@ const CasesSection = ({ reportData }) => {
   return (
     <Accordion>
       {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
-        <AccordionItem
+        <CaseItem
           key={index}
           seq={seq}
           caseData={caseData}
