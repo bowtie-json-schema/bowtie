@@ -1,7 +1,6 @@
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import { useEffect, useState, useTransition } from "react";
-import LoadingAnimation from "../LoadingAnimation";
 import { Accordion } from "react-bootstrap";
 
 const CaseContent = ({ seq, caseData, implementations }) => {
