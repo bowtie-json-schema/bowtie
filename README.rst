@@ -40,4 +40,4 @@ It's called Bowtie because it fans in lots of JSON then fans out lots of results
 Looks like a bowtie, no?
 Also because it's elegant – we hope.
 
-For more information, see `Bowtie's documentation <https://bowtie-json-schema.readthedocs.io/>`_.
+For more information, see `Bowtie's documentation <https://docs.bowtie.report/>`_.
