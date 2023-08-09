@@ -40,6 +40,17 @@ repos:
       - name: prettier (javascript implementations & bowtie internals)
         exclude: frontend/pnpm-lock.yaml
         id: prettier
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.46.0
+    hooks:
+      - name: eslint
+        id: eslint
+        files: ^frontend/src/.*\.jsx?$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.43.0
+          - eslint-plugin-react@7.32.2
+          - eslint-plugin-react-hooks@4.6.0
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"
     hooks:
@@ -51,9 +62,6 @@ repos:
             "implementations/rust-jsonschema/Cargo.toml",
             "--",
           ]
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: "v1.0"
-    hooks:
       - name: cargo fmt rust-boon
         id: fmt
         args: ["--manifest-path", "implementations/rust-boon/Cargo.toml", "--"]
@@ -81,21 +89,10 @@ repos:
       - name: clang-format (c/c++/c#/java implementations)
         id: clang-format
         types_or: [c++, c, c#, java, objective-c]
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.46.0
-    hooks:
-      - name: eslint
-        id: eslint
-        files: ^frontend/src/.*\.jsx?$
-        types: [file]
-        additional_dependencies:
-          - eslint@8.43.0
-          - eslint-plugin-react@7.32.2
-          - eslint-plugin-react-hooks@4.6.0
   - repo: https://github.com/dustinsand/pre-commit-jvm
     rev: v0.8.0
     hooks:
-      - name: ktlint
+      - name: ktlint (kotlin implementations)
         id: ktlint
         args:
           [
@@ -103,7 +100,7 @@ repos:
             "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
             "implementations/kotlin-kmp-json-schema-validator/*.kts",
           ]
-      - name: detekt
+      - name: detekt (kotlin implementations)
         id: detekt
         args:
           [
@@ -111,7 +108,7 @@ repos:
             "--input",
             "implementations/kotlin-kmp-json-schema-validator",
           ]
-      - name: PMD (java implementations)
+      - name: pmd (java implementations)
         id: pmd
         args:
           [
