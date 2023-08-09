@@ -260,7 +260,7 @@ def develop_harness(session):
             "-f",
             IMPLEMENTATIONS / name / "Dockerfile",
             "-t",
-            f"ghcr.io/bowtie-jsonschema/{name}",
+            f"ghcr.io/bowtie-json-schema/{name}",
             external=True,
         )
 

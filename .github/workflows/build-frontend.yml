@@ -13,13 +13,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: npm ci
-        working-directory: ./frontend
-      - run: npm run build -- --base=${{ vars.BOWTIE_BASE_URL || '/bowtie' }}
-        working-directory: ./frontend
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --dir frontend --frozen-lockfile --strict-peer-dependencies
+
+      - name: Build the UI
+        run: pnpm run --dir frontend build -- --base=${{ vars.BOWTIE_BASE_URL || '/bowtie' }}
+
       - uses: actions/upload-artifact@v3
         with:
           name: frontend-build

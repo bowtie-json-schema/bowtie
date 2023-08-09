@@ -1,0 +1,10 @@
+[versions]
+kotlin = "1.8.22"
+json-schema-validator = "0.0.2"
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+[libraries]
+json-schema-validator = { group = "io.github.optimumcode", name = "json-schema-validator", version.ref = "json-schema-validator" }
