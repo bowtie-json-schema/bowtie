@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.14",
-    "@types/react-dom": "^18.2.6",
+    "@types/react-dom": "^18.2.7",
     "@types/urijs": "^1.19.19",
     "@vitejs/plugin-react": "^4.0.3",
     "eslint": "8.43.0",
