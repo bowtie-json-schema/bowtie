@@ -11,6 +11,6 @@ const langMap: Record<string, string> = {
   ruby: "Ruby",
   rust: "Rust",
   typescript: "TypeScript",
-}
+};
 
 export const mapLanguage = (lang: string) => langMap[lang] ?? lang;
