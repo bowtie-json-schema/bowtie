@@ -3,7 +3,7 @@ import { InfoCircleFill } from "react-bootstrap-icons";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
-import {mapLanguage} from '../../data/mapLanguage'
+import { mapLanguage } from "../../data/mapLanguage";
 
 const ImplementationRow = ({ cases, implementation }) => {
   const [showDetails, setShowDetails] = useState(false);

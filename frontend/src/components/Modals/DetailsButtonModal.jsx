@@ -1,5 +1,5 @@
 import { Button, Modal } from "react-bootstrap";
-import {mapLanguage} from '../../data/mapLanguage'
+import { mapLanguage } from "../../data/mapLanguage";
 
 export const DetailsButtonModal = ({
   show,

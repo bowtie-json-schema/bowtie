@@ -3,7 +3,7 @@ import { Badge, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";
-import {mapLanguage} from '../data/mapLanguage.ts'
+import { mapLanguage } from "../data/mapLanguage.ts";
 
 export const FilterSection = ({ languages }: { languages: string[] }) => {
   const params = useSearchParams();

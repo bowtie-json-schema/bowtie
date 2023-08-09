@@ -2,7 +2,7 @@ import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import { useEffect, useState, useTransition } from "react";
 import { Accordion } from "react-bootstrap";
-import {mapLanguage} from '../../data/mapLanguage'
+import { mapLanguage } from "../../data/mapLanguage";
 
 const CaseContent = ({ seq, caseData, implementations }) => {
   const [instance, setInstance] = useState();
