@@ -14,17 +14,6 @@ env:
   PIP_NO_PYTHON_VERSION_WARNING: "1"
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-      - name: Run pre-commit action
-        uses: pre-commit/action@v3.0.0
-        with:
-          extra_args: --config .non-pre-commit-ci.yaml --all-files
   list:
     runs-on: ubuntu-latest
     outputs:
