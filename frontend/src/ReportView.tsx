@@ -21,7 +21,7 @@ export const ReportView = ({ reportData }: { reportData: ReportData }) => {
 
   const filteredData = useMemo(() => {
     let filteredData = reportData;
-    if (params.size) {
+    if (params.getAll("language").length) {
       const filteredArray = Array.from(
         reportData.implementations.entries(),
       ).filter(([, data]) =>
