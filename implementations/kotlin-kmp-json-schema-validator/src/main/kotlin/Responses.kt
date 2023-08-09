@@ -10,7 +10,7 @@ class StartResponse(
 
 @Serializable
 class Implementation(
-    val language: String = "Kotlin",
+    val language: String = "kotlin",
     val name: String = "kmp-json-schema-validator",
     val version: String,
     val dialects: Set<String>,
