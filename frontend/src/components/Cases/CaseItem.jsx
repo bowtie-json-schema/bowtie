@@ -2,6 +2,7 @@ import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import { useEffect, useState, useTransition } from "react";
 import { Accordion } from "react-bootstrap";
+import {mapLanguage} from '../../data/mapLanguage'
 
 const CaseContent = ({ seq, caseData, implementations }) => {
   const [instance, setInstance] = useState();
@@ -25,10 +26,12 @@ const CaseContent = ({ seq, caseData, implementations }) => {
                     implementation.metadata.language
                   }
                 >
-                  <b>{implementation.metadata.name + " "}</b>
-                  <small className="text-muted">
-                    {implementation.metadata.language}
-                  </small>
+                  <div className="flex-column d-flex">
+                    <b>{implementation.metadata.name}</b>
+                    <small className="text-muted">
+                      {mapLanguage(implementation.metadata.language)}
+                    </small>
+                  </div>
                 </td>
               ))}
             </tr>

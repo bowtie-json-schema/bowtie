@@ -1,13 +1,14 @@
 import { Button, Modal } from "react-bootstrap";
+import {mapLanguage} from '../../data/mapLanguage'
 
 export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
         <Modal.Title>
-          <b>{implementation.metadata.name + " "}</b>
-          <small className="text-muted">
-            {implementation.metadata.language}
+          <b>{implementation.metadata.name}</b>
+          <small className="text-muted ps-2">
+            {mapLanguage(implementation.metadata.language)}
           </small>
         </Modal.Title>
       </Modal.Header>
@@ -27,7 +28,7 @@ export const RunTimeInfoModal = ({ show, handleClose, implementation }) => {
         {implementation.metadata.language && (
           <p>
             <strong>Language: </strong>
-            {implementation.metadata.language}
+            {mapLanguage(implementation.metadata.language)}
           </p>
         )}
         {implementation.metadata.language_version && (

@@ -3,6 +3,7 @@ import { Badge, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";
+import {mapLanguage} from '../data/mapLanguage.ts'
 
 export const FilterSection = ({ languages }: { languages: string[] }) => {
   const params = useSearchParams();
@@ -39,7 +40,7 @@ const FilterChip = ({
     return (
       <Link key={current} to={{ search: newParams.toString() }}>
         <Badge pill bg="filter-active">
-          <div className="px-2">{current}</div>
+          <div className="px-2">{mapLanguage(current)}</div>
           <X size="20px" className="mr-1" />
         </Badge>
       </Link>
@@ -50,7 +51,7 @@ const FilterChip = ({
     return (
       <Link key={current} to={{ search: newParams.toString() }}>
         <Badge pill bg="filter">
-          <div className="px-2">{current}</div>
+          <div className="px-2">{mapLanguage(current)}</div>
         </Badge>
       </Link>
     );

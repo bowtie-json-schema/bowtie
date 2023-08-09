@@ -1,4 +1,5 @@
 import { Button, Modal } from "react-bootstrap";
+import {mapLanguage} from '../../data/mapLanguage'
 
 export const DetailsButtonModal = ({
   show,
@@ -40,9 +41,9 @@ export const DetailsButtonModal = ({
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
-          <b>{implementation.metadata.name + " "}</b>
-          <small className="text-muted">
-            {implementation.metadata.language}
+          <b>{implementation.metadata.name}</b>
+          <small className="text-muted ps-2">
+            {mapLanguage(implementation.metadata.language)}
           </small>
         </Modal.Title>
       </Modal.Header>
