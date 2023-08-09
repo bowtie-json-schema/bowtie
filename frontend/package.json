@@ -9,7 +9,7 @@
     "lint": "eslint src --ext js,jsx --max-warnings 0"
   },
   "dependencies": {
-    "bootstrap": "^5.3.0",
+    "bootstrap": "^5.3.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-bootstrap": "^2.8.0",
