@@ -111,3 +111,12 @@ repos:
             "--input",
             "implementations/kotlin-kmp-json-schema-validator",
           ]
+      - name: PMD (java implementations)
+        id: pmd
+        args:
+          [
+            "-R",
+            "implementations/.java-implementations-pmd-ruleset.xml",
+            "-d",
+            "implementations",
+          ]
