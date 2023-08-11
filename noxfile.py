@@ -13,6 +13,7 @@ DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
 IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
+UI = ROOT / "frontend"
 
 
 nox.options.sessions = []
@@ -279,3 +280,15 @@ def requirements(session):
             "-U",
             each.relative_to(ROOT),
         )
+
+
+@session(default=False, python=False)
+def ui(session):
+    """
+    Run a local development UI.
+    """
+
+    needs_install = not UI.joinpath("node_modules").is_dir()
+    if needs_install:
+        session.run("pnpm", "install", "--dir", UI)
+    session.run("pnpm", "run", "--dir", UI, "start")
