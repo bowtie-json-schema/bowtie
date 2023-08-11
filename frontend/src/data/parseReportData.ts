@@ -1,9 +1,6 @@
 export const parseReportData = (lines: any[]): ReportData => {
   const runInfoData = lines[0] as RunInfo;
-  const implementationEntries = Object.entries(runInfoData.implementations) as [
-    string,
-    ImplementationMetadata,
-  ][];
+  const implementationEntries = Object.entries(runInfoData.implementations);
 
   implementationEntries.sort(([id1], [id2]) => id1.localeCompare(id2));
   const caseMap = new Map() as Map<number, Case>;
@@ -77,51 +74,22 @@ export const parseReportData = (lines: any[]): ReportData => {
     }
   }
 
-  const totalTests = Array.from(caseMap.values()).reduce(
-    (prev, curr) => prev + curr.tests.length,
-    0,
-  );
-  const totals = Array.from(implementationMap.values()).reduce(
-    (prev, curr) => ({
-      erroredCases: prev.erroredCases + curr.erroredCases,
-      skippedTests: prev.skippedTests + curr.skippedTests,
-      unsuccessfulTests: prev.unsuccessfulTests + curr.unsuccessfulTests,
-      erroredTests: prev.erroredTests + curr.erroredTests,
-    }),
-    {
-      erroredCases: 0,
-      skippedTests: 0,
-      unsuccessfulTests: 0,
-      erroredTests: 0,
-    },
-  );
-
   return {
     runInfo: runInfoData,
     cases: caseMap,
     implementations: implementationMap,
-    totalTests: totalTests,
-    erroredCases: totals.erroredCases,
-    skippedTests: totals.skippedTests,
-    unsuccessfulTests: totals.unsuccessfulTests,
-    erroredTests: totals.erroredTests,
     didFailFast: didFailFast,
   };
 };
 
-interface ReportData {
+export interface ReportData {
   runInfo: RunInfo;
   cases: Map<number, Case>;
   implementations: Map<string, ImplementationData>;
-  totalTests: number;
-  erroredCases: number;
-  skippedTests: number;
-  unsuccessfulTests: number;
-  erroredTests: number;
   didFailFast: boolean;
 }
 
-interface RunInfo {
+export interface RunInfo {
   started: string;
   bowtie_version: string;
   dialect: string;
@@ -129,7 +97,7 @@ interface RunInfo {
   metadata: any;
 }
 
-interface ImplementationData {
+export interface ImplementationData {
   id: string;
   metadata: ImplementationMetadata;
   cases: Map<number, CaseResult[]>;
@@ -139,13 +107,13 @@ interface ImplementationData {
   erroredTests: number;
 }
 
-interface CaseResult {
+export interface CaseResult {
   state: "successful" | "failed" | "skipped" | "errored";
   valid?: boolean;
   message?: string;
 }
 
-interface ImplementationMetadata {
+export interface ImplementationMetadata {
   language: string;
   name: string;
   version?: string;
@@ -164,7 +132,7 @@ interface ImplementationMetadata {
   [k: string]: unknown;
 }
 
-interface Case {
+export interface Case {
   description: string;
   comment?: string;
   schema: {
