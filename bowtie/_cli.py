@@ -650,7 +650,7 @@ class _TestSuiteCases(click.ParamType):
 
             # isort: on
 
-            gh = GitHub()  # type: ignore[reportUnknownVariableType]  # noqa: E501
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # type: ignore[reportUnknownVariableType]  # noqa: E501
             repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
             _, _, rest = (
