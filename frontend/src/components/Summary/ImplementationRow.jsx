@@ -4,13 +4,9 @@ import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const ImplementationRow = ({ cases, implementation }) => {
-
-  const goToDetailsPage = () => {
-    window.location.href = window.location.href + "details";
-  };
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
@@ -18,17 +14,11 @@ const ImplementationRow = ({ cases, implementation }) => {
   return (
     <tr>
       <th scope="row">
-        <Link
-          to={`
-            /implementations/${implementation.metadata.language}-${implementation.metadata.name}
-            `
-          }
-          // href={
-          //   implementation.metadata.homepage ?? implementation.metadata.issues
-          // }
+        <NavLink
+          to={`/implementations/${implementation.metadata.language}-${implementation.metadata.name}`}
         >
           {implementation.metadata.name}
-        </Link>
+        </NavLink>
         <small className="text-muted ps-1">
           {mapLanguage(implementation.metadata.language)}
         </small>
@@ -60,13 +50,13 @@ const ImplementationRow = ({ cases, implementation }) => {
       </td>
 
       <td>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            onClick={() => setShowDetails(true)}
-          >
-            Details
-          </button>
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setShowDetails(true)}
+        >
+          Details
+        </button>
       </td>
       <RunTimeInfoModal
         show={showRunTimeInfo}

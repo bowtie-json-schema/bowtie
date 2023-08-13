@@ -3,7 +3,6 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
-import CasesSection from "./components/Cases/CasesSection";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
@@ -76,24 +75,13 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
-        loader: async ({ params }) =>
-          fetchReportData("draft2020-12"),
+        loader: async ({ params }) => fetchReportData("draft2020-12"),
       },
       {
-        children: [
-          {
-            path: "/implementations/:langImplementation/dialects/:dialectName",
-            Component: ImplementationDetails,
-            loader: async ({ params }) =>
-              fetchReportData(params.dialectName, params.langImplementation),
-          },
-          {
-            path: "/implementations/:langImplementation/dialects/:dialectName/details",
-            Component: CasesSection,
-            loader: async ({ params }) =>
-              fetchReportData(params.dialectName, params.langImplementation),
-          },
-        ],
+        path: "/implementations/:langImplementation/dialects/:dialectName",
+        Component: ImplementationDetails,
+        loader: async ({ params }) =>
+          fetchReportData(params.dialectName, params.langImplementation),
       },
       {
         path: "/docs",

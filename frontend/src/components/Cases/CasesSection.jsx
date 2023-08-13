@@ -3,10 +3,6 @@ import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }) => {
 
-  const loaderData = useLoaderData();
-  if (!reportData) {
-    reportData = loaderData;
-  }
   const implementations = Array.from(reportData.implementations.values());
   return (
     <Accordion id="cases">
