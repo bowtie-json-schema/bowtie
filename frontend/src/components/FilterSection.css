@@ -1,0 +1,21 @@
+.bg-filter {
+  border: 1px solid var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+.bg-filter:hover {
+  border-color: var(--bs-primary-border-subtle);
+  color: var(--bs-primary-border-subtle);
+}
+
+.bg-filter-active {
+  background: var(--bs-primary);
+}
+
+.bg-filter,
+.bg-filter-active {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  line-height: 1.1;
+}

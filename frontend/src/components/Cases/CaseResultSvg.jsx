@@ -11,7 +11,7 @@ const stateToTile = {
   errored: "Case errored",
 };
 
-const AccordionSvg = ({ result }) => {
+const CaseResultSvg = ({ result }) => {
   if (result.state === "skipped" || result.state === "errored") {
     const borderClass =
       result.state === "skipped" ? "text-bg-warning" : "text-bg-danger";
@@ -37,4 +37,4 @@ const AccordionSvg = ({ result }) => {
   }
 };
 
-export default AccordionSvg;
+export default CaseResultSvg;

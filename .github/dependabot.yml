@@ -10,6 +10,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "npm"
+    directory: "frontend"
+    schedule:
+      interval: "weekly"
+
   # Dependabot for Implementations (Harnesses)
   # ------------------------------------------
 
@@ -75,6 +80,11 @@ updates:
 
   - package-ecosystem: "gradle"
     directory: "implementations/java-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gradle"
+    directory: "implementations/kmp-json-schema-validator"
     schedule:
       interval: "daily"
 

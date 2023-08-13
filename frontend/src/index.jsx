@@ -10,11 +10,16 @@ import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
+import URI from "urijs";
+
+const reportHost =
+  import.meta.env.MODE === "development"
+    ? "https://bowtie.report"
+    : window.location.href;
+const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 import { ImplementationDetails } from "./components/ImplementationDetails/ImplementationDetails";
 import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
 
-const reportUrl = "https://bowtie.report";
-const titleTag = document.getElementsByTagName("title")[0];
 const dialectToName = {
   "draft2020-12": "Draft 2020-12",
   "draft2019-09": "Draft 2019-09",
@@ -26,8 +31,9 @@ const dialectToName = {
 
 const fetchReportData = async (dialect, implementation) => {
   const dialectName = dialectToName[dialect] || dialect;
-  titleTag.textContent = `Bowtie - ${dialectName}`;
-  const response = await fetch(`${reportUrl}/${dialect}.json`);
+  document.title = `Bowtie - ${dialectName}`;
+  const url = reportUri.clone().filename(dialect).suffix("json").href();
+  const response = await fetch(url);
   const jsonl = await response.text();
   const lines = jsonl.trim().split(/\r?\n/).map(JSON.parse);
 
@@ -59,7 +65,7 @@ const router = createHashRouter([
         loader: async () => fetchReportData("draft2020-12"),
       },
       {
-        path: "/:draftName",
+        path: "/dialects/:draftName",
         Component: ReportDataHandler,
         loader: async ({ params }) => fetchReportData(params.draftName),
       },

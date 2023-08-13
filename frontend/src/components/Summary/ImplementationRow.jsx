@@ -3,6 +3,7 @@ import { InfoCircleFill } from "react-bootstrap-icons";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
+import { mapLanguage } from "../../data/mapLanguage";
 import { Link } from "react-router-dom";
 
 const ImplementationRow = ({ cases, implementation }) => {
@@ -28,8 +29,8 @@ const ImplementationRow = ({ cases, implementation }) => {
         >
           {implementation.metadata.name}
         </Link>
-        <small className="text-muted">
-          {" " + implementation.metadata.language}
+        <small className="text-muted ps-1">
+          {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
       <td>

@@ -32,7 +32,7 @@ click==8.1.6
     # via
     #   bowtie-json-schema
     #   trogon
-cryptography==41.0.2
+cryptography==41.0.3
     # via pyjwt
 frozenlist==1.4.0
     # via
@@ -52,7 +52,7 @@ iniconfig==2.0.0
     # via pytest
 jinja2==3.1.2
     # via bowtie-json-schema
-jsonschema==4.18.4
+jsonschema==4.18.6
     # via bowtie-json-schema
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -102,7 +102,7 @@ referencing==0.30.0
     #   jsonschema-specifications
 requests==2.31.0
     # via github3-py
-rich==13.4.2
+rich==13.5.2
     # via
     #   bowtie-json-schema
     #   textual
@@ -114,7 +114,7 @@ six==1.16.0
     # via python-dateutil
 structlog==23.1.0
     # via bowtie-json-schema
-textual==0.30.0
+textual==0.31.0
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema

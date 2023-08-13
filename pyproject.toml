@@ -62,8 +62,8 @@ dependencies = [
 bowtie = "bowtie._cli:main"
 
 [project.urls]
-Documentation = "https://bowtie-json-schema.readthedocs.io/"
-Homepage = "https://github.com/bowtie-json-schema/bowtie"
+Documentation = "https://docs.bowtie.report/"
+Homepage = "https://bowtie.report/"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 

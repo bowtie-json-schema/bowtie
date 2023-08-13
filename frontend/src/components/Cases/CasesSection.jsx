@@ -1,5 +1,5 @@
-import AccordionItem from "./AccordionItem";
-import { useLoaderData } from "react-router-dom";
+import CaseItem from "./CaseItem";
+import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }) => {
 
@@ -9,16 +9,16 @@ const CasesSection = ({ reportData }) => {
   }
   const implementations = Array.from(reportData.implementations.values());
   return (
-    <div className="accordion pt-5" id="cases">
+    <Accordion id="cases">
       {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
-        <AccordionItem
+        <CaseItem
           key={index}
           seq={seq}
           caseData={caseData}
           implementations={implementations}
         />
       ))}
-    </div>
+    </Accordion>
   );
 };
 
