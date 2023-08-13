@@ -25,7 +25,7 @@ const NavBar = () => {
         }`}
       >
         <div className="container-fluid">
-          <Link className="navbar-brand mb-0 h1" to="/draft2020-12">
+          <Link className="navbar-brand mb-0 h1" to="/draft2020-12/">
             Bowtie
           </Link>
           <button
@@ -67,37 +67,37 @@ const NavBar = () => {
                 </a>
                 <ul className="dropdown-menu">
                   <li>
-                    <NavLink className="dropdown-item" to="/draft2020-12">
+                    <NavLink className="dropdown-item" to="/draft2020-12/">
                       2020-12
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/draft2019-09">
+                    <NavLink className="dropdown-item" to="/draft2019-09/">
                       2019-09
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/draft7">
+                    <NavLink className="dropdown-item" to="/draft7/">
                       7
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/draft6">
+                    <NavLink className="dropdown-item" to="/draft6/">
                       6
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/draft4">
+                    <NavLink className="dropdown-item" to="/draft4/">
                       4
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/draft3">
+                    <NavLink className="dropdown-item" to="/draft3/">
                       3
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/local-report">
+                    <NavLink className="dropdown-item" to="/local-report/">
                       Local report
                     </NavLink>
                   </li>

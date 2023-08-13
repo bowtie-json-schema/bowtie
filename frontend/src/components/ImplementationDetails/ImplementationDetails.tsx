@@ -1,8 +1,7 @@
 import { useLoaderData } from "react-router-dom";
 import { ReportView } from "../../ReportView";
 
-export const PerImplementationPage = () => {
+export const ImplementationDetails = () => {
     const loaderData = useLoaderData();
-    // return <ReportView reportData={loaderData} />
-    return <h1>Hello</h1>
+    return <ReportView reportData={loaderData} />
 }

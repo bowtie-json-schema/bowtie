@@ -3,21 +3,31 @@ import { InfoCircleFill } from "react-bootstrap-icons";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
+import { Link } from "react-router-dom";
 
 const ImplementationRow = ({ cases, implementation }) => {
+
+  const goToDetailsPage = () => {
+    window.location.href = window.location.href + "details";
+  };
+
   const [showDetails, setShowDetails] = useState(false);
   const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
 
   return (
     <tr>
       <th scope="row">
-        <a
-          href={
-            implementation.metadata.homepage ?? implementation.metadata.issues
+        <Link
+          to={`
+            /implementations/${implementation.metadata.language}-${implementation.metadata.name}
+            `
           }
+          // href={
+          //   implementation.metadata.homepage ?? implementation.metadata.issues
+          // }
         >
           {implementation.metadata.name}
-        </a>
+        </Link>
         <small className="text-muted">
           {" " + implementation.metadata.language}
         </small>
@@ -49,13 +59,13 @@ const ImplementationRow = ({ cases, implementation }) => {
       </td>
 
       <td>
-        <button
-          type="button"
-          className="btn btn-sm btn-primary"
-          onClick={() => setShowDetails(true)}
-        >
-          Details
-        </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => setShowDetails(true)}
+          >
+            Details
+          </button>
       </td>
       <RunTimeInfoModal
         show={showRunTimeInfo}

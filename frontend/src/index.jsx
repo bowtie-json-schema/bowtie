@@ -3,12 +3,14 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
+import CasesSection from "./components/Cases/CasesSection";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
+import { ImplementationDetails } from "./components/ImplementationDetails/ImplementationDetails";
 import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
 
 const reportUrl = "https://bowtie.report";
@@ -45,26 +47,6 @@ const fetchReportData = async (dialect, implementation) => {
   return parseReportData(lines);
 };
 
-const implementations = [
-  "clojure-json-schema",
-  "cpp-valijson",
-  "dotnet-jsonschema-net",
-  "go-gojsonschema",
-  "go-jsonschema",
-  "java-json-schema",
-  "java-json-schema-validator",
-  "js-ajv",
-  "js-hyperjump",
-  "lua-josnschema",
-  "python-fastjsonschema",
-  "python-jschon",
-  "python-jsonschema",
-  "ruby-json_schemer",
-  "rust-boon",
-  "rust-jsonschema",
-  "ts-vscode-json-languageservice",
-];
-
 const router = createHashRouter([
   {
     path: "/",
@@ -86,10 +68,26 @@ const router = createHashRouter([
         Component: DragAndDrop,
       },
       {
-        path: "/implementations/:langImplementation/dialects/:dialectName",
+        path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
         loader: async ({ params }) =>
-          fetchReportData(params.dialectName, params.langImplementation),
+          fetchReportData("draft2020-12"),
+      },
+      {
+        children: [
+          {
+            path: "/implementations/:langImplementation/dialects/:dialectName",
+            Component: ImplementationDetails,
+            loader: async ({ params }) =>
+              fetchReportData(params.dialectName, params.langImplementation),
+          },
+          {
+            path: "/implementations/:langImplementation/dialects/:dialectName/details",
+            Component: CasesSection,
+            loader: async ({ params }) =>
+              fetchReportData(params.dialectName, params.langImplementation),
+          },
+        ],
       },
       {
         path: "/docs",

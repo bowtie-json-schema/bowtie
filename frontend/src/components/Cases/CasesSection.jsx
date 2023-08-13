@@ -1,6 +1,12 @@
 import AccordionItem from "./AccordionItem";
+import { useLoaderData } from "react-router-dom";
 
 const CasesSection = ({ reportData }) => {
+
+  const loaderData = useLoaderData();
+  if (!reportData) {
+    reportData = loaderData;
+  }
   const implementations = Array.from(reportData.implementations.values());
   return (
     <div className="accordion pt-5" id="cases">
