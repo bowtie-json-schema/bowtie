@@ -75,7 +75,7 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
-        loader: async ({ params }) => fetchReportData("draft2020-12"),
+        loader: async () => fetchReportData("draft2020-12"),
       },
       {
         path: "/implementations/:langImplementation/dialects/:dialectName",

@@ -7,15 +7,34 @@ import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink } from "react-router-dom";
 
 const ImplementationRow = ({ cases, implementation }) => {
-
   const [showDetails, setShowDetails] = useState(false);
   const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
+
+  const getPath = (language, name) => {
+    const urlPath = {
+      "c++-valijson": "cpp-valijson",
+      "dotnet-JsonSchema.Net": "dotnet-jsonschema-net",
+      "javascript-ajv": "js-ajv",
+      "javascript-hyperjump-jsv": "js-hyperjump",
+      "lua-josnschema": "lua-jsonschema",
+      "typescript-vscode-json-language-service":
+        "ts-vscode-json-languageservice",
+    };
+    if (`${language}-${name}` in urlPath) {
+      return urlPath[`${language}-${name}`];
+    } else {
+      return `${language}-${name}`;
+    }
+  };
 
   return (
     <tr>
       <th scope="row">
         <NavLink
-          to={`/implementations/${implementation.metadata.language}-${implementation.metadata.name}`}
+          to={`/implementations/${getPath(
+            implementation.metadata.language,
+            implementation.metadata.name
+          )}`}
         >
           {implementation.metadata.name}
         </NavLink>
