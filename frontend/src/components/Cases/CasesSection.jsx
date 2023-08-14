@@ -2,7 +2,6 @@ import CaseItem from "./CaseItem";
 import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }) => {
-
   const implementations = Array.from(reportData.implementations.values());
   return (
     <Accordion id="cases">

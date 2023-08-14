@@ -33,7 +33,7 @@ const ImplementationRow = ({ cases, implementation }) => {
         <NavLink
           to={`/implementations/${getPath(
             implementation.metadata.language,
-            implementation.metadata.name
+            implementation.metadata.name,
           )}`}
         >
           {implementation.metadata.name}
