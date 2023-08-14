@@ -39,7 +39,7 @@ const fetchReportData = async (dialect, implementation) => {
   if (implementation) {
     const filteredData = lines.filter(
       (obj) =>
-        !obj.implementation || obj.implementation.includes(implementation)
+        !obj.implementation || obj.implementation.includes(implementation),
     );
     for (const key in filteredData[0]?.implementations) {
       if (!key.includes(implementation)) {
@@ -102,6 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
