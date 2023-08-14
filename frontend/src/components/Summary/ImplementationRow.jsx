@@ -10,32 +10,14 @@ const ImplementationRow = ({ cases, implementation }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
 
-  const getPath = (language, name) => {
-    const urlPath = {
-      "c++-valijson": "cpp-valijson",
-      "dotnet-JsonSchema.Net": "dotnet-jsonschema-net",
-      "javascript-ajv": "js-ajv",
-      "javascript-hyperjump-jsv": "js-hyperjump",
-      "lua-josnschema": "lua-jsonschema",
-      "typescript-vscode-json-language-service":
-        "ts-vscode-json-languageservice",
-    };
-    if (`${language}-${name}` in urlPath) {
-      return urlPath[`${language}-${name}`];
-    } else {
-      return `${language}-${name}`;
-    }
+  const getPath = () => {
+    const pathSegment = implementation.id.split("/");
+    return pathSegment[pathSegment.length - 1];
   };
-
   return (
     <tr>
       <th scope="row">
-        <NavLink
-          to={`/implementations/${getPath(
-            implementation.metadata.language,
-            implementation.metadata.name
-          )}`}
-        >
+        <NavLink to={`/implementations/${getPath()}`}>
           {implementation.metadata.name}
         </NavLink>
         <small className="text-muted ps-1">
