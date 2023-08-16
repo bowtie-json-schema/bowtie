@@ -10,14 +10,13 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
 import URI from "urijs";
+import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
 
 const reportHost =
   import.meta.env.MODE === "development"
     ? "https://bowtie.report"
     : window.location.href;
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
-import { ImplementationDetails } from "./components/ImplementationDetails/ImplementationDetails";
-import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
 
 const dialectToName = {
   "draft2020-12": "Draft 2020-12",
@@ -76,21 +75,7 @@ const router = createHashRouter([
         path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
         loader: async () => fetchReportData("draft2020-12"),
-      },
-      {
-        path: "/implementations/:langImplementation/dialects/:dialectName",
-        Component: ImplementationDetails,
-        loader: async ({ params }) =>
-          fetchReportData(params.dialectName, params.langImplementation),
-      },
-      {
-        path: "/docs",
-        Component: () => {
-          window.location.href =
-            "https://bowtie-json-schema.readthedocs.io/en/latest/";
-          return null;
-        },
-      },
+      }
     ],
   },
 ]);
