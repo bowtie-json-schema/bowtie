@@ -27,27 +27,16 @@ const dialectToName = {
   draft3: "Draft 3",
 };
 
-const fetchReportData = async (dialect, implementation) => {
-  const dialectName = dialectToName[dialect] || dialect;
+export const fetchReportData = async (dialect) => {
+  const dialectName = dialectToName[dialect] ?? dialect;
   document.title = `Bowtie - ${dialectName}`;
   const url = reportUri.clone().filename(dialect).suffix("json").href();
   const response = await fetch(url);
   const jsonl = await response.text();
-  const lines = jsonl.trim().split(/\r?\n/).map(JSON.parse);
-
-  if (implementation) {
-    const filteredData = lines.filter(
-      (obj) =>
-        !obj.implementation || obj.implementation.includes(implementation),
-    );
-    for (const key in filteredData[0]?.implementations) {
-      if (!key.includes(implementation)) {
-        delete filteredData[0].implementations[key];
-      }
-    }
-    return parseReportData(filteredData);
-  }
-
+  const lines = jsonl
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => JSON.parse(line));
   return parseReportData(lines);
 };
 
@@ -75,7 +64,7 @@ const router = createHashRouter([
         path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
         loader: async () => fetchReportData("draft2020-12"),
-      }
+      },
     ],
   },
 ]);
@@ -87,6 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

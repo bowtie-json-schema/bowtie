@@ -1,14 +1,11 @@
 import "./ImplementationRow.css";
-import { InfoCircleFill } from "react-bootstrap-icons";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
-import { RunTimeInfoModal } from "../Modals/RunTimeInfoModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink } from "react-router-dom";
 
 const ImplementationRow = ({ cases, implementation }) => {
   const [showDetails, setShowDetails] = useState(false);
-  const [showRunTimeInfo, setShowRunTimeInfo] = useState(false);
 
   const getPath = () => {
     const pathSegment = implementation.id.split("/");
@@ -28,12 +25,6 @@ const ImplementationRow = ({ cases, implementation }) => {
         <small className="font-monospace text-muted">
           {implementation.metadata.version ?? ""}
         </small>
-        <button
-          className="btn border-0"
-          onClick={() => setShowRunTimeInfo(true)}
-        >
-          <InfoCircleFill />
-        </button>
       </td>
 
       <td className="text-center">{implementation.erroredCases}</td>
@@ -59,11 +50,6 @@ const ImplementationRow = ({ cases, implementation }) => {
           Details
         </button>
       </td>
-      <RunTimeInfoModal
-        show={showRunTimeInfo}
-        handleClose={() => setShowRunTimeInfo(false)}
-        implementation={implementation}
-      />
       <DetailsButtonModal
         show={showDetails}
         handleClose={() => setShowDetails(false)}

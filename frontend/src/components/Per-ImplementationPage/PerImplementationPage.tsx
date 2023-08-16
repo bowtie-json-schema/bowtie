@@ -4,6 +4,7 @@ import { Table, Container } from "react-bootstrap";
 import { ReportData, ImplementationMetadata } from "../../data/parseReportData";
 // @ts-ignore
 import LoadingAnimation from "../../components/LoadingAnimation";
+import DialectCompliance from "./DialectCompliance";
 
 export const PerImplementationPage = () => {
   const loaderData = useLoaderData() as ReportData;
@@ -22,21 +23,28 @@ export const PerImplementationPage = () => {
       <Card className="mx-auto mb-3 w-75">
         <Card.Header>Runtime Info</Card.Header>
         <Card.Body>
-          <Table striped bordered size="sm">
+          <Table>
             <tbody>
               <tr>
-                <th>Name</th>
+                <th>Name:</th>
                 <td>{implementationDetails.name}</td>
               </tr>
               <tr>
-                <th>Language</th>
+                <th>Language:</th>
                 <td>
                   {implementationDetails.language}
-                  <span className="text-muted">{` (${implementationDetails.version})`}</span>
+                  <span className="text-muted">{implementationDetails.language && (` (${implementationDetails.version || ""})`)}</span>
                 </td>
               </tr>
               <tr>
-                <th>Dialects</th>
+                <th>OS:</th>
+                <td>
+                  {implementationDetails.os || ""}
+                  <span className="text-muted">{implementationDetails.os && (` (${implementationDetails.os_version})`)}</span>
+                </td>
+              </tr>
+              <tr>
+                <th>Dialects:</th>
                 <td>
                   <ul>
                     {implementationDetails.dialects.map((dialect, index) => (
@@ -48,7 +56,7 @@ export const PerImplementationPage = () => {
                 </td>
               </tr>
               <tr>
-                <th>Image</th>
+                <th>Image:</th>
                 <td>
                   <Link to={implementationDetails.image}>
                     {implementationDetails.image}
@@ -56,7 +64,7 @@ export const PerImplementationPage = () => {
                 </td>
               </tr>
               <tr>
-                <th>Homepage</th>
+                <th>Homepage:</th>
                 <td>
                   <Link to={implementationDetails.homepage}>
                     {implementationDetails.homepage}
@@ -64,7 +72,7 @@ export const PerImplementationPage = () => {
                 </td>
               </tr>
               <tr>
-                <th>Issues</th>
+                <th>Issues:</th>
                 <td>
                   <Link to={implementationDetails.issues}>
                     {implementationDetails.issues}
@@ -75,6 +83,7 @@ export const PerImplementationPage = () => {
           </Table>
         </Card.Body>
       </Card>
+      <DialectCompliance dialects={implementationDetails.dialects} />
     </Container>
   ) : (
     <LoadingAnimation />
