@@ -49,3 +49,5 @@ Add the ``validate`` Command
 
 For breakdown of this command,
 refer to the :doc:`CLI <cli>` page.
+
+An example of the above code can be found `here <https://github.com/bowtie-json-schema/bowtie-actions-example>`.
