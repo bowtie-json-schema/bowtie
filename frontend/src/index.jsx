@@ -27,7 +27,7 @@ const dialectToName = {
   draft3: "Draft 3",
 };
 
-export const fetchReportData = async (dialect) => {
+const fetchReportData = async (dialect) => {
   const dialectName = dialectToName[dialect] ?? dialect;
   document.title = `Bowtie - ${dialectName}`;
   const url = reportUri.clone().filename(dialect).suffix("json").href();
@@ -38,6 +38,22 @@ export const fetchReportData = async (dialect) => {
     .split(/\r?\n/)
     .map((line) => JSON.parse(line));
   return parseReportData(lines);
+};
+
+const fetchAllReportData = async () => {
+  let loaderData = {};
+  const fetchPromises = Object.keys(dialectToName).map(async (draft) => {
+    const url = `https://bowtie.report/${draft}.json`;
+    const response = await fetch(url);
+    const jsonl = await response.text();
+    const lines = jsonl
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line));
+    loaderData[draft] = parseReportData(lines);
+  });
+  await Promise.all(fetchPromises);
+  return loaderData;
 };
 
 const router = createHashRouter([
@@ -63,7 +79,7 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: PerImplementationPage,
-        loader: async () => fetchReportData("draft2020-12"),
+        loader: async () => fetchAllReportData(),
       },
     ],
   },

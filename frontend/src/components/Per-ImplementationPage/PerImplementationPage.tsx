@@ -13,9 +13,9 @@ export const PerImplementationPage = () => {
   let implementationName = pathSegments[pathSegments.length - 1];
 
   let implementationDetails: ImplementationMetadata = {};
-  Object.keys(loaderData.runInfo.implementations).forEach((key) => {
+  Object.keys(Object.values(loaderData)[0].runInfo.implementations).forEach((key) => {
     if (key.includes(implementationName)) {
-      implementationDetails = loaderData.runInfo.implementations[key];
+      implementationDetails = Object.values(loaderData)[0].runInfo.implementations[key];
     }
   });
   return implementationDetails ? (
@@ -83,7 +83,7 @@ export const PerImplementationPage = () => {
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance dialects={implementationDetails.dialects} />
+      <DialectCompliance loaderData={loaderData} implementationsDetails={implementationDetails} implementationName={implementationName} />
     </Container>
   ) : (
     <LoadingAnimation />
