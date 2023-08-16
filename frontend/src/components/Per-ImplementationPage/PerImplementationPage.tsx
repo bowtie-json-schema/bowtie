@@ -13,11 +13,14 @@ export const PerImplementationPage = () => {
   let implementationName = pathSegments[pathSegments.length - 1];
 
   let implementationDetails: ImplementationMetadata = {};
-  Object.keys(Object.values(loaderData)[0].runInfo.implementations).forEach((key) => {
-    if (key.includes(implementationName)) {
-      implementationDetails = Object.values(loaderData)[0].runInfo.implementations[key];
-    }
-  });
+  Object.keys(Object.values(loaderData)[0].runInfo.implementations).forEach(
+    (key) => {
+      if (key.includes(implementationName)) {
+        implementationDetails =
+          Object.values(loaderData)[0].runInfo.implementations[key];
+      }
+    },
+  );
   return implementationDetails ? (
     <Container className="p-4">
       <Card className="mx-auto mb-3 w-75">
@@ -33,14 +36,20 @@ export const PerImplementationPage = () => {
                 <th>Language:</th>
                 <td>
                   {implementationDetails.language}
-                  <span className="text-muted">{implementationDetails.language && (` (${implementationDetails.version || ""})`)}</span>
+                  <span className="text-muted">
+                    {implementationDetails.language &&
+                      ` (${implementationDetails.version || ""})`}
+                  </span>
                 </td>
               </tr>
               <tr>
                 <th>OS:</th>
                 <td>
                   {implementationDetails.os || ""}
-                  <span className="text-muted">{implementationDetails.os && (` (${implementationDetails.os_version})`)}</span>
+                  <span className="text-muted">
+                    {implementationDetails.os &&
+                      ` (${implementationDetails.os_version})`}
+                  </span>
                 </td>
               </tr>
               <tr>
@@ -83,7 +92,11 @@ export const PerImplementationPage = () => {
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance loaderData={loaderData} implementationsDetails={implementationDetails} implementationName={implementationName} />
+      <DialectCompliance
+        loaderData={loaderData}
+        implementationsDetails={implementationDetails}
+        implementationName={implementationName}
+      />
     </Container>
   ) : (
     <LoadingAnimation />
