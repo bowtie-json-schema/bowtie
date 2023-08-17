@@ -14,8 +14,11 @@ export const PerImplementationPage = () => {
 
   let implementationDetail: ImplementationMetadata = {};
   let allImplementations = {};
-  Object.values(loaderData).map(value => {
-    allImplementations = {...allImplementations, ...value.runInfo.implementations};
+  Object.values(loaderData).map((value) => {
+    allImplementations = {
+      ...allImplementations,
+      ...value.runInfo.implementations,
+    };
   });
   Object.keys(allImplementations).forEach((key) => {
     if (key.includes(implementationName)) {
@@ -37,14 +40,20 @@ export const PerImplementationPage = () => {
                 <th>Language:</th>
                 <td>
                   {implementationDetail.language}
-                  <span className="text-muted">{implementationDetail.language && (` (${implementationDetail.version || ""})`)}</span>
+                  <span className="text-muted">
+                    {implementationDetail.language &&
+                      ` (${implementationDetail.version || ""})`}
+                  </span>
                 </td>
               </tr>
               <tr>
                 <th>OS:</th>
                 <td>
                   {implementationDetail.os || ""}
-                  <span className="text-muted">{implementationDetail.os && (` (${implementationDetail.os_version})`)}</span>
+                  <span className="text-muted">
+                    {implementationDetail.os &&
+                      ` (${implementationDetail.os_version})`}
+                  </span>
                 </td>
               </tr>
               <tr>
@@ -87,7 +96,11 @@ export const PerImplementationPage = () => {
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance loaderData={loaderData} implementationsDetail={implementationDetail} implementationName={implementationName} />
+      <DialectCompliance
+        loaderData={loaderData}
+        implementationsDetail={implementationDetail}
+        implementationName={implementationName}
+      />
     </Container>
   ) : (
     <LoadingAnimation />
