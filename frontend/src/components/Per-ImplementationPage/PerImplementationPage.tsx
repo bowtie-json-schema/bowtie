@@ -12,13 +12,17 @@ export const PerImplementationPage = () => {
   const pathSegments = window.location.href.split("/");
   let implementationName = pathSegments[pathSegments.length - 1];
 
-  let implementationDetails: ImplementationMetadata = {};
-  Object.keys(Object.values(loaderData)[0].runInfo.implementations).forEach((key) => {
+  let implementationDetail: ImplementationMetadata = {};
+  let allImplementations = {};
+  Object.values(loaderData).map(value => {
+    allImplementations = {...allImplementations, ...value.runInfo.implementations};
+  });
+  Object.keys(allImplementations).forEach((key) => {
     if (key.includes(implementationName)) {
-      implementationDetails = Object.values(loaderData)[0].runInfo.implementations[key];
+      implementationDetail = allImplementations[key];
     }
   });
-  return implementationDetails ? (
+  return implementationDetail ? (
     <Container className="p-4">
       <Card className="mx-auto mb-3 w-75">
         <Card.Header>Runtime Info</Card.Header>
@@ -27,27 +31,27 @@ export const PerImplementationPage = () => {
             <tbody>
               <tr>
                 <th>Name:</th>
-                <td>{implementationDetails.name}</td>
+                <td>{implementationDetail.name}</td>
               </tr>
               <tr>
                 <th>Language:</th>
                 <td>
-                  {implementationDetails.language}
-                  <span className="text-muted">{implementationDetails.language && (` (${implementationDetails.version || ""})`)}</span>
+                  {implementationDetail.language}
+                  <span className="text-muted">{implementationDetail.language && (` (${implementationDetail.version || ""})`)}</span>
                 </td>
               </tr>
               <tr>
                 <th>OS:</th>
                 <td>
-                  {implementationDetails.os || ""}
-                  <span className="text-muted">{implementationDetails.os && (` (${implementationDetails.os_version})`)}</span>
+                  {implementationDetail.os || ""}
+                  <span className="text-muted">{implementationDetail.os && (` (${implementationDetail.os_version})`)}</span>
                 </td>
               </tr>
               <tr>
                 <th>Dialects:</th>
                 <td>
                   <ul>
-                    {implementationDetails.dialects.map((dialect, index) => (
+                    {implementationDetail.dialects.map((dialect, index) => (
                       <li key={index}>
                         <Link to={dialect}>{dialect}</Link>
                       </li>
@@ -58,24 +62,24 @@ export const PerImplementationPage = () => {
               <tr>
                 <th>Image:</th>
                 <td>
-                  <Link to={implementationDetails.image}>
-                    {implementationDetails.image}
+                  <Link to={implementationDetail.image}>
+                    {implementationDetail.image}
                   </Link>
                 </td>
               </tr>
               <tr>
                 <th>Homepage:</th>
                 <td>
-                  <Link to={implementationDetails.homepage}>
-                    {implementationDetails.homepage}
+                  <Link to={implementationDetail.homepage}>
+                    {implementationDetail.homepage}
                   </Link>
                 </td>
               </tr>
               <tr>
                 <th>Issues:</th>
                 <td>
-                  <Link to={implementationDetails.issues}>
-                    {implementationDetails.issues}
+                  <Link to={implementationDetail.issues}>
+                    {implementationDetail.issues}
                   </Link>
                 </td>
               </tr>
@@ -83,7 +87,7 @@ export const PerImplementationPage = () => {
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance loaderData={loaderData} implementationsDetails={implementationDetails} implementationName={implementationName} />
+      <DialectCompliance loaderData={loaderData} implementationsDetail={implementationDetail} implementationName={implementationName} />
     </Container>
   ) : (
     <LoadingAnimation />

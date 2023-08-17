@@ -4,13 +4,13 @@ import { ReportData } from '../../data/parseReportData';
 
 interface DialectComplianceProps {
     loaderData: ReportData;
-    implementationsDetails: {
+    implementationsDetail: {
         [x: string]: any;
     }
     implementationName: string;
 }
 
-const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, implementationsDetails, implementationName }) => {
+const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, implementationsDetail, implementationName }) => {
 
     const dialectMapping = {
         "https://json-schema.org/draft/2020-12": "draft2020-12",
@@ -33,7 +33,7 @@ const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, imple
                             <th>Skipped</th>
                             <th>Errored</th>
                         </tr>
-                        {implementationsDetails.dialects.map((dialect: string, index: number) => {
+                        {implementationsDetail.dialects.map((dialect: string, index: number) => {
                             const draft = Object.entries(dialectMapping).find(([key,]) => dialect.includes(key));
                             if (draft && loaderData[draft[1]] && loaderData[draft[1]].implementations) {
                                 const specificDialect = Array.from(loaderData[draft[1]].implementations).find(([key, value]) => key.includes(implementationName));
