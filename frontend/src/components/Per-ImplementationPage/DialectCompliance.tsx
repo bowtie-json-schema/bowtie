@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, Table } from 'react-bootstrap';
-import { ReportData } from '../../data/parseReportData';
+import React from "react";
+import { Card, Table } from "react-bootstrap";
+import { ReportData } from "../../data/parseReportData";
 
 interface DialectComplianceProps {
     loaderData: ReportData;
