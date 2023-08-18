@@ -2,52 +2,39 @@
 Using Bowtie in GitHub Actions
 ==============================
 
-Bowtie can be used from within GitHub Actions.
-Follow the steps to get started with it in a few simple steps:
-
-Setup Bowtie
-------------
-
-* Create ``.github/workflows`` directory in your repository.
-* Create a file with ``.yml`` extension.
-* Enter the following code in the YAML file:
+Bowtie can be used from within `GitHub Actions <https://docs.github.com/en/actions/learn-github-actions>`_ by using it in a GitHub workflow step.
+For example:
 
 .. code:: yaml
 
-    name: Setup Bowtie
-    run-name: ${{ github.actor }} is learning to use Bowtie
-
+    name: Run Bowtie
     on: [push]
 
     jobs:
-    sets-up-bowtie:
+      bowtie:
         runs-on: ubuntu-latest
 
         steps:
-        - name: Install Bowtie
-            uses: bowtie-json-schema/bowtie@v2023.05.12
+          - name: Install Bowtie
+            uses: bowtie-json-schema/bowtie@v2023.08.9
 
-* Push the changes to your repository.
+You will likely wish to use the latest version of Bowtie available.
 
-*The code snippet will install bowtie every time you push onto the repository.*
+.. seealso::
 
-Validate using bowtie
----------------------
+    `Workflow Syntax for GitHub Actions <https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions>`_
 
-Now that you have successfully added bowtie to your workflow,
-let's work on using it to validate your JSON Specifications.
+        for full details on writing GitHub Actions workflows
 
-Add the ``validate`` Command
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Add the following code snippet to your YAML file:
+Once you have installed it, the `Bowtie CLI <cli>` will be available in successive run steps.
+Most commonly, you can use it to validate an instance (some data) using a specific JSON Schema implementation by adding:
 
 .. code:: yaml
 
-        - name: Validate Schema
-          run: bowtie validate -i lua-jsonschema schema.json instance.json
+    - name: Validate Schema
+      run: bowtie validate -i lua-jsonschema schema.json instance.json
 
-For breakdown of this command,
-refer to the :doc:`CLI <cli>` page.
+replacing ``lua-jsonschema`` and the filenames with your implementation and schema of choice.
+For full details on the commands available, see the `CLI documentation <cli>`.
 
-An example of the above code can be found `here <https://github.com/bowtie-json-schema/github-actions-example>`_.
+A fully working example of the above code can also be found :org:`here <github-actions-example>`.
