@@ -22,6 +22,7 @@ Contents
     cli
     implementers
     contributing
+    github-actions
 
 
 Installation
