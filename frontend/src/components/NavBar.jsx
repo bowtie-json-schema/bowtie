@@ -7,7 +7,7 @@ import { BowtieVersionContext } from "../context/BowtieVersionContext";
 import { dialectToName } from "..";
 
 const NavBar = () => {
-  const [isDialectPage, setIsDialectPage] = useState(true);
+  const [isDialectPage, setIsDialectPage] = useState(false);
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { version } = useContext(BowtieVersionContext);
   const { pathname, hash, key } = useLocation();
@@ -17,13 +17,14 @@ const NavBar = () => {
       const targetElement = document.getElementById(hash.substring(1));
       targetElement?.scrollIntoView({ behavior: "smooth" });
     }
-    for (const key in dialectToName) {
-      if (pathname === "/" || pathname.includes(`/dialects/${key}`)) {
-        setIsDialectPage(true);
-      } else {
-        setIsDialectPage(false);
+    const matchPath = () => {
+      for (const key in dialectToName) {
+        if (pathname === "/" || pathname.includes(`/dialects/${key}`)) {
+          return true;
+        }
       }
-    }
+    };
+    setIsDialectPage(matchPath());
   }, [key, hash, pathname]);
 
   return (
