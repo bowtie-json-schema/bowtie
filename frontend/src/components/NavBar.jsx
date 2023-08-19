@@ -111,6 +111,15 @@ const NavBar = () => {
               </li>
             </ul>
           </div>
+          <button id="docs" className="btn btn-sm btn-secondary border-0 me-1">
+            <Link
+              className="nav-link"
+              to="https://docs.bowtie.report/"
+              target="blank"
+            >
+              Docs
+            </Link>
+          </button>
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
