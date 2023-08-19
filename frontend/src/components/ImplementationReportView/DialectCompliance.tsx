@@ -3,10 +3,12 @@ import { Card, Table } from "react-bootstrap";
 import { ReportData } from "../../data/parseReportData";
 
 interface DialectComplianceProps {
-    loaderData: ReportData;
+    loaderData: { [key: string]: ReportData };
     implementationsDetail: {
-        [x: string]: any;
-    }
+        dialects: string[];
+        homepage: string;
+        name: string;
+    };
     implementationName: string;
 }
 
@@ -48,7 +50,7 @@ const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, imple
                     </thead>
                     <tbody className="table-group-divider">
 
-                        {implementationsDetail.dialects.map((dialect: string, index: number) => {
+                        {implementationsDetail.dialects.map((dialect, index) => {
                             const draft = Object.entries(dialectMapping).find(([key,]) => dialect.includes(key));
                             if (draft && loaderData[draft[1]] && loaderData[draft[1]].implementations) {
                                 const specificDialect = Array.from(loaderData[draft[1]].implementations).find(([key, value]) => key.includes(implementationName));

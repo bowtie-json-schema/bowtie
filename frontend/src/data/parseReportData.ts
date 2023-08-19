@@ -118,8 +118,9 @@ export interface ImplementationMetadata {
   name: string;
   version?: string;
   dialects: string[];
-  homepage?: string;
+  homepage: string;
   issues: string;
+  image: string;
   links?: {
     description?: string;
     url?: string;

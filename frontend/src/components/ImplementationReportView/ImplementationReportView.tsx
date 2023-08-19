@@ -7,13 +7,22 @@ import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 
 export const ImplementationReportView = () => {
-  const loaderData = useLoaderData() as ReportData;
+  const loaderData = useLoaderData() as { [key: string]: ReportData };
 
   const pathSegments = window.location.href.split("/");
   let implementationName = pathSegments[pathSegments.length - 1];
 
-  let implementationDetail: ImplementationMetadata = {};
-  let allImplementations = {};
+  let implementationDetail: ImplementationMetadata = {
+    dialects: [],
+    homepage: "",
+    name: "",
+    version: "",
+    language: "",
+    issues: "",
+    image: ""
+  };
+
+  let allImplementations: { [key: string]: ImplementationMetadata } = {};
   Object.values(loaderData).map(value => {
     allImplementations = { ...allImplementations, ...value.runInfo.implementations };
   });
@@ -35,10 +44,14 @@ export const ImplementationReportView = () => {
                 <td>{implementationDetail.name}</td>
               </tr>
               <tr>
+                <th>Version:</th>
+                <td>{implementationDetail.version}</td>
+              </tr>
+              <tr>
                 <th>Language:</th>
                 <td>
                   {implementationDetail.language}
-                  <span className="text-muted">{implementationDetail.language && (` (${implementationDetail.version || ""})`)}</span>
+                  <span className="text-muted">{implementationDetail.language && (` (${implementationDetail.language_version || ""})`)}</span>
                 </td>
               </tr>
               <tr>
