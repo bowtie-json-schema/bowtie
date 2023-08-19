@@ -18,7 +18,7 @@ const reportHost =
     : window.location.href;
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
-const dialectToName = {
+export const dialectToName = {
   "draft2020-12": "Draft 2020-12",
   "draft2019-09": "Draft 2019-09",
   draft7: "Draft 7",

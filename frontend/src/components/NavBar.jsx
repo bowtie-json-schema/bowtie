@@ -1,21 +1,30 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
+import { dialectToName } from "..";
 
 const NavBar = () => {
+  const [isDialectPage, setIsDialectPage] = useState(true);
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { version } = useContext(BowtieVersionContext);
-  const { hash, key } = useLocation();
+  const { pathname, hash, key } = useLocation();
 
   useEffect(() => {
     if (hash) {
       const targetElement = document.getElementById(hash.substring(1));
       targetElement?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [key, hash]);
+    for (const key in dialectToName) {
+      if (pathname === "/" || pathname.includes(`/dialects/${key}`)) {
+        setIsDialectPage(true);
+      } else {
+        setIsDialectPage(false);
+      }
+    }
+  }, [key, hash, pathname]);
 
   return (
     <>
@@ -41,21 +50,25 @@ const NavBar = () => {
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "run-info" }}>
-                  Run Info
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "summary" }}>
-                  Summary
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "cases" }}>
-                  Details
-                </Link>
-              </li>
+              {isDialectPage ? (
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "run-info" }}>
+                      Run Info
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "summary" }}>
+                      Summary
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "cases" }}>
+                      Details
+                    </Link>
+                  </li>
+                </>
+              ) : null}
               <li className="nav-item dropdown">
                 <a
                   className="nav-link dropdown-toggle"
