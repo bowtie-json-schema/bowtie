@@ -51,7 +51,7 @@ const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, imple
                         {implementationsDetail.dialects.map((dialect, index) => {
                             const draft = Object.entries(dialectMapping).find(([key,]) => dialect.includes(key));
                             if (draft && loaderData[draft[1]] && loaderData[draft[1]].implementations) {
-                                const specificDialect = Array.from(loaderData[draft[1]].implementations).find(([key, value]) => key.includes(implementationName));
+                                const specificDialect = Array.from(loaderData[draft[1]].implementations).find(([key,]) => key.includes(implementationName));
                                 if (specificDialect) {
                                     return (
                                         <tr key={index}>
