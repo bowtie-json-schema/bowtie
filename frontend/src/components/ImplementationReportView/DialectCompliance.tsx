@@ -25,14 +25,29 @@ const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, imple
         <Card className="mx-auto mb-3 w-75">
             <Card.Header>Compliance</Card.Header>
             <Card.Body>
-                <Table striped bordered size="sm">
+                <Table className="table-hover sm">
                     <thead>
+                        <tr>
+                            <th
+                                rowSpan={2}
+                                scope="col"
+                                className="text-center align-middle"
+                            >
+                                Supported Dialects
+                            </th>
+                            <th colSpan={3} className="text-center">
+                                Tests
+                            </th>
+                        </tr>
                         <tr className="text-center">
-                            <th>Dialects</th>
                             <th>Unsuccessful</th>
                             <th>Skipped</th>
                             <th>Errored</th>
+
                         </tr>
+                    </thead>
+                    <tbody className="table-group-divider">
+
                         {implementationsDetail.dialects.map((dialect: string, index: number) => {
                             const draft = Object.entries(dialectMapping).find(([key,]) => dialect.includes(key));
                             if (draft && loaderData[draft[1]] && loaderData[draft[1]].implementations) {
@@ -41,16 +56,16 @@ const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, imple
                                     return (
                                         <tr key={index}>
                                             <td>{dialect}</td>
-                                            <td>{specificDialect[1].unsuccessfulTests}</td>
-                                            <td>{specificDialect[1].skippedTests}</td>
-                                            <td>{specificDialect[1].erroredTests}</td>
+                                            <td className="text-center">{specificDialect[1].unsuccessfulTests}</td>
+                                            <td className="text-center">{specificDialect[1].skippedTests}</td>
+                                            <td className="text-center">{specificDialect[1].erroredTests}</td>
                                         </tr>
                                     );
                                 }
                             }
                             return null;
                         })}
-                    </thead>
+                    </tbody>
                 </Table>
             </Card.Body>
         </Card>

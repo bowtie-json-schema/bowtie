@@ -10,7 +10,7 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { parseReportData } from "./data/parseReportData";
 import URI from "urijs";
-import { PerImplementationPage } from "./components/Per-ImplementationPage/PerImplementationPage";
+import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
 const reportHost =
   import.meta.env.MODE === "development"
@@ -78,7 +78,7 @@ const router = createHashRouter([
       },
       {
         path: "/implementations/:langImplementation",
-        Component: PerImplementationPage,
+        Component: ImplementationReportView,
         loader: async () => fetchAllReportData(),
       },
     ],

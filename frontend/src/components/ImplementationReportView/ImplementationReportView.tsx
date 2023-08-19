@@ -3,10 +3,10 @@ import { useLoaderData, Link } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
 import { ReportData, ImplementationMetadata } from "../../data/parseReportData";
 // @ts-ignore
-import LoadingAnimation from "../../components/LoadingAnimation";
+import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 
-export const PerImplementationPage = () => {
+export const ImplementationReportView = () => {
   const loaderData = useLoaderData() as ReportData;
 
   const pathSegments = window.location.href.split("/");
@@ -15,11 +15,12 @@ export const PerImplementationPage = () => {
   let implementationDetail: ImplementationMetadata = {};
   let allImplementations = {};
   Object.values(loaderData).map(value => {
-    allImplementations = {...allImplementations, ...value.runInfo.implementations};
+    allImplementations = { ...allImplementations, ...value.runInfo.implementations };
   });
   Object.keys(allImplementations).forEach((key) => {
     if (key.includes(implementationName)) {
       implementationDetail = allImplementations[key];
+      document.title = `Bowtie - ${implementationDetail.name}`;
     }
   });
   return implementationDetail ? (

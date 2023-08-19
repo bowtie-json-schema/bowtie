@@ -1,15 +1,15 @@
 // @ts-ignore
-import CasesSection from "./components/Cases/CasesSection";
+import CasesSection from "./components/Cases/CasesSection.jsx";
 // @ts-ignore
-import RunInfoSection from "./components/RunInfo/RunInfoSection";
+import RunInfoSection from "./components/RunInfo/RunInfoSection.jsx";
 // @ts-ignore
-import SummarySection from "./components/Summary/SummarySection";
+import SummarySection from "./components/Summary/SummarySection.jsx";
 import { useMemo } from "react";
 import { ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
-export const ReportView = ({ reportData }: { reportData: ReportData }) => {
+export const DialectReportView = ({ reportData }: { reportData: ReportData }) => {
   const params = useSearchParams();
 
   const languages = useMemo(() => {
