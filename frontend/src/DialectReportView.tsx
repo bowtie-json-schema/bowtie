@@ -9,7 +9,11 @@ import { ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
-export const DialectReportView = ({ reportData }: { reportData: ReportData }) => {
+export const DialectReportView = ({
+  reportData,
+}: {
+  reportData: ReportData;
+}) => {
   const params = useSearchParams();
 
   const languages = useMemo(() => {

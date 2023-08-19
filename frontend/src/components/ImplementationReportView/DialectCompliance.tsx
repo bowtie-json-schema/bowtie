@@ -3,23 +3,26 @@ import { Card, Table } from "react-bootstrap";
 import { ReportData } from "../../data/parseReportData";
 
 interface DialectComplianceProps {
-    loaderData: { [key: string]: ReportData };
-    implementationsDetail: {
-        dialects: string[];
-    };
-    implementationName: string;
+  loaderData: { [key: string]: ReportData };
+  implementationsDetail: {
+    dialects: string[];
+  };
+  implementationName: string;
 }
 
-const DialectCompliance: React.FC<DialectComplianceProps> = ({ loaderData, implementationsDetail, implementationName }) => {
-
-    const dialectMapping = {
-        "https://json-schema.org/draft/2020-12": "draft2020-12",
-        "https://json-schema.org/draft/2019-09": "draft2019-09",
-        "http://json-schema.org/draft-07": "draft7",
-        "http://json-schema.org/draft-06": "draft6",
-        "http://json-schema.org/draft-04": "draft4",
-        "http://json-schema.org/draft-03": "draft3"
-    };
+const DialectCompliance: React.FC<DialectComplianceProps> = ({
+  loaderData,
+  implementationsDetail,
+  implementationName,
+}) => {
+  const dialectMapping = {
+    "https://json-schema.org/draft/2020-12": "draft2020-12",
+    "https://json-schema.org/draft/2019-09": "draft2019-09",
+    "http://json-schema.org/draft-07": "draft7",
+    "http://json-schema.org/draft-06": "draft6",
+    "http://json-schema.org/draft-04": "draft4",
+    "http://json-schema.org/draft-03": "draft3",
+  };
 
     return (
         <Card className="mx-auto mb-3 w-75">

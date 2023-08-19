@@ -20,12 +20,15 @@ export const ImplementationReportView = () => {
     version: "",
     language: "",
     issues: "",
-    image: ""
+    image: "",
   };
 
   let allImplementations: { [key: string]: ImplementationMetadata } = {};
-  Object.values(loaderData).map(value => {
-    allImplementations = { ...allImplementations, ...value.runInfo.implementations };
+  Object.values(loaderData).map((value) => {
+    allImplementations = {
+      ...allImplementations,
+      ...value.runInfo.implementations,
+    };
   });
   Object.keys(allImplementations).forEach((key) => {
     if (key.includes(implementationName)) {
@@ -54,14 +57,20 @@ export const ImplementationReportView = () => {
                   <th>Language:</th>
                   <td>
                     {mapLanguage(implementationDetail.language)}
-                    <span className="text-muted">{implementationDetail.language && (` (${implementationDetail.language_version || ""})`)}</span>
+                    <span className="text-muted">
+                      {implementationDetail.language &&
+                        ` (${implementationDetail.language_version || ""})`}
+                    </span>
                   </td>
                 </tr>
                 <tr>
                   <th>OS:</th>
                   <td>
                     {implementationDetail.os || ""}
-                    <span className="text-muted">{implementationDetail.os && (` (${implementationDetail.os_version})`)}</span>
+                    <span className="text-muted">
+                      {implementationDetail.os &&
+                        ` (${implementationDetail.os_version})`}
+                    </span>
                   </td>
                 </tr>
                 <tr>
@@ -104,14 +113,14 @@ export const ImplementationReportView = () => {
             </Table>
           </Card.Body>
         </Card>
-        <DialectCompliance loaderData={loaderData} implementationsDetail={implementationDetail} implementationName={implementationName} />
+        <DialectCompliance
+          loaderData={loaderData}
+          implementationsDetail={implementationDetail}
+          implementationName={implementationName}
+        />
       </Container>
     );
-  }
+  };
 
-  return implementationDetail ? (
-    <ReportComponent />
-  ) : (
-    <LoadingAnimation />
-  );
+  return implementationDetail ? <ReportComponent /> : <LoadingAnimation />;
 };
