@@ -6,8 +6,6 @@ interface DialectComplianceProps {
     loaderData: { [key: string]: ReportData };
     implementationsDetail: {
         dialects: string[];
-        homepage: string;
-        name: string;
     };
     implementationName: string;
 }

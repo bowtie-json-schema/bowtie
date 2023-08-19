@@ -42,16 +42,9 @@ const fetchReportData = async (dialect) => {
 
 const fetchAllReportData = async () => {
   let loaderData = {};
-  const fetchPromises = Object.keys(dialectToName).map(async (draft) => {
-    const url = `https://bowtie.report/${draft}.json`;
-    const response = await fetch(url);
-    const jsonl = await response.text();
-    const lines = jsonl
-      .trim()
-      .split(/\r?\n/)
-      .map((line) => JSON.parse(line));
-    loaderData[draft] = parseReportData(lines);
-  });
+  const fetchPromises = Object.keys(dialectToName).map(
+    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect))
+  );
   await Promise.all(fetchPromises);
   return loaderData;
 };
@@ -92,6 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
