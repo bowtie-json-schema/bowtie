@@ -14,7 +14,17 @@ end
 # Bowtie implementation for json_schemer
 module BowtieJsonSchemer
   @started = false
-  @draft = nil
+  @meta_schema = nil
+  @meta_schema_refs = {
+    JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
+    JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
+    JSONSchemer::Draft7::BASE_URI => JSONSchemer::Draft7::SCHEMA,
+    JSONSchemer::Draft6::BASE_URI => JSONSchemer::Draft6::SCHEMA,
+    JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA
+  }
+  @meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
+  @meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
+  @meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
 
   ARGF.each_line do |line|  # rubocop:disable Metrics/BlockLength
     request = JSON.parse(line)
@@ -34,6 +44,8 @@ module BowtieJsonSchemer
           issues: 'https://github.com/davishmcclurg/json_schemer/issues',
 
           dialects: [
+            'https://json-schema.org/draft/2020-12/schema',
+            'https://json-schema.org/draft/2019-09/schema',
             'http://json-schema.org/draft-07/schema#',
             'http://json-schema.org/draft-06/schema#',
             'http://json-schema.org/draft-04/schema#',
@@ -44,15 +56,20 @@ module BowtieJsonSchemer
     when 'dialect'
       raise NotStarted unless @started
 
-      @draft = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[request['dialect']]
+      @meta_schema = JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[request['dialect']]
       response = { ok: true }
       puts "#{JSON.generate(response)}\n"
     when 'run'
       raise NotStarted unless @started
 
-      schemer = @draft.new(
+      schemer = JSONSchemer.schema(
         request['case']['schema'],
-        ref_resolver: proc { |uri| request['case']['registry'][uri.to_s] },
+        meta_schema: @meta_schema,
+        format: false,
+        regexp_resolver: 'ecma',
+        ref_resolver: proc do |uri|
+          request['case']['registry'][uri.to_s] || @meta_schema_refs[uri]
+        end
       )
       begin
         response = {
