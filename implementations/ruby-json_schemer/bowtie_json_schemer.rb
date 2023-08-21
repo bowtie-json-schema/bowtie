@@ -20,7 +20,7 @@ module BowtieJsonSchemer
     JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
     JSONSchemer::Draft7::BASE_URI => JSONSchemer::Draft7::SCHEMA,
     JSONSchemer::Draft6::BASE_URI => JSONSchemer::Draft6::SCHEMA,
-    JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA
+    JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA,
   }
   @meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
   @meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
@@ -69,7 +69,7 @@ module BowtieJsonSchemer
         regexp_resolver: 'ecma',
         ref_resolver: proc do |uri|
           request['case']['registry'][uri.to_s] || @meta_schema_refs[uri]
-        end
+        end,
       )
       begin
         response = {
