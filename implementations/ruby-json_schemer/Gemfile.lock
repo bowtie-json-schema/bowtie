@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    bowtie_json_schemer (0.1.0)
-      json_schemer (>= 0.2, < 3.0)
+    bowtie_json_schemer (2.0.0)
+      json_schemer (>= 2.0, < 3.0)
 
 GEM
   remote: https://rubygems.org/
