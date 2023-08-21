@@ -7,5 +7,5 @@ Gem::Specification.new do |spec|
   spec.authors               = ['Bowtie Authors']
   spec.required_ruby_version = '>= 3.0'
 
-  spec.add_dependency 'json_schemer', '>= 0.2', '< 2.0'
+  spec.add_dependency 'json_schemer', '>= 0.2', '< 3.0'
 end
