@@ -41,7 +41,7 @@ const fetchReportData = async (dialect) => {
 };
 
 const fetchAllReportData = async () => {
-  let loaderData = {};
+  const loaderData = {};
   const fetchPromises = Object.keys(dialectToName).map(
     async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
   );

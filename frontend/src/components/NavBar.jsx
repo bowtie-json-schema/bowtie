@@ -1,31 +1,25 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
-import { dialectToName } from "..";
 
 const NavBar = () => {
-  const [isDialectPage, setIsDialectPage] = useState(false);
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { version } = useContext(BowtieVersionContext);
-  const { pathname, hash, key } = useLocation();
+  const { hash, key } = useLocation();
+
+  const rootMatch = useMatch("/");
+  const dialectsMatch = useMatch("/dialects/*");
+  const isDialectPage = rootMatch || dialectsMatch;
 
   useEffect(() => {
     if (hash) {
       const targetElement = document.getElementById(hash.substring(1));
       targetElement?.scrollIntoView({ behavior: "smooth" });
     }
-    const matchPath = () => {
-      for (const key in dialectToName) {
-        if (pathname === "/" || pathname.includes(`/dialects/${key}`)) {
-          return true;
-        }
-      }
-    };
-    setIsDialectPage(matchPath());
-  }, [key, hash, pathname]);
+  }, [key, hash]);
 
   return (
     <>
@@ -51,7 +45,7 @@ const NavBar = () => {
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              {isDialectPage ? (
+              {isDialectPage && (
                 <>
                   <li className="nav-item">
                     <Link className="nav-link" to={{ hash: "run-info" }}>
@@ -69,7 +63,7 @@ const NavBar = () => {
                     </Link>
                   </li>
                 </>
-              ) : null}
+              )}
               <li className="nav-item dropdown">
                 <a
                   className="nav-link dropdown-toggle"
