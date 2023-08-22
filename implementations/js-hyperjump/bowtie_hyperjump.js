@@ -116,10 +116,9 @@ const cmds = {
       });
     } else {
       try {
-        const idToken =
-          args.dialect === "http://json-schema.org/draft-04/schema#"
-            ? "id"
-            : "$id";
+        const idToken = dialect === "http://json-schema.org/draft-04/schema#"
+          ? "id"
+          : "$id";
         const host = testCase.schema?.[idToken]?.startsWith("file:")
           ? "file://"
           : "https://example.com";
