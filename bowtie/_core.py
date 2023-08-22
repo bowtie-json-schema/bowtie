@@ -28,6 +28,7 @@ class GotStderr(Exception):
 class StartupFailed(Exception):
     name: str
     stderr: str = ""
+    data: Any = None
 
     def __str__(self) -> str:
         if self.stderr:
@@ -38,6 +39,7 @@ class StartupFailed(Exception):
 @frozen
 class NoSuchImage(Exception):
     name: str
+    data: Any = None
 
 
 class StreamClosed(Exception):
@@ -221,10 +223,15 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            status, data, *_ = error.args
-            if data.get("cause") == "image not known" or status == 500:  # :/
-                raise NoSuchImage(name=image_name)
-            raise StartupFailed(name=image_name)
+            status, data, *_ = error.args  # :/ what a mess
+            if data.get("cause") == "image not known":
+                raise NoSuchImage(name=image_name, data=data)
+
+            message = json.loads(data.get("message", "{}")).get("error", "")
+            if status == 500 and " 403 " in message:
+                raise NoSuchImage(name=image_name, data=data)
+
+            raise StartupFailed(name=image_name, data=data)
 
         yield self
         with suppress(GotStderr):  # XXX: Log this too?
