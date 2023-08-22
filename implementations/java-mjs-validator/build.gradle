@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '.'
+            include 'Harness.java'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def harness = [
+        group: 'org.up.js',
+        name: 'mjs',
+        version: '1.0'
+]
+def jsonHelper = [
+        group: 'com.googlecode.json-simple',
+        name: 'json-simple',
+        version: '1.1.1'
+]
+
+dependencies {
+	implementation files('mjs.jar')
+    implementation "$jsonHelper.group:$jsonHelper.name:$jsonHelper.version"
+}
+
+jar {
+    archiveBaseName = 'validator'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes "Main-Class": "Harness"
+        attributes "Implementation-Group": harness.group
+        attributes "Implementation-Name": harness.name
+        attributes "Implementation-Version": harness.version
+        attributes "Provider-Group": jsonHelper.group
+        attributes "Provider-Name": jsonHelper.name
+        attributes "Provider-Version": jsonHelper.version
+    }
+}
