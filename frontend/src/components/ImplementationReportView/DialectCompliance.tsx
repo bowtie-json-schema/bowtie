@@ -1,19 +1,11 @@
 import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { ImplementationMetadata } from "../../data/parseReportData";
+import { Dialect } from "../../data/Dialect";
 
 const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
   specificData,
 }) => {
-  const dialectMapping: { [key: string]: string } = {
-    "draft2020-12": "https://json-schema.org/draft/2020-12",
-    "draft2019-09": "https://json-schema.org/draft/2019-09",
-    draft7: "http://json-schema.org/draft-07",
-    draft6: "http://json-schema.org/draft-06",
-    draft4: "http://json-schema.org/draft-04",
-    draft3: "http://json-schema.org/draft-03",
-  };
-
   return (
     <Card className="mx-auto mb-3 w-75">
       <Card.Header>Compliance</Card.Header>
@@ -29,7 +21,7 @@ const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
               </th>
             </tr>
             <tr className="text-center">
-              <th>Unsuccessful</th>
+              <th>Failed</th>
               <th>Skipped</th>
               <th>Errored</th>
             </tr>
@@ -39,13 +31,13 @@ const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
               ([draft, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{dialectMapping[draft]}</td>
+                    <td>{Dialect.dialectMapping[draft]}</td>
                     <td className="text-center">{result.unsuccessfulTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
-              },
+              }
             )}
           </tbody>
         </Table>

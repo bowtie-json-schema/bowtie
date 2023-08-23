@@ -1,5 +1,5 @@
 import { Card } from "react-bootstrap";
-import { useLoaderData, Link } from "react-router-dom";
+import { useLoaderData, useParams, Link } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
 import { ImplementationMetadata } from "../../data/parseReportData";
 // @ts-ignore
@@ -12,22 +12,22 @@ export const ImplementationReportView = () => {
     [key: string]: ImplementationMetadata;
   };
 
-  const pathSegments = window.location.href.split("/");
-  let implementationName = pathSegments[pathSegments.length - 1];
+  const { langImplementation } = useParams();
+  const implementationName = langImplementation ?? "";
 
   function filterImplementation(
     object: { [key: string]: ImplementationMetadata },
-    implementationName: string,
+    implementationName: string
   ): ImplementationMetadata {
     const filteredKeys = Object.keys(object).filter((key) =>
-      key.includes(implementationName),
+      key.includes(implementationName)
     );
     return object[filteredKeys[0]];
   }
 
   const specificData = filterImplementation(
     allImplementations,
-    implementationName,
+    implementationName
   );
 
   return allImplementations ? (
@@ -86,7 +86,7 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
                         </li>
-                      ),
+                      )
                     )}
                   </ul>
                 </td>

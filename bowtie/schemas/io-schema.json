@@ -46,7 +46,7 @@
                 "implementation": {
                   "description": "Metadata about the implementation. The list below contain required or suggested values, but implementation-specific additional metadata can also be included and will be preserved in emitted reports.",
                   "type": "object",
-                  "required": ["language", "name", "dialects", "issues"],
+                  "required": ["language", "name", "dialects", "issues", "homepage"],
                   "properties": {
                     "language": {
                       "description": "The implementation language (e.g. C++, Python, etc.)",
