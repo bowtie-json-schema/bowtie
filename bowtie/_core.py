@@ -223,18 +223,9 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            status, data, *_ = error.args  # :/ what a mess
-            if data.get("cause") == "image not known":
+            status, data, *_ = error.args  # :/
+            if data.get("cause") == "image not known" or status == 500:
                 raise NoSuchImage(name=image_name, data=data)
-
-            if status == 500:
-                message = data.get("message", {})
-                try:
-                    if " 403 " in json.loads(message).get("error", '""'):
-                        raise NoSuchImage(name=image_name, data=data)
-                except json.JSONDecodeError:
-                    pass
-
             raise StartupFailed(name=image_name, data=data)
 
         yield self
@@ -244,13 +235,11 @@ class Implementation:
             await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     async def _start_container(self):
-        with suppress(aiodocker.exceptions.DockerError):
-            await self._docker.pull(self.name)  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        self._container = await self._docker.containers.create(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]  # noqa: E501
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
+                HostConfig=dict(NetworkMode="none"),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
             ),
         )
         self._stream = Stream.attached_to(
