@@ -66,7 +66,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               key={index}
               index={index}
             />
-          )
+          ),
         )}
       </tbody>
       <tfoot>

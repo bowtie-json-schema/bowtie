@@ -37,7 +37,7 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
-              }
+              },
             )}
           </tbody>
         </Table>

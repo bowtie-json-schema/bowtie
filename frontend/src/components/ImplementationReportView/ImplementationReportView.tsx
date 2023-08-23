@@ -17,13 +17,12 @@ export const ImplementationReportView = () => {
   const { langImplementation } = useParams();
   const implementationName = langImplementation ?? "";
 
-
   function getFilteredImplementationMetadata(
     allImplementations: { [key: string]: ImplementationMetadata },
-    implementationName: string
+    implementationName: string,
   ): ImplementationMetadata {
     const filteredKeys = Object.keys(allImplementations).filter((key) =>
-      key.includes(implementationName)
+      key.includes(implementationName),
     );
     return allImplementations[filteredKeys[0]];
   }
