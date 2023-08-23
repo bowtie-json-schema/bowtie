@@ -260,6 +260,8 @@ You can also have a look at the full schema for details on the ``stop`` command,
 Let's implement both requests.
 Change your harness to contain:
 
+.. _start_implementation:
+
 .. code:: lua
 
     local json = require 'json'
@@ -364,6 +366,18 @@ Add a handler for the ``dialect`` command to your harness which returns that res
       assert(STARTED, 'Not started!')
       return { ok = false }
     end,
+
+.. warning::
+
+    Responding ``{"ok": true}`` or ``false`` is *not* an indication of whether your implementation supports the dialect sent.
+
+    Bowtie will never send a dialect request for a dialect that your harness does not support -- which it already knows from the ``start`` response we implemented `earlier <start_implementation>`.
+    If it ever did so this would be considered a Bowtie bug.
+
+    This request *strictly* controls what your implementation harness should do with schemas that do *not* internally indicate what version they are written for, and the response should signal whether your implementation has configured itself appropriately or not.
+
+    Bowtie will *continue executing tests* even if it sees a ``false`` response.
+
 
 Running ``bowtie`` now should produce::
 
