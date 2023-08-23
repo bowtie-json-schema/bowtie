@@ -17,17 +17,17 @@ export const ImplementationReportView = () => {
 
   function filterImplementation(
     object: { [key: string]: ImplementationMetadata },
-    implementationName: string
+    implementationName: string,
   ): ImplementationMetadata {
     const filteredKeys = Object.keys(object).filter((key) =>
-      key.includes(implementationName)
+      key.includes(implementationName),
     );
     return object[filteredKeys[0]];
   }
 
   const specificData = filterImplementation(
     allImplementations,
-    implementationName
+    implementationName,
   );
 
   return allImplementations ? (
@@ -86,7 +86,7 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
