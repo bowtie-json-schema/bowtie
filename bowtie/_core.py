@@ -223,18 +223,9 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            status, data, *_ = error.args  # :/ what a mess
-            if data.get("cause") == "image not known":
+            status, data, *_ = error.args  # :/
+            if data.get("cause") == "image not known" or status == 500:
                 raise NoSuchImage(name=image_name, data=data)
-
-            if status == 500:
-                message = data.get("message", {})
-                try:
-                    if " 403 " in json.loads(message).get("error", '""'):
-                        raise NoSuchImage(name=image_name, data=data)
-                except json.JSONDecodeError:
-                    pass
-
             raise StartupFailed(name=image_name, data=data)
 
         yield self
