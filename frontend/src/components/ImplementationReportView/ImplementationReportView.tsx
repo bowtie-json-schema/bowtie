@@ -31,7 +31,7 @@ export const ImplementationReportView = () => {
   // Filter the implementation metadata using the selected implementation name.
   const implementation = getFilteredImplementationMetadata(
     allImplementations,
-    implementationName
+    implementationName,
   );
 
   return allImplementations ? (
@@ -90,7 +90,7 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
