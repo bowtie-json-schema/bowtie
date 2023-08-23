@@ -227,9 +227,13 @@ class Implementation:
             if data.get("cause") == "image not known":
                 raise NoSuchImage(name=image_name, data=data)
 
-            message = json.loads(data.get("message", "{}")).get("error", "")
-            if status == 500 and " 403 " in message:
-                raise NoSuchImage(name=image_name, data=data)
+            if status == 500:
+                message = data.get("message", {})
+                try:
+                    if " 403 " in json.loads(message).get("error", '""'):
+                        raise NoSuchImage(name=image_name, data=data)
+                except json.JSONDecodeError:
+                    pass
 
             raise StartupFailed(name=image_name, data=data)
 
