@@ -244,7 +244,8 @@ class Implementation:
             await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     async def _start_container(self):
-        await self._docker.pull(self.name)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        with suppress(aiodocker.exceptions.DockerError):
+            await self._docker.pull(self.name)  # type: ignore[reportUnknownMemberType]  # noqa: E501
         self._container = await self._docker.containers.create(  # type: ignore[reportUnknownMemberType]  # noqa: E501
             config=dict(
                 Image=self.name,
