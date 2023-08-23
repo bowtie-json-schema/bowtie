@@ -14,7 +14,7 @@ export const parseReportData = (lines: any[]): ReportData => {
       skippedTests: 0,
       unsuccessfulTests: 0,
       erroredTests: 0,
-    })
+    }),
   );
 
   let didFailFast = false;
@@ -35,7 +35,7 @@ export const parseReportData = (lines: any[]): ReportData => {
           new Array(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          })
+          }),
         );
       } else if (line.skipped) {
         implementationData.skippedTests += caseData.tests.length;
@@ -44,7 +44,7 @@ export const parseReportData = (lines: any[]): ReportData => {
           new Array(caseData.tests.length).fill({
             state: "skipped",
             message: line.message,
-          })
+          }),
         );
       } else if (line.implementation) {
         const caseResults = (line.results as any[]).map<CaseResult>(
@@ -65,7 +65,7 @@ export const parseReportData = (lines: any[]): ReportData => {
                 return { state: "failed", valid: res.valid };
               }
             }
-          }
+          },
         );
         implementationData.cases.set(line.seq, caseResults);
       } else if (line.did_fail_fast !== undefined) {
@@ -82,29 +82,40 @@ export const parseReportData = (lines: any[]): ReportData => {
   };
 };
 
-export const parseImplementationData = (loaderData: { [key: string]: ReportData }) => {
+export const parseImplementationData = (loaderData: {
+  [key: string]: ReportData;
+}) => {
   let allImplementations: { [key: string]: ImplementationMetadata } = {};
-  let dialectCompliance: { [key: string]: { [key: string]: Partial<Totals> } } = {};
+  let dialectCompliance: { [key: string]: { [key: string]: Partial<Totals> } } =
+    {};
 
   for (const [key, value] of Object.entries(loaderData)) {
-    dialectCompliance[key] = calculateImplementationTotal(value.implementations);
-    allImplementations = { ...allImplementations, ...value.runInfo.implementations };
+    dialectCompliance[key] = calculateImplementationTotal(
+      value.implementations,
+    );
+    allImplementations = {
+      ...allImplementations,
+      ...value.runInfo.implementations,
+    };
   }
 
   Object.keys(allImplementations).map((implementation) => {
     Object.entries(dialectCompliance).map(([key, value]) => {
       if (value[implementation]) {
-        if (!allImplementations[implementation].hasOwnProperty('results')) {
-          allImplementations[implementation]['results'] = {}
+        if (!allImplementations[implementation].hasOwnProperty("results")) {
+          allImplementations[implementation]["results"] = {};
         }
-        allImplementations[implementation]['results'][key] = value[implementation]
+        allImplementations[implementation]["results"][key] =
+          value[implementation];
       }
-    })
-  })
+    });
+  });
   return allImplementations;
-}
+};
 
-const calculateImplementationTotal = (implementations: Map<string, ImplementationData>) => {
+const calculateImplementationTotal = (
+  implementations: Map<string, ImplementationData>,
+) => {
   let implementationResult: { [key: string]: Partial<Totals> } = {};
 
   Array.from(implementations.entries()).forEach(([key, value]) => {
@@ -121,7 +132,7 @@ const calculateImplementationTotal = (implementations: Map<string, Implementatio
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0
+    0,
   );
   return Array.from(data.implementations.values()).reduce(
     (prev, curr) => ({
@@ -137,7 +148,7 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       unsuccessfulTests: 0,
       erroredTests: 0,
-    }
+    },
   );
 };
 
@@ -196,7 +207,7 @@ export interface ImplementationMetadata {
   os?: string;
   os_version?: string;
   language_version?: string;
-  results: { [key: string]: Partial<Totals> }
+  results: { [key: string]: Partial<Totals> };
 
   [k: string]: unknown;
 }

@@ -45,7 +45,7 @@ const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
                     <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
-              }
+              },
             )}
           </tbody>
         </Table>

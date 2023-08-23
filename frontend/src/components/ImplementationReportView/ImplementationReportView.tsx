@@ -8,29 +8,38 @@ import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 
 export const ImplementationReportView = () => {
-  const allImplementations = useLoaderData() as { [key: string]: ImplementationMetadata };
+  const allImplementations = useLoaderData() as {
+    [key: string]: ImplementationMetadata;
+  };
 
   const pathSegments = window.location.href.split("/");
   let implementationName = pathSegments[pathSegments.length - 1];
 
-  function filterImplementation(object: { [key: string]: ImplementationMetadata }, implementationName: string): ImplementationMetadata {
-    const filteredKeys = Object.keys(object).filter(key => key.includes(implementationName));
+  function filterImplementation(
+    object: { [key: string]: ImplementationMetadata },
+    implementationName: string,
+  ): ImplementationMetadata {
+    const filteredKeys = Object.keys(object).filter((key) =>
+      key.includes(implementationName),
+    );
     return object[filteredKeys[0]];
   }
 
-
-  const specificData = filterImplementation(allImplementations, implementationName)
+  const specificData = filterImplementation(
+    allImplementations,
+    implementationName,
+  );
 
   return allImplementations ? (
-    <ReportComponent
-      specificData={specificData}
-    />
+    <ReportComponent specificData={specificData} />
   ) : (
     <LoadingAnimation />
   );
 };
 
-const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({ specificData }) => {
+const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
+  specificData,
+}) => {
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 w-75">
@@ -77,7 +86,7 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({ s
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
@@ -97,9 +106,7 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({ s
               <tr>
                 <th>Issues:</th>
                 <td>
-                  <Link to={specificData.issues}>
-                    {specificData.issues}
-                  </Link>
+                  <Link to={specificData.issues}>{specificData.issues}</Link>
                 </td>
               </tr>
             </tbody>
