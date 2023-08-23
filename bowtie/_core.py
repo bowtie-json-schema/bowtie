@@ -239,7 +239,7 @@ class Implementation:
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
+                HostConfig=dict(NetworkMode="none"),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
             ),
         )
         self._stream = Stream.attached_to(
