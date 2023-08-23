@@ -8,37 +8,41 @@ import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 
 export const ImplementationReportView = () => {
+  // Fetch all supported implementation's metadata.
   const allImplementations = useLoaderData() as {
     [key: string]: ImplementationMetadata;
   };
 
+  // Get the selected implementation's name from the URL parameters.
   const { langImplementation } = useParams();
   const implementationName = langImplementation ?? "";
 
-  function filterImplementation(
-    object: { [key: string]: ImplementationMetadata },
+
+  function getFilteredImplementationMetadata(
+    allImplementations: { [key: string]: ImplementationMetadata },
     implementationName: string
   ): ImplementationMetadata {
-    const filteredKeys = Object.keys(object).filter((key) =>
+    const filteredKeys = Object.keys(allImplementations).filter((key) =>
       key.includes(implementationName)
     );
-    return object[filteredKeys[0]];
+    return allImplementations[filteredKeys[0]];
   }
 
-  const specificData = filterImplementation(
+  // Filter the implementation metadata using the selected implementation name.
+  const implementation = getFilteredImplementationMetadata(
     allImplementations,
     implementationName
   );
 
   return allImplementations ? (
-    <ReportComponent specificData={specificData} />
+    <ReportComponent implementation={implementation} />
   ) : (
     <LoadingAnimation />
   );
 };
 
-const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
-  specificData,
+const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
+  implementation,
 }) => {
   return (
     <Container className="p-4">
@@ -49,31 +53,31 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
             <tbody>
               <tr>
                 <th>Name:</th>
-                <td>{specificData.name}</td>
+                <td>{implementation.name}</td>
               </tr>
               <tr>
                 <th>Version:</th>
-                <td>{specificData.version}</td>
+                <td>{implementation.version}</td>
               </tr>
               <tr>
                 <th>Language:</th>
                 <td>
-                  {mapLanguage(specificData.language)}
+                  {mapLanguage(implementation.language)}
                   <span className="text-muted">
-                    {specificData.language &&
-                      specificData.language_version &&
-                      ` (${specificData.language_version || ""})`}
+                    {implementation.language &&
+                      implementation.language_version &&
+                      ` (${implementation.language_version || ""})`}
                   </span>
                 </td>
               </tr>
               <tr>
                 <th>OS:</th>
                 <td>
-                  {specificData.os || ""}
+                  {implementation.os || ""}
                   <span className="text-muted">
-                    {specificData.os &&
-                      specificData.os_version &&
-                      ` (${specificData.os_version})`}
+                    {implementation.os &&
+                      implementation.os_version &&
+                      ` (${implementation.os_version})`}
                   </span>
                 </td>
               </tr>
@@ -81,7 +85,7 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
                 <th>Dialects:</th>
                 <td>
                   <ul>
-                    {specificData.dialects.map(
+                    {implementation.dialects.map(
                       (dialect: string, index: number) => (
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
@@ -93,14 +97,14 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
               </tr>
               <tr>
                 <th>Image:</th>
-                <td>{specificData.image}</td>
+                <td>{implementation.image}</td>
               </tr>
               <tr>
                 <th>Homepage:</th>
-                {specificData.homepage && (
+                {implementation.homepage && (
                   <td>
-                    <Link to={specificData.homepage}>
-                      {specificData.homepage}
+                    <Link to={implementation.homepage}>
+                      {implementation.homepage}
                     </Link>
                   </td>
                 )}
@@ -108,14 +112,16 @@ const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({
               <tr>
                 <th>Issues:</th>
                 <td>
-                  <Link to={specificData.issues}>{specificData.issues}</Link>
+                  <Link to={implementation.issues}>
+                    {implementation.issues}
+                  </Link>
                 </td>
               </tr>
             </tbody>
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance specificData={specificData} />
+      <DialectCompliance implementation={implementation} />
     </Container>
   );
 };

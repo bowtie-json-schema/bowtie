@@ -8,12 +8,12 @@ export const Dialect: Dialect = {
     draft3: "Draft 3",
   },
   dialectMapping: {
-    "draft2020-12": "https://json-schema.org/draft/2020-12",
-    "draft2019-09": "https://json-schema.org/draft/2019-09",
-    draft7: "http://json-schema.org/draft-07",
-    draft6: "http://json-schema.org/draft-06",
-    draft4: "http://json-schema.org/draft-04",
-    draft3: "http://json-schema.org/draft-03",
+    "draft2020-12": "https://json-schema.org/draft/2020-12/schema",
+    "draft2019-09": "https://json-schema.org/draft/2019-09/schema",
+    draft7: "http://json-schema.org/draft-07/schema#",
+    draft6: "http://json-schema.org/draft-06/schema#",
+    draft4: "http://json-schema.org/draft-04/schema#",
+    draft3: "http://json-schema.org/draft-03/schema#",
   },
 };
 

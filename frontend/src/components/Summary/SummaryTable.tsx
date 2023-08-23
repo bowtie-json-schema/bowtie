@@ -66,7 +66,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               key={index}
               index={index}
             />
-          ),
+          )
         )}
       </tbody>
       <tfoot>
@@ -77,10 +77,10 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           <td className="text-center">{totals.erroredCases}</td>
           <td className="text-center">{totals.skippedTests}</td>
           <td className="text-center details-required">
-            {totals.unsuccessfulTests + totals.erroredTests}
+            {totals.failedTests + totals.erroredTests}
             <div className="hover-details text-center">
               <p>
-                <b>failed</b>: {totals.unsuccessfulTests}
+                <b>failed</b>: {totals.failedTests}
               </p>
               <p>
                 <b>errored</b>: {totals.erroredTests}

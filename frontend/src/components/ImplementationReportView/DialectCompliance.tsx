@@ -3,9 +3,9 @@ import { Card, Table } from "react-bootstrap";
 import { ImplementationMetadata } from "../../data/parseReportData";
 import { Dialect } from "../../data/Dialect";
 
-const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
-  specificData,
-}) => {
+const DialectCompliance: React.FC<{
+  implementation: ImplementationMetadata;
+}> = ({ implementation }) => {
   return (
     <Card className="mx-auto mb-3 w-75">
       <Card.Header>Compliance</Card.Header>
@@ -27,17 +27,17 @@ const DialectCompliance: React.FC<{ specificData: ImplementationMetadata }> = ({
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(specificData.results).map(
-              ([draft, result], index) => {
+            {Object.entries(implementation.results).map(
+              ([dialectName, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.dialectMapping[draft]}</td>
-                    <td className="text-center">{result.unsuccessfulTests}</td>
+                    <td>{Dialect.dialectMapping[dialectName]}</td>
+                    <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
-              },
+              }
             )}
           </tbody>
         </Table>

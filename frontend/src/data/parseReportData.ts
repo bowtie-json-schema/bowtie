@@ -12,7 +12,7 @@ export const parseReportData = (lines: any[]): ReportData => {
       cases: new Map(),
       erroredCases: 0,
       skippedTests: 0,
-      unsuccessfulTests: 0,
+      failedTests: 0,
       erroredTests: 0,
     }),
   );
@@ -61,7 +61,7 @@ export const parseReportData = (lines: any[]): ReportData => {
               if (successful) {
                 return { state: "successful", valid: res.valid };
               } else {
-                implementationData.unsuccessfulTests++;
+                implementationData.failedTests++;
                 return { state: "failed", valid: res.valid };
               }
             }
@@ -122,7 +122,7 @@ const calculateImplementationTotal = (
     implementationResult[key] = {
       erroredTests: value.erroredTests,
       skippedTests: value.skippedTests,
-      unsuccessfulTests: value.unsuccessfulTests,
+      failedTests: value.failedTests,
     };
   });
 
@@ -139,14 +139,14 @@ export const calculateTotals = (data: ReportData): Totals => {
       totalTests,
       erroredCases: prev.erroredCases + curr.erroredCases,
       skippedTests: prev.skippedTests + curr.skippedTests,
-      unsuccessfulTests: prev.unsuccessfulTests + curr.unsuccessfulTests,
+      failedTests: prev.failedTests + curr.failedTests,
       erroredTests: prev.erroredTests + curr.erroredTests,
     }),
     {
       totalTests: totalTests,
       erroredCases: 0,
       skippedTests: 0,
-      unsuccessfulTests: 0,
+      failedTests: 0,
       erroredTests: 0,
     },
   );
@@ -156,7 +156,7 @@ export interface Totals {
   totalTests: number;
   erroredCases: number;
   skippedTests: number;
-  unsuccessfulTests: number;
+  failedTests: number;
   erroredTests: number;
 }
 
@@ -181,7 +181,7 @@ export interface ImplementationData {
   cases: Map<number, CaseResult[]>;
   erroredCases: number;
   skippedTests: number;
-  unsuccessfulTests: number;
+  failedTests: number;
   erroredTests: number;
 }
 
@@ -196,7 +196,7 @@ export interface ImplementationMetadata {
   name: string;
   version?: string;
   dialects: string[];
-  homepage?: string;
+  homepage: string;
   issues: string;
   image: string;
   links?: {
