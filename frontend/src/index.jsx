@@ -38,7 +38,7 @@ const fetchReportData = async (dialect) => {
 const fetchAllReportData = async () => {
   const loaderData = {};
   const fetchPromises = Object.keys(Dialect.dialectToName).map(
-    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect))
+    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
   );
   await Promise.all(fetchPromises);
   return parseImplementationData(loaderData);
@@ -80,6 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
