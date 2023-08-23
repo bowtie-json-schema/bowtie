@@ -1,64 +1,36 @@
 import { Card } from "react-bootstrap";
 import { useLoaderData, Link } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
-import { ReportData, ImplementationMetadata } from "../../data/parseReportData";
+import { ImplementationMetadata } from "../../data/parseReportData";
 // @ts-ignore
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 
-interface DialectComplianceProps {
-  implementationDetail: ImplementationMetadata;
-  loaderData: { [key: string]: ReportData };
-  implementationName: string;
-}
-
-let implementationDetail: ImplementationMetadata = {
-  dialects: [],
-  homepage: "",
-  name: "",
-  version: "",
-  language: "",
-  issues: "",
-  image: "",
-};
-
 export const ImplementationReportView = () => {
-  const loaderData = useLoaderData() as { [key: string]: ReportData };
+  const allImplementations = useLoaderData() as { [key: string]: ImplementationMetadata };
 
   const pathSegments = window.location.href.split("/");
   let implementationName = pathSegments[pathSegments.length - 1];
 
-  let allImplementations: { [key: string]: ImplementationMetadata } = {};
-  Object.values(loaderData).map((value) => {
-    allImplementations = {
-      ...allImplementations,
-      ...value.runInfo.implementations,
-    };
-  });
-  Object.keys(allImplementations).forEach((key) => {
-    if (key.includes(implementationName)) {
-      implementationDetail = allImplementations[key];
-      document.title = `Bowtie - ${implementationDetail.name}`;
-    }
-  });
+  function filterImplementation(object: { [key: string]: ImplementationMetadata }, implementationName: string): ImplementationMetadata {
+    const filteredKeys = Object.keys(object).filter(key => key.includes(implementationName));
+    return object[filteredKeys[0]];
+  }
 
-  return implementationDetail ? (
+
+  const specificData = filterImplementation(allImplementations, implementationName)
+
+  return allImplementations ? (
     <ReportComponent
-      implementationDetail={implementationDetail}
-      loaderData={loaderData}
-      implementationName={implementationName}
+      specificData={specificData}
     />
   ) : (
     <LoadingAnimation />
   );
 };
 
-const ReportComponent: React.FC<DialectComplianceProps> = ({
-  implementationDetail,
-  loaderData,
-  implementationName,
-}) => {
+const ReportComponent: React.FC<{ specificData: ImplementationMetadata }> = ({ specificData }) => {
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 w-75">
@@ -68,31 +40,31 @@ const ReportComponent: React.FC<DialectComplianceProps> = ({
             <tbody>
               <tr>
                 <th>Name:</th>
-                <td>{implementationDetail.name}</td>
+                <td>{specificData.name}</td>
               </tr>
               <tr>
                 <th>Version:</th>
-                <td>{implementationDetail.version}</td>
+                <td>{specificData.version}</td>
               </tr>
               <tr>
                 <th>Language:</th>
                 <td>
-                  {mapLanguage(implementationDetail.language)}
+                  {mapLanguage(specificData.language)}
                   <span className="text-muted">
-                    {implementationDetail.language &&
-                      implementationDetail.language_version &&
-                      ` (${implementationDetail.language_version || ""})`}
+                    {specificData.language &&
+                      specificData.language_version &&
+                      ` (${specificData.language_version || ""})`}
                   </span>
                 </td>
               </tr>
               <tr>
                 <th>OS:</th>
                 <td>
-                  {implementationDetail.os || ""}
+                  {specificData.os || ""}
                   <span className="text-muted">
-                    {implementationDetail.os &&
-                      implementationDetail.os_version &&
-                      ` (${implementationDetail.os_version})`}
+                    {specificData.os &&
+                      specificData.os_version &&
+                      ` (${specificData.os_version})`}
                   </span>
                 </td>
               </tr>
@@ -100,7 +72,7 @@ const ReportComponent: React.FC<DialectComplianceProps> = ({
                 <th>Dialects:</th>
                 <td>
                   <ul>
-                    {implementationDetail.dialects.map(
+                    {specificData.dialects.map(
                       (dialect: string, index: number) => (
                         <li key={index}>
                           <Link to={dialect}>{dialect}</Link>
@@ -112,21 +84,21 @@ const ReportComponent: React.FC<DialectComplianceProps> = ({
               </tr>
               <tr>
                 <th>Image:</th>
-                <td>{implementationDetail.image}</td>
+                <td>{specificData.image}</td>
               </tr>
               <tr>
                 <th>Homepage:</th>
                 <td>
-                  <Link to={implementationDetail.homepage}>
-                    {implementationDetail.homepage}
+                  <Link to={specificData.homepage}>
+                    {specificData.homepage}
                   </Link>
                 </td>
               </tr>
               <tr>
                 <th>Issues:</th>
                 <td>
-                  <Link to={implementationDetail.issues}>
-                    {implementationDetail.issues}
+                  <Link to={specificData.issues}>
+                    {specificData.issues}
                   </Link>
                 </td>
               </tr>
@@ -134,11 +106,7 @@ const ReportComponent: React.FC<DialectComplianceProps> = ({
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance
-        loaderData={loaderData}
-        implementationsDetail={implementationDetail}
-        implementationName={implementationName}
-      />
+      <DialectCompliance specificData={specificData} />
     </Container>
   );
 };

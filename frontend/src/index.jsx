@@ -8,7 +8,10 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
-import { parseReportData } from "./data/parseReportData";
+import {
+  parseReportData,
+  parseImplementationData,
+} from "./data/parseReportData";
 import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
@@ -43,10 +46,10 @@ const fetchReportData = async (dialect) => {
 const fetchAllReportData = async () => {
   const loaderData = {};
   const fetchPromises = Object.keys(dialectToName).map(
-    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
+    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect))
   );
   await Promise.all(fetchPromises);
-  return loaderData;
+  return parseImplementationData(loaderData);
 };
 
 const router = createHashRouter([
@@ -85,6 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
