@@ -43,6 +43,12 @@ jobs:
       - name: Install Bowtie
         run: python3 -m pip install bowtie-json-schema
 
+      # Ha ha, without me, reports sometimes claim they're running out of disk
+      # space... See e.g. https://github.com/actions/runner-images/issues/2840
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+
       - name: Generate the Report
         run: |
           bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie report --badges badges --generate-dialect-navigation --out ${{ matrix.version }}.html
