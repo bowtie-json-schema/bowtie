@@ -99,6 +99,14 @@ and build the image (below using ``podman`` but if you're using ``docker``, just
 
     podman build --quiet -f Dockerfile -t bowtie-lua-jsonschema .
 
+.. note::
+
+    If you are indeed using ``podman``, you must ensure you have set the ``DOCKER_HOST`` environment variable in the environment in which you invoke ``bowtie``.
+
+    This ensures ``bowtie`` can speak the Docker API to your ``podman`` installation (which is needed because the API client used within Bowtie is agnostic, but speaks the Docker API, which ``podman`` supports as well).
+
+    Further information may be found `here <https://podman-desktop.io/docs/migrating-from-docker/using-the-docker_host-environment-variable>`_.
+
 If everything went well, running:
 
 .. code:: sh

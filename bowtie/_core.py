@@ -28,6 +28,7 @@ class GotStderr(Exception):
 class StartupFailed(Exception):
     name: str
     stderr: str = ""
+    data: Any = None
 
     def __str__(self) -> str:
         if self.stderr:
@@ -38,6 +39,7 @@ class StartupFailed(Exception):
 @frozen
 class NoSuchImage(Exception):
     name: str
+    data: Any = None
 
 
 class StreamClosed(Exception):
@@ -221,10 +223,19 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            status, data, *_ = error.args
-            if data.get("cause") == "image not known" or status == 500:  # :/
-                raise NoSuchImage(name=image_name)
-            raise StartupFailed(name=image_name)
+            status, data, *_ = error.args  # :/ what a mess
+            if data.get("cause") == "image not known":
+                raise NoSuchImage(name=image_name, data=data)
+
+            if status == 500:
+                message = data.get("message", {})
+                try:
+                    if " 403 " in json.loads(message).get("error", '""'):
+                        raise NoSuchImage(name=image_name, data=data)
+                except json.JSONDecodeError:
+                    pass
+
+            raise StartupFailed(name=image_name, data=data)
 
         yield self
         with suppress(GotStderr):  # XXX: Log this too?
@@ -233,7 +244,9 @@ class Implementation:
             await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     async def _start_container(self):
-        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        with suppress(aiodocker.exceptions.DockerError):
+            await self._docker.pull(self.name)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        self._container = await self._docker.containers.create(  # type: ignore[reportUnknownMemberType]  # noqa: E501
             config=dict(
                 Image=self.name,
                 OpenStdin=True,

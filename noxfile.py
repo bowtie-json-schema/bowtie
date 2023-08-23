@@ -139,6 +139,7 @@ def docs(session, builder):
         argv = ["-n", "-T", "-W"]
         if builder != "spelling":
             argv += ["-q"]
+        posargs = session.posargs or [tmpdir / builder]
         session.run(
             "python",
             "-m",
@@ -146,8 +147,8 @@ def docs(session, builder):
             "-b",
             builder,
             DOCS,
-            tmpdir / builder,
             *argv,
+            *posargs,
         )
 
 

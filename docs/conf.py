@@ -8,7 +8,8 @@ DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
 GITHUB = URL("https://github.com/")
-HOMEPAGE = GITHUB / "bowtie-json-schema/bowtie"
+ORG = GITHUB / "bowtie-json-schema"
+HOMEPAGE = ORG / "bowtie"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -89,6 +90,7 @@ intersphinx_mapping = {
 extlinks = {
     "gh": (str(HOMEPAGE) + "/%s", None),
     "github": (str(GITHUB) + "/%s", None),
+    "org": (str(ORG) + "/%s", None),
 }
 extlinks_detect_hardcoded_links = True
 
