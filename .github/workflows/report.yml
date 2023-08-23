@@ -32,6 +32,12 @@ jobs:
           - draft3
 
     steps:
+      # Ha ha, without me, reports sometimes claim they're running out of disk
+      # space... See e.g. https://github.com/actions/runner-images/issues/2840
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+
       # FIXME: we can skip checking out if we are able to list all images in
       #        the image repository
       - uses: actions/checkout@v3
@@ -42,12 +48,6 @@ jobs:
 
       - name: Install Bowtie
         run: python3 -m pip install bowtie-json-schema
-
-      # Ha ha, without me, reports sometimes claim they're running out of disk
-      # space... See e.g. https://github.com/actions/runner-images/issues/2840
-      - name: Free up disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
 
       - name: Generate the Report
         run: |
