@@ -19,7 +19,7 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@types/react": "^18.2.20",
+    "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
     "@types/urijs": "^1.19.19",
     "@vitejs/plugin-react": "^4.0.4",
