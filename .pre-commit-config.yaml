@@ -28,6 +28,14 @@ repos:
     rev: v1.32.1
     hooks:
       - id: djlint-jinja
+  - repo: local
+    hooks:
+      - id: check-dependabot
+        name: check implementations for dependabot registration
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-dependabot
+        additional_dependencies: [pyyaml]
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:

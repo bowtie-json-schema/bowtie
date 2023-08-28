@@ -18,73 +18,78 @@ updates:
   # Dependabot for Implementations (Harnesses)
   # ------------------------------------------
 
-  # FIXME: Dependabot doesn't support clojure.
+  # ignore: clojure-json-schema - FIXME: Dependabot doesn't support clojure.
   #        See https://github.com/frenchy64/dependabot-lein-via-mvn for
   #        a possible workaround.
   # - package-ecosystem: "clojure"
-  #   directory: "implementations/clojure-json-schema"
+  #   directory: "/implementations/clojure-json-schema"
   #   schedule:
   #     interval: "daily"
 
-  # cpp-valijson builds its repository's HEAD
+  # ignore: cpp-valijson - builds its repository's HEAD
 
   - package-ecosystem: "nuget"
-    directory: "implementations/dotnet-jsonschema-net"
+    directory: "/implementations/dotnet-jsonschema-net"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gomod"
-    directory: "implementations/go-jsonschema"
+    directory: "/implementations/go-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directory: "/implementations/go-gojsonschema"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "implementations/js-ajv"
+    directory: "/implementations/js-ajv"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "implementations/js-hyperjump"
+    directory: "/implementations/js-hyperjump"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "implementations/ts-vscode-json-languageservice"
+    directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
 
-  # lua-jsonschema installs the latest (unpinned) version
-  # python-fastjsonschema installs the latest (unpinned) version
-  # python-jschon installs the latest (unpinned) version
-  # python-jsonschema installs the latest (unpinned) version
+  # ignore: lua-jsonschema - installs the latest (unpinned) version
+  # ignore: python-fastjsonschema - installs the latest (unpinned) version
+  # ignore: python-jschon - installs the latest (unpinned) version
+  # ignore: python-jsonschema - installs the latest (unpinned) version
 
   - package-ecosystem: "bundler"
-    directory: "implementations/ruby-json_schemer"
+    directory: "/implementations/ruby-json_schemer"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "cargo"
-    directory: "implementations/rust-jsonschema"
+    directory: "/implementations/rust-jsonschema"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "cargo"
-    directory: "implementations/rust-boon"
+    directory: "/implementations/rust-boon"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "implementations/java-json-schema"
+    directory: "/implementations/java-json-schema"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "implementations/java-json-schema-validator"
+    directory: "/implementations/java-json-schema-validator"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "implementations/kmp-json-schema-validator"
+    directory: "/implementations/kotlin-kmp-json-schema-validator"
     schedule:
       interval: "daily"
 
@@ -140,6 +145,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
+    directory: "/implementations/python-jschon"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/implementations/python-jsonschema"
     schedule:
       interval: "daily"
@@ -166,6 +176,16 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/kotlin-kmp-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
 
