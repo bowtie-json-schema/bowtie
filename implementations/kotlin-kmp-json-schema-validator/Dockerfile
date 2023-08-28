@@ -1,4 +1,4 @@
-FROM gradle:8.2.1-jdk11
+FROM gradle:8.3.0-jdk11
 WORKDIR /opt/app
 COPY gradle/libs.versions.toml gradle/
 COPY settings.gradle.kts .
