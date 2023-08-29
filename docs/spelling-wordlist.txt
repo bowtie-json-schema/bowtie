@@ -8,18 +8,31 @@ Podman
 autoformatter
 boolean
 bowtie
+# corresp.
+corresp
+customizable
+deserialized
+enablement
 errored
 frontend
 golang
 implementers
 linter
 linters
+metaschema
+metaschemas
 positionally
+preoptimization
+prepopulated
+programmatically
 providable
+representable
 runtime
 schemas
 shortname
 shortnames
+subresources
+subschemas
 # this "word" (tui) appears nowhere but oh god as usual who wants to debug Sphinx
 tui
 validator

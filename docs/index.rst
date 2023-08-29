@@ -23,6 +23,7 @@ Contents
     implementers
     contributing
     github-actions
+    interfaces
 
 
 Installation
