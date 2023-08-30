@@ -113,8 +113,9 @@ def command(
     name: str,
     Response: Callable[..., _R | None],
 ) -> Callable[[type], type[Command[_R]]]:
-    request_schema = {"$ref": f"#/$defs/command/$defs/{name}"}
-    response_schema = {"$ref": f"#/$defs/command/$defs/{name}/$defs/response"}
+    uri = f"https://bowtie.report/io-schema/{name}/"
+    request_schema = {"$ref": uri}
+    response_schema = {"$ref": f"{uri}response/"}
 
     def _command(cls: type) -> type[Command[_R]]:
         def to_request(

@@ -22,6 +22,7 @@ from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
 import jinja2
+import referencing.jsonschema
 import structlog
 import structlog.typing
 
@@ -292,30 +293,31 @@ def _validation_results_table(
 
 
 def validator_for_dialect(dialect: str | None = None):
+    path = files("bowtie.schemas") / "io-schema.json"  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    root_schema = json.loads(path.read_text())  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
-    from jsonschema.validators import RefResolver
 
-    text = files("bowtie.schemas").joinpath("io-schema.json").read_text()  # type: ignore[reportUnknownMemberType]  # noqa: E501
-    root_schema = json.loads(text)  # type: ignore[reportUnknownArgumentType]
-    resolver = RefResolver.from_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
     Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]  # noqa: E501
     Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     if dialect is None:
         dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
+    root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+    registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        uri=CURRENT_DIALECT_URI,
+        resource=specification.create_resource({"$ref": dialect}),
+    )
+
     def validate(instance: Any, schema: Any) -> None:
-        resolver.store[CURRENT_DIALECT_URI] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        validator = Validator(schema, resolver=resolver)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-        try:
-            errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        except Exception:  # XXX: Warn after Reporter disappears
-            pass
-        else:
-            if errors:
-                raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
+        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]  # noqa: E501
+        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        if errors:
+            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
 
     return validate
 

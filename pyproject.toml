@@ -51,7 +51,8 @@ dependencies = [
   "click",
   "github3.py",
   "jinja2",
-  "jsonschema",
+  "jsonschema>=4.19.0",
+  "referencing>=0.30.0",
   "rich",
   "structlog",
   "trogon>=0.4.0",
@@ -103,7 +104,7 @@ exclude = [
 [tool.ruff]
 line-length = 79
 target-version = "py38"
-select = ["ANN", "B", "D", "D204", "E", "F", "Q", "SIM", "UP", "W"]
+select = ["ANN", "B", "D", "D204", "E", "F", "Q", "RUF", "SIM", "UP", "W"]
 ignore = [
   # Wat, type annotations for self and cls, why is this a thing?
   "ANN101",
@@ -148,6 +149,6 @@ docstring-quotes = "double"
 [tool.ruff.per-file-ignores]
 "docs/*" = ["ANN", "D"]
 "noxfile.py" = ["ANN", "D"]
-"tests/*" = ["ANN", "D"]
+"tests/*" = ["ANN", "D", "RUF012"]
 "implementations/*" = ["ANN", "D"]
 "bowtie/schemas/__init__.py" = ["D"]
