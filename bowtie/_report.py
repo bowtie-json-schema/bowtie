@@ -76,7 +76,7 @@ class Reporter:
         )
 
     def will_speak(self, dialect: str):
-        self._log.info("Will speak", dialect=dialect)
+        self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
         if not count:
