@@ -212,7 +212,6 @@ def _ordered_failures(
     return sorted(
         counts,
         key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
-        reverse=True,
     )
 
 
