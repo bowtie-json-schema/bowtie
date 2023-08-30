@@ -137,13 +137,12 @@ class DialectRunner:
         )
 
     def warn_if_unacknowledged(self, reporter: Reporter):
-        if self._start_response == _commands.StartedDialect.OK:
-            return
-        reporter.unacknowledged_dialect(
-            implementation=self._name,
-            dialect=self._dialect,
-            response=self._start_response,
-        )
+        if self._start_response != _commands.StartedDialect.OK:
+            reporter.unacknowledged_dialect(
+                implementation=self._name,
+                dialect=self._dialect,
+                response=self._start_response,
+            )
 
     async def run_case(
         self,
