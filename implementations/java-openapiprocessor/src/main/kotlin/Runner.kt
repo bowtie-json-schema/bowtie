@@ -20,7 +20,7 @@ import java.util.stream.Stream
 class Runner(
     private val input: BufferedReader,
     private val output: BufferedWriter,
-    private val error: BufferedWriter
+    private val error: BufferedWriter,
 ) {
     private val mapper = createMapper()
     private val config = Configuration()

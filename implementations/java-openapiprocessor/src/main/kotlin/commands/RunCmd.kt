@@ -16,7 +16,7 @@ class Case(
     val comment: String?,
     val schema: Any,
     val registry: Map<URI, Any>?,
-    val tests: List<Test>
+    val tests: List<Test>,
 )
 
 data class Test(
@@ -40,7 +40,7 @@ class RunCmd(private val cfg: Configuration) : Request {
                 "errored" to true,
                 "context" to mapOf(
                     "message" to ex.message,
-                    "traceback" to stacktrace(ex)
+                    "traceback" to stacktrace(ex),
                 )
             )
         }
@@ -79,14 +79,14 @@ class RunCmd(private val cfg: Configuration) : Request {
 
             results.add(
                 mutableMapOf<String, Any>(
-                    "valid" to step.isValid
+                    "valid" to step.isValid,
                 )
             )
         }
 
         return mapOf(
             "seq" to request.seq,
-            "results" to results
+            "results" to results,
         )
     }
 }
