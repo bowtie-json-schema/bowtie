@@ -117,8 +117,7 @@ repos:
           [
             "--build-upon-default-config",
             "--input",
-            "implementations/kotlin-kmp-json-schema-validator",
-            "implementations/java-openapiprocessor",
+            "implementations/kotlin-kmp-json-schema-validator, implementations/java-openapiprocessor",
           ]
       - name: pmd (java implementations)
         id: pmd
