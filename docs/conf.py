@@ -48,7 +48,7 @@ rst_prolog = """
 .. |site| replace:: https://bowtie.report/
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
-"""  # noqa: E501
+"""  # noqa: E501, RUF100
 
 
 def entire_domain(host):
