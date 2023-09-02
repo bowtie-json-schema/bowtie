@@ -2,7 +2,7 @@ package commands
 
 import io.openapiprocessor.jsonschema.schema.SchemaVersion
 import java.net.URI
-import java.util.*
+import java.util.Properties
 
 data class StartRequest(val version: Int) : Request
 
