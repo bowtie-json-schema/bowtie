@@ -637,6 +637,7 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
             {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
             {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
             {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+            {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=foo","instance":""}]}
         """  # noqa: E501
     )
 
@@ -686,6 +687,12 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
             {"type": "boolean"},
             [
                 ["", ["skipped", "valid"]],
+            ],
+        ],
+        [
+            {"type": "array"},
+            [
+                ["", ["error", "valid"]],
             ],
         ],
     ]
