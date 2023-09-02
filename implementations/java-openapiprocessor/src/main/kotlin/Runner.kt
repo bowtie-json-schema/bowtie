@@ -2,7 +2,16 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import commands.*
+import commands.Configuration
+import commands.Dialect
+import commands.DialectRequest
+import commands.Request
+import commands.Run
+import commands.RunRequest
+import commands.Start
+import commands.StartRequest
+import commands.Stop
+import commands.StopRequest
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.util.stream.Stream
