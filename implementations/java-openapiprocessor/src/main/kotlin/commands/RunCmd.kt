@@ -23,7 +23,7 @@ data class Test(
     val description: String,
     val comment: String? = null,
     val instance: Any?,
-    val valid: Boolean?
+    val valid: Boolean?,
 )
 
 data class RunRequest(val seq: Int, val case: Case) : Request
@@ -41,7 +41,7 @@ class RunCmd(private val cfg: Configuration) : Request {
                 "context" to mapOf(
                     "message" to ex.message,
                     "traceback" to stacktrace(ex),
-                )
+                ),
             )
         }
     }
@@ -80,7 +80,7 @@ class RunCmd(private val cfg: Configuration) : Request {
             results.add(
                 mutableMapOf<String, Any>(
                     "valid" to step.isValid,
-                )
+                ),
             )
         }
 
