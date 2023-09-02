@@ -50,7 +50,7 @@ tasks {
                 "validator.version" to libs.versions.validator.get(),
                 "validator.homepage" to "https://github.com/openapi-processor/openapi-parser",
                 "validator.issues" to "https://github.com/openapi-processor/openapi-parser/issues",
-                "java.build.version" to libs.versions.build.jdk.get()
+                "java.build.version" to libs.versions.build.jdk.get(),
             )
         )
     }
