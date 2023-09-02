@@ -2,7 +2,7 @@ package commands
 
 class StopRequest : Request
 
-class Stop(private val cfg: Configuration) {
+class Stop {
 
     fun run(): Map<String, Any> {
         return emptyMap()
