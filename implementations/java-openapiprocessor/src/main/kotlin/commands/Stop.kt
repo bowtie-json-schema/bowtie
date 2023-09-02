@@ -1,6 +1,6 @@
 package commands
 
-class StopRequest: Request
+class StopRequest : Request
 
 class Stop(private val cfg: Configuration) {
 
