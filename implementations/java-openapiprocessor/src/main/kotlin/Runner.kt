@@ -16,6 +16,7 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.util.stream.Stream
 
+@Suppress("TooManFunctions")
 class Runner(
     private val input: BufferedReader,
     private val output: BufferedWriter,
@@ -24,6 +25,7 @@ class Runner(
     private val mapper = createMapper()
     private val config = Configuration()
 
+    @Suppress("TooGenericExceptionCaught")
     fun run() {
         commands().forEach {
             try {

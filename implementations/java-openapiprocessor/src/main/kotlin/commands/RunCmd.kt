@@ -30,6 +30,7 @@ data class RunRequest(val seq: Int, val case: Case) : Request
 
 class RunCmd(private val cfg: Configuration) : Request {
 
+    @Suppress("TooGenericExceptionCaught")
     fun run(request: RunRequest): Map<String, Any> {
         return try {
             validate(request)
