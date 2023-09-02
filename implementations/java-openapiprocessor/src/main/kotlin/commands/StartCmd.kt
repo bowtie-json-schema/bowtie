@@ -22,8 +22,8 @@ class StartCmd {
                 "version" to properties.getVersion(),
                 "dialects" to SchemaVersion.entries.map { it.schemaUri },
                 "homepage" to properties.getHomepage(),
-                "issues" to properties.getIssues()
-            )
+                "issues" to properties.getIssues(),
+            ),
         )
     }
 
