@@ -47,7 +47,7 @@ class Runner(
                 writeResponse(Run(config).run(request))
             }
             is StopRequest -> {
-                writeResponse(Stop(config).run())
+                writeResponse(Stop().run())
             }
             else -> {
                 writeError("unknown request!")
