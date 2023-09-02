@@ -89,6 +89,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gradle"
+    directory: "/implementations/java-openapiprocessor"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gradle"
     directory: "/implementations/kotlin-kmp-json-schema-validator"
     schedule:
       interval: "daily"
@@ -176,6 +181,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-openapiprocessor"
     schedule:
       interval: "daily"
 
