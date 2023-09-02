@@ -14,4 +14,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(name = "dialect", value = DialectRequest::class),
     JsonSubTypes.Type(name = "run", value = RunRequest::class)
 )
-interface Request {}
+interface Request

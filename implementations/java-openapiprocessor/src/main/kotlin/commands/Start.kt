@@ -4,8 +4,7 @@ import io.openapiprocessor.jsonschema.schema.SchemaVersion
 import java.net.URI
 import java.util.*
 
-
-data class StartRequest(val version: Int): Request
+data class StartRequest(val version: Int) : Request
 
 class Start {
 
@@ -40,7 +39,7 @@ class Start {
 }
 
 private fun Properties.getVersion(): String {
-    return  getProperty("validator.version")
+    return getProperty("validator.version")
 }
 
 private fun Properties.getHomepage(): URI {

@@ -7,7 +7,6 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.util.stream.Stream
 
-
 class Runner(
     private val input: BufferedReader,
     private val output: BufferedWriter,
@@ -21,7 +20,6 @@ class Runner(
             try {
                 val request = readRequest(it)
                 handleRequest(request)
-
             } catch (ex: Exception) {
                 writeError(ex)
             }
@@ -46,7 +44,6 @@ class Runner(
                 writeError("unknown request!")
             }
         }
-
     }
 
     private fun commands(): Stream<String> {

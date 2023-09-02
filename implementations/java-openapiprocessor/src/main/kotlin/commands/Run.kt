@@ -26,9 +26,9 @@ data class Test(
     val valid: Boolean?
 )
 
-data class RunRequest(val seq: Int, val case: Case): Request
+data class RunRequest(val seq: Int, val case: Case) : Request
 
-class Run(private val cfg: Configuration): Request {
+class Run(private val cfg: Configuration) : Request {
 
     fun run(request: RunRequest): Map<String, Any> {
         return try {
@@ -76,9 +76,11 @@ class Run(private val cfg: Configuration): Request {
             val instance = JsonInstance(it.instance)
             val step = validator.validate(schema, instance)
 
-            results.add(mutableMapOf<String, Any>(
-                "valid" to step.isValid
-            ))
+            results.add(
+                mutableMapOf<String, Any>(
+                    "valid" to step.isValid
+                )
+            )
         }
 
         return mapOf(

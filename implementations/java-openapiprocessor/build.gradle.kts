@@ -42,7 +42,7 @@ tasks {
         description = "Write project properties in a file."
         comment = "properties for start command"
 
-        destinationFile.set(file("${buildDir}/validator.properties"))
+        destinationFile.set(file("$buildDir/validator.properties"))
         encoding = "UTF-8"
 
         properties(
