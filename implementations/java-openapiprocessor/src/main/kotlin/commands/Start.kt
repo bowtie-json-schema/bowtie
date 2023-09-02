@@ -49,7 +49,3 @@ private fun Properties.getHomepage(): URI {
 private fun Properties.getIssues(): URI {
     return URI(getProperty("validator.issues"))
 }
-
-private fun Properties.getJavaVersion(): String {
-    return getProperty("java.build.version")
-}
