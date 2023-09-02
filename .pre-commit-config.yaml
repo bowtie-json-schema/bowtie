@@ -105,8 +105,6 @@ repos:
         id: ktlint
         args:
           [
-            "--log-level",
-            "trace",
             "--format",
             "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
             "implementations/kotlin-kmp-json-schema-validator/*.kts",
