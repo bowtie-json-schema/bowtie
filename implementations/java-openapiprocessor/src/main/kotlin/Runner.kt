@@ -6,11 +6,11 @@ import commands.Configuration
 import commands.Dialect
 import commands.DialectRequest
 import commands.Request
-import commands.Run
+import commands.RunCmd
 import commands.RunRequest
-import commands.Start
+import commands.StartCmd
 import commands.StartRequest
-import commands.Stop
+import commands.StopCmd
 import commands.StopRequest
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -38,16 +38,16 @@ class Runner(
     private fun handleRequest(request: Request) {
         when (request) {
             is StartRequest -> {
-                writeResponse(Start().run(request))
+                writeResponse(StartCmd().run(request))
             }
             is DialectRequest -> {
                 writeResponse(Dialect(config).run(request))
             }
             is RunRequest -> {
-                writeResponse(Run(config).run(request))
+                writeResponse(RunCmd(config).run(request))
             }
             is StopRequest -> {
-                writeResponse(Stop().run())
+                writeResponse(StopCmd().run())
             }
             else -> {
                 writeError("unknown request!")

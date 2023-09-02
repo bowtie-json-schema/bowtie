@@ -28,7 +28,7 @@ data class Test(
 
 data class RunRequest(val seq: Int, val case: Case) : Request
 
-class Run(private val cfg: Configuration) : Request {
+class RunCmd(private val cfg: Configuration) : Request {
 
     fun run(request: RunRequest): Map<String, Any> {
         return try {

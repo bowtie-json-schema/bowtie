@@ -6,7 +6,7 @@ import java.util.Properties
 
 data class StartRequest(val version: Int) : Request
 
-class Start {
+class StartCmd {
 
     fun run(request: StartRequest): Map<String, Any> {
         assert(request.version == 1)
