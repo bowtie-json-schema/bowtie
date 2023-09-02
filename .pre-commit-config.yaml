@@ -108,6 +108,8 @@ repos:
             "--format",
             "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
             "implementations/kotlin-kmp-json-schema-validator/*.kts",
+            "implementations/java-openapiprocessor/**/*.kt",
+            "implementations/java-openapiprocessor/*.kts",
           ]
       - name: detekt (kotlin implementations)
         id: detekt
@@ -116,6 +118,7 @@ repos:
             "--build-upon-default-config",
             "--input",
             "implementations/kotlin-kmp-json-schema-validator",
+            "implementations/java-openapiprocessor",
           ]
       - name: pmd (java implementations)
         id: pmd
