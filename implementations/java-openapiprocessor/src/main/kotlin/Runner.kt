@@ -16,7 +16,7 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.util.stream.Stream
 
-@Suppress("TooManFunctions")
+@Suppress("TooManyFunctions")
 class Runner(
     private val input: BufferedReader,
     private val output: BufferedWriter,
