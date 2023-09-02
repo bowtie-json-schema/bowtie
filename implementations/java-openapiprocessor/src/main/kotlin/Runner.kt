@@ -1,4 +1,3 @@
-import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -21,7 +20,10 @@ class Runner(
     private val output: BufferedWriter,
     private val error: BufferedWriter
 ) {
-    private val mapper = createMapper()
+    private val mapper = jsonMapper {
+        addModule(kotlinModule())
+    }
+
     private val config = Configuration()
 
     fun run() {
@@ -92,11 +94,5 @@ class Runner(
 
     private fun toJson(response: Map<String, Any>): String {
         return mapper.writeValueAsString(response)
-    }
-
-    private fun createMapper(): JsonMapper {
-        return jsonMapper {
-            addModule(kotlinModule())
-        }
     }
 }
