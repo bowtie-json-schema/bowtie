@@ -1,6 +1,49 @@
 #!/usr/bin/env python3
 """
-A bowtie runner which always gets the right answer, slowly.
+A bowtie harness which supports being instrumented via a little mini-language.
+
+Specifically, the string contents of test case descriptions and test
+descriptions cause it to behave in various ways, so it can be used as a way to
+test behavior (of Bowtie) by instrumenting a harness to behave accordingly in a
+way which should not affect other participating harnesses (which don't or
+shouldn't generally look at the description).
+
+``envsonschema`` will claim to support all "real" JSON Schema dialects when
+started.
+
+For running test cases, it will follow a mini-language of instructions taken
+from descriptions in both cases and individual tests (to guide either test case
+behavior or test behavior accordingly).
+
+Here's a short description of the minilanguage:
+
+    * Words containing colons are instructions, with the right side of the
+      colon containing comma-separated, ``=``-delimited arguments. For example,
+      ``foo:bar=baz,quux=1`` is a ``foo`` instruction with ``bar`` and
+      ``quux`` arguments (set to ``baz`` and ``1`` respectively)
+    * Supported instructions (and signatures) for test cases are:
+        - hang ():
+            tell the harness that it should hang before exiting when it
+            will be sent a ``stop`` request
+        - crash (): crash the harness with an exception
+        - sleep (number): sleep some number of seconds before responding
+        - skip (**CaseSkipped without skipped)
+            return a skipped result for the entire test case.
+            Arguments are as in `CaseSkipped`, used to indicate skip reason.
+        - error (**CaseErrored.context)
+            return an error result for the entire test case
+            Arguments are as in `CaseErrored`, used to indicate a message, etc.
+        - split ()
+            cause the response from this test case to be sent as multiple
+            messages. Simulates a slow or split response from a harness.
+    * Supported instructions (and signatures) for tests are:
+        - valid (bool): explicitly set the validation result for this test
+        - crash (): as above, for only this test
+        - sleep (number) : as above, for only this test
+        - skip (**CaseSkipped without skipped) : as above, for only this test
+        - error (**CaseErrored.context): as above, for only this test
+
+Any other words are ignored.
 """
 from dataclasses import dataclass
 import io
