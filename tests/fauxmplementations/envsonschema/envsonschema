@@ -40,8 +40,8 @@ Here's a short description of the minilanguage:
         - valid (bool): explicitly set the validation result for this test
         - crash (): as above, for only this test
         - sleep (number) : as above, for only this test
-        - skip (**CaseSkipped without skipped) : as above, for only this test
-        - error (**CaseErrored.context): as above, for only this test
+        - skip (**SkippedTest.context) : as above, for only this test
+        - error (**ErroredTest.context): as above, for only this test
 
 Any other words are ignored.
 """
@@ -116,9 +116,9 @@ class Runner:
                 self._hang_on_stop = True
             elif instruction == "error":
                 result = dict(
-                    (each.split("=", 1) for each in arg.split(",")),
                     errored=True,
                     seq=seq,
+                    context=dict(kv.split("=", 1) for kv in arg.split(",")),
                 )
                 return self.send(**result)
             elif instruction == "skip":
@@ -164,7 +164,7 @@ class Runner:
                         errored=True,
                         seq=seq,
                         context=dict(
-                            each.split("=", 1) for each in arg.split(",")
+                            kv.split("=", 1) for kv in arg.split(",")
                         ),
                     )
                     return self.send(**result)
