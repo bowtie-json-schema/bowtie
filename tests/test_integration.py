@@ -362,7 +362,10 @@ async def test_implementations_can_signal_errors(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
+    assert results == [
+        [{"context": {"message": "boom"}, "errored": True, "skipped": False}],
+        [{"valid": True}],
+    ], stderr
     assert stderr != ""
     assert returncode == 0, stderr
 
