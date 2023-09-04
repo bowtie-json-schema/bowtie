@@ -162,12 +162,10 @@ class Runner:
                 elif instruction == "error":
                     result = dict(
                         errored=True,
-                        seq=seq,
                         context=dict(
                             kv.split("=", 1) for kv in arg.split(",")
                         ),
                     )
-                    return self.send(**result)
 
             results["results"].append(result)
 

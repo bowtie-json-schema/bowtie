@@ -247,7 +247,7 @@ def _validation_results(
             descriptions: list[str] = []
             for implementation in summary.implementations:
                 valid = case_result[1].get(implementation["image"])
-                if valid is None:
+                if valid is None or valid[1] == "errored":
                     description = "error"
                 elif valid[1] == "skipped":
                     description = "skipped"

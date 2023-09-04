@@ -683,11 +683,11 @@ async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
         {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
         {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
         {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
-        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
     lines = dedent(raw.strip("\n")).encode("utf-8")
-    run_stdout, _ = await run.communicate(lines)
+    run_stdout, run_stderr = await run.communicate(lines)
 
     summary_validation = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -741,6 +741,7 @@ async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
             {"type": "array"},
             [
                 ["", ["error", "valid"]],
+                [12, ["invalid", "valid"]],
             ],
         ],
         [
@@ -749,7 +750,7 @@ async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
                 ["", ["error", "valid"]],
             ],
         ],
-    ]
+    ], run_stderr.decode()
 
 
 @pytest.mark.asyncio
