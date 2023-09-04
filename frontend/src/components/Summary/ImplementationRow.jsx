@@ -38,10 +38,10 @@ const ImplementationRow = ({ cases, implementation }) => {
       <td className="text-center">{implementation.erroredCases}</td>
       <td className="text-center">{implementation.skippedTests}</td>
       <td className="text-center details-required">
-        {implementation.unsuccessfulTests + implementation.erroredTests}
+        {implementation.failedTests + implementation.erroredTests}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>:{implementation.unsuccessfulTests}
+            <b>failed</b>:{implementation.failedTests}
           </p>
           <p>
             <b>errored</b>:{implementation.erroredTests}

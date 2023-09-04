@@ -7,7 +7,7 @@ export interface Totals {
   totalTests: number;
   erroredCases: number;
   skippedTests: number;
-  unsuccessfulTests: number;
+  failedTests: number;
   erroredTests: number;
 }
 
@@ -21,14 +21,14 @@ const calculateTotals = (data: ReportData): Totals => {
       totalTests,
       erroredCases: prev.erroredCases + curr.erroredCases,
       skippedTests: prev.skippedTests + curr.skippedTests,
-      unsuccessfulTests: prev.unsuccessfulTests + curr.unsuccessfulTests,
+      failedTests: prev.failedTests + curr.failedTests,
       erroredTests: prev.erroredTests + curr.erroredTests,
     }),
     {
       totalTests: totalTests,
       erroredCases: 0,
       skippedTests: 0,
-      unsuccessfulTests: 0,
+      failedTests: 0,
       erroredTests: 0,
     },
   );
@@ -108,10 +108,10 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           <td className="text-center">{totals.erroredCases}</td>
           <td className="text-center">{totals.skippedTests}</td>
           <td className="text-center details-required">
-            {totals.unsuccessfulTests + totals.erroredTests}
+            {totals.failedTests + totals.erroredTests}
             <div className="hover-details text-center">
               <p>
-                <b>failed</b>: {totals.unsuccessfulTests}
+                <b>failed</b>: {totals.failedTests}
               </p>
               <p>
                 <b>errored</b>: {totals.erroredTests}

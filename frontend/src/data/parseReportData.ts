@@ -12,7 +12,7 @@ export const parseReportData = (lines: any[]): ReportData => {
       cases: new Map(),
       erroredCases: 0,
       skippedTests: 0,
-      unsuccessfulTests: 0,
+      failedTests: 0,
       erroredTests: 0,
     }),
   );
@@ -61,7 +61,7 @@ export const parseReportData = (lines: any[]): ReportData => {
               if (successful) {
                 return { state: "successful", valid: res.valid };
               } else {
-                implementationData.unsuccessfulTests++;
+                implementationData.failedTests++;
                 return { state: "failed", valid: res.valid };
               }
             }
@@ -103,7 +103,7 @@ export interface ImplementationData {
   cases: Map<number, CaseResult[]>;
   erroredCases: number;
   skippedTests: number;
-  unsuccessfulTests: number;
+  failedTests: number;
   erroredTests: number;
 }
 
