@@ -1,4 +1,4 @@
-FROM gradle:8.2.1-jdk11
+FROM gradle:8.3.0-jdk11
 WORKDIR /app
 COPY . .
 RUN gradle installDist --no-daemon
