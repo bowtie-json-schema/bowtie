@@ -21,7 +21,7 @@ jobs:
     outputs:
       images: ${{ steps.images-matrix.outputs.images }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: images-matrix
         run: |
           python3 -c '
@@ -48,7 +48,7 @@ jobs:
         image: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: dorny/paths-filter@v2
         id: changes
