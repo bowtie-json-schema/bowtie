@@ -101,24 +101,12 @@ repos:
   - repo: https://github.com/dustinsand/pre-commit-jvm
     rev: v0.9.0
     hooks:
-      - name: ktlint (kotlin implementations)
+      - name: ktlint (java/kotlin implementations)
         id: ktlint
-        args:
-          [
-            "--format",
-            "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
-            "implementations/kotlin-kmp-json-schema-validator/*.kts",
-            "implementations/java-openapiprocessor/**/*.kt",
-            "implementations/java-openapiprocessor/*.kts",
-          ]
-      - name: detekt (kotlin implementations)
+        args: [--format]
+      - name: detekt (java/kotlin implementations)
         id: detekt
-        args:
-          [
-            "--build-upon-default-config",
-            "--input",
-            "implementations/kotlin-kmp-json-schema-validator, implementations/java-openapiprocessor",
-          ]
+        args: ["--build-upon-default-config"]
       - name: pmd (java implementations)
         id: pmd
         args:
