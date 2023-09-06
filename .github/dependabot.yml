@@ -69,7 +69,7 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "composer"
-    directory: "/implementations/php-json-schema"
+    directory: "/implementations/php-opis-json-schema"
     schedule:
       interval: "daily"
 
@@ -150,7 +150,7 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/implementations/php-json-schema"
+    directory: "/implementations/php-opis-json-schema"
     schedule:
       interval: "daily"
 
