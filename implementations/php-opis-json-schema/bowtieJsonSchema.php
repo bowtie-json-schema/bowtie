@@ -8,9 +8,6 @@ use Opis\JsonSchema\{
 
 $STARTED = false;
 
-$validator = new Validator();
-$resolver = $validator->loader()->resolver();
-
 function start($request)
 {
     if ($request->version !== 1) {
@@ -28,8 +25,8 @@ function start($request)
             'homepage' => 'https://opis.io/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
-                'http://json-schema.org/draft/2020-12/schema#',
-                'http://json-schema.org/draft-2019-09/schema#',
+                'https://json-schema.org/draft/2020-12/schema',
+                'https://json-schema.org/draft-2019-09/schema',
                 'http://json-schema.org/draft-07/schema#',
                 'http://json-schema.org/draft-06/schema#',
             ],
@@ -51,6 +48,9 @@ function dialect($request)
 
 function run($request)
 {
+    $validator = new Validator();
+    $resolver = $validator->loader()->resolver();
+
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
