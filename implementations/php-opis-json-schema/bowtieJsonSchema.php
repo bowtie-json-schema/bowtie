@@ -87,8 +87,8 @@ $cmds = [
     'stop' => 'stop'
 ];
 
-while (($line = fgets(STDIN)) !== false) {
-    $request = json_decode($line);
+while (true) {
+    $request = json_decode(fgets(STDIN));
     if (json_last_error() !== JSON_ERROR_NONE) {
         echo json_encode(['error' => json_last_error_msg()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
         continue;
