@@ -24,7 +24,7 @@ function start($request)
         'version' => 1,
         'implementation' => [
             'language' => 'php',
-            'name' => 'json-schema',
+            'name' => 'opis-json-schema',
             'homepage' => 'https://opis.io/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
