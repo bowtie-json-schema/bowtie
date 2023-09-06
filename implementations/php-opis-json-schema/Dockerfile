@@ -1,13 +1,17 @@
+FROM composer:2.6 AS builder
+
+WORKDIR /usr/src/myapp
+
+COPY composer.* .
+RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --optimize-autoloader
+COPY bowtieJsonSchema.php .
+RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
+
 FROM php:8.2-fpm-alpine
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+WORKDIR /usr/src/myapp
 
-WORKDIR /app
-
-COPY bowtieJsonSchema.php ./
-COPY composer.json ./
-
-RUN composer install --no-scripts --no-autoloader
-RUN composer dump-autoload --optimize
+COPY bowtieJsonSchema.php .
+COPY --from=builder /usr/src/myapp/vendor /usr/src/myapp/vendor
 
 CMD ["php", "bowtieJsonSchema.php"]
