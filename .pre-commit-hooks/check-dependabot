@@ -10,6 +10,7 @@ from yaml import safe_load as loads
 ROOT = Path(__file__).absolute().parent.parent
 DEPENDABOT = ROOT.joinpath(".github/dependabot.yml").read_text()
 IMPLEMENTATIONS = ROOT / "implementations"
+DEPENDABOT_DOCS = "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem"  # noqa: E501
 
 # Every implementation must appear both for container image updates
 # (in the docker ecosystem) as well as for its own packaging ecosystem
@@ -50,7 +51,8 @@ if packaging_missing:
         f"{', '.join(packaging_missing)} are not configured to update their "
         "packaging dependencies via Dependabot. "
         "Please add a suitable package-ecosystem section to the "
-        ".github/dependabot.yml file, or if your programming language is "
-        "unsupported within Dependabot, add a comment saying "
+        ".github/dependabot.yml file. You can find information on the valid "
+        f"ecosystem values at {DEPENDABOT_DOCS}. If your programming language "
+        "is unsupported within Dependabot, add a comment saying "
         "# ignore: <implementation name> - <reason> to the same file."
     )
