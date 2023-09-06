@@ -64,8 +64,15 @@ function run($request)
     $results = [];
 
     foreach ($request->case->tests as $test) {
-        $result = $validator->validate($test->instance, $request->case->schema);
-        $results[] = ['valid' => $result->isValid()];
+        try {
+            $result = $validator->validate($test->instance, $request->case->schema);
+            $results[] = ['valid' => $result->isValid()];
+        } catch (Exception $e) {
+            $results[] = [
+                'errored' => true,
+                'context' => ['message' => $e->getMessage()],
+            ];
+        }
     }
     $response = ['seq' => $request->seq, 'results' => $results];
     return json_encode($response);
@@ -89,17 +96,7 @@ $cmds = [
 
 while (true) {
     $request = json_decode(fgets(STDIN));
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['error' => json_last_error_msg()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
-        continue;
-    }
-
     $cmd = $request->cmd;
-
-    try {
-        $response = $cmds[$cmd]($request);
-        echo $response . "\n";
-    } catch (Exception $e) {
-        echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
-    }
+    $response = $cmds[$cmd]($request);
+    echo $response . "\n";
 }
