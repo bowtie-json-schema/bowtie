@@ -35,7 +35,7 @@ function start($request)
             'language_version' => PHP_VERSION,
         ],
     ];
-    return json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    return json_encode($response);
 }
 
 function dialect($request)
@@ -43,7 +43,7 @@ function dialect($request)
     if (!$GLOBALS['STARTED']) {
         throw new Exception('Not started!');
     }
-    return json_encode(['ok' => false], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    return json_encode(['ok' => false]);
 }
 
 function run($request)
@@ -68,7 +68,7 @@ function run($request)
         $results[] = ['valid' => $result->isValid()];
     }
     $response = ['seq' => $request->seq, 'results' => $results];
-    return json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    return json_encode($response);
 }
 
 function stop($request)
