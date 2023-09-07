@@ -210,11 +210,6 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/tests/fauxmplementations/badsonschema"
-    schedule:
-      interval: "daily"
-
-  - package-ecosystem: "docker"
     directory: "/tests/fauxmplementations/envsonschema"
     schedule:
       interval: "daily"
