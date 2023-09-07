@@ -149,10 +149,14 @@ class _CaseReporter:
         self._write(case=asdict(case), seq=seq)
         return self
 
-    def got_results(
-        self,
-        results: _commands.CaseResult | _commands.CaseErrored,
-    ):
+    def got_results(self, results: _commands.CaseResult):
+        for result in results.results:
+            if result.errored:
+                self._log.error(
+                    "",
+                    logger_name=results.implementation,
+                    **result.context,
+                )
         self._write(**asdict(results))
 
     def skipped(self, skipped: _commands.CaseSkipped):
@@ -161,11 +165,11 @@ class _CaseReporter:
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
 
-    def errored(self, results: _commands.CaseErrored):
+    def case_errored(self, results: _commands.CaseErrored):
         implementation, context = results.implementation, results.context
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
-        self.got_results(results)
+        self._write(**asdict(results))
 
 
 @mutable

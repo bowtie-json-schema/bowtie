@@ -294,7 +294,7 @@ class CaseErrored:
     caught: bool = True
 
     def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]  # noqa: E501
-        reporter.errored(self)
+        reporter.case_errored(self)
 
     @classmethod
     def uncaught(
