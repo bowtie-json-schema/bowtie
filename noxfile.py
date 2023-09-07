@@ -19,7 +19,7 @@ UI = ROOT / "frontend"
 nox.options.sessions = []
 
 
-def session(default=True, **kwargs):
+def session(default=True, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
@@ -169,7 +169,6 @@ def benchmark(fn):
     """
     A non-default noxenv to run a specific benchmark.
     """
-
     name = fn.__name__.removeprefix("bench_")
 
     @session(default=False, tags=["perf"], name=f"bench({name})")
@@ -288,7 +287,6 @@ def ui(session):
     """
     Run a local development UI.
     """
-
     needs_install = not UI.joinpath("node_modules").is_dir()
     if needs_install:
         session.run("pnpm", "install", "--dir", UI)
