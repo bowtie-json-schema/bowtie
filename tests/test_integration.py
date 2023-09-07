@@ -85,7 +85,7 @@ always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
     read
-    printf '{"implementation": {"name": "always-valid", "language": "sh", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     while IFS= read -r input; do
@@ -546,6 +546,7 @@ async def test_info_pretty(envsonschema):
         """\
         name: "envsonschema"
         language: "python"
+        homepage: "https://github.com/bowtie-json-schema/bowtie/"
         issues: "https://github.com/bowtie-json-schema/bowtie/issues"
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",
@@ -579,6 +580,7 @@ async def test_info_json(envsonschema):
     assert json.loads(stdout) == {
         "name": "envsonschema",
         "language": "python",
+        "homepage": "https://github.com/bowtie-json-schema/bowtie/",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
