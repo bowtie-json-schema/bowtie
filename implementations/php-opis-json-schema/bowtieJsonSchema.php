@@ -7,6 +7,7 @@ use Opis\JsonSchema\{
 };
 
 $STARTED = false;
+$CURRENT_DIALECT = NULL;
 
 function start($request)
 {
@@ -49,7 +50,16 @@ function start($request)
 function dialect($request)
 {
     assert($GLOBALS['STARTED'], 'Not started!');
-    return ['ok' => false];
+    // These seem to be magic values the implementation understands.
+    // See e.g. https://github.com/opis/json-schema/blob/c48df6d7089a45f01e1c82432348f2d5976f9bfb/tests/AbstractOfficialDraftTest.php#L69
+    $dialects = [
+        'https://json-schema.org/draft/2020-12/schema' => '2020-12',
+        'https://json-schema.org/draft-2019-09/schema' => '2019-09',
+        'http://json-schema.org/draft-07/schema#' => '07',
+        'http://json-schema.org/draft-06/schema#' => '06',
+    ];
+    $GLOBALS['CURRENT_DIALECT'] = $dialects[$request->dialect];
+    return ['ok' => true];
 }
 
 function run($request)
@@ -68,8 +78,15 @@ function run($request)
 
     foreach ($request->case->tests as $test) {
         try {
-            $result = $validator->validate($test->instance, $request->case->schema);
-            $results[] = ['valid' => $result->isValid()];
+            $result = $validator->dataValidation(
+                $test->instance,
+                $request->case->schema,
+                null,
+                null,
+                null,
+                $GLOBALS['CURRENT_DIALECT'],
+            );
+            $results[] = ['valid' => $result == NULL];
         } catch (Exception $e) {
             $results[] = [
                 'errored' => true,
