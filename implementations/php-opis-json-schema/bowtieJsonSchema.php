@@ -73,7 +73,10 @@ function run($request)
         } catch (Exception $e) {
             $results[] = [
                 'errored' => true,
-                'context' => ['message' => $e->getMessage()],
+                'context' => [
+                    'message' => $e->getMessage(),
+                    'traceback' => $e->getTraceAsString(),
+                ],
             ];
         }
     }
