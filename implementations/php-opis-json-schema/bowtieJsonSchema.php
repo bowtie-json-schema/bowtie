@@ -36,7 +36,7 @@ function start($request)
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
                 'https://json-schema.org/draft/2020-12/schema',
-                'https://json-schema.org/draft-2019-09/schema',
+                'https://json-schema.org/draft/2019-09/schema',
                 'http://json-schema.org/draft-07/schema#',
                 'http://json-schema.org/draft-06/schema#',
             ],
