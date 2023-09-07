@@ -10,9 +10,7 @@ $STARTED = false;
 
 function start($request)
 {
-    if ($request->version !== 1) {
-        throw new Exception('Wrong version!');
-    }
+    assert($request->version == 1, 'Wrong version!');
 
     $GLOBALS['STARTED'] = true;
 
@@ -40,20 +38,16 @@ function start($request)
 
 function dialect($request)
 {
-    if (!$GLOBALS['STARTED']) {
-        throw new Exception('Not started!');
-    }
+    assert($GLOBALS['STARTED'], 'Not started!');
     return json_encode(['ok' => false]);
 }
 
 function run($request)
 {
+    assert($GLOBALS['STARTED'], 'Not started!');
+
     $validator = new Validator();
     $resolver = $validator->loader()->resolver();
-
-    if (!$GLOBALS['STARTED']) {
-        throw new Exception('Not started!');
-    }
 
     if (isset($request->case->registry)) {
         foreach ($request->case->registry as $key => $value) {
@@ -80,10 +74,7 @@ function run($request)
 
 function stop($request)
 {
-    if (!$GLOBALS['STARTED']) {
-        throw new Exception('Not started!');
-    }
-
+    assert($GLOBALS['STARTED'], 'Not started!');
     exit(0);
 }
 
