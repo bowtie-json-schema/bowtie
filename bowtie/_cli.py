@@ -102,7 +102,7 @@ def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
-    redirect_structlog()
+    _redirect_structlog()
 
 
 @main.command()
@@ -782,7 +782,7 @@ async def _run(
             )
 
             seq = 0
-            should_stop: bool = False
+            should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
                 if set_schema and not isinstance(case.schema, bool):
                     case.schema["$schema"] = dialect
@@ -877,7 +877,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def redirect_structlog(file: TextIO = sys.stderr):
+def _redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """

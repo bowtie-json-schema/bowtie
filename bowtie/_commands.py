@@ -252,11 +252,8 @@ class CaseResult:
 
     @classmethod
     def from_dict(cls, data: Any, **kwargs: Any) -> CaseResult:
-        return cls(
-            results=[TestResult.from_dict(t) for t in data.pop("results")],
-            **data,
-            **kwargs,
-        )
+        results = [TestResult.from_dict(t) for t in data.pop("results")]
+        return cls(results=results, **data, **kwargs)
 
     @property
     def failed(self) -> bool:
