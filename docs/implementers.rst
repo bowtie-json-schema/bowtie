@@ -463,7 +463,7 @@ If we run ``bowtie`` again, we see::
     2022-10-31 13:20.14 [info     ] Finished                       count=2
 
 where we've now successfully run some inputted test cases.
-The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie report <cli:report>`.
+The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie summary <cli:summary>`.
 Hooray!
 
 Step 4: Resolving References
