@@ -14,12 +14,23 @@ function start($request)
 
     $GLOBALS['STARTED'] = true;
 
-    $response = [
+
+    $jsonschema_version = "<error reading composer data>";
+    $composer = json_decode(file_get_contents('vendor/composer/installed.json'));
+    foreach ($composer->packages as $package) {
+        if ($package->name == "opis/json-schema") {
+            $jsonschema_version = $package->version;
+            break;
+        }
+    }
+
+    return [
         'ready' => true,
         'version' => 1,
         'implementation' => [
             'language' => 'php',
             'name' => 'opis-json-schema',
+            'version' => $jsonschema_version,
             'homepage' => 'https://opis.io/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
