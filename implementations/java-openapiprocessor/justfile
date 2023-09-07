@@ -17,7 +17,3 @@ suite draft:
 # run with draft and create summary
 summary draft:
    bowtie suite -i localhost/bowtie-java-openapiprocessor {{draft}} | bowtie summary
-
-# run with draft and create report
-report draft:
-   bowtie suite -i localhost/bowtie-java-openapiprocessor {{draft}} | bowtie report

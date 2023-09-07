@@ -397,13 +397,9 @@ class RunInfo:
 class ReportData(TypedDict):
     summary: _Summary
     run_info: RunInfo
-    generate_dialect_navigation: bool
 
 
-def from_input(
-    input: Iterable[str],
-    generate_dialect_navigation: bool = False,
-) -> ReportData:
+def from_input(input: Iterable[str]) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
@@ -423,8 +419,4 @@ def from_input(
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
-    return ReportData(
-        summary=summary,
-        run_info=run_info,
-        generate_dialect_navigation=generate_dialect_navigation,
-    )
+    return ReportData(summary=summary, run_info=run_info)

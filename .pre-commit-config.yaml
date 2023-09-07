@@ -25,10 +25,6 @@ repos:
     rev: "v0.0.287"
     hooks:
       - id: ruff
-  - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.32.1
-    hooks:
-      - id: djlint-jinja
   - repo: local
     hooks:
       - id: check-dependabot

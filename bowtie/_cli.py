@@ -21,7 +21,6 @@ from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
-import jinja2
 import referencing.jsonschema
 import structlog
 import structlog.typing
@@ -107,52 +106,19 @@ def main():
 
 
 @main.command()
-@click.argument(
-    "input",
+@click.option(
+    "--input",
     default="-",
     type=click.File(mode="r"),
 )
-@click.option(
-    "--out",
-    "-o",
-    "output",
-    help="Where to write the outputted report HTML.",
-    default="bowtie-report.html",
-    show_default=True,
-    type=click.File("w"),
-)
-@click.option(
-    "--badges",
-    "-b",
-    help="Directory to write the generated badge json files.",
-    type=click.Path(path_type=Path),
-)
-@click.option(
-    "--generate-dialect-navigation",
-    help="generate hyperlinks to all dialect reports",
-    is_flag=True,
-    default=False,
-)
-def report(
-    input: Iterable[str],
-    output: TextIO,
-    badges: Path | None,
-    generate_dialect_navigation: bool,
-):
+@click.argument("output", type=click.Path(path_type=Path))
+def badges(input: Iterable[str], output: Path):
     """
-    Generate a Bowtie report from a previous run.
+    Generate Bowtie badges from a previous run.
     """
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader("bowtie"),
-        undefined=jinja2.StrictUndefined,
-        keep_trailing_newline=True,
-    )
-    report_data = _report.from_input(input, generate_dialect_navigation)
-    if badges is not None:
-        dialect = report_data["run_info"].dialect
-        report_data["summary"].generate_badges(badges, dialect)
-    template = env.get_template("report.html.j2")
-    output.write(template.render(**report_data))
+    report_data = _report.from_input(input)
+    dialect = report_data["run_info"].dialect
+    report_data["summary"].generate_badges(output, dialect)
 
 
 @main.command()
@@ -830,7 +796,6 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        # TODO: Combine this with the logic in the template
                         should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
 
                 if should_stop:

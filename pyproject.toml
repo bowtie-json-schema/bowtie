@@ -12,7 +12,6 @@ exclude = [
 
 [tool.hatch.build.force-include]
 "bowtie/schemas/io-schema.json" = "bowtie/schemas/io-schema.json"
-"bowtie/templates/" = "bowtie/templates/"
 
 [project]
 name = "bowtie-json-schema"
@@ -50,7 +49,6 @@ dependencies = [
   "attrs>=22.2.0",
   "click",
   "github3.py",
-  "jinja2",
   "jsonschema>=4.19.0",
   "referencing>=0.30.0",
   "rich",
@@ -72,13 +70,6 @@ Source = "https://github.com/bowtie-json-schema/bowtie"
 branch = true
 source = ["bowtie"]
 dynamic_context = "test_function"
-
-[tool.djlint]
-# H008: Single and double quotes don't mean the same thing in Jinja, so it's
-#       not always the case that the latter should be used unfortunately.
-# J018: url_for is a flask thing, not a Jinja2 native one.
-ignore = "H008,J018"
-indent = 2
 
 [tool.doc8]
 ignore = [
