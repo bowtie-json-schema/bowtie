@@ -44,13 +44,12 @@ function start($request)
             'language_version' => PHP_VERSION,
         ],
     ];
-    return json_encode($response);
 }
 
 function dialect($request)
 {
     assert($GLOBALS['STARTED'], 'Not started!');
-    return json_encode(['ok' => false]);
+    return ['ok' => false];
 }
 
 function run($request)
@@ -58,9 +57,8 @@ function run($request)
     assert($GLOBALS['STARTED'], 'Not started!');
 
     $validator = new Validator();
-    $resolver = $validator->loader()->resolver();
-
     if (isset($request->case->registry)) {
+        $resolver = $validator->loader()->resolver();
         foreach ($request->case->registry as $key => $value) {
             $resolver->registerRaw($value, $key);
         }
@@ -79,8 +77,7 @@ function run($request)
             ];
         }
     }
-    $response = ['seq' => $request->seq, 'results' => $results];
-    return json_encode($response);
+    return ['seq' => $request->seq, 'results' => $results];
 }
 
 function stop($request)
@@ -98,7 +95,6 @@ $cmds = [
 
 while (true) {
     $request = json_decode(fgets(STDIN));
-    $cmd = $request->cmd;
-    $response = $cmds[$cmd]($request);
-    echo $response . "\n";
+    $response = $cmds[$request->cmd]($request);
+    echo json_encode($response) . "\n";
 }
