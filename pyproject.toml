@@ -103,7 +103,7 @@ exclude = [
 
 [tool.ruff]
 line-length = 79
-target-version = "py38"
+target-version = "py310"
 select = ["ANN", "B", "D", "D204", "E", "F", "Q", "RUF", "SIM", "UP", "W"]
 ignore = [
   # Wat, type annotations for self and cls, why is this a thing?
@@ -117,6 +117,8 @@ ignore = [
   "B008",
   # raise SomeException(...) is fine.
   "B904",
+  # There's no need for explicit strict, this is simply zip's default behavior.
+  "B905",
   # It's fine to not have docstrings for magic methods.
   "D105",
   # __init__ especially doesn't need a docstring
@@ -137,9 +139,6 @@ ignore = [
   "D407",
   # Plz spaces after section headers
   "D412",
-  # We support 3.8 and 3.9
-  "UP006",
-  "UP007",
 ]
 extend-exclude = ["json"]
 

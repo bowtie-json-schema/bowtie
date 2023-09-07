@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncIterator, Literal, TextIO, Union
+from typing import Any, Literal, TextIO
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -934,7 +934,7 @@ def redirect_structlog(file: TextIO = sys.stderr):
     )
 
 
-_P = Union[Path, zipfile.Path]
+_P = Path | zipfile.Path
 
 
 # Missing zipfile.Path methods...
