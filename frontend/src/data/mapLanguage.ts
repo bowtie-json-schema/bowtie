@@ -7,6 +7,7 @@ const langMap: Record<string, string> = {
   javascript: "JavaScript",
   kotlin: "Kotlin",
   lua: "Lua",
+  php: "PHP",
   python: "Python",
   ruby: "Ruby",
   rust: "Rust",
