@@ -155,7 +155,7 @@ class _CaseReporter:
                 self._log.error(
                     "",
                     logger_name=results.implementation,
-                    **result.context,
+                    **result.context,  # type: ignore
                 )
         self._write(**asdict(results))
 
