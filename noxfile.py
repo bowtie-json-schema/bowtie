@@ -80,7 +80,7 @@ def audit(session):
     """
     Audit Python dependencies for vulnerabilities.
     """
-    session.install("pip-audit", REQUIREMENTS["main"])
+    session.install("pip-audit", "-r", REQUIREMENTS["main"])
     session.run("python", "-m", "pip_audit")
 
 
