@@ -48,8 +48,6 @@ jobs:
         if: runner.os == 'macOS'
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
-        with:
-          python-versions: "3.10, 3.11, 3.12"
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}"
 
