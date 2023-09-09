@@ -16,6 +16,8 @@ TESTS = ROOT / "tests"
 UI = ROOT / "frontend"
 
 
+SUPPORTED = ["3.10", "3.11"]
+
 nox.options.sessions = []
 
 
@@ -28,7 +30,7 @@ def session(default=True, **kwargs):  # noqa: D103
     return _session
 
 
-@session(python=["3.10", "3.11"])
+@session(python=SUPPORTED)
 def tests(session):
     """
     Run Bowtie's test suite.
@@ -57,6 +59,15 @@ def tests(session):
                 )
     else:
         session.run("pytest", *session.posargs, TESTS)
+
+
+@session(python=SUPPORTED)
+def audit(session):
+    """
+    Audit Python dependencies for vulnerabilities.
+    """
+    session.install("pip-audit", ROOT)
+    session.run("python", "-m", "pip_audit")
 
 
 @session(tags=["build"])
