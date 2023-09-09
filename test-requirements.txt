@@ -81,14 +81,14 @@ pygments==2.16.1
     # via rich
 pyjwt[crypto]==2.8.0
     # via github3-py
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
     #   pytest-icdiff
 pytest-asyncio==0.21.1
     # via -r test-requirements.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
     # via -r test-requirements.in
 python-dateutil==2.8.2
     # via github3-py
@@ -103,7 +103,7 @@ rich==13.5.2
     # via
     #   bowtie-json-schema
     #   textual
-rpds-py==0.10.0
+rpds-py==0.10.2
     # via
     #   jsonschema
     #   referencing
@@ -111,7 +111,7 @@ six==1.16.0
     # via python-dateutil
 structlog==23.1.0
     # via bowtie-json-schema
-textual==0.35.1
+textual==0.36.0
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema

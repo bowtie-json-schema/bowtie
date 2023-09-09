@@ -67,6 +67,8 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==6.8.0
     # via textual
+jinja2==3.1.2
+    # via sphinx
 jsonschema==4.19.0
     # via bowtie-json-schema
 jsonschema-specifications==2023.7.1
@@ -82,6 +84,8 @@ markdown-it-py[linkify,plugins]==3.0.0
     #   mdit-py-plugins
     #   rich
     #   textual
+markupsafe==2.1.3
+    # via jinja2
 matplotlib==3.7.2
     # via sphinxext-opengraph
 mdit-py-plugins==0.4.0
@@ -135,7 +139,7 @@ rich==13.5.2
     # via
     #   bowtie-json-schema
     #   textual
-rpds-py==0.10.0
+rpds-py==0.10.2
     # via
     #   jsonschema
     #   referencing
@@ -143,9 +147,9 @@ six==1.16.0
     # via python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
-soupsieve==2.4.1
+soupsieve==2.5
     # via beautifulsoup4
-sphinx==7.2.4
+sphinx==7.2.5
     # via
     #   -r docs/requirements.in
     #   furo
@@ -186,7 +190,7 @@ sphinxext-opengraph==0.8.2
     # via -r docs/requirements.in
 structlog==23.1.0
     # via bowtie-json-schema
-textual==0.35.1
+textual==0.36.0
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema
