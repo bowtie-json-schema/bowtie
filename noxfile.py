@@ -15,6 +15,20 @@ IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
 UI = ROOT / "frontend"
 
+REQUIREMENTS = dict(
+    main=ROOT / "requirements.txt",
+    docs=DOCS / "requirements.txt",
+    tests=ROOT / "test-requirements.txt",
+)
+REQUIREMENTS_IN = {
+    (
+        ROOT / "pyproject.toml"
+        if path.name == "requirements.txt"
+        else path.parent / f"{path.stem}.in"
+    )
+    for path in REQUIREMENTS.values()
+}
+
 
 SUPPORTED = ["3.10", "3.11"]
 
@@ -35,7 +49,7 @@ def tests(session):
     """
     Run Bowtie's test suite.
     """
-    session.install("-r", ROOT / "test-requirements.txt")
+    session.install("-r", REQUIREMENTS["tests"])
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
@@ -66,7 +80,7 @@ def audit(session):
     """
     Audit Python dependencies for vulnerabilities.
     """
-    session.install("pip-audit", ROOT)
+    session.install("pip-audit", REQUIREMENTS["main"])
     session.run("python", "-m", "pip_audit")
 
 
@@ -144,7 +158,7 @@ def docs(session, builder):
     """
     Build Bowtie's documentation.
     """
-    session.install("-r", DOCS / "requirements.txt")
+    session.install("-r", REQUIREMENTS["docs"])
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         argv = ["-n", "-T", "-W"]
@@ -185,7 +199,7 @@ def benchmark(fn):
     @session(default=False, tags=["perf"], name=f"bench({name})")
     @wraps(fn)
     def _benchmark(session):
-        session.install(ROOT)
+        session.install(REQUIREMENTS)
         bowtie = Path(session.bin) / "bowtie"
         hyperfine_args, command = fn(session=session, bowtie=bowtie)
         session.run("hyperfine", *hyperfine_args, command, external=True)
@@ -283,7 +297,7 @@ def requirements(session):
     Update bowtie's requirements.txt files.
     """
     session.install("pip-tools")
-    for each in [DOCS / "requirements.in", ROOT / "test-requirements.in"]:
+    for each in REQUIREMENTS_IN:
         session.run(
             "pip-compile",
             "--resolver",
