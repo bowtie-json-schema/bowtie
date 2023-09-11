@@ -494,6 +494,17 @@ async def _info(image_names: list[str], format: _F):
 
 @main.command()
 @click.pass_context
+@click.option(
+    "-q",
+    "--quiet",
+    "echo",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    is_flag=True,
+    help="Don't print any output, just exit with nonzero status on failure.",
+)
 @FORMAT
 @IMPLEMENTATION
 def smoke(context: click.Context, **kwargs: Any):
@@ -504,7 +515,11 @@ def smoke(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _smoke(image_names: list[str], format: _F):
+async def _smoke(
+    image_names: list[str],
+    format: _F,
+    echo: Callable[..., None],
+):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -516,17 +531,17 @@ async def _smoke(image_names: list[str], format: _F):
                 implementation = await each
             except NoSuchImage as error:
                 exit_code |= _EX_CONFIG
-                click.echo(
+                echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
                     file=sys.stderr,
                 )
                 continue
 
-            click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
+            echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= _EX_CONFIG
-                click.echo("  ❗ (error): startup failed", file=sys.stderr)
+                echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
             dialect = implementation.dialects[0]
@@ -566,7 +581,7 @@ async def _smoke(image_names: list[str], format: _F):
                         }
                         async for case, response in responses
                     ]
-                    click.echo(json.dumps(serializable, indent=2))
+                    echo(json.dumps(serializable, indent=2))
                 case "pretty":
                     async for case, response in responses:
                         if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
@@ -577,12 +592,12 @@ async def _smoke(image_names: list[str], format: _F):
                             message = "✗ (failed)"
                         else:
                             message = "✓"
-                        click.echo(f"  {message}: {case.description}")
+                        echo(f"  {message}: {case.description}")
 
     if exit_code:
-        click.echo("\n❌ some failures", file=sys.stderr)
+        echo("\n❌ some failures", file=sys.stderr)
     else:
-        click.echo("\n✅ all passed", file=sys.stderr)
+        echo("\n✅ all passed", file=sys.stderr)
 
     return exit_code
 
