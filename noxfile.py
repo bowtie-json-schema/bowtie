@@ -268,11 +268,13 @@ def bench_suite(session, bowtie):
     return args, command
 
 
-@session(default=False)
+@session(default=False, python=False)
 def develop_harness(session):
     """
     Build a local version of an implementation harness.
 
+    The harness will be smoke tested after build, relying on Bowtie being
+    available on your ``PATH``.
     This is used / useful during development of a new harness.
 
     For "real" versions of harnesses, rely on the built version from GitHub
@@ -289,6 +291,7 @@ def develop_harness(session):
             f"ghcr.io/bowtie-json-schema/{name}",
             external=True,
         )
+        session.run("bowtie", "smoke", "--quiet", "-i", name, external=True)
 
 
 @session(default=False)
