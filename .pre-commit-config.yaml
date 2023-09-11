@@ -18,7 +18,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.0.287"
+    rev: "v0.0.288"
     hooks:
       - id: ruff
   - repo: local
@@ -30,7 +30,7 @@ repos:
         entry: .pre-commit-hooks/check-dependabot
         additional_dependencies: [pyyaml]
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.1
     hooks:
       - name: black (python implementations & bowtie internals)
         id: black
@@ -42,7 +42,7 @@ repos:
         exclude: frontend/pnpm-lock.yaml
         id: prettier
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.48.0
+    rev: v8.49.0
     hooks:
       - name: eslint
         id: eslint
@@ -80,7 +80,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.18.1
+    rev: v0.18.2
     hooks:
       - name: stylua (lua implementations)
         id: stylua
