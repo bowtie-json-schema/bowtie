@@ -1,0 +1,4 @@
+[{*.gradle.kts,*.kt,*.kts,*.main.kts,*.space.kts}]
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_name_count_to_use_star_import = 100
+ij_kotlin_packages_to_use_import_on_demand = ""

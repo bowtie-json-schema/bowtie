@@ -15,11 +15,27 @@ IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
 UI = ROOT / "frontend"
 
+REQUIREMENTS = dict(
+    main=ROOT / "requirements.txt",
+    docs=DOCS / "requirements.txt",
+    tests=ROOT / "test-requirements.txt",
+)
+REQUIREMENTS_IN = {
+    (
+        ROOT / "pyproject.toml"
+        if path.name == "requirements.txt"
+        else path.parent / f"{path.stem}.in"
+    )
+    for path in REQUIREMENTS.values()
+}
+
+
+SUPPORTED = ["3.10", "3.11"]
 
 nox.options.sessions = []
 
 
-def session(default=True, **kwargs):
+def session(default=True, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
@@ -28,12 +44,12 @@ def session(default=True, **kwargs):
     return _session
 
 
-@session(python=["3.10", "3.11"])
+@session(python=SUPPORTED)
 def tests(session):
     """
     Run Bowtie's test suite.
     """
-    session.install("-r", ROOT / "test-requirements.txt")
+    session.install("-r", REQUIREMENTS["tests"])
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
@@ -57,6 +73,15 @@ def tests(session):
                 )
     else:
         session.run("pytest", *session.posargs, TESTS)
+
+
+@session(python=SUPPORTED)
+def audit(session):
+    """
+    Audit Python dependencies for vulnerabilities.
+    """
+    session.install("pip-audit", "-r", REQUIREMENTS["main"])
+    session.run("python", "-m", "pip_audit")
 
 
 @session(tags=["build"])
@@ -133,7 +158,7 @@ def docs(session, builder):
     """
     Build Bowtie's documentation.
     """
-    session.install("-r", DOCS / "requirements.txt")
+    session.install("-r", REQUIREMENTS["docs"])
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         argv = ["-n", "-T", "-W"]
@@ -169,13 +194,12 @@ def benchmark(fn):
     """
     A non-default noxenv to run a specific benchmark.
     """
-
     name = fn.__name__.removeprefix("bench_")
 
     @session(default=False, tags=["perf"], name=f"bench({name})")
     @wraps(fn)
     def _benchmark(session):
-        session.install(ROOT)
+        session.install(REQUIREMENTS)
         bowtie = Path(session.bin) / "bowtie"
         hyperfine_args, command = fn(session=session, bowtie=bowtie)
         session.run("hyperfine", *hyperfine_args, command, external=True)
@@ -244,11 +268,13 @@ def bench_suite(session, bowtie):
     return args, command
 
 
-@session(default=False)
+@session(default=False, python=False)
 def develop_harness(session):
     """
     Build a local version of an implementation harness.
 
+    The harness will be smoke tested after build, relying on Bowtie being
+    available on your ``PATH``.
     This is used / useful during development of a new harness.
 
     For "real" versions of harnesses, rely on the built version from GitHub
@@ -265,6 +291,7 @@ def develop_harness(session):
             f"ghcr.io/bowtie-json-schema/{name}",
             external=True,
         )
+        session.run("bowtie", "smoke", "--quiet", "-i", name, external=True)
 
 
 @session(default=False)
@@ -273,7 +300,7 @@ def requirements(session):
     Update bowtie's requirements.txt files.
     """
     session.install("pip-tools")
-    for each in [DOCS / "requirements.in", ROOT / "test-requirements.in"]:
+    for each in REQUIREMENTS_IN:
         session.run(
             "pip-compile",
             "--resolver",
@@ -288,7 +315,6 @@ def ui(session):
     """
     Run a local development UI.
     """
-
     needs_install = not UI.joinpath("node_modules").is_dir()
     if needs_install:
         session.run("pnpm", "install", "--dir", UI)

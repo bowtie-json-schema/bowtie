@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncIterator, Literal, TextIO, Union
+from typing import Any, Literal, TextIO
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -21,7 +21,7 @@ from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
-import jinja2
+import referencing.jsonschema
 import structlog
 import structlog.typing
 
@@ -102,56 +102,23 @@ def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
-    redirect_structlog()
+    _redirect_structlog()
 
 
 @main.command()
-@click.argument(
-    "input",
+@click.option(
+    "--input",
     default="-",
     type=click.File(mode="r"),
 )
-@click.option(
-    "--out",
-    "-o",
-    "output",
-    help="Where to write the outputted report HTML.",
-    default="bowtie-report.html",
-    show_default=True,
-    type=click.File("w"),
-)
-@click.option(
-    "--badges",
-    "-b",
-    help="Directory to write the generated badge json files.",
-    type=click.Path(path_type=Path),
-)
-@click.option(
-    "--generate-dialect-navigation",
-    help="generate hyperlinks to all dialect reports",
-    is_flag=True,
-    default=False,
-)
-def report(
-    input: Iterable[str],
-    output: TextIO,
-    badges: Path | None,
-    generate_dialect_navigation: bool,
-):
+@click.argument("output", type=click.Path(path_type=Path))
+def badges(input: Iterable[str], output: Path):
     """
-    Generate a Bowtie report from a previous run.
+    Generate Bowtie badges from a previous run.
     """
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader("bowtie"),
-        undefined=jinja2.StrictUndefined,
-        keep_trailing_newline=True,
-    )
-    report_data = _report.from_input(input, generate_dialect_navigation)
-    if badges is not None:
-        dialect = report_data["run_info"].dialect
-        report_data["summary"].generate_badges(badges, dialect)
-    template = env.get_template("report.html.j2")
-    output.write(template.render(**report_data))
+    report_data = _report.from_input(input)
+    dialect = report_data["run_info"].dialect
+    report_data["summary"].generate_badges(output, dialect)
 
 
 @main.command()
@@ -211,7 +178,6 @@ def _ordered_failures(
     return sorted(
         counts,
         key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
-        reverse=True,
     )
 
 
@@ -246,8 +212,8 @@ def _validation_results(
         for case_result in case_results:
             descriptions: list[str] = []
             for implementation in summary.implementations:
-                valid = case_result[1].get(implementation["image"], "error")
-                if valid == "error":
+                valid = case_result[1].get(implementation["image"])
+                if valid is None or valid[1] == "errored":
                     description = "error"
                 elif valid[1] == "skipped":
                     description = "skipped"
@@ -292,30 +258,31 @@ def _validation_results_table(
 
 
 def validator_for_dialect(dialect: str | None = None):
+    path = files("bowtie.schemas") / "io-schema.json"  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    root_schema = json.loads(path.read_text())  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
-    from jsonschema.validators import RefResolver
 
-    text = files("bowtie.schemas").joinpath("io-schema.json").read_text()  # type: ignore[reportUnknownMemberType]  # noqa: E501
-    root_schema = json.loads(text)  # type: ignore[reportUnknownArgumentType]
-    resolver = RefResolver.from_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
     Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]  # noqa: E501
     Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
     if dialect is None:
         dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
 
+    root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+    registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        uri=CURRENT_DIALECT_URI,
+        resource=specification.create_resource({"$ref": dialect}),
+    )
+
     def validate(instance: Any, schema: Any) -> None:
-        resolver.store[CURRENT_DIALECT_URI] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        validator = Validator(schema, resolver=resolver)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-        try:
-            errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        except Exception:  # XXX: Warn after Reporter disappears
-            pass
-        else:
-            if errors:
-                raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
+        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]  # noqa: E501
+        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        if errors:
+            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
 
     return validate
 
@@ -527,6 +494,17 @@ async def _info(image_names: list[str], format: _F):
 
 @main.command()
 @click.pass_context
+@click.option(
+    "-q",
+    "--quiet",
+    "echo",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    is_flag=True,
+    help="Don't print any output, just exit with nonzero status on failure.",
+)
 @FORMAT
 @IMPLEMENTATION
 def smoke(context: click.Context, **kwargs: Any):
@@ -537,7 +515,11 @@ def smoke(context: click.Context, **kwargs: Any):
     context.exit(exit_code)
 
 
-async def _smoke(image_names: list[str], format: _F):
+async def _smoke(
+    image_names: list[str],
+    format: _F,
+    echo: Callable[..., None],
+):
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -549,17 +531,17 @@ async def _smoke(image_names: list[str], format: _F):
                 implementation = await each
             except NoSuchImage as error:
                 exit_code |= _EX_CONFIG
-                click.echo(
+                echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
                     file=sys.stderr,
                 )
                 continue
 
-            click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
+            echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= _EX_CONFIG
-                click.echo("  ❗ (error): startup failed", file=sys.stderr)
+                echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
             dialect = implementation.dialects[0]
@@ -599,7 +581,7 @@ async def _smoke(image_names: list[str], format: _F):
                         }
                         async for case, response in responses
                     ]
-                    click.echo(json.dumps(serializable, indent=2))
+                    echo(json.dumps(serializable, indent=2))
                 case "pretty":
                     async for case, response in responses:
                         if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
@@ -610,12 +592,12 @@ async def _smoke(image_names: list[str], format: _F):
                             message = "✗ (failed)"
                         else:
                             message = "✓"
-                        click.echo(f"  {message}: {case.description}")
+                        echo(f"  {message}: {case.description}")
 
     if exit_code:
-        click.echo("\n❌ some failures", file=sys.stderr)
+        echo("\n❌ some failures", file=sys.stderr)
     else:
-        click.echo("\n✅ all passed", file=sys.stderr)
+        echo("\n✅ all passed", file=sys.stderr)
 
     return exit_code
 
@@ -815,7 +797,7 @@ async def _run(
             )
 
             seq = 0
-            should_stop: bool = False
+            should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
                 if set_schema and not isinstance(case.schema, bool):
                     case.schema["$schema"] = dialect
@@ -829,7 +811,6 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        # TODO: Combine this with the logic in the template
                         should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
 
                 if should_stop:
@@ -911,7 +892,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def redirect_structlog(file: TextIO = sys.stderr):
+def _redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
@@ -933,7 +914,7 @@ def redirect_structlog(file: TextIO = sys.stderr):
     )
 
 
-_P = Union[Path, zipfile.Path]
+_P = Path | zipfile.Path
 
 
 # Missing zipfile.Path methods...

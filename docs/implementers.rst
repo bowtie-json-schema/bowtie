@@ -200,7 +200,7 @@ We can pass a hand-crafted `test case` to Bowtie by running:
 
 which if you now run should produce something like::
 
-    2022-10-05 15:39.59 [info     ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
+    2022-10-05 15:39.59 [debug    ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
     Traceback (most recent call last):
         ...
     TypeError: bowtie._commands.Started() argument after ** must be a mapping, not list
@@ -216,7 +216,7 @@ You can enable this validation by passing :program:`bowtie run` the :option:`-V`
     {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
     {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }
     EOF
-    2022-10-05 20:59.41 [info     ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
+    2022-10-05 20:59.41 [debug    ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
     2022-10-05 20:59.41 [error    ] Invalid response               [localhost/tutorial-lua-jsonschema] errors=[<ValidationError: "[] is not of type 'object'">] request=Start(version=1)
     2022-10-05 20:59.45 [warning  ] Unsupported dialect, skipping implementation. [localhost/tutorial-lua-jsonschema] dialect=https://json-schema.org/draft/2020-12/schema
     {"implementations": {}}
@@ -259,6 +259,8 @@ You can also have a look at the full schema for details on the ``stop`` command,
 
 Let's implement both requests.
 Change your harness to contain:
+
+.. _start_implementation:
 
 .. code:: lua
 
@@ -306,7 +308,7 @@ When stopping, we simply exit successfully.
 
 If you re-run ``bowtie``, you'll see now that it doesn't crash, though it outputs::
 
-    2022-10-11 13:44.40 [info     ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
+    2022-10-11 13:44.40 [debug    ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
     2022-10-11 13:44.40 [warning  ] Unsupported dialect, skipping implementation. [localhost/tutorial-lua-jsonschema] dialect=https://json-schema.org/draft/2020-12/schema
     {"implementations": {}}
 
@@ -319,7 +321,7 @@ Tell Bowtie we are speaking an earlier version by passing the :option:`--dialect
 
 If we yet again invoke ``bowtie``, we now see something like::
 
-    2022-10-31 12:26.05 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    2022-10-31 12:26.05 [debug    ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
     ╭───────────── localhost/tutorial-lua-jsonschema (stderr) ─────────────╮
     │                                                                      │
     │    luajit: bowtie_jsonschema.lua:35: attempt to call a nil value     │
@@ -365,9 +367,21 @@ Add a handler for the ``dialect`` command to your harness which returns that res
       return { ok = false }
     end,
 
+.. warning::
+
+    Responding ``{"ok": true}`` or ``false`` is *not* an indication of whether your implementation supports the dialect sent.
+
+    Bowtie will never send a dialect request for a dialect that your harness does not support -- which it already knows from the ``start`` response we implemented `earlier <start_implementation>`.
+    If it ever did so this would be considered a Bowtie bug.
+
+    This request *strictly* controls what your implementation harness should do with schemas that do *not* internally indicate what version they are written for, and the response should signal whether your implementation has configured itself appropriately or not.
+
+    Bowtie will *continue executing tests* even if it sees a ``false`` response.
+
+
 Running ``bowtie`` now should produce::
 
-    2022-10-31 13:04.51 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    2022-10-31 13:04.51 [debug    ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
     2022-10-31 13:04.52 [warning  ] Implicit dialect not acknowledged. Proceeding, but implementation may not have configured itself to handle schemas without $schema. [localhost/tutorial-lua-jsonschema] dialect=http://json-schema.org/draft-07/schema# response=StartedDialect(ok=False)
     {"implementations": {"localhost/tutorial-lua-jsonschema": {"language": "lua", "name": "jsonschema", "homepage": "https://github.com/api7/jsonschema", "issues": "https://github.com/api7/jsonschema/issues", "dialects": ["http://json-schema.org/draft-07/schema#", "http://json-schema.org/draft-06/schema#", "http://json-schema.org/draft-04/schema#"], "image": "localhost/tutorial-lua-jsonschema"}}}
     {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
@@ -439,7 +453,7 @@ The results are indicated positionally as shown above, meaning the first result 
 
 If we run ``bowtie`` again, we see::
 
-    2022-10-31 13:20.14 [info     ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
+    2022-10-31 13:20.14 [debug    ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#
     2022-10-31 13:20.14 [warning  ] Implicit dialect not acknowledged. Proceeding, but implementation may not have configured itself to handle schemas without $schema. [localhost/tutorial-lua-jsonschema] dialect=http://json-schema.org/draft-07/schema# response=StartedDialect(ok=False)
     {"implementations": {"localhost/tutorial-lua-jsonschema": {"dialects": ["http://json-schema.org/draft-07/schema#", "http://json-schema.org/draft-06/schema#", "http://json-schema.org/draft-04/schema#"], "language": "lua", "name": "jsonschema", "homepage": "https://github.com/api7/jsonschema", "issues": "https://github.com/api7/jsonschema/issues", "image": "localhost/tutorial-lua-jsonschema"}}}
     {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
@@ -449,7 +463,7 @@ If we run ``bowtie`` again, we see::
     2022-10-31 13:20.14 [info     ] Finished                       count=2
 
 where we've now successfully run some inputted test cases.
-The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie report <cli:report>`.
+The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie summary <cli:summary>`.
 Hooray!
 
 Step 4: Resolving References

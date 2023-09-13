@@ -49,19 +49,65 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
-def strimplementation(name, contents):
+def strimplementation(name, contents, files={}):  # noqa: B006
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
         contents = dedent(contents).encode("utf-8")
         info = tarfile.TarInfo(name="Dockerfile")
         info.size = len(contents)
         tar.addfile(info, BytesIO(contents))
+
+        for k, v in files.items():
+            v = dedent(v).encode("utf-8")
+            info = tarfile.TarInfo(name=k)
+            info.size = len(v)
+            tar.addfile(info, BytesIO(v))
+
     fileobj.seek(0)
     return image(name=name, fileobj=fileobj)
 
 
+def shellplementation(name, contents):
+    return strimplementation(
+        name=name,
+        files={"run.sh": contents},
+        contents="""
+        FROM alpine:3.16
+        COPY run.sh .
+        CMD sh run.sh
+        """,
+    )
+
+
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
+always_valid = shellplementation(  # I'm sorry future me.
+    name="always_valid",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    while IFS= read -r input; do
+      [[ "$input" == '{"cmd": "stop"}' ]] && exit
+      echo $input | awk '{
+       seq = gensub(/.*"seq": ([^,]+).*/, "\\1", "g", $0);
+       tests = gensub(/.*"tests": \[([^]]+)\].*/, "\\1", "g", $0);
+       gsub(/}, \{/, "\n", tests);
+       count = split(tests, tests_array, ",");
+       result = sprintf("{\"seq\": %s, \"results\": [", seq);
+       for (i = 1; i <= count; i++) {
+         result = result "{\"valid\": true}";
+         if (i < count) {
+             result = result ",";
+         }
+       }
+       result = result "]}";
+       print result;
+      }'
+    done
+    """,  # noqa: E501
+)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="FROM alpine:3.16\nENTRYPOINT true\n",
@@ -316,7 +362,10 @@ async def test_implementations_can_signal_errors(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
+    assert results == [
+        [{"context": {"message": "boom"}, "errored": True, "skipped": False}],
+        [{"valid": True}],
+    ], stderr
     assert stderr != ""
     assert returncode == 0, stderr
 
@@ -497,6 +546,7 @@ async def test_info_pretty(envsonschema):
         """\
         name: "envsonschema"
         language: "python"
+        homepage: "https://github.com/bowtie-json-schema/bowtie/"
         issues: "https://github.com/bowtie-json-schema/bowtie/issues"
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",
@@ -530,6 +580,7 @@ async def test_info_json(envsonschema):
     assert json.loads(stdout) == {
         "name": "envsonschema",
         "language": "python",
+        "homepage": "https://github.com/bowtie-json-schema/bowtie/",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
@@ -616,7 +667,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
+async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
     run = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -625,20 +676,23 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
         "-i",
         envsonschema,
         "-i",
-        lintsonschema,
+        always_valid,
+        "-V",
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    run_stdout, _ = await run.communicate(
-        b"""\
-            {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-            {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
-            {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
-            {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
-            {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
-        """  # noqa: E501
-    )
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    lines = dedent(raw.strip("\n")).encode("utf-8")
+    run_stdout, run_stderr = await run.communicate(lines)
 
     summary_validation = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -688,7 +742,20 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
                 ["", ["skipped", "valid"]],
             ],
         ],
-    ]
+        [
+            {"type": "array"},
+            [
+                ["", ["error", "valid"]],
+                [12, ["invalid", "valid"]],
+            ],
+        ],
+        [
+            {"type": "array"},
+            [
+                ["", ["error", "valid"]],
+            ],
+        ],
+    ], run_stderr.decode()
 
 
 @pytest.mark.asyncio

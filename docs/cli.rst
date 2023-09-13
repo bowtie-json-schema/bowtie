@@ -12,7 +12,7 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
 
 .. code:: sh
 
-    $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie report
+    $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
 
 
 Running the Official Suite Across All Implementations
@@ -22,7 +22,7 @@ The following will run all Draft 7 tests from the `official test suite`_ (which 
 
 .. code:: sh
 
-    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie report
+    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
 
 
 Running Test Suite Tests From Local Checkouts
@@ -32,7 +32,7 @@ Providing a local path to the test suite can be used as well, which is useful if
 
 .. code:: sh
 
-    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie report
+    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
 
 
 Checking An Implementation Functions On Basic Input

@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""
+Check that all implementations are registered with dependabot.
+"""
+from pathlib import Path
+import sys
+
+from yaml import safe_load as loads
+
+ROOT = Path(__file__).absolute().parent.parent
+DEPENDABOT = ROOT.joinpath(".github/dependabot.yml").read_text()
+IMPLEMENTATIONS = ROOT / "implementations"
+DEPENDABOT_DOCS = "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem"  # noqa: E501
+
+# Every implementation must appear both for container image updates
+# (in the docker ecosystem) as well as for its own packaging ecosystem
+# or else should be explicitly ignored with a comment.
+DOCKER, PACKAGING = set(), set()
+for each in loads(DEPENDABOT)["updates"]:
+    directory = each["directory"]
+    if not directory.startswith("/implementations/"):
+        continue
+    ecosystem = each["package-ecosystem"].lower()
+    seen = DOCKER if ecosystem == "docker" else PACKAGING
+    seen.add(directory.removeprefix("/implementations/"))
+
+
+known = list(IMPLEMENTATIONS.glob("[!.]*"))
+docker_missing = {each.name for each in known if each.name not in DOCKER}
+if docker_missing:
+    sys.exit(
+        f"{', '.join(docker_missing)} are not configured to update its "
+        "container image via Dependabot. "
+        "Please add a package-ecosystem: docker section to the "
+        ".github/dependabot.yml file."
+    )
+
+
+ignored = {
+    line.strip().removeprefix("# ignore: ").partition(" ")[0]
+    for line in DEPENDABOT.splitlines()
+    if line.strip().startswith("# ignore: ")
+}
+packaging_missing = {
+    each.name
+    for each in known
+    if each.name not in PACKAGING and each.name not in ignored
+}
+if packaging_missing:
+    sys.exit(
+        f"{', '.join(packaging_missing)} are not configured to update their "
+        "packaging dependencies via Dependabot. "
+        "Please add a suitable package-ecosystem section to the "
+        ".github/dependabot.yml file. You can find information on the valid "
+        f"ecosystem values at {DEPENDABOT_DOCS}. If your programming language "
+        "is unsupported within Dependabot, add a comment saying "
+        "# ignore: <implementation name> - <reason> to the same file."
+    )

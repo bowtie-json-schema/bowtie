@@ -40,18 +40,18 @@ jobs:
 
       # FIXME: we can skip checking out if we are able to list all images in
       #        the image repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
       - name: Install Bowtie
-        run: python3 -m pip install bowtie-json-schema
+        uses: bowtie-json-schema/bowtie@v2023.09.12
 
       - name: Generate the Report
         run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie report --badges badges --generate-dialect-navigation --out ${{ matrix.version }}.html
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges badges
 
       - uses: actions/upload-artifact@v3
         with:

@@ -76,7 +76,7 @@ class Reporter:
         )
 
     def will_speak(self, dialect: str):
-        self._log.info("Will speak", dialect=dialect)
+        self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
         if not count:
@@ -149,10 +149,14 @@ class _CaseReporter:
         self._write(case=asdict(case), seq=seq)
         return self
 
-    def got_results(
-        self,
-        results: _commands.CaseResult | _commands.CaseErrored,
-    ):
+    def got_results(self, results: _commands.CaseResult):
+        for result in results.results:
+            if result.errored:
+                self._log.error(
+                    "",
+                    logger_name=results.implementation,
+                    **result.context,  # type: ignore
+                )
         self._write(**asdict(results))
 
     def skipped(self, skipped: _commands.CaseSkipped):
@@ -161,11 +165,11 @@ class _CaseReporter:
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
 
-    def errored(self, results: _commands.CaseErrored):
+    def case_errored(self, results: _commands.CaseErrored):
         implementation, context = results.implementation, results.context
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
-        self.got_results(results)
+        self._write(**asdict(results))
 
 
 @mutable
@@ -397,13 +401,9 @@ class RunInfo:
 class ReportData(TypedDict):
     summary: _Summary
     run_info: RunInfo
-    generate_dialect_navigation: bool
 
 
-def from_input(
-    input: Iterable[str],
-    generate_dialect_navigation: bool = False,
-) -> ReportData:
+def from_input(input: Iterable[str]) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
@@ -423,8 +423,4 @@ def from_input(
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
-    return ReportData(
-        summary=summary,
-        run_info=run_info,
-        generate_dialect_navigation=generate_dialect_navigation,
-    )
+    return ReportData(summary=summary, run_info=run_info)

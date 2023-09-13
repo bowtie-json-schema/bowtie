@@ -19,7 +19,7 @@ jobs:
     outputs:
       noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
       - id: noxenvs-matrix
@@ -37,7 +37,7 @@ jobs:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: >
           sudo apt-get update &&
@@ -46,10 +46,6 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
       - name: Run nox
@@ -66,7 +62,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
