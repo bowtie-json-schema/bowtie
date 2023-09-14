@@ -9,4 +9,4 @@ RUN gradle --no-daemon --parallel install
 
 FROM bellsoft/liberica-openjdk-alpine:17
 COPY --from=builder /opt/app/build /opt/app/build
-CMD ["./opt/app/build/install/kmp-json-schema-validator/bin/kmp-json-schema-validator"]
+CMD ["/opt/app/build/install/kmp-json-schema-validator/bin/kmp-json-schema-validator"]

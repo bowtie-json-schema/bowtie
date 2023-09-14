@@ -6,4 +6,4 @@ RUN chmod +x ./build/install/bowtie/bin/openapiprocessor
 
 FROM bellsoft/liberica-openjdk-alpine:17
 COPY --from=builder /opt/app/build /opt/app/build
-CMD ["./opt/app/build/install/bowtie/bin/openapiprocessor"]
+CMD ["/opt/app/build/install/bowtie/bin/openapiprocessor"]
