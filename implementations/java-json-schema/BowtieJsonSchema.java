@@ -78,7 +78,7 @@ public class BowtieJsonSchema {
                 "https://github.com/harrel56/json-schema/issues",
                 System.getProperty("os.name"),
                 System.getProperty("os.version"),
-                System.getProperty("java.vendor.version"),
+                Runtime.version().toString(),
                 List.of(
                         new Link("https://harrel.dev", "Group homepage"),
                         new Link(createMavenUrl("Implementation", attributes), "Maven Central - implementation"),
