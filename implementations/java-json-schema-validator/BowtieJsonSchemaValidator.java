@@ -107,7 +107,7 @@ public class BowtieJsonSchemaValidator {
         "https://github.com/networknt/json-schema-validator/issues",
         System.getProperty("os.name"),
         System.getProperty("os.version"),
-        System.getProperty("java.vendor.version")
+        Runtime.version().toString()
       )
     );
     output.println(objectMapper.writeValueAsString(startResponse));
