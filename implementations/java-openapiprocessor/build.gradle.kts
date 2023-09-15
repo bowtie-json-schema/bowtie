@@ -12,10 +12,6 @@ repositories {
     }
 }
 
-kotlin {
-    jvmToolchain(libs.versions.build.jdk.get().toInt())
-}
-
 application {
     mainClass.set("MainKt")
 }
