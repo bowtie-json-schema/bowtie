@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   bootstrap:
-    specifier: ^5.3.1
-    version: 5.3.1(@popperjs/core@2.11.8)
+    specifier: ^5.3.2
+    version: 5.3.2(@popperjs/core@2.11.8)
   moment:
     specifier: ^2.29.4
     version: 2.29.4
@@ -1140,8 +1140,8 @@ packages:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
 
-  /bootstrap@5.3.1(@popperjs/core@2.11.8):
-    resolution: {integrity: sha512-jzwza3Yagduci2x0rr9MeFSORjcHpt0lRZukZPZQJT1Dth5qzV7XcgGqYzi39KGAVYR8QEDVoO0ubFKOxzMG+g==}
+  /bootstrap@5.3.2(@popperjs/core@2.11.8):
+    resolution: {integrity: sha512-D32nmNWiQHo94BKHLmOrdjlL05q1c8oxbtBphQFb9Z5to6eGRDCm0QgeaZ4zFBHzfg2++rqa2JkqCcxDy0sH0g==}
     peerDependencies:
       '@popperjs/core': ^2.11.8
     dependencies:
