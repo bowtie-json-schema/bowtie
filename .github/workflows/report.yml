@@ -47,7 +47,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install Bowtie
-        uses: bowtie-json-schema/bowtie@v2023.09.12
+        uses: bowtie-json-schema/bowtie@v2023.09.16
 
       - name: Generate the Report
         run: |
