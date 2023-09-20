@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import scala.Tuple2;
 import java.io.*;
 import io.circe.Json;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
 * The Harness program implements an application that
@@ -26,11 +28,9 @@ class Harness{
 	
 	private static final Logger LOGGER = Logger.getLogger( Harness.class.getName() );
 	
-	public static Set<String> dialects;
-	
 	public static String dialect;
 	
-	private static final String NOT_IMPLEMENTED = "Not implemented this case";
+	private static final String NOT_IMPLEMENTED = "This case is not yet implemented.";
 	private static final Map<String, String> UNSUPPORTED_CASES = Map.ofEntries(
 		Map.entry("escaped pointer ref", NOT_IMPLEMENTED), Map.entry("empty tokens in $ref json-pointer", NOT_IMPLEMENTED),
 		Map.entry("maxLength validation", NOT_IMPLEMENTED),Map.entry("minLength validation", NOT_IMPLEMENTED),
@@ -38,21 +38,16 @@ class Harness{
 		Map.entry("small multiple of large integer", NOT_IMPLEMENTED), Map.entry("$ref to $ref finds detached $anchor", NOT_IMPLEMENTED),
 		Map.entry("$ref to $dynamicRef finds detached $dynamicAnchor", NOT_IMPLEMENTED));
 	
-	static {
-		dialects = new HashSet<String>();
-		dialects.add("https://json-schema.org/draft/2020-12/schema");
-	}
-	
 	public static void main(String[] args) {
 		Scanner input = new Scanner(System.in);
 		while (true) {
 			String line = input.nextLine();
-			String output = operate(line);
+			String output = new Harness().operate(line);
 			System.out.println(output);
 		}
 	}
 	
-	public static String operate(String line){
+	public String operate(String line){
 		JSONParser parser = new JSONParser();
 		String error = "";
 		try{
@@ -62,16 +57,18 @@ class Harness{
 			  case "start":
 				long version = (long) json.get("version");
 				if(version == 1){
+					InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
+					var attributes = new Manifest(is).getMainAttributes();
 					started = true;
 					JSONObject message = new JSONObject();
 					message.put("ready", true);
 					message.put("version", 1);
 					JSONObject implementation = new JSONObject();
 					implementation.put("language", "scala");
-					implementation.put("name", "mjs");
-					implementation.put("version", "Validator eec1cbef Java 420ad1d");
-					implementation.put("homepage", "https://github.com/sdbs-uni-p/mjs-validator");
-					implementation.put("issues", "https://github.com/sdbs-uni-p/mjs-validator/issues");
+					implementation.put("name", attributes.getValue("Implementation-Name"));
+					implementation.put("version", attributes.getValue("Implementation-Version"));
+					implementation.put("homepage", "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator");
+					implementation.put("issues", "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator/issues");
 					JSONArray dialects = new JSONArray();
 					dialects.add("https://json-schema.org/draft/2020-12/schema");
 					implementation.put("dialects", dialects);
@@ -84,7 +81,7 @@ class Harness{
 					throw new RuntimeException("Bowtie hasn't started!");
 				}
 				dialect = (String) json.get("dialect");
-				return "{ \"ok\" : " + dialects.contains(dialect) + " }";
+				return "{ \"ok\" : false }";
 			  case "run":
 				if(started != true){
 					throw new RuntimeException("Bowtie hasn't started!");
@@ -94,18 +91,12 @@ class Harness{
 				JSONObject cas = null;
 				String schema = null;
 				String description = null;
-				String registry = null;
 				try{
 					cas = (JSONObject) json.get("case");
 					schema = getStringFromJson(cas.get("schema"));
 					description = (String) cas.get("description");
 					if(UNSUPPORTED_CASES.containsKey(description)){
 						return skipMsg(UNSUPPORTED_CASES.get(description), seq);
-					}
-					
-					if(cas.containsKey("registry")){
-						registry = getStringFromJson(cas.get("registry"));
-						LOGGER.log(Level.INFO, "registry found : " + registry);
 					}
 					JSONArray tests = (JSONArray) cas.get("tests");
 					
@@ -130,15 +121,10 @@ class Harness{
 					output.put("results", resultArray);
 					return output.toJSONString();
 				}
-				catch (OutOfMemoryError | StackOverflowError e) {
-					LOGGER.log(Level.SEVERE, "Exception occur in run command : " + cas.toJSONString() + " " + test.toJSONString(), e);
-					error = errorMsg("Error: Input is too large. Due to hardware restrictions of this application, we can only process small inputs.", seq);
-					return error;
-				}
 				catch(Exception e){
 					LOGGER.log(Level.SEVERE, "Exception occur in run command : " + cas.toJSONString() + " " + test.toJSONString(), e);
 					String msg = getDetailedMessage(e, test, schema);
-					error = errorMsg(msg, seq); //e.getMessage()
+					error = errorMsg(msg, seq);
 					return error;
 				}
 			  case "stop":
