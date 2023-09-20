@@ -82,7 +82,6 @@ LATEST_DIALECT_NAME = "draft2020-12"
 
 # Magic constants assumed/used by the official test suite
 SUITE_REMOTE_BASE_URI = "http://localhost:1234"
-SUITE_DRAFT_NEXT_URI = "https://json-schema.org/draft/next/schema"
 
 #: Should match the magic value used to validate `schema`s in `io-schema.json`
 CURRENT_DIALECT_URI = "urn:current-dialect"
@@ -678,8 +677,8 @@ class _TestSuiteCases(click.ParamType):
             paths, version_path = _glob(path, "*.json"), path
 
         remotes = version_path.parent.parent / "remotes"
-        cases = suite_cases_from(paths=paths, remotes=remotes)
         dialect = DIALECT_SHORTNAMES.get(version_path.name)
+        cases = suite_cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
         return cases, dialect
 
@@ -850,21 +849,29 @@ def sequenced(
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
-def _remotes_from(path: Path) -> Iterable[tuple[str, Any]]:
+def _remotes_from(
+    path: Path,
+    dialect: str | None,
+) -> Iterable[tuple[str, Any]]:
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
         # FIXME: #40: for draft-next support
-        if schema.get("$schema") == SUITE_DRAFT_NEXT_URI:
+        schema_dialect = schema.get("$schema")
+        if schema_dialect is not None and schema_dialect != dialect:
             continue
         relative = str(_relative_to(each, path)).replace("\\", "/")
         uri = urljoin(SUITE_REMOTE_BASE_URI, relative)
         yield uri, schema
 
 
-def suite_cases_from(paths: Iterable[_P], remotes: Path) -> Iterable[TestCase]:
+def suite_cases_from(
+    paths: Iterable[_P],
+    remotes: Path,
+    dialect: str | None,
+) -> Iterable[TestCase]:
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = dict(_remotes_from(remotes))
+            registry = dict(_remotes_from(remotes, dialect=dialect))
         else:
             registry = {}
 
