@@ -8,8 +8,7 @@ RUN lein deps
 COPY . .
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" app-standalone.jar
 
-FROM alpine
+FROM bellsoft/liberica-openjdk-alpine:20
 WORKDIR /usr/src/app
-RUN apk add --no-cache openjdk17-jre
 COPY --from=builder /usr/src/app/app-standalone.jar .
 CMD ["java", "-jar", "app-standalone.jar"]
