@@ -47,7 +47,7 @@ click==8.1.7
     #   -r requirements.txt
     #   bowtie-json-schema
     #   trogon
-cryptography==41.0.3
+cryptography==41.0.4
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -145,12 +145,12 @@ requests==2.31.0
     # via
     #   -r requirements.txt
     #   github3-py
-rich==13.5.2
+rich==13.5.3
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
     #   textual
-rpds-py==0.10.2
+rpds-py==0.10.3
     # via
     #   -r requirements.txt
     #   jsonschema
@@ -163,7 +163,7 @@ structlog==23.1.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-textual==0.36.0
+textual==0.37.1
     # via
     #   -r requirements.txt
     #   trogon
@@ -171,7 +171,7 @@ trogon==0.5.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -r requirements.txt
     #   aiodocker
@@ -184,7 +184,7 @@ uritemplate==4.1.1
     # via
     #   -r requirements.txt
     #   github3-py
-urllib3==2.0.4
+urllib3==2.0.5
     # via
     #   -r requirements.txt
     #   requests
@@ -192,7 +192,7 @@ yarl==1.9.2
     # via
     #   -r requirements.txt
     #   aiohttp
-zipp==3.16.2
+zipp==3.17.0
     # via
     #   -r requirements.txt
     #   importlib-metadata

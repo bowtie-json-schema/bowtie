@@ -23,7 +23,7 @@ REQUIREMENTS = dict(
 REQUIREMENTS_IN = {
     (
         ROOT / "pyproject.toml"
-        if path.name == "requirements.txt"
+        if path.absolute() == REQUIREMENTS["main"].absolute()
         else path.parent / f"{path.stem}.in"
     )
     for path in REQUIREMENTS.values()

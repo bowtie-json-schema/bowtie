@@ -30,7 +30,7 @@ click==8.1.7
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   trogon
-cryptography==41.0.3
+cryptography==41.0.4
     # via pyjwt
 frozenlist==1.4.0
     # via
@@ -78,11 +78,11 @@ referencing==0.30.2
     #   jsonschema-specifications
 requests==2.31.0
     # via github3-py
-rich==13.5.2
+rich==13.5.3
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   textual
-rpds-py==0.10.2
+rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
@@ -90,11 +90,11 @@ six==1.16.0
     # via python-dateutil
 structlog==23.1.0
     # via bowtie-json-schema (pyproject.toml)
-textual==0.36.0
+textual==0.37.1
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema (pyproject.toml)
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   aiodocker
     #   textual
@@ -102,9 +102,9 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
-urllib3==2.0.4
+urllib3==2.0.5
     # via requests
 yarl==1.9.2
     # via aiohttp
-zipp==3.16.2
+zipp==3.17.0
     # via importlib-metadata
