@@ -46,13 +46,34 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 w-75">
-        <Card.Header>Implementation Info</Card.Header>
+        <Card.Header>
+          <span className="px-1 text-muted">
+            {mapLanguage(implementation.language)}
+          </span>
+
+          <span>{implementation.name}</span>
+        </Card.Header>
+
         <Card.Body>
           <Table>
             <tbody>
               <tr>
-                <th>Name:</th>
-                <td>{implementation.name}</td>
+                <th>Homepage:</th>
+                {implementation.homepage && (
+                  <td>
+                    <Link to={implementation.homepage}>
+                      {implementation.homepage}
+                    </Link>
+                  </td>
+                )}
+              </tr>
+              <tr>
+                <th>Issues:</th>
+                <td>
+                  <Link to={implementation.issues}>
+                    {implementation.issues}
+                  </Link>
+                </td>
               </tr>
               <tr>
                 <th>Version:</th>
@@ -81,7 +102,7 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Dialects:</th>
+                <th>Supported Dialects:</th>
                 <td>
                   <ul>
                     {implementation.dialects.map(
@@ -92,28 +113,6 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
                       ),
                     )}
                   </ul>
-                </td>
-              </tr>
-              <tr>
-                <th>Image:</th>
-                <td>{implementation.image}</td>
-              </tr>
-              <tr>
-                <th>Homepage:</th>
-                {implementation.homepage && (
-                  <td>
-                    <Link to={implementation.homepage}>
-                      {implementation.homepage}
-                    </Link>
-                  </td>
-                )}
-              </tr>
-              <tr>
-                <th>Issues:</th>
-                <td>
-                  <Link to={implementation.issues}>
-                    {implementation.issues}
-                  </Link>
                 </td>
               </tr>
             </tbody>
