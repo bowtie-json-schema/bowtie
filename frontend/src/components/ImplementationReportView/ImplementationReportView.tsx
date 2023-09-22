@@ -108,9 +108,7 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
                   <ul>
                     {implementation.dialects.map(
                       (dialect: string, index: number) => (
-                        <li key={index}>
-                          <Link to={dialect}>{dialect}</Link>
-                        </li>
+                        <li key={index}>{dialect}</li>
                       ),
                     )}
                   </ul>
