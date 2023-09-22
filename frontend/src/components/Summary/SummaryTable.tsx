@@ -1,38 +1,7 @@
 // @ts-ignore
 import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
-import { ReportData } from "../../data/parseReportData";
-
-export interface Totals {
-  totalTests: number;
-  erroredCases: number;
-  skippedTests: number;
-  failedTests: number;
-  erroredTests: number;
-}
-
-const calculateTotals = (data: ReportData): Totals => {
-  const totalTests = Array.from(data.cases.values()).reduce(
-    (prev, curr) => prev + curr.tests.length,
-    0,
-  );
-  return Array.from(data.implementations.values()).reduce(
-    (prev, curr) => ({
-      totalTests,
-      erroredCases: prev.erroredCases + curr.erroredCases,
-      skippedTests: prev.skippedTests + curr.skippedTests,
-      failedTests: prev.failedTests + curr.failedTests,
-      erroredTests: prev.erroredTests + curr.erroredTests,
-    }),
-    {
-      totalTests: totalTests,
-      erroredCases: 0,
-      skippedTests: 0,
-      failedTests: 0,
-      erroredTests: 0,
-    },
-  );
-};
+import { ReportData, calculateTotals } from "../../data/parseReportData";
 
 const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);

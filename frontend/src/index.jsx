@@ -8,8 +8,13 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
-import { parseReportData } from "./data/parseReportData";
+import { Dialect } from "./data/Dialect";
+import {
+  parseReportData,
+  parseImplementationData,
+} from "./data/parseReportData";
 import URI from "urijs";
+import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
 const reportHost =
   import.meta.env.MODE === "development"
@@ -17,17 +22,8 @@ const reportHost =
     : window.location.href;
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
-const dialectToName = {
-  "draft2020-12": "Draft 2020-12",
-  "draft2019-09": "Draft 2019-09",
-  draft7: "Draft 7",
-  draft6: "Draft 6",
-  draft4: "Draft 4",
-  draft3: "Draft 3",
-};
-
 const fetchReportData = async (dialect) => {
-  const dialectName = dialectToName[dialect] ?? dialect;
+  const dialectName = Dialect.dialectToName[dialect] ?? dialect;
   document.title = `Bowtie - ${dialectName}`;
   const url = reportUri.clone().filename(dialect).suffix("json").href();
   const response = await fetch(url);
@@ -37,6 +33,15 @@ const fetchReportData = async (dialect) => {
     .split(/\r?\n/)
     .map((line) => JSON.parse(line));
   return parseReportData(lines);
+};
+
+const fetchAllReportData = async () => {
+  const loaderData = {};
+  const fetchPromises = Object.keys(Dialect.dialectToName).map(
+    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
+  );
+  await Promise.all(fetchPromises);
+  return parseImplementationData(loaderData);
 };
 
 const router = createHashRouter([
@@ -58,6 +63,11 @@ const router = createHashRouter([
       {
         path: "/local-report",
         Component: DragAndDrop,
+      },
+      {
+        path: "/implementations/:langImplementation",
+        Component: ImplementationReportView,
+        loader: fetchAllReportData,
       },
     ],
   },

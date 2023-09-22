@@ -1,5 +1,5 @@
 import { useLoaderData } from "react-router-dom";
-import { ReportView } from "./ReportView";
+import { DialectReportView } from "./DialectReportView";
 import { useContext, useEffect } from "react";
 import { BowtieVersionContext } from "./context/BowtieVersionContext";
 
@@ -12,7 +12,7 @@ const ReportDataHandler = () => {
     [setVersion, loaderData.runInfo.bowtie_version],
   );
 
-  return <ReportView reportData={loaderData} />;
+  return <DialectReportView reportData={loaderData} />;
 };
 
 export default ReportDataHandler;

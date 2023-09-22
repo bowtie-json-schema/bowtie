@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import "./DragAndDrop.css";
-import { ReportView } from "../../ReportView";
+import { DialectReportView } from "../../DialectReportView";
 import { parseReportData } from "../../data/parseReportData";
 
 export const DragAndDrop = () => {
@@ -66,7 +66,7 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <ReportView reportData={lines} />;
+    return <DialectReportView reportData={lines} />;
   }
 
   return (
