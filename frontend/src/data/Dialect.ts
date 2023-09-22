@@ -1,5 +1,5 @@
 export const Dialect: Dialect = {
-  dialectToName: {
+  toShortName: {
     "draft2020-12": "Draft 2020-12",
     "draft2019-09": "Draft 2019-09",
     draft7: "Draft 7",
@@ -7,7 +7,7 @@ export const Dialect: Dialect = {
     draft4: "Draft 4",
     draft3: "Draft 3",
   },
-  dialectMapping: {
+  toURI: {
     "draft2020-12": "https://json-schema.org/draft/2020-12/schema",
     "draft2019-09": "https://json-schema.org/draft/2019-09/schema",
     draft7: "http://json-schema.org/draft-07/schema#",
@@ -18,10 +18,6 @@ export const Dialect: Dialect = {
 };
 
 export interface Dialect {
-  dialectToName: {
-    [key: string]: string;
-  };
-  dialectMapping: {
-    [key: string]: string;
-  };
+  toShortName: { [key: string]: string };
+  toURI: { [key: string]: string };
 }

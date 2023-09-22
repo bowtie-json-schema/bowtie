@@ -23,7 +23,7 @@ const reportHost =
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
 const fetchReportData = async (dialect) => {
-  const dialectName = Dialect.dialectToName[dialect] ?? dialect;
+  const dialectName = Dialect.toShortName[dialect] ?? dialect;
   document.title = `Bowtie - ${dialectName}`;
   const url = reportUri.clone().filename(dialect).suffix("json").href();
   const response = await fetch(url);
@@ -37,7 +37,7 @@ const fetchReportData = async (dialect) => {
 
 const fetchAllReportData = async () => {
   const loaderData = {};
-  const fetchPromises = Object.keys(Dialect.dialectToName).map(
+  const fetchPromises = Object.keys(Dialect.toShortName).map(
     async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
   );
   await Promise.all(fetchPromises);

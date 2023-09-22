@@ -31,7 +31,7 @@ const DialectCompliance: React.FC<{
               ([dialectName, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.dialectMapping[dialectName]}</td>
+                    <td>{Dialect.toURI[dialectName]}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
