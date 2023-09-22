@@ -90,17 +90,18 @@ const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
                   </span>
                 </td>
               </tr>
-              <tr>
-                <th>OS:</th>
-                <td>
-                  {implementation.os || ""}
-                  <span className="text-muted">
-                    {implementation.os &&
-                      implementation.os_version &&
-                      ` (${implementation.os_version})`}
-                  </span>
-                </td>
-              </tr>
+              {implementation.os && (
+                <tr>
+                  <th>OS:</th>
+                  <td>
+                    {implementation.os}
+                    <span className="text-muted">
+                      {implementation.os_version &&
+                        ` (${implementation.os_version})`}
+                    </span>
+                  </td>
+                </tr>
+              )}
               <tr>
                 <th>Supported Dialects:</th>
                 <td>
