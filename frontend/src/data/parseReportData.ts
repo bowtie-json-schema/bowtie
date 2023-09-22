@@ -86,8 +86,9 @@ export const parseImplementationData = (loaderData: {
   [key: string]: ReportData;
 }) => {
   let allImplementations: { [key: string]: ImplementationMetadata } = {};
-  let dialectCompliance: { [key: string]: { [key: string]: Partial<Totals> } } =
-    {};
+  const dialectCompliance: {
+    [key: string]: { [key: string]: Partial<Totals> };
+  } = {};
 
   for (const [key, value] of Object.entries(loaderData)) {
     dialectCompliance[key] = calculateImplementationTotal(
@@ -102,7 +103,12 @@ export const parseImplementationData = (loaderData: {
   Object.keys(allImplementations).map((implementation) => {
     Object.entries(dialectCompliance).map(([key, value]) => {
       if (value[implementation]) {
-        if (!allImplementations[implementation].hasOwnProperty("results")) {
+        if (
+          !Object.prototype.hasOwnProperty.call(
+            allImplementations[implementation],
+            "results",
+          )
+        ) {
           allImplementations[implementation]["results"] = {};
         }
         allImplementations[implementation]["results"][key] =
@@ -116,7 +122,7 @@ export const parseImplementationData = (loaderData: {
 const calculateImplementationTotal = (
   implementations: Map<string, ImplementationData>,
 ) => {
-  let implementationResult: { [key: string]: Partial<Totals> } = {};
+  const implementationResult: { [key: string]: Partial<Totals> } = {};
 
   Array.from(implementations.entries()).forEach(([key, value]) => {
     implementationResult[key] = {
