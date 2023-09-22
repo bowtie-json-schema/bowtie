@@ -48,6 +48,7 @@ repos:
         id: eslint
         files: ^frontend/.*\.[jt]sx?$
         types: [file]
+        args: [--fix]
         additional_dependencies:
           - eslint@8.48.0
           - eslint-plugin-react@7.33.2
