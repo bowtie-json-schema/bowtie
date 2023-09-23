@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { ImplementationMetadata } from "../../data/parseReportData";
-import { Dialect } from "../../data/Dialect";
+import Dialect from "../../data/Dialect";
 
 const DialectCompliance: React.FC<{
   implementation: ImplementationMetadata;
@@ -31,7 +31,7 @@ const DialectCompliance: React.FC<{
               ([dialectName, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.toURI[dialectName]}</td>
+                    <td>{Dialect.forPath(dialectName).uri}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>

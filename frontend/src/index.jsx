@@ -8,11 +8,8 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
-import { Dialect } from "./data/Dialect";
-import {
-  parseReportData,
-  parseImplementationData,
-} from "./data/parseReportData";
+import Dialect from "./data/Dialect";
+import { parseImplementationData } from "./data/parseReportData";
 import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
@@ -23,24 +20,22 @@ const reportHost =
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
 const fetchReportData = async (dialect) => {
-  const dialectName = Dialect.toShortName[dialect] ?? dialect;
-  document.title = `Bowtie - ${dialectName}`;
-  const url = reportUri.clone().filename(dialect).suffix("json").href();
-  const response = await fetch(url);
-  const jsonl = await response.text();
-  const lines = jsonl
-    .trim()
-    .split(/\r?\n/)
-    .map((line) => JSON.parse(line));
-  return parseReportData(lines);
+  document.title = `Bowtie - ${dialect.prettyName}`;
+  return dialect.fetchReport(reportUri);
 };
 
-const fetchAllReportData = async () => {
+const fetchAllReportData = async (langImplementation) => {
+  document.title = `Bowtie - ${langImplementation}`;
   const loaderData = {};
-  const fetchPromises = Object.keys(Dialect.toShortName).map(
-    async (dialect) => (loaderData[dialect] = await fetchReportData(dialect)),
-  );
-  await Promise.all(fetchPromises);
+  const promises = [];
+  for (const dialect of Dialect.known()) {
+    promises.push(
+      dialect
+        .fetchReport(reportUri)
+        .then((data) => (loaderData[dialect.path] = data)),
+    );
+  }
+  await Promise.all(promises);
   return parseImplementationData(loaderData);
 };
 
@@ -53,12 +48,13 @@ const router = createHashRouter([
       {
         index: true,
         Component: ReportDataHandler,
-        loader: async () => fetchReportData("draft2020-12"),
+        loader: async () => fetchReportData(Dialect.forPath("draft2020-12")),
       },
       {
         path: "/dialects/:draftName",
         Component: ReportDataHandler,
-        loader: async ({ params }) => fetchReportData(params.draftName),
+        loader: async ({ params }) =>
+          fetchReportData(Dialect.forPath(params.draftName)),
       },
       {
         path: "/local-report",
@@ -67,7 +63,8 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
-        loader: fetchAllReportData,
+        loader: async ({ params }) =>
+          fetchAllReportData(params.langImplementation),
       },
     ],
   },
