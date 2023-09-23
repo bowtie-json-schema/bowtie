@@ -3,15 +3,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import main.MainClass$;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import scala.Tuple2;
 import java.io.*;
 import io.circe.Json;
-import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
 * The Harness program implements an application that
@@ -28,7 +33,8 @@ class Harness{
 	
 	private static final Logger LOGGER = Logger.getLogger( Harness.class.getName() );
 	
-	public static String dialect;
+	private final ObjectMapper objectMapper = new ObjectMapper().configure(
+      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	
 	private static final String NOT_IMPLEMENTED = "This case is not yet implemented.";
 	private static final Map<String, String> UNSUPPORTED_CASES = Map.ofEntries(
@@ -48,14 +54,14 @@ class Harness{
 	}
 	
 	public String operate(String line){
-		JSONParser parser = new JSONParser();
 		String error = "";
 		try{
-			JSONObject json = (JSONObject) parser.parse(line);
-			String cmd = (String) json.get("cmd");
+			JsonNode node = objectMapper.readTree(line);
+			String cmd = node.get("cmd").asText();
 			switch(cmd) {
 			  case "start":
-				long version = (long) json.get("version");
+				StartRequest startRequest = objectMapper.treeToValue(node, StartRequest.class);
+				long version = startRequest.version();
 				if(version == 1){
 					InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
 					var attributes = new Manifest(is).getMainAttributes();
@@ -80,51 +86,39 @@ class Harness{
 				if(started != true){
 					throw new RuntimeException("Bowtie hasn't started!");
 				}
-				dialect = (String) json.get("dialect");
+				DialectRequest dialectRequest = objectMapper.treeToValue(node, DialectRequest.class);
 				return "{ \"ok\" : false }";
 			  case "run":
 				if(started != true){
 					throw new RuntimeException("Bowtie hasn't started!");
 				}
-				long seq = (long) json.get("seq");
-				JSONObject test = null;
-				JSONObject cas = null;
-				String schema = null;
-				String description = null;
+				RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+				
 				try{
-					cas = (JSONObject) json.get("case");
-					schema = getStringFromJson(cas.get("schema"));
-					description = (String) cas.get("description");
-					if(UNSUPPORTED_CASES.containsKey(description)){
-						return skipMsg(UNSUPPORTED_CASES.get(description), seq);
+					if(UNSUPPORTED_CASES.containsKey(runRequest.testCase().description())){
+						return skipMsg(UNSUPPORTED_CASES.get(runRequest.testCase().description()), runRequest.seq().asLong());
 					}
-					JSONArray tests = (JSONArray) cas.get("tests");
 					
 					JSONArray resultArray = new JSONArray();
-					Iterator testIterator = tests.iterator(); 
 					
-					while (testIterator.hasNext()) { 
-						test = (JSONObject) testIterator.next();
-						Object obj = test.get("instance");
-						String instance = getStringFromJson(obj);
+					for (Test test : runRequest.testCase().tests()) {
+						String instance = test.instance().toString();
 						MainClass$ m = MainClass$.MODULE$;
-						Tuple2<Object, Json> results = m.validateInstance(schema, instance);
-						boolean value = (boolean) results._1();
+						Tuple2<Object, Json> results = m.validateInstance(runRequest.testCase().schema().toString(), instance);
 						
 						JSONObject result = new JSONObject();
-						result.put("valid", value);
+						result.put("valid", (boolean) results._1());
 						resultArray.add(result);
 					}
 					
-					JSONObject output = new JSONObject();
-					output.put("seq", seq);
-					output.put("results", resultArray);
-					return output.toJSONString();
+					JSONObject out = new JSONObject();
+					out.put("seq", runRequest.seq().asLong());
+					out.put("results", resultArray);
+					return out.toJSONString();
 				}
 				catch(Exception e){
-					LOGGER.log(Level.SEVERE, "Exception occur in run command : " + cas.toJSONString() + " " + test.toJSONString(), e);
-					String msg = getDetailedMessage(e, test, schema);
-					error = errorMsg(msg, seq);
+					String msg = getDetailedMessage(e, runRequest.testCase().schema().toString());
+					error = errorMsg(msg, runRequest.seq().asLong());
 					return error;
 				}
 			  case "stop":
@@ -134,7 +128,6 @@ class Harness{
 				System.exit(0);
 			}
 		}catch(Exception e){
-			LOGGER.log(Level.SEVERE, "Exception occur in operate : ", e);
 			error = errorMsg(e.getMessage(), -1);
 			return error;
 		}
@@ -153,7 +146,6 @@ class Harness{
 	}
 	
 	public static String skipMsg(String message, long seq){
-		JSONObject traceBack = new JSONObject();
 		JSONObject error = new JSONObject();
 		error.put("skipped", true);
 		error.put("seq", seq);
@@ -161,39 +153,19 @@ class Harness{
 		return error.toJSONString();
 	}
 	
-	public static String getDetailedMessage(Exception e, JSONObject test, String schema){
+	public static String getDetailedMessage(Exception e, String schema){
 		StringWriter sw = new StringWriter();
 		e.printStackTrace(new PrintWriter(sw));
-		Object obj = test.get("instance");
-		String instance = getStringFromJson(obj);
-		return sw.toString() + " " + test.toJSONString() + " " + instance + " " + schema;
-	}
-	
-	public static String getStringFromJson(Object obj){
-		String value = "";
-		if(obj == null) {
-			value = "null";
-		}
-		else if (obj instanceof Long) {
-			value = String.valueOf((Long)obj);
-		}
-		else if (obj instanceof Double) {
-			value = String.valueOf((Double)obj);
-		}
-		else if (obj instanceof Boolean) {
-			value = String.valueOf((Boolean)obj);
-		}
-		else if (obj instanceof String) {
-			value = (String)obj;
-			JSONObject json = new JSONObject();
-			value = "\"" + json.escape(value) + "\"";
-		}
-		else if (obj instanceof JSONObject) {
-			value = ((JSONObject)obj).toJSONString();
-		}
-		else if (obj instanceof JSONArray) {
-			value = ((JSONArray)obj).toJSONString();
-		}
-		return value;
+		return sw.toString() + " " + schema;
 	}
 }
+
+record StartRequest(int version) {}
+
+record DialectRequest(String dialect) {}
+
+record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+
+record TestCase(String description, String comment, JsonNode schema, JsonNode registry, List<Test> tests) {}
+
+record Test(String description, String comment, JsonNode instance, boolean valid) {}

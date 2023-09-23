@@ -25,10 +25,16 @@ def jsonHelper = [
         name: 'json-simple',
         version: '1.1.1'
 ]
+def jsonProvider = [
+        group: 'com.fasterxml.jackson.core',
+        name: 'jackson-databind',
+        version: '2.15.2'
+]
 
 dependencies {
 	implementation files('mjs.jar')
     implementation "$jsonHelper.group:$jsonHelper.name:$jsonHelper.version"
+	implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
 }
 
 jar {
