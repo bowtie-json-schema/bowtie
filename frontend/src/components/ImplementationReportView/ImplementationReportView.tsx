@@ -1,5 +1,5 @@
 import { Card } from "react-bootstrap";
-import { useLoaderData, useParams, Link } from "react-router-dom";
+import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 // @ts-ignore
@@ -15,26 +15,20 @@ export const ImplementationReportView = () => {
 
   // Get the selected implementation's name from the URL parameters.
   const { langImplementation } = useParams();
-  const implementationName = langImplementation ?? "";
+  // FIXME: This magic prefix is duplicated from the backend side,
+  //        and probably needs some tweaking for when using a local image.
+  const image = langImplementation
+    ? `ghcr.io/bowtie-json-schema/${langImplementation}`
+    : "";
+  const implementation = allImplementations[image];
 
-  function getFilteredImplementationMetadata(
-    allImplementations: { [key: string]: Implementation },
-    implementationName: string,
-  ): Implementation {
-    const filteredKeys = Object.keys(allImplementations).filter((key) =>
-      key.includes(implementationName),
-    );
-    return allImplementations[filteredKeys[0]];
-  }
-
-  // Filter the implementation metadata using the selected implementation name.
-  const implementation = getFilteredImplementationMetadata(
-    allImplementations,
-    implementationName,
-  );
-
+  // FIXME: Probably redirect to /implementations if/when that's a thing.
   return allImplementations ? (
-    <ReportComponent implementation={implementation} />
+    implementation ? (
+      <ReportComponent implementation={implementation} />
+    ) : (
+      <Navigate to="/" />
+    )
   ) : (
     <LoadingAnimation />
   );
