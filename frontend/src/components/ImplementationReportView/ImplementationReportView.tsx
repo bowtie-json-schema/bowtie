@@ -1,7 +1,7 @@
 import { Card } from "react-bootstrap";
 import { useLoaderData, useParams, Link } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
-import { ImplementationMetadata } from "../../data/parseReportData";
+import { Implementation } from "../../data/parseReportData";
 // @ts-ignore
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
@@ -10,7 +10,7 @@ import { mapLanguage } from "../../data/mapLanguage";
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
   const allImplementations = useLoaderData() as {
-    [key: string]: ImplementationMetadata;
+    [key: string]: Implementation;
   };
 
   // Get the selected implementation's name from the URL parameters.
@@ -18,9 +18,9 @@ export const ImplementationReportView = () => {
   const implementationName = langImplementation ?? "";
 
   function getFilteredImplementationMetadata(
-    allImplementations: { [key: string]: ImplementationMetadata },
+    allImplementations: { [key: string]: Implementation },
     implementationName: string,
-  ): ImplementationMetadata {
+  ): Implementation {
     const filteredKeys = Object.keys(allImplementations).filter((key) =>
       key.includes(implementationName),
     );
@@ -40,7 +40,7 @@ export const ImplementationReportView = () => {
   );
 };
 
-const ReportComponent: React.FC<{ implementation: ImplementationMetadata }> = ({
+const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   implementation,
 }) => {
   return (

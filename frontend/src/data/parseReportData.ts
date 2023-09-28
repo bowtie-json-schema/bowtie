@@ -85,7 +85,7 @@ export const parseReportData = (lines: any[]): ReportData => {
 export const parseImplementationData = (loaderData: {
   [key: string]: ReportData;
 }) => {
-  let allImplementations: { [key: string]: ImplementationMetadata } = {};
+  let allImplementations: { [key: string]: Implementation } = {};
   const dialectCompliance: {
     [key: string]: { [key: string]: Partial<Totals> };
   } = {};
@@ -177,13 +177,13 @@ export interface RunInfo {
   started: string;
   bowtie_version: string;
   dialect: string;
-  implementations: Record<string, ImplementationMetadata>;
+  implementations: Record<string, Implementation>;
   metadata: any;
 }
 
 export interface ImplementationData {
   id: string;
-  metadata: ImplementationMetadata;
+  metadata: Implementation;
   cases: Map<number, CaseResult[]>;
   erroredCases: number;
   skippedTests: number;
@@ -197,7 +197,7 @@ export interface CaseResult {
   message?: string;
 }
 
-export interface ImplementationMetadata {
+export interface Implementation {
   language: string;
   name: string;
   version?: string;

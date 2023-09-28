@@ -1,10 +1,10 @@
 import React from "react";
 import { Card, Table } from "react-bootstrap";
-import { ImplementationMetadata } from "../../data/parseReportData";
+import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
 
 const DialectCompliance: React.FC<{
-  implementation: ImplementationMetadata;
+  implementation: Implementation;
 }> = ({ implementation }) => {
   return (
     <Card className="mx-auto mb-3 w-75">
