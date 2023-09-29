@@ -222,17 +222,41 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
-            status, data, *_ = error.args  # :/
+            # This craziness can go wrong in various ways, none of them
+            # machine parseable.
+
+            status, data, *_ = error.args
             if data.get("cause") == "image not known":
                 raise NoSuchImage(name=image_name, data=data)
 
-            try:  # GitHub Registry saying an image doesn't exist...
-                error = json.loads(data.get("message", "{}")).get("error", "")
-            except Exception:
-                pass
-            else:
-                if "403 (forbidden)" in error.casefold():
-                    raise NoSuchImage(name=image_name, data=data)
+            message = ghcr = data.get("message", "")
+
+            if status == 500:
+                try:
+                    # GitHub Registry saying an image doesn't exist as reported
+                    # within GitHub Actions' version of Podman...
+                    # This is some crazy string like:
+                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
+                    # with seemingly no other indication elsewhere and
+                    # obviously no real good way to detect this specific case
+                    no_image = message.endswith('/tags/list": denied')
+                except Exception:
+                    pass
+                else:
+                    if no_image:
+                        raise NoSuchImage(name=image_name, data=data)
+
+                try:
+                    # GitHub Registry saying an image doesn't exist as reported
+                    # locally via podman on macOS...
+
+                    # message will be ... a JSON string !?! ...
+                    error = json.loads(ghcr).get("error", "")
+                except Exception:  # not JSON, or missing keys...
+                    pass
+                else:
+                    if "403 (forbidden)" in error.casefold():
+                        raise NoSuchImage(name=image_name, data=data)
 
             raise StartupFailed(name=image_name, data=data)
 
