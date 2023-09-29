@@ -223,8 +223,17 @@ class Implementation:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
             status, data, *_ = error.args  # :/
-            if data.get("cause") == "image not known" or status == 500:
+            if data.get("cause") == "image not known":
                 raise NoSuchImage(name=image_name, data=data)
+
+            try:  # GitHub Registry saying an image doesn't exist...
+                error = json.loads(data.get("message", "{}")).get("error", "")
+            except Exception:
+                pass
+            else:
+                if "403 (forbidden)" in error.casefold():
+                    raise NoSuchImage(name=image_name, data=data)
+
             raise StartupFailed(name=image_name, data=data)
 
         yield self
