@@ -347,7 +347,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
         )
 
     assert results == []
-    assert b"got an error" in stderr.lower(), stderr
+    assert b"got an error" in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -402,7 +402,7 @@ async def test_it_prevents_network_access(hit_the_network):
         )
 
     assert results == []
-    assert b"bad address" in stderr.lower(), stderr
+    assert b"bad address" in stderr.lower(), stderr.decode()
 
 
 @pytest.mark.asyncio
@@ -424,7 +424,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert b"VersionMismatch: (1, 0)" in stderr, stderr
+    assert b"VersionMismatch: (1, 0)" in stderr, stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -775,7 +775,7 @@ async def test_no_such_image():
     assert (
         b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
         in stderr
-    )
+    ), stderr.decode()
     assert proc.returncode != 0
 
     proc = await asyncio.create_subprocess_exec(
@@ -792,7 +792,7 @@ async def test_no_such_image():
     assert (
         b"'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
         in stderr
-    )
+    ), stderr.decode()
     assert proc.returncode != 0
 
     proc = await asyncio.create_subprocess_exec(
@@ -812,5 +812,5 @@ async def test_no_such_image():
     assert (
         b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
         in stderr
-    )
+    ), stderr.decode()
     assert proc.returncode != 0
