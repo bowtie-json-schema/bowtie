@@ -15,8 +15,8 @@ dependencies:
     specifier: ^18.2.0
     version: 18.2.0
   react-bootstrap:
-    specifier: ^2.8.0
-    version: 2.8.0(@types/react@18.2.22)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^2.9.0
+    version: 2.9.0(@types/react@18.2.22)(react-dom@18.2.0)(react@18.2.0)
   react-bootstrap-icons:
     specifier: ^1.10.3
     version: 1.10.3(react@18.2.0)
@@ -2548,8 +2548,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-bootstrap@2.8.0(@types/react@18.2.22)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-e/aNtxl0Z2ozrIaR82jr6Zz7ss9GSoaXpQaxmvtDUsTZIq/XalkduR/ZXP6vbQHz2T4syvjA+4FbtwELxxmpww==}
+  /react-bootstrap@2.9.0(@types/react@18.2.22)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-dGh6fGjqR9MBzPOp2KbXJznt1Zy6SWepXYUdxMT18Zu/wJ73HCU8JNZe9dfzjmVssZYsJH9N3HHE4wAtQvNz7g==}
     peerDependencies:
       '@types/react': '>=16.14.8'
       react: '>=16.14.0'
