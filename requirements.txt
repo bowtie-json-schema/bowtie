@@ -44,7 +44,7 @@ idna==3.4
     #   yarl
 importlib-metadata==6.8.0
     # via textual
-jsonschema==4.19.0
+jsonschema==4.19.1
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.7.1
     # via jsonschema
