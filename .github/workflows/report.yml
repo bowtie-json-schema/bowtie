@@ -42,12 +42,8 @@ jobs:
       #        the image repository
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-
       - name: Install Bowtie
-        uses: bowtie-json-schema/bowtie@v2023.10.1
+        uses: ./
 
       - name: Generate the Report
         run: |
