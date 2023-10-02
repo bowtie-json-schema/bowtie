@@ -90,7 +90,7 @@ six==1.16.0
     # via python-dateutil
 structlog==23.1.0
     # via bowtie-json-schema (pyproject.toml)
-textual==0.37.1
+textual==0.38.1
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema (pyproject.toml)
