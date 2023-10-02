@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '.'
+            include 'BowtieJsonSchemaFriend.java'
+        }
+    }
+}
+
+repositories {
+    maven {
+        mavenCentral()
+        url 'https://jitpack.io'
+    }
+}
+
+def harnessImplementation = [
+        group: 'net.jimblackler.jsonschemafriend',
+        name: 'core',
+        version: '0.11.4'
+]
+def jsonProvider = [
+        group: 'com.fasterxml.jackson.core',
+        name: 'jackson-databind',
+        version: '2.15.2'
+]
+
+dependencies {
+    /* Verbose dependency notation for dependabot */
+    implementation "$harnessImplementation.group:$harnessImplementation.name:$harnessImplementation.version"
+    implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
+}
+
+jar {
+    archiveBaseName = 'harness'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes "Main-Class": "BowtieJsonSchemaFriend"
+        attributes "Implementation-Group": harnessImplementation.group
+        attributes "Implementation-Name": "jsonschemafriend"
+        attributes "Implementation-Version": harnessImplementation.version
+        attributes "Provider-Group": jsonProvider.group
+        attributes "Provider-Name": jsonProvider.name
+        attributes "Provider-Version": jsonProvider.version
+    }
+}
