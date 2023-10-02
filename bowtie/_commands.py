@@ -125,7 +125,7 @@ def command(
             try:
                 instance = json.loads(response)
             except json.JSONDecodeError as error:
-                raise exceptions._ProtocolError(errors=[error])  # type: ignore[reportPrivateUsage]  # noqa: E501
+                raise exceptions._ProtocolError(errors=[error])  # type: ignore[reportPrivateUsage]
             validate(instance=instance, schema=response_schema)
             return Response(**instance)
 
@@ -237,7 +237,7 @@ class ReportableResult(Protocol):
     errored: bool
     failed: bool
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]  # noqa: E501
+    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
         pass
 
 
@@ -259,7 +259,7 @@ class CaseResult:
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]  # noqa: E501
+    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
         reporter.got_results(self)
 
     def compare(
@@ -270,7 +270,7 @@ class CaseResult:
                 not test.skipped
                 and not test.errored
                 and expected is not None
-                and expected != test.valid  # type: ignore[reportUnknownMemberType]  # noqa: E501
+                and expected != test.valid  # type: ignore[reportUnknownMemberType]
             )
             yield test, failed
 
@@ -290,7 +290,7 @@ class CaseErrored:
 
     caught: bool = True
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]  # noqa: E501
+    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
         reporter.case_errored(self)
 
     @classmethod
@@ -324,7 +324,7 @@ class CaseSkipped:
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]  # noqa: E501
+    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
         reporter.skipped(self)
 
 
@@ -339,7 +339,7 @@ class Empty:
 
     implementation: str
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]  # noqa: E501
+    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
         reporter.no_response(implementation=self.implementation)
 
 

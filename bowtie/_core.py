@@ -85,15 +85,15 @@ class Stream:
             )
             if message is not None:
                 break
-            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
             if info["State"]["FinishedAt"]:
                 raise StreamClosed(self)
 
         if message.stream == 2:  # type: ignore[reportUnknownMemberType]
             data: list[bytes] = []
 
-            while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: E501
-                data.append(message.data)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            while message.stream == 2:  # type: ignore[reportUnknownMemberType]
+                data.append(message.data)  # type: ignore[reportUnknownMemberType]
                 message = await self._read_with_timeout()
                 if message is None:
                     raise GotStderr(b"".join(data))
@@ -101,11 +101,11 @@ class Stream:
         line: bytes
         rest: list[bytes]
         while True:
-            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]
             if rest:
-                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]  # noqa: E501
+                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]
                 self._buffer.extend(rest)
-                return line  # type: ignore[reportUnknownVariableType]  # noqa: E501
+                return line  # type: ignore[reportUnknownVariableType]
 
             message = None
             while message is None:
@@ -133,7 +133,7 @@ class DialectRunner:
             name=name,
             send=send,
             dialect=dialect,
-            start_response=await send(_commands.Dialect(dialect=dialect)),  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+            start_response=await send(_commands.Dialect(dialect=dialect)),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         )
 
     def warn_if_unacknowledged(self, reporter: Reporter):
@@ -152,7 +152,7 @@ class DialectRunner:
         command = _commands.Run(seq=seq, case=case.without_expected_results())
         try:
             expected = [test.valid for test in case.tests]
-            response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+            response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 return _commands.Empty(implementation=self._name)
             return response(implementation=self._name, expected=expected)
@@ -191,7 +191,7 @@ class Implementation:
     _stream: Stream = field(default=None, repr=False, alias="stream")
     _read_timeout_sec: float | None = field(
         default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
         repr=False,
     )
 
@@ -264,28 +264,28 @@ class Implementation:
         with suppress(GotStderr):  # XXX: Log this too?
             await self._stop()
         with suppress(aiodocker.exceptions.DockerError):
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
     async def _start_container(self):
-        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+                HostConfig=dict(NetworkMode="none"),  # type: ignore[reportUnknownArgumentType]
             ),
         )
         self._stream = Stream.attached_to(
             self._container,
             read_timeout_sec=self._read_timeout_sec,
         )
-        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         if started is None:
             return
         self.metadata = started.implementation
 
     async def _restart_container(self):
         self._restarts -= 1
-        await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
         await self._start_container()
         await self.start_speaking(dialect=self._dialect)
 
@@ -305,7 +305,7 @@ class Implementation:
         )
 
     async def _stop(self):
-        await self._send_no_response(_commands.STOP)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+        await self._send_no_response(_commands.STOP)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
 
     async def _send_no_response(self, cmd: _commands.Command[Any]):
         request = cmd.to_request(validate=self._maybe_validate)
@@ -331,7 +331,7 @@ class Implementation:
                     response=response,
                     validate=self._maybe_validate,
                 )
-            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]  # noqa: E501
+            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]
                 self._reporter.invalid_response(
                     error=error,
                     implementation=self,

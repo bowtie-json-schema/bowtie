@@ -10,7 +10,7 @@ from yaml import safe_load as loads
 ROOT = Path(__file__).absolute().parent.parent
 DEPENDABOT = ROOT.joinpath(".github/dependabot.yml").read_text()
 IMPLEMENTATIONS = ROOT / "implementations"
-DEPENDABOT_DOCS = "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem"  # noqa: E501
+DEPENDABOT_DOCS = "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem"
 
 # Every implementation must appear both for container image updates
 # (in the docker ecosystem) as well as for its own packaging ecosystem

@@ -98,8 +98,8 @@ FORMAT = click.option(
 _F = Literal["json", "pretty"]
 
 
-@tui(help="Open a simple interactive TUI for executing Bowtie commands.")  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))  # type: ignore[reportUntypedFunctionDecorator]  # noqa: E501
+@tui(help="Open a simple interactive TUI for executing Bowtie commands.")  # type: ignore[reportGeneralTypeIssues]
+@click.group(context_settings=dict(help_option_names=["--help", "-h"]))  # type: ignore[reportUntypedFunctionDecorator]
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
     """
@@ -162,9 +162,9 @@ def summary(input: Iterable[str], format: _F, show: str):
 
     match format:
         case "json":
-            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
-            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
 
 
@@ -180,7 +180,7 @@ def _ordered_failures(
     )
     return sorted(
         counts,
-        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]
     )
 
 
@@ -261,31 +261,31 @@ def _validation_results_table(
 
 
 def validator_for_dialect(dialect: str | None = None):
-    path = files("bowtie.schemas") / "io-schema.json"  # type: ignore[reportUnknownMemberType]  # noqa: E501
-    root_schema = json.loads(path.read_text())  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+    path = files("bowtie.schemas") / "io-schema.json"  # type: ignore[reportUnknownMemberType]
+    root_schema = json.loads(path.read_text())  # type: ignore[reportUnknownArgumentType]
 
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-    Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]
+    Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]
 
     if dialect is None:
-        dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]
 
-    root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
-    registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]
+    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]
+    registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]
         uri=CURRENT_DIALECT_URI,
         resource=specification.create_resource({"$ref": dialect}),
     )
 
     def validate(instance: Any, schema: Any) -> None:
-        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
+        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]
         if errors:
-            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
+            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 
     return validate
 
@@ -298,7 +298,7 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
     help="A docker image which implements the bowtie IO protocol.",
     required=True,
     multiple=True,
@@ -311,14 +311,14 @@ DIALECT = click.option(
         "A URI or shortname identifying the dialect of each test case."
         f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
     ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]
     default=LATEST_DIALECT_NAME,
     show_default=True,
 )
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
     help="Only run cases whose description match the given glob pattern.",
 )
 FAIL_FAST = click.option(
@@ -361,7 +361,7 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
@@ -504,7 +504,7 @@ async def _info(image_names: list[str], format: _F):
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help="Don't print any output, just exit with nonzero status on failure.",
 )
@@ -587,10 +587,10 @@ async def _smoke(
                     echo(json.dumps(serializable, indent=2))
                 case "pretty":
                     async for case, response in responses:
-                        if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        if response.errored:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
-                        elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        elif response.failed:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
                             message = "✗ (failed)"
                         else:
@@ -631,19 +631,19 @@ class _TestSuiteCases(click.ParamType):
             from github3 import (  # type: ignore[reportMissingTypeStubs]
                 GitHub,  # type: ignore[reportUnknownVariableType]
             )
-            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]  # noqa: E501
+            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]
 
             # isort: on
 
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # type: ignore[reportUnknownVariableType]  # noqa: E501
-            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # type: ignore[reportUnknownVariableType]
+            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]
 
             _, _, rest = (
                 value[len(TEST_SUITE_URL) :].lstrip("/").partition("/")
             )
             ref, sep, partial = rest.partition("/tests")
             data = BytesIO()
-            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
@@ -652,13 +652,13 @@ class _TestSuiteCases(click.ParamType):
                 cases = list(cases)
 
             try:
-                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
             except NotFoundError:
                 commit_info = ref
             else:
                 # TODO: Make this the tree URL maybe, but I see tree(...)
                 #       doesn't come with an html_url
-                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
             run_metadata: dict[str, Any] = {"Commit": commit_info}
 
         if dialect is not None:
@@ -814,11 +814,11 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]
 
                 if should_stop:
                     break
-            reporter.finished(count=seq, did_fail_fast=should_stop)  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            reporter.finished(count=seq, did_fail_fast=should_stop)  # type: ignore[reportUnknownArgumentType]
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
@@ -844,7 +844,7 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
 def sequenced(
     cases: Iterable[TestCase],
     reporter: _report.Reporter,
-) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]  # noqa: E501
+) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
@@ -951,10 +951,10 @@ def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
 def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
         return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
+    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
 
 
 def _stem(path: _P) -> str:  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
-    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
+    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]

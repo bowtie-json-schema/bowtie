@@ -193,9 +193,9 @@ class Count:
 @mutable
 class _Summary:
     implementations: Iterable[dict[str, Any]] = field(
-        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]
             value,  # type: ignore[reportUnknownArgumentType]
-            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]
         ),
     )
     _combined: dict[int, Any] = field(factory=dict)
@@ -274,10 +274,10 @@ class _Summary:
             count.total_tests += 1
             if test.skipped:
                 count.skipped_tests += 1
-                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]
             elif test.errored:
                 count.errored_tests += 1
-                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]
             else:
                 if failed:
                     count.failed_tests += 1

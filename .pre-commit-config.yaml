@@ -21,6 +21,7 @@ repos:
     rev: "v0.0.292"
     hooks:
       - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
   - repo: local
     hooks:
       - id: check-dependabot
