@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 WORKDIR /usr/src/myapp
 RUN python3 -m pip install jschon
 COPY bowtie_jschon.py .
