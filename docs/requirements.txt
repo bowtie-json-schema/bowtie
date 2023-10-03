@@ -20,7 +20,7 @@ attrs==23.1.0
     #   bowtie-json-schema
     #   jsonschema
     #   referencing
-babel==2.12.1
+babel==2.13.0
     # via sphinx
 beautifulsoup4==4.12.2
     # via furo
@@ -28,9 +28,9 @@ file:.#egg=bowtie-json-schema
     # via -r docs/requirements.in
 certifi==2023.7.22
     # via requests
-cffi==1.15.1
+cffi==1.16.0
     # via cryptography
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via
     #   aiohttp
     #   requests
@@ -43,13 +43,13 @@ contourpy==1.1.1
     # via matplotlib
 cryptography==41.0.4
     # via pyjwt
-cycler==0.11.0
+cycler==0.12.0
     # via matplotlib
 docutils==0.20.1
     # via
     #   sphinx
     #   sphinx-click
-fonttools==4.42.1
+fonttools==4.43.0
     # via matplotlib
 frozenlist==1.4.0
     # via
@@ -69,7 +69,7 @@ importlib-metadata==6.8.0
     # via textual
 jinja2==3.1.2
     # via sphinx
-jsonschema==4.19.0
+jsonschema==4.19.1
     # via bowtie-json-schema
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -100,7 +100,7 @@ numpy==1.26.0
     # via
     #   contourpy
     #   matplotlib
-packaging==23.1
+packaging==23.2
     # via
     #   matplotlib
     #   sphinx
@@ -135,7 +135,7 @@ requests==2.31.0
     # via
     #   github3-py
     #   sphinx
-rich==13.5.3
+rich==13.6.0
     # via
     #   bowtie-json-schema
     #   textual
@@ -190,8 +190,14 @@ sphinxext-opengraph==0.8.2
     # via -r docs/requirements.in
 structlog==23.1.0
     # via bowtie-json-schema
-textual==0.37.1
+textual==0.38.1
     # via trogon
+tree-sitter==0.20.2
+    # via
+    #   textual
+    #   tree-sitter-languages
+tree-sitter-languages==1.7.0
+    # via textual
 trogon==0.5.0
     # via bowtie-json-schema
 typing-extensions==4.8.0
@@ -202,7 +208,7 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 yarl==1.9.2
     # via

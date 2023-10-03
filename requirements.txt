@@ -92,6 +92,12 @@ structlog==23.1.0
     # via bowtie-json-schema (pyproject.toml)
 textual==0.38.1
     # via trogon
+tree-sitter==0.20.2
+    # via
+    #   textual
+    #   tree-sitter-languages
+tree-sitter-languages==1.7.0
+    # via textual
 trogon==0.5.0
     # via bowtie-json-schema (pyproject.toml)
 typing-extensions==4.8.0
