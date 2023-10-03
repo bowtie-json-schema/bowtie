@@ -102,7 +102,7 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 yarl==1.9.2
     # via aiohttp
