@@ -592,9 +592,9 @@ async def _smoke(
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
                             logger.error(
-                                case,
+                                case.description,
                                 logger_name=response.implementation,
-                                **response.context,
+                                **response.context,  # type: ignore[reportGeneralTypeIssues]
                             )
                         elif response.failed:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
