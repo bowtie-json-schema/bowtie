@@ -523,6 +523,7 @@ async def _smoke(
     format: _F,
     echo: Callable[..., None],
 ):
+    logger = structlog.stdlib.get_logger()
     exit_code = 0
     async with _start(
         image_names=image_names,
@@ -590,6 +591,11 @@ async def _smoke(
                         if response.errored:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
+                            logger.error(
+                                case,
+                                logger_name=response.implementation,
+                                **response.context,
+                            )
                         elif response.failed:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
                             message = "✗ (failed)"
