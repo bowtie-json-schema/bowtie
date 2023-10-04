@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar, cast
+import re
 
 try:
     from typing import dataclass_transform
@@ -101,14 +102,18 @@ class Command(Protocol[_R]):
 
 @dataclass_transform()
 def command(
-    name: str,
     Response: Callable[..., _R | None],
+    name: str = "",
 ) -> Callable[[type], type[Command[_R]]]:
-    uri = f"https://bowtie.report/io-schema/{name}/"
-    request_schema = {"$ref": uri}
-    response_schema = {"$ref": f"{uri}response/"}
-
     def _command(cls: type) -> type[Command[_R]]:
+        nonlocal name
+        if not name:
+            name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
+
+        uri = f"https://bowtie.report/io-schema/{name}/"
+        request_schema = {"$ref": uri}
+        response_schema = {"$ref": f"{uri}response/"}
+
         def to_request(
             self: Command[_R],
             validate: Callable[..., None],
@@ -137,7 +142,7 @@ def command(
     return _command
 
 
-@command(name="start", Response=Started)
+@command(Response=Started)
 class Start:
     version: int
 
@@ -155,7 +160,7 @@ class StartedDialect:
 StartedDialect.OK = StartedDialect(ok=True)
 
 
-@command(name="dialect", Response=StartedDialect)
+@command(Response=StartedDialect)
 class Dialect:
     dialect: str
 
@@ -345,13 +350,13 @@ class Empty:
         reporter.no_response(implementation=self.implementation)
 
 
-@command(name="run", Response=_case_result)
+@command(Response=_case_result)
 class Run:
     seq: int
     case: dict[str, Any]
 
 
-@command(name="stop", Response=lambda: None)
+@command(Response=lambda: None)
 class Stop:
     pass
 
