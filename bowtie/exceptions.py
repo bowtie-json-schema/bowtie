@@ -11,6 +11,10 @@ if TYPE_CHECKING:
     from bowtie._core import Implementation
 
 
+#: The current version of Bowtie's IO protocol.
+_PROTOCOL_VERSION = 1
+
+
 @frozen
 class StartupFailure(Exception):
     """
@@ -34,8 +38,22 @@ class VersionMismatch(Exception):
     The wrong protocol version was returned from an implementation.
     """
 
-    expected: int
     got: int
+    expected: int = _PROTOCOL_VERSION
+
+    def __str__(self) -> str:
+        return (
+            f"Expected to speak version {self.expected} of the Bowtie "
+            f"protocol but the implementation sent {self.got}."
+        )
+
+    @classmethod
+    def check(cls, got: int) -> None:
+        """
+        Complain if we are speaking the wrong protocol version.
+        """
+        if got != _PROTOCOL_VERSION:
+            raise cls(got=got)
 
 
 @frozen

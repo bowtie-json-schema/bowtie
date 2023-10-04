@@ -72,17 +72,14 @@ class TestCase:
 class Started:
     implementation: dict[str, Any]
     ready: bool = field()
-    version: int = field()
+    version: int = field(
+        validator=lambda _, __, got: exceptions.VersionMismatch.check(got),
+    )
 
     @ready.validator  # type: ignore[reportGeneralTypeIssues]
     def _check_ready(self, _: Any, ready: bool):
         if not ready:
             raise exceptions.ImplementationNotReady()
-
-    @version.validator  # type: ignore[reportGeneralTypeIssues]
-    def _check_version(self, _: Any, version: int):
-        if version != 1:
-            raise exceptions.VersionMismatch(expected=1, got=version)
 
 
 _R = TypeVar("_R", covariant=True)

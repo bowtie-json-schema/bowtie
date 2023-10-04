@@ -424,7 +424,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert b"VersionMismatch: (1, 0)" in stderr, stderr.decode()
+    assert b"expected to speak version 1 " in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
