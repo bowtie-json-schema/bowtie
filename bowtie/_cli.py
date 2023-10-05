@@ -569,7 +569,7 @@ async def _smoke(
                 ),
             ]
             responses = (
-                (case, await runner.run_case(seq=seq, case=case))
+                (case, await case.run(seq=seq, runner=runner))
                 for seq, case in enumerate(cases)
             )
 
@@ -812,7 +812,7 @@ async def _run(
                     case.schema["$schema"] = dialect
 
                 responses = [
-                    each.run_case(seq=seq, case=case) for each in runners
+                    case.run(seq=seq, runner=runner) for runner in runners
                 ]
                 for each in asyncio.as_completed(responses):
                     response = await each

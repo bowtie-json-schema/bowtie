@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
@@ -144,21 +144,20 @@ class DialectRunner:
                 response=self._start_response,
             )
 
-    async def run_case(
+    async def run_validation(
         self,
-        seq: int,
-        case: _commands.TestCase,
+        command: _commands.Run,
+        tests: Iterable[_commands.Test],
     ) -> _commands.ReportableResult:
-        command = _commands.Run(seq=seq, case=case.without_expected_results())
         try:
-            expected = [test.valid for test in case.tests]
+            expected = [test.valid for test in tests]
             response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 return _commands.Empty(implementation=self._name)
             return response(implementation=self._name, expected=expected)
         except GotStderr as error:
             return _commands.CaseErrored.uncaught(
-                seq=seq,
+                seq=command.seq,
                 implementation=self._name,
                 stderr=error.stderr.decode("utf-8"),
             )
