@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from importlib.resources import files
@@ -26,7 +26,7 @@ import structlog
 import structlog.typing
 
 from bowtie import _report
-from bowtie._commands import ReportableResult, Test, TestCase
+from bowtie._commands import Test, TestCase
 from bowtie._core import (
     DialectRunner,
     GotStderr,
@@ -568,7 +568,7 @@ async def _smoke(
                     ],
                 ),
             ]
-            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (
+            responses = (
                 (case, await runner.run_case(seq=seq, case=case))
                 for seq, case in enumerate(cases)
             )
@@ -811,7 +811,7 @@ async def _run(
                 if set_schema and not isinstance(case.schema, bool):
                     case.schema["$schema"] = dialect
 
-                responses: Iterable[Awaitable[ReportableResult]] = [
+                responses = [
                     each.run_case(seq=seq, case=case) for each in runners
                 ]
                 for each in asyncio.as_completed(responses):
