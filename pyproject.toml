@@ -43,7 +43,6 @@ classifiers = [
   "Topic :: File Formats :: JSON :: JSON Schema",
 ]
 dynamic = ["version"]
-
 dependencies = [
   "aiodocker",
   "attrs>=22.2.0",
@@ -66,10 +65,22 @@ Homepage = "https://bowtie.report/"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 
+[tool.coverage.html]
+show_contexts = true
+skip_covered = false
+
 [tool.coverage.run]
 branch = true
 source = ["bowtie"]
 dynamic_context = "test_function"
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "\\s*\\.\\.\\.\\s*",
+]
+show_missing = true
+skip_covered = true
 
 [tool.doc8]
 ignore = [
@@ -137,8 +148,8 @@ extend-exclude = ["json"]
 docstring-quotes = "double"
 
 [tool.ruff.per-file-ignores]
-"docs/*" = ["ANN", "D"]
 "noxfile.py" = ["ANN", "D100"]
+"docs/*" = ["ANN", "D"]
 "tests/*" = ["ANN", "D", "RUF012"]
 "implementations/*" = ["ANN", "D"]
 "bowtie/schemas/__init__.py" = ["D"]
