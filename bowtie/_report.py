@@ -37,7 +37,7 @@ def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
 
 @frozen
 class Reporter:
-    _write: Callable[..., Any] = field(default=writer())
+    _write: Callable[..., Any] = field(default=writer(), alias="write")
     _log: structlog.stdlib.BoundLogger = field(
         factory=structlog.stdlib.get_logger,
     )

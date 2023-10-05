@@ -523,12 +523,12 @@ async def _smoke(
     format: _F,
     echo: Callable[..., None],
 ):
-    logger = structlog.stdlib.get_logger()
+    reporter = _report.Reporter(write=lambda **_: None)
     exit_code = 0
     async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
-        reporter=_report.Reporter(),
+        reporter=reporter,
     ) as starting:
         for each in asyncio.as_completed(starting):
             try:
@@ -569,7 +569,7 @@ async def _smoke(
                 ),
             ]
             responses = (
-                (case, await case.run(seq=seq, runner=runner))
+                (seq, case, await case.run(seq=seq, runner=runner))
                 for seq, case in enumerate(cases)
             )
 
@@ -583,18 +583,19 @@ async def _smoke(
                                 failed=response.failed,
                             ),
                         }
-                        async for case, response in responses
+                        async for _, case, response in responses
                     ]
                     echo(json.dumps(serializable, indent=2))
                 case "pretty":
-                    async for case, response in responses:
+                    async for seq, case, response in responses:
                         if response.errored:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
-                            logger.error(
-                                case.description,
-                                logger_name=response.implementation,
-                                **response.context,  # type: ignore[reportGeneralTypeIssues]
+                            response.report(
+                                reporter=reporter.case_started(
+                                    seq=seq,
+                                    case=case,
+                                )
                             )
                         elif response.failed:  # type: ignore[reportGeneralTypeIssues]
                             exit_code |= os.EX_DATAERR
