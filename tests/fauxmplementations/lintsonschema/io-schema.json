@@ -1,37 +1,49 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bowtie-json-schema/bowtie/v0/io-schema.json",
   "title": "Bowtie IO Protocol",
   "description": "Input/output specification for Bowtie, a meta-validator for JSON Schema validator implementations",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://bowtie.report/io-schema/",
 
   "$defs": {
-    "version": { "type": "integer", "const": 1 },
+    "version": {
+      "description": "The current version of this protocol, to be incremented if changed",
+
+      "$anchor": "version",
+
+      "type": "integer",
+      "const": 1
+    },
 
     "command": {
       "type": "object",
       "required": ["cmd"],
       "unevaluatedProperties": false,
       "oneOf": [
-        { "$ref": "#/$defs/command/$defs/start" },
-        { "$ref": "#/$defs/command/$defs/dialect" },
-        { "$ref": "#/$defs/command/$defs/run" },
-        { "$ref": "#/$defs/command/$defs/stop" }
+        { "$ref": "start" },
+        { "$ref": "dialect" },
+        { "$ref": "run" },
+        { "$ref": "stop" }
       ],
 
       "$defs": {
         "start": {
           "description": "Sent once at program start to the implementation to indicate Bowtie is starting to send test cases.",
 
+          "$id": "start/",
+
           "required": ["version"],
           "properties": {
             "cmd": { "const": "start" },
             "version": {
               "description": "The version of the Bowtie protocol which is intended.",
-              "$ref": "#/$defs/version"
+              "$ref": "../#version"
             }
           },
           "$defs": {
             "response": {
+              "$id": "response/",
+
               "type": "object",
               "required": ["ready", "version", "implementation"],
               "properties": {
@@ -41,20 +53,31 @@
                 },
                 "version": {
                   "description": "Confirmation of the Bowtie version",
-                  "$ref": "#/$defs/version"
+                  "$ref": "../../#version"
                 },
                 "implementation": {
                   "description": "Metadata about the implementation. The list below contain required or suggested values, but implementation-specific additional metadata can also be included and will be preserved in emitted reports.",
+
                   "type": "object",
-                  "required": ["language", "name", "dialects", "issues"],
+                  "required": [
+                    "name",
+                    "language",
+                    "dialects",
+                    "homepage",
+                    "issues"
+                  ],
                   "properties": {
                     "language": {
                       "description": "The implementation language (e.g. C++, Python, etc.)",
-                      "type": "string"
+
+                      "type": "string",
+                      "pattern": "^[a-z0-9-+_]*$"
                     },
                     "name": {
                       "description": "The name of the implementation itself",
-                      "type": "string"
+
+                      "type": "string",
+                      "pattern": "^[A-Za-z][\\w\\-.]*[A-Za-z0-9]$"
                     },
                     "version": {
                       "description": "The implementation version",
@@ -62,21 +85,25 @@
                     },
                     "dialects": {
                       "description": "A list of JSON Schema dialects (URIs) which the implementation understands. When running test cases, this list will be consulted before sending them to the implementation (and any unsupported dialects will be skipped).",
+
                       "type": "array",
                       "items": { "type": "string", "format": "uri" }
                     },
                     "homepage": {
                       "description": "A URL for the implementation's homepage",
+
                       "type": "string",
                       "format": "uri"
                     },
                     "issues": {
                       "description": "A URL for the implementation's bug tracker",
+
                       "type": "string",
                       "format": "uri"
                     },
                     "links": {
                       "description": "Additional web page links relevant to the implementation",
+
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -85,6 +112,18 @@
                           "url": { "type": "string", "format": "uri" }
                         }
                       }
+                    },
+                    "os": {
+                      "description": "Operating system the implementation is running on",
+                      "type": "string"
+                    },
+                    "os_version": {
+                      "description": "Version of OS the implementation is running on",
+                      "type": "string"
+                    },
+                    "language_version": {
+                      "description": "Version of language used to run the implementation",
+                      "type": "string"
                     }
                   }
                 }
@@ -96,16 +135,21 @@
         "dialect": {
           "description": "Sent to indicate an 'implicit dialect' -- i.e. which dialect is intended for schemas which do not contain $schema. May be sent multiple times by bowtie to indicate a change in implicit dialect. Note that implementations do not have to support processing such schemas in certain versions of the JSON Schema specification. Harnesses should *not* attempt to pepper this behavior over, or otherwise change the behavior of an implementation. In other words, this value should *not* be used to mutate incoming schemas (by inserting $schema). If an implementation does not support indicating what dialect a schema is written against unless indicated by $schema, or if it refuses to process schemas which do not contain $schema entirely, it should respond to this command as indicated below, and simply error when running cases containing such schemas as it would when used normally. Regardless of the dialect specified by this request, *explicitly* dialected schemas (which do contain $schema) with a different dialect may still be sent (as long as the implementation has signalled it supports the dialect)!",
 
+          "$id": "dialect/",
+
           "properties": {
             "cmd": { "const": "dialect" },
             "dialect": {
               "description": "A dialect URI which has previously been recognized as supported by the implementation's start response.",
+
               "type": "string",
               "format": "uri"
             }
           },
           "$defs": {
             "response": {
+              "$id": "response/",
+
               "oneOf": [
                 {
                   "description": "The implementation supports out-of-band indication of schema dialects and has configured itself for the dialect sent.",
@@ -123,38 +167,40 @@
         "run": {
           "description": "Sent to implementations for each test case.",
 
+          "$id": "run/",
+
           "required": ["seq", "case"],
           "properties": {
             "cmd": { "const": "run" },
             "seq": {
-              "description": "A sequence identifier for the test case. It must be passed along as-is in the response."
+              "description": "A sequence identifier for the test case. It must be passed along as-is in the response.",
+              "$anchor": "seq"
             },
-            "case": { "$ref": "#/$defs/case" }
+            "case": { "$ref": "../#case" }
           },
           "$defs": {
             "response": {
+              "$id": "response/",
+
               "type": "object",
               "required": ["seq"],
               "unevaluatedProperties": false,
               "properties": {
                 "seq": {
-                  "description": "The unchanged sequence identifier originally provided in the request."
+                  "description": "The unchanged sequence identifier originally provided in the request.",
+                  "$ref": "../#seq"
                 }
               },
               "oneOf": [
-                {
-                  "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/result"
-                },
-                {
-                  "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped"
-                },
-                {
-                  "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/errored"
-                }
+                { "$ref": "#result" },
+                { "$ref": "#skipped" },
+                { "$ref": "#errored" }
               ],
               "$defs": {
                 "result": {
                   "description": "Signal that the implementation ran the test case (though may have skipped tests within it) and got the provided result.",
+
+                  "$anchor": "result",
 
                   "required": ["results"],
                   "properties": {
@@ -167,15 +213,10 @@
                             "properties": {
                               "valid": { "type": "boolean" }
                             },
-                            "required": ["valid"],
-                            "additionalProperties": false
+                            "required": ["valid"]
                           },
-                          {
-                            "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/skipped"
-                          },
-                          {
-                            "$ref": "#/$defs/command/$defs/run/$defs/response/$defs/errored"
-                          }
+                          { "$ref": "#skipped" },
+                          { "$ref": "#errored" }
                         ]
                       }
                     }
@@ -183,6 +224,8 @@
                 },
                 "skipped": {
                   "description": "Signal that the implementation skipped the test case or test (typically because it is a known bug). Either an issue URL or a human-readable message is encouraged to explain the skip.",
+
+                  "$anchor": "skipped",
 
                   "required": ["skipped"],
                   "properties": {
@@ -193,6 +236,7 @@
                     },
                     "issue_url": {
                       "description": "An optional link to a relevant issue on the implementation's bug tracker.",
+
                       "type": "string",
                       "format": "url"
                     }
@@ -201,11 +245,29 @@
                 "errored": {
                   "description": "Signal that the implementation encountered an internal error (which it caught). Additional context can be passed along (e.g. a traceback or exception detail).",
 
+                  "$anchor": "errored",
+
                   "required": ["errored"],
                   "properties": {
                     "errored": { "const": true },
                     "context": {
-                      "description": "Additional implementation-specific or language-specific context available when the error was caught."
+                      "description": "Additional implementation-specific or language-specific context available when the error was caught.",
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "description": "A (short) description of the error.",
+                          "type": "string"
+                        },
+                        "traceback": {
+                          "description": "A language-specific traceback (backtrace) containing stack frames or fuller debugging information on where the error occurred.",
+                          "type": "string"
+                        },
+                        "stderr": {
+                          "description": "The raw (captured) contents of standard error from within the harness. Prefer using 'traceback' if the contents are a traceback.",
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
                     }
                   }
                 }
@@ -217,16 +279,20 @@
         "stop": {
           "description": "Sent once at program end to the implementation to indicate it should shut down. No response is required.",
 
+          "$id": "stop/",
+
           "properties": {
             "cmd": { "const": "stop" }
           },
-          "$defs": { "response": {} }
+          "$defs": { "response": { "$id": "response/" } }
         }
       }
     },
 
     "case": {
       "description": "An individual test case, consisting of a single schema and one or more instances to validate under it",
+
+      "$anchor": "case",
 
       "type": "object",
       "required": ["description", "schema", "tests"],
@@ -241,6 +307,7 @@
         },
         "schema": {
           "description": "A valid JSON Schema.",
+          "$comment": "the `urn:current-dialect` URI used here is a sort of 'magic' URI set by Bowtie during runs, which will resolve to (effectively) the meta-schema for the current dialect being run by Bowtie. E.g. when running tests using the Draft 2020-12 dialect, the URI will resolve to the schema `{\"$ref\": \"https://json-schema.org/draft/2020-12/schema\"}`. This sort of dynamically set value is necessary, as schemas are supposed to be valid under the current dialect being spoken by Bowtie, but that's not known until runtime.",
           "$ref": "urn:current-dialect"
         },
         "registry": {
@@ -251,7 +318,7 @@
         "tests": {
           "description": "A set of related tests all using the same schema",
           "type": "array",
-          "items": { "$ref": "#/$defs/test" },
+          "items": { "$ref": "#test" },
           "minItems": 1
         }
       },
@@ -259,6 +326,8 @@
     },
     "test": {
       "description": "A single test",
+
+      "$anchor": "test",
 
       "type": "object",
       "required": ["description", "instance"],

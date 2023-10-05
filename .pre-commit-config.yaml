@@ -30,6 +30,11 @@ repos:
         pass_filenames: false
         entry: .pre-commit-hooks/check-dependabot
         additional_dependencies: [pyyaml]
+      - id: check-lintsonschema
+        name: check lintsonschema for drift
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-lintsonschema-schema
   - repo: https://github.com/psf/black
     rev: 23.9.1
     hooks:

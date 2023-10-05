@@ -28,19 +28,13 @@ CURRENT_DIALECT = Resource.from_contents(
 REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
 
 Validator = jsonschema.validators.validator_for(SCHEMA)
-REQUEST_VALIDATOR = Validator(
-    schema={"$ref": f"{SCHEMA['$id']}#/$defs/command"},
-    registry=REGISTRY,
-)
-RESPONSE_VALIDATORS = {
-    k: Validator(
-        registry=REGISTRY,
-        schema={
-            "$ref": f"{SCHEMA['$id']}#/$defs/command/$defs/{k}/$defs/response",
-        },
+VALIDATORS = {}
+for command in SCHEMA["$defs"]["command"]["$defs"]:
+    uri = f"https://bowtie.report/io-schema/{command}/"
+    VALIDATORS[command] = dict(
+        request=Validator({"$ref": uri}, registry=REGISTRY),
+        response=Validator({"$ref": f"{uri}response/"}, registry=REGISTRY),
     )
-    for k in SCHEMA["$defs"]["command"]["$defs"]
-}
 
 
 @dataclass
@@ -52,12 +46,13 @@ class Runner:
     def run(self, stdin=sys.stdin):
         for line in stdin:
             each = json.loads(line)
-            for error in REQUEST_VALIDATOR.iter_errors(each):
+            cmd = each["cmd"]
+            for error in VALIDATORS[cmd]["request"].iter_errors(each):
                 self._stderr.write(error.message)
                 self._stderr.write("\n")
-            cmd = each.pop("cmd")
+            del each["cmd"]
             response = getattr(self, f"cmd_{cmd}")(**each)
-            for error in RESPONSE_VALIDATORS[cmd].iter_errors(response):
+            for error in VALIDATORS[cmd]["response"].iter_errors(response):
                 self._stderr.write(error.message)
                 self._stderr.write("\n")
             self._stdout.write(f"{json.dumps(response)}\n")
