@@ -102,7 +102,7 @@ class Runner:
 
     def cmd_dialect(self, dialect):
         assert self._started, "Not started!"
-        return dict(ok=True)
+        self.send(ok=True)
 
     def cmd_run(self, case, seq):
         assert self._started, "Not started!"
