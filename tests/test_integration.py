@@ -495,8 +495,8 @@ async def test_smoke_json(envsonschema):
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate()
-    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
-    #        Change to asserting about the smoke stdout once that's there.
+    # FIXME: This == 0 is doubly wrong, and due to #520.
+    #        Change to asserting about the smoke stdout once that's fixed.
     assert proc.returncode == 0, (stdout, stderr)
     assert json.loads(stdout) == [
         {
