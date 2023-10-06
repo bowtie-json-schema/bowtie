@@ -199,7 +199,7 @@ def benchmark(fn):
     @session(default=False, tags=["perf"], name=f"bench({name})")
     @wraps(fn)
     def _benchmark(session):
-        session.install(REQUIREMENTS)
+        session.install("-r", REQUIREMENTS["main"], ROOT)
         bowtie = Path(session.bin) / "bowtie"
         hyperfine_args, command = fn(session=session, bowtie=bowtie)
         session.run("hyperfine", *hyperfine_args, command, external=True)
