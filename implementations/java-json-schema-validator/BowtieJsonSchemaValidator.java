@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.JsonSchemaVersion;
+import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.uri.URIFetcher;
 import java.io.*;
@@ -19,31 +21,24 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private static final List<String> DIALECTS =
-      List.of("https://json-schema.org/draft/2020-12/schema",
-              "https://json-schema.org/draft/2019-09/schema",
-              "http://json-schema.org/draft-07/schema#",
-              "http://json-schema.org/draft-06/schema#",
-              "http://json-schema.org/draft-04/schema#");
-
-  private JsonMetaSchema getVersionFromDialect(String dialect) {
+  private SpecVersion.VersionFlag getVersionFromDialect(String dialect) {
     switch (dialect) {
     case "https://json-schema.org/draft/2020-12/schema":
-      return JsonMetaSchema.getV202012();
+      return SpecVersion.VersionFlag.V202012;
     case "https://json-schema.org/draft/2019-09/schema":
-      return JsonMetaSchema.getV201909();
+      return SpecVersion.VersionFlag.V201909;
     case "http://json-schema.org/draft-07/schema#":
-      return JsonMetaSchema.getV7();
+      return SpecVersion.VersionFlag.V7;
     case "http://json-schema.org/draft-06/schema#":
-      return JsonMetaSchema.getV6();
+      return SpecVersion.VersionFlag.V6;
     case "http://json-schema.org/draft-04/schema#":
-      return JsonMetaSchema.getV4();
+      return SpecVersion.VersionFlag.V4;
     default:
-      return JsonMetaSchema.getV202012();
+      throw new IllegalArgumentException("Unsupported value" + dialect);
     }
   }
 
-  private String dialect;
+  private SpecVersion.VersionFlag versionFlag;
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -102,69 +97,80 @@ public class BowtieJsonSchemaValidator {
         "java",
         attributes.getValue("Implementation-Name"),
         attributes.getValue("Implementation-Version"),
-        DIALECTS,
+        List.of(
+          "https://json-schema.org/draft/2020-12/schema",
+          "https://json-schema.org/draft/2019-09/schema",
+          "http://json-schema.org/draft-07/schema#",
+          "http://json-schema.org/draft-06/schema#",
+          "http://json-schema.org/draft-04/schema#"
+        ),
         "https://github.com/networknt/json-schema-validator/",
         "https://github.com/networknt/json-schema-validator/issues",
         System.getProperty("os.name"),
         System.getProperty("os.version"),
-        Runtime.version().toString()
+        Runtime.version().toString(),
+        List.of()
       )
     );
     output.println(objectMapper.writeValueAsString(startResponse));
   }
 
   private void dialect(JsonNode node) throws JsonProcessingException {
+    if (!started) {
+      throw new IllegalArgumentException("Not started!");
+    }
+
     DialectRequest dialectRequest = objectMapper.treeToValue(
       node,
       DialectRequest.class
     );
 
-    if (!started) {
-      throw new IllegalArgumentException("Not started!");
-    }
-
-    dialect = dialectRequest.dialect();
-    if (dialect == null) {
-      throw new IllegalArgumentException("Bad dialect!");
-    }
+    versionFlag = getVersionFromDialect(dialectRequest.dialect());
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void run(JsonNode node)
-    throws JsonProcessingException {
+  private void run(JsonNode node) throws JsonProcessingException {
     if (!started) {
       throw new IllegalArgumentException("Not started!");
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
-    if (runRequest.testCase().registry() != null) {
-      CustomURIFetcher uriFetcher = new CustomURIFetcher(
-        runRequest.testCase().registry()
-      );
+    try {
 
-      JsonSchemaFactory factory = JsonSchemaFactory
-        .builder()
-        .uriFetcher(uriFetcher, "http")
-        .uriFetcher(uriFetcher, "https")
-        .addMetaSchema(getVersionFromDialect(dialect))
-        .defaultMetaSchemaURI(getVersionFromDialect(dialect).getUri())
-        .build();
-      try {
-        List<TestResult> results = runRequest
-          .testCase()
-          .tests()
-          .stream()
-          .map(test -> {
-            JsonSchema jsonSchema = factory.getSchema(
-              runRequest.testCase().schema()
-            );
-            Set<ValidationMessage> errors = jsonSchema.validate(
-              test.instance()
-            );
-            boolean isValid = errors == null || errors.isEmpty();
-            return new TestResult(isValid);
-          })
-          .toList();
+      final JsonSchemaFactory factory;
+      if (runRequest.testCase().registry() == null) {
+        factory = JsonSchemaFactory.getInstance(versionFlag);
+      } else {
+        CustomURIFetcher uriFetcher = new CustomURIFetcher(
+          runRequest.testCase().registry()
+        );
+
+        JsonSchemaVersion jsonSchemaVersion = JsonSchemaFactory.checkVersion(versionFlag);
+        JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
+        factory = JsonSchemaFactory
+          .builder()
+          .uriFetcher(uriFetcher, "http")
+          .uriFetcher(uriFetcher, "https")
+          .defaultMetaSchemaURI(metaSchema.getUri())
+          .addMetaSchema(metaSchema)
+          .build();
+      }
+
+      List<TestResult> results = runRequest
+        .testCase()
+        .tests()
+        .stream()
+        .map(test -> {
+          JsonSchema jsonSchema = factory.getSchema(
+            runRequest.testCase().schema()
+          );
+          Set<ValidationMessage> errors = jsonSchema.validate(
+            test.instance()
+          );
+          boolean isValid = errors == null || errors.isEmpty();
+          return new TestResult(isValid);
+        })
+        .toList();
         output.println(
           objectMapper.writeValueAsString(
             new RunResponse(runRequest.seq(), results)
@@ -182,7 +188,6 @@ public class BowtieJsonSchemaValidator {
         output.println(objectMapper.writeValueAsString(response));
       }
     }
-  }
 
   private String stackTraceToString(Exception e) {
     StringWriter stringWriter = new StringWriter();
@@ -190,13 +195,12 @@ public class BowtieJsonSchemaValidator {
     return stringWriter.toString();
   }
 
-  public class CustomURIFetcher implements URIFetcher {
+  class CustomURIFetcher implements URIFetcher {
 
     private final Map<String, JsonNode> registry;
 
-    public CustomURIFetcher(JsonNode registryNode) {
-      this.registry =
-        objectMapper.convertValue(registryNode, new TypeReference<>() {});
+    CustomURIFetcher(JsonNode registryNode) {
+      this.registry = objectMapper.convertValue(registryNode, new TypeReference<>() {});
     }
 
     @Override
@@ -221,11 +225,7 @@ public class BowtieJsonSchemaValidator {
 
 record StartRequest(int version) {}
 
-record StartResponse(
-  int version,
-  boolean ready,
-  Implementation implementation
-) {}
+record StartResponse(int version, boolean ready, Implementation implementation) {}
 
 record DialectRequest(String dialect) {}
 
@@ -235,39 +235,27 @@ record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
 
 record RunResponse(JsonNode seq, List<TestResult> results) {}
 
-record RunErroredResponse(
-  JsonNode seq,
-  boolean errored,
-  ErrorContext context
-) {}
+record RunSkippedResponse(JsonNode seq, boolean skipped, String message, String issue_url) {}
+
+record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {}
 
 record ErrorContext(String message, String traceback) {}
 
-record TestCase(
-  String description,
-  String comment,
-  JsonNode schema,
-  JsonNode registry,
-  List<Test> tests
-) {}
+record Implementation(String language,
+                      String name,
+                      String version,
+                      List<String> dialects,
+                      String homepage,
+                      String issues,
+                      String os,
+                      String os_version,
+                      String language_version,
+                      List<Link> links) {}
 
-record Test(
-  String description,
-  String comment,
-  JsonNode instance,
-  boolean valid
-) {}
+record Link(String url, String description) {}
+
+record TestCase(String description, String comment, JsonNode schema, JsonNode registry, List<Test> tests) {}
+
+record Test(String description, String comment, JsonNode instance, boolean valid) {}
 
 record TestResult(boolean valid) {}
-
-record Implementation(
-  String language,
-  String name,
-  String version,
-  List<String> dialects,
-  String homepage,
-  String issues,
-  String os,
-  String os_version,
-  String language_version
-) {}
