@@ -1,4 +1,4 @@
-FROM gradle:8.3.0-jdk17 AS builder
+FROM gradle:8.4.0-jdk17 AS builder
 COPY BowtieJsonSchemaValidator.java /opt/app/BowtieJsonSchemaValidator.java
 COPY build.gradle /opt/app/build.gradle
 WORKDIR /opt/app
