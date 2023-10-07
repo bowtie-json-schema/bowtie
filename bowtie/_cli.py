@@ -371,6 +371,17 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
+EXPECT = click.option(
+    "--expect",
+    show_default=True,
+    show_choices=True,
+    default="any",
+    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    help=(
+        "Expect the given input to be considered valid or invalid, "
+        "or else (with 'any') to allow either result."
+    ),
+)
 
 
 @main.command()
@@ -411,22 +422,28 @@ def run(
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
+@EXPECT
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
     context: click.Context,
     schema: TextIO,
     instances: Iterable[TextIO],
+    expect: str,
     **kwargs: Any,
 ):
     """
-    Validate a schema & one or more instances across implementations.
+    Validate one or more instances under a given schema across implementations.
     """
     case = TestCase(
         description="bowtie validate",
         schema=json.load(schema),
         tests=[
-            Test(description=str(i), instance=json.load(instance))
+            Test(
+                description=str(i),
+                instance=json.load(instance),
+                valid=dict(valid=True, invalid=False, any=None)[expect],
+            )
             for i, instance in enumerate(instances, 1)
         ],
     )
