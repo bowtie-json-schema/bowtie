@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
+from functools import wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, TextIO
+from typing import Any, Literal, ParamSpec, TextIO
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -108,7 +109,25 @@ def main():
     _redirect_structlog()
 
 
-@main.command()
+P = ParamSpec("P")
+
+
+def subcommand(fn: Callable[P, int | None]):
+    """
+    Define a Bowtie subcommand which returns its exit code.
+    """
+
+    @main.command()
+    @click.pass_context
+    @wraps(fn)
+    def run(context: click.Context, *args: P.args, **kwargs: P.kwargs) -> None:
+        exit_code = fn(*args, **kwargs)
+        context.exit(0 if exit_code is None else exit_code)
+
+    return run
+
+
+@subcommand
 @click.option(
     "--input",
     default="-",
@@ -124,7 +143,7 @@ def badges(input: Iterable[str], output: Path):
     report_data["summary"].generate_badges(output, dialect)
 
 
-@main.command()
+@subcommand
 @FORMAT
 @click.option(
     "--show",
@@ -384,8 +403,7 @@ EXPECT = click.option(
 )
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @DIALECT
 @FILTER
@@ -398,25 +416,17 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(
-    context: click.Context,
-    input: Iterable[str],
-    filter: str,
-    **kwargs: Any,
-):
+def run(input: Iterable[str], filter: str, **kwargs: Any):
     """
     Run a sequence of cases provided on standard input.
     """
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
-
-    exit_code = asyncio.run(_run(**kwargs, cases=cases))
-    context.exit(exit_code)
+    return asyncio.run(_run(**kwargs, cases=cases))
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
@@ -426,7 +436,6 @@ def run(
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    context: click.Context,
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
@@ -447,20 +456,17 @@ def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    exit_code = asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
-    context.exit(exit_code)
+    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @FORMAT
 @IMPLEMENTATION
-def info(context: click.Context, **kwargs: Any):
+def info(**kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
-    exit_code = asyncio.run(_info(**kwargs))
-    context.exit(exit_code)
+    return asyncio.run(_info(**kwargs))
 
 
 async def _info(image_names: list[str], format: _F):
@@ -512,8 +518,7 @@ async def _info(image_names: list[str], format: _F):
     return exit_code
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @click.option(
     "-q",
     "--quiet",
@@ -527,12 +532,11 @@ async def _info(image_names: list[str], format: _F):
 )
 @FORMAT
 @IMPLEMENTATION
-def smoke(context: click.Context, **kwargs: Any):
+def smoke(**kwargs: Any):
     """
     Smoke test one or more implementations for basic correctness.
     """
-    exit_code = asyncio.run(_smoke(**kwargs))
-    context.exit(exit_code)
+    return asyncio.run(_smoke(**kwargs))
 
 
 async def _smoke(
@@ -707,8 +711,7 @@ class _TestSuiteCases(click.ParamType):
         return cases, dialect
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @FILTER
 @FAIL_FAST
@@ -717,7 +720,6 @@ class _TestSuiteCases(click.ParamType):
 @VALIDATE
 @click.argument("input", type=_TestSuiteCases())
 def suite(
-    context: click.Context,
     input: tuple[Iterable[TestCase], str, dict[str, Any]],
     filter: str,
     **kwargs: Any,
@@ -753,8 +755,7 @@ def suite(
         cases = (case for case in cases if fnmatch(case.description, filter))
 
     task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
-    exit_code = asyncio.run(task)
-    context.exit(exit_code)
+    return asyncio.run(task)
 
 
 async def _run(
