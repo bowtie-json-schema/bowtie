@@ -82,7 +82,7 @@ class Started:
     implementation: dict[str, Any]
     ready: bool = field()
     version: int = field(
-        validator=lambda _, __, got: exceptions.VersionMismatch.check(got),  # type: ignore[reportGeneralTypeIssues]
+        validator=lambda _, __, got: exceptions.VersionMismatch.check(got),
     )
 
     @ready.validator  # type: ignore[reportGeneralTypeIssues]

@@ -80,9 +80,7 @@ class Stream:
             return self._buffer.popleft()
 
         while True:
-            message: aiodocker.stream.Message | None = (
-                await self._read_with_timeout()
-            )
+            message = await self._read_with_timeout()
             if message is not None:
                 break
             info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
@@ -270,7 +268,7 @@ class Implementation:
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),  # type: ignore[reportUnknownArgumentType]
+                HostConfig=dict(NetworkMode="none"),
             ),
         )
         self._stream = Stream.attached_to(

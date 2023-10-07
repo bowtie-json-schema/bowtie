@@ -99,8 +99,8 @@ FORMAT = click.option(
 _F = Literal["json", "pretty"]
 
 
-@tui(help="Open a simple interactive TUI for executing Bowtie commands.")  # type: ignore[reportGeneralTypeIssues]
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))  # type: ignore[reportUntypedFunctionDecorator]
+@tui(help="Open a simple interactive TUI for executing Bowtie commands.")
+@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
     """
@@ -199,7 +199,7 @@ def _ordered_failures(
     )
     return sorted(
         counts,
-        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]
+        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),
     )
 
 
@@ -280,8 +280,8 @@ def _validation_results_table(
 
 
 def validator_for_dialect(dialect: str | None = None):
-    path = files("bowtie.schemas") / "io-schema.json"  # type: ignore[reportUnknownMemberType]
-    root_schema = json.loads(path.read_text())  # type: ignore[reportUnknownArgumentType]
+    path = files("bowtie.schemas") / "io-schema.json"
+    root_schema = json.loads(path.read_text())
 
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
@@ -609,7 +609,7 @@ async def _smoke(
                     echo(json.dumps(serializable, indent=2))
                 case "pretty":
                     async for seq, case, response in responses:
-                        if response.errored:  # type: ignore[reportGeneralTypeIssues]
+                        if response.errored:
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
                             response.report(
@@ -618,7 +618,7 @@ async def _smoke(
                                     case=case,
                                 )
                             )
-                        elif response.failed:  # type: ignore[reportGeneralTypeIssues]
+                        elif response.failed:
                             exit_code |= os.EX_DATAERR
                             message = "✗ (failed)"
                         else:
@@ -657,13 +657,13 @@ class _TestSuiteCases(click.ParamType):
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
-                GitHub,  # type: ignore[reportUnknownVariableType]
+                GitHub,
             )
             from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]
 
             # isort: on
 
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # type: ignore[reportUnknownVariableType]
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
             repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]
 
             _, _, rest = (
@@ -839,11 +839,11 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]
+                        should_stop = response.errored or response.failed
 
                 if should_stop:
                     break
-            reporter.finished(count=seq, did_fail_fast=should_stop)  # type: ignore[reportUnknownArgumentType]
+            reporter.finished(count=seq, did_fail_fast=should_stop)
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
