@@ -474,10 +474,18 @@ async def test_smoke_pretty(envsonschema):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, _ = await proc.communicate()
-    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
-    #        Change to asserting about the smoke stdout once that's there.
+    stdout, _ = await proc.communicate()
+    # This != 0 is because indeed envsonschema gets answers wrong.
     assert proc.returncode != 0
+    assert (
+        dedent(stdout.decode())
+        == dedent(
+            """
+          ✗ (failed): allow-everything schema
+          ✓: allow-nothing schema
+        """
+        ).lstrip("\n")
+    ), stdout.decode()
 
 
 @pytest.mark.asyncio
@@ -495,8 +503,7 @@ async def test_smoke_json(envsonschema):
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate()
-    # FIXME: This == 0 is doubly wrong, and due to #520.
-    #        Change to asserting about the smoke stdout once that's fixed.
+    # FIXME: This == 0 is wrong due to #520.
     assert proc.returncode == 0, (stdout, stderr)
     assert json.loads(stdout) == [
         {
