@@ -3,10 +3,15 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TextIO, TypedDict
 import importlib.metadata
 import json
 import sys
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 from attrs import asdict, field, frozen, mutable
 import structlog.stdlib
@@ -131,6 +136,14 @@ class Reporter:
             ),
         )
 
+    def schema_case_started(self, seq: int, case: _commands.SchemaTestCase):
+        return _SchemaCaseReporter.case_started(
+            case=case,
+            seq=seq,
+            write=self._write,
+            log=self._log.bind(seq=seq, case=case.description),
+        )
+
 
 @frozen
 class _CaseReporter:
@@ -144,7 +157,7 @@ class _CaseReporter:
         write: Callable[..., None],
         case: _commands.TestCase,
         seq: int,
-    ) -> _CaseReporter:
+    ) -> Self:
         self = cls(log=log, write=write)
         self._write(case=asdict(case), seq=seq)
         return self
@@ -170,6 +183,64 @@ class _CaseReporter:
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
         self._write(**asdict(results))
+
+
+@frozen
+class _SchemaCaseReporter:
+    _write: Callable[..., Any] = field(alias="write")
+    _log: structlog.stdlib.BoundLogger = field(alias="log")
+
+    @classmethod
+    def case_started(
+        cls,
+        log: structlog.stdlib.BoundLogger,
+        write: Callable[..., None],
+        case: _commands.SchemaTestCase,
+        seq: int,
+    ) -> Self:
+        self = cls(log=log, write=write)
+        self._write(case=asdict(case), seq=seq)
+        return self
+
+    def got_results(self, results: _commands.CaseResult):
+        for result in results.results:
+            if result.errored:
+                self._log.error(
+                    "",
+                    logger_name=results.implementation,
+                    **result.context,  # type: ignore
+                )
+        self._write(**asdict(results))
+
+    def skipped(self, skipped: _commands.CaseSkipped):
+        self._write(**asdict(skipped))
+
+    def no_response(self, implementation: str):
+        self._log.error("No response", logger_name=implementation)
+
+    def case_errored(self, results: _commands.CaseErrored):
+        implementation, context = results.implementation, results.context
+        message = "" if results.caught else "uncaught error"
+        self._log.error(message, logger_name=implementation, **context)
+        self._write(**asdict(results))
+
+
+class AnyCaseReporter(Protocol):
+    """
+    A reporter for either test cases or schema test cases.
+    """
+
+    def got_results(self, results: _commands.CaseResult):
+        ...
+
+    def skipped(self, skipped: _commands.CaseSkipped):
+        ...
+
+    def no_response(self, implementation: str):
+        ...
+
+    def case_errored(self, results: _commands.CaseErrored):
+        ...
 
 
 @mutable

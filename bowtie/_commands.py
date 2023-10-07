@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar, cast
 import re
 
 try:
-    from typing import dataclass_transform
+    from typing import Self, dataclass_transform
 except ImportError:
-    from typing_extensions import dataclass_transform
+    from typing_extensions import Self, dataclass_transform
 
 import json
 
@@ -19,8 +19,8 @@ from attrs import asdict, field, frozen
 from bowtie import exceptions
 
 if TYPE_CHECKING:
-    from bowtie import _report
     from bowtie._core import DialectRunner
+    from bowtie._report import AnyCaseReporter, Reporter
 
 
 @frozen
@@ -44,7 +44,7 @@ class TestCase:
         cls,
         tests: Iterable[dict[str, Any]],
         **kwargs: Any,
-    ) -> TestCase:
+    ) -> Self:
         kwargs["tests"] = [Test(**test) for test in tests]
         return cls(**kwargs)
 
@@ -53,8 +53,11 @@ class TestCase:
         seq: int,
         runner: DialectRunner,
     ) -> Awaitable[ReportableResult]:
-        command = Run(seq=seq, case=self.without_expected_results())
+        command = Validate(seq=seq, case=self.without_expected_results())
         return runner.run_validation(command=command, tests=self.tests)
+
+    def report_started(self, seq: int, reporter: Reporter):
+        return reporter.case_started(seq=seq, case=self)
 
     def without_expected_results(self) -> dict[str, Any]:
         as_dict = {
@@ -72,6 +75,53 @@ class TestCase:
                 self,
                 filter=lambda k, v: k.name != "tests"
                 and (k.name not in {"comment", "registry"} or v is not None),
+            ),
+        )
+        return as_dict
+
+
+@frozen
+class SchemaTestCase:
+    description: str
+    tests: list[Test]
+    comment: str | None = None
+
+    @classmethod
+    def from_dict(
+        cls,
+        tests: Iterable[dict[str, Any]],
+        **kwargs: Any,
+    ) -> Self:
+        kwargs["tests"] = [Test(**test) for test in tests]
+        return cls(**kwargs)
+
+    def run(
+        self,
+        seq: int,
+        runner: DialectRunner,
+    ) -> Awaitable[ReportableResult]:
+        command = ValidateSchema(seq=seq, case=self.without_expected_results())
+        return runner.run_validation(command=command, tests=self.tests)
+
+    def report_started(self, seq: int, reporter: Reporter):
+        return reporter.schema_case_started(seq=seq, case=self)
+
+    def without_expected_results(self) -> dict[str, Any]:
+        as_dict = {
+            "tests": [
+                asdict(
+                    test,
+                    filter=lambda k, v: k.name != "valid"
+                    and (k.name != "comment" or v is not None),
+                )
+                for test in self.tests
+            ],
+        }
+        as_dict.update(
+            asdict(
+                self,
+                filter=lambda k, v: k.name != "tests"
+                and (k.name != "comment" or v is not None),
             ),
         )
         return as_dict
@@ -153,7 +203,7 @@ class Start:
     version: int
 
 
-START_V1 = Start(version=1)
+START_V2 = Start(version=2)
 
 
 @frozen
@@ -250,8 +300,8 @@ class ReportableResult(Protocol):
 
     implementation: str
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
-        pass
+    def report(self, reporter: AnyCaseReporter) -> None:
+        ...
 
 
 @frozen
@@ -272,7 +322,7 @@ class CaseResult:
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: AnyCaseReporter) -> None:
         reporter.got_results(self)
 
     def compare(
@@ -303,7 +353,7 @@ class CaseErrored:
 
     caught: bool = True
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: AnyCaseReporter):
         reporter.case_errored(self)
 
     @classmethod
@@ -337,7 +387,7 @@ class CaseSkipped:
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: AnyCaseReporter):
         reporter.skipped(self)
 
 
@@ -352,12 +402,18 @@ class Empty:
 
     implementation: str
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: AnyCaseReporter):
         reporter.no_response(implementation=self.implementation)
 
 
 @command(Response=_case_result)
-class Run:
+class Validate:
+    seq: int
+    case: dict[str, Any]
+
+
+@command(Response=_case_result)
+class ValidateSchema:
     seq: int
     case: dict[str, Any]
 

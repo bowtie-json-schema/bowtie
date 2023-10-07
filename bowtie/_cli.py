@@ -7,7 +7,7 @@ from functools import wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, ParamSpec, TextIO
+from typing import Any, Literal, ParamSpec, TextIO, TypeVar
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -15,7 +15,7 @@ import os
 import sys
 import zipfile
 
-from attrs import asdict
+from attrs import asdict, evolve
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
@@ -27,7 +27,7 @@ import structlog
 import structlog.typing
 
 from bowtie import _report
-from bowtie._commands import Test, TestCase
+from bowtie._commands import SchemaTestCase, Test, TestCase
 from bowtie._core import (
     DialectRunner,
     GotStderr,
@@ -245,7 +245,7 @@ def _validation_results(
                     description = "invalid"
                 descriptions.append(description)
             results.append((case_result[0]["instance"], descriptions))
-        yield case["schema"], results
+        yield case.get("schema"), results
 
 
 def _validation_results_table(
@@ -423,7 +423,7 @@ def run(input: Iterable[str], filter: str, **kwargs: Any):
     cases = (TestCase.from_dict(**json.loads(line)) for line in input)
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
-    return asyncio.run(_run(**kwargs, cases=cases))
+    return asyncio.run(_validate(**kwargs, cases=cases))
 
 
 @subcommand
@@ -456,7 +456,56 @@ def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+    return asyncio.run(_validate(fail_fast=False, **kwargs, cases=[case]))
+
+
+@main.command()
+@click.pass_context
+@IMPLEMENTATION
+@FAIL_FAST
+@DIALECT
+@SET_SCHEMA
+@TIMEOUT
+@VALIDATE
+@EXPECT
+@click.argument("schema_files", nargs=-1, type=click.File(mode="rb"))
+def validate_schema(
+    context: click.Context,
+    schema_files: Iterable[TextIO],
+    expect: str,
+    dialect: str,
+    set_schema: bool,
+    **kwargs: Any,
+):
+    """
+    Validate a schema itself under the dialect it's defined for.
+
+    Per the specification, this should not only validate the schema under a
+    meta-schema but also perform a number of additional checks specific to the
+    dialect which govern which schemas are invalid even if this constraint
+    isn't expressed or expressible in a meta-schema.
+    """
+    schemas = (json.load(each) for each in schema_files)
+    if set_schema:
+        schemas = (
+            {"$schema": dialect} | schema
+            if isinstance(schema, dict)
+            else schema
+            for schema in schemas
+        )
+
+    case = SchemaTestCase(
+        description="bowtie validate-schema",
+        tests=[
+            Test(
+                description=str(i),
+                instance=schema,
+                valid=dict(valid=True, invalid=False, any=None)[expect],
+            )
+            for i, schema in enumerate(schemas, 1)
+        ],
+    )
+    return asyncio.run(_run(**kwargs, cases=[case], dialect=dialect))
 
 
 @subcommand
@@ -572,10 +621,12 @@ async def _smoke(
             dialect = implementation.dialects[0]
             runner = await implementation.start_speaking(dialect)
 
+            allow_everything = {"$schema": dialect}
+
             cases = [
                 TestCase(
                     description="allow-everything schema",
-                    schema={"$schema": dialect},
+                    schema=allow_everything,
                     tests=[
                         Test(description="First", instance=1, valid=True),
                         Test(description="Second", instance="foo", valid=True),
@@ -586,6 +637,26 @@ async def _smoke(
                     schema={"$schema": dialect, "not": {}},
                     tests=[
                         Test(description="First", instance=12, valid=False),
+                    ],
+                ),
+                SchemaTestCase(
+                    description="valid schema",
+                    tests=[
+                        Test(
+                            description="allow-everything schema",
+                            instance=allow_everything,
+                            valid=True,
+                        ),
+                    ],
+                ),
+                SchemaTestCase(
+                    description="invalid schema",
+                    tests=[
+                        Test(
+                            description="non-object, non-bool",
+                            instance=[37],
+                            valid=False,
+                        ),
                     ],
                 ),
             ]
@@ -613,9 +684,9 @@ async def _smoke(
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
                             response.report(
-                                reporter=reporter.case_started(
+                                reporter=case.report_started(
                                     seq=seq,
-                                    case=case,
+                                    reporter=reporter,
                                 )
                             )
                         elif response.failed:
@@ -754,16 +825,36 @@ def suite(
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
 
-    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
+    task = _validate(
+        **kwargs,
+        dialect=dialect,
+        cases=cases,
+        run_metadata=metadata,
+    )
     return asyncio.run(task)
+
+
+def _validate(
+    cases: Iterable[TestCase],
+    dialect: str,
+    set_schema: bool,
+    **kwargs: Any,
+):
+    if set_schema:
+        cases = (
+            evolve(case, schema={"$schema": dialect} | case.schema)
+            if isinstance(case.schema, dict)
+            else case
+            for case in cases
+        )
+    return _run(cases=cases, dialect=dialect, **kwargs)
 
 
 async def _run(
     image_names: list[str],
-    cases: Iterable[TestCase],
+    cases: Iterable[TestCase | SchemaTestCase],
     dialect: str,
     fail_fast: bool,
-    set_schema: bool,
     run_metadata: dict[str, Any] = {},  # noqa: B006
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -827,9 +918,6 @@ async def _run(
             seq = 0
             should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
-                if set_schema and not isinstance(case.schema, bool):
-                    case.schema["$schema"] = dialect
-
                 responses = [
                     case.run(seq=seq, runner=runner) for runner in runners
                 ]
@@ -866,12 +954,15 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
         ]
 
 
+T = TypeVar("T", bound=TestCase | SchemaTestCase)
+
+
 def sequenced(
-    cases: Iterable[TestCase],
+    cases: Iterable[T],
     reporter: _report.Reporter,
-) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[int, T, _report.AnyCaseReporter]]:
     for seq, case in enumerate(cases, 1):
-        yield seq, case, reporter.case_started(seq=seq, case=case)
+        yield seq, case, case.report_started(seq=seq, reporter=reporter)
 
 
 def _remotes_from(

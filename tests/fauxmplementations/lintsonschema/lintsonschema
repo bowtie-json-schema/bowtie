@@ -59,12 +59,12 @@ class Runner:
             self._stdout.flush()
 
     def cmd_start(self, version):
-        assert version == 1
+        assert version == 2
 
         self._started = True
         return dict(
             ready=True,
-            version=1,
+            version=2,
             implementation=dict(
                 language="python",
                 name="lintsonschema",
@@ -85,7 +85,7 @@ class Runner:
         assert self._started, "Not started!"
         return dict(ok=True)
 
-    def cmd_run(self, case, seq):
+    def cmd_validate(self, case, seq):
         assert self._started, "Not started!"
 
         results = [

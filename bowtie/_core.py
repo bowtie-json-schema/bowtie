@@ -144,7 +144,7 @@ class DialectRunner:
 
     async def run_validation(
         self,
-        command: _commands.Run,
+        command: _commands.Validate | _commands.ValidateSchema,
         tests: Iterable[_commands.Test],
     ) -> _commands.ReportableResult:
         try:
@@ -275,7 +275,7 @@ class Implementation:
             self._container,
             read_timeout_sec=self._read_timeout_sec,
         )
-        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+        started = await self._send(_commands.START_V2)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         if started is None:
             return
         self.metadata = started.implementation

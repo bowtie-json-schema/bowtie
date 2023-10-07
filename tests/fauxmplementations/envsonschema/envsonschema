@@ -72,18 +72,18 @@ class Runner:
         for line in stdin:
             each = json.loads(line)
             cmd = each.pop("cmd")
-            getattr(self, f"cmd_{cmd}")(**each)
+            getattr(self, f"cmd_{cmd.replace('-', '_')}")(**each)
 
     def send(self, **response):
         self._stdout.write(f"{json.dumps(response)}\n")
         self._stdout.flush()
 
     def cmd_start(self, version):
-        assert version == 1
+        assert version == 2
         self._started = True
         self.send(
             ready=True,
-            version=1,
+            version=2,
             implementation=dict(
                 language="python",
                 name="envsonschema",
@@ -104,7 +104,7 @@ class Runner:
         assert self._started, "Not started!"
         self.send(ok=True)
 
-    def cmd_run(self, case, seq):
+    def cmd_validate(self, case, seq):
         assert self._started, "Not started!"
 
         send = self.send
@@ -171,6 +171,10 @@ class Runner:
             results["results"].append(result)
 
         send(seq=seq, **results)
+
+    def cmd_validate_schema(self, case, seq):
+        # envsonschema anyways doesn't look at the schema
+        self.cmd_validate(case=case, seq=seq)
 
     def cmd_stop(self):
         assert self._started, "Not started!"

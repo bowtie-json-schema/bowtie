@@ -85,7 +85,7 @@ always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
     read
-    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     while IFS= read -r input; do
@@ -123,7 +123,7 @@ fail_on_run = strimplementation(
     name="fail_on_run",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
+    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 2}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 wrong_version = strimplementation(
@@ -137,7 +137,7 @@ hit_the_network = strimplementation(
     name="hit_the_network",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
+    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 2}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
     """,  # noqa: E501
 )
 
@@ -424,7 +424,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert b"expected to speak version 1 " in stderr.lower(), stderr.decode()
+    assert b"expected to speak version 2 " in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -483,6 +483,8 @@ async def test_smoke_pretty(envsonschema):
             """
           ✗ (failed): allow-everything schema
           ✓: allow-nothing schema
+          ✗ (failed): valid schema
+          ✓: invalid schema
         """
         ).lstrip("\n")
     ), stdout.decode()
@@ -527,6 +529,32 @@ async def test_smoke_json(envsonschema):
                     "not": {},
                 },
                 "tests": [{"description": "First", "instance": 12}],
+            },
+            "response": {"errored": False, "failed": False},
+        },
+        {
+            "case": {
+                "description": "valid schema",
+                "tests": [
+                    {
+                        "description": "allow-everything schema",
+                        "instance": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        },
+                    },
+                ],
+            },
+            "response": {"errored": False, "failed": True},
+        },
+        {
+            "case": {
+                "description": "invalid schema",
+                "tests": [
+                    {
+                        "description": "non-object, non-bool",
+                        "instance": [37],
+                    },
+                ],
             },
             "response": {"errored": False, "failed": False},
         },
@@ -622,6 +650,78 @@ async def test_validate(envsonschema, tmp_path):
     )
     _, _ = await proc.communicate()
     assert proc.returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_validate_invalid_schema(envsonschema, tmp_path):
+    schema = tmp_path / "invalid.json"
+    schema.write_text('{"type": 12}')
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "validate-schema",
+        "-i",
+        envsonschema,
+        schema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    validate_schema_stdout, _ = await proc.communicate()
+
+    summary_failures = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await summary_failures.communicate(validate_schema_stdout)
+    assert stderr == b""
+    assert json.loads(stdout) == [
+        [None, [[{"type": 12}, ["invalid"]]]],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_validate_valid_schema(envsonschema, tmp_path):
+    schema = tmp_path / "valid.json"
+    schema.write_text("{}")
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "validate-schema",
+        "-i",
+        envsonschema,
+        schema,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    validate_schema_stdout, _ = await proc.communicate()
+
+    summary_failures = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await summary_failures.communicate(validate_schema_stdout)
+    assert stderr == b""
+    assert json.loads(stdout) == [
+        [None, [[{}, ["invalid"]]]],
+    ]
 
 
 @pytest.mark.asyncio

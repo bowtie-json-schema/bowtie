@@ -12,7 +12,7 @@
       "$anchor": "version",
 
       "type": "integer",
-      "const": 1
+      "const": 2
     },
 
     "command": {
@@ -22,7 +22,8 @@
       "oneOf": [
         { "$ref": "commands/start" },
         { "$ref": "commands/dialect" },
-        { "$ref": "commands/run" },
+        { "$ref": "commands/validate" },
+        { "$ref": "commands/validate-schema" },
         { "$ref": "commands/stop" }
       ],
 
@@ -164,14 +165,14 @@
           }
         },
 
-        "run": {
+        "validate": {
           "description": "Sent to implementations for each test case.",
 
-          "$id": "commands/run/",
+          "$id": "commands/validate/",
 
           "required": ["seq", "case"],
           "properties": {
-            "cmd": { "const": "run" },
+            "cmd": { "const": "validate" },
             "seq": {
               "description": "A sequence identifier for the test case. It must be passed along as-is in the response.",
               "$anchor": "seq"
@@ -243,7 +244,119 @@
                   }
                 },
                 "errored": {
-                  "description": "Signal that the implementation encountered an internal error (which it caught). Additional context can be passed along (e.g. a traceback or exception detail).",
+                  "description": "Signal that the implementation encountered an internal error (which its harness caught). Additional context can be passed along (e.g. a traceback or exception detail).",
+
+                  "$anchor": "errored",
+
+                  "required": ["errored"],
+                  "properties": {
+                    "errored": { "const": true },
+                    "context": {
+                      "description": "Additional implementation-specific or language-specific context available when the error was caught.",
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "description": "A (short) description of the error.",
+                          "type": "string"
+                        },
+                        "traceback": {
+                          "description": "A language-specific traceback (backtrace) containing stack frames or fuller debugging information on where the error occurred.",
+                          "type": "string"
+                        },
+                        "stderr": {
+                          "description": "The raw (captured) contents of standard error from within the harness. Prefer using 'traceback' if the contents are a traceback.",
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        "validate-schema": {
+          "description": "Sent to implementations for each schema test case (to validate whether a schema itself is valid or not).",
+
+          "$id": "commands/validate-schema/",
+
+          "required": ["seq", "case"],
+          "properties": {
+            "cmd": { "const": "validate-schema" },
+            "seq": {
+              "description": "A sequence identifier for the schema test case. It must be passed along as-is in the response.",
+              "$anchor": "seq"
+            },
+            "case": { "$ref": "../../#schema-case" }
+          },
+          "$defs": {
+            "response": {
+              "$id": "response/",
+
+              "type": "object",
+              "required": ["seq"],
+              "unevaluatedProperties": false,
+              "properties": {
+                "seq": {
+                  "description": "The unchanged sequence identifier originally provided in the request.",
+                  "$ref": "../#seq"
+                }
+              },
+              "oneOf": [
+                { "$ref": "#result" },
+                { "$ref": "#skipped" },
+                { "$ref": "#errored" }
+              ],
+              "$defs": {
+                "result": {
+                  "description": "Signal that the implementation ran the schema test case (though may have skipped tests within it) and got the provided result.",
+
+                  "$anchor": "result",
+
+                  "required": ["results"],
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "oneOf": [
+                          {
+                            "properties": {
+                              "valid": { "type": "boolean" }
+                            },
+                            "required": ["valid"]
+                          },
+                          { "$ref": "#skipped" },
+                          { "$ref": "#errored" }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "skipped": {
+                  "description": "Signal that the implementation skipped the schema test case or individual test (typically because it is a known bug). Either an issue URL or a human-readable message is encouraged to explain the skip.",
+
+                  "$anchor": "skipped",
+
+                  "required": ["skipped"],
+                  "properties": {
+                    "skipped": { "const": true },
+                    "message": {
+                      "description": "A human-readable message passed back from the implementation explaining why the skip occurred.",
+                      "type": "string"
+                    },
+                    "issue_url": {
+                      "description": "An optional link to a relevant issue on the implementation's bug tracker.",
+
+                      "type": "string",
+                      "format": "url"
+                    }
+                  }
+                },
+                "errored": {
+                  "description": "Signal that the implementation encountered an internal error (which its harness caught). Additional context can be passed along (e.g. a traceback or exception detail).",
 
                   "$anchor": "errored",
 
@@ -317,6 +430,31 @@
         },
         "tests": {
           "description": "A set of related tests all using the same schema",
+          "type": "array",
+          "items": { "$ref": "#test" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "schema-case": {
+      "description": "An individual schema test case, consisting of one or more schemas to themselves validate.",
+
+      "$anchor": "schema-case",
+
+      "type": "object",
+      "required": ["description", "tests"],
+      "properties": {
+        "description": {
+          "description": "A (human-readable) short description of this schema test case",
+          "type": "string"
+        },
+        "comment": {
+          "description": "Any additional comments about the schema test case",
+          "type": "string"
+        },
+        "tests": {
+          "description": "A set of related schemas to validate.",
           "type": "array",
           "items": { "$ref": "#test" },
           "minItems": 1

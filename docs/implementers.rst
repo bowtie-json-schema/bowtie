@@ -217,7 +217,7 @@ You can enable this validation by passing :program:`bowtie run` the :option:`-V`
     {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }
     EOF
     2022-10-05 20:59.41 [debug    ] Will speak dialect             dialect=https://json-schema.org/draft/2020-12/schema
-    2022-10-05 20:59.41 [error    ] Invalid response               [localhost/tutorial-lua-jsonschema] errors=[<ValidationError: "[] is not of type 'object'">] request=Start(version=1)
+    2022-10-05 20:59.41 [error    ] Invalid response               [localhost/tutorial-lua-jsonschema] errors=[<ValidationError: "[] is not of type 'object'">] request=Start(version=2)
     2022-10-05 20:59.45 [warning  ] Unsupported dialect, skipping implementation. [localhost/tutorial-lua-jsonschema] dialect=https://json-schema.org/draft/2020-12/schema
     {"implementations": {}}
     {"case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}, "valid": null}], "comment": null, "registry": null}, "seq": 1}
@@ -239,7 +239,7 @@ so ``start`` requests will have two parameters:
 
     * ``cmd`` which indicates the kind of request being sent (and is present in all requests sent by Bowtie)
     * ``version`` which represents the version of the Bowtie protocol being spoken.
-      Today, that version is always ``1``, but that may change in the future, in which case a harness should bail out as it may not understand the requests being sent.
+      Today, that version is always ``2``, but that may change in the future, in which case a harness should bail out as it may not understand the requests being sent.
 
 The harness is expected to respond with:
 
@@ -270,11 +270,11 @@ Change your harness to contain:
 
     local cmds = {
       start = function(request)
-        assert(request.version == 1, 'Wrong version!')
+        assert(request.version == 2, 'Wrong version!')
         STARTED = true
         return {
           ready = true,
-          version = 1,
+          version = 2,
           implementation = {
             language = 'lua',
             name = 'jsonschema',
@@ -424,20 +424,20 @@ to the top of your harness.
 The API we need within the Lua ``jsonschema`` library is one called ``jsonschema.generate_validator``, which is the API which a user of the library calls in order to validate an instance under a provided schema.
 For details on how to use this API, see `the library's documentation <https://github.com/api7/jsonschema/tree/b8c362b62492b23b346781b8dcff8c611d112831#getting-started>`_, but for our purposes it essentially takes 2 arguments -- a JSON Schema (represented as a Lua ``table``) along with an additional options argument which we'll use momentarily.
 It returns a callable which then can be used to validate instances (other Lua values).
-Let's take a first pass at implementing the ``run`` command, whose input looks like:
+Let's take a first pass at implementing the ``validate`` command, whose input looks like:
 
 .. literalinclude:: ../bowtie/schemas/io.json
     :language: json
-    :start-at: "run"
+    :start-at: "validate"
     :end-before: "$defs"
     :dedent:
 
-``run`` requests contain a test case (a schema with tests), alongside a ``seq`` parameter which is simply an identifier for the request and needs to be included in the response we write back.
-Here's an implementation of the ``run`` command to add to our harness implementation:
+``validate`` requests contain a test case (a schema with tests), alongside a ``seq`` parameter which is simply an identifier for the request and needs to be included in the response we write back.
+Here's an implementation of the ``validate`` command to add to our harness implementation:
 
 .. code:: lua
 
-    run = function(request)
+    validate = function(request)
       assert(STARTED, 'Not started!')
 
       local validate = jsonschema.generate_validator(request.case.schema)
@@ -448,7 +448,7 @@ Here's an implementation of the ``run`` command to add to our harness implementa
       return { seq = request.seq, results = results }
     end,
 
-We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` number alongside results for each test.
+We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``validate`` request, returning a response which contains the ``seq`` number alongside results for each test.
 The results are indicated positionally as shown above, meaning the first result in the results array should be the result for the first test in the input array.
 
 If we run ``bowtie`` again, we see::
@@ -469,7 +469,7 @@ Hooray!
 Step 4: Resolving References
 ----------------------------
 
-In order to support testing the :kw:`$ref` keyword from JSON Schema, which involves resolving references to JSON documents, there's an additional parameter that is sent with ``run`` commands which contains a schema *registry*, i.e. a collection of additional schemas beyond the test case schema itself which may be referenced from within the test case.
+In order to support testing the :kw:`$ref` keyword from JSON Schema, which involves resolving references to JSON documents, there's an additional parameter that is sent with ``validate`` commands which contains a schema *registry*, i.e. a collection of additional schemas beyond the test case schema itself which may be referenced from within the test case.
 The intention is that the harness should configure its implementation to be able to retrieve any of the schemas present in the registry for the duration of the test case.
 
 As an example, a registry may look like:
@@ -480,7 +480,7 @@ As an example, a registry may look like:
       "http://example.com/my/string/schema": {"type": "string"}
     }
 
-which, if included in a ``run`` request means that the implementation is expected to resolve a retrieval URI of ``http://example.com/my/string/schema`` to the corresponding schema above.
+which, if included in a ``validate`` request means that the implementation is expected to resolve a retrieval URI of ``http://example.com/my/string/schema`` to the corresponding schema above.
 Each key in the registry is an (absolute) retrieval URI and each value is a corresponding JSON Schema.
 
 The Lua implementation we have been writing a harness for actually contains no built-in support for resolving ``$ref`` by default, but does give us a way to "hook in" an implementation of reference resolution.
@@ -509,7 +509,7 @@ If an implementation happens to not be fully compliant with the specification, o
 Whilst Bowtie tries to be hearty about these possibilities by automatically restarting crashed containers, it's more efficient for the harness itself to do so via mechanisms within the host language.
 
 Bowtie will show an ``uncaught error`` message in its debugging output whenever a container crashes.
-We can make the harness internally catch the error(s) and return a special response to ``run`` requests which signals that the implementation errored.
+We can make the harness internally catch the error(s) and return a special response to ``validate`` requests which signals that the implementation errored.
 Doing so will still be marked as an error in debugging output, but Bowtie will recognize that the error was caught by the harness, and things will generally be faster by not incurring additional restart cost each time the harness crashes.
 
 Catching exceptions from our Lua implementation is simple, by wrapping the ``validate()`` function call with the ``pcall`` function, which will catch any errors raised and allow us to detect whether any have occurred.
