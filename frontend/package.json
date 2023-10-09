@@ -30,6 +30,6 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "ts-loader": "^9.4.4",
     "typescript": "^5.2.2",
-    "vite": "^4.4.9"
+    "vite": "^4.4.11"
   }
 }
