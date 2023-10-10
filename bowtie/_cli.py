@@ -84,7 +84,7 @@ LATEST_DIALECT_NAME = "draft2020-12"
 # Magic constants assumed/used by the official test suite
 SUITE_REMOTE_BASE_URI = "http://localhost:1234"
 
-#: Should match the magic value used to validate `schema`s in `io-schema.json`
+#: Should match the magic value used to validate `schema`s in `schemas/io.json`
 CURRENT_DIALECT_URI = "urn:current-dialect"
 
 FORMAT = click.option(
@@ -280,7 +280,7 @@ def _validation_results_table(
 
 
 def validator_for_dialect(dialect: str | None = None):
-    path = files("bowtie.schemas") / "io-schema.json"
+    path = files("bowtie.schemas") / "io.json"
     root_schema = json.loads(path.read_text())
 
     from jsonschema.validators import (

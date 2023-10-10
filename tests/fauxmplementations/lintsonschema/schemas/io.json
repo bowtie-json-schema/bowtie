@@ -3,7 +3,7 @@
   "description": "Input/output specification for Bowtie, a meta-validator for JSON Schema validator implementations",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "https://bowtie.report/io-schema/",
+  "$id": "https://bowtie.report/schemas/io/",
 
   "$defs": {
     "version": {

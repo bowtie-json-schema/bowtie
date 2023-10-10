@@ -20,7 +20,7 @@ failed = False
 for path in SCHEMAS.rglob("*.json"):
     schema = path.read_text()
 
-    copy = LINTSONSCHEMA / path.relative_to(SCHEMAS)
+    copy = LINTSONSCHEMA / "schemas" / path.relative_to(SCHEMAS)
     if schema != copy.read_text():
         failed = True
         copy.write_text(schema)

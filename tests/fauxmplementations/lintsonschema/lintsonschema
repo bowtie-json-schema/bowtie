@@ -13,7 +13,7 @@ from jsonschema_specifications import REGISTRY as SPECIFICATIONS
 from referencing import Registry, Resource
 import jsonschema.validators
 
-SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/io-schema.json"))
+SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/schemas/io.json"))
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
 SCHEMA_RESOURCE = Resource.from_contents(SCHEMA)
 
@@ -30,7 +30,7 @@ REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
 Validator = jsonschema.validators.validator_for(SCHEMA)
 VALIDATORS = {}
 for command in SCHEMA["$defs"]["command"]["$defs"]:
-    uri = f"https://bowtie.report/io-schema/{command}/"
+    uri = f"https://bowtie.report/schemas/io/{command}/"
     VALIDATORS[command] = dict(
         request=Validator({"$ref": uri}, registry=REGISTRY),
         response=Validator({"$ref": f"{uri}response/"}, registry=REGISTRY),
