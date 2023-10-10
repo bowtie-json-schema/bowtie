@@ -2,8 +2,10 @@ from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from zipfile import ZipFile
 import os
 import shlex
+import tarfile
 
 import nox
 
@@ -11,6 +13,7 @@ ROOT = Path(__file__).parent
 PYPROJECT = ROOT / "pyproject.toml"
 DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
+SCHEMAS = BOWTIE / "schemas"
 IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
 UI = ROOT / "frontend"
@@ -93,6 +96,37 @@ def build(session):
     with TemporaryDirectory() as tmpdir:
         session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
         session.run("twine", "check", "--strict", tmpdir + "/*")
+
+        schemas = frozenset(SCHEMAS.rglob("*.json"))
+        assert schemas, "Didn't find any schemas!"
+
+        tmpdir = Path(tmpdir)
+
+        (tarpath,) = tmpdir.glob("*.tar.gz")
+        with tarfile.open(tarpath) as tar:
+            found = {
+                SCHEMAS.joinpath(member.name.split("/", 3)[3]).absolute()
+                for member in tar
+                if "bowtie/schemas" in member.name
+            }
+            if not schemas <= found:
+                session.error(
+                    "Tar distribution schemas are missing. "
+                    f"Expected {schemas} but found {found}."
+                )
+
+        (wheelpath,) = tmpdir.glob("*.whl")
+        wheel = ZipFile(wheelpath)
+        found = {
+            SCHEMAS.joinpath(name.removeprefix("bowtie/schemas/")).absolute()
+            for name in wheel.namelist()
+            if name.startswith("bowtie/schemas")
+        }
+        if not schemas <= found:
+            session.error(
+                "Wheel distribution schemas are missing. "
+                f"Expected {schemas} but found {found}."
+            )
 
 
 @session(tags=["build"])

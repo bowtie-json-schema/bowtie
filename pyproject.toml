@@ -6,12 +6,10 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build]
+packages = ["bowtie"]
 exclude = [
     "implementations/",
 ]
-
-[tool.hatch.build.force-include]
-"bowtie/schemas/io-schema.json" = "bowtie/schemas/io-schema.json"
 
 [project]
 name = "bowtie-json-schema"
