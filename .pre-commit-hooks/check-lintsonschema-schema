@@ -9,11 +9,21 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).absolute().parent.parent
-IO_SCHEMA = ROOT.joinpath("bowtie/schemas/io-schema.json").read_text()
-IO_SCHEMA_COPY = ROOT / "tests/fauxmplementations/lintsonschema/io-schema.json"
+SCHEMAS = ROOT / "bowtie/schemas"
+LINTSONSCHEMA = ROOT / "tests/fauxmplementations/lintsonschema/"
 
-if IO_SCHEMA_COPY.read_text() != IO_SCHEMA:
-    IO_SCHEMA_COPY.write_text(IO_SCHEMA)
-    sys.exit(
-        "lintsonschema's io-schema.json drifted from the real one. Fixing...",
-    )
+if not SCHEMAS.is_dir():
+    sys.exit("Didn't find any schemas to check. Something seems wrong!")
+
+
+failed = False
+for path in SCHEMAS.rglob("*.json"):
+    schema = path.read_text()
+
+    copy = LINTSONSCHEMA / path.relative_to(SCHEMAS)
+    if schema != copy.read_text():
+        failed = True
+        copy.write_text(schema)
+
+if failed:
+    sys.exit("lintsonschema's schemas drifted from the real ones. Fixing...")
