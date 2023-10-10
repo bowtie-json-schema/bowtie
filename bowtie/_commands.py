@@ -91,10 +91,10 @@ class Started:
             raise exceptions.ImplementationNotReady()
 
 
-_R = TypeVar("_R", covariant=True)
+R = TypeVar("R", covariant=True)
 
 
-class Command(Protocol[_R]):
+class Command(Protocol[R]):
     def to_request(self, validate: Callable[..., None]) -> dict[str, Any]:
         ...
 
@@ -102,16 +102,16 @@ class Command(Protocol[_R]):
     def from_response(
         response: bytes,
         validate: Callable[..., None],
-    ) -> _R | None:
+    ) -> R | None:
         ...
 
 
 @dataclass_transform()
 def command(
-    Response: Callable[..., _R | None],
+    Response: Callable[..., R | None],
     name: str = "",
-) -> Callable[[type], type[Command[_R]]]:
-    def _command(cls: type) -> type[Command[_R]]:
+) -> Callable[[type], type[Command[R]]]:
+    def _command(cls: type) -> type[Command[R]]:
         nonlocal name
         if not name:
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
@@ -121,7 +121,7 @@ def command(
         response_schema = {"$ref": f"{uri}response/"}
 
         def to_request(
-            self: Command[_R],
+            self: Command[R],
             validate: Callable[..., None],
         ) -> dict[str, Any]:
             request = dict(cmd=name, **asdict(self))
@@ -132,7 +132,7 @@ def command(
         def from_response(
             response: bytes,
             validate: Callable[..., None],
-        ) -> _R | None:
+        ) -> R | None:
             try:
                 instance = json.loads(response)
             except json.JSONDecodeError as error:
@@ -140,7 +140,7 @@ def command(
             validate(instance=instance, schema=response_schema)
             return Response(**instance)
 
-        cls = cast(type[Command[_R]], cls)
+        cls = cast(type[Command[R]], cls)
         cls.to_request = to_request
         cls.from_response = from_response
         return frozen(cls)
