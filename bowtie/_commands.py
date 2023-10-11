@@ -116,7 +116,7 @@ def command(
         if not name:
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
 
-        uri = f"https://bowtie.report/schemas/io/{name}/"
+        uri = f"https://bowtie.report/schemas/io/commands/{name}/"
         request_schema = {"$ref": uri}
         response_schema = {"$ref": f"{uri}response/"}
 
