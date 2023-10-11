@@ -149,6 +149,8 @@ def shiv(session):
             "--reproducible",
             "-c",
             "bowtie",
+            "-r",
+            REQUIREMENTS["main"],
             ROOT,
             "-o",
             out,
@@ -339,6 +341,7 @@ def requirements(session):
             "pip-compile",
             "--resolver",
             "backtracking",
+            "--strip-extras",
             "-U",
             each.relative_to(ROOT),
         )
