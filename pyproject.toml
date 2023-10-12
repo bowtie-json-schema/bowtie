@@ -151,4 +151,3 @@ docstring-quotes = "double"
 "docs/*" = ["ANN", "D"]
 "tests/*" = ["ANN", "D", "RUF012"]
 "implementations/*" = ["ANN", "D"]
-"bowtie/schemas/__init__.py" = ["D"]
