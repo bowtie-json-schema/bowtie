@@ -23,6 +23,7 @@ for path in SCHEMAS.rglob("*.json"):
     copy = LINTSONSCHEMA / "schemas" / path.relative_to(SCHEMAS)
     if not copy.is_file() or schema != copy.read_text():
         failed = True
+        copy.parent.mkdir(parents=True, exist_ok=True)
         copy.write_text(schema)
 
 if failed:
