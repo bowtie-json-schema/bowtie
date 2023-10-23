@@ -38,8 +38,8 @@ devDependencies:
     specifier: ^18.2.13
     version: 18.2.13
   '@types/urijs':
-    specifier: ^1.19.20
-    version: 1.19.20
+    specifier: ^1.19.22
+    version: 1.19.22
   '@typescript-eslint/eslint-plugin':
     specifier: ^6.7.5
     version: 6.7.5(@typescript-eslint/parser@6.7.5)(eslint@8.51.0)(typescript@5.2.2)
@@ -759,8 +759,8 @@ packages:
     resolution: {integrity: sha512-cJRQXpObxfNKkFAZbJl2yjWtJCqELQIdShsogr1d2MilP8dKD9TE/nEKHkJgUNHdGKCQaf9HbIynuV2csLGVLg==}
     dev: true
 
-  /@types/urijs@1.19.20:
-    resolution: {integrity: sha512-77Mq/2BeHU894J364dUv9tSwxxyCLtcX228Pc8TwZpP5bvOoMns+gZoftp3LYl3FBH8vChpWbuagKGiMki2c1A==}
+  /@types/urijs@1.19.22:
+    resolution: {integrity: sha512-qnYBwfN7O/+i6E1Kr8JaCKsrCLpRCiQ1XxkSxNIYuJ/5Aagt0+HlMX78DJMUrNzDULMz0eu2gcprlxJaDtACOw==}
     dev: true
 
   /@types/warning@3.0.0:
