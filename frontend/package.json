@@ -19,7 +19,7 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@types/react": "^18.2.31",
+    "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "@types/urijs": "^1.19.22",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
