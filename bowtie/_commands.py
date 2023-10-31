@@ -248,7 +248,9 @@ class ReportableResult(Protocol):
     errored: bool
     failed: bool
 
-    implementation: str
+    @property
+    def implementation(self) -> str:
+        ...
 
     def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
         pass
