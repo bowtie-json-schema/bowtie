@@ -545,7 +545,7 @@ The structure of skip responses, which you should send when presented with a "kn
 The biggest consideration at the minute is how to *identify* incoming test cases.
 Adding some sort of "persistent identifier" to test cases is something we've previously discussed upstream in the official test suite, which would make this easier.
 Until that happens however, your best current bet is to match on the test case description and/or schema, and use that to decide this incoming test is unsupported (and then respond with a skip request as above).
-For a specific example of doing so for Bowtie's reporting, see `this PR <https://github.com/bowtie-json-schema/bowtie/pull/73>`_.
+For a specific example of doing so for Bowtie's reporting, see :pr:`this PR <73>`.
 
 If you've gotten to the end and wish to see the full code for the harness, have a look at the `completed harness for lua-jsonschema <https://github.com/bowtie-json-schema/bowtie/blob/090f259b03888c7bc72beb7702546d00b7622e90/implementations/lua-jsonschema/bowtie_jsonschema.lua>`_.
 

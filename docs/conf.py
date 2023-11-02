@@ -91,6 +91,8 @@ extlinks = {
     "gh": (str(HOMEPAGE) + "/%s", None),
     "github": (str(GITHUB) + "/%s", None),
     "org": (str(ORG) + "/%s", None),
+    "pr": (str(HOMEPAGE / "pull") + "/%s", None),
+    "wiki": ("https://en.wikipedia.org/wiki/%s", None),
 }
 extlinks_detect_hardcoded_links = True
 
