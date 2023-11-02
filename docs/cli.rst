@@ -7,7 +7,14 @@ Examples
 
 .. sidebar::
 
-    Some below
+    Many of Bowtie's subcommands take a ``-i / --implementation`` option which specifies which implementations you wish to run against.
+    In general, these same subcommands allow repeating this argument multiple times to run across multiple implementations.
+    In many or even most cases, you may be interested in running against *all* implementations Bowtie supports.
+    For somewhat boring reasons partially having to do with the GitHub API, this turns out to be nontrivial to implement, though it is tracked in :issue:`this issue <24>`.
+    In the interim, it's often convenient to use a local checkout of Bowtie in order to list this information.
+    Specifically, all supported implementations live in the ``implementations/`` directory, and therefore you can construct a string of ``-i`` arguments using a small bit of shell vomit.
+    If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
+    See `below <cli:running the official suite across all implementations>` for a full example.
 
 Validating a Specific Instance Against One or More Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -62,7 +69,7 @@ The following will run all Draft 7 tests from the `official test suite`_ (which 
 
 .. code:: sh
 
-    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
+    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
 
 
 Running Test Suite Tests From Local Checkouts
@@ -72,7 +79,7 @@ Providing a local path to the test suite can be used as well, which is useful if
 
 .. code:: sh
 
-    $ bowtie suite $(find /path/to/bowtie/checkout/implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/.*\/implementations\//-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
+    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
 
 
 Checking An Implementation Functions On Basic Input

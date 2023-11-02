@@ -91,6 +91,7 @@ extlinks = {
     "gh": (str(HOMEPAGE) + "/%s", None),
     "github": (str(GITHUB) + "/%s", None),
     "org": (str(ORG) + "/%s", None),
+    "issue": (str(HOMEPAGE / "issues") + "/%s", None),
     "pr": (str(HOMEPAGE / "pull") + "/%s", None),
     "wiki": ("https://en.wikipedia.org/wiki/%s", None),
 }
