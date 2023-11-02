@@ -5,7 +5,7 @@ CLI
 Examples
 --------
 
-.. sidebar::
+.. sidebar:: Running Commands Against All Implementations
 
     Many of Bowtie's subcommands take a ``-i / --implementation`` option which specifies which implementations you wish to run against.
     In general, these same subcommands allow repeating this argument multiple times to run across multiple implementations.
