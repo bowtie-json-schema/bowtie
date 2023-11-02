@@ -2,16 +2,18 @@
 CLI
 ===
 
-Examples
---------
+Bowtie is a versatile tool which you can use to investigate any or all of the implementations it supports.
+Below are a few sample command lines you might be interested in.
 
-.. sidebar:: Running Commands Against All Implementations
+.. admonition:: Running Commands Against All Implementations
 
     Many of Bowtie's subcommands take a ``-i / --implementation`` option which specifies which implementations you wish to run against.
     In general, these same subcommands allow repeating this argument multiple times to run across multiple implementations.
     In many or even most cases, you may be interested in running against *all* implementations Bowtie supports.
-    For somewhat boring reasons partially having to do with the GitHub API, this turns out to be nontrivial to implement, though it is tracked in :issue:`this issue <24>`.
+    For somewhat boring reasons (partially having to do with the GitHub API) this "run against all implementations" functionality is slightly nontrivial to implement in a seamless way, though doing so is nevertheless tracked in :issue:`this issue <24>`.
+
     In the interim, it's often convenient to use a local checkout of Bowtie in order to list this information.
+
     Specifically, all supported implementations live in the ``implementations/`` directory, and therefore you can construct a string of ``-i`` arguments using a small bit of shell vomit.
     If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
