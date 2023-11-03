@@ -26,6 +26,9 @@ if TYPE_CHECKING:
     from bowtie._report import CaseReporter
 
 
+Seq = int
+
+
 @frozen
 class Test:
     description: str
@@ -53,7 +56,7 @@ class TestCase:
 
     def run(
         self,
-        seq: int,
+        seq: Seq,
         runner: DialectRunner,
     ) -> Awaitable[ReportableResult]:
         command = Run(seq=seq, case=self.without_expected_results())
@@ -266,7 +269,7 @@ class CaseResult:
     errored = False
 
     implementation: str
-    seq: int
+    seq: Seq
     results: list[TestResult | SkippedTest | ErroredTest]
     expected: list[bool | None]
 
@@ -305,7 +308,7 @@ class CaseErrored:
     failed = False
 
     implementation: str
-    seq: int
+    seq: Seq
     context: dict[str, Any]
 
     caught: bool = True
@@ -317,7 +320,7 @@ class CaseErrored:
     def uncaught(
         cls,
         implementation: str,
-        seq: int,
+        seq: Seq,
         **context: Any,
     ) -> CaseErrored:
         return cls(
@@ -338,7 +341,7 @@ class CaseSkipped:
     failed = False
 
     implementation: str
-    seq: int
+    seq: Seq
 
     message: str | None = None
     issue_url: str | None = None
@@ -365,7 +368,7 @@ class Empty:
 
 @command(Response=_case_result)
 class Run:
-    seq: int
+    seq: Seq
     case: dict[str, Any]
 
 

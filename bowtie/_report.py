@@ -119,7 +119,7 @@ class Reporter:
             request=cmd,
         )
 
-    def case_started(self, seq: int, case: _commands.TestCase):
+    def case_started(self, seq: _commands.Seq, case: _commands.TestCase):
         return CaseReporter.case_started(
             case=case,
             seq=seq,
@@ -143,7 +143,7 @@ class CaseReporter:
         log: structlog.stdlib.BoundLogger,
         write: Callable[..., None],
         case: _commands.TestCase,
-        seq: int,
+        seq: _commands.Seq,
     ) -> CaseReporter:
         self = cls(log=log, write=write)
         self._write(case=case.serializable(), seq=seq)
@@ -243,7 +243,7 @@ class _Summary:
     def skipped_tests(self):
         return sum(count.skipped_tests for count in self.counts.values())
 
-    def add_case_metadata(self, seq: int, case: dict[str, Any]):
+    def add_case_metadata(self, seq: _commands.Seq, case: dict[str, Any]):
         results: list[tuple[Any, dict[str, tuple[str, str]]]] = [
             (test, {}) for test in case["tests"]
         ]
@@ -252,7 +252,7 @@ class _Summary:
     def see_error(
         self,
         implementation: str,
-        seq: int,
+        seq: _commands.Seq,
         context: dict[str, Any],
         caught: bool,
     ):
