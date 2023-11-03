@@ -146,7 +146,7 @@ class CaseReporter:
         seq: int,
     ) -> CaseReporter:
         self = cls(log=log, write=write)
-        self._write(case=asdict(case), seq=seq)
+        self._write(case=case.serializable(), seq=seq)
         return self
 
     def got_results(self, results: _commands.CaseResult):

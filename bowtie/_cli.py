@@ -16,6 +16,8 @@ import sys
 import zipfile
 
 from attrs import asdict
+from referencing import Registry
+from referencing.jsonschema import SchemaRegistry
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
@@ -894,11 +896,13 @@ def suite_cases_from(
     remotes: Path,
     dialect: str | None,
 ) -> Iterable[TestCase]:
+    empty: SchemaRegistry = Registry()
+    populated = empty.with_contents(_remotes_from(remotes, dialect=dialect))
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = dict(_remotes_from(remotes, dialect=dialect))
+            registry = populated
         else:
-            registry = {}
+            registry = empty
 
         for case in json.loads(path.read_text()):
             for test in case["tests"]:

@@ -674,7 +674,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
+async def test_summary_show_validation(envsonschema, always_valid):
     run = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -760,6 +760,52 @@ async def test_summary_show_validation(envsonschema, always_valid, tmp_path):
             {"type": "array"},
             [
                 ["", ["error", "valid"]],
+            ],
+        ],
+    ], run_stderr.decode()
+
+
+@pytest.mark.asyncio
+async def test_run_with_registry(always_valid):
+    run = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        always_valid,
+        "-V",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    raw = """
+        {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+    """  # noqa: E501
+    lines = dedent(raw.strip("\n")).encode("utf-8")
+    run_stdout, run_stderr = await run.communicate(lines)
+
+    summary_validation = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "validation",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await summary_validation.communicate(run_stdout)
+    assert stderr == b""
+    assert json.loads(stdout) == [
+        [
+            {"type": "integer"},
+            [
+                [12, ["valid"]],
+                [12.5, ["valid"]],
             ],
         ],
     ], run_stderr.decode()

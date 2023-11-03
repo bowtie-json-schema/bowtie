@@ -15,6 +15,8 @@ except ImportError:
 import json
 
 from attrs import asdict, field, frozen
+from referencing import Registry
+from referencing.jsonschema import SchemaRegistry
 
 from bowtie import exceptions
 
@@ -37,7 +39,7 @@ class TestCase:
     schema: Any
     tests: list[Test]
     comment: str | None = None
-    registry: dict[str, Any] | None = None
+    registry: SchemaRegistry = Registry()
 
     @classmethod
     def from_dict(
@@ -56,6 +58,16 @@ class TestCase:
         command = Run(seq=seq, case=self.without_expected_results())
         return runner.run_validation(command=command, tests=self.tests)
 
+    def serializable(self) -> dict[str, Any]:
+        as_dict = asdict(
+            self,
+            filter=lambda k, v: k.name != "registry"
+            and (k.name != "comment" or v is not None),
+        )
+        if self.registry:
+            as_dict["registry"] = dict(self.registry)
+        return as_dict
+
     def without_expected_results(self) -> dict[str, Any]:
         as_dict = {
             "tests": [
@@ -70,10 +82,12 @@ class TestCase:
         as_dict.update(
             asdict(
                 self,
-                filter=lambda k, v: k.name != "tests"
-                and (k.name not in {"comment", "registry"} or v is not None),
+                filter=lambda k, v: k.name not in {"tests", "registry"}
+                and (k.name != "comment" or v is not None),
             ),
         )
+        if self.registry:
+            as_dict["registry"] = dict(self.registry.items())
         return as_dict
 
 
