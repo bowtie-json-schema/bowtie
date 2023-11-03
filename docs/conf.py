@@ -2,12 +2,12 @@ from pathlib import Path
 import importlib.metadata
 import re
 
-from url import URL
+from yarl import URL
 
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
-GITHUB = URL.parse("https://github.com/")
+GITHUB = URL("https://github.com/")
 ORG = GITHUB / "bowtie-json-schema"
 HOMEPAGE = ORG / "bowtie"
 

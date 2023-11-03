@@ -180,11 +180,11 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
-url-py==0.4.0
-    # via -r docs/requirements.in
 urllib3==2.0.7
     # via requests
 yarl==1.9.2
-    # via aiohttp
+    # via
+    #   -r docs/requirements.in
+    #   aiohttp
 zipp==3.17.0
     # via importlib-metadata

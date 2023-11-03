@@ -7,4 +7,4 @@ sphinx-json-schema-spec
 sphinx>5
 sphinxcontrib-spelling>5
 sphinxext-opengraph
-url.py
+yarl
