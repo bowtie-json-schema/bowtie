@@ -37,7 +37,7 @@ cffi==1.16.0
     # via
     #   -r requirements.txt
     #   cryptography
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -73,7 +73,7 @@ importlib-metadata==6.8.0
     #   textual
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.19.1
+jsonschema==4.19.2
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -163,7 +163,7 @@ structlog==23.2.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-textual==0.40.0
+textual==0.41.0
     # via
     #   -r requirements.txt
     #   trogon
