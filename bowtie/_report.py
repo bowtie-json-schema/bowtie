@@ -120,7 +120,7 @@ class Reporter:
         )
 
     def case_started(self, seq: int, case: _commands.TestCase):
-        return _CaseReporter.case_started(
+        return CaseReporter.case_started(
             case=case,
             seq=seq,
             write=self._write,
@@ -133,7 +133,7 @@ class Reporter:
 
 
 @frozen
-class _CaseReporter:
+class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
 
@@ -144,7 +144,7 @@ class _CaseReporter:
         write: Callable[..., None],
         case: _commands.TestCase,
         seq: int,
-    ) -> _CaseReporter:
+    ) -> CaseReporter:
         self = cls(log=log, write=write)
         self._write(case=asdict(case), seq=seq)
         return self

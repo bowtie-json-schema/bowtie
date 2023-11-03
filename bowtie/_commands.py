@@ -19,8 +19,8 @@ from attrs import asdict, field, frozen
 from bowtie import exceptions
 
 if TYPE_CHECKING:
-    from bowtie import _report
     from bowtie._core import DialectRunner
+    from bowtie._report import CaseReporter
 
 
 @frozen
@@ -252,7 +252,7 @@ class ReportableResult(Protocol):
     def implementation(self) -> str:
         ...
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: CaseReporter) -> None:
         pass
 
 
@@ -274,7 +274,7 @@ class CaseResult:
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
 
-    def report(self, reporter: _report._CaseReporter) -> None:  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: CaseReporter) -> None:
         reporter.got_results(self)
 
     def compare(
@@ -305,7 +305,7 @@ class CaseErrored:
 
     caught: bool = True
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: CaseReporter):
         reporter.case_errored(self)
 
     @classmethod
@@ -339,7 +339,7 @@ class CaseSkipped:
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: CaseReporter):
         reporter.skipped(self)
 
 
@@ -354,7 +354,7 @@ class Empty:
 
     implementation: str
 
-    def report(self, reporter: _report._CaseReporter):  # type: ignore[reportPrivateUsage]
+    def report(self, reporter: CaseReporter):
         reporter.no_response(implementation=self.implementation)
 
 

@@ -869,7 +869,7 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
 def sequenced(
     cases: Iterable[TestCase],
     reporter: _report.Reporter,
-) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]
+) -> Iterable[tuple[int, TestCase, _report.CaseReporter]]:
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
