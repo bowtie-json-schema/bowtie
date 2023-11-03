@@ -21,7 +21,6 @@ from bowtie import exceptions
 
 if TYPE_CHECKING:
     from referencing.jsonschema import SchemaRegistry
-    from referencing.typing import URI
 
     from bowtie._core import DialectRunner
     from bowtie._report import CaseReporter
@@ -71,26 +70,16 @@ class TestCase:
         return as_dict
 
     def without_expected_results(self) -> dict[str, Any]:
-        as_dict: dict[str | URI, Any] = {
-            "tests": [
-                asdict(
-                    test,
-                    filter=lambda k, v: k.name != "valid"
-                    and (k.name != "comment" or v is not None),
-                )
-                for test in self.tests
-            ],
-        }
-        as_dict.update(
-            asdict(
-                self,
-                filter=lambda k, v: k.name not in {"tests", "registry"}
-                and (k.name != "comment" or v is not None),
-            ),
-        )
-        if self.registry:
-            as_dict["registry"] = dict(self.registry.items())
-        return as_dict
+        serializable = self.serializable()
+        serializable["tests"] = [
+            {
+                k: v
+                for k, v in test.items()
+                if k != "valid" and (k != "comment" or v is not None)
+            }
+            for test in serializable.pop("tests")
+        ]
+        return serializable
 
 
 @frozen
