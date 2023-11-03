@@ -16,11 +16,13 @@ import json
 
 from attrs import asdict, field, frozen
 from referencing import Registry
-from referencing.jsonschema import SchemaRegistry
 
 from bowtie import exceptions
 
 if TYPE_CHECKING:
+    from referencing.jsonschema import SchemaRegistry
+    from referencing.typing import URI
+
     from bowtie._core import DialectRunner
     from bowtie._report import CaseReporter
 
@@ -69,7 +71,7 @@ class TestCase:
         return as_dict
 
     def without_expected_results(self) -> dict[str, Any]:
-        as_dict = {
+        as_dict: dict[str | URI, Any] = {
             "tests": [
                 asdict(
                     test,
