@@ -37,7 +37,7 @@ cffi==1.16.0
     # via
     #   -r requirements.txt
     #   cryptography
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -47,7 +47,7 @@ click==8.1.7
     #   -r requirements.txt
     #   bowtie-json-schema
     #   trogon
-cryptography==41.0.4
+cryptography==41.0.5
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -122,7 +122,7 @@ pyjwt==2.8.0
     # via
     #   -r requirements.txt
     #   github3-py
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r test-requirements.in
     #   pytest-asyncio

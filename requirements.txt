@@ -22,7 +22,7 @@ certifi==2023.7.22
     # via requests
 cffi==1.16.0
     # via cryptography
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via
     #   aiohttp
     #   requests
@@ -44,7 +44,7 @@ idna==3.4
     #   yarl
 importlib-metadata==6.8.0
     # via textual
-jsonschema==4.19.1
+jsonschema==4.19.2
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -90,7 +90,7 @@ six==1.16.0
     # via python-dateutil
 structlog==23.2.0
     # via bowtie-json-schema (pyproject.toml)
-textual==0.40.0
+textual==0.41.0
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema (pyproject.toml)
