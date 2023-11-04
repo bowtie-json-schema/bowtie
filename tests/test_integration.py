@@ -187,7 +187,10 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
             else:
                 errors.append(each)
 
-        assert errors if expecting_errors else not errors, pformat(errors)
+        if expecting_errors:
+            assert errors, stderr.decode()
+        else:
+            assert not errors, pformat(errors)
         return proc.returncode, successful, errors, cases, stderr
 
     yield _send
