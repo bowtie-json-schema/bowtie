@@ -16,8 +16,6 @@ import sys
 import zipfile
 
 from attrs import asdict
-from referencing import Registry
-from referencing.jsonschema import SchemaRegistry
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
@@ -418,14 +416,17 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, **kwargs: Any):
+def run(input: Iterable[str], filter: str, dialect: str, **kwargs: Any):
     """
     Run a sequence of cases provided on standard input.
     """
-    cases = (TestCase.from_dict(**json.loads(line)) for line in input)
+    cases = (
+        TestCase.from_dict(dialect=dialect, **json.loads(line))
+        for line in input
+    )
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
-    return asyncio.run(_run(**kwargs, cases=cases))
+    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
 @subcommand
@@ -896,22 +897,21 @@ def suite_cases_from(
     remotes: Path,
     dialect: str | None,
 ) -> Iterable[TestCase]:
-    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]
-    empty: SchemaRegistry = Registry()
-    populated = empty.with_contents(
-        _remotes_from(remotes, dialect=dialect),
-        default_specification=specification,
-    )
+    populated = dict(_remotes_from(remotes, dialect=dialect))
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = populated
         else:
-            registry = empty
+            registry = {}
 
         for case in json.loads(path.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
-            yield TestCase.from_dict(**case, registry=registry)
+            yield TestCase.from_dict(
+                dialect=dialect,
+                registry=registry,
+                **case,
+            )
 
 
 def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
