@@ -896,8 +896,12 @@ def suite_cases_from(
     remotes: Path,
     dialect: str | None,
 ) -> Iterable[TestCase]:
+    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]
     empty: SchemaRegistry = Registry()
-    populated = empty.with_contents(_remotes_from(remotes, dialect=dialect))
+    populated = empty.with_contents(
+        _remotes_from(remotes, dialect=dialect),
+        default_specification=specification,
+    )
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = populated

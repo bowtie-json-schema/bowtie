@@ -69,7 +69,10 @@ class TestCase:
             and (k.name != "comment" or v is not None),
         )
         if self.registry:
-            as_dict["registry"] = dict(self.registry)
+            # FIXME: Via python-jsonschema/referencing#16
+            as_dict["registry"] = {
+                k: v.contents for k, v in self.registry.items()
+            }
         return as_dict
 
     def without_expected_results(self) -> dict[str, Any]:
