@@ -857,7 +857,7 @@ async def _run(
             should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
                 if set_schema and not isinstance(case.schema, bool):
-                    case.schema["$schema"] = dialect
+                    case.schema["$schema"] = str(dialect)
 
                 responses = [
                     case.run(seq=seq, runner=runner) for runner in runners
