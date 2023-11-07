@@ -73,7 +73,9 @@ pycparser==2.21
 pygments==2.16.1
     # via rich
 pyjwt==2.8.0
-    # via github3-py
+    # via
+    #   github3-py
+    #   pyjwt
 python-dateutil==2.8.2
     # via github3-py
 referencing==0.30.2
@@ -108,6 +110,8 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
+url-py==0.8.3
+    # via bowtie-json-schema (pyproject.toml)
 urllib3==2.0.7
     # via requests
 yarl==1.9.2

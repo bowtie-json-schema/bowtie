@@ -4,12 +4,14 @@ import re
 
 from url import URL
 
+from bowtie import HOMEPAGE
+
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
 GITHUB = URL.parse("https://github.com/")
 ORG = GITHUB / "bowtie-json-schema"
-HOMEPAGE = ORG / "bowtie"
+REPO = ORG / "bowtie"
 
 project = "bowtie"
 author = "Julian Berman"
@@ -44,8 +46,8 @@ html_theme = "furo"
 html_logo = str(STATIC / "dreamed.png")
 html_static_path = [str(STATIC)]
 
-rst_prolog = """
-.. |site| replace:: https://bowtie.report/
+rst_prolog = f"""
+.. |site| replace:: {HOMEPAGE}
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501, RUF100
@@ -58,8 +60,8 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("img.shields.io"),
     f"{GITHUB}.*#.*",
-    str(HOMEPAGE / "actions"),
-    str(HOMEPAGE / "workflows/CI/badge.svg"),
+    str(REPO / "actions"),
+    str(REPO / "workflows/CI/badge.svg"),
 ]
 
 # = Extensions =
@@ -88,11 +90,11 @@ intersphinx_mapping = {
 # -- extlinks --
 
 extlinks = {
-    "gh": (str(HOMEPAGE) + "/%s", None),
+    "gh": (str(REPO) + "/%s", None),
     "github": (str(GITHUB) + "/%s", None),
     "org": (str(ORG) + "/%s", None),
-    "issue": (str(HOMEPAGE / "issues") + "/%s", None),
-    "pr": (str(HOMEPAGE / "pull") + "/%s", None),
+    "issue": (str(REPO / "issues") + "/%s", None),
+    "pr": (str(REPO / "pull") + "/%s", None),
     "wiki": ("https://en.wikipedia.org/wiki/%s", None),
 }
 extlinks_detect_hardcoded_links = True

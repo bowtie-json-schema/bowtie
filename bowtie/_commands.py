@@ -17,7 +17,7 @@ from attrs import asdict, field, frozen
 from referencing import Registry, Specification
 from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 
-from bowtie import exceptions
+from bowtie import HOMEPAGE, exceptions
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
@@ -139,9 +139,9 @@ def command(
         if not name:
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
 
-        uri = f"https://bowtie.report/schemas/io/commands/{name}/"
-        request_schema = {"$ref": uri}
-        response_schema = {"$ref": f"{uri}response/"}
+        uri = HOMEPAGE / "schemas/io/commands" / name / ""
+        request_schema = {"$ref": str(uri)}
+        response_schema = {"$ref": str(uri / "response" / "")}
 
         def to_request(
             self: Command[R],
