@@ -17,6 +17,10 @@ if TYPE_CHECKING:
     from bowtie._core import Implementation
 
 
+class EmptyReport(Exception):
+    diagnostic_code = "empty-report"
+
+
 class _InvalidBowtieReport(Exception):
     pass
 
@@ -408,7 +412,10 @@ def from_input(input: Iterable[str]) -> ReportData:
     Create a structure suitable for the report template from an input file.
     """
     lines = (json.loads(line) for line in input)
-    run_info = RunInfo(**next(lines))
+    header = next(lines, None)
+    if header is None:
+        raise EmptyReport()
+    run_info = RunInfo(**header)
     summary = run_info.create_summary()
 
     for each in lines:

@@ -41,8 +41,11 @@ click==8.1.7
     #   trogon
 cryptography==41.0.5
     # via pyjwt
+diagnostic==2.0.0
+    # via bowtie-json-schema
 docutils==0.20.1
     # via
+    #   diagnostic
     #   sphinx
     #   sphinx-click
 frozenlist==1.4.0
@@ -73,6 +76,7 @@ lxml==4.9.3
     # via sphinx-json-schema-spec
 markdown-it-py==3.0.0
     # via
+    #   diagnostic
     #   mdit-py-plugins
     #   rich
     #   textual
@@ -116,8 +120,9 @@ requests==2.31.0
 rich==13.6.0
     # via
     #   bowtie-json-schema
+    #   diagnostic
     #   textual
-rpds-py==0.10.6
+rpds-py==0.12.0
     # via
     #   jsonschema
     #   referencing

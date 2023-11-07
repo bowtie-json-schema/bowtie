@@ -51,6 +51,14 @@ cryptography==41.0.5
     # via
     #   -r requirements.txt
     #   pyjwt
+diagnostic==2.0.0
+    # via
+    #   -r requirements.txt
+    #   bowtie-json-schema
+docutils==0.20.1
+    # via
+    #   -r requirements.txt
+    #   diagnostic
 frozenlist==1.4.0
     # via
     #   -r requirements.txt
@@ -88,6 +96,7 @@ linkify-it-py==2.0.2
 markdown-it-py==3.0.0
     # via
     #   -r requirements.txt
+    #   diagnostic
     #   mdit-py-plugins
     #   rich
     #   textual
@@ -149,8 +158,9 @@ rich==13.6.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
+    #   diagnostic
     #   textual
-rpds-py==0.10.6
+rpds-py==0.12.0
     # via
     #   -r requirements.txt
     #   jsonschema

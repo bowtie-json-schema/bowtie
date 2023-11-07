@@ -16,13 +16,15 @@ import sys
 import zipfile
 
 from attrs import asdict
-from rich import box, console, panel
+from diagnostic import DiagnosticError
+from rich.console import Console
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import aiodocker
 import click
 import referencing.jsonschema
+import rich
 import structlog
 import structlog.typing
 
@@ -39,7 +41,9 @@ from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
 )
 
+# Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
+_EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
@@ -164,7 +168,22 @@ def summary(input: Iterable[str], format: _F, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
-    summary = _report.from_input(input)["summary"]
+    try:
+        summary = _report.from_input(input)["summary"]
+    except _report.EmptyReport:
+        error = DiagnosticError(
+            code="empty-report",
+            message="The Bowtie report is empty.",
+            causes=[f"{input.name} contains no test result data."],
+            hint_stmt=(
+                "If you are piping data into bowtie summary, "
+                "check to ensure that what you've run has succeeded, "
+                "otherwise it may be emitting no report data."
+            ),
+        )
+        rich.print(error)
+        return _EX_NOINPUT
+
     if show == "failures":
         results = _ordered_failures(summary)
         to_table = _failure_table
@@ -184,7 +203,7 @@ def summary(input: Iterable[str], format: _F, show: str):
             click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
             table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]
-            console.Console().print(table)
+            Console().print(table)
 
 
 def _ordered_failures(
@@ -261,7 +280,7 @@ def _validation_results_table(
     )
 
     for schema, case_results in results:
-        subtable = Table("Instance", box=box.SIMPLE_HEAD)
+        subtable = Table("Instance", box=rich.box.SIMPLE_HEAD)
         for implementation in summary.implementations:
             subtable.add_column(
                 Text.assemble(
@@ -925,8 +944,8 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
             if contents is not None:
                 implementation = event_dict["logger_name"]
                 title = f"[traceback.title]{implementation} [dim]({each})"
-                console.Console(file=file, color_system="truecolor").print(
-                    panel.Panel(
+                Console(file=file, color_system="truecolor").print(
+                    rich.panel.Panel(
                         contents.rstrip("\n"),
                         title=title,
                         border_style="traceback.border",
