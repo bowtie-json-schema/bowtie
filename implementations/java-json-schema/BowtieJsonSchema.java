@@ -79,7 +79,7 @@ public class BowtieJsonSchema {
     InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
     var attributes = new Manifest(is).getMainAttributes();
 
-    String fullName = "%s:%s".formatted(
+    String fullName = "%s.%s".formatted(
       attributes.getValue("Implementation-Group"),
       attributes.getValue("Implementation-Name")
     );
