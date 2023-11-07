@@ -17,7 +17,7 @@ import zipfile
 
 from attrs import asdict
 from diagnostic import DiagnosticError
-from rich.console import Console
+from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
@@ -164,7 +164,7 @@ def badges(input: Iterable[str], output: Path):
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: _F, show: str):
+def summary(input: TextIO, format: _F, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
@@ -203,7 +203,7 @@ def summary(input: Iterable[str], format: _F, show: str):
             click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
             table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]
-            Console().print(table)
+            console.Console().print(table)
 
 
 def _ordered_failures(
@@ -280,7 +280,7 @@ def _validation_results_table(
     )
 
     for schema, case_results in results:
-        subtable = Table("Instance", box=rich.box.SIMPLE_HEAD)
+        subtable = Table("Instance", box=box.SIMPLE_HEAD)
         for implementation in summary.implementations:
             subtable.add_column(
                 Text.assemble(
@@ -944,8 +944,8 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
             if contents is not None:
                 implementation = event_dict["logger_name"]
                 title = f"[traceback.title]{implementation} [dim]({each})"
-                Console(file=file, color_system="truecolor").print(
-                    rich.panel.Panel(
+                console.Console(file=file, color_system="truecolor").print(
+                    panel.Panel(
                         contents.rstrip("\n"),
                         title=title,
                         border_style="traceback.border",
