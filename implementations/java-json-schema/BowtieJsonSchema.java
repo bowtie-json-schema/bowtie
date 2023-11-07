@@ -9,7 +9,6 @@ import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
-
 import java.io.*;
 import java.util.List;
 import java.util.Map;
