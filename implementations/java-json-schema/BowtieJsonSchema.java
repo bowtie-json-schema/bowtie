@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.harrel.jsonschema.*;
-
 import java.io.*;
 import java.util.List;
 import java.util.Map;
