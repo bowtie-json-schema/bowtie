@@ -911,7 +911,7 @@ def _remotes_from(
         schema = json.loads(each.read_text())
         # FIXME: #40: for draft-next support
         schema_dialect = schema.get("$schema")
-        if schema_dialect is not None and schema_dialect != dialect:
+        if schema_dialect is not None and schema_dialect != str(dialect):
             continue
         relative = str(_relative_to(each, path)).replace("\\", "/")
         yield SUITE_REMOTE_BASE_URI / relative, schema

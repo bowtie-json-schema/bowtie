@@ -16,12 +16,13 @@ import json
 from attrs import asdict, field, frozen
 from referencing import Registry, Specification
 from referencing.jsonschema import Schema, SchemaRegistry, specification_with
-from url import URL
 
 from bowtie import HOMEPAGE, exceptions
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
+
+    from url import URL
 
     from bowtie._core import DialectRunner
     from bowtie._report import CaseReporter
@@ -55,7 +56,7 @@ class TestCase:
         **kwargs: Any,
     ) -> TestCase:
         populated: SchemaRegistry = Registry().with_contents(  # type: ignore[reportUnknownMemberType]
-            ((str(url), schema) for url, schema in registry.items()),
+            registry.items(),
             default_specification=specification_with(
                 str(dialect or "urn:bowtie:unknown-dialect"),
                 default=Specification.OPAQUE,
@@ -148,13 +149,7 @@ def command(
             self: Command[R],
             validate: Callable[..., None],
         ) -> dict[str, Any]:
-            as_dict = asdict(
-                self,
-                value_serializer=lambda _, __, value: (
-                    str(value) if isinstance(value, URL) else value
-                ),
-            )
-            request = dict(as_dict, cmd=name)
+            request = dict(cmd=name, **asdict(self))
             validate(instance=request, schema=request_schema)
             return request
 
