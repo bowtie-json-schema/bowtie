@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class EmptyReport(Exception):
-    diagnostic_code = "empty-report"
+    pass
 
 
 class _InvalidBowtieReport(Exception):
