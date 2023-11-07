@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.harrel.jsonschema.Dialects;
 import dev.harrel.jsonschema.SchemaResolver;
+import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
@@ -17,8 +18,6 @@ import java.util.jar.Manifest;
 
 public class BowtieJsonSchema {
 
-  private static final String DRAFT_2020 =
-      "https://json-schema.org/draft/2020-12/schema";
   private static final String RECOGNIZING_IDENTIFIERS =
       "Determining if a specific location is a schema or not is not supported.";
   private static final Map<String, String> UNSUPPORTED = Map.of(
@@ -80,14 +79,18 @@ public class BowtieJsonSchema {
     InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
     var attributes = new Manifest(is).getMainAttributes();
 
+    String fullName = "%s:%s".formatted(
+      attributes.getValue("Implementation-Group"),
+      attributes.getValue("Implementation-Name")
+    );
     StartResponse startResponse = new StartResponse(
       1,
       true,
       new Implementation(
         "java",
-        attributes.getValue("Implementation-Name"),
+        fullName,
         attributes.getValue("Implementation-Version"),
-        List.of(DRAFT_2020),
+        List.of(SpecificationVersion.DRAFT2019_09.getId(), SpecificationVersion.DRAFT2020_12.getId()),
         "https://github.com/harrel56/json-schema",
         "https://github.com/harrel56/json-schema/issues",
         System.getProperty("os.name"),
@@ -113,8 +116,10 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
-    if (DRAFT_2020.equals(dialectRequest.dialect())) {
+    if (SpecificationVersion.DRAFT2020_12.getId().equals(dialectRequest.dialect())) {
         validatorFactory.withDialect(new Dialects.Draft2020Dialect());
+    } else if (SpecificationVersion.DRAFT2019_09.getId().equals(dialectRequest.dialect())) {
+        validatorFactory.withDialect(new Dialects.Draft2019Dialect());
     }
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
