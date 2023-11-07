@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
@@ -16,6 +15,8 @@ import aiodocker.stream
 from bowtie import _commands, exceptions
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+
     from bowtie._report import Reporter
 
 

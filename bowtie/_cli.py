@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, ParamSpec, TextIO
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TextIO
 from urllib.parse import urljoin
 import asyncio
 import json
@@ -40,6 +39,9 @@ from bowtie._core import (
 from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
