@@ -23,14 +23,14 @@ REQUIREMENTS = dict(
     docs=DOCS / "requirements.txt",
     tests=ROOT / "test-requirements.txt",
 )
-REQUIREMENTS_IN = {
+REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
     (
         ROOT / "pyproject.toml"
         if path.absolute() == REQUIREMENTS["main"].absolute()
         else path.parent / f"{path.stem}.in"
     )
     for path in REQUIREMENTS.values()
-}
+]
 
 
 SUPPORTED = ["3.10", "3.11"]
