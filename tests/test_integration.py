@@ -191,7 +191,7 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
             assert errors, stderr.decode()
         else:
             assert not errors, pformat(errors)
-        return proc.returncode, successful, errors, cases, stderr
+        return proc.returncode, successful, errors, cases, stderr.decode()
 
     yield _send
 
@@ -259,7 +259,7 @@ async def test_unsupported_dialect(envsonschema):
         returncode, results, _, _, stderr = await send("")
 
     assert results == []
-    assert b"unsupported dialect" in stderr.lower()
+    assert "unsupported dialect" in stderr.lower()
     assert returncode != 0
 
 
@@ -290,7 +290,7 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         )
 
     assert results == [[{"valid": False}], [{"valid": False}]]
-    assert b"startup failed" in stderr.lower(), stderr
+    assert "startup failed" in stderr.lower(), stderr
     assert returncode != 0, stderr
 
 
@@ -310,7 +310,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
     assert results == []
     assert cases == []
-    assert b"startup failed" in stderr.lower(), stderr
+    assert "startup failed" in stderr.lower(), stderr
     assert returncode != 0, stderr
 
 
@@ -327,8 +327,8 @@ async def test_handles_broken_start_implementations(
             """,  # noqa: E501
         )
 
-    assert b"startup failed" in stderr.lower(), stderr
-    assert b"BOOM!" in stderr, stderr
+    assert "startup failed" in stderr.lower(), stderr
+    assert "BOOM!" in stderr, stderr
     assert returncode != 0, stderr
     assert results == [[{"valid": False}], [{"valid": False}]]
 
@@ -350,7 +350,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
         )
 
     assert results == []
-    assert b"got an error" in stderr.lower(), stderr.decode()
+    assert "got an error" in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -405,7 +405,7 @@ async def test_it_prevents_network_access(hit_the_network):
         )
 
     assert results == []
-    assert b"bad address" in stderr.lower(), stderr.decode()
+    assert "bad address" in stderr.lower(), stderr.decode()
 
 
 @pytest.mark.asyncio
@@ -427,7 +427,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert b"expected to speak version 1 " in stderr.lower(), stderr.decode()
+    assert "expected to speak version 1 " in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
