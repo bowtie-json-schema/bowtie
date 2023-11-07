@@ -7,7 +7,6 @@ from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TextIO
-from urllib.parse import urljoin
 import asyncio
 import json
 import os
@@ -20,6 +19,7 @@ from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
+from url import URL, RelativeURLWithoutBase
 import aiodocker
 import click
 import referencing.jsonschema
@@ -27,7 +27,7 @@ import rich
 import structlog
 import structlog.typing
 
-from bowtie import _report
+from bowtie import GITHUB, _report
 from bowtie._commands import Test, TestCase
 from bowtie._core import (
     DialectRunner,
@@ -41,23 +41,23 @@ from bowtie.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
+TEST_SUITE_URL = GITHUB / "json-schema-org/json-schema-test-suite"
 
-DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
-DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
-DRAFT7 = "http://json-schema.org/draft-07/schema#"
-DRAFT6 = "http://json-schema.org/draft-06/schema#"
-DRAFT4 = "http://json-schema.org/draft-04/schema#"
-DRAFT3 = "http://json-schema.org/draft-03/schema#"
+DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
+DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
+DRAFT7 = URL.parse("http://json-schema.org/draft-07/schema#")
+DRAFT6 = URL.parse("http://json-schema.org/draft-06/schema#")
+DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
+DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
 
-DIALECT_SHORTNAMES = {
+DIALECT_SHORTNAMES: Mapping[str, URL] = {
     "2020": DRAFT2020,
     "202012": DRAFT2020,
     "2020-12": DRAFT2020,
@@ -78,20 +78,20 @@ DIALECT_SHORTNAMES = {
     "draft3": DRAFT3,
 }
 TEST_SUITE_DIALECT_URLS = {
-    DRAFT2020: f"{TEST_SUITE_URL}/tree/main/tests/draft2020-12",
-    DRAFT2019: f"{TEST_SUITE_URL}/tree/main/tests/draft2019-09",
-    DRAFT7: f"{TEST_SUITE_URL}/tree/main/tests/draft7",
-    DRAFT6: f"{TEST_SUITE_URL}/tree/main/tests/draft6",
-    DRAFT4: f"{TEST_SUITE_URL}/tree/main/tests/draft4",
-    DRAFT3: f"{TEST_SUITE_URL}/tree/main/tests/draft3",
+    DRAFT2020: TEST_SUITE_URL / "tree/main/tests/draft2020-12",
+    DRAFT2019: TEST_SUITE_URL / "tree/main/tests/draft2019-09",
+    DRAFT7: TEST_SUITE_URL / "tree/main/tests/draft7",
+    DRAFT6: TEST_SUITE_URL / "tree/main/tests/draft6",
+    DRAFT4: TEST_SUITE_URL / "tree/main/tests/draft4",
+    DRAFT3: TEST_SUITE_URL / "tree/main/tests/draft3",
 }
 LATEST_DIALECT_NAME = "draft2020-12"
 
 # Magic constants assumed/used by the official test suite
-SUITE_REMOTE_BASE_URI = "http://localhost:1234"
+SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 #: Should match the magic value used to validate `schema`s in `schemas/io.json`
-CURRENT_DIALECT_URI = "urn:current-dialect"
+CURRENT_DIALECT_URI = URL.parse("urn:current-dialect")
 
 FORMAT = click.option(
     "--format",
@@ -300,7 +300,7 @@ def _validation_results_table(
     return table
 
 
-def validator_for_dialect(dialect: str | None = None):
+def validator_for_dialect(dialect: URL | None = None):
     path = files("bowtie.schemas") / "io.json"
     root_schema = json.loads(path.read_text())
 
@@ -315,10 +315,12 @@ def validator_for_dialect(dialect: str | None = None):
         dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]
 
     root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]
-    specification = referencing.jsonschema.specification_with(dialect)  # type: ignore[reportGeneralTypeIssues]
+    specification = referencing.jsonschema.specification_with(
+        str(dialect) if dialect is not None else dialect,  # type: ignore[reportGeneralTypeIssues]
+    )
     registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]
-        uri=CURRENT_DIALECT_URI,
-        resource=specification.create_resource({"$ref": dialect}),
+        uri=str(CURRENT_DIALECT_URI),
+        resource=specification.create_resource({"$ref": str(dialect)}),  # type: ignore[reportUnknownArgumentType]
     )
 
     def validate(instance: Any, schema: Any) -> None:
@@ -330,7 +332,7 @@ def validator_for_dialect(dialect: str | None = None):
     return validate
 
 
-def do_not_validate(dialect: str | None = None) -> Callable[..., None]:
+def do_not_validate(dialect: URL | None = None) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
@@ -351,7 +353,11 @@ DIALECT = click.option(
         "A URI or shortname identifying the dialect of each test case."
         f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
     ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]
+    type=lambda dialect: (  # type: ignore[reportUnknownLambdaType]
+        DIALECT_SHORTNAMES[dialect]  # type: ignore[reportUnknownArgumentType]
+        if dialect in DIALECT_SHORTNAMES
+        else URL.parse(dialect)  # type: ignore[reportUnknownArgumentType]
+    ),
     default=LATEST_DIALECT_NAME,
     show_default=True,
 )
@@ -437,7 +443,7 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, dialect: str, **kwargs: Any):
+def run(input: Iterable[str], filter: str, dialect: URL, **kwargs: Any):
     """
     Run a sequence of cases provided on standard input.
     """
@@ -593,13 +599,14 @@ async def _smoke(
                 echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
+            # FIXME: Sort by newer dialect
             dialect = implementation.dialects[0]
             runner = await implementation.start_speaking(dialect)
 
             cases = [
                 TestCase(
                     description="allow-everything schema",
-                    schema={"$schema": dialect},
+                    schema={"$schema": str(dialect)},
                     tests=[
                         Test(description="First", instance=1, valid=True),
                         Test(description="Second", instance="foo", valid=True),
@@ -607,7 +614,7 @@ async def _smoke(
                 ),
                 TestCase(
                     description="allow-nothing schema",
-                    schema={"$schema": dialect, "not": {}},
+                    schema={"$schema": str(dialect), "not": {}},
                     tests=[
                         Test(description="First", instance=12, valid=False),
                     ],
@@ -665,19 +672,20 @@ class _TestSuiteCases(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], str, dict[str, Any]]:
+    ) -> tuple[Iterable[TestCase], URL, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
-        value = DIALECT_SHORTNAMES.get(value, value)
-        value = TEST_SUITE_DIALECT_URLS.get(value, value)
-
-        is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
-        if is_local_path:
+        try:
+            value = URL.parse(value)
+        except RelativeURLWithoutBase:
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
+            value = DIALECT_SHORTNAMES.get(value, value)
+            value = TEST_SUITE_DIALECT_URLS.get(value, value)
+
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
@@ -690,16 +698,13 @@ class _TestSuiteCases(click.ParamType):
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
             repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]
 
-            _, _, rest = (
-                value[len(TEST_SUITE_URL) :].lstrip("/").partition("/")
-            )
-            ref, sep, partial = rest.partition("/tests")
+            _, _, _, ref, sep, *partial = value.path_segments
             data = BytesIO()
             repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                path = contents / sep.strip("/") / partial.strip("/")
+                path = contents / sep / "/".join(partial)
                 cases, dialect = self._cases_and_dialect(path=path)
                 cases = list(cases)
 
@@ -744,7 +749,7 @@ class _TestSuiteCases(click.ParamType):
 @VALIDATE
 @click.argument("input", type=_TestSuiteCases())
 def suite(
-    input: tuple[Iterable[TestCase], str, dict[str, Any]],
+    input: tuple[Iterable[TestCase], URL, dict[str, Any]],
     filter: str,
     **kwargs: Any,
 ):
@@ -785,7 +790,7 @@ def suite(
 async def _run(
     image_names: list[str],
     cases: Iterable[TestCase],
-    dialect: str,
+    dialect: URL,
     fail_fast: bool,
     set_schema: bool,
     run_metadata: dict[str, Any] = {},  # noqa: B006
@@ -900,8 +905,8 @@ def sequenced(
 
 def _remotes_from(
     path: Path,
-    dialect: str | None,
-) -> Iterable[tuple[str, Any]]:
+    dialect: URL | None,
+) -> Iterable[tuple[URL, Any]]:
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
         # FIXME: #40: for draft-next support
@@ -909,16 +914,15 @@ def _remotes_from(
         if schema_dialect is not None and schema_dialect != dialect:
             continue
         relative = str(_relative_to(each, path)).replace("\\", "/")
-        uri = urljoin(SUITE_REMOTE_BASE_URI, relative)
-        yield uri, schema
+        yield SUITE_REMOTE_BASE_URI / relative, schema
 
 
 def suite_cases_from(
     paths: Iterable[_P],
     remotes: Path,
-    dialect: str | None,
+    dialect: URL | None,
 ) -> Iterable[TestCase]:
-    populated = dict(_remotes_from(remotes, dialect=dialect))
+    populated = {str(k): v for k, v in _remotes_from(remotes, dialect=dialect)}
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = populated

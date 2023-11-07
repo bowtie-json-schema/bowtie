@@ -7,6 +7,7 @@ import json
 import sys
 
 from attrs import asdict, field, frozen, mutable
+from url import URL
 import structlog.stdlib
 
 from bowtie import _commands
@@ -27,12 +28,12 @@ class _InvalidBowtieReport(Exception):
 
 
 _DIALECT_URI_TO_SHORTNAME = {
-    "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
-    "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
-    "http://json-schema.org/draft-07/schema#": "Draft 7",
-    "http://json-schema.org/draft-06/schema#": "Draft 6",
-    "http://json-schema.org/draft-04/schema#": "Draft 4",
-    "http://json-schema.org/draft-03/schema#": "Draft 3",
+    URL.parse("https://json-schema.org/draft/2020-12/schema"): "Draft 2020-12",
+    URL.parse("https://json-schema.org/draft/2019-09/schema"): "Draft 2019-09",
+    URL.parse("http://json-schema.org/draft-07/schema#"): "Draft 7",
+    URL.parse("http://json-schema.org/draft-06/schema#"): "Draft 6",
+    URL.parse("http://json-schema.org/draft-04/schema#"): "Draft 4",
+    URL.parse("http://json-schema.org/draft-03/schema#"): "Draft 3",
 }
 
 
@@ -50,7 +51,7 @@ class Reporter:
     def unsupported_dialect(
         self,
         implementation: Implementation,
-        dialect: str,
+        dialect: URL,
     ):
         self._log.warn(
             "Unsupported dialect, skipping implementation.",
@@ -61,7 +62,7 @@ class Reporter:
     def unacknowledged_dialect(
         self,
         implementation: str,
-        dialect: str,
+        dialect: URL,
         response: Any,
     ):
         self._log.warn(
@@ -76,11 +77,9 @@ class Reporter:
         )
 
     def ready(self, run_info: RunInfo):
-        self._write(
-            **{k.lstrip("_"): v for k, v in asdict(run_info).items()},
-        )
+        self._write(**run_info.serializable())
 
-    def will_speak(self, dialect: str):
+    def will_speak(self, dialect: URL):
         self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
@@ -320,7 +319,7 @@ class _Summary:
                 each["results"],
             )
 
-    def generate_badges(self, target_dir: Path, dialect: str):
+    def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
             dialect_versions = impl["dialects"]
@@ -367,15 +366,11 @@ class _Summary:
 class RunInfo:
     started: str
     bowtie_version: str
-    dialect: str
+    dialect: URL
     _implementations: dict[str, dict[str, Any]] = field(
         alias="implementations",
     )
     metadata: dict[str, Any] = field(factory=dict)
-
-    @property
-    def dialect_shortname(self):
-        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
 
     @classmethod
     def from_implementations(
@@ -396,11 +391,20 @@ class RunInfo:
             **kwargs,
         )
 
+    @property
+    def dialect_shortname(self):
+        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
+
     def create_summary(self) -> _Summary:
         """
         Create a summary object used to incrementally parse reports.
         """
         return _Summary(implementations=self._implementations.values())
+
+    def serializable(self):
+        as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
+        as_dict["dialect"] = str(as_dict["dialect"])
+        return as_dict
 
 
 class ReportData(TypedDict):

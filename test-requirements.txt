@@ -194,7 +194,7 @@ uritemplate==4.1.1
     # via
     #   -r requirements.txt
     #   github3-py
-url-py==0.8.3
+url-py==0.9.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema

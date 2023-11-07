@@ -7,6 +7,7 @@ import asyncio
 import json
 
 from attrs import field, frozen, mutable
+from url import URL
 import aiodocker.containers
 import aiodocker.docker
 import aiodocker.exceptions
@@ -115,7 +116,7 @@ class Stream:
 @frozen
 class DialectRunner:
     _name: str = field(alias="name")
-    _dialect: str = field(alias="dialect")
+    _dialect: URL = field(alias="dialect")
     _send: Callable[[_commands.Command[Any]], Awaitable[Any]] = field(
         alias="send",
     )
@@ -125,14 +126,15 @@ class DialectRunner:
     async def start(
         cls,
         send: Callable[[_commands.Command[Any]], Awaitable[Any]],
-        dialect: str,
+        dialect: URL,
         name: str,
     ) -> DialectRunner:
+        request = _commands.Dialect(dialect=str(dialect))
         return cls(
             name=name,
             send=send,
             dialect=dialect,
-            start_response=await send(_commands.Dialect(dialect=dialect)),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+            start_response=await send(request),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         )
 
     def warn_if_unacknowledged(self, reporter: Reporter):
@@ -163,7 +165,7 @@ class DialectRunner:
 
 
 class _MakeValidator(Protocol):
-    def __call__(self, dialect: str | None = None) -> Callable[..., None]:
+    def __call__(self, dialect: URL | None = None) -> Callable[..., None]:
         ...
 
 
@@ -196,7 +198,7 @@ class Implementation:
     metadata: dict[str, Any] | None = None
 
     # FIXME: Still some refactoring into DialectRunner needed.
-    _dialect: str = None  # type: ignore[reportGeneralTypeIssues]
+    _dialect: URL = None  # type: ignore[reportGeneralTypeIssues]
 
     @classmethod
     @asynccontextmanager
@@ -291,9 +293,10 @@ class Implementation:
     def dialects(self):
         if self.metadata is None:
             raise StartupFailed(name=self.name)
-        return self.metadata.get("dialects", [])
+        # FIXME: Probably should return a set, but needs ordering occasionally
+        return [URL.parse(each) for each in self.metadata.get("dialects", [])]
 
-    def start_speaking(self, dialect: str) -> Awaitable[DialectRunner]:
+    def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect
         self._maybe_validate = self._make_validator(dialect)
         return DialectRunner.start(

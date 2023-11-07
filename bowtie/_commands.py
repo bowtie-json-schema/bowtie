@@ -16,6 +16,7 @@ import json
 from attrs import asdict, field, frozen
 from referencing import Registry, Specification
 from referencing.jsonschema import Schema, SchemaRegistry, specification_with
+from url import URL
 
 from bowtie import HOMEPAGE, exceptions
 
@@ -48,15 +49,15 @@ class TestCase:
     @classmethod
     def from_dict(
         cls,
-        dialect: str | None,
+        dialect: URL | None,
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
     ) -> TestCase:
         populated: SchemaRegistry = Registry().with_contents(  # type: ignore[reportUnknownMemberType]
-            registry.items(),
+            ((str(url), schema) for url, schema in registry.items()),
             default_specification=specification_with(
-                dialect or "urn:bowtie:unknown-dialect",
+                str(dialect or "urn:bowtie:unknown-dialect"),
                 default=Specification.OPAQUE,
             ),
         )
@@ -147,7 +148,13 @@ def command(
             self: Command[R],
             validate: Callable[..., None],
         ) -> dict[str, Any]:
-            request = dict(cmd=name, **asdict(self))
+            as_dict = asdict(
+                self,
+                value_serializer=lambda _, __, value: (
+                    str(value) if isinstance(value, URL) else value
+                ),
+            )
+            request = dict(as_dict, cmd=name)
             validate(instance=request, schema=request_schema)
             return request
 

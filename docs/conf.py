@@ -2,16 +2,10 @@ from pathlib import Path
 import importlib.metadata
 import re
 
-from url import URL
-
-from bowtie import HOMEPAGE
+from bowtie import GITHUB, HOMEPAGE, ORG, REPO
 
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
-
-GITHUB = URL.parse("https://github.com/")
-ORG = GITHUB / "bowtie-json-schema"
-REPO = ORG / "bowtie"
 
 project = "bowtie"
 author = "Julian Berman"
