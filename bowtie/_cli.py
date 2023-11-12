@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from fnmatch import fnmatch
 from functools import wraps
 from importlib.resources import files
@@ -677,15 +677,18 @@ class _TestSuiteCases(click.ParamType):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
+        value = DIALECT_SHORTNAMES.get(value, value)
+        value = TEST_SUITE_DIALECT_URLS.get(value, value)
+
         try:
-            value = URL.parse(value)
+            with suppress(TypeError):
+                value = URL.parse(value)
+        except TypeError:
+            pass
         except RelativeURLWithoutBase:
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
-            value = DIALECT_SHORTNAMES.get(value, value)
-            value = TEST_SUITE_DIALECT_URLS.get(value, value)
-
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
