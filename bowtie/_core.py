@@ -110,7 +110,7 @@ class Stream:
             message = None
             while message is None:
                 message = await self._read_with_timeout()
-            self._last += line
+            self._last += line  # type: ignore[reportUnknownMemberType]
 
 
 @frozen

@@ -38,7 +38,7 @@ _DIALECT_URI_TO_SHORTNAME = {
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
-    return lambda **result: file.write(f"{json.dumps(result)}\n")
+    return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 
 
 @frozen

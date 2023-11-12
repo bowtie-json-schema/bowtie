@@ -574,7 +574,7 @@ async def _smoke(
     format: _F,
     echo: Callable[..., None],
 ):
-    reporter = _report.Reporter(write=lambda **_: None)
+    reporter = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType]
     exit_code = 0
     async with _start(
         image_names=image_names,
