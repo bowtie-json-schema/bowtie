@@ -322,7 +322,7 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
-            dialect_versions = impl["dialects"]
+            dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if dialect not in dialect_versions:
                 continue
             supported_drafts = ", ".join(
@@ -373,6 +373,10 @@ class RunInfo:
     metadata: dict[str, Any] = field(factory=dict)
 
     @classmethod
+    def from_dict(cls, dialect: str, **kwargs: Any) -> RunInfo:
+        return cls(dialect=URL.parse(dialect), **kwargs)
+
+    @classmethod
     def from_implementations(
         cls,
         implementations: Iterable[Implementation],
@@ -420,7 +424,7 @@ def from_input(input: Iterable[str]) -> ReportData:
     header = next(lines, None)
     if header is None:
         raise EmptyReport()
-    run_info = RunInfo(**header)
+    run_info = RunInfo.from_dict(**header)
     summary = run_info.create_summary()
 
     for each in lines:
