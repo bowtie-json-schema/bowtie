@@ -683,8 +683,6 @@ class _TestSuiteCases(click.ParamType):
         try:
             with suppress(TypeError):
                 value = URL.parse(value)
-        except TypeError:
-            pass
         except RelativeURLWithoutBase:
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
