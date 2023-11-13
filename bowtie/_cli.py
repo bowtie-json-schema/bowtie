@@ -48,7 +48,7 @@ _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-TEST_SUITE_URL = GITHUB / "json-schema-org/json-schema-test-suite"
+TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
 
 DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
 DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
@@ -664,6 +664,15 @@ async def _smoke(
     return exit_code
 
 
+def path_and_ref_from_gh_path(path: list[str]):
+    subpath: list[str] = []
+    while path[-1] != "tests":
+        subpath.append(path.pop())
+    subpath.append(path.pop())
+    # remove tree/ or blob/
+    return "/".join(reversed(subpath)).rstrip("/"), "/".join(path[1:])
+
+
 class _TestSuiteCases(click.ParamType):
     name = "json-schema-org/JSON-Schema-Test-Suite test cases"
 
@@ -697,16 +706,17 @@ class _TestSuiteCases(click.ParamType):
             # isort: on
 
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
-            _, _, _, ref, sep, *partial = value.path_segments
+            path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
             repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                path = contents / sep / "/".join(partial)
-                cases, dialect = self._cases_and_dialect(path=path)
+                # path = contents / sep / "/".join(partial)
+                cases, dialect = self._cases_and_dialect(path=contents / path)
                 cases = list(cases)
 
             try:
