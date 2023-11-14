@@ -42,6 +42,10 @@ from bowtie.exceptions import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
+    from importlib.resources.abc import Traversable
+
+    from jsonschema.protocols import Validator
+    from referencing.jsonschema import SchemaRegistry
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -300,32 +304,62 @@ def _validation_results_table(
     return table
 
 
-def validator_for_dialect(dialect: URL | None = None):
-    path = files("bowtie.schemas") / "io.json"
-    root_schema = json.loads(path.read_text())
+def _walk_importlib_path(root: Traversable):
+    """
+    .walk() for importlib resources paths, which don't have the method :/
+    """  # noqa: D415
+    walking = [root]
+    while walking:
+        path = walking.pop()
+        for each in path.iterdir():
+            if each.is_dir():
+                walking.append(each)
+            else:
+                yield each
+
+
+def bowtie_schemas_registry() -> tuple[type[Validator], SchemaRegistry]:
+    # FIXME: This seems still like something minor is missing from referencing.
+
+    paths = _walk_importlib_path(root=files("bowtie.schemas"))
+    contents = (json.loads(path.read_text()) for path in paths)
+
+    # Assume a uniform and top-level specification for Bowtie's own schemas.
+    root_contents = next(contents)
+    dialect_id = root_contents["$schema"]
+    spec = referencing.jsonschema.specification_with(dialect_id)
+    root = spec.create_resource(root_contents)
+    resources = (
+        referencing.Resource.from_contents(each, default_specification=spec)
+        for each in contents
+    )
 
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]
-    Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]
+    Validator = validator_for(dialect_id)  # type: ignore[reportUnknownVariableType]
 
-    if dialect is None:
-        dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]
+    registry: referencing.jsonschema.SchemaRegistry = referencing.Registry()
+    return Validator, root @ (resources @ registry)  # type: ignore[reportGeneralTypeIssues]
 
-    root_resource = referencing.Resource.from_contents(root_schema)  # type: ignore[reportGeneralTypeIssues]
-    specification = referencing.jsonschema.specification_with(
-        str(dialect) if dialect is not None else dialect,  # type: ignore[reportGeneralTypeIssues]
-    )
-    registry = root_resource @ referencing.Registry().with_resource(  # type: ignore[reportUnknownMemberType]
+
+def validator_for_dialect(dialect: URL = DRAFT2020):
+    Validator, base_registry = bowtie_schemas_registry()
+
+    # TODO: Maybe here too there should be an easier way to get an
+    #        internally-identified schema under the given specification.
+    #        Maybe not though, and it might be safer to just always use
+    #        external IDs.
+    specification = referencing.jsonschema.specification_with(str(dialect))
+    registry = base_registry.with_resource(
         uri=str(CURRENT_DIALECT_URI),
-        resource=specification.create_resource({"$ref": str(dialect)}),  # type: ignore[reportUnknownArgumentType]
+        resource=specification.create_resource({"$ref": str(dialect)}),
     )
 
-    def validate(instance: Any, schema: Any) -> None:
-        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
-        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]
+    def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
+        validator = Validator(schema, registry=registry)  # type: ignore[reportGeneralTypeIssues]
+        errors = list(validator.iter_errors(instance))
         if errors:
             raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 
