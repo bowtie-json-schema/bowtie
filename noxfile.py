@@ -174,7 +174,7 @@ def typing(session):
     """
     Check Bowtie's codebase using pyright.
     """
-    session.install("pyright", ROOT, "../jsonschema")
+    session.install("pyright", ROOT)
     session.run("pyright", BOWTIE)
 
 
