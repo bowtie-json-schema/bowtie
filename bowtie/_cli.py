@@ -340,8 +340,8 @@ def bowtie_schemas_registry() -> tuple[type[Validator], SchemaRegistry]:
 
     Validator = validator_for(dialect_id)  # type: ignore[reportUnknownVariableType]
 
-    registry: referencing.jsonschema.SchemaRegistry = referencing.Registry()
-    return Validator, root @ (resources @ registry)  # type: ignore[reportGeneralTypeIssues]
+    registry = root @ (resources @ referencing.jsonschema.EMPTY_REGISTRY)
+    return Validator, registry  # type: ignore[reportUnknownVariableType]
 
 
 def validator_for_dialect(dialect: URL = DRAFT2020):

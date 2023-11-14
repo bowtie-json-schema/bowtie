@@ -85,7 +85,7 @@ jsonschema==4.19.2
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2023.11.1
     # via
     #   -r requirements.txt
     #   jsonschema
@@ -144,7 +144,7 @@ python-dateutil==2.8.2
     # via
     #   -r requirements.txt
     #   github3-py
-referencing==0.30.2
+referencing==0.31.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -194,11 +194,11 @@ uritemplate==4.1.1
     # via
     #   -r requirements.txt
     #   github3-py
-url-py==0.9.1
+url-py==0.9.2
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-urllib3==2.0.7
+urllib3==2.1.0
     # via
     #   -r requirements.txt
     #   requests
