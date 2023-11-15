@@ -110,7 +110,7 @@ uc-micro-py==1.0.2
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
-url-py==0.9.2
+url-py==0.9.3
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.1.0
     # via requests

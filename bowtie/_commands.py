@@ -141,9 +141,9 @@ def command(
         if not name:
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
 
-        uri = HOMEPAGE / "schemas/io/commands" / name / ""
+        uri = f"tag:{HOMEPAGE.host_str},2023:ihop:command:{name}"
         request_schema = {"$ref": str(uri)}
-        response_schema = {"$ref": str(uri / "response" / "")}
+        response_schema = {"$ref": f"{uri}#response"}  # FIXME: crate-py/url#6
 
         def to_request(
             self: Command[R],

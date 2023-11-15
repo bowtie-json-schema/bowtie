@@ -30,10 +30,10 @@ REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
 Validator = jsonschema.validators.validator_for(SCHEMA)
 VALIDATORS = {}
 for command in SCHEMA["$defs"]["command"]["$defs"]:
-    uri = f"https://bowtie.report/schemas/io/commands/{command}/"
+    uri = f"tag:bowtie.report,2023:ihop:command:{command}"
     VALIDATORS[command] = dict(
         request=Validator({"$ref": uri}, registry=REGISTRY),
-        response=Validator({"$ref": f"{uri}response/"}, registry=REGISTRY),
+        response=Validator({"$ref": f"{uri}#response"}, registry=REGISTRY),
     )
 
 
