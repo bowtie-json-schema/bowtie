@@ -10,7 +10,7 @@ jsv-validator = { module = "io.openapiprocessor:json-schema-validator" }
 io-interfaces = { module = "io.openapiprocessor:io-interfaces" }
 io-jackson = { module = "io.openapiprocessor:io-jackson" }
 
-jackson-bom = "com.fasterxml.jackson:jackson-bom:2.15.3"
+jackson-bom = "com.fasterxml.jackson:jackson-bom:2.16.0"
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
 
