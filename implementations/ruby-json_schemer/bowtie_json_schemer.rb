@@ -68,7 +68,7 @@ module BowtieJsonSchemer
         format: false,
         regexp_resolver: 'ecma',
         ref_resolver: proc do |uri|
-          request['case']['registry'][uri.to_s] || @meta_schema_refs[uri]
+          request.dig('case', 'registry', uri.to_s) || @meta_schema_refs[uri]
         end,
       )
       begin
