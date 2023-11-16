@@ -20,10 +20,10 @@
       "required": ["cmd"],
       "unevaluatedProperties": false,
       "oneOf": [
-        { "$ref": "tag:bowtie.report,2023:command:start" },
-        { "$ref": "tag:bowtie.report,2023:command:dialect" },
-        { "$ref": "tag:bowtie.report,2023:command:run" },
-        { "$ref": "tag:bowtie.report,2023:command:stop" }
+        { "$ref": "tag:bowtie.report,2023:ihop:command:start" },
+        { "$ref": "tag:bowtie.report,2023:ihop:command:dialect" },
+        { "$ref": "tag:bowtie.report,2023:ihop:command:run" },
+        { "$ref": "tag:bowtie.report,2023:ihop:command:stop" }
       ],
 
       "$defs": {
