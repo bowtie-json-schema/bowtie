@@ -66,7 +66,7 @@ importlib-metadata==6.8.0
     # via textual
 jinja2==3.1.2
     # via sphinx
-jsonschema==4.19.2
+jsonschema==4.20.0
     # via bowtie-json-schema
 jsonschema-specifications==2023.11.1
     # via jsonschema
@@ -119,12 +119,12 @@ requests==2.31.0
     # via
     #   github3-py
     #   sphinx
-rich==13.6.0
+rich==13.7.0
     # via
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.12.0
+rpds-py==0.13.0
     # via
     #   jsonschema
     #   referencing

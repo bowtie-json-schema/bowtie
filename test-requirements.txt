@@ -81,7 +81,7 @@ importlib-metadata==6.8.0
     #   textual
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.19.2
+jsonschema==4.20.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -154,13 +154,13 @@ requests==2.31.0
     # via
     #   -r requirements.txt
     #   github3-py
-rich==13.6.0
+rich==13.7.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.12.0
+rpds-py==0.13.0
     # via
     #   -r requirements.txt
     #   jsonschema

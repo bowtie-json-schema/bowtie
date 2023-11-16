@@ -48,7 +48,7 @@ idna==3.4
     #   yarl
 importlib-metadata==6.8.0
     # via textual
-jsonschema==4.19.2
+jsonschema==4.20.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.11.1
     # via jsonschema
@@ -85,12 +85,12 @@ referencing==0.31.0
     #   jsonschema-specifications
 requests==2.31.0
     # via github3-py
-rich==13.6.0
+rich==13.7.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   textual
-rpds-py==0.12.0
+rpds-py==0.13.0
     # via
     #   jsonschema
     #   referencing
