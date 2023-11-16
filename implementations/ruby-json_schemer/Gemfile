@@ -1,4 +1,4 @@
 # frozen_string_literal: true
 
 source 'https://rubygems.org'
-gemspec
+gem 'json_schemer', '2.0.0'

@@ -1,6 +1,12 @@
 AllCops:
   TargetRubyVersion: 3.0
 
+Layout/CaseIndentation:
+  EnforcedStyle: end
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
