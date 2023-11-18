@@ -42,9 +42,14 @@ const CaseContent = ({ seq, caseData, implementations }) => {
                 <td>
                   <p className="m-0">{test.description}</p>
                 </td>
-                {implementations.map((impl, i) => (
-                  <CaseResultSvg key={i} result={impl.cases.get(seq)[index]} />
-                ))}
+                {implementations.map((impl, i) => {
+                  let caseResults = impl.cases.get(seq);
+                  let result =
+                    caseResults !== undefined
+                      ? caseResults[index]
+                      : { state: "errored" };
+                  <CaseResultSvg key={i} result={result} />;
+                })}
               </tr>
             ))}
           </tbody>
