@@ -5,7 +5,7 @@ COPY *.csproj .
 RUN dotnet restore
 
 COPY . .
-RUN dotnet build-server shutdown && dotnet publish -c Release -o /app --no-restore
+RUN dotnet publish -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0-alpine
 WORKDIR /app
