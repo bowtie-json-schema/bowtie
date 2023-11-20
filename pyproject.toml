@@ -54,6 +54,9 @@ dependencies = [
   "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
   "url.py",
+
+  # 3.9.0 seems to cause podman errors when upgrading connections
+  "aiohttp<3.9.0",
 ]
 
 [project.scripts]
