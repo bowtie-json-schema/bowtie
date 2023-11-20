@@ -18,7 +18,7 @@ attrs==23.1.0
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
     #   referencing
-certifi==2023.7.22
+certifi==2023.11.17
     # via requests
 cffi==1.16.0
     # via cryptography
