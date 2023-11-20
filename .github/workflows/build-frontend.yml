@@ -1,4 +1,4 @@
-name: Frontend UI build
+name: Build the UI
 
 on:
   workflow_call:

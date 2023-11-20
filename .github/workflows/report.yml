@@ -1,4 +1,4 @@
-name: Test Suite Report
+name: Regenerate Test Reports
 
 on:
   release:
