@@ -92,3 +92,6 @@ jobs:
             shiv/bowtie
             dist/*
           generate_release_notes: true
+      - name: Regenerate the Test Report
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        uses: ./.github/workflows/report.yml

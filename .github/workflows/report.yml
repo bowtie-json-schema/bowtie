@@ -3,6 +3,7 @@ name: Regenerate Test Reports
 on:
   release:
     types: [published]
+  workflow_call:
   workflow_dispatch:
   schedule:
     # Daily at 2:15
