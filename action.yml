@@ -1,5 +1,6 @@
 name: Setup Bowtie
 description: "Install Bowtie, hooray!"
+author: "Julian Berman"
 branding:
   icon: package
   color: blue
