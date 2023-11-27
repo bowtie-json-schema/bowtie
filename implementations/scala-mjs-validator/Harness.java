@@ -1,171 +1,198 @@
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import main.MainClass$;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-import scala.Tuple2;
-import java.io.*;
-import io.circe.Json;
-import java.util.jar.Manifest;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.circe.Json;
+import java.io.*;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.Manifest;
+import main.MainClass$;
+import scala.Tuple3;
 
-/**
-* The Harness program implements an application that
-* simply take input from Bowtie application using standard
-* input and output to the standard output.
-*
-* @author  Sajal Jain
-* @version 1.0
-* @since   2023-01-10 
-*/
-class Harness{
-	
-	public static boolean started = false;
-	
-	private static final Logger LOGGER = Logger.getLogger( Harness.class.getName() );
-	
-	private final ObjectMapper objectMapper = new ObjectMapper().configure(
+public class Harness {
+
+  private static final String NOT_IMPLEMENTED =
+      "This case is not yet implemented.";
+  private static final Map<String, String> UNSUPPORTED = Map.of(
+      "escaped pointer ref", NOT_IMPLEMENTED,
+      "empty tokens in $ref json-pointer", NOT_IMPLEMENTED,
+      "maxLength validation", NOT_IMPLEMENTED, "minLength validation",
+      NOT_IMPLEMENTED, "$id inside an unknown keyword is not a real identifier",
+      NOT_IMPLEMENTED,
+      "schema that uses custom metaschema with with no validation vocabulary",
+      NOT_IMPLEMENTED, "small multiple of large integer", NOT_IMPLEMENTED,
+      "$ref to $ref finds detached $anchor", NOT_IMPLEMENTED,
+      "$ref to $dynamicRef finds detached $dynamicAnchor", NOT_IMPLEMENTED);
+
+  private final MainClass$ mjs = MainClass$.MODULE$;
+
+  private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-	
-	private static final String NOT_IMPLEMENTED = "This case is not yet implemented.";
-	private static final Map<String, String> UNSUPPORTED_CASES = Map.ofEntries(
-		Map.entry("escaped pointer ref", NOT_IMPLEMENTED), Map.entry("empty tokens in $ref json-pointer", NOT_IMPLEMENTED),
-		Map.entry("maxLength validation", NOT_IMPLEMENTED),Map.entry("minLength validation", NOT_IMPLEMENTED),
-		Map.entry("$id inside an unknown keyword is not a real identifier", NOT_IMPLEMENTED), Map.entry("schema that uses custom metaschema with with no validation vocabulary", NOT_IMPLEMENTED),
-		Map.entry("small multiple of large integer", NOT_IMPLEMENTED), Map.entry("$ref to $ref finds detached $anchor", NOT_IMPLEMENTED),
-		Map.entry("$ref to $dynamicRef finds detached $dynamicAnchor", NOT_IMPLEMENTED));
-	
-	public static void main(String[] args) {
-		Scanner input = new Scanner(System.in);
-		while (true) {
-			String line = input.nextLine();
-			String output = new Harness().operate(line);
-			System.out.println(output);
-		}
-	}
-	
-	public String operate(String line){
-		String error = "";
-		try{
-			JsonNode node = objectMapper.readTree(line);
-			String cmd = node.get("cmd").asText();
-			switch(cmd) {
-			  case "start":
-				StartRequest startRequest = objectMapper.treeToValue(node, StartRequest.class);
-				long version = startRequest.version();
-				if(version == 1){
-					InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
-					var attributes = new Manifest(is).getMainAttributes();
-					started = true;
-					JSONObject message = new JSONObject();
-					message.put("ready", true);
-					message.put("version", 1);
-					JSONObject implementation = new JSONObject();
-					implementation.put("language", "scala");
-					implementation.put("name", attributes.getValue("Implementation-Name"));
-					implementation.put("version", attributes.getValue("Implementation-Version"));
-					implementation.put("homepage", "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator");
-					implementation.put("issues", "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator/issues");
-					JSONArray dialects = new JSONArray();
-					dialects.add("https://json-schema.org/draft/2020-12/schema");
-					implementation.put("dialects", dialects);
-					message.put("implementation", implementation);
-					return message.toJSONString();
-				}
-				break;
-			  case "dialect":
-				if(started != true){
-					throw new RuntimeException("Bowtie hasn't started!");
-				}
-				DialectRequest dialectRequest = objectMapper.treeToValue(node, DialectRequest.class);
-				return "{ \"ok\" : false }";
-			  case "run":
-				if(started != true){
-					throw new RuntimeException("Bowtie hasn't started!");
-				}
-				RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
-				
-				try{
-					if(UNSUPPORTED_CASES.containsKey(runRequest.testCase().description())){
-						return skipMsg(UNSUPPORTED_CASES.get(runRequest.testCase().description()), runRequest.seq().asLong());
-					}
-					
-					JSONArray resultArray = new JSONArray();
-					
-					for (Test test : runRequest.testCase().tests()) {
-						String instance = test.instance().toString();
-						MainClass$ m = MainClass$.MODULE$;
-						Tuple2<Object, Json> results = m.validateInstance(runRequest.testCase().schema().toString(), instance);
-						
-						JSONObject result = new JSONObject();
-						result.put("valid", (boolean) results._1());
-						resultArray.add(result);
-					}
-					
-					JSONObject out = new JSONObject();
-					out.put("seq", runRequest.seq().asLong());
-					out.put("results", resultArray);
-					return out.toJSONString();
-				}
-				catch(Exception e){
-					String msg = getDetailedMessage(e, runRequest.testCase().schema().toString());
-					error = errorMsg(msg, runRequest.seq().asLong());
-					return error;
-				}
-			  case "stop":
-				if(started != true){
-					throw new RuntimeException("Bowtie hasn't started!");
-				}
-				System.exit(0);
-			}
-		}catch(Exception e){
-			error = errorMsg(e.getMessage(), -1);
-			return error;
-		}
-		error = errorMsg("Send correct command", -1);
-		return error;
-	}
-	
-	public static String errorMsg(String message, long seq){
-		JSONObject traceBack = new JSONObject(); 
-		traceBack.put("traceBack", message);
-		JSONObject error = new JSONObject(); 
-		error.put("errored", true);
-		error.put("seq", seq);
-		error.put("context",traceBack);
-		return error.toJSONString();
-	}
-	
-	public static String skipMsg(String message, long seq){
-		JSONObject error = new JSONObject();
-		error.put("skipped", true);
-		error.put("seq", seq);
-		error.put("message",message);
-		return error.toJSONString();
-	}
-	
-	public static String getDetailedMessage(Exception e, String schema){
-		StringWriter sw = new StringWriter();
-		e.printStackTrace(new PrintWriter(sw));
-		return sw.toString() + " " + schema;
-	}
+  private final PrintStream output;
+  private boolean started;
+
+  public static void main(String[] args) {
+    BufferedReader reader =
+        new BufferedReader(new InputStreamReader(System.in));
+    new Harness(System.out).run(reader);
+  }
+
+  public Harness(PrintStream output) { this.output = output; }
+
+  private void run(BufferedReader reader) {
+    reader.lines().forEach(this::handle);
+  }
+
+  private void handle(String data) {
+    try {
+      JsonNode node = objectMapper.readTree(data);
+      String cmd = node.get("cmd").asText();
+      switch (cmd) {
+        case "start" -> start(node);
+        case "dialect" -> dialect(node);
+        case "run" -> run(node);
+        case "stop" -> System.exit(0);
+        default -> throw new IllegalArgumentException(
+          "Unknown cmd [%s]".formatted(cmd)
+        );
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private void start(JsonNode node) throws IOException {
+    started = true;
+    StartRequest startRequest = objectMapper.treeToValue(
+      node,
+      StartRequest.class
+    );
+    if (startRequest.version() != 1) {
+      throw new IllegalArgumentException(
+        "Unsupported IHOP version [%d]".formatted(startRequest.version())
+      );
+    }
+
+    InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
+    var attributes = new Manifest(is).getMainAttributes();
+
+    StartResponse startResponse = new StartResponse(
+      1,
+      true,
+      new Implementation(
+        "scala",
+        attributes.getValue("Implementation-Name"),
+        attributes.getValue("Implementation-Version"),
+        List.of("https://json-schema.org/draft/2020-12/schema"),
+        "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator",
+        "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator/issues",
+        System.getProperty("os.name"),
+        System.getProperty("os.version"),
+        Runtime.version().toString(),
+        List.of()
+      )
+    );
+    output.println(objectMapper.writeValueAsString(startResponse));
+    }
+
+    @SuppressWarnings("PMD.UnusedFormalParameter")
+    private void dialect(JsonNode node) throws JsonProcessingException {
+    if (!started) {
+      throw new IllegalArgumentException("Not started!");
+    }
+
+    DialectResponse dialectResponse = new DialectResponse(false);
+    output.println(objectMapper.writeValueAsString(dialectResponse));
+    }
+
+  private void run(JsonNode node) throws JsonProcessingException {
+    if (!started) {
+      throw new IllegalArgumentException("Not started!");
+    }
+    RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+
+    if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
+      RunSkippedResponse response = new RunSkippedResponse(
+        runRequest.seq(),
+        true,
+        UNSUPPORTED.get(runRequest.testCase().description()),
+        null
+      );
+      output.println(objectMapper.writeValueAsString(response));
+      return;
+    }
+
+    try {
+
+      List<TestResult> results = runRequest
+        .testCase()
+        .tests()
+        .stream()
+        .map(test -> {
+            Tuple3<Object, Json, String> result = mjs.validateInstance(
+                runRequest.testCase().schema().toString(),
+                test.instance().toString()
+            );
+          return new TestResult((boolean)result._1());
+        })
+        .toList();
+        output.println(
+          objectMapper.writeValueAsString(
+            new RunResponse(runRequest.seq(), results)
+          )
+        );
+      } catch (Exception e) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        e.printStackTrace(printWriter);
+        RunErroredResponse response = new RunErroredResponse(
+          runRequest.seq(),
+          true,
+          new ErrorContext(e.getMessage(), stackTraceToString(e))
+        );
+        output.println(objectMapper.writeValueAsString(response));
+      }
+    }
+
+
+  private String stackTraceToString(Exception e) {
+    StringWriter stringWriter = new StringWriter();
+    e.printStackTrace(new PrintWriter(stringWriter));
+    return stringWriter.toString();
+  }
 }
 
 record StartRequest(int version) {}
 
+record StartResponse(int version, boolean ready, Implementation implementation) {}
+
 record DialectRequest(String dialect) {}
+
+record DialectResponse(boolean ok) {}
 
 record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
 
-record TestCase(String description, String comment, JsonNode schema, JsonNode registry, List<Test> tests) {}
+record RunResponse(JsonNode seq, List<TestResult> results) {}
 
-record Test(String description, String comment, JsonNode instance, boolean valid) {}
+record RunSkippedResponse(JsonNode seq, boolean skipped, String message, String issue_url) {}
+
+record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {}
+
+record ErrorContext(String message, String traceback) {}
+
+record Implementation(String language, String name, String version,
+                      List<String> dialects, String homepage, String issues,
+                      String os, String os_version, String language_version,
+                      List<Link> links) {}
+
+record Link(String url, String description) {}
+
+record TestCase(String description, String comment, JsonNode schema,
+                JsonNode registry, List<Test> tests) {}
+
+record Test(String description, String comment, JsonNode instance,
+            boolean valid) {}
+
+record TestResult(boolean valid) {}

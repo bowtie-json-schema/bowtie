@@ -15,41 +15,36 @@ repositories {
     mavenCentral()
 }
 
-def harness = [
+def harnessImplementation = [
         group: 'org.up.js',
         name: 'mjs',
         version: '1.0'
 ]
-def jsonHelper = [
-        group: 'com.googlecode.json-simple',
-        name: 'json-simple',
-        version: '1.1.1'
-]
 def jsonProvider = [
         group: 'com.fasterxml.jackson.core',
         name: 'jackson-databind',
-        version: '2.15.2'
+        version: '2.16.0'
 ]
 
 dependencies {
-	implementation files('mjs.jar')
-    implementation "$jsonHelper.group:$jsonHelper.name:$jsonHelper.version"
-	implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
+    implementation files('mjs.jar')
+    /* Verbose dependency notation for dependabot */
+    implementation "$jsonProvider.group:$jsonProvider.name:$jsonProvider.version"
 }
 
 jar {
-    archiveBaseName = 'validator'
+    archiveBaseName = 'harness'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     manifest {
         attributes "Main-Class": "Harness"
-        attributes "Implementation-Group": harness.group
-        attributes "Implementation-Name": harness.name
-        attributes "Implementation-Version": harness.version
-        attributes "Provider-Group": jsonHelper.group
-        attributes "Provider-Name": jsonHelper.name
-        attributes "Provider-Version": jsonHelper.version
+        attributes "Implementation-Group": harnessImplementation.group
+        attributes "Implementation-Name": harnessImplementation.name
+        attributes "Implementation-Version": harnessImplementation.version
+        attributes "Provider-Group": jsonProvider.group
+        attributes "Provider-Name": jsonProvider.name
+        attributes "Provider-Version": jsonProvider.version
     }
 }

@@ -205,7 +205,7 @@ public class BowtieJsonSchema {
       return Optional.ofNullable(registry.get(uri))
                 .map(Result::fromProviderNode)
                 .orElse(SchemaResolver.Result.empty());
-    }
+      }
     }
 }
 
