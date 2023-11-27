@@ -781,10 +781,10 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
         "badges",
         badges,
         stdin=run_stdout,
+        exit_code=-1,
     )
-    assert stdout == stderr == ""
-    # FIXME: some better assertion, maybe involving running multiple
-    #        implementations
+    assert stdout == ""
+    assert stderr != ""
     assert not badges.is_dir()
 
 

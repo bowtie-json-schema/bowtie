@@ -321,6 +321,10 @@ class _Summary:
 
     def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
+        total = self.total_tests
+        if not total:
+            raise EmptyReport()
+
         for impl in self.implementations:
             dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if dialect not in dialect_versions:
@@ -331,11 +335,7 @@ class _Summary:
             )
             name = impl["name"]
             lang = impl["language"]
-            # FIXME: this count needs to be global, not per-implementation
             counts = self.counts[impl["image"]]
-            total = counts.total_tests
-            if not total:
-                continue
             passed = (
                 total
                 - counts.failed_tests

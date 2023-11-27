@@ -150,7 +150,21 @@ def badges(input: Iterable[str], output: Path):
     """
     report_data = _report.from_input(input)
     dialect = report_data["run_info"].dialect
-    report_data["summary"].generate_badges(output, dialect)
+    try:
+        report_data["summary"].generate_badges(output, dialect)
+    except _report.EmptyReport:
+        error = DiagnosticError(
+            code="empty-report",
+            message="The Bowtie report is empty.",
+            causes=[f"{input.name} contains no test result data."],
+            hint_stmt=(
+                "If you are piping data into bowtie badges, "
+                "check to ensure that what you've run has succeeded, "
+                "otherwise it may be emitting no report data."
+            ),
+        )
+        rich.print(error, file=sys.stderr)
+        return _EX_NOINPUT
 
 
 @subcommand
@@ -187,7 +201,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "otherwise it may be emitting no report data."
             ),
         )
-        rich.print(error)
+        rich.print(error, file=sys.stderr)
         return _EX_NOINPUT
 
     if show == "failures":
