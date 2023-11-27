@@ -144,7 +144,7 @@ def subcommand(fn: Callable[P, int | None]):
     type=click.File(mode="r"),
 )
 @click.argument("output", type=click.Path(path_type=Path))
-def badges(input: Iterable[str], output: Path):
+def badges(input: TextIO, output: Path):
     """
     Generate Bowtie badges from a previous run.
     """

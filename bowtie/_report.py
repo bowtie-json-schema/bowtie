@@ -121,6 +121,7 @@ class Reporter:
             logger_name=implementation.name,
             exc_info=error,
             request=cmd,
+            response=response,
         )
 
     def case_started(self, seq: _commands.Seq, case: _commands.TestCase):

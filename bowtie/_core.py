@@ -48,6 +48,14 @@ class StreamClosed(Exception):
     pass
 
 
+class _InvalidResponse:
+    def __repr__(self) -> str:
+        return "<InvalidResponse>"
+
+
+INVALID = _InvalidResponse()
+
+
 @mutable
 class Stream:
     """
@@ -155,6 +163,11 @@ class DialectRunner:
             response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 return _commands.Empty(implementation=self._name)
+            elif response is INVALID:
+                return _commands.CaseErrored.uncaught(
+                    implementation=self._name,
+                    seq=command.seq,
+                )
             return response(implementation=self._name, expected=expected)
         except GotStderr as error:
             return _commands.CaseErrored.uncaught(
@@ -339,3 +352,4 @@ class Implementation:
                     response=response,
                     cmd=cmd,
                 )
+                return INVALID
