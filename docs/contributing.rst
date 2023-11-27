@@ -12,7 +12,7 @@ If you're going to work on Bowtie itself, you likely will want to install it usi
 
 .. code:: sh
 
-    $ pip install -e wherever/you/cloned/bowtie
+    $ pip install -r bowtie-repo/requirements.txt -e bowtie-repo/
 
 which will allow you to make changes to files within Bowtie and see the results without reinstalling it repeatedly.
 

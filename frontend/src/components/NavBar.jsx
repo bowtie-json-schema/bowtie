@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react";
 import { Sun, MoonStarsFill } from "react-bootstrap-icons";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
@@ -9,6 +9,10 @@ const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { version } = useContext(BowtieVersionContext);
   const { hash, key } = useLocation();
+
+  const rootMatch = useMatch("/");
+  const dialectsMatch = useMatch("/dialects/*");
+  const isDialectPage = rootMatch || dialectsMatch;
 
   useEffect(() => {
     if (hash) {
@@ -41,21 +45,25 @@ const NavBar = () => {
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "run-info" }}>
-                  Run Info
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "summary" }}>
-                  Summary
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to={{ hash: "cases" }}>
-                  Details
-                </Link>
-              </li>
+              {isDialectPage && (
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "run-info" }}>
+                      Run Info
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "summary" }}>
+                      Summary
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link" to={{ hash: "cases" }}>
+                      Details
+                    </Link>
+                  </li>
+                </>
+              )}
               <li className="nav-item dropdown">
                 <a
                   className="nav-link dropdown-toggle"
@@ -103,7 +111,7 @@ const NavBar = () => {
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/local-report">
+                    <NavLink className="dropdown-item" to="/local-report/">
                       Local report
                     </NavLink>
                   </li>

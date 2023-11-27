@@ -12,7 +12,7 @@ export const parseReportData = (lines: any[]): ReportData => {
       cases: new Map(),
       erroredCases: 0,
       skippedTests: 0,
-      unsuccessfulTests: 0,
+      failedTests: 0,
       erroredTests: 0,
     }),
   );
@@ -61,7 +61,7 @@ export const parseReportData = (lines: any[]): ReportData => {
               if (successful) {
                 return { state: "successful", valid: res.valid };
               } else {
-                implementationData.unsuccessfulTests++;
+                implementationData.failedTests++;
                 return { state: "failed", valid: res.valid };
               }
             }
@@ -82,6 +82,90 @@ export const parseReportData = (lines: any[]): ReportData => {
   };
 };
 
+export const parseImplementationData = (loaderData: {
+  [key: string]: ReportData;
+}) => {
+  let allImplementations: { [key: string]: Implementation } = {};
+  const dialectCompliance: {
+    [key: string]: { [key: string]: Partial<Totals> };
+  } = {};
+
+  for (const [key, value] of Object.entries(loaderData)) {
+    dialectCompliance[key] = calculateImplementationTotal(
+      value.implementations,
+    );
+    allImplementations = {
+      ...allImplementations,
+      ...value.runInfo.implementations,
+    };
+  }
+
+  Object.keys(allImplementations).map((implementation) => {
+    Object.entries(dialectCompliance).map(([key, value]) => {
+      if (value[implementation]) {
+        if (
+          !Object.prototype.hasOwnProperty.call(
+            allImplementations[implementation],
+            "results",
+          )
+        ) {
+          allImplementations[implementation]["results"] = {};
+        }
+        allImplementations[implementation]["results"][key] =
+          value[implementation];
+      }
+    });
+  });
+  return allImplementations;
+};
+
+const calculateImplementationTotal = (
+  implementations: Map<string, ImplementationData>,
+) => {
+  const implementationResult: { [key: string]: Partial<Totals> } = {};
+
+  Array.from(implementations.entries()).forEach(([key, value]) => {
+    implementationResult[key] = {
+      erroredTests: value.erroredTests,
+      skippedTests: value.skippedTests,
+      failedTests: value.failedTests,
+    };
+  });
+
+  return implementationResult;
+};
+
+export const calculateTotals = (data: ReportData): Totals => {
+  const totalTests = Array.from(data.cases.values()).reduce(
+    (prev, curr) => prev + curr.tests.length,
+    0,
+  );
+  return Array.from(data.implementations.values()).reduce(
+    (prev, curr) => ({
+      totalTests,
+      erroredCases: prev.erroredCases + curr.erroredCases,
+      skippedTests: prev.skippedTests + curr.skippedTests,
+      failedTests: prev.failedTests + curr.failedTests,
+      erroredTests: prev.erroredTests + curr.erroredTests,
+    }),
+    {
+      totalTests: totalTests,
+      erroredCases: 0,
+      skippedTests: 0,
+      failedTests: 0,
+      erroredTests: 0,
+    },
+  );
+};
+
+export interface Totals {
+  totalTests: number;
+  erroredCases: number;
+  skippedTests: number;
+  failedTests: number;
+  erroredTests: number;
+}
+
 export interface ReportData {
   runInfo: RunInfo;
   cases: Map<number, Case>;
@@ -93,17 +177,17 @@ export interface RunInfo {
   started: string;
   bowtie_version: string;
   dialect: string;
-  implementations: Record<string, ImplementationMetadata>;
+  implementations: Record<string, Implementation>;
   metadata: any;
 }
 
 export interface ImplementationData {
   id: string;
-  metadata: ImplementationMetadata;
+  metadata: Implementation;
   cases: Map<number, CaseResult[]>;
   erroredCases: number;
   skippedTests: number;
-  unsuccessfulTests: number;
+  failedTests: number;
   erroredTests: number;
 }
 
@@ -113,13 +197,14 @@ export interface CaseResult {
   message?: string;
 }
 
-export interface ImplementationMetadata {
+export interface Implementation {
   language: string;
   name: string;
   version?: string;
   dialects: string[];
-  homepage?: string;
+  homepage: string;
   issues: string;
+  image: string;
   links?: {
     description?: string;
     url?: string;
@@ -128,6 +213,7 @@ export interface ImplementationMetadata {
   os?: string;
   os_version?: string;
   language_version?: string;
+  results: { [key: string]: Partial<Totals> };
 
   [k: string]: unknown;
 }

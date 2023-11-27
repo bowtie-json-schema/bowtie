@@ -9,6 +9,12 @@ local handle = io.popen 'luarocks show jsonschema --mversion'
 local jsonschema_version = handle:read '*a'
 handle:close()
 
+local function resolve_in_registry(registry)
+  return function(url)
+    return registry[url]
+  end
+end
+
 local cmds = {
   start = function(request)
     assert(request.version == 1, 'Wrong version!')
@@ -38,14 +44,19 @@ local cmds = {
   run = function(request)
     assert(STARTED, 'Not started!')
 
-    local validate = jsonschema.generate_validator(request.case.schema, {
-      external_resolver = function(url)
-        return request.case.registry[url]
-      end,
-    })
+    local registry = request.case.registry
+    local opts = { external_resolver = resolve_in_registry(registry) }
+    local ok, result = xpcall(jsonschema.generate_validator, debug.traceback, request.case.schema, opts)
+    if not ok then
+      return {
+        seq = request.seq,
+        errored = true,
+        context = { traceback = result },
+      }
+    end
     local results = {}
     for _, test in ipairs(request.case.tests) do
-      table.insert(results, { valid = validate(test.instance) })
+      table.insert(results, { valid = result(test.instance) })
     end
     return { seq = request.seq, results = results }
   end,

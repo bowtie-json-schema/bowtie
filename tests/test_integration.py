@@ -19,6 +19,29 @@ HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 
+async def run(*argv, stdin: str = "", exit_code=0):
+    """
+    Run a subprocess asynchronously to completion.
+
+    An exit code of `-1` means "any non-zero exit code".
+    """
+    process = await asyncio.create_subprocess_exec(
+        *argv,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate(stdin.encode())
+    returned = stdout.decode(), stderr.decode()
+
+    if exit_code == -1:
+        assert process.returncode != 0, returned
+    else:
+        assert process.returncode == exit_code, returned
+
+    return returned
+
+
 def tar_from_directory(directory):
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
@@ -49,19 +72,65 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
-def strimplementation(name, contents):
+def strimplementation(name, contents, files={}):  # noqa: B006
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
         contents = dedent(contents).encode("utf-8")
         info = tarfile.TarInfo(name="Dockerfile")
         info.size = len(contents)
         tar.addfile(info, BytesIO(contents))
+
+        for k, v in files.items():
+            v = dedent(v).encode("utf-8")
+            info = tarfile.TarInfo(name=k)
+            info.size = len(v)
+            tar.addfile(info, BytesIO(v))
+
     fileobj.seek(0)
     return image(name=name, fileobj=fileobj)
 
 
+def shellplementation(name, contents):
+    return strimplementation(
+        name=name,
+        files={"run.sh": contents},
+        contents="""
+        FROM alpine:3.16
+        COPY run.sh .
+        CMD sh run.sh
+        """,
+    )
+
+
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
+always_valid = shellplementation(  # I'm sorry future me.
+    name="always_valid",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    while IFS= read -r input; do
+      [[ "$input" == '{"cmd": "stop"}' ]] && exit
+      echo $input | awk '{
+       seq = gensub(/.*"seq": ([^,]+).*/, "\\1", "g", $0);
+       tests = gensub(/.*"tests": \[([^]]+)\].*/, "\\1", "g", $0);
+       gsub(/}, \{/, "\n", tests);
+       count = split(tests, tests_array, ",");
+       result = sprintf("{\"seq\": %s, \"results\": [", seq);
+       for (i = 1; i <= count; i++) {
+         result = result "{\"valid\": true}";
+         if (i < count) {
+             result = result ",";
+         }
+       }
+       result = result "]}";
+       print result;
+      }'
+    done
+    """,  # noqa: E501
+)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="FROM alpine:3.16\nENTRYPOINT true\n",
@@ -141,8 +210,11 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
             else:
                 errors.append(each)
 
-        assert errors if expecting_errors else not errors, pformat(errors)
-        return proc.returncode, successful, errors, cases, stderr
+        if expecting_errors:
+            assert errors, stderr.decode()
+        else:
+            assert not errors, pformat(errors)
+        return proc.returncode, successful, errors, cases, stderr.decode()
 
     yield _send
 
@@ -210,7 +282,7 @@ async def test_unsupported_dialect(envsonschema):
         returncode, results, _, _, stderr = await send("")
 
     assert results == []
-    assert b"unsupported dialect" in stderr.lower()
+    assert "unsupported dialect" in stderr.lower()
     assert returncode != 0
 
 
@@ -241,7 +313,7 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         )
 
     assert results == [[{"valid": False}], [{"valid": False}]]
-    assert b"startup failed" in stderr.lower(), stderr
+    assert "startup failed" in stderr.lower(), stderr
     assert returncode != 0, stderr
 
 
@@ -261,7 +333,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
     assert results == []
     assert cases == []
-    assert b"startup failed" in stderr.lower(), stderr
+    assert "startup failed" in stderr.lower(), stderr
     assert returncode != 0, stderr
 
 
@@ -278,8 +350,8 @@ async def test_handles_broken_start_implementations(
             """,  # noqa: E501
         )
 
-    assert b"startup failed" in stderr.lower(), stderr
-    assert b"BOOM!" in stderr, stderr
+    assert "startup failed" in stderr.lower(), stderr
+    assert "BOOM!" in stderr, stderr
     assert returncode != 0, stderr
     assert results == [[{"valid": False}], [{"valid": False}]]
 
@@ -301,7 +373,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
         )
 
     assert results == []
-    assert b"got an error" in stderr.lower(), stderr
+    assert "got an error" in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -316,7 +388,10 @@ async def test_implementations_can_signal_errors(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
+    assert results == [
+        [{"context": {"message": "boom"}, "errored": True, "skipped": False}],
+        [{"valid": True}],
+    ], stderr
     assert stderr != ""
     assert returncode == 0, stderr
 
@@ -353,7 +428,7 @@ async def test_it_prevents_network_access(hit_the_network):
         )
 
     assert results == []
-    assert b"bad address" in stderr.lower(), stderr
+    assert "bad address" in stderr.lower(), stderr.decode()
 
 
 @pytest.mark.asyncio
@@ -375,7 +450,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert b"VersionMismatch: (1, 0)" in stderr, stderr
+    assert "expected to speak version 1 " in stderr.lower(), stderr.decode()
     assert returncode != 0, stderr
 
 
@@ -413,7 +488,7 @@ async def test_filter(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_pretty(envsonschema):
-    proc = await asyncio.create_subprocess_exec(
+    stdout, _ = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -422,18 +497,22 @@ async def test_smoke_pretty(envsonschema):
         "pretty",
         "-i",
         envsonschema,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
-    _, _ = await proc.communicate()
-    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
-    #        Change to asserting about the smoke stdout once that's there.
-    assert proc.returncode != 0
+    assert (
+        dedent(stdout)
+        == dedent(
+            """
+          ✗ (failed): allow-everything schema
+          ✓: allow-nothing schema
+        """
+        ).lstrip("\n")
+    ), stdout
 
 
 @pytest.mark.asyncio
 async def test_smoke_json(envsonschema):
-    proc = await asyncio.create_subprocess_exec(
+    stdout, _ = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -442,13 +521,8 @@ async def test_smoke_json(envsonschema):
         "json",
         "-i",
         envsonschema,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        exit_code=0,  # FIXME: This == 0 is wrong due to #520.
     )
-    stdout, stderr = await proc.communicate()
-    # FIXME: This != 0 is because indeed envsonschema gets answers wrong
-    #        Change to asserting about the smoke stdout once that's there.
-    assert proc.returncode == 0, (stdout, stderr)
     assert json.loads(stdout) == [
         {
             "case": {
@@ -479,7 +553,7 @@ async def test_smoke_json(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_pretty(envsonschema):
-    proc = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -488,15 +562,12 @@ async def test_info_pretty(envsonschema):
         "pretty",
         "-i",
         envsonschema,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate()
-    assert proc.returncode == 0, (stdout, stderr)
-    assert stdout.decode() == dedent(
+    assert stdout == dedent(
         """\
         name: "envsonschema"
         language: "python"
+        homepage: "https://github.com/bowtie-json-schema/bowtie/"
         issues: "https://github.com/bowtie-json-schema/bowtie/issues"
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",
@@ -508,12 +579,12 @@ async def test_info_pretty(envsonschema):
         ]
         """,
     )
-    assert stderr == b""
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
 async def test_info_json(envsonschema):
-    proc = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -522,14 +593,11 @@ async def test_info_json(envsonschema):
         "json",
         "-i",
         envsonschema,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate()
-    assert proc.returncode == 0, (stdout, stderr)
     assert json.loads(stdout) == {
         "name": "envsonschema",
         "language": "python",
+        "homepage": "https://github.com/bowtie-json-schema/bowtie/",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
@@ -539,8 +607,8 @@ async def test_info_json(envsonschema):
             "http://json-schema.org/draft-04/schema#",
             "http://json-schema.org/draft-03/schema#",
         ],
-    }
-    assert stderr == b""
+    }, stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -549,7 +617,7 @@ async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("a.json").write_text("12")
     tmp_path.joinpath("b.json").write_text('"foo"')
 
-    proc = await asyncio.create_subprocess_exec(
+    stdout, _ = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -559,11 +627,9 @@ async def test_validate(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "a.json",
         tmp_path / "b.json",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        exit_code=0,
     )
-    _, _ = await proc.communicate()
-    assert proc.returncode == 0
+    assert stdout != ""  # the real assertion here is we succeed above
 
 
 @pytest.mark.asyncio
@@ -571,7 +637,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
 
-    validate = await asyncio.create_subprocess_exec(
+    validate_stdout, _ = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -580,12 +646,9 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         envsonschema,
         tmp_path / "schema.json",
         tmp_path / "instance.json",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
     )
-    validate_stdout, _ = await validate.communicate()
 
-    summary_failures = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -594,12 +657,9 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         "json",
         "--show",
         "failures",
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        stdin=validate_stdout,
     )
-    stdout, stderr = await summary_failures.communicate(validate_stdout)
-    assert stderr == b""
+    assert stderr == ""
     assert json.loads(stdout) == [
         [
             ["envsonschema", "python"],
@@ -616,8 +676,17 @@ async def test_summary_show_failures(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
-    run = await asyncio.create_subprocess_exec(
+async def test_summary_show_validation(envsonschema, always_valid):
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    run_stdout, run_stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -625,22 +694,12 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
         "-i",
         envsonschema,
         "-i",
-        lintsonschema,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    run_stdout, _ = await run.communicate(
-        b"""\
-            {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-            {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
-            {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
-            {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
-            {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
-        """  # noqa: E501
+        always_valid,
+        "-V",
+        stdin=dedent(raw.strip("\n")),
     )
 
-    summary_validation = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -649,12 +708,9 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
         "json",
         "--show",
         "validation",
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        stdin=run_stdout,
     )
-    stdout, stderr = await summary_validation.communicate(run_stdout)
-    assert stderr == b""
+    assert stderr == ""
     assert json.loads(stdout) == [
         [
             {"type": "integer"},
@@ -688,47 +744,94 @@ async def test_summary_show_validation(envsonschema, lintsonschema, tmp_path):
                 ["", ["skipped", "valid"]],
             ],
         ],
-    ]
+        [
+            {"type": "array"},
+            [
+                ["", ["error", "valid"]],
+                [12, ["invalid", "valid"]],
+            ],
+        ],
+        [
+            {"type": "array"},
+            [
+                ["", ["error", "valid"]],
+            ],
+        ],
+    ], run_stderr.decode()
+
+
+@pytest.mark.asyncio
+async def test_run_with_registry(always_valid):
+    raw = """
+        {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+    """  # noqa: E501
+
+    run_stdout, run_stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        always_valid,
+        "-V",
+        stdin=dedent(raw.strip("\n")),
+    )
+
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "validation",
+        stdin=run_stdout,
+    )
+    assert stderr == ""
+    assert json.loads(stdout) == [
+        [
+            {"type": "integer"},
+            [
+                [12, ["valid"]],
+                [12.5, ["valid"]],
+            ],
+        ],
+    ], run_stderr.decode()
 
 
 @pytest.mark.asyncio
 async def test_no_such_image():
-    proc = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
         "run",
         "-i",
         "no-such-image",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        exit_code=-1,
     )
-    stdout, stderr = await proc.communicate()
-    assert stdout == b""
+    assert stdout == ""
     assert (
-        b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
         in stderr
-    )
-    assert proc.returncode != 0
+    ), stderr
 
-    proc = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
         "smoke",
         "-i",
         "no-such-image",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        exit_code=-1,
     )
-    stdout, stderr = await proc.communicate()
     assert (
-        b"'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
+        "'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
         in stderr
-    )
-    assert proc.returncode != 0
+    ), stderr
 
-    proc = await asyncio.create_subprocess_exec(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -736,14 +839,11 @@ async def test_no_such_image():
         "-i",
         "no-such-image",
         "-",
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        stdin="{}",
+        exit_code=-1,
     )
-    stdout, stderr = await proc.communicate(b"{}")
-    assert stdout == b""
+    assert stdout == ""
     assert (
-        b"[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
         in stderr
-    )
-    assert proc.returncode != 0
+    ), stderr

@@ -1,20 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict
 import importlib.metadata
 import json
 import sys
 
 from attrs import asdict, field, frozen, mutable
+from url import URL
 import structlog.stdlib
 
 from bowtie import _commands
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+    from pathlib import Path
+
     from bowtie._core import Implementation
+
+
+class EmptyReport(Exception):
+    pass
 
 
 class _InvalidBowtieReport(Exception):
@@ -22,22 +28,22 @@ class _InvalidBowtieReport(Exception):
 
 
 _DIALECT_URI_TO_SHORTNAME = {
-    "https://json-schema.org/draft/2020-12/schema": "Draft 2020-12",
-    "https://json-schema.org/draft/2019-09/schema": "Draft 2019-09",
-    "http://json-schema.org/draft-07/schema#": "Draft 7",
-    "http://json-schema.org/draft-06/schema#": "Draft 6",
-    "http://json-schema.org/draft-04/schema#": "Draft 4",
-    "http://json-schema.org/draft-03/schema#": "Draft 3",
+    URL.parse("https://json-schema.org/draft/2020-12/schema"): "Draft 2020-12",
+    URL.parse("https://json-schema.org/draft/2019-09/schema"): "Draft 2019-09",
+    URL.parse("http://json-schema.org/draft-07/schema#"): "Draft 7",
+    URL.parse("http://json-schema.org/draft-06/schema#"): "Draft 6",
+    URL.parse("http://json-schema.org/draft-04/schema#"): "Draft 4",
+    URL.parse("http://json-schema.org/draft-03/schema#"): "Draft 3",
 }
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
-    return lambda **result: file.write(f"{json.dumps(result)}\n")
+    return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 
 
 @frozen
 class Reporter:
-    _write: Callable[..., Any] = field(default=writer())
+    _write: Callable[..., Any] = field(default=writer(), alias="write")
     _log: structlog.stdlib.BoundLogger = field(
         factory=structlog.stdlib.get_logger,
     )
@@ -45,7 +51,7 @@ class Reporter:
     def unsupported_dialect(
         self,
         implementation: Implementation,
-        dialect: str,
+        dialect: URL,
     ):
         self._log.warn(
             "Unsupported dialect, skipping implementation.",
@@ -56,7 +62,7 @@ class Reporter:
     def unacknowledged_dialect(
         self,
         implementation: str,
-        dialect: str,
+        dialect: URL,
         response: Any,
     ):
         self._log.warn(
@@ -71,12 +77,10 @@ class Reporter:
         )
 
     def ready(self, run_info: RunInfo):
-        self._write(
-            **{k.lstrip("_"): v for k, v in asdict(run_info).items()},
-        )
+        self._write(**run_info.serializable())
 
-    def will_speak(self, dialect: str):
-        self._log.info("Will speak", dialect=dialect)
+    def will_speak(self, dialect: URL):
+        self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
         if not count:
@@ -119,8 +123,8 @@ class Reporter:
             request=cmd,
         )
 
-    def case_started(self, seq: int, case: _commands.TestCase):
-        return _CaseReporter.case_started(
+    def case_started(self, seq: _commands.Seq, case: _commands.TestCase):
+        return CaseReporter.case_started(
             case=case,
             seq=seq,
             write=self._write,
@@ -133,7 +137,7 @@ class Reporter:
 
 
 @frozen
-class _CaseReporter:
+class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
 
@@ -143,16 +147,20 @@ class _CaseReporter:
         log: structlog.stdlib.BoundLogger,
         write: Callable[..., None],
         case: _commands.TestCase,
-        seq: int,
-    ) -> _CaseReporter:
+        seq: _commands.Seq,
+    ) -> CaseReporter:
         self = cls(log=log, write=write)
-        self._write(case=asdict(case), seq=seq)
+        self._write(case=case.serializable(), seq=seq)
         return self
 
-    def got_results(
-        self,
-        results: _commands.CaseResult | _commands.CaseErrored,
-    ):
+    def got_results(self, results: _commands.CaseResult):
+        for result in results.results:
+            if result.errored:
+                self._log.error(
+                    "",
+                    logger_name=results.implementation,
+                    **result.context,  # type: ignore
+                )
         self._write(**asdict(results))
 
     def skipped(self, skipped: _commands.CaseSkipped):
@@ -161,11 +169,11 @@ class _CaseReporter:
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
 
-    def errored(self, results: _commands.CaseErrored):
+    def case_errored(self, results: _commands.CaseErrored):
         implementation, context = results.implementation, results.context
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
-        self.got_results(results)
+        self._write(**asdict(results))
 
 
 @mutable
@@ -189,9 +197,9 @@ class Count:
 @mutable
 class _Summary:
     implementations: Iterable[dict[str, Any]] = field(
-        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]
             value,  # type: ignore[reportUnknownArgumentType]
-            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]
         ),
     )
     _combined: dict[int, Any] = field(factory=dict)
@@ -239,7 +247,7 @@ class _Summary:
     def skipped_tests(self):
         return sum(count.skipped_tests for count in self.counts.values())
 
-    def add_case_metadata(self, seq: int, case: dict[str, Any]):
+    def add_case_metadata(self, seq: _commands.Seq, case: dict[str, Any]):
         results: list[tuple[Any, dict[str, tuple[str, str]]]] = [
             (test, {}) for test in case["tests"]
         ]
@@ -248,7 +256,7 @@ class _Summary:
     def see_error(
         self,
         implementation: str,
-        seq: int,
+        seq: _commands.Seq,
         context: dict[str, Any],
         caught: bool,
     ):
@@ -270,10 +278,10 @@ class _Summary:
             count.total_tests += 1
             if test.skipped:
                 count.skipped_tests += 1
-                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]
             elif test.errored:
                 count.errored_tests += 1
-                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]
             else:
                 if failed:
                     count.failed_tests += 1
@@ -311,10 +319,10 @@ class _Summary:
                 each["results"],
             )
 
-    def generate_badges(self, target_dir: Path, dialect: str):
+    def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         for impl in self.implementations:
-            dialect_versions = impl["dialects"]
+            dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if dialect not in dialect_versions:
                 continue
             supported_drafts = ", ".join(
@@ -358,15 +366,15 @@ class _Summary:
 class RunInfo:
     started: str
     bowtie_version: str
-    dialect: str
+    dialect: URL
     _implementations: dict[str, dict[str, Any]] = field(
         alias="implementations",
     )
     metadata: dict[str, Any] = field(factory=dict)
 
-    @property
-    def dialect_shortname(self):
-        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
+    @classmethod
+    def from_dict(cls, dialect: str, **kwargs: Any) -> RunInfo:
+        return cls(dialect=URL.parse(dialect), **kwargs)
 
     @classmethod
     def from_implementations(
@@ -387,28 +395,36 @@ class RunInfo:
             **kwargs,
         )
 
+    @property
+    def dialect_shortname(self):
+        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
+
     def create_summary(self) -> _Summary:
         """
         Create a summary object used to incrementally parse reports.
         """
         return _Summary(implementations=self._implementations.values())
 
+    def serializable(self):
+        as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
+        as_dict["dialect"] = str(as_dict["dialect"])
+        return as_dict
+
 
 class ReportData(TypedDict):
     summary: _Summary
     run_info: RunInfo
-    generate_dialect_navigation: bool
 
 
-def from_input(
-    input: Iterable[str],
-    generate_dialect_navigation: bool = False,
-) -> ReportData:
+def from_input(input: Iterable[str]) -> ReportData:
     """
     Create a structure suitable for the report template from an input file.
     """
     lines = (json.loads(line) for line in input)
-    run_info = RunInfo(**next(lines))
+    header = next(lines, None)
+    if header is None:
+        raise EmptyReport()
+    run_info = RunInfo.from_dict(**header)
     summary = run_info.create_summary()
 
     for each in lines:
@@ -423,8 +439,4 @@ def from_input(
             summary.see_maybe_fail_fast(**each)
         else:
             summary.see_result(_commands.CaseResult.from_dict(each))
-    return ReportData(
-        summary=summary,
-        run_info=run_info,
-        generate_dialect_navigation=generate_dialect_navigation,
-    )
+    return ReportData(summary=summary, run_info=run_info)

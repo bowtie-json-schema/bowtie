@@ -2,7 +2,7 @@ FROM ruby:3-alpine as builder
 
 # unf_ext wants libc++ to compile itself
 RUN apk add --no-cache g++ make
-COPY Gemfile* *.gemspec .
+COPY Gemfile* .
 RUN bundle install
 
 FROM ruby:3-alpine

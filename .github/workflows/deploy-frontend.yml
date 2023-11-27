@@ -1,4 +1,4 @@
-name: Deploy frontend UI with test reports to GH pages
+name: Deploy the UI and Latest Test Reports
 
 on:
   workflow_call:

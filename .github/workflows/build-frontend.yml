@@ -1,4 +1,4 @@
-name: Frontend UI build
+name: Build the UI
 
 on:
   workflow_call:
@@ -12,9 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18.x
 
@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --dir frontend --frozen-lockfile --strict-peer-dependencies
 
       - name: Build the UI
-        run: pnpm run --dir frontend build -- --base=${{ vars.BOWTIE_BASE_URL || '/bowtie' }}
+        run: pnpm run --dir frontend build --base=${{ vars.BOWTIE_BASE_URL || '/bowtie' }}
 
       - uses: actions/upload-artifact@v3
         with:

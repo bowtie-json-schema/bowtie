@@ -83,9 +83,9 @@ class BowtieSampsonSchemaValidatorLauncher(
 
     private fun shouldSkipCase(caseDescription: String): String? {
         return when {
-            caseDescription.endsWith(" format") -> "impl does not support format assertion"
+            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
             caseDescription in IGNORED_CASES || caseDescription.contains("remote ref") ->
-                "impl does not support remote schema loading yet"
+                "remote schema loading is not yet supported"
             else -> null
         }
     }
@@ -102,7 +102,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                 json.encodeToString(
                     RunResponse.Skipped(
                         seq = command.seq,
-                        message = "case '${command.case.description}' in the list of ignored cases: $reason",
+                        message = reason,
                     ),
                 ),
             )
@@ -134,9 +134,7 @@ class BowtieSampsonSchemaValidatorLauncher(
         val results: List<TestResult> = command.case.tests.map { test ->
             runCatching {
                 shouldSkipTest(command.case.description, test.description)?.let { reason ->
-                    TestResult.Skipped(
-                        message = "test '${test.description}' in the list of ignored tests: $reason",
-                    )
+                    TestResult.Skipped(message = reason)
                 } ?: run {
                     val valid = schema.validate(test.instance, ErrorCollector.EMPTY)
                     TestResult.Executed(

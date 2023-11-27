@@ -1,0 +1,5 @@
+{
+  "require": {
+    "opis/json-schema": "^2.2"
+  }
+}

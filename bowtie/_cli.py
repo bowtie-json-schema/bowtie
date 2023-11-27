@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from fnmatch import fnmatch
+from functools import wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncIterator, Literal, TextIO, Union
-from urllib.parse import urljoin
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TextIO
 import asyncio
 import json
 import os
@@ -15,18 +14,21 @@ import sys
 import zipfile
 
 from attrs import asdict
+from diagnostic import DiagnosticError
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
+from url import URL, RelativeURLWithoutBase
 import aiodocker
 import click
-import jinja2
+import referencing.jsonschema
+import rich
 import structlog
 import structlog.typing
 
-from bowtie import _report
-from bowtie._commands import ReportableResult, Test, TestCase
+from bowtie import GITHUB, _report
+from bowtie._commands import Test, TestCase
 from bowtie._core import (
     DialectRunner,
     GotStderr,
@@ -38,19 +40,28 @@ from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Mapping
+    from importlib.resources.abc import Traversable
+
+    from jsonschema.protocols import Validator
+    from referencing.jsonschema import SchemaRegistry
+
+# Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
+_EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-TEST_SUITE_URL = "https://github.com/json-schema-org/json-schema-test-suite"
+TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
 
-DRAFT2020 = "https://json-schema.org/draft/2020-12/schema"
-DRAFT2019 = "https://json-schema.org/draft/2019-09/schema"
-DRAFT7 = "http://json-schema.org/draft-07/schema#"
-DRAFT6 = "http://json-schema.org/draft-06/schema#"
-DRAFT4 = "http://json-schema.org/draft-04/schema#"
-DRAFT3 = "http://json-schema.org/draft-03/schema#"
+DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
+DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
+DRAFT7 = URL.parse("http://json-schema.org/draft-07/schema#")
+DRAFT6 = URL.parse("http://json-schema.org/draft-06/schema#")
+DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
+DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
 
-DIALECT_SHORTNAMES = {
+DIALECT_SHORTNAMES: Mapping[str, URL] = {
     "2020": DRAFT2020,
     "202012": DRAFT2020,
     "2020-12": DRAFT2020,
@@ -71,17 +82,20 @@ DIALECT_SHORTNAMES = {
     "draft3": DRAFT3,
 }
 TEST_SUITE_DIALECT_URLS = {
-    DRAFT2020: f"{TEST_SUITE_URL}/tree/main/tests/draft2020-12",
-    DRAFT2019: f"{TEST_SUITE_URL}/tree/main/tests/draft2019-09",
-    DRAFT7: f"{TEST_SUITE_URL}/tree/main/tests/draft7",
-    DRAFT6: f"{TEST_SUITE_URL}/tree/main/tests/draft6",
-    DRAFT4: f"{TEST_SUITE_URL}/tree/main/tests/draft4",
-    DRAFT3: f"{TEST_SUITE_URL}/tree/main/tests/draft3",
+    DRAFT2020: TEST_SUITE_URL / "tree/main/tests/draft2020-12",
+    DRAFT2019: TEST_SUITE_URL / "tree/main/tests/draft2019-09",
+    DRAFT7: TEST_SUITE_URL / "tree/main/tests/draft7",
+    DRAFT6: TEST_SUITE_URL / "tree/main/tests/draft6",
+    DRAFT4: TEST_SUITE_URL / "tree/main/tests/draft4",
+    DRAFT3: TEST_SUITE_URL / "tree/main/tests/draft3",
 }
 LATEST_DIALECT_NAME = "draft2020-12"
 
-#: Should match the magic value used to validate `schema`s in `io-schema.json`
-CURRENT_DIALECT_URI = "urn:current-dialect"
+# Magic constants assumed/used by the official test suite
+SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
+
+#: Should match the magic value used to validate `schema`s in `schemas/io.json`
+CURRENT_DIALECT_URI = URL.parse("urn:current-dialect")
 
 FORMAT = click.option(
     "--format",
@@ -95,66 +109,51 @@ FORMAT = click.option(
 _F = Literal["json", "pretty"]
 
 
-@tui()  # type: ignore[reportGeneralTypeIssues]
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))  # type: ignore[reportUntypedFunctionDecorator]  # noqa: E501
+@tui(help="Open a simple interactive TUI for executing Bowtie commands.")
+@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 def main():
     """
     A meta-validator for the JSON Schema specifications.
     """
-    redirect_structlog()
+    _redirect_structlog()
 
 
-@main.command()
-@click.argument(
-    "input",
+P = ParamSpec("P")
+
+
+def subcommand(fn: Callable[P, int | None]):
+    """
+    Define a Bowtie subcommand which returns its exit code.
+    """
+
+    @main.command()
+    @click.pass_context
+    @wraps(fn)
+    def run(context: click.Context, *args: P.args, **kwargs: P.kwargs) -> None:
+        exit_code = fn(*args, **kwargs)
+        context.exit(0 if exit_code is None else exit_code)
+
+    return run
+
+
+@subcommand
+@click.option(
+    "--input",
     default="-",
     type=click.File(mode="r"),
 )
-@click.option(
-    "--out",
-    "-o",
-    "output",
-    help="Where to write the outputted report HTML.",
-    default="bowtie-report.html",
-    show_default=True,
-    type=click.File("w"),
-)
-@click.option(
-    "--badges",
-    "-b",
-    help="Directory to write the generated badge json files.",
-    type=click.Path(path_type=Path),
-)
-@click.option(
-    "--generate-dialect-navigation",
-    help="generate hyperlinks to all dialect reports",
-    is_flag=True,
-    default=False,
-)
-def report(
-    input: Iterable[str],
-    output: TextIO,
-    badges: Path | None,
-    generate_dialect_navigation: bool,
-):
+@click.argument("output", type=click.Path(path_type=Path))
+def badges(input: Iterable[str], output: Path):
     """
-    Generate a Bowtie report from a previous run.
+    Generate Bowtie badges from a previous run.
     """
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader("bowtie"),
-        undefined=jinja2.StrictUndefined,
-        keep_trailing_newline=True,
-    )
-    report_data = _report.from_input(input, generate_dialect_navigation)
-    if badges is not None:
-        dialect = report_data["run_info"].dialect
-        report_data["summary"].generate_badges(badges, dialect)
-    template = env.get_template("report.html.j2")
-    output.write(template.render(**report_data))
+    report_data = _report.from_input(input)
+    dialect = report_data["run_info"].dialect
+    report_data["summary"].generate_badges(output, dialect)
 
 
-@main.command()
+@subcommand
 @FORMAT
 @click.option(
     "--show",
@@ -171,11 +170,26 @@ def report(
     default="-",
     type=click.File(mode="r"),
 )
-def summary(input: Iterable[str], format: _F, show: str):
+def summary(input: TextIO, format: _F, show: str):
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
-    summary = _report.from_input(input)["summary"]
+    try:
+        summary = _report.from_input(input)["summary"]
+    except _report.EmptyReport:
+        error = DiagnosticError(
+            code="empty-report",
+            message="The Bowtie report is empty.",
+            causes=[f"{input.name} contains no test result data."],
+            hint_stmt=(
+                "If you are piping data into bowtie summary, "
+                "check to ensure that what you've run has succeeded, "
+                "otherwise it may be emitting no report data."
+            ),
+        )
+        rich.print(error)
+        return _EX_NOINPUT
+
     if show == "failures":
         results = _ordered_failures(summary)
         to_table = _failure_table
@@ -192,9 +206,9 @@ def summary(input: Iterable[str], format: _F, show: str):
 
     match format:
         case "json":
-            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
-            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
 
 
@@ -210,8 +224,7 @@ def _ordered_failures(
     )
     return sorted(
         counts,
-        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
-        reverse=True,
+        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),
     )
 
 
@@ -246,8 +259,8 @@ def _validation_results(
         for case_result in case_results:
             descriptions: list[str] = []
             for implementation in summary.implementations:
-                valid = case_result[1].get(implementation["image"], "error")
-                if valid == "error":
+                valid = case_result[1].get(implementation["image"])
+                if valid is None or valid[1] == "errored":
                     description = "error"
                 elif valid[1] == "skipped":
                     description = "skipped"
@@ -291,36 +304,69 @@ def _validation_results_table(
     return table
 
 
-def validator_for_dialect(dialect: str | None = None):
+def _walk_importlib_path(root: Traversable):
+    """
+    .walk() for importlib resources paths, which don't have the method :/
+    """  # noqa: D415
+    walking = [root]
+    while walking:
+        path = walking.pop()
+        for each in path.iterdir():
+            if each.is_dir():
+                walking.append(each)
+            else:
+                yield each
+
+
+def bowtie_schemas_registry() -> tuple[type[Validator], SchemaRegistry]:
+    # FIXME: This seems still like something minor is missing from referencing.
+
+    paths = _walk_importlib_path(root=files("bowtie.schemas"))
+    contents = (json.loads(path.read_text()) for path in paths)
+
+    # Assume a uniform and top-level specification for Bowtie's own schemas.
+    root_contents = next(contents)
+    dialect_id = root_contents["$schema"]
+    spec = referencing.jsonschema.specification_with(dialect_id)
+    root = spec.create_resource(root_contents)
+    resources = (
+        referencing.Resource.from_contents(each, default_specification=spec)
+        for each in contents
+    )
+
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
-    from jsonschema.validators import RefResolver
 
-    text = files("bowtie.schemas").joinpath("io-schema.json").read_text()  # type: ignore[reportUnknownMemberType]  # noqa: E501
-    root_schema = json.loads(text)  # type: ignore[reportUnknownArgumentType]
-    resolver = RefResolver.from_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
-    Validator = validator_for(root_schema)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-    Validator.check_schema(root_schema)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    Validator = validator_for(dialect_id)  # type: ignore[reportUnknownVariableType]
 
-    if dialect is None:
-        dialect = Validator.META_SCHEMA["$id"]  # type: ignore[reportUnknownMemberType]  # noqa: E501
+    registry = root @ (resources @ referencing.jsonschema.EMPTY_REGISTRY)
+    return Validator, registry  # type: ignore[reportUnknownVariableType]
 
-    def validate(instance: Any, schema: Any) -> None:
-        resolver.store[CURRENT_DIALECT_URI] = {"$ref": dialect}  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        validator = Validator(schema, resolver=resolver)  # type: ignore[reportUnknownVariableType]  # noqa: E501
-        try:
-            errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  # noqa: E501
-        except Exception:  # XXX: Warn after Reporter disappears
-            pass
-        else:
-            if errors:
-                raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]  # noqa: E501
+
+def validator_for_dialect(dialect: URL = DRAFT2020):
+    Validator, base_registry = bowtie_schemas_registry()
+
+    # TODO: Maybe here too there should be an easier way to get an
+    #        internally-identified schema under the given specification.
+    #        Maybe not though, and it might be safer to just always use
+    #        external IDs.
+    specification = referencing.jsonschema.specification_with(str(dialect))
+    registry = base_registry.with_resource(
+        uri=str(CURRENT_DIALECT_URI),
+        resource=specification.create_resource({"$ref": str(dialect)}),
+    )
+
+    def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
+        validator = Validator(schema, registry=registry)  # type: ignore[reportGeneralTypeIssues]
+        errors = list(validator.iter_errors(instance))
+        if errors:
+            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 
     return validate
 
 
-def do_not_validate(dialect: str | None = None) -> Callable[..., None]:
+def do_not_validate(dialect: URL | None = None) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
@@ -328,7 +374,7 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
     help="A docker image which implements the bowtie IO protocol.",
     required=True,
     multiple=True,
@@ -341,14 +387,18 @@ DIALECT = click.option(
         "A URI or shortname identifying the dialect of each test case."
         f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
     ),
-    type=lambda dialect: DIALECT_SHORTNAMES.get(dialect, dialect),  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda dialect: (  # type: ignore[reportUnknownLambdaType]
+        DIALECT_SHORTNAMES[dialect]  # type: ignore[reportUnknownArgumentType]
+        if dialect in DIALECT_SHORTNAMES
+        else URL.parse(dialect)  # type: ignore[reportUnknownArgumentType]
+    ),
     default=LATEST_DIALECT_NAME,
     show_default=True,
 )
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
     help="Only run cases whose description match the given glob pattern.",
 )
 FAIL_FAST = click.option(
@@ -391,7 +441,7 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]  # noqa: E501
+    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
@@ -401,10 +451,20 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
+EXPECT = click.option(
+    "--expect",
+    show_default=True,
+    show_choices=True,
+    default="any",
+    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    help=(
+        "Expect the given input to be considered valid or invalid, "
+        "or else (with 'any') to allow either result."
+    ),
+)
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @DIALECT
 @FILTER
@@ -417,63 +477,60 @@ VALIDATE = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(
-    context: click.Context,
-    input: Iterable[str],
-    filter: str,
-    **kwargs: Any,
-):
+def run(input: Iterable[str], filter: str, dialect: URL, **kwargs: Any):
     """
     Run a sequence of cases provided on standard input.
     """
-    cases = (TestCase.from_dict(**json.loads(line)) for line in input)
+    cases = (
+        TestCase.from_dict(dialect=dialect, **json.loads(line))
+        for line in input
+    )
     if filter:
         cases = (case for case in cases if fnmatch(case.description, filter))
-
-    exit_code = asyncio.run(_run(**kwargs, cases=cases))
-    context.exit(exit_code)
+    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
+@EXPECT
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    context: click.Context,
     schema: TextIO,
     instances: Iterable[TextIO],
+    expect: str,
     **kwargs: Any,
 ):
     """
-    Validate a schema & one or more instances across implementations.
+    Validate one or more instances under a given schema across implementations.
     """
     case = TestCase(
         description="bowtie validate",
         schema=json.load(schema),
         tests=[
-            Test(description=str(i), instance=json.load(instance))
+            Test(
+                description=str(i),
+                instance=json.load(instance),
+                valid=dict(valid=True, invalid=False, any=None)[expect],
+            )
             for i, instance in enumerate(instances, 1)
         ],
     )
-    exit_code = asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
-    context.exit(exit_code)
+    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @FORMAT
 @IMPLEMENTATION
-def info(context: click.Context, **kwargs: Any):
+def info(**kwargs: Any):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
-    exit_code = asyncio.run(_info(**kwargs))
-    context.exit(exit_code)
+    return asyncio.run(_info(**kwargs))
 
 
 async def _info(image_names: list[str], format: _F):
@@ -525,50 +582,65 @@ async def _info(image_names: list[str], format: _F):
     return exit_code
 
 
-@main.command()
-@click.pass_context
+@subcommand
+@click.option(
+    "-q",
+    "--quiet",
+    "echo",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]
+    is_flag=True,
+    help="Don't print any output, just exit with nonzero status on failure.",
+)
 @FORMAT
 @IMPLEMENTATION
-def smoke(context: click.Context, **kwargs: Any):
+def smoke(**kwargs: Any):
     """
     Smoke test one or more implementations for basic correctness.
     """
-    exit_code = asyncio.run(_smoke(**kwargs))
-    context.exit(exit_code)
+    return asyncio.run(_smoke(**kwargs))
 
 
-async def _smoke(image_names: list[str], format: _F):
+async def _smoke(
+    image_names: list[str],
+    format: _F,
+    echo: Callable[..., None],
+):
+    reporter = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType]
     exit_code = 0
     async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
-        reporter=_report.Reporter(),
+        reporter=reporter,
     ) as starting:
         for each in asyncio.as_completed(starting):
             try:
                 implementation = await each
             except NoSuchImage as error:
                 exit_code |= _EX_CONFIG
-                click.echo(
+                echo(
                     f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
                     file=sys.stderr,
                 )
                 continue
 
-            click.echo(f"Testing {implementation.name!r}...", file=sys.stderr)
+            echo(f"Testing {implementation.name!r}...", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= _EX_CONFIG
-                click.echo("  ❗ (error): startup failed", file=sys.stderr)
+                echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
+            # FIXME: Sort by newer dialect
             dialect = implementation.dialects[0]
             runner = await implementation.start_speaking(dialect)
 
             cases = [
                 TestCase(
                     description="allow-everything schema",
-                    schema={"$schema": dialect},
+                    schema={"$schema": str(dialect)},
                     tests=[
                         Test(description="First", instance=1, valid=True),
                         Test(description="Second", instance="foo", valid=True),
@@ -576,14 +648,14 @@ async def _smoke(image_names: list[str], format: _F):
                 ),
                 TestCase(
                     description="allow-nothing schema",
-                    schema={"$schema": dialect, "not": {}},
+                    schema={"$schema": str(dialect), "not": {}},
                     tests=[
                         Test(description="First", instance=12, valid=False),
                     ],
                 ),
             ]
-            responses: AsyncIterator[tuple[TestCase, ReportableResult]] = (
-                (case, await runner.run_case(seq=seq, case=case))
+            responses = (
+                (seq, case, await case.run(seq=seq, runner=runner))
                 for seq, case in enumerate(cases)
             )
 
@@ -597,27 +669,42 @@ async def _smoke(image_names: list[str], format: _F):
                                 failed=response.failed,
                             ),
                         }
-                        async for case, response in responses
+                        async for _, case, response in responses
                     ]
-                    click.echo(json.dumps(serializable, indent=2))
+                    echo(json.dumps(serializable, indent=2))
                 case "pretty":
-                    async for case, response in responses:
-                        if response.errored:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                    async for seq, case, response in responses:
+                        if response.errored:
                             exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
-                        elif response.failed:  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                            response.report(
+                                reporter=reporter.case_started(
+                                    seq=seq,
+                                    case=case,
+                                )
+                            )
+                        elif response.failed:
                             exit_code |= os.EX_DATAERR
                             message = "✗ (failed)"
                         else:
                             message = "✓"
-                        click.echo(f"  {message}: {case.description}")
+                        echo(f"  {message}: {case.description}")
 
     if exit_code:
-        click.echo("\n❌ some failures", file=sys.stderr)
+        echo("\n❌ some failures", file=sys.stderr)
     else:
-        click.echo("\n✅ all passed", file=sys.stderr)
+        echo("\n✅ all passed", file=sys.stderr)
 
     return exit_code
+
+
+def path_and_ref_from_gh_path(path: list[str]):
+    subpath: list[str] = []
+    while path[-1] != "tests":
+        subpath.append(path.pop())
+    subpath.append(path.pop())
+    # remove tree/ or blob/
+    return "/".join(reversed(subpath)).rstrip("/"), "/".join(path[1:])
 
 
 class _TestSuiteCases(click.ParamType):
@@ -628,7 +715,7 @@ class _TestSuiteCases(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], str, dict[str, Any]]:
+    ) -> tuple[Iterable[TestCase], URL, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
@@ -636,44 +723,44 @@ class _TestSuiteCases(click.ParamType):
         value = DIALECT_SHORTNAMES.get(value, value)
         value = TEST_SUITE_DIALECT_URLS.get(value, value)
 
-        is_local_path = not value.casefold().startswith(TEST_SUITE_URL)
-        if is_local_path:
+        try:
+            with suppress(TypeError):
+                value = URL.parse(value)
+        except RelativeURLWithoutBase:
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
             # Sigh. PyCQA/isort#1839
             # isort: off
             from github3 import (  # type: ignore[reportMissingTypeStubs]
-                GitHub,  # type: ignore[reportUnknownVariableType]
+                GitHub,
             )
-            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]  # noqa: E501
+            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]
 
             # isort: on
 
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # type: ignore[reportUnknownVariableType]  # noqa: E501
-            repo = gh.repository("json-schema-org", "JSON-Schema-Test-Suite")  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
-            _, _, rest = (
-                value[len(TEST_SUITE_URL) :].lstrip("/").partition("/")
-            )
-            ref, sep, partial = rest.partition("/tests")
+            path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
-            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                path = contents / sep.strip("/") / partial.strip("/")
-                cases, dialect = self._cases_and_dialect(path=path)
+                # path = contents / sep / "/".join(partial)
+                cases, dialect = self._cases_and_dialect(path=contents / path)
                 cases = list(cases)
 
             try:
-                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
             except NotFoundError:
                 commit_info = ref
             else:
                 # TODO: Make this the tree URL maybe, but I see tree(...)
                 #       doesn't come with an html_url
-                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]  # noqa: E501
+                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
             run_metadata: dict[str, Any] = {"Commit": commit_info}
 
         if dialect is not None:
@@ -692,14 +779,13 @@ class _TestSuiteCases(click.ParamType):
             paths, version_path = _glob(path, "*.json"), path
 
         remotes = version_path.parent.parent / "remotes"
-        cases = suite_cases_from(paths=paths, remotes=remotes)
         dialect = DIALECT_SHORTNAMES.get(version_path.name)
+        cases = suite_cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
         return cases, dialect
 
 
-@main.command()
-@click.pass_context
+@subcommand
 @IMPLEMENTATION
 @FILTER
 @FAIL_FAST
@@ -708,8 +794,7 @@ class _TestSuiteCases(click.ParamType):
 @VALIDATE
 @click.argument("input", type=_TestSuiteCases())
 def suite(
-    context: click.Context,
-    input: tuple[Iterable[TestCase], str, dict[str, Any]],
+    input: tuple[Iterable[TestCase], URL, dict[str, Any]],
     filter: str,
     **kwargs: Any,
 ):
@@ -744,14 +829,13 @@ def suite(
         cases = (case for case in cases if fnmatch(case.description, filter))
 
     task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
-    exit_code = asyncio.run(task)
-    context.exit(exit_code)
+    return asyncio.run(task)
 
 
 async def _run(
     image_names: list[str],
     cases: Iterable[TestCase],
-    dialect: str,
+    dialect: URL,
     fail_fast: bool,
     set_schema: bool,
     run_metadata: dict[str, Any] = {},  # noqa: B006
@@ -815,13 +899,13 @@ async def _run(
             )
 
             seq = 0
-            should_stop: bool = False
+            should_stop = False
             for seq, case, case_reporter in sequenced(cases, reporter):
                 if set_schema and not isinstance(case.schema, bool):
-                    case.schema["$schema"] = dialect
+                    case.schema["$schema"] = str(dialect)
 
-                responses: Iterable[Awaitable[ReportableResult]] = [
-                    each.run_case(seq=seq, case=case) for each in runners
+                responses = [
+                    case.run(seq=seq, runner=runner) for runner in runners
                 ]
                 for each in asyncio.as_completed(responses):
                     response = await each
@@ -829,12 +913,11 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        # TODO: Combine this with the logic in the template
-                        should_stop = response.errored or response.failed  # type: ignore[reportGeneralTypeIssues]  # noqa: E501
+                        should_stop = response.errored or response.failed
 
                 if should_stop:
                     break
-            reporter.finished(count=seq, did_fail_fast=should_stop)  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+            reporter.finished(count=seq, did_fail_fast=should_stop)
             if not seq:
                 exit_code = os.EX_NOINPUT
     return exit_code
@@ -860,28 +943,45 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
 def sequenced(
     cases: Iterable[TestCase],
     reporter: _report.Reporter,
-) -> Iterable[tuple[int, TestCase, _report._CaseReporter]]:  # type: ignore[reportPrivateUsage]  # noqa: E501
+) -> Iterable[tuple[int, TestCase, _report.CaseReporter]]:
     for seq, case in enumerate(cases, 1):
         yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
-def suite_cases_from(paths: Iterable[_P], remotes: Path) -> Iterable[TestCase]:
+def _remotes_from(
+    path: Path,
+    dialect: URL | None,
+) -> Iterable[tuple[URL, Any]]:
+    for each in _rglob(path, "*.json"):
+        schema = json.loads(each.read_text())
+        # FIXME: #40: for draft-next support
+        schema_dialect = schema.get("$schema")
+        if schema_dialect is not None and schema_dialect != str(dialect):
+            continue
+        relative = str(_relative_to(each, path)).replace("\\", "/")
+        yield SUITE_REMOTE_BASE_URI / relative, schema
+
+
+def suite_cases_from(
+    paths: Iterable[_P],
+    remotes: Path,
+    dialect: URL | None,
+) -> Iterable[TestCase]:
+    populated = {str(k): v for k, v in _remotes_from(remotes, dialect=dialect)}
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = {
-                urljoin(
-                    "http://localhost:1234",
-                    str(_relative_to(each, remotes)).replace("\\", "/"),
-                ): json.loads(each.read_text())
-                for each in _rglob(remotes, "*.json")
-            }
+            registry = populated
         else:
             registry = {}
 
         for case in json.loads(path.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
-            yield TestCase.from_dict(**case, registry=registry)
+            yield TestCase.from_dict(
+                dialect=dialect,
+                registry=registry,
+                **case,
+            )
 
 
 def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
@@ -911,7 +1011,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def redirect_structlog(file: TextIO = sys.stderr):
+def _redirect_structlog(file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
@@ -933,7 +1033,7 @@ def redirect_structlog(file: TextIO = sys.stderr):
     )
 
 
-_P = Union[Path, zipfile.Path]
+_P = Path | zipfile.Path
 
 
 # Missing zipfile.Path methods...
@@ -954,10 +1054,10 @@ def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
 def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
         return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
+    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
 
 
 def _stem(path: _P) -> str:  # Missing on < 3.11
     if hasattr(path, "stem"):
         return path.stem
-    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]  # noqa: E501
+    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]

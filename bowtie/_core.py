@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
 import json
 
 from attrs import field, frozen, mutable
+from url import URL
 import aiodocker.containers
 import aiodocker.docker
 import aiodocker.exceptions
@@ -16,6 +16,8 @@ import aiodocker.stream
 from bowtie import _commands, exceptions
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+
     from bowtie._report import Reporter
 
 
@@ -28,6 +30,7 @@ class GotStderr(Exception):
 class StartupFailed(Exception):
     name: str
     stderr: str = ""
+    data: Any = None
 
     def __str__(self) -> str:
         if self.stderr:
@@ -38,6 +41,7 @@ class StartupFailed(Exception):
 @frozen
 class NoSuchImage(Exception):
     name: str
+    data: Any = None
 
 
 class StreamClosed(Exception):
@@ -78,20 +82,18 @@ class Stream:
             return self._buffer.popleft()
 
         while True:
-            message: aiodocker.stream.Message | None = (
-                await self._read_with_timeout()
-            )
+            message = await self._read_with_timeout()
             if message is not None:
                 break
-            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
             if info["State"]["FinishedAt"]:
                 raise StreamClosed(self)
 
         if message.stream == 2:  # type: ignore[reportUnknownMemberType]
             data: list[bytes] = []
 
-            while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: E501
-                data.append(message.data)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            while message.stream == 2:  # type: ignore[reportUnknownMemberType]
+                data.append(message.data)  # type: ignore[reportUnknownMemberType]
                 message = await self._read_with_timeout()
                 if message is None:
                     raise GotStderr(b"".join(data))
@@ -99,22 +101,22 @@ class Stream:
         line: bytes
         rest: list[bytes]
         while True:
-            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]
             if rest:
-                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]  # noqa: E501
+                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]
                 self._buffer.extend(rest)
-                return line  # type: ignore[reportUnknownVariableType]  # noqa: E501
+                return line  # type: ignore[reportUnknownVariableType]
 
             message = None
             while message is None:
                 message = await self._read_with_timeout()
-            self._last += line
+            self._last += line  # type: ignore[reportUnknownMemberType]
 
 
 @frozen
 class DialectRunner:
     _name: str = field(alias="name")
-    _dialect: str = field(alias="dialect")
+    _dialect: URL = field(alias="dialect")
     _send: Callable[[_commands.Command[Any]], Awaitable[Any]] = field(
         alias="send",
     )
@@ -124,47 +126,46 @@ class DialectRunner:
     async def start(
         cls,
         send: Callable[[_commands.Command[Any]], Awaitable[Any]],
-        dialect: str,
+        dialect: URL,
         name: str,
     ) -> DialectRunner:
+        request = _commands.Dialect(dialect=str(dialect))
         return cls(
             name=name,
             send=send,
             dialect=dialect,
-            start_response=await send(_commands.Dialect(dialect=dialect)),  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+            start_response=await send(request),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         )
 
     def warn_if_unacknowledged(self, reporter: Reporter):
-        if self._start_response == _commands.StartedDialect.OK:
-            return
-        reporter.unacknowledged_dialect(
-            implementation=self._name,
-            dialect=self._dialect,
-            response=self._start_response,
-        )
+        if self._start_response != _commands.StartedDialect.OK:
+            reporter.unacknowledged_dialect(
+                implementation=self._name,
+                dialect=self._dialect,
+                response=self._start_response,
+            )
 
-    async def run_case(
+    async def run_validation(
         self,
-        seq: int,
-        case: _commands.TestCase,
+        command: _commands.Run,
+        tests: Iterable[_commands.Test],
     ) -> _commands.ReportableResult:
-        command = _commands.Run(seq=seq, case=case.without_expected_results())
         try:
-            expected = [test.valid for test in case.tests]
-            response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+            expected = [test.valid for test in tests]
+            response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 return _commands.Empty(implementation=self._name)
             return response(implementation=self._name, expected=expected)
         except GotStderr as error:
             return _commands.CaseErrored.uncaught(
-                seq=seq,
+                seq=command.seq,
                 implementation=self._name,
                 stderr=error.stderr.decode("utf-8"),
             )
 
 
 class _MakeValidator(Protocol):
-    def __call__(self, dialect: str | None = None) -> Callable[..., None]:
+    def __call__(self, dialect: URL | None = None) -> Callable[..., None]:
         ...
 
 
@@ -190,14 +191,14 @@ class Implementation:
     _stream: Stream = field(default=None, repr=False, alias="stream")
     _read_timeout_sec: float | None = field(
         default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]  # noqa: E501
+        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
         repr=False,
     )
 
     metadata: dict[str, Any] | None = None
 
     # FIXME: Still some refactoring into DialectRunner needed.
-    _dialect: str = None  # type: ignore[reportGeneralTypeIssues]
+    _dialect: URL = None  # type: ignore[reportGeneralTypeIssues]
 
     @classmethod
     @asynccontextmanager
@@ -221,19 +222,52 @@ class Implementation:
         except StreamClosed:
             raise StartupFailed(name=image_name)
         except aiodocker.exceptions.DockerError as error:
+            # This craziness can go wrong in various ways, none of them
+            # machine parseable.
+
             status, data, *_ = error.args
-            if data.get("cause") == "image not known" or status == 500:  # :/
-                raise NoSuchImage(name=image_name)
-            raise StartupFailed(name=image_name)
+            if data.get("cause") == "image not known":
+                raise NoSuchImage(name=image_name, data=data)
+
+            message = ghcr = data.get("message", "")
+
+            if status == 500:
+                try:
+                    # GitHub Registry saying an image doesn't exist as reported
+                    # within GitHub Actions' version of Podman...
+                    # This is some crazy string like:
+                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
+                    # with seemingly no other indication elsewhere and
+                    # obviously no real good way to detect this specific case
+                    no_image = message.endswith('/tags/list": denied')
+                except Exception:
+                    pass
+                else:
+                    if no_image:
+                        raise NoSuchImage(name=image_name, data=data)
+
+                try:
+                    # GitHub Registry saying an image doesn't exist as reported
+                    # locally via podman on macOS...
+
+                    # message will be ... a JSON string !?! ...
+                    error = json.loads(ghcr).get("error", "")
+                except Exception:  # not JSON, or missing keys...
+                    pass
+                else:
+                    if "403 (forbidden)" in error.casefold():
+                        raise NoSuchImage(name=image_name, data=data)
+
+            raise StartupFailed(name=image_name, data=data)
 
         yield self
         with suppress(GotStderr):  # XXX: Log this too?
             await self._stop()
         with suppress(aiodocker.exceptions.DockerError):
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
     async def _start_container(self):
-        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
@@ -244,14 +278,14 @@ class Implementation:
             self._container,
             read_timeout_sec=self._read_timeout_sec,
         )
-        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         if started is None:
             return
         self.metadata = started.implementation
 
     async def _restart_container(self):
         self._restarts -= 1
-        await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]  # noqa: E501
+        await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
         await self._start_container()
         await self.start_speaking(dialect=self._dialect)
 
@@ -259,9 +293,10 @@ class Implementation:
     def dialects(self):
         if self.metadata is None:
             raise StartupFailed(name=self.name)
-        return self.metadata.get("dialects", [])
+        # FIXME: Probably should return a set, but needs ordering occasionally
+        return [URL.parse(each) for each in self.metadata.get("dialects", [])]
 
-    def start_speaking(self, dialect: str) -> Awaitable[DialectRunner]:
+    def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect
         self._maybe_validate = self._make_validator(dialect)
         return DialectRunner.start(
@@ -271,7 +306,7 @@ class Implementation:
         )
 
     async def _stop(self):
-        await self._send_no_response(_commands.STOP)  # type: ignore[reportGeneralTypeIssues]  # noqa: E501  uh?? no idea what's going on here.
+        await self._send_no_response(_commands.STOP)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
 
     async def _send_no_response(self, cmd: _commands.Command[Any]):
         request = cmd.to_request(validate=self._maybe_validate)
@@ -297,7 +332,7 @@ class Implementation:
                     response=response,
                     validate=self._maybe_validate,
                 )
-            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]  # noqa: E501
+            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]
                 self._reporter.invalid_response(
                     error=error,
                     implementation=self,

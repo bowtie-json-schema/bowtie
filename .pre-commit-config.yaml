@@ -1,7 +1,8 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
+      - id: check-added-large-files
       - id: check-ast
       - id: check-json
       - id: check-toml
@@ -16,41 +17,56 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
-    hooks:
-      - id: pyupgrade
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.0.285"
+    rev: "v0.1.6"
     hooks:
       - id: ruff
-  - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.32.1
+        args: [--fix, --exit-non-zero-on-fix]
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.27.1
     hooks:
-      - id: djlint-jinja
+      - name: ensure bowtie's own schemas are valid
+        id: check-metaschema
+        files: ^bowtie/schemas/.*\.json$
+  - repo: local
+    hooks:
+      - id: check-dependabot
+        name: check implementations for dependabot registration
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-dependabot
+        additional_dependencies: [pyyaml]
+      - id: check-lintsonschema
+        name: check lintsonschema for drift
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-lintsonschema-schema
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.11.0
     hooks:
       - name: black (python implementations & bowtie internals)
         id: black
         args: ["--line-length", "79"]
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.2"
+    rev: "v3.1.0"
     hooks:
       - name: prettier (javascript implementations & bowtie internals)
         exclude: frontend/pnpm-lock.yaml
         id: prettier
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.47.0
+    rev: v8.54.0
     hooks:
       - name: eslint
         id: eslint
-        files: ^frontend/src/.*\.jsx?$
+        files: ^frontend/.*\.[jt]sx?$
         types: [file]
+        args: [--fix]
         additional_dependencies:
-          - eslint@8.43.0
-          - eslint-plugin-react@7.32.2
+          - eslint@8.50.0
+          - eslint-plugin-react@7.33.2
           - eslint-plugin-react-hooks@4.6.0
+          - "@typescript-eslint/eslint-plugin@6.6.0"
+          - "@typescript-eslint/parser@6.7.3"
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"
     hooks:
@@ -77,14 +93,14 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.18.1
+    rev: v0.19.1
     hooks:
       - name: stylua (lua implementations)
         id: stylua
         exclude: .*/json.lua
         args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v16.0.6
+    rev: v17.0.5
     hooks:
       - name: clang-format (c/c++/c#/java implementations)
         id: clang-format
@@ -92,22 +108,12 @@ repos:
   - repo: https://github.com/dustinsand/pre-commit-jvm
     rev: v0.9.0
     hooks:
-      - name: ktlint (kotlin implementations)
+      - name: ktlint (java/kotlin implementations)
         id: ktlint
-        args:
-          [
-            "--format",
-            "implementations/kotlin-kmp-json-schema-validator/**/*.kt",
-            "implementations/kotlin-kmp-json-schema-validator/*.kts",
-          ]
-      - name: detekt (kotlin implementations)
+        args: [--format]
+      - name: detekt (java/kotlin implementations)
         id: detekt
-        args:
-          [
-            "--build-upon-default-config",
-            "--input",
-            "implementations/kotlin-kmp-json-schema-validator",
-          ]
+        args: ["--build-upon-default-config"]
       - name: pmd (java implementations)
         id: pmd
         args:

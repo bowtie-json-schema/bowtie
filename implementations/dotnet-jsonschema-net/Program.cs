@@ -102,7 +102,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                 foreach (var test in tests)
                 {
                     testDescription = test["description"].GetValue<string>();
-                    var validationResult = schema.Validate(test["instance"], options);
+                    var validationResult = schema.Evaluate(test["instance"], options);
                     var testResult = JsonSerializer.SerializeToNode(validationResult);
                     results.Add(testResult);
                 }

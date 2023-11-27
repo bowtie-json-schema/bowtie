@@ -3,15 +3,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
-import io
+from typing import TYPE_CHECKING
 import json
 import platform
 import sys
 import traceback
 
-from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
 import referencing.jsonschema
+
+if TYPE_CHECKING:
+    import io
+
+    from jsonschema.protocols import Validator
 
 
 @dataclass

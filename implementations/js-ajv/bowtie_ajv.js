@@ -3,10 +3,9 @@ const readline = require("readline");
 const os = require("os");
 const process = require("process");
 
-const ajv_version = require(path.join(
-  path.dirname(path.dirname(require.resolve("ajv"))),
-  "package.json",
-)).version;
+const ajv_version = require(
+  path.join(path.dirname(path.dirname(require.resolve("ajv"))), "package.json"),
+).version;
 
 const DRAFTS = {
   "https://json-schema.org/draft/2020-12/schema": require("ajv/dist/2020"),
