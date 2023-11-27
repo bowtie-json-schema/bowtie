@@ -331,8 +331,11 @@ class _Summary:
             )
             name = impl["name"]
             lang = impl["language"]
+            # FIXME: this count needs to be global, not per-implementation
             counts = self.counts[impl["image"]]
             total = counts.total_tests
+            if not total:
+                continue
             passed = (
                 total
                 - counts.failed_tests

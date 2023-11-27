@@ -761,6 +761,34 @@ async def test_summary_show_validation(envsonschema, always_valid):
 
 
 @pytest.mark.asyncio
+async def test_badges_nothing_ran(envsonschema, tmp_path):
+    run_stdout, _ = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        envsonschema,
+        stdin="",
+        exit_code=-1,  # no test cases run causes a non-zero here
+    )
+
+    badges = tmp_path / "badges"
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "badges",
+        badges,
+        stdin=run_stdout,
+    )
+    assert stdout == stderr == ""
+    # FIXME: some better assertion, maybe involving running multiple
+    #        implementations
+    assert not badges.is_dir()
+
+
+@pytest.mark.asyncio
 async def test_run_with_registry(always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
