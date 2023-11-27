@@ -33,16 +33,18 @@ REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
 ]
 
 
+# aiohttp / aiodocker don't support 3.12
 SUPPORTED = ["3.10", "3.11"]
+LATEST = SUPPORTED[-1]
 
 nox.options.sessions = []
 
 
-def session(default=True, **kwargs):  # noqa: D103
+def session(default=True, python=LATEST, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
-        return nox.session(**kwargs)(fn)
+        return nox.session(python=python, **kwargs)(fn)
 
     return _session
 
