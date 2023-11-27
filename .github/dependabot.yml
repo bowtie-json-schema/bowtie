@@ -92,11 +92,6 @@ updates:
     directory: "/implementations/java-json-schema-validator"
     schedule:
       interval: "daily"
-      
-  - package-ecosystem: "gradle"
-    directory: "implementations/java-mjs-validator"
-    schedule:
-      interval: "daily"
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-openapiprocessor"
@@ -110,6 +105,11 @@ updates:
 
   - package-ecosystem: "gradle"
     directory: "/implementations/kotlin-kmp-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gradle"
+    directory: "/implementations/scala-mjs-validator"
     schedule:
       interval: "daily"
 
@@ -216,6 +216,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/kotlin-kmp-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/scala-mjs-validator"
     schedule:
       interval: "daily"
 
