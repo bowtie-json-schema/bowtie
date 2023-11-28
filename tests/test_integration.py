@@ -521,7 +521,7 @@ async def test_smoke_json(envsonschema):
         "json",
         "-i",
         envsonschema,
-        exit_code=0,  # FIXME: This == 0 is wrong due to #520.
+        exit_code=-1,
     )
     assert json.loads(stdout) == [
         {

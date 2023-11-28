@@ -28,7 +28,7 @@ import structlog
 import structlog.typing
 
 from bowtie import GITHUB, _report
-from bowtie._commands import Test, TestCase
+from bowtie._commands import ReportableResult as Result, Seq, Test, TestCase
 from bowtie._core import (
     DialectRunner,
     GotStderr,
@@ -624,6 +624,21 @@ async def _smoke(
 ):
     reporter = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType]
     exit_code = 0
+
+    match format:
+        case "json":
+
+            def finish() -> None:
+                echo(json.dumps(serializable, indent=2))
+
+        case "pretty":
+
+            def finish():
+                if exit_code:
+                    echo("\n❌ some failures", file=sys.stderr)
+                else:
+                    echo("\n✅ all passed", file=sys.stderr)
+
     async with _start(
         image_names=image_names,
         make_validator=validator_for_dialect,
@@ -668,28 +683,26 @@ async def _smoke(
                     ],
                 ),
             ]
-            responses = (
-                (seq, case, await case.run(seq=seq, runner=runner))
-                for seq, case in enumerate(cases)
-            )
 
             match format:
                 case "json":
-                    serializable = [
-                        {
-                            "case": case.without_expected_results(),
-                            "response": dict(
-                                errored=response.errored,
-                                failed=response.failed,
-                            ),
-                        }
-                        async for _, case, response in responses
-                    ]
-                    echo(json.dumps(serializable, indent=2))
+                    serializable: list[dict[str, Any]] = []
+
+                    def see(seq: Seq, case: TestCase, response: Result):
+                        serializable.append(  # noqa: B023
+                            {
+                                "case": case.without_expected_results(),
+                                "response": dict(
+                                    errored=response.errored,
+                                    failed=response.failed,
+                                ),
+                            }
+                        )
+
                 case "pretty":
-                    async for seq, case, response in responses:
+
+                    def see(seq: Seq, case: TestCase, response: Result):
                         if response.errored:
-                            exit_code |= os.EX_DATAERR
                             message = "❗ (error)"
                             response.report(
                                 reporter=reporter.case_started(
@@ -698,17 +711,18 @@ async def _smoke(
                                 )
                             )
                         elif response.failed:
-                            exit_code |= os.EX_DATAERR
                             message = "✗ (failed)"
                         else:
                             message = "✓"
                         echo(f"  {message}: {case.description}")
 
-    if exit_code:
-        echo("\n❌ some failures", file=sys.stderr)
-    else:
-        echo("\n✅ all passed", file=sys.stderr)
+            for seq, case in enumerate(cases):
+                response = await case.run(seq=seq, runner=runner)
+                if response.errored or response.failed:
+                    exit_code |= os.EX_DATAERR
+                see(seq, case, response)
 
+    finish()
     return exit_code
 
 
