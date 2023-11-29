@@ -54,7 +54,7 @@ function dialect($request)
     // See e.g. https://github.com/opis/json-schema/blob/c48df6d7089a45f01e1c82432348f2d5976f9bfb/tests/AbstractOfficialDraftTest.php#L69
     $dialects = [
         'https://json-schema.org/draft/2020-12/schema' => '2020-12',
-        'https://json-schema.org/draft-2019-09/schema' => '2019-09',
+        'https://json-schema.org/draft/2019-09/schema' => '2019-09',
         'http://json-schema.org/draft-07/schema#' => '07',
         'http://json-schema.org/draft-06/schema#' => '06',
     ];
