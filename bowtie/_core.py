@@ -168,7 +168,17 @@ class DialectRunner:
                     implementation=self._name,
                     seq=command.seq,
                 )
-            return response(implementation=self._name, expected=expected)
+            try:
+                return response(implementation=self._name, expected=expected)
+            except Exception:
+                # TODO: This kind of error will almost certainly be caught by
+                # running with -V -- probably we should emit a diagnostic
+                # saying so (that you'll get a clearer error by using it)
+                return _commands.CaseErrored.uncaught(
+                    implementation=self._name,
+                    seq=command.seq,
+                )
+
         except GotStderr as error:
             return _commands.CaseErrored.uncaught(
                 seq=command.seq,
