@@ -46,7 +46,7 @@ importlib-metadata==6.8.0
     # via textual
 jsonschema==4.20.0
     # via bowtie-json-schema (pyproject.toml)
-jsonschema-specifications==2023.11.1
+jsonschema-specifications==2023.11.2
     # via jsonschema
 linkify-it-py==2.0.2
     # via markdown-it-py
