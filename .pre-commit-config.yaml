@@ -18,7 +18,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.1.6"
+    rev: "v0.1.7"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -54,7 +54,7 @@ repos:
         exclude: frontend/pnpm-lock.yaml
         id: prettier
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.54.0
+    rev: v8.55.0
     hooks:
       - name: eslint
         id: eslint
@@ -100,7 +100,7 @@ repos:
         exclude: .*/json.lua
         args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v17.0.5
+    rev: v17.0.6
     hooks:
       - name: clang-format (c/c++/c#/java implementations)
         id: clang-format
