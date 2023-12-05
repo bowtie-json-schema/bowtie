@@ -115,6 +115,19 @@ _F = Literal["json", "pretty"]
 def main():
     """
     A meta-validator for the JSON Schema specifications.
+
+    Bowtie gives you access to JSON Schema across every programming
+    language and implementation.
+
+    It lets you compare implementations to each other, or to known correct
+    results from the JSON Schema test suite.
+
+    If you don't know where to begin, ``bowtie validate`` (for checking what
+    any given implementations think of your schema) or ``bowtie suite`` (for
+    running the official test suite against implementations) are likely good
+    places to start.
+
+    Full documentation can also be found at https://docs.bowtie.report
     """
     _redirect_structlog()
 
