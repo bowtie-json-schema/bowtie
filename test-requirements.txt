@@ -131,7 +131,7 @@ pytest==7.4.3
     #   -r test-requirements.in
     #   pytest-asyncio
     #   pytest-icdiff
-pytest-asyncio==0.23.2
+pytest-asyncio==0.21.1
     # via -r test-requirements.in
 pytest-icdiff==0.9
     # via -r test-requirements.in
