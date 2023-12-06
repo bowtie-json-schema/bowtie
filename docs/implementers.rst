@@ -182,7 +182,7 @@ If this is your first time reading Lua code, what we've done is create a dispatc
 .. note::
 
     We also have configured ``stdout`` for the harness to be line-buffered (by calling ``setvbuf``).
-    Ensure you've done the equivalent for your host language, as Bowtie expects to be able to read responses to each message it sends.
+    Ensure you've done the equivalent for your host language, as Bowtie expects to be able to read responses to each message it sends even though some languages do not necessarily flush their output on each line write.
 
 Any other command other than ``start`` or ``stop`` will blow up, but we're reading and writing JSON!
 
@@ -241,7 +241,7 @@ so ``start`` requests will have two parameters:
     * ``version`` which represents the version of the Bowtie protocol being spoken.
       Today, that version is always ``1``, but that may change in the future, in which case a harness should bail out as it may not understand the requests being sent.
 
-The harness is expected to respond with:
+The harness is expected to respond with something conforming to:
 
 .. literalinclude:: ../bowtie/schemas/io.json
     :language: json
@@ -338,9 +338,9 @@ which is indicating that we have yet another command to implement -- the ``diale
 Step 2: Configuring Implicit Dialects
 -------------------------------------
 
-The JSON Schema specification (in at least some dialects) allows schemas of the form ``{"type": "object"}`` -- i.e. where the schema does not include a :kw:`$schema` property which indicates the dialect of JSON Schema being used.
+The JSON Schema specification generally allows schemas of the form ``{"type": "object"}`` -- i.e. ones where the schema does not internally include a :kw:`$schema` keyword which would otherwise indicate the dialect of JSON Schema being used.
 In other words, the aforementioned schema may be treated (depending on its author's intention) as a Draft 4 schema, a Draft 7 schema, a Draft 2020-12 schema, etc.
-Bowtie enables specifying an intended behavior for such schemas by communicating it "out-of-band" to harnesses via the ``dialect`` command, which indicates to the harness "treat schemas without ``$schema`` as this particular dialect (provided in the request)".
+Bowtie enables specifying an intended behavior for such schemas by communicating it "out-of-band" to harnesses via the ``dialect`` command, which indicates to the harness: "treat schemas without ``$schema`` as this particular dialect (provided in the request)".
 The structure of this command looks like:
 
 .. literalinclude:: ../bowtie/schemas/io.json
@@ -369,12 +369,12 @@ Add a handler for the ``dialect`` command to your harness which returns that res
 
 .. warning::
 
-    Responding ``{"ok": true}`` or ``false`` is *not* an indication of whether your implementation supports the dialect sent.
+    Responding ``{"ok": true}`` or ``false`` is *not* an indication of whether an implementation supports the dialect sent.
 
-    Bowtie will never send a dialect request for a dialect that your harness does not support -- which it already knows from the ``start`` response we implemented `earlier <start_implementation>`.
+    Bowtie will never send a dialect request for a dialect that a harness does not support -- information which it already knows from the ``start`` response we implemented `earlier <start_implementation>`, where we specified the complete list of supported dialects for the implementation.
     If it ever did so this would be considered a Bowtie bug.
 
-    This request *strictly* controls what your implementation harness should do with schemas that do *not* internally indicate what version they are written for, and the response should signal whether your implementation has configured itself appropriately or not.
+    This ``dialect`` request *strictly* controls setting what an implementation harness should do with schemas that do *not* internally indicate what version they are written for; its response should signal only whether the implementation has configured itself appropriately or whether doing so is not supported.
 
     Bowtie will *continue executing tests* even if it sees a ``false`` response.
 
