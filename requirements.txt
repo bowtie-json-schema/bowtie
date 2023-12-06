@@ -74,7 +74,7 @@ pyjwt==2.8.0
     #   pyjwt
 python-dateutil==2.8.2
     # via github3-py
-referencing==0.31.0
+referencing==0.31.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
@@ -94,7 +94,7 @@ six==1.16.0
     # via python-dateutil
 structlog==23.2.0
     # via bowtie-json-schema (pyproject.toml)
-textual==0.44.0
+textual==0.44.1
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema (pyproject.toml)
@@ -110,7 +110,7 @@ url-py==0.10.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.1.0
     # via requests
-yarl==1.9.3
+yarl==1.9.4
     # via aiohttp
 zipp==3.17.0
     # via importlib-metadata

@@ -42,7 +42,7 @@ click==8.1.7
     #   -r requirements.txt
     #   bowtie-json-schema
     #   trogon
-cryptography==41.0.6
+cryptography==41.0.7
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -70,7 +70,7 @@ idna==3.6
     #   -r requirements.txt
     #   requests
     #   yarl
-importlib-metadata==6.8.0
+importlib-metadata==7.0.0
     # via
     #   -r requirements.txt
     #   textual
@@ -80,7 +80,7 @@ jsonschema==4.20.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-jsonschema-specifications==2023.11.1
+jsonschema-specifications==2023.11.2
     # via
     #   -r requirements.txt
     #   jsonschema
@@ -131,15 +131,15 @@ pytest==7.4.3
     #   -r test-requirements.in
     #   pytest-asyncio
     #   pytest-icdiff
-pytest-asyncio==0.21.1
+pytest-asyncio==0.23.2
     # via -r test-requirements.in
-pytest-icdiff==0.8
+pytest-icdiff==0.9
     # via -r test-requirements.in
 python-dateutil==2.8.2
     # via
     #   -r requirements.txt
     #   github3-py
-referencing==0.31.0
+referencing==0.31.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -155,7 +155,7 @@ rich==13.7.0
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.13.1
+rpds-py==0.13.2
     # via
     #   -r requirements.txt
     #   jsonschema
@@ -168,7 +168,7 @@ structlog==23.2.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-textual==0.42.0
+textual==0.44.1
     # via
     #   -r requirements.txt
     #   trogon
@@ -197,7 +197,7 @@ urllib3==2.1.0
     # via
     #   -r requirements.txt
     #   requests
-yarl==1.9.3
+yarl==1.9.4
     # via
     #   -r requirements.txt
     #   aiohttp

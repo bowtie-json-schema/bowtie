@@ -35,7 +35,7 @@ click==8.1.7
     #   bowtie-json-schema
     #   sphinx-click
     #   trogon
-cryptography==41.0.6
+cryptography==41.0.7
     # via pyjwt
 diagnostic==2.0.0
     # via bowtie-json-schema
@@ -58,13 +58,13 @@ idna==3.6
     #   yarl
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.8.0
+importlib-metadata==7.0.0
     # via textual
 jinja2==3.1.2
     # via sphinx
 jsonschema==4.20.0
     # via bowtie-json-schema
-jsonschema-specifications==2023.11.1
+jsonschema-specifications==2023.11.2
     # via jsonschema
 linkify-it-py==2.0.2
     # via markdown-it-py
@@ -106,7 +106,7 @@ pyjwt==2.8.0
     #   pyjwt
 python-dateutil==2.8.2
     # via github3-py
-referencing==0.31.0
+referencing==0.31.1
     # via
     #   bowtie-json-schema
     #   jsonschema
@@ -120,7 +120,7 @@ rich==13.7.0
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.13.1
+rpds-py==0.13.2
     # via
     #   jsonschema
     #   referencing
@@ -171,7 +171,7 @@ sphinxext-opengraph==0.9.0
     # via -r docs/requirements.in
 structlog==23.2.0
     # via bowtie-json-schema
-textual==0.42.0
+textual==0.44.1
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema
@@ -189,7 +189,7 @@ url-py==0.10.0
     #   bowtie-json-schema
 urllib3==2.1.0
     # via requests
-yarl==1.9.3
+yarl==1.9.4
     # via aiohttp
 zipp==3.17.0
     # via importlib-metadata
