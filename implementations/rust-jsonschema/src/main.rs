@@ -17,7 +17,7 @@ impl SchemaResolver for InMemoryResolver {
         url: &Url,
         _original_reference: &str,
     ) -> core::result::Result<Arc<serde_json::Value>, SchemaResolverError> {
-        return Ok(Arc::new(self.registry[url.to_string()].to_owned()));
+        Ok(Arc::new(self.registry[url.to_string()].to_owned()))
     }
 }
 
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
                         ],
                     },
                 });
-                println!("{}", response.to_string());
+                println!("{}", response);
             }
             "dialect" => {
                 if !started {
@@ -86,7 +86,7 @@ fn main() -> Result<()> {
                 options = JSONSchema::options();
                 compiler = options.with_draft(*dialects.get(dialect).expect("No such draft!"));
                 let response = json!({"ok": true});
-                println!("{}", response.to_string());
+                println!("{}", response);
             }
             "run" => {
                 if !started {
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
                         },
                     }),
                 };
-                println!("{}", response.to_string());
+                println!("{}", response);
             }
             "stop" => {
                 if !started {

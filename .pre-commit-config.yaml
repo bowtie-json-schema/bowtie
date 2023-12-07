@@ -78,9 +78,27 @@ repos:
             "implementations/rust-jsonschema/Cargo.toml",
             "--",
           ]
+      - name: cargo clippy rust-jsonschema
+        id: clippy
+        args:
+          [
+            "--manifest-path",
+            "implementations/rust-jsonschema/Cargo.toml",
+            "--fix",
+            "--",
+          ]
       - name: cargo fmt rust-boon
         id: fmt
         args: ["--manifest-path", "implementations/rust-boon/Cargo.toml", "--"]
+      - name: cargo clippy rust-boon
+        id: clippy
+        args:
+          [
+            "--manifest-path",
+            "implementations/rust-boon/Cargo.toml",
+            "--fix",
+            "--",
+          ]
   - repo: https://github.com/syntaqx/git-hooks
     rev: v0.0.18
     hooks:
