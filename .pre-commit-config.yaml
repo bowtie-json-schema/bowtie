@@ -88,6 +88,7 @@ repos:
           [
             "--manifest-path",
             "implementations/rust-jsonschema/Cargo.toml",
+            "--allow-dirty",
             "--fix",
             "--",
           ]
@@ -100,6 +101,7 @@ repos:
           [
             "--manifest-path",
             "implementations/rust-boon/Cargo.toml",
+            "--allow-dirty",
             "--fix",
             "--",
           ]
