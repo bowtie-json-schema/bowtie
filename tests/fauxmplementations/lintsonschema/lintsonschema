@@ -9,32 +9,26 @@ import json
 import os
 import sys
 
-from jsonschema_specifications import REGISTRY as SPECIFICATIONS
-from referencing import Registry, Resource
+from referencing.jsonschema import EMPTY_REGISTRY, specification_with
 import jsonschema.validators
+import referencing_loaders as loaders
 
-SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/schemas/io.json"))
-SCHEMA = json.loads(SCHEMA_PATH.read_text())
-SCHEMA_RESOURCE = Resource.from_contents(SCHEMA)
+SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMAS", "/schemas"))
 
-METASCHEMA_ID = SPECIFICATIONS[SCHEMA["$schema"]].id()
-CURRENT_DIALECT = Resource.from_contents(
+_schemas = loaders.from_path(SCHEMA_PATH)
+_REGISTRY = EMPTY_REGISTRY.with_resources(_schemas).crawl()
+ROOT_URI = "tag:bowtie.report,2023:ihop"
+METASCHEMA_ID = _REGISTRY.contents(ROOT_URI)["$schema"]
+SPECIFICATION = specification_with(METASCHEMA_ID)
+CURRENT_DIALECT = SPECIFICATION.create_resource(  # FIXME: wrong spec...
     {
-        "$schema": METASCHEMA_ID,
         "$id": "urn:current-dialect",
         "$ref": METASCHEMA_ID,
     },
 )
-REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
+REGISTRY = CURRENT_DIALECT @ _REGISTRY
 
-Validator = jsonschema.validators.validator_for(SCHEMA)
-VALIDATORS = {}
-for command in SCHEMA["$defs"]["command"]["$defs"]:
-    uri = f"tag:bowtie.report,2023:ihop:command:{command}"
-    VALIDATORS[command] = dict(
-        request=Validator({"$ref": uri}, registry=REGISTRY),
-        response=Validator({"$ref": f"{uri}#response"}, registry=REGISTRY),
-    )
+Validator = jsonschema.validators.validator_for(METASCHEMA_ID)
 
 
 @dataclass
@@ -47,12 +41,18 @@ class Runner:
         for line in stdin:
             each = json.loads(line)
             cmd = each["cmd"]
-            for error in VALIDATORS[cmd]["request"].iter_errors(each):
+            uri = f"tag:bowtie.report,2023:ihop:command:{cmd}"
+            request_validator = Validator({"$ref": uri}, registry=REGISTRY)
+            for error in request_validator.iter_errors(each):
                 self._stderr.write(error.message)
                 self._stderr.write("\n")
             del each["cmd"]
+            response_validator = Validator(
+                {"$ref": f"{uri}#response"},
+                registry=REGISTRY,
+            )
             response = getattr(self, f"cmd_{cmd}")(**each)
-            for error in VALIDATORS[cmd]["response"].iter_errors(response):
+            for error in response_validator.iter_errors(response):
                 self._stderr.write(error.message)
                 self._stderr.write("\n")
             self._stdout.write(f"{json.dumps(response)}\n")

@@ -1,0 +1,31 @@
+{
+  "description": "Sent to indicate an 'implicit dialect' -- i.e. which dialect is intended for schemas which do not contain $schema. May be sent multiple times by bowtie to indicate a change in implicit dialect. Note that implementations do not have to support processing such schemas in certain versions of the JSON Schema specification. Harnesses should *not* attempt to pepper this behavior over, or otherwise change the behavior of an implementation. In other words, this value should *not* be used to mutate incoming schemas (by inserting $schema). If an implementation does not support indicating what dialect a schema is written against unless indicated by $schema, or if it refuses to process schemas which do not contain $schema entirely, it should respond to this command as indicated below, and simply error when running cases containing such schemas as it would when used normally. Regardless of the dialect specified by this request, *explicitly* dialected schemas (which do contain $schema) with a different dialect may still be sent (as long as the implementation has signalled it supports the dialect)!",
+
+  "$id": "tag:bowtie.report,2023:ihop:command:dialect",
+
+  "properties": {
+    "cmd": { "const": "dialect" },
+    "dialect": {
+      "description": "A dialect URI which has previously been recognized as supported by the implementation's start response.",
+
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "$defs": {
+    "response": {
+      "$anchor": "response",
+
+      "oneOf": [
+        {
+          "description": "The implementation supports out-of-band indication of schema dialects and has configured itself for the dialect sent.",
+          "const": { "ok": true }
+        },
+        {
+          "description": "The implementation does not support out-of-band indication of schema dialects. Cases may proceed to be sent nevertheless.",
+          "const": { "ok": false }
+        }
+      ]
+    }
+  }
+}

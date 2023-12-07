@@ -1,0 +1,98 @@
+{
+  "description": "Sent once at program start to the implementation to indicate Bowtie is starting to send test cases.",
+
+  "$id": "tag:bowtie.report,2023:ihop:command:start",
+
+  "required": ["version"],
+  "properties": {
+    "cmd": { "const": "start" },
+    "version": {
+      "description": "The version of the Bowtie protocol which is intended.",
+      "$ref": "tag:bowtie.report,2023:ihop#version"
+    }
+  },
+  "$defs": {
+    "response": {
+      "$anchor": "response",
+
+      "type": "object",
+      "required": ["ready", "version", "implementation"],
+      "properties": {
+        "ready": {
+          "description": "Confirmation that the implementation is ready.",
+          "const": true
+        },
+        "version": {
+          "description": "Confirmation of the Bowtie version",
+          "$ref": "tag:bowtie.report,2023:ihop#version"
+        },
+        "implementation": {
+          "description": "Metadata about the implementation. The list below contain required or suggested values, but implementation-specific additional metadata can also be included and will be preserved in emitted reports.",
+
+          "type": "object",
+          "required": ["name", "language", "dialects", "homepage", "issues"],
+          "properties": {
+            "language": {
+              "description": "The implementation language (e.g. C++, Python, etc.)",
+
+              "type": "string",
+              "pattern": "^[a-z0-9-+_]*$"
+            },
+            "name": {
+              "description": "The name of the implementation itself",
+
+              "type": "string",
+              "pattern": "^[A-Za-z][\\w\\-.]*[A-Za-z0-9]$"
+            },
+            "version": {
+              "description": "The implementation version",
+              "type": "string"
+            },
+            "dialects": {
+              "description": "A list of JSON Schema dialects (URIs) which the implementation understands. When running test cases, this list will be consulted before sending them to the implementation (and any unsupported dialects will be skipped).",
+
+              "type": "array",
+              "items": { "type": "string", "format": "uri" }
+            },
+            "homepage": {
+              "description": "A URL for the implementation's homepage",
+
+              "type": "string",
+              "format": "uri"
+            },
+            "issues": {
+              "description": "A URL for the implementation's bug tracker",
+
+              "type": "string",
+              "format": "uri"
+            },
+            "links": {
+              "description": "Additional web page links relevant to the implementation",
+
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "description": { "type": "string" },
+                  "url": { "type": "string", "format": "uri" }
+                }
+              }
+            },
+            "os": {
+              "description": "Operating system the implementation is running on",
+              "type": "string"
+            },
+            "os_version": {
+              "description": "Version of OS the implementation is running on",
+              "type": "string"
+            },
+            "language_version": {
+              "description": "Version of language used to run the implementation",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

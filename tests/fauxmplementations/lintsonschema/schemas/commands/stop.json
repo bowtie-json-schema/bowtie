@@ -1,0 +1,10 @@
+{
+  "description": "Sent once at program end to the implementation to indicate it should shut down. No response is required.",
+
+  "$id": "tag:bowtie.report,2023:ihop:command:stop",
+
+  "properties": {
+    "cmd": { "const": "stop" }
+  },
+  "$defs": { "response": { "$anchor": "response" } }
+}

@@ -229,9 +229,8 @@ Lua the language has only one container type (``table``), and we've returned ``{
 Don't think too hard about Lua's peculiarities, let's just fix it by having a look at what parameters the ``start`` command sends a harness and what it expects back.
 The schema says:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/start.json
     :language: json
-    :start-at: "start"
     :end-before: "$defs"
     :dedent:
 
@@ -243,10 +242,9 @@ so ``start`` requests will have two parameters:
 
 The harness is expected to respond with something conforming to:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/start.json
     :language: json
     :start-at: "response"
-    :end-before: "dialect"
     :dedent:
 
 which is some metadata about the implementation being tested, and includes things like:
@@ -343,9 +341,8 @@ In other words, the aforementioned schema may be treated (depending on its autho
 Bowtie enables specifying an intended behavior for such schemas by communicating it "out-of-band" to harnesses via the ``dialect`` command, which indicates to the harness: "treat schemas without ``$schema`` as this particular dialect (provided in the request)".
 The structure of this command looks like:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/dialect.json
     :language: json
-    :start-at: "dialect"
     :end-before: "$defs"
     :dedent:
 
@@ -426,9 +423,8 @@ For details on how to use this API, see `the library's documentation <https://gi
 It returns a callable which then can be used to validate instances (other Lua values).
 Let's take a first pass at implementing the ``run`` command, whose input looks like:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/run.json
     :language: json
-    :start-at: "run"
     :end-before: "$defs"
     :dedent:
 
@@ -516,10 +512,9 @@ Catching exceptions from our Lua implementation is simple, by wrapping the ``val
 Once the harness detects an error, it should return an error response (in place of results), which may include any diagnostic information for later use, e.g. a traceback or internal error message.
 The structure of error responses is:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/run.json
     :language: json
     :start-at: "errored": {
-    :end-before: "stop"
     :dedent:
 
 (i.e. in particular the harness should return a response setting ``errored`` to ``true``).
@@ -536,7 +531,7 @@ Support for skipping tests is still somewhat crude, but it does indeed work, and
 
 The structure of skip responses, which you should send when presented with a "known" unsupported test, is:
 
-.. literalinclude:: ../bowtie/schemas/io.json
+.. literalinclude:: ../bowtie/schemas/commands/run.json
     :language: json
     :start-at: "skipped": {
     :end-before: "errored"
