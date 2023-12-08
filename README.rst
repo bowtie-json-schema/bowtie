@@ -30,6 +30,10 @@ Bowtie
   :alt: pre-commit.ci status
   :target: https://results.pre-commit.ci/latest/github/bowtie-json-schema/bowtie/main
 
+.. image:: https://gitpod.io/button/open-in-gitpod.svg
+  :alt: Open in Gitpod
+  :target: https://gitpod.io/#https://github.com/bowtie-json-schema/bowtie
+
 |
 
 Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-schema.org/>`_, by which we mean it coordinates executing *other* `validator implementations <https://json-schema.org/implementations.html>`_, collecting and reporting on their results.

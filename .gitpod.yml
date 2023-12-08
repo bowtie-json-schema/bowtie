@@ -1,0 +1,8 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - name: Install Bowtie
+    init: python3 -m pip install -r requirements.txt -e .
+  - name: Pull Bowtie Images
+    init: for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done

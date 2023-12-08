@@ -54,6 +54,7 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("img.shields.io"),
     f"{GITHUB}.*#.*",
+    "https://gitpod.io/.*#.*",
     str(REPO / "actions"),
     str(REPO / "workflows/CI/badge.svg"),
 ]
