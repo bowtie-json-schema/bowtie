@@ -7,9 +7,7 @@ source = "vcs"
 
 [tool.hatch.build]
 packages = ["bowtie"]
-exclude = [
-    "implementations/",
-]
+exclude = ["implementations/"]
 
 [project]
 name = "bowtie-json-schema"
@@ -38,6 +36,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
   "Topic :: File Formats :: JSON :: JSON Schema",
 ]
 dynamic = ["version"]
@@ -63,6 +62,7 @@ bowtie = "bowtie._cli:main"
 Documentation = "https://docs.bowtie.report/"
 Homepage = "https://bowtie.report/"
 Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
+Funding = "https://github.com/sponsors/Julian"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 
 [tool.coverage.html]
@@ -143,6 +143,8 @@ ignore = [
   "D407",
   # Plz spaces after section headers
   "D412",
+  # Not sure what heuristic this uses, but it seems easy for it to be wrong.
+  "SIM300",
 ]
 extend-exclude = ["json"]
 
