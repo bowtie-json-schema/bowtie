@@ -15,4 +15,3 @@ RUN sbt assembly
 FROM bellsoft/liberica-openjdk-alpine:17
 COPY --from=builder /opt/harness/target/scala-*/validator.jar /opt/app/validator.jar
 CMD ["java", "-Xss8m", "-Xmx16g", "-jar", "/opt/app/validator.jar"]
-

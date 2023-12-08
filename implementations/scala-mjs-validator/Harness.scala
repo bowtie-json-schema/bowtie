@@ -1,9 +1,8 @@
 import java.io._
 import io.circe.generic.auto._
-import io.circe.generic.semiauto._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import io.circe.{Json, Decoder, Encoder, HCursor, ParsingFailure}
+import io.circe.{Json, Decoder, ParsingFailure}
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import java.util.jar.Manifest
 import main.MainClass
@@ -109,7 +108,7 @@ class Harness {
 
           val result: Json = Json.obj("valid" -> MainClass.validateInstance(schema, instance, registryMap).asJson)
           resultArray :+= result
-        }      
+        }
       }
       RunResponse(runRequest.seq, resultArray).asJson.noSpaces
     } catch {
@@ -127,8 +126,8 @@ class Harness {
   }
 }
 
-case class Implementation(language: String, name: String, version: String, 
-                          dialects: List[String], homepage: String, issues: String, 
+case class Implementation(language: String, name: String, version: String,
+                          dialects: List[String], homepage: String, issues: String,
                           os: String, os_version: String, language_version: String,
                           links: List[Link])
 
