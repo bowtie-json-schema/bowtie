@@ -108,11 +108,6 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "gradle"
-    directory: "/implementations/scala-mjs-validator"
-    schedule:
-      interval: "daily"
-
   # Dependabot for Dockerfiles
   # --------------------------
 
