@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 from zipfile import ZipFile
 import os
 import shlex
@@ -51,6 +52,29 @@ def session(default=True, python=LATEST, **kwargs):  # noqa: D103
     return _session
 
 
+def _install_coverage_hook(session: nox.Session):
+    """
+    Enable measurement of coverage in sub-processes.
+
+    See https://coverage.readthedocs.io/en/latest/subprocess.html.
+    """
+    session.run(
+        "python",
+        "-c",
+        dedent(
+            r"""
+            from pathlib import Path
+            import sysconfig
+
+            Path(sysconfig.get_path("purelib")).joinpath("coverage.pth").write_text(
+                "import coverage; coverage.process_startup()\n",
+                encoding="utf-8",
+            )
+            """,
+        ).lstrip("\n"),
+    )
+
+
 @session(python=SUPPORTED)
 def tests(session):
     """
@@ -65,19 +89,37 @@ def tests(session):
             github = None
 
         session.install("coverage[toml]")
-        session.run("coverage", "run", "-m", "pytest", TESTS)
-        if github is None:
-            session.run("coverage", "report")
-        else:
-            with github.open("a") as summary:
-                summary.write("### Coverage\n\n")
-                summary.flush()  # without a flush, output seems out of order.
-                session.run(
-                    "coverage",
-                    "report",
-                    "--format=markdown",
-                    stdout=summary,
-                )
+
+        _install_coverage_hook(session)
+        with TemporaryDirectory() as _tmpdir:
+            tmpdir = Path(_tmpdir)
+            coverage = os.environ.get("COVERAGE_FILE", tmpdir / "coverage")
+            env = dict(
+                COVERAGE_PROCESS_START=os.fsencode(PYPROJECT.resolve()),
+                COVERAGE_FILE=os.fsencode(coverage),
+            )
+            session.run(
+                "coverage",
+                "run",
+                "-m",
+                "pytest",
+                TESTS,
+                env=env,
+            )
+            session.run("coverage", "combine", env=env)
+            if github is None:
+                session.run("coverage", "report", env=env)
+            else:
+                with github.open("a") as summary:
+                    summary.write("### Coverage\n\n")
+                    summary.flush()  # without flush, output seems out of order
+                    session.run(
+                        "coverage",
+                        "report",
+                        "--format=markdown",
+                        stdout=summary,
+                        env=env,
+                    )
     else:
         session.run("pytest", *session.posargs, TESTS)
 

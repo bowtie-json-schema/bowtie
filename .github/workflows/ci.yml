@@ -41,16 +41,16 @@ jobs:
       fail-fast: false
       matrix:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
+        posargs: [""]
         include:
-          - noxenv: app
+          - noxenv: tests-3.12
+            posargs: coverage github
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: >
-          sudo apt-get update &&
-          sudo apt-get install -y libenchant-2-dev
+        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
         if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
       - name: Install dependencies
         run: brew install enchant podman

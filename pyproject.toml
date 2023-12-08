@@ -83,6 +83,7 @@ skip_covered = false
 
 [tool.coverage.run]
 branch = true
+parallel = true  # to support subprocess collection
 source = ["bowtie"]
 dynamic_context = "test_function"
 
