@@ -42,6 +42,10 @@ html_static_path = [str(STATIC)]
 
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
+.. |gitpod| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
+  :alt: Open in Gitpod
+  :target: https://gitpod.io/#{REPO}
+
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501, RUF100

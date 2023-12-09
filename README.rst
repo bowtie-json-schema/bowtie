@@ -10,7 +10,7 @@ Bowtie
 
 |
 
-.. image:: https://img.shields.io/badge/Gitpod-ready_to_code-orange?logo=gitpod
+.. image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
   :alt: Open in Gitpod
   :target: https://gitpod.io/#https://github.com/bowtie-json-schema/bowtie
 
