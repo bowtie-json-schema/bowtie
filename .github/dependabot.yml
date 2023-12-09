@@ -108,10 +108,7 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "gradle"
-    directory: "/implementations/scala-mjs-validator"
-    schedule:
-      interval: "daily"
+  # ignore: scala-mjs-validator - FIXME: Dependabot doesn't support Scala.
 
   # Dependabot for Dockerfiles
   # --------------------------
