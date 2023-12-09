@@ -108,6 +108,8 @@ updates:
     schedule:
       interval: "daily"
 
+  # ignore: scala-mjs-validator - FIXME: Dependabot doesn't support Scala.
+
   # Dependabot for Dockerfiles
   # --------------------------
 
