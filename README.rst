@@ -10,6 +10,10 @@ Bowtie
 
 |
 
+.. image:: https://img.shields.io/badge/Gitpod-ready_to_code-orange?logo=gitpod
+  :alt: Open in Gitpod
+  :target: https://gitpod.io/#https://github.com/bowtie-json-schema/bowtie
+
 .. image:: https://zenodo.org/badge/531839193.svg
   :alt: DOI
   :target: https://zenodo.org/badge/latestdoi/531839193
@@ -29,10 +33,6 @@ Bowtie
 .. image:: https://results.pre-commit.ci/badge/github/bowtie-json-schema/bowtie/main.svg
   :alt: pre-commit.ci status
   :target: https://results.pre-commit.ci/latest/github/bowtie-json-schema/bowtie/main
-
-.. image:: https://gitpod.io/button/open-in-gitpod.svg
-  :alt: Open in Gitpod
-  :target: https://gitpod.io/#https://github.com/bowtie-json-schema/bowtie
 
 |
 
