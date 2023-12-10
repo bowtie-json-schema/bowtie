@@ -9,7 +9,7 @@ additionalRepositories:
 
 tasks:
   - name: Install Bowtie
-    init: python3 -m pip install -r requirements.txt -e .
+    init: python3 -m pip install -r requirements.txt -e . && pyenv rehash
 
   - name: Pull Bowtie Images
     init: for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done
