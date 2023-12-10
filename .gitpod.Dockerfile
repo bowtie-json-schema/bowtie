@@ -4,4 +4,4 @@ USER gitpod
 
 ENV SHELL=/usr/bin/zsh
 RUN pyenv install 3.11 && pyenv global 3.11
-RUN python3.11 -m pip install -r https://raw.githubusercontent.com/bowtie-json-schema/bowtie/main/requirements.txt
+RUN python3.11 -m pip install -r https://raw.githubusercontent.com/bowtie-json-schema/bowtie/main/requirements.txt && pyenv rehash
