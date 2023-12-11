@@ -95,7 +95,7 @@ LATEST_DIALECT_NAME = "draft2020-12"
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 #: Should match the magic value used to validate `schema`s in `schemas/io.json`
-CURRENT_DIALECT_URI = URL.parse("urn:current-dialect")
+CURRENT_DIALECT_URI = URL.parse("tag:bowtie.report,2023:ihop:__dialect__")
 
 FORMAT = click.option(
     "--format",

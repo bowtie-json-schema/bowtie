@@ -22,7 +22,7 @@ METASCHEMA_ID = _REGISTRY.contents(ROOT_URI)["$schema"]
 SPECIFICATION = specification_with(METASCHEMA_ID)
 CURRENT_DIALECT = SPECIFICATION.create_resource(  # FIXME: wrong spec...
     {
-        "$id": "urn:current-dialect",
+        "$id": "tag:bowtie.report,2023:ihop:__dialect__",
         "$ref": METASCHEMA_ID,
     },
 )
