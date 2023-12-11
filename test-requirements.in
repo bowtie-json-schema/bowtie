@@ -1,5 +1,5 @@
 file:.#egg=bowtie-json-schema
 -r requirements.txt
 pytest
-pytest-asyncio
+pytest-asyncio==0.21.1
 pytest-icdiff
