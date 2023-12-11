@@ -139,12 +139,17 @@ python-dateutil==2.8.2
     # via
     #   -r requirements.txt
     #   github3-py
-referencing==0.31.1
+referencing==0.32.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
     #   jsonschema
     #   jsonschema-specifications
+    #   referencing-loaders
+referencing-loaders==0.4.2
+    # via
+    #   -r requirements.txt
+    #   bowtie-json-schema
 requests==2.31.0
     # via
     #   -r requirements.txt
@@ -176,7 +181,7 @@ trogon==0.5.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   -r requirements.txt
     #   aiodocker

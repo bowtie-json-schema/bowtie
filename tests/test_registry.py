@@ -4,7 +4,7 @@ Test the proper population of a Bowtie schema registry.
 
 from bowtie._cli import bowtie_schemas_registry
 
-_, REGISTRY = bowtie_schemas_registry()
+REGISTRY = bowtie_schemas_registry()
 
 
 def test_root_schema():

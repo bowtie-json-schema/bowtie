@@ -48,6 +48,7 @@ dependencies = [
   "github3.py",
   "jsonschema>=4.19.0",
   "referencing>=0.31.0",
+  "referencing-loaders>=0.4.2",
   "rich",
   "structlog",
   "trogon>=0.4.0",

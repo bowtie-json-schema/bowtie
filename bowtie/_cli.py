@@ -23,6 +23,7 @@ from url import URL, RelativeURLWithoutBase
 import aiodocker
 import click
 import referencing.jsonschema
+import referencing_loaders
 import rich
 import structlog
 import structlog.typing
@@ -42,9 +43,7 @@ from bowtie.exceptions import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-    from importlib.resources.abc import Traversable
 
-    from jsonschema.protocols import Validator
     from referencing.jsonschema import SchemaRegistry
 
 # Windows fallbacks...
@@ -331,48 +330,17 @@ def _validation_results_table(
     return table
 
 
-def _walk_importlib_path(root: Traversable):
-    """
-    .walk() for importlib resources paths, which don't have the method :/
-    """  # noqa: D415
-    walking = [root]
-    while walking:
-        path = walking.pop()
-        for each in path.iterdir():
-            if each.is_dir():
-                walking.append(each)
-            else:
-                yield each
+def bowtie_schemas_registry() -> SchemaRegistry:
+    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
+    return referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
 
 
-def bowtie_schemas_registry() -> tuple[type[Validator], SchemaRegistry]:
-    # FIXME: This seems still like something minor is missing from referencing.
-
-    paths = _walk_importlib_path(root=files("bowtie.schemas"))
-    contents = (json.loads(path.read_text()) for path in paths)
-
-    # Assume a uniform and top-level specification for Bowtie's own schemas.
-    root_contents = next(contents)
-    dialect_id = root_contents["$schema"]
-    spec = referencing.jsonschema.specification_with(dialect_id)
-    root = spec.create_resource(root_contents)
-    resources = (
-        referencing.Resource.from_contents(each, default_specification=spec)
-        for each in contents
-    )
-
+def validator_for_dialect(dialect: URL = DRAFT2020):
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    Validator = validator_for(dialect_id)  # type: ignore[reportUnknownVariableType]
-
-    registry = root @ (resources @ referencing.jsonschema.EMPTY_REGISTRY)
-    return Validator, registry  # type: ignore[reportUnknownVariableType]
-
-
-def validator_for_dialect(dialect: URL = DRAFT2020):
-    Validator, base_registry = bowtie_schemas_registry()
+    base_registry = bowtie_schemas_registry()
 
     # TODO: Maybe here too there should be an easier way to get an
     #        internally-identified schema under the given specification.
@@ -385,8 +353,9 @@ def validator_for_dialect(dialect: URL = DRAFT2020):
     )
 
     def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
-        validator = Validator(schema, registry=registry)  # type: ignore[reportGeneralTypeIssues]
-        errors = list(validator.iter_errors(instance))
+        Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
+        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
+        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownVariableType]
         if errors:
             raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 
