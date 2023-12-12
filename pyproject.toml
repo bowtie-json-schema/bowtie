@@ -142,7 +142,8 @@ ignore = [
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
   "RET503",  # Returning None implicitly is fine
-  "RET505",  # This pushes you to use `if` instead of `elif`, but for no reason
+  "RET505",  # These push you to use `if` instead of `elif`, but for no reason
+  "RET506",
   "RSE102",  # Ha, what, who even knew you could leave the parens off. But no.
   "SIM300", # Not sure what heuristic this uses, but it's easily incorrect
   "SLF001",  # Private usage within this package itself is fine
@@ -162,6 +163,6 @@ from-first = true
 
 [tool.ruff.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
-"docs/*" = ["ANN", "D"]
+"docs/*" = ["ANN", "D", "INP001"]
 "tests/*" = ["ANN", "D", "RUF012", "S"]
-"implementations/*" = ["ANN", "D"]
+"implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]

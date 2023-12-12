@@ -32,7 +32,7 @@ if docker_missing:
         f"{', '.join(docker_missing)} are not configured to update its "
         "container image via Dependabot. "
         "Please add a package-ecosystem: docker section to the "
-        ".github/dependabot.yml file."
+        ".github/dependabot.yml file.",
     )
 
 
@@ -54,5 +54,5 @@ if packaging_missing:
         ".github/dependabot.yml file. You can find information on the valid "
         f"ecosystem values at {DEPENDABOT_DOCS}. If your programming language "
         "is unsupported within Dependabot, add a comment saying "
-        "# ignore: <implementation name> - <reason> to the same file."
+        "# ignore: <implementation name> - <reason> to the same file.",
     )

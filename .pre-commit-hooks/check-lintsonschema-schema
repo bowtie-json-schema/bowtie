@@ -37,5 +37,5 @@ for path in LINTSONSCHEMA_PATH.rglob("*.json"):
 if extra:
     sys.exit(
         f"lintsonschema's schemas contain extra files: {extra}. "
-        "Refusing to delete them, you should inspect them manually."
+        "Refusing to delete them, you should inspect them manually.",
     )
