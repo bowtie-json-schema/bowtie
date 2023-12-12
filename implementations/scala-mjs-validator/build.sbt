@@ -11,10 +11,11 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.13.10"
 )
 
-val circeVersion = "0.14.6"
+val circeVersion = "0.14.1"
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-generic-extras",
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
 
