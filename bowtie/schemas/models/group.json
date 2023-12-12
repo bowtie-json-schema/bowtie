@@ -1,0 +1,47 @@
+{
+  "description": "A collection of related, runnable tests, either individually or themselves in subgroups",
+
+  "$id": "tag:bowtie.report,2023:ihop:group",
+
+  "type": "object",
+  "required": ["description", "children"],
+  "properties": {
+    "description": {
+      "description": "A (human-readable) short description of this test group",
+      "type": "string"
+    },
+    "comment": {
+      "description": "Any additional comments about the test group",
+      "type": "string"
+    },
+    "schema": {
+      "description": "A valid JSON Schema.",
+      "$comment": "the URI used here is a sort of 'magic' URI set by Bowtie during runs, which will resolve to (effectively) the meta-schema for the current dialect being run by Bowtie. E.g. when running tests using the Draft 2020-12 dialect, the URI will resolve to the schema `{\"$ref\": \"https://json-schema.org/draft/2020-12/schema\"}`. This sort of dynamically set value is necessary, as schemas are supposed to be valid under the current dialect being spoken by Bowtie, but that's not known until runtime.",
+      "$ref": "tag:bowtie.report,2023:ihop:__dialect__"
+    },
+    "registry": {
+      "description": "A schema registry to be made available for all tests in this group.",
+      "$ref": "tag:bowtie.report,2023:ihop:registry"
+    },
+    "children": {
+      "description": "A set of related children of this test group",
+      "type": "array",
+      "minItems": 1
+    }
+  },
+  "oneOf": [
+    {
+      "description": "a leaf test group (whose children are tests, and which therefore declares a schema for its children)",
+      "properties": {
+        "children": { "items": { "$ref": "tag:bowtie.report,2023:ihop:test" } }
+      },
+      "required": ["schema"]
+    },
+    {
+      "description": "an outer test group (whose children are further test groups)",
+      "properties": { "children": { "items": { "$ref": "#" } } },
+      "not": { "required": ["schema"] }
+    }
+  ],
+  "unevaluatedProperties": false
+}

@@ -350,9 +350,15 @@ def _validation_results_table(
     return table
 
 
-def bowtie_schemas_registry() -> SchemaRegistry:
+def bowtie_schemas_registry(dialect: URL) -> SchemaRegistry:
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    return referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
+    base = referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
+
+    specification = referencing.jsonschema.specification_with(str(dialect))
+    return base.with_resource(
+        uri=str(CURRENT_DIALECT_URI),
+        resource=specification.create_resource({"$ref": str(dialect)}),
+    )
 
 
 def validator_for_dialect(dialect: URL = DRAFT2020):
@@ -360,17 +366,12 @@ def validator_for_dialect(dialect: URL = DRAFT2020):
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    base_registry = bowtie_schemas_registry()
+    registry = bowtie_schemas_registry(dialect=dialect)
 
     # TODO: Maybe here too there should be an easier way to get an
     #        internally-identified schema under the given specification.
     #        Maybe not though, and it might be safer to just always use
     #        external IDs.
-    specification = referencing.jsonschema.specification_with(str(dialect))
-    registry = base_registry.with_resource(
-        uri=str(CURRENT_DIALECT_URI),
-        resource=specification.create_resource({"$ref": str(dialect)}),
-    )
 
     def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
         Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]

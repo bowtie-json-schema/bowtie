@@ -1,0 +1,9 @@
+{
+  "title": "JSON Schema registry",
+  "description": "A collection of schemas, identified by URIs, which tests may reference (via $ref) and expect to be retrievable. They should be registered in whatever mechanism is expected by the implementation.",
+
+  "$id": "tag:bowtie.report,2023:ihop:registry",
+
+  "type": "object",
+  "propertyNames": { "format": "uri" }
+}

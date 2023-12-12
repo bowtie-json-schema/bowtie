@@ -1,0 +1,26 @@
+{
+  "description": "A single test",
+
+  "$id": "tag:bowtie.report,2023:ihop:test",
+
+  "type": "object",
+  "required": ["description", "instance"],
+  "properties": {
+    "description": {
+      "description": "The test description, briefly explaining which behavior it exercises",
+      "type": "string"
+    },
+    "comment": {
+      "description": "Any additional comments about the test",
+      "type": "string"
+    },
+    "instance": {
+      "description": "The instance which should be validated against the schema in \"schema\"."
+    },
+    "valid": {
+      "description": "Optionally, whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}
