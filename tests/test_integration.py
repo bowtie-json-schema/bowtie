@@ -199,6 +199,7 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
         else:
             assert proc.returncode != 0
 
+        # FIXME: Replace this with bowtie._report's parsing
         successful, errors, cases = [], [], []
         for each in sorted(lines, key=lambda e: e.get("implementation", "")):
             if "results" in each:
