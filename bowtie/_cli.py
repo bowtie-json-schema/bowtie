@@ -155,16 +155,18 @@ def subcommand(fn: Callable[P, int | None]):
     default="-",
     type=click.File(mode="r"),
 )
-@click.argument("output", type=click.Path(path_type=Path))
+@click.argument(
+    "output",
+    default=Path("badges"),
+    type=click.Path(path_type=Path),
+)
 def badges(input: TextIO, output: Path):
     """
     Generate Bowtie badges from a previous run.
     """
     report_data = _report.from_input(input)
-    dialect = report_data["run_info"].dialect
-    try:
-        report_data["summary"].generate_badges(output, dialect)
-    except _report.EmptyReport:
+    summary = report_data["summary"]
+    if summary.is_empty:
         error = DiagnosticError(
             code="empty-report",
             message="The Bowtie report is empty.",
@@ -177,6 +179,24 @@ def badges(input: TextIO, output: Path):
         )
         rich.print(error, file=sys.stderr)
         return _EX_NOINPUT
+
+    try:
+        output.mkdir()
+    except FileExistsError:
+        error = DiagnosticError(
+            code="already-exists",
+            message="Badge output directory already exists.",
+            causes=[f"{output} is an existing directory."],
+            hint_stmt=(
+                "If you intended to replace its contents with new badges, "
+                "delete the directory first."
+            ),
+        )
+        rich.print(error, file=sys.stderr)
+        return _EX_NOINPUT
+
+    dialect = report_data["run_info"].dialect
+    summary.generate_badges(output, dialect)
 
 
 @subcommand

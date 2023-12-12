@@ -211,6 +211,10 @@ class _Summary:
         self.counts = {each["image"]: Count() for each in self.implementations}
 
     @property
+    def is_empty(self):
+        return self.total_tests == 0
+
+    @property
     def total_cases(self):
         counts = {count.total_cases for count in self.counts.values()}
         if len(counts) != 1:
@@ -323,9 +327,6 @@ class _Summary:
     def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]
         total = self.total_tests
-        if not total:
-            raise EmptyReport()
-
         for impl in self.implementations:
             dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if dialect not in dialect_versions:
