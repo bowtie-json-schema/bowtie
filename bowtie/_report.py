@@ -160,7 +160,7 @@ class CaseReporter:
                 self._log.error(
                     "",
                     logger_name=results.implementation,
-                    **result.context,  # type: ignore
+                    **result.context,  # type: ignore[reportGeneralTypeIssues]
                 )
         self._write(**asdict(results))
 
@@ -222,7 +222,7 @@ class _Summary:
                 f"  {each.rpartition('/')[2]}: {count.total_cases}"
                 for each, count in self.counts.items()
             )
-            raise _InvalidBowtieReport(
+            raise _InvalidBowtieReport(  # noqa: TRY003
                 f"Inconsistent number of cases run:\n\n{summary}",
             )
         return counts.pop()
@@ -235,7 +235,7 @@ class _Summary:
     def total_tests(self):
         counts = {count.total_tests for count in self.counts.values()}
         if len(counts) != 1:
-            raise _InvalidBowtieReport(
+            raise _InvalidBowtieReport(  # noqa: TRY003
                 f"Inconsistent number of tests run: {self.counts}",
             )
         return counts.pop()

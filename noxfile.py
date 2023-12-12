@@ -58,7 +58,7 @@ def tests(session):
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
-            github = os.environ["GITHUB_STEP_SUMMARY"]
+            github = Path(os.environ["GITHUB_STEP_SUMMARY"])
         else:
             github = None
 
@@ -67,7 +67,7 @@ def tests(session):
         if github is None:
             session.run("coverage", "report")
         else:
-            with open(github, "a") as summary:
+            with github.open("a") as summary:
                 summary.write("### Coverage\n\n")
                 summary.flush()  # without a flush, output seems out of order.
                 session.run(
@@ -116,7 +116,7 @@ def build(session):
             if not schemas <= found:
                 session.error(
                     "Tar distribution schemas are missing. "
-                    f"Expected {schemas} but found {found}."
+                    f"Expected {schemas} but found {found}.",
                 )
 
         (wheelpath,) = tmpdir.glob("*.whl")
@@ -129,7 +129,7 @@ def build(session):
         if not schemas <= found:
             session.error(
                 "Wheel distribution schemas are missing. "
-                f"Expected {schemas} but found {found}."
+                f"Expected {schemas} but found {found}.",
             )
 
 

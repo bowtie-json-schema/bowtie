@@ -572,9 +572,8 @@ async def _info(image_names: list[str], format: _F):
                 click.echo("  ❗ (error): startup failed")
                 continue
 
-            metadata = {
-                k: v
-                for k, v in sorted(
+            metadata = dict(
+                sorted(
                     implementation.metadata.items(),
                     key=lambda kv: (
                         kv[0] != "name",
@@ -583,8 +582,8 @@ async def _info(image_names: list[str], format: _F):
                         kv[0] == "dialects",
                         kv[0],
                     ),
-                )
-            }
+                ),
+            )
 
             match format:
                 case "json":
@@ -699,7 +698,7 @@ async def _smoke(
                                     errored=response.errored,
                                     failed=response.failed,
                                 ),
-                            }
+                            },
                         )
 
                 case "pretty":
@@ -711,7 +710,7 @@ async def _smoke(
                                 reporter=reporter.case_started(
                                     seq=seq,
                                     case=case,
-                                )
+                                ),
                             )
                         elif response.failed:
                             message = "✗ (failed)"
@@ -780,7 +779,6 @@ class _TestSuiteCases(click.ParamType):
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                # path = contents / sep / "/".join(partial)
                 cases, dialect = self._cases_and_dialect(path=contents / path)
                 cases = list(cases)
 

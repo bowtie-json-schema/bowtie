@@ -70,7 +70,7 @@ def errors(uri, instance):
                                 "description": "level 1",
                                 "schema": {},
                                 "children": [TEST],
-                            }
+                            },
                         ],
                     },
                 ],

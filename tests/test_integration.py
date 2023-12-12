@@ -505,7 +505,7 @@ async def test_smoke_pretty(envsonschema):
             """
           ✗ (failed): allow-everything schema
           ✓: allow-nothing schema
-        """
+        """,
         ).lstrip("\n")
     ), stdout
 

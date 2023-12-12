@@ -116,10 +116,10 @@ class Started:
             raise exceptions.ImplementationNotReady()
 
 
-R = TypeVar("R", covariant=True)
+R_co = TypeVar("R_co", covariant=True)
 
 
-class Command(Protocol[R]):
+class Command(Protocol[R_co]):
     def to_request(self, validate: Callable[..., None]) -> dict[str, Any]:
         ...
 
@@ -127,16 +127,16 @@ class Command(Protocol[R]):
     def from_response(
         response: bytes,
         validate: Callable[..., None],
-    ) -> R | None:
+    ) -> R_co | None:
         ...
 
 
 @dataclass_transform()
 def command(
-    Response: Callable[..., R | None],
+    Response: Callable[..., R_co | None],
     name: str = "",
-) -> Callable[[type], type[Command[R]]]:
-    def _command(cls: type) -> type[Command[R]]:
+) -> Callable[[type], type[Command[R_co]]]:
+    def _command(cls: type) -> type[Command[R_co]]:
         nonlocal name
         if not name:
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
@@ -146,7 +146,7 @@ def command(
         response_schema = {"$ref": f"{uri}#response"}  # FIXME: crate-py/url#6
 
         def to_request(
-            self: Command[R],
+            self: Command[R_co],
             validate: Callable[..., None],
         ) -> dict[str, Any]:
             request = dict(cmd=name, **asdict(self))
@@ -157,15 +157,15 @@ def command(
         def from_response(
             response: bytes,
             validate: Callable[..., None],
-        ) -> R | None:
+        ) -> R_co | None:
             try:
                 instance = json.loads(response)
             except json.JSONDecodeError as error:
-                raise exceptions._ProtocolError(errors=[error])  # type: ignore[reportPrivateUsage]
+                raise exceptions._ProtocolError(errors=[error]) from error  # type: ignore[reportPrivateUsage]
             validate(instance=instance, schema=response_schema)
             return Response(**instance)
 
-        cls = cast(type[Command[R]], cls)
+        cls = cast(type[Command[R_co]], cls)
         cls.to_request = to_request
         cls.from_response = from_response
         return frozen(cls)

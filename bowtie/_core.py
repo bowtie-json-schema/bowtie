@@ -97,10 +97,10 @@ class Stream:
             if info["State"]["FinishedAt"]:
                 raise StreamClosed(self)
 
-        if message.stream == 2:  # type: ignore[reportUnknownMemberType]
+        if message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
             data: list[bytes] = []
 
-            while message.stream == 2:  # type: ignore[reportUnknownMemberType]
+            while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
                 data.append(message.data)  # type: ignore[reportUnknownMemberType]
                 message = await self._read_with_timeout()
                 if message is None:
@@ -170,7 +170,7 @@ class DialectRunner:
                 )
             try:
                 return response(implementation=self._name, expected=expected)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # TODO: This kind of error will almost certainly be caught by
                 # running with -V -- probably we should emit a diagnostic
                 # saying so (that you'll get a clearer error by using it)
@@ -241,20 +241,21 @@ class Implementation:
         try:
             await self._start_container()
         except GotStderr as error:
-            raise StartupFailed(name=image_name, stderr=error.stderr.decode())
+            err = StartupFailed(name=image_name, stderr=error.stderr.decode())
+            raise err from None
         except StreamClosed:
-            raise StartupFailed(name=image_name)
+            raise StartupFailed(name=image_name) from None
         except aiodocker.exceptions.DockerError as error:
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
 
             status, data, *_ = error.args
             if data.get("cause") == "image not known":
-                raise NoSuchImage(name=image_name, data=data)
+                raise NoSuchImage(name=image_name, data=data) from error
 
             message = ghcr = data.get("message", "")
 
-            if status == 500:
+            if status == 500:  # noqa: PLR2004
                 try:
                     # GitHub Registry saying an image doesn't exist as reported
                     # within GitHub Actions' version of Podman...
@@ -263,7 +264,7 @@ class Implementation:
                     # with seemingly no other indication elsewhere and
                     # obviously no real good way to detect this specific case
                     no_image = message.endswith('/tags/list": denied')
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
                 else:
                     if no_image:
@@ -275,13 +276,13 @@ class Implementation:
 
                     # message will be ... a JSON string !?! ...
                     error = json.loads(ghcr).get("error", "")
-                except Exception:  # not JSON, or missing keys...
+                except Exception:  # nonJSON / missing key # noqa: BLE001, S110
                     pass
                 else:
                     if "403 (forbidden)" in error.casefold():
                         raise NoSuchImage(name=image_name, data=data)
 
-            raise StartupFailed(name=image_name, data=data)
+            raise StartupFailed(name=image_name, data=data) from error
 
         yield self
         with suppress(GotStderr):  # XXX: Log this too?
