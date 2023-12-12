@@ -9,18 +9,17 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).absolute().parent.parent
-SCHEMAS = ROOT / "bowtie/schemas"
-LINTSONSCHEMA = ROOT / "tests/fauxmplementations/lintsonschema/"
+CANONICAL_PATH = ROOT / "bowtie/schemas"
+LINTSONSCHEMA_PATH = ROOT / "tests/fauxmplementations/lintsonschema/schemas"
 
-if not SCHEMAS.is_dir():
+if not CANONICAL_PATH.is_dir():
     sys.exit("Didn't find any schemas to check. Something seems wrong!")
 
-
 failed = False
-for path in SCHEMAS.rglob("*.json"):
+for path in CANONICAL_PATH.rglob("*.json"):
     schema = path.read_text()
 
-    copy = LINTSONSCHEMA / "schemas" / path.relative_to(SCHEMAS)
+    copy = LINTSONSCHEMA_PATH / path.relative_to(CANONICAL_PATH)
     if not copy.is_file() or schema != copy.read_text():
         failed = True
         copy.parent.mkdir(parents=True, exist_ok=True)
@@ -28,3 +27,15 @@ for path in SCHEMAS.rglob("*.json"):
 
 if failed:
     sys.exit("lintsonschema's schemas drifted from the real ones. Fixing...")
+
+
+extra = []
+for path in LINTSONSCHEMA_PATH.rglob("*.json"):
+    source = CANONICAL_PATH / path.relative_to(LINTSONSCHEMA_PATH)
+    if not source.is_file():
+        extra.append(str(source))
+if extra:
+    sys.exit(
+        f"lintsonschema's schemas contain extra files: {extra}. "
+        "Refusing to delete them, you should inspect them manually."
+    )
