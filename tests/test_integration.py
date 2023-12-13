@@ -13,7 +13,11 @@ from aiodocker.exceptions import DockerError
 import pytest
 import pytest_asyncio
 
-from bowtie._report import RunInfo, _InvalidBowtieReport
+from bowtie import _report
+from bowtie._commands import TestResult
+
+TestResult.__test__ = False  # frigging py.test
+
 
 HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
@@ -146,21 +150,21 @@ fail_on_run = strimplementation(
     name="fail_on_run",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
+    CMD read && printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 wrong_version = strimplementation(
     name="wrong_version",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 0}\n' && read >&2
+    CMD read && printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 0}\n' && read >&2
     """,  # noqa: E501
 )
 hit_the_network = strimplementation(
     name="hit_the_network",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
+    CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
     """,  # noqa: E501
 )
 
@@ -171,8 +175,8 @@ def _failed(message, stderr):
 
 
 @asynccontextmanager
-async def bowtie(*args, succeed=True, expecting_errors=False):
-    proc = await asyncio.create_subprocess_exec(
+async def bowtie(*args, exit_code=0):
+    process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "bowtie",
@@ -185,37 +189,22 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
 
     async def _send(stdin=""):
         input = dedent(stdin).lstrip("\n").encode()
-        stdout, stderr = await proc.communicate(input)
-        lines = (json.loads(line.decode()) for line in stdout.splitlines())
+        stdout, stderr = await process.communicate(input)
+        stderr = stderr.decode()
 
-        if succeed:
-            header = next(lines, None)
-            if header is None:
-                _failed("No report produced", stderr)
-            try:
-                RunInfo(**header)
-            except _InvalidBowtieReport:
-                _failed("Invalid report", stderr)
+        try:
+            report = _report.from_input(stdout.decode().splitlines())
+        except _report.EmptyReport:
+            results = []
         else:
-            assert proc.returncode != 0
+            results = list(report["summary"].flat_results())
 
-        # FIXME: Replace this with bowtie._report's parsing
-        successful, errors, cases = [], [], []
-        for each in sorted(lines, key=lambda e: e.get("implementation", "")):
-            if "results" in each:
-                successful.append(each["results"])
-            elif "case" in each:
-                cases.append(each)
-            elif "did_fail_fast" in each:
-                continue
-            else:
-                errors.append(each)
-
-        if expecting_errors:
-            assert errors, stderr.decode()
+        if exit_code == -1:
+            assert process.returncode != 0, stderr
         else:
-            assert not errors, pformat(errors)
-        return proc.returncode, successful, errors, cases, stderr.decode()
+            assert process.returncode == exit_code, stderr
+
+        return results, stderr
 
     yield _send
 
@@ -223,14 +212,15 @@ async def bowtie(*args, succeed=True, expecting_errors=False):
 @pytest.mark.asyncio
 async def test_validating_on_both_sides(lintsonschema):
     async with bowtie("-i", lintsonschema, "-V") as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
-    assert returncode == 0
+    assert results == [
+        {"bowtie-integration-tests/lintsonschema": TestResult.VALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
@@ -240,34 +230,34 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
         """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
     )
     async with bowtie("-i", envsonschema, tests) as send:
-        returncode, results, _, _, stderr = await send()
+        results, stderr = await send()
 
-    assert results == [[{"valid": False}]], stderr
-    assert returncode == 0
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
     async with bowtie("-i", envsonschema, "--set-schema") as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
-    assert returncode == 0
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
 async def test_no_tests_run(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, cases, stderr = await send("")
+    async with bowtie("-i", envsonschema, exit_code=os.EX_NOINPUT) as send:
+        results, stderr = await send("")
 
     assert results == []
-    assert cases == []
     assert stderr != ""
-    assert returncode == os.EX_NOINPUT
 
 
 @pytest.mark.asyncio
@@ -278,19 +268,18 @@ async def test_unsupported_dialect(envsonschema):
         envsonschema,
         "--dialect",
         dialect,
-        succeed=False,
+        exit_code=-1,
     ) as send:
-        returncode, results, _, _, stderr = await send("")
+        results, stderr = await send("")
 
     assert results == []
     assert "unsupported dialect" in stderr.lower()
-    assert returncode != 0
 
 
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
-    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
-        returncode, results, _, _, stderr = await send(
+    async with bowtie("-i", envsonschema) as send:
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
@@ -298,24 +287,35 @@ async def test_restarts_crashed_implementations(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": False}]]
+    assert results == [
+        {},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {},
+    ], stderr
     assert stderr != ""
-    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio
 async def test_handles_dead_implementations(succeed_immediately, envsonschema):
-    async with bowtie("-i", succeed_immediately, "-i", envsonschema) as send:
-        returncode, results, _, _, stderr = await send(
+    async with bowtie(
+        "-i",
+        succeed_immediately,
+        "-i",
+        envsonschema,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": False}], [{"valid": False}]]
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
     assert "startup failed" in stderr.lower(), stderr
-    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio
@@ -323,8 +323,8 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with bowtie("-i", succeed_immediately, succeed=False) as send:
-        returncode, results, _, cases, stderr = await send(
+    async with bowtie("-i", succeed_immediately, exit_code=-1) as send:
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
@@ -333,9 +333,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
         )
 
     assert results == []
-    assert cases == []
     assert "startup failed" in stderr.lower(), stderr
-    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio
@@ -343,8 +341,14 @@ async def test_handles_broken_start_implementations(
     fail_on_start,
     envsonschema,
 ):
-    async with bowtie("-i", fail_on_start, "-i", envsonschema) as send:
-        returncode, results, _, _, stderr = await send(
+    async with bowtie(
+        "-i",
+        fail_on_start,
+        "-i",
+        envsonschema,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
@@ -353,8 +357,10 @@ async def test_handles_broken_start_implementations(
 
     assert "startup failed" in stderr.lower(), stderr
     assert "BOOM!" in stderr, stderr
-    assert returncode != 0, stderr
-    assert results == [[{"valid": False}], [{"valid": False}]]
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
@@ -364,9 +370,9 @@ async def test_handles_broken_run_implementations(fail_on_run):
         fail_on_run,
         "--dialect",
         "urn:foo",
-        succeed=False,
+        exit_code=-1,
     ) as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
@@ -375,13 +381,12 @@ async def test_handles_broken_run_implementations(fail_on_run):
 
     assert results == []
     assert "got an error" in stderr.lower(), stderr.decode()
-    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
-    async with bowtie("-i", envsonschema, expecting_errors=True) as send:
-        returncode, results, _, _, stderr = await send(
+    async with bowtie("-i", envsonschema) as send:
+        results, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
             {"description": "4", "schema": {}, "tests": [{"description": "error:message=boom", "instance": {}}] }
@@ -390,24 +395,26 @@ async def test_implementations_can_signal_errors(envsonschema):
         )
 
     assert results == [
-        [{"context": {"message": "boom"}, "errored": True, "skipped": False}],
-        [{"valid": True}],
+        {},
+        {"bowtie-integration-tests/envsonschema": "boom"},
+        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
     ], stderr
     assert stderr != ""
-    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio
 async def test_it_handles_split_messages(envsonschema):
     async with bowtie("-i", envsonschema) as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "split:1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}, {"description": "2 valid:0", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}, {"valid": False}]]
-    assert returncode == 0
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
@@ -420,15 +427,14 @@ async def test_it_prevents_network_access(hit_the_network):
         hit_the_network,
         "--dialect",
         "urn:foo",
-        expecting_errors=True,
     ) as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == []
+    assert results == [{}]
     assert "bad address" in stderr.lower(), stderr.decode()
 
 
@@ -442,9 +448,9 @@ async def test_wrong_version(wrong_version):
         wrong_version,
         "--dialect",
         "urn:foo",
-        succeed=False,
+        exit_code=-1,
     ) as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
             """,  # noqa: E501
@@ -452,13 +458,12 @@ async def test_wrong_version(wrong_version):
 
     assert results == [], stderr
     assert "expected to speak version 1 " in stderr.lower(), stderr.decode()
-    assert returncode != 0, stderr
 
 
 @pytest.mark.asyncio
 async def test_fail_fast(envsonschema):
     async with bowtie("-i", envsonschema, "-x") as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
             {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
@@ -466,15 +471,17 @@ async def test_fail_fast(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}], [{"valid": False}]], stderr
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
     assert stderr != ""
-    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio
 async def test_filter(envsonschema):
     async with bowtie("-i", envsonschema, "-k", "baz") as send:
-        returncode, results, _, _, stderr = await send(
+        results, stderr = await send(
             """
             {"description": "foo", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
             {"description": "bar", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
@@ -482,9 +489,10 @@ async def test_filter(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [[{"valid": True}]], stderr
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+    ], stderr
     assert stderr != ""
-    assert returncode == 0, stderr
 
 
 @pytest.mark.asyncio

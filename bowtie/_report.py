@@ -314,15 +314,10 @@ class _Summary:
         )
 
     def flat_results(self):
-        for seq, each in sorted(self._combined.items()):
-            case = each["case"]
-            yield (
-                seq,
-                case["description"],
-                case["schema"],
-                case["registry"],
-                each["results"],
-            )
+        # TODO: Return `TestResult`s rather than dicts
+        for _, each in sorted(self._combined.items()):
+            for result in each["results"]:
+                yield {k: v for k, (v, _) in result[1].items()}
 
     def generate_badges(self, target_dir: Path, dialect: URL):
         label = _DIALECT_URI_TO_SHORTNAME[dialect]

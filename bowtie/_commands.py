@@ -237,6 +237,10 @@ class TestResult:
         return cls(valid=data["valid"])
 
 
+TestResult.VALID = TestResult(valid=True)
+TestResult.INVALID = TestResult(valid=False)
+
+
 @frozen
 class SkippedTest:
     message: str | None = field(default=None)
