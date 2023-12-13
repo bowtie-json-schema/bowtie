@@ -113,10 +113,7 @@ ignore = [
   "A002",
   "A003",
   "ARG",  # This is all wrong whenever an interface is involved
-  "ANN101",  # Wat, type annotations for self and cls, why is this a thing?
-  "ANN102",
-  "ANN202",  # Private annotations are fine to leave out
-  "ANN401",  # No idea how to more properly annotate "pass along all arguments"
+  "ANN",  # Just let the type checker do this
   "B008",  # It's totally OK to call functions for default arguments.
   "B904",  # raise SomeException(...) is fine.
   "B905",  # No need for explicit strict, this is simply zip's default behavior

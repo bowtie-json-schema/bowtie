@@ -190,14 +190,14 @@ async def bowtie(*args, exit_code=0):
     async def _send(stdin=""):
         input = dedent(stdin).lstrip("\n").encode()
         stdout, stderr = await process.communicate(input)
-        stderr = stderr.decode()
+        stdout, stderr = stdout.decode(), stderr.decode()
 
         try:
-            report = _report.from_input(stdout.decode().splitlines())
+            report = _report.Report.from_input(stdout.splitlines())
         except _report.EmptyReport:
             results = []
         else:
-            results = list(report["summary"].flat_results())
+            results = list(report.flat_results())
 
         if exit_code == -1:
             assert process.returncode != 0, stderr

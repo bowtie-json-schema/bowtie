@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict
+from typing import TYPE_CHECKING, Any, TextIO
 import importlib.metadata
 import json
 import sys
@@ -76,8 +76,8 @@ class Reporter:
             response=response,
         )
 
-    def ready(self, run_info: RunInfo):
-        self._write(**run_info.serializable())
+    def ready(self, run_metadata: RunMetadata):
+        self._write(**run_metadata.serializable())
 
     def will_speak(self, dialect: URL):
         self._log.debug("Will speak", dialect=dialect)
@@ -210,9 +210,8 @@ class _Summary:
     def __attrs_post_init__(self) -> None:
         self.counts = {each["image"]: Count() for each in self.implementations}
 
-    @property
-    def is_empty(self):
-        return self.total_tests == 0
+    def __iter__(self):
+        return (v for _, v in sorted(self._combined.items()))
 
     @property
     def total_cases(self):
@@ -313,57 +312,9 @@ class _Summary:
             for each in self._combined.values()
         )
 
-    def flat_results(self):
-        # TODO: Return `TestResult`s rather than dicts
-        for _, each in sorted(self._combined.items()):
-            for result in each["results"]:
-                yield {k: v for k, (v, _) in result[1].items()}
-
-    def generate_badges(self, target_dir: Path, dialect: URL):
-        label = _DIALECT_URI_TO_SHORTNAME[dialect]
-        total = self.total_tests
-        for impl in self.implementations:
-            dialect_versions = [URL.parse(each) for each in impl["dialects"]]
-            if dialect not in dialect_versions:
-                continue
-            supported_drafts = ", ".join(
-                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
-                for each in reversed(dialect_versions)
-            )
-            name = impl["name"]
-            lang = impl["language"]
-            counts = self.counts[impl["image"]]
-            passed = (
-                total
-                - counts.failed_tests
-                - counts.errored_tests
-                - counts.skipped_tests
-            )
-            pct = (passed / total) * 100
-            r, g, b = 100 - int(pct), int(pct), 0
-            badge_per_draft = {
-                "schemaVersion": 1,
-                "label": label,
-                "message": "%d%% Passing" % int(pct),
-                "color": f"{r:02x}{g:02x}{b:02x}",
-            }
-            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
-            comp_dir.mkdir(parents=True, exist_ok=True)
-            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
-            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
-            badge_supp_draft = {
-                "schemaVersion": 1,
-                "label": "JSON Schema Versions",
-                "message": supported_drafts,
-                "color": "lightgreen",
-            }
-            supp_dir = target_dir / f"{lang}-{name}"
-            badge_path_supp_drafts = supp_dir / "supported_versions.json"
-            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
-
 
 @frozen
-class RunInfo:
+class RunMetadata:
     started: str
     bowtie_version: str
     dialect: URL
@@ -373,7 +324,7 @@ class RunInfo:
     metadata: dict[str, Any] = field(factory=dict)
 
     @classmethod
-    def from_dict(cls, dialect: str, **kwargs: Any) -> RunInfo:
+    def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
         return cls(dialect=URL.parse(dialect), **kwargs)
 
     @classmethod
@@ -381,7 +332,7 @@ class RunInfo:
         cls,
         implementations: Iterable[Implementation],
         **kwargs: Any,
-    ) -> RunInfo:
+    ) -> RunMetadata:
         return cls(
             bowtie_version=importlib.metadata.version("bowtie-json-schema"),
             started=datetime.now(timezone.utc).isoformat(),
@@ -411,32 +362,87 @@ class RunInfo:
         return as_dict
 
 
-class ReportData(TypedDict):
+@frozen
+class Report:
+    metadata: RunMetadata
     summary: _Summary
-    run_info: RunInfo
 
+    @classmethod
+    def from_input(cls, input: Iterable[str]) -> Report:
+        lines = (json.loads(line) for line in input)
+        header = next(lines, None)
+        if header is None:
+            raise EmptyReport()
+        metadata = RunMetadata.from_dict(**header)
+        summary = metadata.create_summary()
 
-def from_input(input: Iterable[str]) -> ReportData:
-    """
-    Create a structure suitable for the report template from an input file.
-    """
-    lines = (json.loads(line) for line in input)
-    header = next(lines, None)
-    if header is None:
-        raise EmptyReport()
-    run_info = RunInfo.from_dict(**header)
-    summary = run_info.create_summary()
+        for each in lines:
+            if "case" in each:
+                summary.add_case_metadata(**each)
+            elif "caught" in each:
+                summary.see_error(**each)
+            elif "skipped" in each:
+                del each["skipped"]
+                summary.see_skip(_commands.CaseSkipped(**each))
+            elif "did_fail_fast" in each:
+                summary.see_maybe_fail_fast(**each)
+            else:
+                summary.see_result(_commands.CaseResult.from_dict(each))
 
-    for each in lines:
-        if "case" in each:
-            summary.add_case_metadata(**each)
-        elif "caught" in each:
-            summary.see_error(**each)
-        elif "skipped" in each:
-            del each["skipped"]
-            summary.see_skip(_commands.CaseSkipped(**each))
-        elif "did_fail_fast" in each:
-            summary.see_maybe_fail_fast(**each)
-        else:
-            summary.see_result(_commands.CaseResult.from_dict(each))
-    return ReportData(summary=summary, run_info=run_info)
+        return cls(summary=summary, metadata=metadata)
+
+    @property
+    def dialect(self):
+        return self.metadata.dialect
+
+    @property
+    def is_empty(self):
+        return self.summary.total_tests == 0
+
+    def flat_results(self):
+        # FIXME: Yuck. And return `TestResult`s rather than dicts
+        for each in self.summary:
+            for result in each["results"]:
+                yield {k: v for k, (v, _) in result[1].items()}
+
+    def generate_badges(self, target_dir: Path):
+        label = _DIALECT_URI_TO_SHORTNAME[self.dialect]
+        total = self.summary.total_tests
+        for impl in self.summary.implementations:
+            dialect_versions = [URL.parse(each) for each in impl["dialects"]]
+            if self.dialect not in dialect_versions:
+                continue
+            supported_drafts = ", ".join(
+                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                for each in reversed(dialect_versions)
+            )
+            name = impl["name"]
+            lang = impl["language"]
+            counts = self.summary.counts[impl["image"]]
+            passed = (
+                total
+                - counts.failed_tests
+                - counts.errored_tests
+                - counts.skipped_tests
+            )
+            pct = (passed / total) * 100
+            r, g, b = 100 - int(pct), int(pct), 0
+            badge_per_draft = {
+                "schemaVersion": 1,
+                "label": label,
+                "message": "%d%% Passing" % int(pct),
+                "color": f"{r:02x}{g:02x}{b:02x}",
+            }
+            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
+            comp_dir.mkdir(parents=True, exist_ok=True)
+            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
+            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
+            badge_supp_draft = {
+                "schemaVersion": 1,
+                "label": "JSON Schema Versions",
+                "message": supported_drafts,
+                "color": "lightgreen",
+            }
+            supp_dir = target_dir / f"{lang}-{name}"
+            badge_path_supp_drafts = supp_dir / "supported_versions.json"
+            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))

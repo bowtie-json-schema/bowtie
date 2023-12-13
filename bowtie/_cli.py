@@ -164,9 +164,8 @@ def badges(input: TextIO, output: Path):
     """
     Generate Bowtie badges from a previous run.
     """
-    report_data = _report.from_input(input)
-    summary = report_data["summary"]
-    if summary.is_empty:
+    report = _report.Report.from_input(input)
+    if report.is_empty:
         error = DiagnosticError(
             code="empty-report",
             message="The Bowtie report is empty.",
@@ -195,8 +194,7 @@ def badges(input: TextIO, output: Path):
         rich.print(error, file=sys.stderr)
         return _EX_NOINPUT
 
-    dialect = report_data["run_info"].dialect
-    summary.generate_badges(output, dialect)
+    report.generate_badges(output)
 
 
 @subcommand
@@ -221,7 +219,7 @@ def summary(input: TextIO, format: _F, show: str):
     Generate an (in-terminal) summary of a Bowtie run.
     """
     try:
-        summary = _report.from_input(input)["summary"]
+        summary = _report.Report.from_input(input).summary
     except _report.EmptyReport:
         error = DiagnosticError(
             code="empty-report",
@@ -920,7 +918,7 @@ async def _run(
             reporter.no_implementations()
         else:
             reporter.ready(
-                _report.RunInfo.from_implementations(
+                _report.RunMetadata.from_implementations(
                     implementations=acknowledged,
                     dialect=dialect,
                     metadata=run_metadata,
