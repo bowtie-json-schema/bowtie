@@ -237,8 +237,8 @@ class TestResult:
         return cls(valid=data["valid"])
 
 
-TestResult.VALID = TestResult(valid=True)
-TestResult.INVALID = TestResult(valid=False)
+TestResult.VALID = TestResult(valid=True)  # type: ignore[reportGeneralTypeIssues]
+TestResult.INVALID = TestResult(valid=False)  # type: ignore[reportGeneralTypeIssues]
 
 
 @frozen
