@@ -198,14 +198,15 @@ class Count:
 @mutable
 class _Summary:
     implementations: Iterable[dict[str, Any]] = field(
+        repr=lambda value: f"({len(value)} implementations)",
         converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]
             value,  # type: ignore[reportUnknownArgumentType]
             key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]
         ),
     )
-    _combined: dict[int, Any] = field(factory=dict)
-    did_fail_fast: bool = False
-    counts: dict[str, Count] = field(init=False)
+    _combined: dict[int, Any] = field(factory=dict, repr=False)
+    did_fail_fast: bool = field(default=False, repr=False)
+    counts: dict[str, Count] = field(init=False, repr=False)
 
     def __attrs_post_init__(self) -> None:
         self.counts = {each["image"]: Count() for each in self.implementations}
@@ -319,9 +320,10 @@ class RunMetadata:
     bowtie_version: str
     dialect: URL
     _implementations: dict[str, dict[str, Any]] = field(
+        repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
     )
-    metadata: dict[str, Any] = field(factory=dict)
+    metadata: dict[str, Any] = field(factory=dict, repr=False)
 
     @classmethod
     def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
