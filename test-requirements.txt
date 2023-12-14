@@ -79,6 +79,7 @@ iniconfig==2.0.0
 jsonschema==4.20.0
     # via
     #   -r requirements.txt
+    #   -r test-requirements.in
     #   bowtie-json-schema
 jsonschema-specifications==2023.11.2
     # via
@@ -173,7 +174,7 @@ structlog==23.2.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-textual==0.44.1
+textual==0.45.1
     # via
     #   -r requirements.txt
     #   trogon
