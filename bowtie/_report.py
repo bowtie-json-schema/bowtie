@@ -234,11 +234,15 @@ class _Summary:
     @property
     def total_tests(self):
         counts = {count.total_tests for count in self.counts.values()}
-        if len(counts) != 1:
-            raise _InvalidBowtieReport(  # noqa: TRY003
-                f"Inconsistent number of tests run: {self.counts}",
-            )
-        return counts.pop()
+        match len(counts):
+            case 0:
+                return 0
+            case 1:
+                return counts.pop()
+            case _:
+                raise _InvalidBowtieReport(  # noqa: TRY003
+                    f"Inconsistent number of tests run: {self.counts}",
+                )
 
     @property
     def failed_tests(self):
@@ -316,17 +320,20 @@ class _Summary:
 
 @frozen
 class RunMetadata:
-    started: str
-    bowtie_version: str
     dialect: URL
     _implementations: dict[str, dict[str, Any]] = field(
         repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
     )
+    bowtie_version: str = importlib.metadata.version("bowtie-json-schema")
     metadata: dict[str, Any] = field(factory=dict, repr=False)
+    started: datetime = field(factory=lambda: datetime.now(timezone.utc))
 
     @classmethod
     def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
+        started = kwargs.pop("started")
+        if started is not None:
+            kwargs["started"] = datetime.fromisoformat(started)
         return cls(dialect=URL.parse(dialect), **kwargs)
 
     @classmethod
@@ -336,8 +343,6 @@ class RunMetadata:
         **kwargs: Any,
     ) -> RunMetadata:
         return cls(
-            bowtie_version=importlib.metadata.version("bowtie-json-schema"),
-            started=datetime.now(timezone.utc).isoformat(),
             implementations={
                 implementation.name: dict(
                     implementation.metadata or {},
@@ -360,7 +365,10 @@ class RunMetadata:
 
     def serializable(self):
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
-        as_dict["dialect"] = str(as_dict["dialect"])
+        as_dict.update(
+            dialect=str(as_dict.pop("dialect")),
+            started=as_dict.pop("started").isoformat(),
+        )
         return as_dict
 
 
@@ -392,6 +400,15 @@ class Report:
                 summary.see_result(_commands.CaseResult.from_dict(each))
 
         return cls(summary=summary, metadata=metadata)
+
+    @classmethod
+    def empty(cls, dialect: URL):
+        """
+        'The' empty report.
+        """
+        metadata = RunMetadata(dialect=dialect, implementations={})
+        summary = metadata.create_summary()
+        return cls(metadata=metadata, summary=summary)
 
     @property
     def dialect(self):
