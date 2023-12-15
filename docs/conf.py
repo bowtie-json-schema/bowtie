@@ -37,8 +37,9 @@ pygments_style = "lovelace"
 pygments_dark_style = "one-dark"
 
 html_theme = "furo"
-html_logo = str(STATIC / "dreamed.png")
+html_logo = str(STATIC / "logo.svg")
 html_static_path = [str(STATIC)]
+html_theme_options = {"sidebar_hide_name": True}
 
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
