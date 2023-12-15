@@ -5,7 +5,7 @@ import RunInfoSection from "./components/RunInfo/RunInfoSection";
 // @ts-ignore
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
-import { ReportData } from "./data/parseReportData.ts";
+import { ReportData, Case } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
@@ -23,22 +23,26 @@ export const DialectReportView = ({
     return Array.from(new Set(langs).values());
   }, [reportData]);
 
-  const registries = Array.from(reportData.cases.values()).filter(
-    (value) => value.registry && value.registry.$vocabulary
-  );
-  const vocabularies = useMemo(() => {
-    const registries = Array.from(reportData.cases.values()).filter(
-      (value) => value.registry
-    )
-    const regs = Object.values(registries.map((reg) => reg.registry)[0]).filter(
-      (reg) => reg.$vocabulary
-    );
+  const Cases: Map<number, Case> = reportData.cases;
+  const vocabularies: string[] = useMemo(() => {
+    const vocabSet: Set<string> = new Set();
 
-    const vocabs = regs.map((vocab) => {
-      let arr = Object.keys(vocab.$vocabulary);
-      return arr.map(val => val.split("/").pop());
-    });
-    return Array.from(new Set([].concat(...vocabs)).values());
+    Array.from(Cases.values())
+      .filter((value) => !!value.registry)
+      .forEach((value) => {
+        const registry = value.registry!;
+        Object.keys(registry).forEach((url) => {
+          const vocabObject = (registry[url] as any).$vocabulary;
+          if (vocabObject) {
+            Object.keys(vocabObject).forEach((key) => {
+              const segments = key.split("/");
+              vocabSet.add(segments[segments.length - 1]);
+            });
+          }
+        });
+      });
+
+    return Array.from(vocabSet);
   }, [reportData]);
 
   console.log(vocabularies);
