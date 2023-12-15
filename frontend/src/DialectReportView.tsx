@@ -45,7 +45,7 @@ export const DialectReportView = ({
     return Array.from(vocabSet);
   }, [reportData]);
 
-  console.log(vocabularies);
+  // console.log(vocabularies);
   const filteredData = useMemo(() => {
     let filteredData = reportData;
     if (params.getAll("language").length) {
@@ -63,7 +63,7 @@ export const DialectReportView = ({
     <div>
       <div className="container p-4">
         <RunInfoSection runInfo={filteredData.runInfo} />
-        <FilterSection languages={languages} />
+        <FilterSection languages={languages} vocabularies={vocabularies} />
         <SummarySection reportData={filteredData} />
         <CasesSection reportData={filteredData} />
       </div>
