@@ -770,6 +770,45 @@ async def test_summary_show_validation(envsonschema, always_valid):
 
 
 @pytest.mark.asyncio
+async def test_badges(envsonschema, tmp_path):
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    run_stdout, _ = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "run",
+        "-i",
+        envsonschema,
+        stdin=dedent(raw.strip("\n")),
+    )
+
+    badges = tmp_path / "badges"
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "badges",
+        badges,
+        stdin=run_stdout,
+    )
+
+    assert {path.relative_to(badges) for path in badges.rglob("*")} == {
+        Path("python-envsonschema"),
+        Path("python-envsonschema/supported_versions.json"),
+        Path("python-envsonschema/compliance"),
+        Path("python-envsonschema/compliance/Draft_2020-12.json"),
+    }
+
+
+@pytest.mark.asyncio
 async def test_badges_nothing_ran(envsonschema, tmp_path):
     run_stdout, _ = await run(
         sys.executable,
