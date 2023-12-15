@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";
 import { mapLanguage } from "../data/mapLanguage.ts";
+import { useEffect, useState } from "react";
 
 export const FilterSection = ({
   languages,
@@ -27,10 +28,12 @@ export const FilterSection = ({
               ))}
             </div>
           </div>
-          <div style={{ width: "25%" }}>
+          <div className="m-4" style={{ width: "20%" }}>
             <VocabDropDown vocabularies={vocabularies} />
           </div>
-          <div style={{ width: "25%" }}>Keyword</div>
+          <div className="m-4" style={{ width: "20%" }}>
+            Keyword
+          </div>
         </div>
       </Card.Body>
     </Card>
@@ -78,12 +81,29 @@ const FilterChip = ({
 };
 
 const VocabDropDown = ({ vocabularies }: { vocabularies: string[] }) => {
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
+  const handleSelect = (option: any) => {
+    setSelectedOption(option);
+  };
+
   return (
-    <Dropdown>
-      <Dropdown.Toggle className="">Select Vocabulary</Dropdown.Toggle>
+    <Dropdown onSelect={handleSelect}>
+      <Dropdown.Toggle variant="primary">
+        {selectedOption || "Select a Vocabulary"}
+      </Dropdown.Toggle>
       <Dropdown.Menu>
+        <Dropdown.Item
+          onClick={() => {
+            setSelectedOption("Select a Vocabulary");
+          }}
+        >
+          Reset
+        </Dropdown.Item>
         {vocabularies.map((vocab) => (
-          <Dropdown.Item>{vocab}</Dropdown.Item>
+          <Dropdown.Item key={vocab} eventKey={vocab}>
+            {vocab}
+          </Dropdown.Item>
         ))}
       </Dropdown.Menu>
     </Dropdown>
