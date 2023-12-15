@@ -18,18 +18,37 @@ export const DialectReportView = ({
 
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
-      (impl) => impl.metadata.language,
+      (impl) => impl.metadata.language
     );
     return Array.from(new Set(langs).values());
   }, [reportData]);
 
+  const registries = Array.from(reportData.cases.values()).filter(
+    (value) => value.registry && value.registry.$vocabulary
+  );
+  const vocabularies = useMemo(() => {
+    const registries = Array.from(reportData.cases.values()).filter(
+      (value) => value.registry
+    )
+    const regs = Object.values(registries.map((reg) => reg.registry)[0]).filter(
+      (reg) => reg.$vocabulary
+    );
+
+    const vocabs = regs.map((vocab) => {
+      let arr = Object.keys(vocab.$vocabulary);
+      return arr.map(val => val.split("/").pop());
+    });
+    return Array.from(new Set([].concat(...vocabs)).values());
+  }, [reportData]);
+
+  console.log(vocabularies);
   const filteredData = useMemo(() => {
     let filteredData = reportData;
     if (params.getAll("language").length) {
       const filteredArray = Array.from(
-        reportData.implementations.entries(),
+        reportData.implementations.entries()
       ).filter(([, data]) =>
-        params.getAll("language").includes(data.metadata.language),
+        params.getAll("language").includes(data.metadata.language)
       );
       filteredData = { ...reportData, implementations: new Map(filteredArray) };
     }
