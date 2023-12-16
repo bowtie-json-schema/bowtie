@@ -380,7 +380,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
         )
 
     assert results == []
-    assert "got an error" in stderr.lower(), stderr.decode()
+    assert "got an error" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -435,7 +435,7 @@ async def test_it_prevents_network_access(hit_the_network):
         )
 
     assert results == [{}]
-    assert "bad address" in stderr.lower(), stderr.decode()
+    assert "bad address" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -457,7 +457,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert "expected to speak version 1 " in stderr.lower(), stderr.decode()
+    assert "expected to speak version 1 " in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -766,7 +766,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 ["", ["error", "valid"]],
             ],
         ],
-    ], run_stderr.decode()
+    ], run_stderr
 
 
 @pytest.mark.asyncio
@@ -873,7 +873,7 @@ async def test_run_with_registry(always_valid):
                 [12.5, ["valid"]],
             ],
         ],
-    ], run_stderr.decode()
+    ], run_stderr
 
 
 @pytest.mark.asyncio
