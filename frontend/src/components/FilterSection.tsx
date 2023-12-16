@@ -88,7 +88,7 @@ const VocabDropDown = ({
   searchParams: URLSearchParams;
 }) => {
   const [selectedVocabulary, setSelectedVocabulary] = useState<string | null>(
-    null
+    null,
   );
 
   const handleSelect = (vocabulary: string) => {
