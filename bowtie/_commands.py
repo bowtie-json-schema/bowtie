@@ -218,6 +218,23 @@ def _case_result(
     )
 
 
+class AnyTestResult(Protocol):
+    @property
+    def description(self) -> str:
+        """
+        A single word to use when displaying this result.
+        """
+        ...
+
+    @property
+    def skipped(self) -> bool:
+        ...
+
+    @property
+    def errored(self) -> bool:
+        ...
+
+
 @frozen
 class TestResult:
     errored = False
@@ -225,11 +242,12 @@ class TestResult:
 
     valid: bool
 
+    @property
+    def description(self):
+        return "valid" if self.valid else "invalid"
+
     @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, Any],
-    ) -> TestResult | SkippedTest | ErroredTest:
+    def from_dict(cls, data: dict[str, Any]) -> AnyTestResult:
         if data.pop("skipped", False):
             return SkippedTest(**data)
         elif data.pop("errored", False):
@@ -249,6 +267,8 @@ class SkippedTest:
     errored = False
     skipped: bool = field(init=False, default=True)
 
+    description = "skipped"
+
     @property
     def reason(self) -> str:
         if self.message is not None:
@@ -264,6 +284,8 @@ class ErroredTest:
 
     errored: bool = field(init=False, default=True)
     skipped: bool = False
+
+    description = "error"
 
     @property
     def reason(self) -> str:
@@ -291,7 +313,7 @@ class CaseResult:
 
     implementation: str
     seq: Seq
-    results: list[TestResult | SkippedTest | ErroredTest]
+    results: list[AnyTestResult]
     expected: list[bool | None]
 
     @classmethod
@@ -306,9 +328,7 @@ class CaseResult:
     def report(self, reporter: CaseReporter) -> None:
         reporter.got_results(self)
 
-    def compare(
-        self,
-    ) -> Iterable[tuple[TestResult | SkippedTest | ErroredTest, bool]]:
+    def compare(self) -> Iterable[tuple[AnyTestResult, bool]]:
         for test, expected in zip(self.results, self.expected):
             failed: bool = (  # type: ignore[reportUnknownVariableType]
                 not test.skipped

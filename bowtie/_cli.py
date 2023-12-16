@@ -308,10 +308,8 @@ def _validation_results(
                     description = "error"
                 elif valid[1] == "skipped":
                     description = "skipped"
-                elif valid[0].valid:
-                    description = "valid"
                 else:
-                    description = "invalid"
+                    description = valid[0].description
                 descriptions.append(description)
             results.append((case_result[0]["instance"], descriptions))
         yield case["schema"], results
