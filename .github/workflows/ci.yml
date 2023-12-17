@@ -82,14 +82,12 @@ jobs:
         run: python -m build .
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
-      - name: Create shiv
-        run: mkdir shiv/ && nox -s shiv -- shiv/bowtie && chmod +x shiv/bowtie
-      - name: Tar files
-        run: tar -cvf bowtie.tar dist shiv
+      - name: Build a Bowtie PyApp
+        run: nox -s app -- .
       - uses: actions/upload-artifact@v3
         with:
-          name: packages
-          path: bowtie.tar
+          name: pyapp
+          path: app/bowtie*
       - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -98,8 +96,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            shiv/bowtie
-            dist/*
+            app/bowtie*
           generate_release_notes: true
 
   report:

@@ -9,6 +9,8 @@ source = "vcs"
 packages = ["bowtie"]
 exclude = ["implementations/"]
 
+[tool.hatch.build.target.app]
+
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."

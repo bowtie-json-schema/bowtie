@@ -1,4 +1,3 @@
-from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -134,32 +133,12 @@ def build(session):
 
 
 @session(tags=["build"])
-def shiv(session):
+def app(session):
     """
-    Build a shiv which will run Bowtie.
+    Build a PyApp which will run Bowtie.
     """
-    session.install("shiv")
-
-    with ExitStack() as stack:
-        if session.posargs:
-            out = session.posargs[0]
-        else:
-            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
-            out = tmpdir / "bowtie"
-        session.run(
-            "python",
-            "-m",
-            "shiv",
-            "--reproducible",
-            "-c",
-            "bowtie",
-            "-r",
-            REQUIREMENTS["main"],
-            ROOT,
-            "-o",
-            out,
-        )
-        print(f"Outputted a shiv to {out}.")
+    session.install("hatch")
+    session.run("hatch", "build", "-t", "app", *session.posargs)
 
 
 @session(tags=["style"])
