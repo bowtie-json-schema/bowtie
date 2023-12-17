@@ -32,7 +32,7 @@ diagnostic==2.0.0
     # via bowtie-json-schema (pyproject.toml)
 docutils==0.20.1
     # via diagnostic
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
@@ -89,8 +89,9 @@ rich==13.7.0
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   textual
-rpds-py==0.13.2
+rpds-py==0.15.2
     # via
+    #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
     #   referencing
 six==1.16.0

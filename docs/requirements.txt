@@ -44,7 +44,7 @@ docutils==0.20.1
     #   diagnostic
     #   sphinx
     #   sphinx-click
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
@@ -123,8 +123,9 @@ rich==13.7.0
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.13.2
+rpds-py==0.15.2
     # via
+    #   bowtie-json-schema
     #   jsonschema
     #   referencing
 six==1.16.0

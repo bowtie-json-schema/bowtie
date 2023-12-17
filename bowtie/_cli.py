@@ -219,7 +219,7 @@ def summary(input: TextIO, format: _F, show: str):
     Generate an (in-terminal) summary of a Bowtie run.
     """
     try:
-        summary = _report.Report.from_input(input).summary
+        report = _report.Report.from_input(input)
     except _report.EmptyReport:
         error = DiagnosticError(
             code="empty-report",
@@ -235,7 +235,7 @@ def summary(input: TextIO, format: _F, show: str):
         return _EX_NOINPUT
 
     if show == "failures":
-        results = _ordered_failures(summary)
+        results = _ordered_failures(report)
         to_table = _failure_table
 
         def to_serializable(
@@ -244,7 +244,7 @@ def summary(input: TextIO, format: _F, show: str):
             return [(metadata, asdict(counts)) for metadata, counts in value]
 
     else:
-        results = _validation_results(summary)
+        results = _validation_results(report)
         to_table = _validation_results_table
         to_serializable = list  # type: ignore[reportGeneralTypeIssues]
 
@@ -252,19 +252,19 @@ def summary(input: TextIO, format: _F, show: str):
         case "json":
             click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
-            table = to_table(summary, results)  # type: ignore[reportGeneralTypeIssues]
+            table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
 
 
 def _ordered_failures(
-    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    report: _report.Report,
 ) -> Iterable[tuple[tuple[str, str], _report.Count]]:
     counts = (
         (
             (implementation["name"], implementation["language"]),
-            summary.counts[implementation["image"]],
+            report.summary.by_implementation[implementation["image"]],
         )
-        for implementation in summary.implementations
+        for implementation in report.metadata.implementations
     )
     return sorted(
         counts,
@@ -273,17 +273,17 @@ def _ordered_failures(
 
 
 def _failure_table(
-    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    report: _report.Report,
     results: list[tuple[tuple[str, str], _report.Count]],
 ):
-    test = "tests" if summary.total_tests != 1 else "test"
+    test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         "Implementation",
         "Skips",
         "Errors",
         "Failures",
         title="Bowtie",
-        caption=f"{summary.total_tests} {test} ran\n",
+        caption=f"{report.total_tests} {test} ran\n",
     )
     for (implementation, language), counts in results:
         table.add_row(
@@ -296,40 +296,37 @@ def _failure_table(
 
 
 def _validation_results(
-    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
-) -> Iterable[tuple[Any, Iterable[tuple[Any, list[str]]]]]:
-    for case, _, case_results in summary.case_results():
-        results: list[tuple[Any, list[str]]] = []
-        for case_result in case_results:
-            descriptions: list[str] = []
-            for implementation in summary.implementations:
-                valid = case_result[1].get(implementation["image"])
-                if valid is None or valid[1] == "errored":
-                    description = "error"
-                elif valid[1] == "skipped":
-                    description = "skipped"
-                else:
-                    description = valid[0].description
-                descriptions.append(description)
-            results.append((case_result[0]["instance"], descriptions))
-        yield case["schema"], results
+    report: _report.Report,
+) -> Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]]:
+    for case, case_results in report.summary:
+        results: list[tuple[object, dict[str, str]]] = []
+        for i, test in enumerate(case.tests):
+            descriptions: dict[str, str] = {
+                each: case_results[each].results[i].description
+                for each in report.implementations
+            }
+            results.append((test.instance, descriptions))
+        yield case.schema, results
 
 
 def _validation_results_table(
-    summary: _report._Summary,  # type: ignore[reportPrivateUsage]
+    report: _report.Report,
     results: Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]],
 ):
-    test = "tests" if summary.total_tests != 1 else "test"
+    test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         Column(header="Schema", vertical="middle"),
         "",
         title="Bowtie",
-        caption=f"{summary.total_tests} {test} ran",
+        caption=f"{report.total_tests} {test} ran",
     )
+
+    # TODO: sort the columns?
+    implementations = report.metadata.implementations
 
     for schema, case_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
-        for implementation in summary.implementations:
+        for implementation in implementations:
             subtable.add_column(
                 Text.assemble(
                     implementation["name"],
@@ -337,8 +334,11 @@ def _validation_results_table(
                 ),
             )
 
-        for instance, ordered_results in case_results:
-            subtable.add_row(json.dumps(instance), *ordered_results)
+        for instance, test_results in case_results:
+            subtable.add_row(
+                json.dumps(instance),
+                *(test_results[each["image"]] for each in implementations),
+            )
 
         table.add_row(json.dumps(schema, indent=2), subtable)
         table.add_section()
@@ -363,11 +363,6 @@ def validator_for_dialect(dialect: URL = DRAFT2020):
     )
 
     registry = bowtie_schemas_registry(dialect=dialect)
-
-    # TODO: Maybe here too there should be an easier way to get an
-    #        internally-identified schema under the given specification.
-    #        Maybe not though, and it might be safer to just always use
-    #        external IDs.
 
     def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
         Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]

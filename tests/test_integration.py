@@ -14,7 +14,7 @@ import pytest
 import pytest_asyncio
 
 from bowtie import _report
-from bowtie._commands import TestResult
+from bowtie._commands import ErroredTest, TestResult
 
 TestResult.__test__ = False  # frigging py.test
 
@@ -41,7 +41,7 @@ async def run(*argv, stdin: str = "", exit_code=0):
     if exit_code == -1:
         assert process.returncode != 0, returned
     else:
-        assert process.returncode == exit_code, returned
+        assert process.returncode == exit_code, returned[1]
 
     return returned
 
@@ -288,7 +288,7 @@ async def test_restarts_crashed_implementations(envsonschema):
         )
 
     assert results == [
-        {},
+        {"bowtie-integration-tests/envsonschema": ErroredTest()},
         {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
         {},
     ], stderr
@@ -395,8 +395,12 @@ async def test_implementations_can_signal_errors(envsonschema):
         )
 
     assert results == [
-        {},
-        {"bowtie-integration-tests/envsonschema": "boom"},
+        {"bowtie-integration-tests/envsonschema": ErroredTest()},
+        {
+            "bowtie-integration-tests/envsonschema": ErroredTest(
+                context=dict(message="boom"),
+            ),
+        },
         {"bowtie-integration-tests/envsonschema": TestResult.VALID},
     ], stderr
     assert stderr != ""
@@ -434,7 +438,9 @@ async def test_it_prevents_network_access(hit_the_network):
             """,  # noqa: E501
         )
 
-    assert results == [{}]
+    assert results == [
+        {"bowtie-integration-tests/hit_the_network": ErroredTest()},
+    ], stderr
     assert "bad address" in stderr.lower(), stderr
 
 
@@ -644,7 +650,8 @@ async def test_validate(envsonschema, tmp_path):
 @pytest.mark.asyncio
 async def test_summary_show_failures(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
-    tmp_path.joinpath("instance.json").write_text("12")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
 
     validate_stdout, _ = await run(
         sys.executable,
@@ -653,8 +660,11 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         "validate",
         "-i",
         envsonschema,
+        "--expect",
+        "valid",
         tmp_path / "schema.json",
-        tmp_path / "instance.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
     )
 
     stdout, stderr = await run(
@@ -672,14 +682,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     assert json.loads(stdout) == [
         [
             ["envsonschema", "python"],
-            dict(
-                errored_cases=0,
-                total_cases=1,
-                total_tests=1,
-                failed_tests=0,
-                skipped_tests=0,
-                errored_tests=0,
-            ),
+            dict(failed_tests=2, skipped_tests=0, errored_tests=0),
         ],
     ]
 
@@ -724,46 +727,106 @@ async def test_summary_show_validation(envsonschema, always_valid):
         [
             {"type": "integer"},
             [
-                [12, ["valid", "valid"]],
-                [12.5, ["invalid", "valid"]],
+                [
+                    12,
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "valid",
+                    },
+                ],
+                [
+                    12.5,
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "invalid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "string"},
             [
-                ["{}", ["error", "valid"]],
+                [
+                    "{}",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "error",
+                    },
+                ],
             ],
         ],
         [
             {"type": "number"},
             [
-                ["{}", ["error", "valid"]],
-                [37, ["error", "valid"]],
+                [
+                    "{}",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "error",
+                    },
+                ],
+                [
+                    37,
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "error",
+                    },
+                ],
             ],
         ],
         [
             {"type": "array"},
             [
-                ["", ["skipped", "valid"]],
+                [
+                    "",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "skipped",
+                    },
+                ],
             ],
         ],
         [
             {"type": "boolean"},
             [
-                ["", ["skipped", "valid"]],
+                [
+                    "",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "skipped",
+                    },
+                ],
             ],
         ],
         [
             {"type": "array"},
             [
-                ["", ["error", "valid"]],
-                [12, ["invalid", "valid"]],
+                [
+                    "",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "error",
+                    },
+                ],
+                [
+                    12,
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "invalid",
+                    },
+                ],
             ],
         ],
         [
             {"type": "array"},
             [
-                ["", ["error", "valid"]],
+                [
+                    "",
+                    {
+                        "bowtie-integration-tests/always_valid": "valid",
+                        "bowtie-integration-tests/envsonschema": "error",
+                    },
+                ],
             ],
         ],
     ], run_stderr
@@ -869,8 +932,8 @@ async def test_run_with_registry(always_valid):
         [
             {"type": "integer"},
             [
-                [12, ["valid"]],
-                [12.5, ["valid"]],
+                [12, {"bowtie-integration-tests/always_valid": "valid"}],
+                [12.5, {"bowtie-integration-tests/always_valid": "valid"}],
             ],
         ],
     ], run_stderr

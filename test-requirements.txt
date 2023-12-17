@@ -54,7 +54,7 @@ docutils==0.20.1
     # via
     #   -r requirements.txt
     #   diagnostic
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -161,9 +161,10 @@ rich==13.7.0
     #   bowtie-json-schema
     #   diagnostic
     #   textual
-rpds-py==0.13.2
+rpds-py==0.15.2
     # via
     #   -r requirements.txt
+    #   bowtie-json-schema
     #   jsonschema
     #   referencing
 six==1.16.0

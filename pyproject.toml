@@ -50,6 +50,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
+  "rpds.py>=0.15.2",
   "structlog",
   "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
@@ -145,6 +146,7 @@ ignore = [
   "SIM300", # Not sure what heuristic this uses, but it's easily incorrect
   "SLF001",  # Private usage within this package itself is fine
   "TD",  # These TODO style rules are also silly
+  "TRY003",  # Some exception classes are essentially intended for free-form
 ]
 extend-exclude = ["json"]
 

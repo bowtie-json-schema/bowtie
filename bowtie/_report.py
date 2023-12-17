@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING
 import importlib.metadata
 import json
 import sys
 
-from attrs import asdict, field, frozen, mutable
+from attrs import asdict, evolve, field, frozen
+from rpds import HashTrieMap, Queue
 from url import URL
 import structlog.stdlib
 
@@ -15,6 +16,7 @@ from bowtie import _commands
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
+    from typing import Any, Self, TextIO
 
     from bowtie._core import Implementation
 
@@ -177,12 +179,8 @@ class CaseReporter:
         self._write(**asdict(results))
 
 
-@mutable
+@frozen
 class Count:
-    total_cases: int = 0
-    errored_cases: int = 0
-
-    total_tests: int = 0
     failed_tests: int = 0
     errored_tests: int = 0
     skipped_tests: int = 0
@@ -195,127 +193,140 @@ class Count:
         return self.errored_tests + self.failed_tests + self.skipped_tests
 
 
-@mutable
-class _Summary:
-    implementations: Iterable[dict[str, Any]] = field(
-        repr=lambda value: f"({len(value)} implementations)",
-        converter=lambda value: sorted(  # type: ignore[reportUnknownArgumentType]
-            value,  # type: ignore[reportUnknownArgumentType]
-            key=lambda each: (each["language"], each["name"]),  # type: ignore[reportUnknownArgumentType]
-        ),
-    )
-    _combined: dict[int, Any] = field(factory=dict, repr=False)
-    did_fail_fast: bool = field(default=False, repr=False)
-    counts: dict[str, Count] = field(init=False, repr=False)
+@frozen
+class Summary:
+    _cases_order: Queue[_commands.Seq] = Queue()
+    _cases_by_id: HashTrieMap[
+        _commands.Seq,
+        _commands.TestCase,
+    ] = HashTrieMap()
+    _results: HashTrieMap[_commands.Seq, HashTrieMap[str, Any]] = HashTrieMap()
+    by_implementation: HashTrieMap[str, Count] = HashTrieMap()
+    did_fail_fast: bool = False
 
-    def __attrs_post_init__(self) -> None:
-        self.counts = {each["image"]: Count() for each in self.implementations}
+    @classmethod
+    def from_input(
+        cls,
+        lines: Iterable[dict[str, Any]],
+        **kwargs: Any,
+    ) -> Self:
+        summary = cls(**kwargs)
+        for each in lines:
+            summary = summary.add(each)
+        return summary
+
+    # Assembly
+
+    def add(self, data: dict[str, Any]):
+        match data:
+            case {"seq": _commands.Seq(seq), "case": case}:
+                case = _commands.TestCase.from_dict(
+                    dialect=None,  # FIXME: Probably split TestCase into 2
+                    **case,
+                )
+                return self.with_case(seq=seq, case=case)
+            case data if "caught" in data:
+                error = _commands.CaseErrored(**data)
+                return self.with_result(error)
+            case {"skipped": True, **skip}:
+                return self.with_result(_commands.CaseSkipped(**skip))
+            case data if "did_fail_fast" in data:
+                return self.with_maybe_fail_fast(**data)
+            case _:
+                return self.with_result(_commands.CaseResult.from_dict(data))
+
+    def with_case(self, seq: _commands.Seq, case: _commands.TestCase):
+        if seq in self._cases_by_id:
+            raise _InvalidBowtieReport(
+                f"Duplicate case ID {seq}!",
+            )
+
+        cases_by_id = self._cases_by_id.insert(seq, case)
+        results = self._results.insert(seq, HashTrieMap())
+        return evolve(
+            self,
+            cases_order=self._cases_order.enqueue(seq),
+            cases_by_id=cases_by_id,
+            results=results,
+        )
+
+    def with_result(self, result: _commands.AnyCaseResult):
+        seq = result.seq
+        results = self._results[seq]
+        case = self._cases_by_id[seq]
+        implementation = result.implementation
+        if implementation in self._results[seq]:
+            raise _InvalidBowtieReport(
+                f"Duplicate result for case ID {seq}!",
+            )
+
+        count = self.by_implementation.get(implementation, Count())
+
+        match result:
+            case _commands.CaseResult():
+                for test, failed in result.compare():
+                    if test.skipped:
+                        count = evolve(
+                            count,
+                            skipped_tests=count.skipped_tests + 1,
+                        )
+                    elif test.errored:
+                        count = evolve(
+                            count,
+                            errored_tests=count.errored_tests + 1,
+                        )
+                    elif failed:
+                        count = evolve(
+                            count,
+                            failed_tests=count.failed_tests + 1,
+                        )
+            case _commands.CaseErrored():
+                count = evolve(
+                    count,
+                    errored_tests=count.errored_tests + len(case.tests),
+                )
+            case _commands.CaseSkipped():
+                count = evolve(
+                    count,
+                    skipped_tests=count.skipped_tests + len(case.tests),
+                )
+
+        return evolve(
+            self,
+            by_implementation=self.by_implementation.insert(
+                implementation,
+                count,
+            ),
+            results=self._results.insert(
+                seq,
+                results.insert(implementation, result),
+            ),
+        )
+
+    def with_maybe_fail_fast(self, did_fail_fast: bool):
+        return evolve(self, did_fail_fast=did_fail_fast)
+
+    # Higher-level report support
 
     def __iter__(self):
-        return (v for _, v in sorted(self._combined.items()))
+        return (
+            (self._cases_by_id[seq], self._results[seq])
+            for seq in self._cases_order
+        )
+
+    @property
+    def is_empty(self):
+        return not self._cases_by_id
+
+    # Counts
 
     @property
     def total_cases(self):
-        counts = {count.total_cases for count in self.counts.values()}
-        if len(counts) != 1:
-            summary = "  \n".join(
-                f"  {each.rpartition('/')[2]}: {count.total_cases}"
-                for each, count in self.counts.items()
-            )
-            raise _InvalidBowtieReport(  # noqa: TRY003
-                f"Inconsistent number of cases run:\n\n{summary}",
-            )
-        return counts.pop()
-
-    @property
-    def errored_cases(self):
-        return sum(count.errored_cases for count in self.counts.values())
+        return len(self._cases_by_id)
 
     @property
     def total_tests(self):
-        counts = {count.total_tests for count in self.counts.values()}
-        match len(counts):
-            case 0:
-                return 0
-            case 1:
-                return counts.pop()
-            case _:
-                raise _InvalidBowtieReport(  # noqa: TRY003
-                    f"Inconsistent number of tests run: {self.counts}",
-                )
-
-    @property
-    def failed_tests(self):
-        return sum(count.failed_tests for count in self.counts.values())
-
-    @property
-    def errored_tests(self):
-        return sum(count.errored_tests for count in self.counts.values())
-
-    @property
-    def skipped_tests(self):
-        return sum(count.skipped_tests for count in self.counts.values())
-
-    def add_case_metadata(self, seq: _commands.Seq, case: dict[str, Any]):
-        results: list[tuple[Any, dict[str, tuple[str, str]]]] = [
-            (test, {}) for test in case["tests"]
-        ]
-        self._combined[seq] = dict(case=case, results=results)
-
-    def see_error(
-        self,
-        implementation: str,
-        seq: _commands.Seq,
-        context: dict[str, Any],
-        caught: bool,
-    ):
-        count = self.counts[implementation]
-        count.total_cases += 1
-        count.errored_cases += 1
-
-        case = self._combined[seq]["case"]
-        count.total_tests += len(case["tests"])
-        count.errored_tests += len(case["tests"])
-
-    def see_result(self, result: _commands.CaseResult):
-        count = self.counts[result.implementation]
-        count.total_cases += 1
-
-        combined = self._combined[result.seq]["results"]
-
-        for (test, failed), (_, seen) in zip(result.compare(), combined):
-            count.total_tests += 1
-            if test.skipped:
-                count.skipped_tests += 1
-                seen[result.implementation] = test.reason, "skipped"  # type: ignore[reportGeneralTypeIssues]
-            elif test.errored:
-                count.errored_tests += 1
-                seen[result.implementation] = test.reason, "errored"  # type: ignore[reportGeneralTypeIssues]
-            else:
-                if failed:
-                    count.failed_tests += 1
-                seen[result.implementation] = test, failed
-
-    def see_skip(self, skipped: _commands.CaseSkipped):
-        count = self.counts[skipped.implementation]
-        count.total_cases += 1
-
-        case = self._combined[skipped.seq]["case"]
-        count.total_tests += len(case["tests"])
-        count.skipped_tests += len(case["tests"])
-
-        for _, seen in self._combined[skipped.seq]["results"]:
-            message = skipped.issue_url or skipped.message or "skipped"
-            seen[skipped.implementation] = message, "skipped"
-
-    def see_maybe_fail_fast(self, did_fail_fast: bool):
-        self.did_fail_fast = did_fail_fast
-
-    def case_results(self):
-        return (
-            (each["case"], each.get("registry", {}), each["results"])
-            for each in self._combined.values()
-        )
+        return sum(len(case.tests) for case in self._cases_by_id.values())
 
 
 @frozen
@@ -357,11 +368,9 @@ class RunMetadata:
     def dialect_shortname(self):
         return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
 
-    def create_summary(self) -> _Summary:
-        """
-        Create a summary object used to incrementally parse reports.
-        """
-        return _Summary(implementations=self._implementations.values())
+    @property
+    def implementations(self):
+        return self._implementations.values()
 
     def serializable(self):
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
@@ -375,7 +384,7 @@ class RunMetadata:
 @frozen
 class Report:
     metadata: RunMetadata
-    summary: _Summary
+    summary: Summary
 
     @classmethod
     def from_input(cls, input: Iterable[str]) -> Report:
@@ -384,21 +393,7 @@ class Report:
         if header is None:
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**header)
-        summary = metadata.create_summary()
-
-        for each in lines:
-            if "case" in each:
-                summary.add_case_metadata(**each)
-            elif "caught" in each:
-                summary.see_error(**each)
-            elif "skipped" in each:
-                del each["skipped"]
-                summary.see_skip(_commands.CaseSkipped(**each))
-            elif "did_fail_fast" in each:
-                summary.see_maybe_fail_fast(**each)
-            else:
-                summary.see_result(_commands.CaseResult.from_dict(each))
-
+        summary = Summary.from_input(lines)
         return cls(summary=summary, metadata=metadata)
 
     @classmethod
@@ -407,7 +402,7 @@ class Report:
         'The' empty report.
         """
         metadata = RunMetadata(dialect=dialect, implementations={})
-        summary = metadata.create_summary()
+        summary = Summary()
         return cls(metadata=metadata, summary=summary)
 
     @property
@@ -416,18 +411,29 @@ class Report:
 
     @property
     def is_empty(self):
-        return self.summary.total_tests == 0
+        return self.summary.is_empty
+
+    @property
+    def total_tests(self):
+        return self.summary.total_tests
+
+    @property
+    def implementations(self):
+        return [each["image"] for each in self.metadata.implementations]
 
     def flat_results(self):
-        # FIXME: Yuck. And return `TestResult`s rather than dicts
-        for each in self.summary:
-            for result in each["results"]:
-                yield {k: v for k, (v, _) in result[1].items()}
+        for case, case_results in self.summary:
+            for i, _ in enumerate(case.tests):
+                yield {
+                    each: case_results[each].results[i]
+                    for each in self.implementations
+                    if each in case_results
+                }
 
     def generate_badges(self, target_dir: Path):
         label = _DIALECT_URI_TO_SHORTNAME[self.dialect]
         total = self.summary.total_tests
-        for impl in self.summary.implementations:
+        for impl in self.metadata.implementations:
             dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if self.dialect not in dialect_versions:
                 continue
@@ -437,7 +443,7 @@ class Report:
             )
             name = impl["name"]
             lang = impl["language"]
-            counts = self.summary.counts[impl["image"]]
+            counts = self.summary.by_implementation[impl["image"]]
             passed = (
                 total
                 - counts.failed_tests
