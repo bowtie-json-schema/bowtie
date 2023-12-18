@@ -84,7 +84,7 @@ jobs:
         uses: wntrblm/nox@2023.04.22
       - name: Build a Bowtie PyApp
         run: nox -s app -- .
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: pyapp
           path: app/bowtie*
