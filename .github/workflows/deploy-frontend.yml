@@ -41,7 +41,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest test report
         if: inputs.report_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3
         with:
           workflow: report.yml
           branch: main
