@@ -70,10 +70,6 @@ idna==3.6
     #   -r requirements.txt
     #   requests
     #   yarl
-importlib-metadata==7.0.0
-    # via
-    #   -r requirements.txt
-    #   textual
 iniconfig==2.0.0
     # via pytest
 jsonschema==4.20.0
@@ -175,7 +171,7 @@ structlog==23.2.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-textual==0.45.1
+textual==0.46.0
     # via
     #   -r requirements.txt
     #   trogon
@@ -208,7 +204,3 @@ yarl==1.9.4
     # via
     #   -r requirements.txt
     #   aiohttp
-zipp==3.17.0
-    # via
-    #   -r requirements.txt
-    #   importlib-metadata

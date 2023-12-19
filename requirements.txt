@@ -42,8 +42,6 @@ idna==3.6
     # via
     #   requests
     #   yarl
-importlib-metadata==7.0.0
-    # via textual
 jsonschema==4.20.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.11.2
@@ -116,5 +114,3 @@ urllib3==2.1.0
     # via requests
 yarl==1.9.4
     # via aiohttp
-zipp==3.17.0
-    # via importlib-metadata
