@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TextIO
 import asyncio
 import json
+import logging
 import os
 import sys
 import zipfile
@@ -111,7 +112,23 @@ _F = Literal["json", "pretty"]
 @tui(help="Open a simple interactive TUI for executing Bowtie commands.")
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
-def main():
+@click.option(
+    "--log-level",
+    "-L",
+    help="How verbose should Bowtie be?",
+    default="info",
+    show_default="info",
+    type=click.Choice(
+        [
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical",
+        ],
+    ),
+)
+def main(log_level: str):
     """
     A meta-validator for the JSON Schema specifications.
 
@@ -128,7 +145,7 @@ def main():
 
     Full documentation can also be found at https://docs.bowtie.report
     """
-    _redirect_structlog()
+    _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
 
 P = ParamSpec("P")
@@ -1031,7 +1048,10 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def _redirect_structlog(file: TextIO = sys.stderr):
+def _redirect_structlog(
+    log_level: int = logging.INFO,
+    file: TextIO = sys.stderr,
+):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
@@ -1049,7 +1069,8 @@ def _redirect_structlog(file: TextIO = sys.stderr):
                 colors=getattr(file, "isatty", lambda: False)(),
             ),
         ],
-        logger_factory=structlog.PrintLoggerFactory(file),
+        logger_factory=structlog.WriteLoggerFactory(file),
+        wrapper_class=structlog.make_filtering_bound_logger(log_level),
     )
 
 
