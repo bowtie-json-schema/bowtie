@@ -2,6 +2,7 @@ from hypothesis import given
 from hypothesis.strategies import just
 
 from bowtie import hypothesis as strategies
+from bowtie._report import Report
 
 
 @given(strategies.test_cases())
@@ -34,3 +35,8 @@ def test_cases_and_results_with_given_implementations(seq_cases_results):
 @given(strategies.dialects)
 def test_dialects(dialect):
     assert dialect.host_str == "json-schema.org"
+
+
+@given(strategies.report_data())
+def test_report_data_is_parseable(report_data):
+    Report.from_input(report_data)

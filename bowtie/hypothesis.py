@@ -7,6 +7,7 @@ Note that this module depends on you having installed Hypothesis.
 
 from string import printable
 
+from attrs import asdict
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -27,6 +28,7 @@ from hypothesis.strategies import (
 
 from bowtie import _commands
 from bowtie._cli import DIALECT_SHORTNAMES
+from bowtie._report import RunMetadata
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -137,6 +139,25 @@ def cases_and_results(
         draw(case_results(seq=just(seq), implementations=just(implementation)))
         for implementation in impls
         for (seq, _) in seq_cases
+    ]
+
+
+@composite
+def report_data(
+    draw,
+    dialects=dialects,
+    implementations=sets(implementations, min_size=1),
+):
+    """
+    Generate Bowtie report data (suitable for `Report.from_input`).
+    """
+    dialect = draw(dialects)
+    impls = draw(implementations)
+    seq_cases, results = draw(cases_and_results(implementations=just(impls)))
+    return [  # FIXME: Combine with the logic in CaseReporter
+        RunMetadata(dialect=dialect, implementations=impls).serializable(),
+        *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
+        *[asdict(result) for result in results],
     ]
 
 
