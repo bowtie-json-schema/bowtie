@@ -318,9 +318,13 @@ class CaseResult:
     expected: list[bool | None]
 
     @classmethod
-    def from_dict(cls, data: Any, **kwargs: Any) -> CaseResult:
-        results = [TestResult.from_dict(t) for t in data.pop("results")]
-        return cls(results=results, **data, **kwargs)
+    def from_dict(cls, data: Mapping[str, Any], **kwargs: Any) -> CaseResult:
+        results = [TestResult.from_dict(t) for t in data["results"]]
+        return cls(
+            results=results,
+            **{k: v for k, v in data.items() if k != "results"},
+            **kwargs,
+        )
 
     @property
     def failed(self) -> bool:
