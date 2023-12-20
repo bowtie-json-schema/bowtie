@@ -26,6 +26,7 @@ from hypothesis.strategies import (
 )
 
 from bowtie import _commands
+from bowtie._cli import DIALECT_SHORTNAMES
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -39,6 +40,7 @@ schemas = booleans() | dictionaries(
 
 seq = integers(min_value=1)
 implementations = text(printable, min_size=1)
+dialects = sampled_from(list(DIALECT_SHORTNAMES.values()))
 
 
 def tests(
@@ -116,7 +118,7 @@ def cases_and_results(
     implementations=sets(implementations, min_size=1),
     test_cases=test_cases(),
     min_cases=1,
-    max_cases=10,
+    max_cases=20,
 ):
     """
     A set of test cases along with their results for generated implementations.
