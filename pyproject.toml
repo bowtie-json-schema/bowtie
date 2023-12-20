@@ -59,6 +59,9 @@ dependencies = [
   "url.py",
 ]
 
+[project.optional-dependencies]
+strategies = ["hypothesis>=6.92.1"]
+
 [project.scripts]
 bowtie = "bowtie._cli:main"
 

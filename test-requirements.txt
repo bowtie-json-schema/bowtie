@@ -21,6 +21,7 @@ attrs==23.1.0
     #   -r requirements.txt
     #   aiohttp
     #   bowtie-json-schema
+    #   hypothesis
     #   jsonschema
     #   referencing
 file:.#egg=bowtie-json-schema
@@ -63,6 +64,8 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
+hypothesis==6.92.1
+    # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
 idna==3.6
@@ -167,6 +170,8 @@ six==1.16.0
     # via
     #   -r requirements.txt
     #   python-dateutil
+sortedcontainers==2.4.0
+    # via hypothesis
 structlog==23.2.0
     # via
     #   -r requirements.txt

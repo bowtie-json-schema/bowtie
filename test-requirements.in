@@ -1,5 +1,6 @@
 file:.#egg=bowtie-json-schema
 -r requirements.txt
+hypothesis
 jsonschema
 pytest
 pytest-asyncio==0.21.1
