@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     builds,
     composite,
     dictionaries,
+    fixed_dictionaries,
     floats,
     integers,
     just,
@@ -79,12 +80,29 @@ def test_cases(
     )
 
 
-test_results = sampled_from(
+successful_tests = sampled_from(
     [
         _commands.TestResult.VALID,
         _commands.TestResult.INVALID,
     ],
 )
+errored_tests = builds(
+    _commands.ErroredTest,
+    context=fixed_dictionaries(
+        {},
+        optional=dict(
+            message=text(min_size=1),
+            traceback=text(min_size=1),
+            foo=text(),
+        ),
+    ),
+)
+skipped_tests = builds(
+    _commands.SkippedTest,
+    message=text(min_size=1) | none(),
+    issue_url=text(min_size=1) | none(),
+)
+test_results = successful_tests | errored_tests | skipped_tests
 
 
 @composite
@@ -168,4 +186,7 @@ register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.Seq, seq)
 register_type_strategy(_commands.Test, tests())
 register_type_strategy(_commands.TestCase, test_cases())
-register_type_strategy(_commands.TestResult, test_results)
+register_type_strategy(_commands.TestResult, successful_tests)
+register_type_strategy(_commands.SkippedTest, skipped_tests)
+register_type_strategy(_commands.ErroredTest, errored_tests)
+register_type_strategy(_commands.AnyTestResult, test_results)
