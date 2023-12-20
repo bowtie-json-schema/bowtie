@@ -181,7 +181,7 @@ def badges(input: TextIO, output: Path):
     """
     Generate Bowtie badges from a previous run.
     """
-    report = _report.Report.from_input(input)
+    report = _report.Report.from_serialized(input)
     if report.is_empty:
         error = DiagnosticError(
             code="empty-report",
@@ -236,7 +236,7 @@ def summary(input: TextIO, format: _F, show: str):
     Generate an (in-terminal) summary of a Bowtie run.
     """
     try:
-        report = _report.Report.from_input(input)
+        report = _report.Report.from_serialized(input)
     except _report.EmptyReport:
         error = DiagnosticError(
             code="empty-report",

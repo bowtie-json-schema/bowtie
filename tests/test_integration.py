@@ -193,7 +193,7 @@ async def bowtie(*args, exit_code=0):
         stdout, stderr = stdout.decode(), stderr.decode()
 
         try:
-            report = _report.Report.from_input(stdout.splitlines())
+            report = _report.Report.from_serialized(stdout.splitlines())
         except _report.EmptyReport:
             results = []
         else:

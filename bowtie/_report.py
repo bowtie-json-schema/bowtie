@@ -387,14 +387,18 @@ class Report:
     summary: Summary
 
     @classmethod
-    def from_input(cls, input: Iterable[str]) -> Report:
-        lines = (json.loads(line) for line in input)
-        header = next(lines, None)
+    def from_input(cls, input: Iterable[dict[str, Any]]) -> Self:
+        iterator = iter(input)
+        header = next(iterator, None)
         if header is None:
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**header)
-        summary = Summary.from_input(lines)
+        summary = Summary.from_input(iterator)
         return cls(summary=summary, metadata=metadata)
+
+    @classmethod
+    def from_serialized(cls, serialized: Iterable[str]) -> Self:
+        return cls.from_input(json.loads(line) for line in serialized)
 
     @classmethod
     def empty(cls, dialect: URL):
