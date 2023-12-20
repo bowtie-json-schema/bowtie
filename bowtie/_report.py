@@ -195,13 +195,19 @@ class Count:
 
 @frozen
 class Summary:
-    _cases_order: Queue[_commands.Seq] = Queue()
+    _cases_order: Queue[_commands.Seq] = field(default=Queue(), repr=False)
     _cases_by_id: HashTrieMap[
         _commands.Seq,
         _commands.TestCase,
-    ] = HashTrieMap()
-    _results: HashTrieMap[_commands.Seq, HashTrieMap[str, Any]] = HashTrieMap()
-    by_implementation: HashTrieMap[str, Count] = HashTrieMap()
+    ] = field(default=HashTrieMap(), repr=lambda v: f"({len(v)} cases)")
+    _results: HashTrieMap[_commands.Seq, HashTrieMap[str, Any]] = field(
+        default=HashTrieMap(),
+        repr=False,
+    )
+    by_implementation: HashTrieMap[str, Count] = field(
+        default=HashTrieMap(),
+        repr=False,
+    )
     did_fail_fast: bool = False
 
     @classmethod
