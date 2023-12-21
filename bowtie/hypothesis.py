@@ -28,7 +28,7 @@ from hypothesis.strategies import (
 )
 
 from bowtie import _commands
-from bowtie._cli import DIALECT_SHORTNAMES
+from bowtie._cli import TEST_SUITE_DIALECT_URLS
 from bowtie._report import Report, RunMetadata
 
 # FIXME: probably via hypothesis-jsonschema
@@ -43,7 +43,7 @@ schemas = booleans() | dictionaries(
 
 seq = integers(min_value=1)
 implementations = text(printable, min_size=1, max_size=50)
-dialects = sampled_from(list(DIALECT_SHORTNAMES.values()))
+dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
 
 
 def tests(
