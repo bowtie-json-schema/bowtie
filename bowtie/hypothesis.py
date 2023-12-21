@@ -29,7 +29,7 @@ from hypothesis.strategies import (
 
 from bowtie import _commands
 from bowtie._cli import DIALECT_SHORTNAMES
-from bowtie._report import RunMetadata
+from bowtie._report import Report, RunMetadata
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -179,6 +179,12 @@ def report_data(
     ]
 
 
+reports = builds(
+    Report.from_input,
+    input=report_data(),
+)
+
+
 # FIXME: These don't seem to do anything (in that builds() still fails?)
 #        I also don't really understand why the builtin attrs support doesn't
 #        autodetect more than it seems to be.
@@ -190,3 +196,4 @@ register_type_strategy(_commands.TestResult, successful_tests)
 register_type_strategy(_commands.SkippedTest, skipped_tests)
 register_type_strategy(_commands.ErroredTest, errored_tests)
 register_type_strategy(_commands.AnyTestResult, test_results)
+register_type_strategy(_commands.Report, reports)
