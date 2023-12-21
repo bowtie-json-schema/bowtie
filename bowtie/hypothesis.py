@@ -43,7 +43,7 @@ schemas = booleans() | dictionaries(
     max_size=10,
 )
 
-seq = integers(min_value=1)
+seqs = integers(min_value=1)
 implementations = text(printable, min_size=1, max_size=50)
 dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
 
@@ -109,7 +109,7 @@ test_results = successful_tests | errored_tests | skipped_tests
 
 def case_results(
     implementations=implementations,
-    seq=seq,
+    seqs=seqs,
     min_tests=1,
     max_tests=10,
 ):
@@ -124,21 +124,21 @@ def case_results(
         lambda size: builds(
             _commands.CaseResult,
             implementation=implementations,
-            seq=seq,
+            seq=seqs,
             results=lists(test_results, min_size=size, max_size=size),
             expected=lists(booleans() | none(), min_size=size, max_size=size),
         ),
     )
 
 
-def errored_cases(implementations=implementations, seq=seq):
+def errored_cases(implementations=implementations, seqs=seqs):
     """
     A test case which errored under an implementation (caught or not).
     """
     return builds(
         _commands.CaseErrored,
         implementation=implementations,
-        seq=seq,
+        seq=seqs,
         context=dictionaries(  # FIXME
             keys=text(),
             values=text() | integers(),
@@ -150,7 +150,7 @@ def errored_cases(implementations=implementations, seq=seq):
 
 def skipped_cases(
     implementations=implementations,
-    seq=seq,
+    seqs=seqs,
     message=text(min_size=1, max_size=50) | none(),
     issue_url=text(min_size=1, max_size=50) | none(),
 ):
@@ -160,7 +160,7 @@ def skipped_cases(
     return builds(
         _commands.CaseSkipped,
         implementation=implementations,
-        seq=seq,
+        seq=seqs,
         message=message,
         issue_url=issue_url,
     )
@@ -173,6 +173,7 @@ any_case_results = case_results() | errored_cases() | skipped_cases()
 def cases_and_results(
     draw,
     implementations=sets(implementations, min_size=1, max_size=5),
+    seqs=seqs,
     test_cases=test_cases(),
     min_cases=1,
     max_cases=8,
@@ -183,7 +184,7 @@ def cases_and_results(
     impls = draw(implementations)
 
     strategy = lists(
-        tuples(seq, test_cases),
+        tuples(seqs, test_cases),
         min_size=min_cases,
         max_size=max_cases,
         unique_by=lambda each: each[0],
@@ -191,26 +192,45 @@ def cases_and_results(
     seq_cases = draw(strategy)
 
     return seq_cases, [
-        draw(case_results(seq=just(seq), implementations=just(implementation)))
+        draw(
+            case_results(seqs=just(seq), implementations=just(implementation)),
+        )
         for implementation in impls
         for (seq, _) in seq_cases
     ]
 
 
+# Evade the s h a d o w
+_implementations, _cases_and_results = implementations, cases_and_results
+
+
 @composite
 def report_data(
     draw,
-    dialects=dialects,
-    implementations=sets(implementations, min_size=1, max_size=8),
+    dialect=dialects,
+    implementations=None,
+    cases_and_results=None,
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
-    dialect = draw(dialects)
+    if implementations is None:
+        if cases_and_results is not None:
+            raise ValueError(
+                "Providing cases+results without implementations can lead to "
+                "inconsistent reports.",
+            )
+        implementations = sets(_implementations, min_size=1, max_size=5)
     impls = draw(implementations)
-    seq_cases, results = draw(cases_and_results(implementations=just(impls)))
+
+    if cases_and_results is None:
+        cases_and_results = _cases_and_results(implementations=just(impls))
+
+    seq_cases, results = draw(cases_and_results)
+
+    metadata = RunMetadata(dialect=draw(dialect), implementations=impls)
     return [  # FIXME: Combine with the logic in CaseReporter
-        RunMetadata(dialect=dialect, implementations=impls).serializable(),
+        metadata.serializable(),
         *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
         *[asdict(result) for result in results],
     ]
@@ -220,10 +240,7 @@ def reports(**kwargs):
     """
     Generate full Bowtie reports.
     """
-    return builds(
-        Report.from_input,
-        input=report_data(**kwargs),
-    )
+    return report_data(**kwargs).map(Report.from_input)
 
 
 # FIXME: These don't seem to do anything (in that builds() still fails?)
@@ -232,7 +249,7 @@ def reports(**kwargs):
 register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.CaseErrored, errored_cases())
 register_type_strategy(_commands.CaseSkipped, skipped_cases())
-register_type_strategy(_commands.Seq, seq)
+register_type_strategy(_commands.Seq, seqs)
 register_type_strategy(_commands.Test, tests())
 register_type_strategy(_commands.TestCase, test_cases())
 register_type_strategy(_commands.TestResult, successful_tests)

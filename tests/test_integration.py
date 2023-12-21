@@ -76,7 +76,7 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
-def strimplementation(name, contents, files={}):  # noqa: B006
+def strimplementation(name, contents, files={}):
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
         contents = dedent(contents).encode("utf-8")

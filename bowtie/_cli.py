@@ -875,7 +875,7 @@ async def _run(
     dialect: URL,
     fail_fast: bool,
     set_schema: bool,
-    run_metadata: dict[str, Any] = {},  # noqa: B006
+    run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
 ) -> int:

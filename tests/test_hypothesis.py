@@ -43,5 +43,5 @@ def test_dialects(dialect):
 
 
 @given(strategies.report_data())
-def test_report_data_is_parseable(report_data):
-    Report.from_input(report_data)
+def test_report_data_is_parseable(data):
+    Report.from_input(data)
