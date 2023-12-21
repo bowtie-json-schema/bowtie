@@ -42,7 +42,7 @@ schemas = booleans() | dictionaries(
 )
 
 seq = integers(min_value=1)
-implementations = text(printable, min_size=1)
+implementations = text(printable, min_size=1, max_size=50)
 dialects = sampled_from(list(DIALECT_SHORTNAMES.values()))
 
 
@@ -67,7 +67,7 @@ def tests(
 def test_cases(
     description=text(),
     schema=schemas,
-    tests=lists(tests(), min_size=1),
+    tests=lists(tests(), min_size=1, max_size=8),
 ):
     r"""
     Generate `_commands.TestCase`\ s.
@@ -135,10 +135,10 @@ def case_results(
 @composite
 def cases_and_results(
     draw,
-    implementations=sets(implementations, min_size=1),
+    implementations=sets(implementations, min_size=1, max_size=5),
     test_cases=test_cases(),
     min_cases=1,
-    max_cases=20,
+    max_cases=8,
 ):
     """
     A set of test cases along with their results for generated implementations.
@@ -164,7 +164,7 @@ def cases_and_results(
 def report_data(
     draw,
     dialects=dialects,
-    implementations=sets(implementations, min_size=1),
+    implementations=sets(implementations, min_size=1, max_size=8),
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
@@ -196,4 +196,4 @@ register_type_strategy(_commands.TestResult, successful_tests)
 register_type_strategy(_commands.SkippedTest, skipped_tests)
 register_type_strategy(_commands.ErroredTest, errored_tests)
 register_type_strategy(_commands.AnyTestResult, test_results)
-register_type_strategy(_commands.Report, reports)
+register_type_strategy(Report, reports)
