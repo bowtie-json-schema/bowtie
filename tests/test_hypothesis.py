@@ -20,9 +20,14 @@ def test_tests_invalid(test):
     assert not test.valid
 
 
-@given(strategies.case_results())
-def test_case_results_have_at_least_one_test(case_result):
-    assert len(case_result.results) >= 1
+@given(strategies.any_case_results)
+def test_successful_case_results_have_at_least_one_test(result):
+    assert (
+        result.failed
+        or result.errored
+        or result.skipped
+        or len(result.results) >= 1
+    )
 
 
 @given(strategies.cases_and_results(implementations=just({"foo", "bar"})))

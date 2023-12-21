@@ -38,7 +38,9 @@ schemas = booleans() | dictionaries(
         none() | booleans() | floats() | text(printable),
         lambda children: lists(children)
         | dictionaries(text(printable), children),
+        max_leaves=3,
     ),
+    max_size=10,
 )
 
 seq = integers(min_value=1)
@@ -91,45 +93,80 @@ errored_tests = builds(
     context=fixed_dictionaries(
         {},
         optional=dict(
-            message=text(min_size=1),
-            traceback=text(min_size=1),
+            message=text(min_size=1, max_size=50),
+            traceback=text(min_size=1, max_size=50),
             foo=text(),
         ),
     ),
 )
 skipped_tests = builds(
     _commands.SkippedTest,
-    message=text(min_size=1) | none(),
-    issue_url=text(min_size=1) | none(),
+    message=text(min_size=1, max_size=50) | none(),
+    issue_url=text(min_size=1, max_size=50) | none(),
 )
 test_results = successful_tests | errored_tests | skipped_tests
 
 
-@composite
 def case_results(
-    draw,
     implementations=implementations,
     seq=seq,
-    test_results=test_results,
-    expected=booleans() | none(),
     min_tests=1,
-    max_tests=20,
+    max_tests=10,
 ):
     """
-    A result for an individual test case.
+    A successfully executed (though perhaps still failing) test case result.
 
     Note that the `Seq` for this result will be arbitrary, so don't use this to
     generate results in isolation without controlling for these IDs being what
     they need to be (i.e. report-wide unique).
     """
-    size = draw(integers(min_value=min_tests, max_value=max_tests))
-    # FIXME: only successful here
-    return _commands.CaseResult(
-        implementation=draw(implementations),
-        seq=draw(seq),
-        results=draw(lists(test_results, min_size=size, max_size=size)),
-        expected=draw(lists(expected, min_size=size, max_size=size)),
+    return integers(min_value=min_tests, max_value=max_tests).flatmap(
+        lambda size: builds(
+            _commands.CaseResult,
+            implementation=implementations,
+            seq=seq,
+            results=lists(test_results, min_size=size, max_size=size),
+            expected=lists(booleans() | none(), min_size=size, max_size=size),
+        ),
     )
+
+
+def errored_cases(implementations=implementations, seq=seq):
+    """
+    A test case which errored under an implementation (caught or not).
+    """
+    return builds(
+        _commands.CaseErrored,
+        implementation=implementations,
+        seq=seq,
+        context=dictionaries(  # FIXME
+            keys=text(),
+            values=text() | integers(),
+            max_size=5,
+        ),
+        caught=booleans(),
+    )
+
+
+def skipped_cases(
+    implementations=implementations,
+    seq=seq,
+    message=text(min_size=1, max_size=50) | none(),
+    issue_url=text(min_size=1, max_size=50) | none(),
+):
+    """
+    A test case which was skipped by an implementation.
+    """
+    return builds(
+        _commands.CaseSkipped,
+        implementation=implementations,
+        seq=seq,
+        message=message,
+        issue_url=issue_url,
+    )
+
+
+any_case_results = case_results() | errored_cases() | skipped_cases()
 
 
 @composite
@@ -193,6 +230,8 @@ def reports(**kwargs):
 #        I also don't really understand why the builtin attrs support doesn't
 #        autodetect more than it seems to be.
 register_type_strategy(_commands.CaseResult, case_results())
+register_type_strategy(_commands.CaseErrored, errored_cases())
+register_type_strategy(_commands.CaseSkipped, skipped_cases())
 register_type_strategy(_commands.Seq, seq)
 register_type_strategy(_commands.Test, tests())
 register_type_strategy(_commands.TestCase, test_cases())

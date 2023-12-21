@@ -310,7 +310,7 @@ class ReportableResult(Protocol):
 
 @frozen
 class CaseResult:
-    errored = False
+    errored = skipped = False
 
     implementation: str
     seq: Seq
@@ -351,7 +351,7 @@ class CaseErrored:
     """
 
     errored = True
-    failed = False
+    failed = skipped = False
 
     implementation: str
     seq: Seq
@@ -387,8 +387,7 @@ class CaseSkipped:
     A full test case was skipped.
     """
 
-    errored = False
-    failed = False
+    errored = failed = False
 
     implementation: str
     seq: Seq
