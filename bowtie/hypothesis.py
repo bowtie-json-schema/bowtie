@@ -179,10 +179,14 @@ def report_data(
     ]
 
 
-reports = builds(
-    Report.from_input,
-    input=report_data(),
-)
+def reports(**kwargs):
+    """
+    Generate full Bowtie reports.
+    """
+    return builds(
+        Report.from_input,
+        input=report_data(**kwargs),
+    )
 
 
 # FIXME: These don't seem to do anything (in that builds() still fails?)
@@ -196,4 +200,4 @@ register_type_strategy(_commands.TestResult, successful_tests)
 register_type_strategy(_commands.SkippedTest, skipped_tests)
 register_type_strategy(_commands.ErroredTest, errored_tests)
 register_type_strategy(_commands.AnyTestResult, test_results)
-register_type_strategy(Report, reports)
+register_type_strategy(Report, reports())
