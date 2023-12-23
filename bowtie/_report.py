@@ -219,6 +219,7 @@ class Summary:
         summary = cls(**kwargs)
         for each in lines:
             summary = summary.add(each)
+        # TODO: Check all implementation counts are sane?
         return summary
 
     # Assembly
