@@ -39,7 +39,9 @@ const cmds = {
         name: "ajv",
         version: ajv_version,
         homepage: "https://ajv.js.org/",
+        documentation: "https://ajv.js.org/json-schema.html",
         issues: "https://github.com/ajv-validator/ajv/issues",
+        source: "https://github.com/ajv-validator/ajv",
 
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",

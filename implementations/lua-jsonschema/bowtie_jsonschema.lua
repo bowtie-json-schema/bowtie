@@ -28,6 +28,7 @@ local cmds = {
         version = jsonschema_version,
         homepage = 'https://github.com/api7/jsonschema',
         issues = 'https://github.com/api7/jsonschema/issues',
+        source = 'https://github.com/api7/jsonschema',
 
         dialects = {
           'http://json-schema.org/draft-07/schema#',

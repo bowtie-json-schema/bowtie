@@ -8,14 +8,16 @@ class StartResponse(
     val implementation: Implementation,
 )
 
+@Suppress("LongParameterList")
 @Serializable
 class Implementation(
     val language: String = "kotlin",
     val name: String = "kmp-json-schema-validator",
     val version: String,
     val dialects: Set<String>,
-    val homepage: String? = null,
+    val homepage: String,
     val issues: String,
+    val source: String,
 )
 
 @Serializable

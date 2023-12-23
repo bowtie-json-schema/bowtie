@@ -62,6 +62,7 @@ class Harness {
       List("https://json-schema.org/draft/2020-12/schema"),
       "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator",
       "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator/issues",
+      "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator",
       System.getProperty("os.name"),
       System.getProperty("os.version"),
       Runtime.version().toString,
@@ -128,8 +129,8 @@ class Harness {
 
 case class Implementation(language: String, name: String, version: String,
                           dialects: List[String], homepage: String, issues: String,
-                          os: String, os_version: String, language_version: String,
-                          links: List[Link])
+                          source: String, os: String, os_version: String,
+                          language_version: String, links: List[Link])
 
 case class Link(url: String, description: String)
 

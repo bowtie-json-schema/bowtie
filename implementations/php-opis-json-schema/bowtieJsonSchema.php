@@ -33,6 +33,8 @@ function start($request)
             'name' => 'opis-json-schema',
             'version' => $jsonschema_version,
             'homepage' => 'https://opis.io/json-schema',
+            'documentation' => 'https://opis.io/json-schema/2.x/',
+            'source' => 'https://github.com/opis/json-schema',
             'issues' => 'https://github.com/opis/json-schema/issues',
             'dialects' => [
                 'https://json-schema.org/draft/2020-12/schema',

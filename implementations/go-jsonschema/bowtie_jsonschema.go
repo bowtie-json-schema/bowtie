@@ -75,6 +75,7 @@ func main() {
 					"version":  jsonschemaVersion(),
 					"homepage": "https://github.com/santhosh-tekuri/jsonschema",
 					"issues":   "https://github.com/santhosh-tekuri/jsonschema/issues",
+					"source":   "https://github.com/santhosh-tekuri/jsonschema",
 					"dialects": []string{
 						"https://json-schema.org/draft/2020-12/schema",
 						"https://json-schema.org/draft/2019-09/schema",

@@ -203,7 +203,9 @@ export interface Implementation {
   version?: string;
   dialects: string[];
   homepage: string;
+  documentation?: string;
   issues: string;
+  source: string;
   image: string;
   links?: {
     description?: string;

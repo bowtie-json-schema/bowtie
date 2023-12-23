@@ -45,6 +45,7 @@ class BowtieRcCirceJsonValidator {
       List("https://json-schema.org/draft/2020-12/schema"),
       "https://github.com/reactivecore/rc-circe-json-schema",
       "https://github.com/reactivecore/rc-circe-json-schema/issues",
+      "https://github.com/reactivecore/rc-circe-json-schema",
       System.getProperty("os.name"),
       System.getProperty("os.version"),
       Runtime.version().toString,
@@ -106,8 +107,8 @@ class InMemoryDownloader(registry: Map[String, Json]) extends Downloader[Result]
 
 case class Implementation(language: String, name: String, version: String,
                           dialects: List[String], homepage: String, issues: String,
-                          os: String, os_version: String, language_version: String,
-                          links: List[Link])
+                          source: String, os: String, os_version: String,
+                          language_version: String, links: List[Link])
 
 case class Link(url: String, description: String)
 

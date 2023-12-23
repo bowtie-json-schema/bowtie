@@ -19,6 +19,7 @@
                           :name :json-schema
                           :homepage "https://github.com/luposlip/json-schema"
                           :issues "https://github.com/luposlip/json-schema/issues"
+                          :source "https://github.com/luposlip/json-schema"
 
                           :dialects ["http://json-schema.org/draft-07/schema#",
                                      "http://json-schema.org/draft-06/schema#",

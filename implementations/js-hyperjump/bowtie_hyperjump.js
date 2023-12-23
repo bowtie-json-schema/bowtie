@@ -73,7 +73,8 @@ const cmds = {
         name: "hyperjump-jsv",
         version: hyperjump_version,
         homepage: "https://json-schema.hyperjump.io/",
-        issues: "https://github.com/hyperjump-io/json-schema-validator/issues",
+        issues: "https://github.com/hyperjump-io/json-schema/issues",
+        source: "https://github.com/hyperjump-io/json-schema",
 
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",

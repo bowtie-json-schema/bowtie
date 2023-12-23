@@ -48,7 +48,9 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                         ["name"] = "JsonSchema.Net",
                         ["version"] = GetLibVersion(),
                         ["homepage"] = "https://json-everything.net/json-schema/",
+                        ["documentation"] = "https://docs.json-everything.net/schema/basics/",
                         ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
+                        ["source"] = "https://github.com/gregsdennis/json-everything",
 
                         ["dialects"] =
                             new JsonArray {

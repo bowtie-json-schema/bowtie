@@ -20,6 +20,7 @@ tasks.withType<Jar> {
                 put("Implementation-Version", lib.version)
                 put("Implementation-Homepage", "https://github.com/OptimumCode/json-schema-validator")
                 put("Implementation-Issues", "https://github.com/OptimumCode/json-schema-validator/issues")
+                put("Implementation-Source", "https://github.com/OptimumCode/json-schema-validator")
             },
         )
     }

@@ -55,6 +55,7 @@ class BowtieSampsonSchemaValidatorLauncher(
     private val libraryVersion: String
     private val libraryHomepage: String
     private val libraryIssues: String
+    private val librarySource: String
 
     init {
         val attributes: Attributes = javaClass.getResourceAsStream("META-INF/MANIFEST.MF").use {
@@ -65,6 +66,7 @@ class BowtieSampsonSchemaValidatorLauncher(
             libraryVersion = getValue("Implementation-Version")
             libraryHomepage = getValue("Implementation-Homepage")
             libraryIssues = getValue("Implementation-Issues")
+            librarySource = getValue("Implementation-Source")
         }
     }
 
@@ -189,6 +191,7 @@ class BowtieSampsonSchemaValidatorLauncher(
                         homepage = libraryHomepage,
                         dialects = SUPPORTED_DIALECTS,
                         issues = libraryIssues,
+                        source = librarySource,
                     ),
                 ),
             ),

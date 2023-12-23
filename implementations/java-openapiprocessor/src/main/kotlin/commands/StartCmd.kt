@@ -23,6 +23,7 @@ class StartCmd {
                 "dialects" to SchemaVersion.entries.map { it.schemaUri },
                 "homepage" to properties.getHomepage(),
                 "issues" to properties.getIssues(),
+                "source" to properties.getSource(),
             ),
         )
     }
@@ -48,4 +49,8 @@ private fun Properties.getHomepage(): URI {
 
 private fun Properties.getIssues(): URI {
     return URI(getProperty("validator.issues"))
+}
+
+private fun Properties.getSource(): URI {
+    return URI(getProperty("validator.source"))
 }

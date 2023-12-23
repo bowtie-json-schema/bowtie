@@ -64,8 +64,10 @@ fn main() -> Result<()> {
                         "language": "rust",
                         "name": "jsonschema",
                         "version": env!("JSONSCHEMA_VERSION"),
-                        "homepage": "https://docs.rs/jsonschema/latest/jsonschema/",
+                        "homepage": "https://docs.rs/jsonschema",
+                        "documentation": "https://docs.rs/jsonschema",
                         "issues": "https://github.com/Stranger6667/jsonschema-rs/issues",
+                        "source": "https://github.com/Stranger6667/jsonschema-rs",
 
                         "dialects": [
                             "https://json-schema.org/draft/2020-12/schema",

@@ -47,6 +47,7 @@ const cmds = {
         homepage: "https://github.com/microsoft/vscode-json-languageservice",
         issues:
           "https://github.com/microsoft/vscode-json-languageservice/issues",
+        source: "https://github.com/microsoft/vscode-json-languageservice",
 
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",

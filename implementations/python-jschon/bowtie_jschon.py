@@ -61,7 +61,9 @@ class Runner:
                 name="jschon",
                 version=metadata.version("jschon"),
                 homepage="https://jschon.readthedocs.io/",
+                documentation="https://jschon.readthedocs.io/",
                 issues="https://github.com/marksparkza/jschon/issues",
+                source="https://github.com/marksparkza/jschon",
                 dialects=[
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",

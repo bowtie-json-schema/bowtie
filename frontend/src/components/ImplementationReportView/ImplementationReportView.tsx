@@ -53,11 +53,29 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
             <tbody>
               <tr>
                 <th>Homepage:</th>
+                <td>
+                  <Link to={implementation.homepage}>
+                    {implementation.homepage}
+                  </Link>
+                </td>
+              </tr>
+              {implementation.documentation && (
+                <tr>
+                  <th>Documentation:</th>
                   <td>
-                    <Link to={implementation.homepage}>
-                      {implementation.homepage}
+                    <Link to={implementation.documentation}>
+                      {implementation.documentation}
                     </Link>
                   </td>
+                </tr>
+              )}
+              <tr>
+                <th>Source:</th>
+                <td>
+                  <Link to={implementation.source}>
+                    {implementation.source}
+                  </Link>
+                </td>
               </tr>
               <tr>
                 <th>Issues:</th>

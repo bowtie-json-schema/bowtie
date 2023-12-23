@@ -44,9 +44,11 @@ class Runner:
                 name="jsonschema",
                 version=metadata.version("jsonschema"),
                 homepage="https://python-jsonschema.readthedocs.io/",
+                documentation="https://python-jsonschema.readthedocs.io/",
                 issues=(
                     "https://github.com/python-jsonschema/jsonschema/issues"
                 ),
+                source="https://github.com/python-jsonschema/jsonschema",
                 dialects=[
                     "https://json-schema.org/draft/2020-12/schema",
                     "https://json-schema.org/draft/2019-09/schema",

@@ -71,6 +71,8 @@ int main() {
       implementation.AddMember(
           "issues", "https://github.com/tristanpenman/valijson/issues",
           allocator);
+      implementation.AddMember(
+          "source", "https://github.com/tristanpenman/valijson", allocator);
 
       Value dialects(kArrayType);
       dialects.PushBack("http://json-schema.org/draft-07/schema#", allocator);
