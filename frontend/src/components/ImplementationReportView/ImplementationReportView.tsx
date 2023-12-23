@@ -53,13 +53,11 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
             <tbody>
               <tr>
                 <th>Homepage:</th>
-                {implementation.homepage && (
                   <td>
                     <Link to={implementation.homepage}>
                       {implementation.homepage}
                     </Link>
                   </td>
-                )}
               </tr>
               <tr>
                 <th>Issues:</th>
