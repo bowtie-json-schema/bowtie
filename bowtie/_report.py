@@ -14,7 +14,7 @@ import structlog.stdlib
 from bowtie import _commands
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
     from pathlib import Path
     from typing import Any, Self, TextIO
 
@@ -213,7 +213,7 @@ class Summary:
     @classmethod
     def from_input(
         cls,
-        lines: Iterable[dict[str, Any]],
+        lines: Iterable[Mapping[str, Any]],
         **kwargs: Any,
     ) -> Self:
         summary = cls(**kwargs)
@@ -224,7 +224,7 @@ class Summary:
 
     # Assembly
 
-    def add(self, data: dict[str, Any]):
+    def add(self, data: Mapping[str, Any]):
         match data:
             case {"seq": _commands.Seq(seq), "case": case}:
                 case = _commands.TestCase.from_dict(
@@ -339,12 +339,12 @@ class Summary:
 @frozen
 class RunMetadata:
     dialect: URL
-    _implementations: dict[str, dict[str, Any]] = field(
+    _implementations: Mapping[str, Mapping[str, Any]] = field(
         repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
     )
     bowtie_version: str = importlib.metadata.version("bowtie-json-schema")
-    metadata: dict[str, Any] = field(factory=dict, repr=False)
+    metadata: Mapping[str, Any] = field(factory=dict, repr=False)
     started: datetime = field(factory=lambda: datetime.now(timezone.utc))
 
     @classmethod
@@ -394,7 +394,7 @@ class Report:
     summary: Summary
 
     @classmethod
-    def from_input(cls, input: Iterable[dict[str, Any]]) -> Self:
+    def from_input(cls, input: Iterable[Mapping[str, Any]]) -> Self:
         iterator = iter(input)
         header = next(iterator, None)
         if header is None:
