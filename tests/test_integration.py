@@ -167,6 +167,15 @@ hit_the_network = strimplementation(
     CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
     """,  # noqa: E501
 )
+missing_homepage = shellplementation(
+    name="missing_homepage",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    """,  # noqa: E501
+)
 
 
 def _failed(message, stderr):
@@ -290,7 +299,7 @@ async def test_restarts_crashed_implementations(envsonschema):
     assert results == [
         {"bowtie-integration-tests/envsonschema": ErroredTest()},
         {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
-        {},
+        {"bowtie-integration-tests/envsonschema": ErroredTest()},
     ], stderr
     assert stderr != ""
 
@@ -419,6 +428,20 @@ async def test_it_handles_split_messages(envsonschema):
         {"bowtie-integration-tests/envsonschema": TestResult.VALID},
         {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
     ], stderr
+
+
+@pytest.mark.asyncio
+async def test_it_handles_invalid_start_responses(missing_homepage):
+    async with bowtie("-i", missing_homepage, "-V", exit_code=-1) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert "startup failed" in stderr.lower(), stderr
+    assert "'homepage' is a required" in stderr, stderr
+    assert results == [], stderr
 
 
 @pytest.mark.asyncio

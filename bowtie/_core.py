@@ -303,8 +303,8 @@ class Implementation:
             read_timeout_sec=self._read_timeout_sec,
         )
         started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-        if started is None:
-            return
+        if started is INVALID:
+            raise StartupFailed(name=self.name)
         self.metadata = started.implementation
 
     async def _restart_container(self):
@@ -363,4 +363,5 @@ class Implementation:
                     response=response,
                     cmd=cmd,
                 )
-                return INVALID
+                break
+        return INVALID
