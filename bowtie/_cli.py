@@ -315,7 +315,7 @@ def _failure_table(
 def _validation_results(
     report: _report.Report,
 ) -> Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]]:
-    for case, case_results in report.summary:
+    for _, case, case_results in report.summary:
         results: list[tuple[object, dict[str, str]]] = []
         for i, test in enumerate(case.tests):
             descriptions: dict[str, str] = {

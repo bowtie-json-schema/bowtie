@@ -316,7 +316,7 @@ class Summary:
 
     def __iter__(self):
         return (
-            (self._cases_by_id[seq], self._results[seq])
+            (seq, self._cases_by_id[seq], self._results[seq])
             for seq in self._cases_order
         )
 
@@ -432,7 +432,7 @@ class Report:
         return [each["image"] for each in self.metadata.implementations]
 
     def flat_results(self):
-        for case, case_results in self.summary:
+        for _, case, case_results in self.summary:
             for i, _ in enumerate(case.tests):
                 yield {
                     each: case_results[each].results[i]
