@@ -200,6 +200,13 @@ def cases_and_results(
     ]
 
 
+implementation_metadata = fixed_dictionaries(
+    {
+        "language": text(min_size=1, max_size=20),
+    },
+)
+
+
 # Evade the s h a d o w
 _implementations, _cases_and_results = implementations, cases_and_results
 
@@ -209,6 +216,7 @@ def report_data(
     draw,
     dialect=dialects,
     implementations=None,
+    implementation_metadata=implementation_metadata,
     cases_and_results=None,
     fail_fast=booleans(),
 ):
@@ -229,7 +237,16 @@ def report_data(
 
     seq_cases, results = draw(cases_and_results)
 
-    metadata = RunMetadata(dialect=draw(dialect), implementations=impls)
+    metadata = RunMetadata(
+        dialect=draw(dialect),
+        implementations={
+            name: {
+                "image": f"bowtie-hypothesis-generated/{name}",
+                **draw(implementation_metadata),
+            }
+            for name in impls
+        },
+    )
     return [  # FIXME: Combine with the logic in CaseReporter
         metadata.serializable(),
         *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
