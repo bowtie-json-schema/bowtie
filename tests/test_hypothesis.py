@@ -42,6 +42,6 @@ def test_dialects(dialect):
     assert dialect.host_str == "json-schema.org"
 
 
-@given(strategies.report_data())
-def test_report_data_is_parseable(data):
-    Report.from_input(data)
+@given(strategies.report_data(fail_fast=just(True)))
+def test_report_data_can_be_marked_fail_fast(data):
+    assert Report.from_input(data).did_fail_fast

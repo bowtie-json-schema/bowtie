@@ -210,6 +210,7 @@ def report_data(
     dialect=dialects,
     implementations=None,
     cases_and_results=None,
+    fail_fast=booleans(),
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
@@ -233,6 +234,7 @@ def report_data(
         metadata.serializable(),
         *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
         *[asdict(result) for result in results],
+        {"did_fail_fast": draw(fail_fast)},
     ]
 
 
