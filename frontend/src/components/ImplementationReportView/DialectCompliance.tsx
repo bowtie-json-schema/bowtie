@@ -27,8 +27,19 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(implementation.results).map(
-              ([dialectName, result], index) => {
+            {Object.entries(implementation.results)
+              .sort(
+                (a, b) =>
+                  a[1].failedTests! +
+                    a[1].erroredTests! +
+                    a[1].skippedTests! -
+                    b[1].failedTests! -
+                    b[1].erroredTests! -
+                    b[1].skippedTests! ||
+                  +Dialect.forPath(b[0]).firstPublicationDate -
+                    +Dialect.forPath(a[0]).firstPublicationDate,
+              )
+              .map(([dialectName, result], index) => {
                 return (
                   <tr key={index}>
                     <td>{Dialect.forPath(dialectName).uri}</td>
@@ -37,8 +48,7 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
-              },
-            )}
+              })}
           </tbody>
         </Table>
       </Card.Body>
