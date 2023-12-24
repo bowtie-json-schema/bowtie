@@ -800,8 +800,7 @@ class _TestSuiteCases(click.ParamType):
                 commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
             run_metadata: dict[str, Any] = {"Commit": commit_info}
 
-        if dialect is not None:
-            return cases, dialect, run_metadata
+        return cases, dialect, run_metadata
 
         self.fail(
             f"{value} does not contain JSON Schema Test Suite cases.",
@@ -816,7 +815,11 @@ class _TestSuiteCases(click.ParamType):
             paths, version_path = _glob(path, "*.json"), path
 
         remotes = version_path.parent.parent / "remotes"
+
         dialect = DIALECT_SHORTNAMES.get(version_path.name)
+        if dialect is None:
+            self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
+
         cases = suite_cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
         return cases, dialect
@@ -1002,7 +1005,7 @@ def _remotes_from(
 def suite_cases_from(
     paths: Iterable[_P],
     remotes: Path,
-    dialect: URL | None,
+    dialect: URL,
 ) -> Iterable[TestCase]:
     populated = {str(k): v for k, v in _remotes_from(remotes, dialect=dialect)}
     for path in paths:

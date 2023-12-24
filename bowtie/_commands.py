@@ -51,7 +51,7 @@ class TestCase:
     @classmethod
     def from_dict(
         cls,
-        dialect: URL | None,
+        dialect: URL,
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
@@ -59,7 +59,7 @@ class TestCase:
         populated: SchemaRegistry = Registry().with_contents(  # type: ignore[reportUnknownMemberType]
             registry.items(),
             default_specification=specification_with(
-                str(dialect or "urn:bowtie:unknown-dialect"),
+                str(dialect),
                 default=Specification.OPAQUE,
             ),
         )

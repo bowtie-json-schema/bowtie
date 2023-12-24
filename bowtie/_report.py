@@ -373,7 +373,7 @@ class Report:
             match data:
                 case {"seq": _commands.Seq(seq), "case": case}:
                     case = _commands.TestCase.from_dict(
-                        dialect=None,  # FIXME: Probably split TestCase into 2
+                        dialect=metadata.dialect,
                         **case,
                     )
                     summary = summary.with_case(seq=seq, case=case)

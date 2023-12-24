@@ -6,6 +6,7 @@ from textwrap import dedent, indent
 import asyncio
 import json
 import os
+import re
 import sys
 import tarfile
 
@@ -1011,3 +1012,18 @@ async def test_no_such_image():
         "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
         in stderr
     ), stderr
+
+
+@pytest.mark.asyncio
+async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
+    _, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "suite",
+        "-i",
+        envsonschema,
+        tmp_path,
+        exit_code=-1,
+    )
+    assert re.search(r"does not contain .* cases", stderr)
