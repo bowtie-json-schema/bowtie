@@ -1,6 +1,9 @@
-from bowtie._cli import DRAFT2020
+from hypothesis import given
+
 from bowtie._report import Report
+from bowtie.hypothesis import dialects
 
 
-def test_empty_is_empty():
-    assert Report.empty(dialect=DRAFT2020).is_empty
+@given(dialect=dialects)
+def test_empty_is_empty(dialect):
+    assert Report.empty(dialect=dialect).is_empty
