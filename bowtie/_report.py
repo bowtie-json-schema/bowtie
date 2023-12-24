@@ -208,39 +208,8 @@ class Summary:
         default=HashTrieMap(),
         repr=False,
     )
-    did_fail_fast: bool = False
-
-    @classmethod
-    def from_input(
-        cls,
-        lines: Iterable[Mapping[str, Any]],
-        **kwargs: Any,
-    ) -> Self:
-        summary = cls(**kwargs)
-        for each in lines:
-            summary = summary.add(each)
-        # TODO: Check all implementation counts are sane?
-        return summary
 
     # Assembly
-
-    def add(self, data: Mapping[str, Any]):
-        match data:
-            case {"seq": _commands.Seq(seq), "case": case}:
-                case = _commands.TestCase.from_dict(
-                    dialect=None,  # FIXME: Probably split TestCase into 2
-                    **case,
-                )
-                return self.with_case(seq=seq, case=case)
-            case data if "caught" in data:
-                error = _commands.CaseErrored(**data)
-                return self.with_result(error)
-            case {"skipped": True, **skip}:
-                return self.with_result(_commands.CaseSkipped(**skip))
-            case data if "did_fail_fast" in data:
-                return self.with_maybe_fail_fast(**data)
-            case _:
-                return self.with_result(_commands.CaseResult.from_dict(data))
 
     def with_case(self, seq: _commands.Seq, case: _commands.TestCase):
         if seq in self._cases_by_id:
@@ -309,9 +278,6 @@ class Summary:
                 results.insert(implementation, result),
             ),
         )
-
-    def with_maybe_fail_fast(self, did_fail_fast: bool):
-        return evolve(self, did_fail_fast=did_fail_fast)
 
     # Higher-level report support
 
@@ -392,6 +358,7 @@ class RunMetadata:
 class Report:
     metadata: RunMetadata
     summary: Summary
+    did_fail_fast: bool
 
     @classmethod
     def from_input(cls, input: Iterable[Mapping[str, Any]]) -> Self:
@@ -399,9 +366,34 @@ class Report:
         header = next(iterator, None)
         if header is None:
             raise EmptyReport()
-        metadata = RunMetadata.from_dict(**header)
-        summary = Summary.from_input(iterator)
-        return cls(summary=summary, metadata=metadata)
+
+        did_fail_fast = False
+        metadata, summary = RunMetadata.from_dict(**header), Summary()
+        for data in iterator:
+            match data:
+                case {"seq": _commands.Seq(seq), "case": case}:
+                    case = _commands.TestCase.from_dict(
+                        dialect=None,  # FIXME: Probably split TestCase into 2
+                        **case,
+                    )
+                    summary = summary.with_case(seq=seq, case=case)
+                case data if "caught" in data:
+                    error = _commands.CaseErrored(**data)
+                    summary = summary.with_result(error)
+                case {"skipped": True, **skip}:
+                    skip = _commands.CaseSkipped(**skip)
+                    summary = summary.with_result(skip)
+                case {"did_fail_fast": did_fail_fast}:
+                    break
+                case _:
+                    result = _commands.CaseResult.from_dict(data)
+                    summary = summary.with_result(result)
+        # TODO: Check all implementation counts are sane?
+        return cls(
+            metadata=metadata,
+            summary=summary,
+            did_fail_fast=did_fail_fast,
+        )
 
     @classmethod
     def from_serialized(cls, serialized: Iterable[str]) -> Self:
@@ -414,7 +406,7 @@ class Report:
         """
         metadata = RunMetadata(dialect=dialect, implementations={})
         summary = Summary()
-        return cls(metadata=metadata, summary=summary)
+        return cls(metadata=metadata, summary=summary, did_fail_fast=False)
 
     @property
     def dialect(self):
