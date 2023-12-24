@@ -7,7 +7,7 @@ import json
 import sys
 
 from attrs import asdict, evolve, field, frozen
-from rpds import HashTrieMap, Queue
+from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
 
@@ -195,7 +195,6 @@ class Count:
 
 @frozen
 class Summary:
-    _cases_order: Queue[_commands.Seq] = field(default=Queue(), repr=False)
     _cases_by_id: HashTrieMap[
         _commands.Seq,
         _commands.TestCase,
@@ -219,12 +218,7 @@ class Summary:
 
         cases_by_id = self._cases_by_id.insert(seq, case)
         results = self._results.insert(seq, HashTrieMap())
-        return evolve(
-            self,
-            cases_order=self._cases_order.enqueue(seq),
-            cases_by_id=cases_by_id,
-            results=results,
-        )
+        return evolve(self, cases_by_id=cases_by_id, results=results)
 
     def with_result(self, result: _commands.AnyCaseResult):
         seq = result.seq
@@ -282,10 +276,8 @@ class Summary:
     # Higher-level report support
 
     def __iter__(self):
-        return (
-            (seq, self._cases_by_id[seq], self._results[seq])
-            for seq in self._cases_order
-        )
+        for seq in sorted(self._cases_by_id):  # TODO: sorted collection?
+            yield seq, self._cases_by_id[seq], self._results[seq]
 
     @property
     def is_empty(self):
