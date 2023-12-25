@@ -201,7 +201,7 @@ def cases_and_results(
 
 
 def implementations_with_metadata(
-    implementations=implementations,
+    implementations=sets(implementations, min_size=1, max_size=5),
     metadata=fixed_dictionaries({"language": text(min_size=1, max_size=20)}),
 ):
     """
