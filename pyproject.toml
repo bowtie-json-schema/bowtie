@@ -47,7 +47,6 @@ dependencies = [
   "attrs>=22.2.0",
   "click",
   "diagnostic",
-  "diff>=2023.12.3",
   "github3.py",
   "jsonschema>=4.19.0",
   "referencing>=0.31.0",
@@ -156,7 +155,6 @@ ignore = [
   "TD",  # These TODO style rules are also silly
   "TRY003",  # Some exception classes are essentially intended for free-form
 ]
-extend-exclude = ["json"]
 
 [tool.ruff.lint.flake8-pytest-style]
 mark-parentheses = false
