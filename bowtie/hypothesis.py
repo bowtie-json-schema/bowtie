@@ -200,75 +200,82 @@ def cases_and_results(
     ]
 
 
-implementation_metadata = fixed_dictionaries(
-    {
-        "language": text(min_size=1, max_size=20),
-    },
-)
-
-
-# Evade the s h a d o w
-_implementations, _cases_and_results = implementations, cases_and_results
+def implementations_with_metadata(
+    implementations=implementations,
+    metadata=fixed_dictionaries({"language": text(min_size=1, max_size=20)}),
+):
+    """
+    Implementations along with their metadata.
+    """
+    return implementations.flatmap(
+        lambda impls: fixed_dictionaries(
+            {
+                name: metadata.map(
+                    lambda data, name=name: dict(
+                        image=f"bowtie-hypothesis-generated/{name}",
+                        **data,
+                    ),
+                )
+                for name in impls
+            },
+        ),
+    )
 
 
 def run_metadata(
     dialects=dialects,
-    implementations=sets(_implementations, min_size=1, max_size=5),
-    implementation_metadata=implementation_metadata,
+    implementations_with_metadata=implementations_with_metadata,
 ):
     """
     Generate just a report's metadata.
     """
-    return implementations.flatmap(
-        lambda impls: builds(
-            RunMetadata,
-            dialect=dialects,
-            implementations=fixed_dictionaries(
-                {
-                    name: implementation_metadata.map(
-                        lambda data, name=name: dict(
-                            image=f"bowtie-hypothesis-generated/{name}",
-                            **data,
-                        ),
-                    )
-                    for name in impls
-                },
-            ),
-        ),
+    return builds(
+        RunMetadata,
+        dialect=dialects,
+        implementations=implementations_with_metadata,
     )
+
+
+# Evade the s h a d o w
+_implementations_with_metadata = implementations_with_metadata
+_cases_and_results = cases_and_results
+_run_metadata = run_metadata
 
 
 @composite
 def report_data(
     draw,
     dialects=dialects,
-    implementations=None,
-    implementation_metadata=implementation_metadata,
+    implementations_with_metadata=None,
+    run_metadata=None,
     cases_and_results=None,
     fail_fast=booleans(),
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
-    if implementations is None:
+    if implementations_with_metadata is None:
         if cases_and_results is not None:
             raise ValueError(
                 "Providing cases+results without implementations can lead to "
                 "inconsistent reports.",
             )
-        implementations = sets(_implementations, min_size=1, max_size=5)
-    impls = draw(implementations)
+        implementations_with_metadata = _implementations_with_metadata()
+    implementations = draw(implementations_with_metadata)
+    names = implementations.keys()
 
     if cases_and_results is None:
-        cases_and_results = _cases_and_results(implementations=just(impls))
+        cases_and_results = _cases_and_results(implementations=just(names))
 
     seq_cases, results = draw(cases_and_results)
 
-    metadata = draw(
-        run_metadata(dialects=dialects, implementations=implementations),
-    )
+    if run_metadata is None:
+        run_metadata = _run_metadata(
+            dialects=dialects,
+            implementations_with_metadata=just(implementations),
+        )
     return [  # FIXME: Combine with the logic in CaseReporter
-        metadata.serializable(),
+        draw(run_metadata).serializable(),
         *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
         *[asdict(result) for result in results],
         {"did_fail_fast": draw(fail_fast)},
