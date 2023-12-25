@@ -211,10 +211,37 @@ implementation_metadata = fixed_dictionaries(
 _implementations, _cases_and_results = implementations, cases_and_results
 
 
+def run_metadata(
+    dialects=dialects,
+    implementations=sets(_implementations, min_size=1, max_size=5),
+    implementation_metadata=implementation_metadata,
+):
+    """
+    Generate just a report's metadata.
+    """
+    return implementations.flatmap(
+        lambda impls: builds(
+            RunMetadata,
+            dialect=dialects,
+            implementations=fixed_dictionaries(
+                {
+                    name: implementation_metadata.map(
+                        lambda data, name=name: dict(
+                            image=f"bowtie-hypothesis-generated/{name}",
+                            **data,
+                        ),
+                    )
+                    for name in impls
+                },
+            ),
+        ),
+    )
+
+
 @composite
 def report_data(
     draw,
-    dialect=dialects,
+    dialects=dialects,
     implementations=None,
     implementation_metadata=implementation_metadata,
     cases_and_results=None,
@@ -237,15 +264,8 @@ def report_data(
 
     seq_cases, results = draw(cases_and_results)
 
-    metadata = RunMetadata(
-        dialect=draw(dialect),
-        implementations={
-            name: {
-                "image": f"bowtie-hypothesis-generated/{name}",
-                **draw(implementation_metadata),
-            }
-            for name in impls
-        },
+    metadata = draw(
+        run_metadata(dialects=dialects, implementations=implementations),
     )
     return [  # FIXME: Combine with the logic in CaseReporter
         metadata.serializable(),
