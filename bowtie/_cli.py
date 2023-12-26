@@ -571,7 +571,7 @@ async def _info(image_names: list[str], format: _F):
             except NoSuchImage as error:
                 exit_code |= _EX_CONFIG
                 click.echo(
-                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",
                 )
                 continue
 
@@ -660,7 +660,7 @@ async def _smoke(
             except NoSuchImage as error:
                 exit_code |= _EX_CONFIG
                 echo(
-                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",  # noqa: E501
+                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",
                     file=sys.stderr,
                 )
                 continue

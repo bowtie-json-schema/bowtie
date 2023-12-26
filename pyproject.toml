@@ -112,7 +112,7 @@ exclude = [
 ]
 
 [tool.ruff]
-line-length = 79
+line-length = 88
 select = ["ALL"]
 ignore = [
   "A001",  # It's fine to shadow builtins

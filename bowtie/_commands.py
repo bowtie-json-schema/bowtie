@@ -278,6 +278,13 @@ class SkippedTest:
             return self.issue_url
         return "skipped"
 
+    @classmethod
+    def in_skipped_case(cls):
+        """
+        A skipped test which mentions it is part of an entirely skipped case.
+        """
+        return cls(message="All tests in this test case were skipped.")
+
 
 @frozen
 class ErroredTest:
@@ -294,6 +301,15 @@ class ErroredTest:
         if message:
             return message
         return "Encountered an error."
+
+    @classmethod
+    def in_errored_case(cls):
+        """
+        A errored test which mentions it is part of an entirely errored case.
+        """
+        return cls(
+            context=dict(message="All tests in this test case errored."),
+        )
 
 
 class ReportableResult(Protocol):
@@ -361,7 +377,7 @@ class CaseErrored:
 
     @property
     def results(self) -> Mapping[Seq, AnyTestResult]:
-        return defaultdict(ErroredTest)
+        return defaultdict(ErroredTest.in_errored_case)
 
     def report(self, reporter: CaseReporter):
         reporter.case_errored(self)
@@ -398,7 +414,7 @@ class CaseSkipped:
 
     @property
     def results(self) -> Mapping[Seq, AnyTestResult]:
-        return defaultdict(SkippedTest)
+        return defaultdict(SkippedTest.in_skipped_case)
 
     def report(self, reporter: CaseReporter):
         reporter.skipped(self)

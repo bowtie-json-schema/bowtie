@@ -298,9 +298,13 @@ async def test_restarts_crashed_implementations(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": ErroredTest()},
+        {
+            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+        },
         {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
-        {"bowtie-integration-tests/envsonschema": ErroredTest()},
+        {
+            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+        },
     ], stderr
     assert stderr != ""
 
@@ -405,7 +409,9 @@ async def test_implementations_can_signal_errors(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": ErroredTest()},
+        {
+            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+        },
         {
             "bowtie-integration-tests/envsonschema": ErroredTest(
                 context=dict(message="boom"),
@@ -463,7 +469,9 @@ async def test_it_prevents_network_access(hit_the_network):
         )
 
     assert results == [
-        {"bowtie-integration-tests/hit_the_network": ErroredTest()},
+        {
+            "bowtie-integration-tests/hit_the_network": ErroredTest.in_errored_case(),
+        },
     ], stderr
     assert "bad address" in stderr.lower(), stderr
 
