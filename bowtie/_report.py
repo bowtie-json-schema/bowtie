@@ -167,7 +167,7 @@ class CaseReporter:
         self._write(**asdict(results))
 
     def skipped(self, skipped: _commands.CaseSkipped):
-        self._write(**asdict(skipped))
+        self._write(**skipped.serializable())
 
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
@@ -176,7 +176,7 @@ class CaseReporter:
         implementation, context = results.implementation, results.context
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
-        self._write(**asdict(results))
+        self._write(**results.serializable())
 
 
 @frozen

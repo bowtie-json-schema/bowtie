@@ -139,6 +139,7 @@ def errored_cases(implementations=implementations, seqs=seqs):
         _commands.CaseErrored,
         implementation=implementations,
         seq=seqs,
+        expected=lists(booleans() | none()),
         context=dictionaries(  # FIXME
             keys=text(),
             values=text() | integers(),
@@ -161,6 +162,7 @@ def skipped_cases(
         _commands.CaseSkipped,
         implementation=implementations,
         seq=seqs,
+        expected=lists(booleans() | none()),
         message=message,
         issue_url=issue_url,
     )

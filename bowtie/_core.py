@@ -158,8 +158,9 @@ class DialectRunner:
         command: _commands.Run,
         tests: Iterable[_commands.Test],
     ) -> _commands.ReportableResult:
+        expected = [test.valid for test in tests]
+
         try:
-            expected = [test.valid for test in tests]
             response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 return _commands.Empty(implementation=self._name)
@@ -167,6 +168,7 @@ class DialectRunner:
                 return _commands.CaseErrored.uncaught(
                     implementation=self._name,
                     seq=command.seq,
+                    expected=expected,
                 )
             try:
                 return response(implementation=self._name, expected=expected)
@@ -177,12 +179,14 @@ class DialectRunner:
                 return _commands.CaseErrored.uncaught(
                     implementation=self._name,
                     seq=command.seq,
+                    expected=expected,
                 )
 
         except GotStderr as error:
             return _commands.CaseErrored.uncaught(
                 seq=command.seq,
                 implementation=self._name,
+                expected=expected,
                 stderr=error.stderr.decode("utf-8"),
             )
 
