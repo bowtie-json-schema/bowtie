@@ -13,7 +13,7 @@ except ImportError:
 
 import json
 
-from attrs import asdict, field, frozen
+from attrs import asdict, evolve, field, frozen
 from referencing import Registry, Specification
 from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from url import URL
 
     from bowtie._core import DialectRunner
-    from bowtie._report import CaseReporter
+    from bowtie._report import CaseReporter, Count
 
 
 Seq = int
@@ -314,15 +314,33 @@ class ErroredTest:
 
 
 class ReportableResult(Protocol):
-    errored: bool
-    failed: bool
+    @property
+    def errored(self) -> bool:
+        ...
+
+    @property
+    def failed(self) -> bool:
+        ...
+
+    @property
+    def skipped(self) -> bool:
+        ...
 
     @property
     def implementation(self) -> str:
         ...
 
     def report(self, reporter: CaseReporter) -> None:
-        pass
+        ...
+
+
+class AnyCaseResult(ReportableResult, Protocol):
+    @property
+    def seq(self) -> Seq:
+        ...
+
+    def be_counted(self, count: Count) -> Count:
+        ...
 
 
 @frozen
@@ -346,6 +364,25 @@ class CaseResult:
     @property
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
+
+    def be_counted(self, count: Count) -> Count:
+        for test, failed in self.compare():
+            if test.skipped:
+                count = evolve(
+                    count,
+                    skipped_tests=count.skipped_tests + 1,
+                )
+            elif test.errored:
+                count = evolve(
+                    count,
+                    errored_tests=count.errored_tests + 1,
+                )
+            elif failed:
+                count = evolve(
+                    count,
+                    failed_tests=count.failed_tests + 1,
+                )
+        return count
 
     def report(self, reporter: CaseReporter) -> None:
         reporter.got_results(self)
@@ -399,6 +436,12 @@ class CaseErrored:
             context=context,
         )
 
+    def be_counted(self, count: Count) -> Count:
+        return evolve(
+            count,
+            errored_tests=count.errored_tests + len(self.results),
+        )
+
     def report(self, reporter: CaseReporter):
         reporter.case_errored(self)
 
@@ -428,14 +471,17 @@ class CaseSkipped:
         results = [SkippedTest.in_skipped_case() for _ in self.expected]
         object.__setattr__(self, "results", results)
 
+    def be_counted(self, count: Count) -> Count:
+        return evolve(
+            count,
+            skipped_tests=count.skipped_tests + len(self.results),
+        )
+
     def report(self, reporter: CaseReporter):
         reporter.skipped(self)
 
     def serializable(self) -> Mapping[str, Any]:
         return asdict(self, filter=lambda attr, _: attr.name != "results")
-
-
-AnyCaseResult = CaseResult | CaseSkipped | CaseErrored
 
 
 @frozen
@@ -445,7 +491,7 @@ class Empty:
     """
 
     errored = True
-    failed = False
+    failed = skipped = False
 
     implementation: str
 

@@ -225,40 +225,11 @@ class Summary:
 
         count = self.by_implementation.get(implementation, Count())
 
-        match result:
-            case CaseResult():
-                for test, failed in result.compare():
-                    if test.skipped:
-                        count = evolve(
-                            count,
-                            skipped_tests=count.skipped_tests + 1,
-                        )
-                    elif test.errored:
-                        count = evolve(
-                            count,
-                            errored_tests=count.errored_tests + 1,
-                        )
-                    elif failed:
-                        count = evolve(
-                            count,
-                            failed_tests=count.failed_tests + 1,
-                        )
-            case CaseErrored():
-                count = evolve(
-                    count,
-                    errored_tests=count.errored_tests + len(result.results),
-                )
-            case CaseSkipped():
-                count = evolve(
-                    count,
-                    skipped_tests=count.skipped_tests + len(result.results),
-                )
-
         return evolve(
             self,
             by_implementation=self.by_implementation.insert(
                 implementation,
-                count,
+                result.be_counted(count),
             ),
             results=self._results.insert(
                 seq,
