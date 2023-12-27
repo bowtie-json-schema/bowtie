@@ -16,6 +16,7 @@ from bowtie._commands import (
     CaseResult,
     CaseSkipped,
     Seq,
+    StartedDialect,
     TestCase,
 )
 
@@ -72,7 +73,7 @@ class Reporter:
         self,
         implementation: str,
         dialect: URL,
-        response: Any,
+        response: StartedDialect,
     ):
         self._log.warn(
             (
@@ -202,7 +203,7 @@ class Count:
 
 @frozen
 class Summary:
-    _results: HashTrieMap[Seq, HashTrieMap[str, Any]] = field(
+    _results: HashTrieMap[Seq, HashTrieMap[str, AnyCaseResult]] = field(
         default=HashTrieMap(),
         repr=False,
     )

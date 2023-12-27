@@ -20,7 +20,13 @@ from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 from bowtie import HOMEPAGE, exceptions
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Mapping
+    from collections.abc import (
+        Awaitable,
+        Callable,
+        Iterable,
+        Mapping,
+        Sequence,
+    )
 
     from url import URL
 
@@ -337,6 +343,10 @@ class ReportableResult(Protocol):
 class AnyCaseResult(ReportableResult, Protocol):
     @property
     def seq(self) -> Seq:
+        ...
+
+    @property
+    def results(self) -> Sequence[AnyTestResult]:
         ...
 
     def be_counted(self, count: Count) -> Count:
