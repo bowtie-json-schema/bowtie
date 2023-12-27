@@ -11,13 +11,20 @@ from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
 
-from bowtie import _commands
+from bowtie._commands import (
+    CaseErrored,
+    CaseResult,
+    CaseSkipped,
+    Seq,
+    TestCase,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
     from pathlib import Path
     from typing import Any, Self, TextIO
 
+    from bowtie._commands import AnyCaseResult, AnyTestResult, Command, Test
     from bowtie._core import Implementation
 
 
@@ -113,7 +120,7 @@ class Reporter:
 
     def invalid_response(
         self,
-        cmd: _commands.Command[Any],
+        cmd: Command[Any],
         response: bytes,
         implementation: Implementation,
         error: Exception,
@@ -126,7 +133,7 @@ class Reporter:
             response=response,
         )
 
-    def case_started(self, seq: _commands.Seq, case: _commands.TestCase):
+    def case_started(self, seq: Seq, case: TestCase):
         return CaseReporter.case_started(
             case=case,
             seq=seq,
@@ -149,14 +156,14 @@ class CaseReporter:
         cls,
         log: structlog.stdlib.BoundLogger,
         write: Callable[..., None],
-        case: _commands.TestCase,
-        seq: _commands.Seq,
+        case: TestCase,
+        seq: Seq,
     ) -> CaseReporter:
         self = cls(log=log, write=write)
         self._write(case=case.serializable(), seq=seq)
         return self
 
-    def got_results(self, results: _commands.CaseResult):
+    def got_results(self, results: CaseResult):
         for result in results.results:
             if result.errored:
                 self._log.error(
@@ -166,13 +173,13 @@ class CaseReporter:
                 )
         self._write(**asdict(results))
 
-    def skipped(self, skipped: _commands.CaseSkipped):
+    def skipped(self, skipped: CaseSkipped):
         self._write(**skipped.serializable())
 
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
 
-    def case_errored(self, results: _commands.CaseErrored):
+    def case_errored(self, results: CaseErrored):
         implementation, context = results.implementation, results.context
         message = "" if results.caught else "uncaught error"
         self._log.error(message, logger_name=implementation, **context)
@@ -195,11 +202,7 @@ class Count:
 
 @frozen
 class Summary:
-    _cases_by_id: HashTrieMap[
-        _commands.Seq,
-        _commands.TestCase,
-    ] = field(default=HashTrieMap(), repr=lambda v: f"({len(v)} cases)")
-    _results: HashTrieMap[_commands.Seq, HashTrieMap[str, Any]] = field(
+    _results: HashTrieMap[Seq, HashTrieMap[str, Any]] = field(
         default=HashTrieMap(),
         repr=False,
     )
@@ -208,32 +211,22 @@ class Summary:
         repr=False,
     )
 
+    def __getitem__(self, seq: Seq):
+        return self._results[seq]
+
     # Assembly
 
-    def with_case(self, seq: _commands.Seq, case: _commands.TestCase):
-        if seq in self._cases_by_id:
-            raise _InvalidBowtieReport(
-                f"Duplicate case ID {seq}!",
-            )
-
-        cases_by_id = self._cases_by_id.insert(seq, case)
-        results = self._results.insert(seq, HashTrieMap())
-        return evolve(self, cases_by_id=cases_by_id, results=results)
-
-    def with_result(self, result: _commands.AnyCaseResult):
+    def with_result(self, result: AnyCaseResult):
         seq = result.seq
-        results = self._results[seq]
-        case = self._cases_by_id[seq]
+        results = self._results.get(seq, HashTrieMap())
         implementation = result.implementation
-        if implementation in self._results[seq]:
-            raise _InvalidBowtieReport(
-                f"Duplicate result for case ID {seq}!",
-            )
+        if implementation in results:
+            raise _InvalidBowtieReport(f"Duplicate result for case ID {seq}!")
 
         count = self.by_implementation.get(implementation, Count())
 
         match result:
-            case _commands.CaseResult():
+            case CaseResult():
                 for test, failed in result.compare():
                     if test.skipped:
                         count = evolve(
@@ -250,15 +243,15 @@ class Summary:
                             count,
                             failed_tests=count.failed_tests + 1,
                         )
-            case _commands.CaseErrored():
+            case CaseErrored():
                 count = evolve(
                     count,
-                    errored_tests=count.errored_tests + len(case.tests),
+                    errored_tests=count.errored_tests + len(result.results),
                 )
-            case _commands.CaseSkipped():
+            case CaseSkipped():
                 count = evolve(
                     count,
-                    skipped_tests=count.skipped_tests + len(case.tests),
+                    skipped_tests=count.skipped_tests + len(result.results),
                 )
 
         return evolve(
@@ -272,26 +265,6 @@ class Summary:
                 results.insert(implementation, result),
             ),
         )
-
-    # Higher-level report support
-
-    def __iter__(self):
-        for seq in sorted(self._cases_by_id):  # TODO: sorted collection?
-            yield seq, self._cases_by_id[seq], self._results[seq]
-
-    @property
-    def is_empty(self):
-        return not self._cases_by_id
-
-    # Counts
-
-    @property
-    def total_cases(self):
-        return len(self._cases_by_id)
-
-    @property
-    def total_tests(self):
-        return sum(len(case.tests) for case in self._cases_by_id.values())
 
 
 @frozen
@@ -348,6 +321,7 @@ class RunMetadata:
 
 @frozen
 class Report:
+    _cases: HashTrieMap[Seq, TestCase] = field(alias="cases")
     metadata: RunMetadata
     summary: Summary
     did_fail_fast: bool
@@ -358,30 +332,33 @@ class Report:
         header = next(iterator, None)
         if header is None:
             raise EmptyReport()
+        metadata = RunMetadata.from_dict(**header)
 
-        did_fail_fast = False
-        metadata, summary = RunMetadata.from_dict(**header), Summary()
+        cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
+
+        summary, did_fail_fast = Summary(), False
         for data in iterator:
             match data:
-                case {"seq": _commands.Seq(seq), "case": case}:
-                    case = _commands.TestCase.from_dict(
-                        dialect=metadata.dialect,
-                        **case,
-                    )
-                    summary = summary.with_case(seq=seq, case=case)
+                case {"seq": Seq(seq), "case": case}:
+                    if seq in cases:
+                        raise _InvalidBowtieReport(f"Duplicate case: {seq}")
+
+                    case["dialect"] = metadata.dialect
+                    case = TestCase.from_dict(**case)
+                    cases = cases.insert(seq, case)
                 case data if "caught" in data:
-                    error = _commands.CaseErrored(**data)
+                    error = CaseErrored(**data)
                     summary = summary.with_result(error)
                 case {"skipped": True, **skip}:
-                    skip = _commands.CaseSkipped(**skip)
+                    skip = CaseSkipped(**skip)
                     summary = summary.with_result(skip)
                 case {"did_fail_fast": did_fail_fast}:
                     break
                 case _:
-                    result = _commands.CaseResult.from_dict(data)
+                    result = CaseResult.from_dict(data)
                     summary = summary.with_result(result)
-        # TODO: Check all implementation counts are sane?
         return cls(
+            cases=cases,
             metadata=metadata,
             summary=summary,
             did_fail_fast=did_fail_fast,
@@ -396,9 +373,12 @@ class Report:
         """
         'The' empty report.
         """
-        metadata = RunMetadata(dialect=dialect, implementations={})
-        summary = Summary()
-        return cls(metadata=metadata, summary=summary, did_fail_fast=False)
+        return cls(
+            cases=HashTrieMap(),
+            metadata=RunMetadata(dialect=dialect, implementations={}),
+            summary=Summary(),
+            did_fail_fast=False,
+        )
 
     @property
     def dialect(self):
@@ -406,28 +386,39 @@ class Report:
 
     @property
     def is_empty(self):
-        return self.summary.is_empty
+        return not self._cases
 
     @property
     def total_tests(self):
-        return self.summary.total_tests
+        return sum(len(case.tests) for case in self._cases.values())
 
     @property
     def implementations(self):
         return [each["image"] for each in self.metadata.implementations]
 
-    def flat_results(self):
-        for _, case, case_results in self.summary:
-            for i, _ in enumerate(case.tests):
-                yield {
+    def cases_with_results(
+        self,
+    ) -> Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ]
+    ]:
+        for seq, case in sorted(self._cases.items()):
+            case_results = self.summary[seq]
+            test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
+            for i, test in enumerate(case.tests):
+                by_implementation = {
                     each: case_results[each].results[i]
                     for each in self.implementations
                     if each in case_results
                 }
+                test_results.append((test, by_implementation))
+            yield case, test_results
 
     def generate_badges(self, target_dir: Path):
         label = _DIALECT_URI_TO_SHORTNAME[self.dialect]
-        total = self.summary.total_tests
+        total = self.total_tests
         for impl in self.metadata.implementations:
             dialect_versions = [URL.parse(each) for each in impl["dialects"]]
             if self.dialect not in dialect_versions:

@@ -207,7 +207,11 @@ async def bowtie(*args, exit_code=0):
         except _report.EmptyReport:
             results = []
         else:
-            results = list(report.flat_results())
+            results = [
+                test_result
+                for _, case_results in report.cases_with_results()
+                for _, test_result in case_results
+            ]
 
         if exit_code == -1:
             assert process.returncode != 0, stderr

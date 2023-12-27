@@ -30,7 +30,13 @@ import structlog
 import structlog.typing
 
 from bowtie import GITHUB, _report
-from bowtie._commands import ReportableResult as Result, Seq, Test, TestCase
+from bowtie._commands import (
+    AnyTestResult,
+    ReportableResult as Result,
+    Seq,
+    Test,
+    TestCase,
+)
 from bowtie._core import (
     DialectRunner,
     GotStderr,
@@ -255,15 +261,37 @@ def summary(input: TextIO, format: _F, show: str):
         results = _ordered_failures(report)
         to_table = _failure_table
 
-        def to_serializable(
+        def to_serializable(  # type: ignore[reportGeneralTypeIssues]
             value: Iterable[tuple[tuple[str, str], _report.Count]],
         ):
             return [(metadata, asdict(counts)) for metadata, counts in value]
 
     else:
-        results = _validation_results(report)
+        results = report.cases_with_results()
         to_table = _validation_results_table
         to_serializable = list  # type: ignore[reportGeneralTypeIssues]
+
+        def to_serializable(
+            value: Iterable[
+                tuple[
+                    TestCase,
+                    Iterable[tuple[Test, dict[str, AnyTestResult]]],
+                ]
+            ],
+        ):
+            return [
+                (
+                    case.schema,
+                    [
+                        (
+                            test.instance,
+                            {k: v.description for k, v in test_result.items()},
+                        )
+                        for test, test_result in test_results
+                    ],
+                )
+                for case, test_results in value
+            ]
 
     match format:
         case "json":
@@ -312,23 +340,11 @@ def _failure_table(
     return table
 
 
-def _validation_results(
-    report: _report.Report,
-) -> Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]]:
-    for _, case, case_results in report.summary:
-        results: list[tuple[object, dict[str, str]]] = []
-        for i, test in enumerate(case.tests):
-            descriptions: dict[str, str] = {
-                each: case_results[each].results[i].description
-                for each in report.implementations
-            }
-            results.append((test.instance, descriptions))
-        yield case.schema, results
-
-
 def _validation_results_table(
     report: _report.Report,
-    results: Iterable[tuple[Any, Iterable[tuple[Any, dict[str, str]]]]],
+    results: Iterable[
+        tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
+    ],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
@@ -341,7 +357,7 @@ def _validation_results_table(
     # TODO: sort the columns?
     implementations = report.metadata.implementations
 
-    for schema, case_results in results:
+    for case, test_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
         for implementation in implementations:
             subtable.add_column(
@@ -351,13 +367,16 @@ def _validation_results_table(
                 ),
             )
 
-        for instance, test_results in case_results:
+        for test, test_result in test_results:
             subtable.add_row(
-                json.dumps(instance),
-                *(test_results[each["image"]] for each in implementations),
+                json.dumps(test.instance),
+                *(
+                    test_result[each["image"]].description
+                    for each in implementations
+                ),
             )
 
-        table.add_row(json.dumps(schema, indent=2), subtable)
+        table.add_row(json.dumps(case.schema, indent=2), subtable)
         table.add_section()
 
     return table
