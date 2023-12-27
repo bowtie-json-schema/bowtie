@@ -307,7 +307,7 @@ def _ordered_failures(
     counts = (
         (
             (implementation["name"], implementation["language"]),
-            report.summary.by_implementation[implementation["image"]],
+            report.counts[implementation["image"]],
         )
         for implementation in report.metadata.implementations
     )

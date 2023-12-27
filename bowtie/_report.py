@@ -203,36 +203,30 @@ class Count:
 
 @frozen
 class Summary:
-    _results: HashTrieMap[Seq, HashTrieMap[str, AnyCaseResult]] = field(
+    results: HashTrieMap[Seq, HashTrieMap[str, AnyCaseResult]] = field(
         default=HashTrieMap(),
         repr=False,
     )
-    by_implementation: HashTrieMap[str, Count] = field(
-        default=HashTrieMap(),
-        repr=False,
-    )
-
-    def __getitem__(self, seq: Seq):
-        return self._results[seq]
+    counts: HashTrieMap[str, Count] = field(default=HashTrieMap(), repr=False)
 
     # Assembly
 
     def with_result(self, result: AnyCaseResult):
         seq = result.seq
-        results = self._results.get(seq, HashTrieMap())
+        results = self.results.get(seq, HashTrieMap())
         implementation = result.implementation
         if implementation in results:
             raise _InvalidBowtieReport(f"Duplicate result for case ID {seq}!")
 
-        count = self.by_implementation.get(implementation, Count())
+        count = self.counts.get(implementation, Count())
 
         return evolve(
             self,
-            by_implementation=self.by_implementation.insert(
+            counts=self.counts.insert(
                 implementation,
                 result.be_counted(count),
             ),
-            results=self._results.insert(
+            results=self.results.insert(
                 seq,
                 results.insert(implementation, result),
             ),
@@ -294,8 +288,8 @@ class RunMetadata:
 @frozen
 class Report:
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases")
+    _summary: Summary = field(alias="summary")
     metadata: RunMetadata
-    summary: Summary
     did_fail_fast: bool
 
     @classmethod
@@ -365,6 +359,10 @@ class Report:
         return sum(len(case.tests) for case in self._cases.values())
 
     @property
+    def counts(self):
+        return self._summary.counts
+
+    @property
     def implementations(self):
         return [each["image"] for each in self.metadata.implementations]
 
@@ -377,15 +375,15 @@ class Report:
         ]
     ]:
         for seq, case in sorted(self._cases.items()):
-            case_results = self.summary[seq]
+            case_results = self._summary.results[seq]
             test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
             for i, test in enumerate(case.tests):
-                by_implementation = {
+                counts = {
                     each: case_results[each].results[i]
                     for each in self.implementations
                     if each in case_results
                 }
-                test_results.append((test, by_implementation))
+                test_results.append((test, counts))
             yield case, test_results
 
     def generate_badges(self, target_dir: Path):
@@ -401,7 +399,7 @@ class Report:
             )
             name = impl["name"]
             lang = impl["language"]
-            counts = self.summary.by_implementation[impl["image"]]
+            counts = self._summary.counts[impl["image"]]
             passed = (
                 total
                 - counts.failed_tests
