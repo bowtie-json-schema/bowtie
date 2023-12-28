@@ -203,34 +203,13 @@ class Count:
 
 @frozen
 class Summary:
-    results: HashTrieMap[Seq, HashTrieMap[str, AnyCaseResult]] = field(
-        default=HashTrieMap(),
-        repr=False,
-    )
     counts: HashTrieMap[str, Count] = field(default=HashTrieMap(), repr=False)
 
-    # Assembly
-
     def with_result(self, result: AnyCaseResult):
-        seq = result.seq
-        results = self.results.get(seq, HashTrieMap())
         implementation = result.implementation
-        if implementation in results:
-            raise _InvalidBowtieReport(f"Duplicate result for case ID {seq}!")
-
-        count = self.counts.get(implementation, Count())
-
-        return evolve(
-            self,
-            counts=self.counts.insert(
-                implementation,
-                result.be_counted(count),
-            ),
-            results=self.results.insert(
-                seq,
-                results.insert(implementation, result),
-            ),
-        )
+        old = self.counts.get(implementation, Count())
+        new_counts = self.counts.insert(implementation, result.be_counted(old))
+        return evolve(self, counts=new_counts)
 
 
 @frozen
@@ -276,6 +255,10 @@ class RunMetadata:
     def implementations(self):
         return self._implementations.values()
 
+    @property
+    def images(self):
+        return (each["image"] for each in self._implementations.values())
+
     def serializable(self):
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
         as_dict.update(
@@ -288,6 +271,10 @@ class RunMetadata:
 @frozen
 class Report:
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases")
+    _results: HashTrieMap[str, HashTrieMap[Seq, AnyCaseResult]] = field(
+        repr=False,
+        alias="results",
+    )
     _summary: Summary = field(alias="summary")
     metadata: RunMetadata
     did_fail_fast: bool
@@ -301,34 +288,41 @@ class Report:
         metadata = RunMetadata.from_dict(**header)
 
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
+        empty: HashTrieMap[Seq, AnyCaseResult] = HashTrieMap()
+        results = HashTrieMap.fromkeys(metadata.images, empty)
 
-        summary, did_fail_fast = Summary(), False
+        summary = Summary()
         for data in iterator:
             match data:
                 case {"seq": Seq(seq), "case": case}:
                     if seq in cases:
                         raise _InvalidBowtieReport(f"Duplicate case: {seq}")
-
-                    case["dialect"] = metadata.dialect
-                    case = TestCase.from_dict(**case)
+                    case = TestCase.from_dict(dialect=metadata.dialect, **case)
                     cases = cases.insert(seq, case)
-                case data if "caught" in data:
-                    error = CaseErrored(**data)
-                    summary = summary.with_result(error)
-                case {"skipped": True, **skip}:
-                    skip = CaseSkipped(**skip)
-                    summary = summary.with_result(skip)
+                    continue
                 case {"did_fail_fast": did_fail_fast}:
-                    break
+                    return cls(
+                        results=results,
+                        cases=cases,
+                        metadata=metadata,
+                        summary=summary,
+                        did_fail_fast=did_fail_fast,
+                    )
+                case data if "caught" in data:
+                    result = CaseErrored(**data)
+                case {"skipped": True, **skip}:
+                    result = CaseSkipped(**skip)
                 case _:
                     result = CaseResult.from_dict(data)
-                    summary = summary.with_result(result)
-        return cls(
-            cases=cases,
-            metadata=metadata,
-            summary=summary,
-            did_fail_fast=did_fail_fast,
-        )
+
+            summary = summary.with_result(result)
+            current = results.get(result.implementation, HashTrieMap())
+            results = results.insert(  # TODO: Complain if present
+                result.implementation,
+                current.insert(result.seq, result),
+            )
+
+        raise _InvalidBowtieReport("Report data is truncated, no footer found")
 
     @classmethod
     def from_serialized(cls, serialized: Iterable[str]) -> Self:
@@ -341,6 +335,7 @@ class Report:
         """
         return cls(
             cases=HashTrieMap(),
+            results=HashTrieMap(),
             metadata=RunMetadata(dialect=dialect, implementations={}),
             summary=Summary(),
             did_fail_fast=False,
@@ -364,7 +359,7 @@ class Report:
 
     @property
     def implementations(self):
-        return [each["image"] for each in self.metadata.implementations]
+        return self.metadata.images
 
     def cases_with_results(
         self,
@@ -375,15 +370,13 @@ class Report:
         ]
     ]:
         for seq, case in sorted(self._cases.items()):
-            case_results = self._summary.results[seq]
             test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
             for i, test in enumerate(case.tests):
-                counts = {
-                    each: case_results[each].results[i]
+                test_result = {
+                    each: self._results[each][seq].results[i]
                     for each in self.implementations
-                    if each in case_results
                 }
-                test_results.append((test, counts))
+                test_results.append((test, test_result))
             yield case, test_results
 
     def generate_badges(self, target_dir: Path):

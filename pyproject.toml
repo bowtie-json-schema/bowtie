@@ -52,7 +52,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
-  "rpds.py>=0.15.2",
+  "rpds.py>=0.16.2",
   "structlog",
   "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
