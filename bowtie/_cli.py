@@ -259,18 +259,17 @@ def summary(input: TextIO, format: _F, show: str):
         return _EX_NOINPUT
 
     if show == "failures":
-        results = _ordered_failures(report)
+        results = report.worst_to_best()
         to_table = _failure_table
 
         def to_serializable(  # type: ignore[reportGeneralTypeIssues]
-            value: Iterable[tuple[tuple[str, str], Unsuccessful]],
+            value: Iterable[tuple[Mapping[str, str], Unsuccessful]],
         ):
-            return [(metadata, asdict(counts)) for metadata, counts in value]
+            return [(each["image"], asdict(counts)) for each, counts in value]
 
     else:
         results = report.cases_with_results()
         to_table = _validation_results_table
-        to_serializable = list  # type: ignore[reportGeneralTypeIssues]
 
         def to_serializable(
             value: Iterable[
@@ -302,22 +301,9 @@ def summary(input: TextIO, format: _F, show: str):
             console.Console().print(table)
 
 
-def _ordered_failures(
-    report: _report.Report,
-) -> Iterable[tuple[tuple[str, str], Unsuccessful]]:
-    counts = (
-        (
-            (implementation["name"], implementation["language"]),
-            report.counts[implementation["image"]],
-        )
-        for implementation in report.metadata.implementations
-    )
-    return sorted(counts, key=lambda each: (each[1].total, each[0][0]))
-
-
 def _failure_table(
     report: _report.Report,
-    results: list[tuple[tuple[str, str], Unsuccessful]],
+    results: list[tuple[Mapping[str, str], Unsuccessful]],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
@@ -328,12 +314,12 @@ def _failure_table(
         title="Bowtie",
         caption=f"{report.total_tests} {test} ran\n",
     )
-    for (implementation, language), counts in results:
+    for each, unsuccessful in results:
         table.add_row(
-            Text.assemble(implementation, (f" ({language})", "dim")),
-            str(counts.skipped),
-            str(counts.errored),
-            str(counts.failed),
+            Text.assemble(each["name"], (f" ({each['language']})", "dim")),
+            str(unsuccessful.skipped),
+            str(unsuccessful.errored),
+            str(unsuccessful.failed),
         )
     return table
 

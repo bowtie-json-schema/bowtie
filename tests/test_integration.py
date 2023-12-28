@@ -719,7 +719,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     assert stderr == ""
     assert json.loads(stdout) == [
         [
-            ["envsonschema", "python"],
+            "bowtie-integration-tests/envsonschema",
             dict(failed=2, skipped=0, errored=0),
         ],
     ]

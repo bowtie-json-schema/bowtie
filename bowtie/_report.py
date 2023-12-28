@@ -343,9 +343,18 @@ class Report:
     def total_tests(self):
         return sum(len(case.tests) for case in self._cases.values())
 
-    @property
-    def counts(self):
-        return self._summary.counts
+    def worst_to_best(self):
+        """
+        All implementations ordered by number of unsuccessful tests.
+
+        Ties are then broken alphabetically.
+        """
+        unsuccessful = [
+            (implementation, self._summary.counts[implementation["image"]])
+            for implementation in self.metadata.implementations
+        ]
+        unsuccessful.sort(key=lambda each: (each[1].total, each[0]["name"]))
+        return unsuccessful
 
     @property
     def implementations(self):
