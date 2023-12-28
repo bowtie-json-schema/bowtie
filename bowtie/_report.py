@@ -393,12 +393,7 @@ class Report:
             name = impl["name"]
             lang = impl["language"]
             counts = self._summary.counts[impl["image"]]
-            passed = (
-                total
-                - counts.failed_tests
-                - counts.errored_tests
-                - counts.skipped_tests
-            )
+            passed = total - counts.unsuccessful_tests
             pct = (passed / total) * 100
             r, g, b = 100 - int(pct), int(pct), 0
             badge_per_draft = {
