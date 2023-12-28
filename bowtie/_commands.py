@@ -13,7 +13,7 @@ except ImportError:
 
 import json
 
-from attrs import asdict, evolve, field, frozen
+from attrs import asdict, field, frozen
 from referencing import Registry, Specification
 from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 
@@ -31,10 +31,31 @@ if TYPE_CHECKING:
     from url import URL
 
     from bowtie._core import DialectRunner
-    from bowtie._report import CaseReporter, Count
+    from bowtie._report import CaseReporter
 
 
 Seq = int
+
+
+@frozen
+class Count:
+    failed_tests: int = 0
+    errored_tests: int = 0
+    skipped_tests: int = 0
+
+    def __add__(self, other: Count):
+        return Count(
+            failed_tests=self.failed_tests + other.failed_tests,
+            errored_tests=self.errored_tests + other.errored_tests,
+            skipped_tests=self.skipped_tests + other.skipped_tests,
+        )
+
+    @property
+    def unsuccessful_tests(self):
+        """
+        Any test which was not a successful result, including skips.
+        """
+        return self.errored_tests + self.failed_tests + self.skipped_tests
 
 
 @frozen
@@ -349,7 +370,7 @@ class AnyCaseResult(ReportableResult, Protocol):
     def results(self) -> Sequence[AnyTestResult]:
         ...
 
-    def be_counted(self, count: Count) -> Count:
+    def count(self) -> Count:
         ...
 
 
@@ -375,24 +396,20 @@ class CaseResult:
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
 
-    def be_counted(self, count: Count) -> Count:
+    def count(self) -> Count:
+        skipped = errored = failed = 0
         for test, failed in self.compare():
             if test.skipped:
-                count = evolve(
-                    count,
-                    skipped_tests=count.skipped_tests + 1,
-                )
+                skipped += 1
             elif test.errored:
-                count = evolve(
-                    count,
-                    errored_tests=count.errored_tests + 1,
-                )
+                errored += 1
             elif failed:
-                count = evolve(
-                    count,
-                    failed_tests=count.failed_tests + 1,
-                )
-        return count
+                failed += 1
+        return Count(
+            skipped_tests=skipped,
+            failed_tests=failed,
+            errored_tests=errored,
+        )
 
     def report(self, reporter: CaseReporter) -> None:
         reporter.got_results(self)
@@ -446,11 +463,8 @@ class CaseErrored:
             context=context,
         )
 
-    def be_counted(self, count: Count) -> Count:
-        return evolve(
-            count,
-            errored_tests=count.errored_tests + len(self.results),
-        )
+    def count(self) -> Count:
+        return Count(errored_tests=len(self.results))
 
     def report(self, reporter: CaseReporter):
         reporter.case_errored(self)
@@ -481,11 +495,8 @@ class CaseSkipped:
         results = [SkippedTest.in_skipped_case() for _ in self.expected]
         object.__setattr__(self, "results", results)
 
-    def be_counted(self, count: Count) -> Count:
-        return evolve(
-            count,
-            skipped_tests=count.skipped_tests + len(self.results),
-        )
+    def count(self) -> Count:
+        return Count(skipped_tests=len(self.results))
 
     def report(self, reporter: CaseReporter):
         reporter.skipped(self)

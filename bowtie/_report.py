@@ -15,6 +15,7 @@ from bowtie._commands import (
     CaseErrored,
     CaseResult,
     CaseSkipped,
+    Count,
     Seq,
     StartedDialect,
     TestCase,
@@ -188,28 +189,13 @@ class CaseReporter:
 
 
 @frozen
-class Count:
-    failed_tests: int = 0
-    errored_tests: int = 0
-    skipped_tests: int = 0
-
-    @property
-    def unsuccessful_tests(self):
-        """
-        Any test which was not a successful result, including skips.
-        """
-        return self.errored_tests + self.failed_tests + self.skipped_tests
-
-
-@frozen
 class Summary:
     counts: HashTrieMap[str, Count] = field(default=HashTrieMap(), repr=False)
 
     def with_result(self, result: AnyCaseResult):
         implementation = result.implementation
-        old = self.counts.get(implementation, Count())
-        new_counts = self.counts.insert(implementation, result.be_counted(old))
-        return evolve(self, counts=new_counts)
+        count = self.counts.get(implementation, Count()) + result.count()
+        return evolve(self, counts=self.counts.insert(implementation, count))
 
 
 @frozen
