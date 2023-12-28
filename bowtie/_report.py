@@ -190,15 +190,20 @@ class CaseReporter:
 
 @frozen
 class Summary:
-    counts: HashTrieMap[str, Unsuccessful] = field(
-        default=HashTrieMap(),
-        repr=False,
-    )
+    counts: HashTrieMap[str, Unsuccessful]
+
+    @classmethod
+    def from_implementations(cls, implementations: Iterable[str]):
+        unsuccessful = Unsuccessful()
+        empty: HashTrieMap[str, Unsuccessful] = HashTrieMap.fromkeys(
+            implementations,
+            unsuccessful,
+        )
+        return cls(counts=empty)
 
     def with_result(self, result: AnyCaseResult):
         implementation = result.implementation
-        count = self.counts.get(implementation, Unsuccessful())
-        count += result.unsuccessful()
+        count = self.counts[implementation] + result.unsuccessful()
         return evolve(self, counts=self.counts.insert(implementation, count))
 
 
@@ -281,7 +286,7 @@ class Report:
         empty: HashTrieMap[Seq, AnyCaseResult] = HashTrieMap()
         results = HashTrieMap.fromkeys(metadata.images, empty)
 
-        summary = Summary()
+        summary = Summary.from_implementations(metadata.images)
         for data in iterator:
             match data:
                 case {"seq": Seq(seq), "case": case}:
@@ -327,7 +332,7 @@ class Report:
             cases=HashTrieMap(),
             results=HashTrieMap(),
             metadata=RunMetadata(dialect=dialect, implementations={}),
-            summary=Summary(),
+            summary=Summary.from_implementations([]),
             did_fail_fast=False,
         )
 
