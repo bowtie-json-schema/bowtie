@@ -212,9 +212,10 @@ def implementations_with_metadata(
     return implementations.flatmap(
         lambda impls: fixed_dictionaries(
             {
-                name: metadata.map(
+                f"bowtie-hypothesis-generated/{name}": metadata.map(
                     lambda data, name=name: dict(
                         image=f"bowtie-hypothesis-generated/{name}",
+                        name=name,
                         **data,
                     ),
                 )
