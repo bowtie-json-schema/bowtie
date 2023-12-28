@@ -38,24 +38,24 @@ Seq = int
 
 
 @frozen
-class Count:
-    failed_tests: int = 0
-    errored_tests: int = 0
-    skipped_tests: int = 0
+class Unsuccessful:
+    failed: int = 0
+    errored: int = 0
+    skipped: int = 0
 
-    def __add__(self, other: Count):
-        return Count(
-            failed_tests=self.failed_tests + other.failed_tests,
-            errored_tests=self.errored_tests + other.errored_tests,
-            skipped_tests=self.skipped_tests + other.skipped_tests,
+    def __add__(self, other: Unsuccessful):
+        return Unsuccessful(
+            failed=self.failed + other.failed,
+            errored=self.errored + other.errored,
+            skipped=self.skipped + other.skipped,
         )
 
     @property
-    def unsuccessful_tests(self):
+    def total(self):
         """
         Any test which was not a successful result, including skips.
         """
-        return self.errored_tests + self.failed_tests + self.skipped_tests
+        return self.errored + self.failed + self.skipped
 
 
 @frozen
@@ -370,7 +370,7 @@ class AnyCaseResult(ReportableResult, Protocol):
     def results(self) -> Sequence[AnyTestResult]:
         ...
 
-    def count(self) -> Count:
+    def unsuccessful(self) -> Unsuccessful:
         ...
 
 
@@ -396,7 +396,7 @@ class CaseResult:
     def failed(self) -> bool:
         return any(failed for _, failed in self.compare())
 
-    def count(self) -> Count:
+    def unsuccessful(self) -> Unsuccessful:
         skipped = errored = failed = 0
         for test, failed in self.compare():
             if test.skipped:
@@ -405,11 +405,7 @@ class CaseResult:
                 errored += 1
             elif failed:
                 failed += 1
-        return Count(
-            skipped_tests=skipped,
-            failed_tests=failed,
-            errored_tests=errored,
-        )
+        return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
     def report(self, reporter: CaseReporter) -> None:
         reporter.got_results(self)
@@ -463,8 +459,8 @@ class CaseErrored:
             context=context,
         )
 
-    def count(self) -> Count:
-        return Count(errored_tests=len(self.results))
+    def unsuccessful(self) -> Unsuccessful:
+        return Unsuccessful(errored=len(self.results))
 
     def report(self, reporter: CaseReporter):
         reporter.case_errored(self)
@@ -495,8 +491,8 @@ class CaseSkipped:
         results = [SkippedTest.in_skipped_case() for _ in self.expected]
         object.__setattr__(self, "results", results)
 
-    def count(self) -> Count:
-        return Count(skipped_tests=len(self.results))
+    def unsuccessful(self) -> Unsuccessful:
+        return Unsuccessful(skipped=len(self.results))
 
     def report(self, reporter: CaseReporter):
         reporter.skipped(self)

@@ -15,10 +15,10 @@ from bowtie._commands import (
     CaseErrored,
     CaseResult,
     CaseSkipped,
-    Count,
     Seq,
     StartedDialect,
     TestCase,
+    Unsuccessful,
 )
 
 if TYPE_CHECKING:
@@ -190,11 +190,15 @@ class CaseReporter:
 
 @frozen
 class Summary:
-    counts: HashTrieMap[str, Count] = field(default=HashTrieMap(), repr=False)
+    counts: HashTrieMap[str, Unsuccessful] = field(
+        default=HashTrieMap(),
+        repr=False,
+    )
 
     def with_result(self, result: AnyCaseResult):
         implementation = result.implementation
-        count = self.counts.get(implementation, Count()) + result.count()
+        count = self.counts.get(implementation, Unsuccessful())
+        count += result.unsuccessful()
         return evolve(self, counts=self.counts.insert(implementation, count))
 
 
@@ -378,8 +382,8 @@ class Report:
             )
             name = impl["name"]
             lang = impl["language"]
-            counts = self._summary.counts[impl["image"]]
-            passed = total - counts.unsuccessful_tests
+            unsuccessful = self._summary.counts[impl["image"]]
+            passed = total - unsuccessful.total
             pct = (passed / total) * 100
             r, g, b = 100 - int(pct), int(pct), 0
             badge_per_draft = {

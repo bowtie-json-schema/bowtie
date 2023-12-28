@@ -36,6 +36,7 @@ from bowtie._commands import (
     Seq,
     Test,
     TestCase,
+    Unsuccessful,
 )
 from bowtie._core import (
     DialectRunner,
@@ -262,7 +263,7 @@ def summary(input: TextIO, format: _F, show: str):
         to_table = _failure_table
 
         def to_serializable(  # type: ignore[reportGeneralTypeIssues]
-            value: Iterable[tuple[tuple[str, str], _report.Count]],
+            value: Iterable[tuple[tuple[str, str], Unsuccessful]],
         ):
             return [(metadata, asdict(counts)) for metadata, counts in value]
 
@@ -303,7 +304,7 @@ def summary(input: TextIO, format: _F, show: str):
 
 def _ordered_failures(
     report: _report.Report,
-) -> Iterable[tuple[tuple[str, str], _report.Count]]:
+) -> Iterable[tuple[tuple[str, str], Unsuccessful]]:
     counts = (
         (
             (implementation["name"], implementation["language"]),
@@ -311,15 +312,12 @@ def _ordered_failures(
         )
         for implementation in report.metadata.implementations
     )
-    return sorted(
-        counts,
-        key=lambda each: (each[1].unsuccessful_tests, each[0][0]),
-    )
+    return sorted(counts, key=lambda each: (each[1].total, each[0][0]))
 
 
 def _failure_table(
     report: _report.Report,
-    results: list[tuple[tuple[str, str], _report.Count]],
+    results: list[tuple[tuple[str, str], Unsuccessful]],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
@@ -333,9 +331,9 @@ def _failure_table(
     for (implementation, language), counts in results:
         table.add_row(
             Text.assemble(implementation, (f" ({language})", "dim")),
-            str(counts.skipped_tests),
-            str(counts.errored_tests),
-            str(counts.failed_tests),
+            str(counts.skipped),
+            str(counts.errored),
+            str(counts.failed),
         )
     return table
 
