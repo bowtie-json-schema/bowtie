@@ -5,7 +5,7 @@ Hypothesis strategies and support for Bowtie.
 Note that this module depends on you having installed Hypothesis.
 """
 
-from string import printable
+from string import ascii_lowercase, digits, printable
 
 from attrs import asdict
 from hypothesis.strategies import (
@@ -44,7 +44,11 @@ schemas = booleans() | dictionaries(
 )
 
 seqs = integers(min_value=1)
-implementations = text(printable, min_size=1, max_size=50)
+implementation_names = text(  # FIXME: see the start command schema
+    ascii_lowercase + digits + "-+_",
+    min_size=1,
+    max_size=50,
+)
 dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
 
 
@@ -108,7 +112,7 @@ test_results = successful_tests | errored_tests | skipped_tests
 
 
 def case_results(
-    implementations=implementations,
+    implementations=implementation_names,
     seqs=seqs,
     min_tests=1,
     max_tests=10,
@@ -123,7 +127,7 @@ def case_results(
     return integers(min_value=min_tests, max_value=max_tests).flatmap(
         lambda size: builds(
             _commands.CaseResult,
-            implementation=implementations,
+            implementation=implementation_names,
             seq=seqs,
             results=lists(test_results, min_size=size, max_size=size),
             expected=lists(booleans() | none(), min_size=size, max_size=size),
@@ -131,13 +135,13 @@ def case_results(
     )
 
 
-def errored_cases(implementations=implementations, seqs=seqs):
+def errored_cases(implementations=implementation_names, seqs=seqs):
     """
     A test case which errored under an implementation (caught or not).
     """
     return builds(
         _commands.CaseErrored,
-        implementation=implementations,
+        implementation=implementation_names,
         seq=seqs,
         expected=lists(booleans() | none()),
         context=dictionaries(  # FIXME
@@ -150,7 +154,7 @@ def errored_cases(implementations=implementations, seqs=seqs):
 
 
 def skipped_cases(
-    implementations=implementations,
+    implementations=implementation_names,
     seqs=seqs,
     message=text(min_size=1, max_size=50) | none(),
     issue_url=text(min_size=1, max_size=50) | none(),
@@ -160,7 +164,7 @@ def skipped_cases(
     """
     return builds(
         _commands.CaseSkipped,
-        implementation=implementations,
+        implementation=implementation_names,
         seq=seqs,
         expected=lists(booleans() | none()),
         message=message,
@@ -174,7 +178,7 @@ any_case_results = case_results() | errored_cases() | skipped_cases()
 @composite
 def cases_and_results(
     draw,
-    implementations=sets(implementations, min_size=1, max_size=5),
+    implementations=sets(implementation_names, min_size=1, max_size=5),
     seqs=seqs,
     test_cases=test_cases(),
     min_cases=1,
@@ -203,7 +207,7 @@ def cases_and_results(
 
 
 def implementations_with_metadata(
-    implementations=sets(implementations, min_size=1, max_size=5),
+    implementations=sets(implementation_names, min_size=1, max_size=5),
     metadata=fixed_dictionaries({"language": text(min_size=1, max_size=20)}),
 ):
     """
