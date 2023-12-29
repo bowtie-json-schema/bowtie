@@ -6,7 +6,7 @@ import importlib.metadata
 import json
 import sys
 
-from attrs import asdict, evolve, field, frozen
+from attrs import asdict, field, frozen
 from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
@@ -189,25 +189,6 @@ class CaseReporter:
 
 
 @frozen
-class Summary:
-    counts: HashTrieMap[str, Unsuccessful]
-
-    @classmethod
-    def from_implementations(cls, implementations: Iterable[str]):
-        unsuccessful = Unsuccessful()
-        empty: HashTrieMap[str, Unsuccessful] = HashTrieMap.fromkeys(
-            implementations,
-            unsuccessful,
-        )
-        return cls(counts=empty)
-
-    def with_result(self, result: AnyCaseResult):
-        implementation = result.implementation
-        count = self.counts[implementation] + result.unsuccessful()
-        return evolve(self, counts=self.counts.insert(implementation, count))
-
-
-@frozen
 class RunMetadata:
     dialect: URL
     _implementations: Mapping[str, Mapping[str, Any]] = field(
@@ -270,7 +251,6 @@ class Report:
         repr=False,
         alias="results",
     )
-    _summary: Summary = field(alias="summary")
     metadata: RunMetadata
     did_fail_fast: bool
 
@@ -286,7 +266,6 @@ class Report:
         empty: HashTrieMap[Seq, AnyCaseResult] = HashTrieMap()
         results = HashTrieMap.fromkeys(metadata.images, empty)
 
-        summary = Summary.from_implementations(metadata.images)
         for data in iterator:
             match data:
                 case {"seq": Seq(seq), "case": case}:
@@ -300,7 +279,6 @@ class Report:
                         results=results,
                         cases=cases,
                         metadata=metadata,
-                        summary=summary,
                         did_fail_fast=did_fail_fast,
                     )
                 case data if "caught" in data:
@@ -310,7 +288,6 @@ class Report:
                 case _:
                     result = CaseResult.from_dict(data)
 
-            summary = summary.with_result(result)
             current = results.get(result.implementation, HashTrieMap())
             results = results.insert(  # TODO: Complain if present
                 result.implementation,
@@ -332,7 +309,6 @@ class Report:
             cases=HashTrieMap(),
             results=HashTrieMap(),
             metadata=RunMetadata(dialect=dialect, implementations={}),
-            summary=Summary.from_implementations([]),
             did_fail_fast=False,
         )
 
@@ -348,6 +324,20 @@ class Report:
     def total_tests(self):
         return sum(len(case.tests) for case in self._cases.values())
 
+    @property
+    def implementations(self):
+        return self.metadata.images
+
+    def unsuccessful(self, implementation: str) -> Unsuccessful:
+        """
+        A count of the unsuccessful tests for the given implementation.
+        """
+        results = self._results[implementation].values()
+        return sum(
+            (result.unsuccessful() for result in results),
+            Unsuccessful(),
+        )
+
     def worst_to_best(self):
         """
         All implementations ordered by number of unsuccessful tests.
@@ -355,15 +345,11 @@ class Report:
         Ties are then broken alphabetically.
         """
         unsuccessful = [
-            (implementation, self._summary.counts[implementation["image"]])
+            (implementation, self.unsuccessful(implementation["image"]))
             for implementation in self.metadata.implementations
         ]
         unsuccessful.sort(key=lambda each: (each[1].total, each[0]["name"]))
         return unsuccessful
-
-    @property
-    def implementations(self):
-        return self.metadata.images
 
     def cases_with_results(
         self,
@@ -396,7 +382,7 @@ class Report:
             )
             name = impl["name"]
             lang = impl["language"]
-            unsuccessful = self._summary.counts[impl["image"]]
+            unsuccessful = self.unsuccessful(impl["image"])
             passed = total - unsuccessful.total
             pct = (passed / total) * 100
             r, g, b = 100 - int(pct), int(pct), 0
