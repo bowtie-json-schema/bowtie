@@ -40,7 +40,7 @@ schemas = booleans() | dictionaries(
         | dictionaries(text(printable), children),
         max_leaves=3,
     ),
-    max_size=10,
+    max_size=5,
 )
 
 seqs = integers(min_value=1)
@@ -49,7 +49,38 @@ implementation_names = text(  # FIXME: see the start command schema
     min_size=1,
     max_size=50,
 )
+languages = text(printable, min_size=1, max_size=20)
 dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
+
+
+def implementations(
+    names=implementation_names,
+    languages=languages,
+    min_size=1,
+    max_size=5,
+):
+    """
+    Generate (unique) collections of implementations with their metadata.
+    """
+    return sets(
+        tuples(names, languages),
+        min_size=min_size,
+        max_size=max_size,
+    ).map(
+        lambda values: {
+            (image := f"bowtie-hypothesis-generated/{language}/{name}"): dict(
+                image=image,
+                name=name,
+                language=language,
+            )
+            for name, language in values
+        },
+    )
+
+
+implementation_images = implementations(min_size=1, max_size=1).map(
+    lambda result: next(iter(result)),
+)
 
 
 def tests(
@@ -112,7 +143,7 @@ test_results = successful_tests | errored_tests | skipped_tests
 
 
 def case_results(
-    implementations=implementation_names,
+    implementations=implementation_images,
     seqs=seqs,
     min_tests=1,
     max_tests=10,
@@ -127,7 +158,7 @@ def case_results(
     return integers(min_value=min_tests, max_value=max_tests).flatmap(
         lambda size: builds(
             _commands.CaseResult,
-            implementation=implementation_names,
+            implementation=implementations,
             seq=seqs,
             results=lists(test_results, min_size=size, max_size=size),
             expected=lists(booleans() | none(), min_size=size, max_size=size),
@@ -135,13 +166,13 @@ def case_results(
     )
 
 
-def errored_cases(implementations=implementation_names, seqs=seqs):
+def errored_cases(implementations=implementation_images, seqs=seqs):
     """
     A test case which errored under an implementation (caught or not).
     """
     return builds(
         _commands.CaseErrored,
-        implementation=implementation_names,
+        implementation=implementations,
         seq=seqs,
         expected=lists(booleans() | none()),
         context=dictionaries(  # FIXME
@@ -154,7 +185,7 @@ def errored_cases(implementations=implementation_names, seqs=seqs):
 
 
 def skipped_cases(
-    implementations=implementation_names,
+    implementations=implementation_images,
     seqs=seqs,
     message=text(min_size=1, max_size=50) | none(),
     issue_url=text(min_size=1, max_size=50) | none(),
@@ -164,7 +195,7 @@ def skipped_cases(
     """
     return builds(
         _commands.CaseSkipped,
-        implementation=implementation_names,
+        implementation=implementations,
         seq=seqs,
         expected=lists(booleans() | none()),
         message=message,
@@ -178,7 +209,7 @@ any_case_results = case_results() | errored_cases() | skipped_cases()
 @composite
 def cases_and_results(
     draw,
-    implementations=sets(implementation_names, min_size=1, max_size=5),
+    implementations=implementations(),
     seqs=seqs,
     test_cases=test_cases(),
     min_cases=1,
@@ -187,8 +218,6 @@ def cases_and_results(
     """
     A set of test cases along with their results for generated implementations.
     """
-    impls = draw(implementations)
-
     strategy = lists(
         tuples(seqs, test_cases),
         min_size=min_cases,
@@ -201,50 +230,24 @@ def cases_and_results(
         draw(
             case_results(seqs=just(seq), implementations=just(implementation)),
         )
-        for implementation in impls
+        for implementation in draw(implementations)
         for (seq, _) in seq_cases
     ]
 
 
-def implementations_with_metadata(
-    implementations=sets(implementation_names, min_size=1, max_size=5),
-    metadata=fixed_dictionaries({"language": text(min_size=1, max_size=20)}),
-):
-    """
-    Implementations along with their metadata.
-    """
-    return implementations.flatmap(
-        lambda impls: fixed_dictionaries(
-            {
-                f"bowtie-hypothesis-generated/{name}": metadata.map(
-                    lambda data, name=name: dict(
-                        image=f"bowtie-hypothesis-generated/{name}",
-                        name=name,
-                        **data,
-                    ),
-                )
-                for name in impls
-            },
-        ),
-    )
-
-
-def run_metadata(
-    dialects=dialects,
-    implementations_with_metadata=implementations_with_metadata,
-):
+def run_metadata(dialects=dialects, implementations=implementations()):
     """
     Generate just a report's metadata.
     """
     return builds(
         RunMetadata,
         dialect=dialects,
-        implementations=implementations_with_metadata,
+        implementations=implementations,
     )
 
 
 # Evade the s h a d o w
-_implementations_with_metadata = implementations_with_metadata
+_implementations = implementations
 _cases_and_results = cases_and_results
 _run_metadata = run_metadata
 
@@ -253,7 +256,7 @@ _run_metadata = run_metadata
 def report_data(
     draw,
     dialects=dialects,
-    implementations_with_metadata=None,
+    implementations=None,
     run_metadata=None,
     cases_and_results=None,
     fail_fast=booleans(),
@@ -261,15 +264,15 @@ def report_data(
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
-    if implementations_with_metadata is None:
+    if implementations is None:
         if cases_and_results is not None:
             raise ValueError(
                 "Providing cases+results without implementations can lead to "
                 "inconsistent reports.",
             )
-        implementations_with_metadata = _implementations_with_metadata()
-    implementations = draw(implementations_with_metadata)
-    names = implementations.keys()
+        implementations = _implementations()
+    impls = draw(implementations)
+    names = impls.keys()
 
     if cases_and_results is None:
         cases_and_results = _cases_and_results(implementations=just(names))
@@ -279,7 +282,7 @@ def report_data(
     if run_metadata is None:
         run_metadata = _run_metadata(
             dialects=dialects,
-            implementations_with_metadata=just(implementations),
+            implementations=just(impls),
         )
     return [  # FIXME: Combine with the logic in CaseReporter
         draw(run_metadata).serializable(),
