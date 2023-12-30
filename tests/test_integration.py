@@ -990,7 +990,7 @@ async def test_no_such_image():
     )
     assert stdout == ""
     assert (
-        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image]\n"  # noqa: E501
         in stderr
     ), stderr
 
@@ -1021,7 +1021,7 @@ async def test_no_such_image():
     )
     assert stdout == ""
     assert (
-        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image] \n"  # noqa: E501
+        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image]\n"  # noqa: E501
         in stderr
     ), stderr
 
