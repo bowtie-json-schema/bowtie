@@ -68,7 +68,7 @@ object TestFilterDraft201909 : TestFilter {
     )
 
     private val IGNORE_CASES_WITH_MIN_CONTAINS_ZERO = setOf(
-        "minContains = 0 with no maxContains"
+        "minContains = 0 with no maxContains",
     )
 
     override fun shouldSkipCase(caseDescription: String): String? {
@@ -85,9 +85,9 @@ object TestFilterDraft201909 : TestFilter {
     override fun shouldSkipTest(caseDescription: String, testDescription: String): String? {
         return when {
             caseDescription == "minContains = 0 with maxContains" &&
-                    testDescription == "empty data" ->
-                        "'minContains' does not affect contains work -" +
-                                " at least one element must match 'contains' schema"
+                testDescription == "empty data" ->
+                "'minContains' does not affect contains work -" +
+                    " at least one element must match 'contains' schema"
             else -> null
         }
     }

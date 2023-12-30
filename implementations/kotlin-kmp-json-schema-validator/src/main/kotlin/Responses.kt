@@ -94,5 +94,4 @@ private class TestResultSerializer : JsonContentPolymorphicSerializer<TestResult
             else -> error("unknown object type")
         }
     }
-
 }
