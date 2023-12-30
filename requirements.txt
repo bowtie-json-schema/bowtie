@@ -14,6 +14,7 @@ attrs==23.2.0
     # via
     #   aiohttp
     #   bowtie-json-schema (pyproject.toml)
+    #   diff
     #   jsonschema
     #   referencing
 certifi==2024.2.2
@@ -27,6 +28,8 @@ click==8.1.7
 cryptography==42.0.5
     # via pyjwt
 diagnostic==2.0.0
+    # via bowtie-json-schema (pyproject.toml)
+diff==2023.12.6
     # via bowtie-json-schema (pyproject.toml)
 docutils==0.20.1
     # via diagnostic

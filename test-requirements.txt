@@ -21,6 +21,7 @@ attrs==23.2.0
     #   -r requirements.txt
     #   aiohttp
     #   bowtie-json-schema
+    #   diff
     #   hypothesis
     #   jsonschema
     #   referencing
@@ -47,6 +48,10 @@ cryptography==42.0.5
     #   -r requirements.txt
     #   pyjwt
 diagnostic==2.0.0
+    # via
+    #   -r requirements.txt
+    #   bowtie-json-schema
+diff==2023.12.6
     # via
     #   -r requirements.txt
     #   bowtie-json-schema

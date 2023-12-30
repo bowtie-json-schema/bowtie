@@ -16,6 +16,7 @@ attrs==23.2.0
     # via
     #   aiohttp
     #   bowtie-json-schema
+    #   diff
     #   jsonschema
     #   referencing
 babel==2.14.0
@@ -37,6 +38,8 @@ click==8.1.7
 cryptography==42.0.5
     # via pyjwt
 diagnostic==2.0.0
+    # via bowtie-json-schema
+diff==2023.12.6
     # via bowtie-json-schema
 docutils==0.20.1
     # via
