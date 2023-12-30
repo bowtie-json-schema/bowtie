@@ -86,7 +86,8 @@ object TestFilterDraft201909 : TestFilter {
         return when {
             caseDescription == "minContains = 0 with maxContains" &&
                     testDescription == "empty data" ->
-                        "'minContains' does not affect contains work - at least one element must match 'contains' schema"
+                        "'minContains' does not affect contains work -" +
+                                " at least one element must match 'contains' schema"
             else -> null
         }
     }
