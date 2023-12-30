@@ -42,7 +42,7 @@ jobs:
       - name: Build the UI
         run: pnpm run --dir frontend build --base=${{ vars.BOWTIE_BASE_URL || '/bowtie' }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: frontend-build
           path: frontend/build
