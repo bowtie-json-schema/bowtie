@@ -1,5 +1,6 @@
 import io.github.optimumcode.json.schema.ErrorCollector
 import io.github.optimumcode.json.schema.JsonSchema
+import io.github.optimumcode.json.schema.SchemaType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
@@ -29,19 +30,7 @@ fun main() {
 
 private val SUPPORTED_DIALECTS: Set<String> = hashSetOf(
     "http://json-schema.org/draft-07/schema#",
-)
-
-/**
- * All these cases are ignored because they contain remote refs
- * Library does not support them yet.
- */
-private val IGNORED_CASES: Set<String> = hashSetOf(
-    "validate definition against metaschema",
-    "base URI change - change folder",
-    "base URI change - change folder in subschema",
-    "base URI change",
-    "retrieved nested refs resolve relative to their URI not \$id",
-    "\$ref to \$ref finds location-independent \$id",
+    "https://json-schema.org/draft/2019-09/schema",
 )
 
 enum class Result { CONTINUE, STOP }
@@ -51,11 +40,12 @@ class BowtieSampsonSchemaValidatorLauncher(
     private val json: Json,
 ) {
     private var started: Boolean = false
-    private var currentDialect: String = ""
+    private var currentDialect: SchemaType? = null
     private val libraryVersion: String
     private val libraryHomepage: String
     private val libraryIssues: String
     private val librarySource: String
+    private var testFilter: TestFilter = TestFilterDraft7
 
     init {
         val attributes: Attributes = javaClass.getResourceAsStream("META-INF/MANIFEST.MF").use {
@@ -83,23 +73,9 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
     }
 
-    private fun shouldSkipCase(caseDescription: String): String? {
-        return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            caseDescription in IGNORED_CASES || caseDescription.contains("remote ref") ->
-                "remote schema loading is not yet supported"
-            else -> null
-        }
-    }
-
-    @Suppress("detekt:UnusedPrivateMember", "detekt:FunctionOnlyReturningConstant")
-    private fun shouldSkipTest(caseDescription: String, testDescription: String): String? {
-        return null
-    }
-
     private fun handleRun(command: Command.Run) {
         requireStarted()
-        shouldSkipCase(command.case.description)?.also { reason ->
+        testFilter.shouldSkipCase(command.case.description)?.also { reason ->
             writer.writeLine(
                 json.encodeToString(
                     RunResponse.Skipped(
@@ -114,7 +90,7 @@ class BowtieSampsonSchemaValidatorLauncher(
 
         @Suppress("detekt:TooGenericExceptionCaught")
         val schema = try {
-            JsonSchema.fromJsonElement(schemaDefinition)
+            JsonSchema.fromJsonElement(schemaDefinition, currentDialect)
         } catch (ex: Exception) {
             writer.writeLine(
                 json.encodeToString(
@@ -135,7 +111,7 @@ class BowtieSampsonSchemaValidatorLauncher(
     private fun runCase(command: Command.Run, schema: JsonSchema) {
         val results: List<TestResult> = command.case.tests.map { test ->
             runCatching {
-                shouldSkipTest(command.case.description, test.description)?.let { reason ->
+                testFilter.shouldSkipTest(command.case.description, test.description)?.let { reason ->
                     TestResult.Skipped(message = reason)
                 } ?: run {
                     val valid = schema.validate(test.instance, ErrorCollector.EMPTY)
@@ -164,6 +140,7 @@ class BowtieSampsonSchemaValidatorLauncher(
 
     private fun handleDialect(command: Command.Dialect): Result {
         requireStarted()
+        currentDialect = null
         val supported = command.dialect in SUPPORTED_DIALECTS
         writer.writeLine(
             json.encodeToString(
@@ -173,7 +150,8 @@ class BowtieSampsonSchemaValidatorLauncher(
             ),
         )
         if (supported) {
-            currentDialect = command.dialect
+            currentDialect = SchemaType.find(command.dialect)
+            testFilter = getFilter(currentDialect)
         }
         return Result.CONTINUE
     }

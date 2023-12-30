@@ -24,7 +24,7 @@ sealed class Command {
     ) : Command()
 
     @Serializable
-    object Stop : Command()
+    data object Stop : Command()
 }
 
 @Serializable
