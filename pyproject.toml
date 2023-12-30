@@ -51,6 +51,7 @@ dependencies = [
   "aiodocker",
   "attrs>=22.2.0",
   "diagnostic",
+  "diff>=2023.12.6",
   "github3.py",
   "jsonschema>=4.19.0",
   "jsonschema_lexer",

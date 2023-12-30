@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from itertools import count
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -53,6 +54,10 @@ class MissingFooter(InvalidReport):
     Even though that only tells us whether the report failed fast, it might
     mean there's actual data missing too.
     """
+
+
+class IncompatibleDiff(Exception):
+    pass
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
@@ -170,6 +175,14 @@ class RunMetadata:
         return as_dict
 
 
+@frozen
+class Diff:
+    report: Report
+
+    def explain(self):
+        return "Reports were not the same."  # FIXME
+
+
 @frozen(eq=False)
 class Report:
     r"""
@@ -192,7 +205,7 @@ class Report:
         alias="results",
     )
     metadata: RunMetadata
-    did_fail_fast: bool
+    did_fail_fast: bool = field(eq=False, repr=False)
 
     def __eq__(self, other: object):
         if type(other) is not Report:
@@ -288,6 +301,68 @@ class Report:
             metadata=RunMetadata(implementations=implementations, **kwargs),
             did_fail_fast=False,
         )
+
+    def __diff__(self, other: Report) -> Diff:
+        """
+        Diff two reports, producing a new report with the differences.
+
+        Raises:
+
+            IncompatibleDiff:
+
+                If the two reports are not from the same dialect
+
+        """
+        if self.metadata.dialect != other.metadata.dialect:
+            raise IncompatibleDiff(self, other)
+
+        # We want to compare cases regardless of their `seq`, so we go via JSON
+        # so that we can rely on hashability
+        def results_for(seq: Seq):
+            return (
+                (image, self._results[image][seq]) for image in self._results
+            )
+
+        seqs = count(1)
+        cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
+        images = self._results.keys() | other._results
+        empty: HashTrieMap[Seq, SeqResult] = HashTrieMap()
+        results: HashTrieMap[
+            ImplementationId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap.fromkeys(images, empty)
+
+        # hashable case+tests -> seq in other
+        cases_json = {
+            case.uniq(): (case, results_for(seq))
+            for seq, case in self._cases.items()
+        }
+        for old, case in other._cases.items():
+            match = cases_json.pop(case.uniq(), None)
+            if match is None:
+                seq: Seq = next(seqs)
+                cases = cases.insert(seq, case)
+                for image, subresults in other._results.items():
+                    with_missing = results[image].insert(seq, subresults[old])
+                    results = results.insert(image, with_missing)
+            else:
+                pass  # compare results
+
+        for seq, (case, case_results) in zip(seqs, cases_json.values()):
+            cases = cases.insert(seq, case)
+            for image, result in case_results:
+                with_extra = results[image].insert(seq, result)
+                results = results.insert(image, with_extra)
+
+        # TODO: diff(self,_cases, other.cases)
+
+        report = Report(
+            cases=cases,
+            metadata=self.metadata,
+            results=results,
+            did_fail_fast=False,  # FIXME: probably `self or older`'s attr
+        )
+        return Diff(report=report)
 
     @property
     def implementations(self) -> Sequence[ImplementationInfo]:

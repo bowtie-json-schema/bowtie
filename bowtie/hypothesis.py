@@ -7,6 +7,7 @@ Note that this module depends on you having installed Hypothesis.
 
 from string import printable
 
+from diff import diff
 from hypothesis.provisional import urls
 from hypothesis.strategies import (
     booleans,
@@ -25,6 +26,7 @@ from hypothesis.strategies import (
     recursive,
     register_type_strategy,
     sampled_from,
+    shared,
     text,
     tuples,
     uuids,
@@ -120,7 +122,7 @@ def implementation_infos(
 
 
 def implementations(
-    infos=implementation_infos(),
+    infos=implementation_infos(dialects=known_dialects),
     min_size=1,
     max_size=5,
 ):
@@ -375,6 +377,17 @@ def reports(**kwargs):
     Generate full Bowtie reports.
     """
     return report_data(**kwargs).map(Report.from_input)
+
+
+def report_diffs(dialects=known_dialects, **kwargs):
+    """
+    Generate Bowtie report diffs.
+    """
+    return builds(
+        diff,
+        reports(dialects=shared(dialects, key="diffs"), **kwargs),
+        reports(dialects=shared(dialects, key="diffs"), **kwargs),
+    ).filter(bool)
 
 
 # FIXME: These don't seem to do anything (in that builds() still fails?)

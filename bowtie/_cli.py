@@ -599,6 +599,33 @@ def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
     return f"\n\n{header}\n{separator}\n{body}\n\n"
 
 
+@subcommand
+@click.argument(
+    "older",
+    type=click.File(mode="r"),
+)
+@click.argument(
+    "newer",
+    default="-",
+    type=click.File(mode="r"),
+)
+def diff(older: TextIO, newer: TextIO):
+    """
+    Diff two Bowtie-produced reports.
+    """
+    new = _report.Report.from_serialized(newer)
+    old = _report.Report.from_serialized(older)
+
+    from diff import diff
+
+    difference = diff(new, old)
+
+    if difference is not None:
+        results = difference.report.cases_with_results()
+        table = _validation_results_table(difference.report, results)
+        rich.print(table)
+
+
 def _failure_table(
     report: _report.Report,
     results: list[tuple[ImplementationInfo, Unsuccessful]],
