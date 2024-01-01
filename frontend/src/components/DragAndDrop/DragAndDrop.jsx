@@ -98,7 +98,7 @@ export const DragAndDrop = () => {
               <CloudArrowUpFill size={80} />
               {invalidFile ? (
                 <h5 className={"pt-3 text-danger"}>
-                  You're uploading something that wasn't produced by Bowtie!
+                  That doesn&apos;t look like a Bowtie report.
                 </h5>
               ) : (
                 <>
