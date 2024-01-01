@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
+import Dialect from "../data/Dialect";
 
 const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
@@ -74,42 +75,16 @@ const NavBar = () => {
                   Dialects{" "}
                 </a>
                 <ul className="dropdown-menu">
-                  <li>
-                    <NavLink
-                      className="dropdown-item"
-                      to="/dialects/draft2020-12"
-                    >
-                      2020-12
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      className="dropdown-item"
-                      to="/dialects/draft2019-09"
-                    >
-                      2019-09
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft7">
-                      7
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft6">
-                      6
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft4">
-                      4
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/dialects/draft3">
-                      3
-                    </NavLink>
-                  </li>
+                  {Dialect.newest_to_oldest().map((dialect) => (
+                    <li key={dialect.path}>
+                      <NavLink
+                        className="dropdown-item"
+                        to={`/dialects/${dialect.path}`}
+                      >
+                        {dialect.prettyName}
+                      </NavLink>
+                    </li>
+                  ))}
                   <li>
                     <NavLink className="dropdown-item" to="/local-report/">
                       Local report

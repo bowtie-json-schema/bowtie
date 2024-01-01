@@ -45,6 +45,13 @@ export default class Dialect {
     return Dialect.all.values();
   }
 
+  static newest_to_oldest(): Array<Dialect> {
+    return Array.from(Dialect.known()).sort(
+      (d1: Dialect, d2: Dialect) =>
+        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
+    );
+  }
+
   static forPath(path: string): Dialect {
     const dialect = Dialect.all.get(path);
     if (!dialect) {
