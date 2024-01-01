@@ -1,6 +1,6 @@
 import "./ImplementationRow.css";
 import { useState } from "react";
-// @ts-ignore
+// @ts-expect-error: FIXME: Not yet typescripted
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink } from "react-router-dom";

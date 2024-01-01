@@ -1,4 +1,3 @@
-// @ts-ignore
 import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
 import { ReportData, calculateTotals } from "../../data/parseReportData";
