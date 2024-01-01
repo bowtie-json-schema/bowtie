@@ -38,6 +38,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Install dependencies
         run: >
           sudo apt-get update &&
@@ -46,6 +47,10 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -57,6 +62,7 @@ jobs:
           allow-prereleases: true
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
+
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
 
