@@ -330,6 +330,17 @@ def requirements(session):
         )
 
 
+@session(python=False, name="build(ui)")
+def build_ui(session):
+    """
+    Check that the UI properly builds.
+    """
+    needs_install = not UI.joinpath("node_modules").is_dir()
+    if needs_install:
+        session.run("pnpm", "install", "--frozen-lockfile", "--dir", UI)
+    session.run("pnpm", "run", "--dir", UI, "build")
+
+
 @session(default=False, python=False)
 def ui(session):
     """

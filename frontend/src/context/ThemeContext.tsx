@@ -1,10 +1,14 @@
 import { ReactNode, createContext, useState, useEffect } from "react";
 
-export const ThemeContext = createContext("light");
-
 type ThemeContextProviderProps = {
-  children: ReactNode;
+  isDarkMode: boolean;
+  children?: ReactNode;
 };
+
+export const ThemeContext = createContext<ThemeContextProviderProps>({
+  children: [],
+  isDarkMode: false,
+});
 
 const ThemeContextProvider = ({ children }: ThemeContextProviderProps) => {
   const [isDarkMode, setDarkMode] = useState(
