@@ -31,6 +31,7 @@ fun main() {
 private val SUPPORTED_DIALECTS: Set<String> = hashSetOf(
     "http://json-schema.org/draft-07/schema#",
     "https://json-schema.org/draft/2019-09/schema",
+    "https://json-schema.org/draft/2020-12/schema",
 )
 
 enum class Result { CONTINUE, STOP }
