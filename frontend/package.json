@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx --max-warnings 0"
   },
+  "type": "module",
   "dependencies": {
     "bootstrap": "^5.3.2",
     "moment": "^2.30.1",
