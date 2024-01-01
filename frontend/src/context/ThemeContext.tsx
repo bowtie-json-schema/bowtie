@@ -1,15 +1,19 @@
-import { createContext, useState, useEffect } from "react";
+import { ReactNode, createContext, useState, useEffect } from "react";
 
-export const ThemeContext = createContext();
+export const ThemeContext = createContext("light");
 
-const ThemeContextProvider = ({ children }) => {
+type ThemeContextProviderProps = {
+  children: ReactNode;
+};
+
+const ThemeContextProvider = ({ children }: ThemeContextProviderProps) => {
   const [isDarkMode, setDarkMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
   useEffect(() => {
     document
-      .querySelector("body")
+      .querySelector("html")!
       .setAttribute("data-bs-theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
