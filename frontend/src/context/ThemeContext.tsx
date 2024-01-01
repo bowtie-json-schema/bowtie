@@ -6,7 +6,6 @@ type ThemeContextProviderProps = {
 };
 
 export const ThemeContext = createContext<ThemeContextProviderProps>({
-  children: [],
   isDarkMode: false,
 });
 
