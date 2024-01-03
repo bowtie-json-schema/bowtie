@@ -1,4 +1,4 @@
-.. image:: https://github.com/bowtie-json-schema/branding/blob/main/logos/reversed-deeppink.png?raw=true
+.. image:: https://github.com/bowtie-json-schema/branding/blob/main/primary-brandmark/neg-deeppink.png?raw=true
   :alt: Bowtie
   :target: https://pypi.org/project/bowtie-json-schema/
 
