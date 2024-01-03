@@ -1,5 +1,6 @@
 {
-  "description": "A single test",
+  "description": "A single test case",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "$id": "tag:bowtie.report,2023:ihop:test",
 

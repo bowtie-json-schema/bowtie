@@ -1,5 +1,6 @@
 {
   "description": "A collection of related, runnable tests, either individually or themselves in subgroups",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "$id": "tag:bowtie.report,2023:ihop:group",
 
