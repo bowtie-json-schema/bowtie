@@ -40,7 +40,6 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             }
             started = true;
             var startResult = new JsonObject {
-                ["ready"] = true,
                 ["version"] = 1,
                 ["implementation"] =
                     new JsonObject {

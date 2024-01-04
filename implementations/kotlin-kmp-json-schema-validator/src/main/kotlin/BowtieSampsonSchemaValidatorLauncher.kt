@@ -162,7 +162,6 @@ class BowtieSampsonSchemaValidatorLauncher(
         writer.writeLine(
             json.encodeToString(
                 StartResponse(
-                    ready = true,
                     version = 1,
                     implementation = Implementation(
                         name = "kmp-json-schema-validator",

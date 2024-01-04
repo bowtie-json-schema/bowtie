@@ -12,8 +12,7 @@
           (case (request "cmd")
             "start" (do (assert (= (request "version") 1) "Not version 1!")
                         (reset! started true)
-                        {:ready true
-                         :version 1
+                        {:version 1
                          :implementation
                          {:language :clojure
                           :name :json-schema

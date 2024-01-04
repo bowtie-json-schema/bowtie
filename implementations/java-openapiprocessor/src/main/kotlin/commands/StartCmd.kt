@@ -13,7 +13,6 @@ class StartCmd {
 
         val properties = readProperties()
         return mapOf(
-            "ready" to true,
             "version" to 1,
             "implementation" to mapOf(
                 "language" to "java",

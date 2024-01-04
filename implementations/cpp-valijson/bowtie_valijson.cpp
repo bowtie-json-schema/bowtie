@@ -60,7 +60,6 @@ int main() {
 
       started = true;
 
-      response.AddMember("ready", true, allocator);
       response.AddMember("version", 1, allocator);
 
       Value implementation(kObjectType);

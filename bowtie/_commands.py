@@ -132,15 +132,9 @@ class TestCase:
 @frozen
 class Started:
     implementation: dict[str, Any]
-    ready: bool = field()
     version: int = field(
         validator=lambda _, __, got: exceptions.VersionMismatch.check(got),
     )
-
-    @ready.validator  # type: ignore[reportGeneralTypeIssues]
-    def _check_ready(self, _: Any, ready: bool):
-        if not ready:
-            raise exceptions.ImplementationNotReady()
 
 
 R_co = TypeVar("R_co", covariant=True)

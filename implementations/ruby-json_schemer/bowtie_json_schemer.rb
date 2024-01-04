@@ -32,7 +32,6 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
     raise UnsupportedVersion, version unless version == 1
 
     {
-      ready: true,
       version: version,
       implementation: {
         language: :ruby,

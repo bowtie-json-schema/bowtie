@@ -63,7 +63,6 @@ func main() {
 				panic("Not version 1!")
 			}
 			data := map[string]interface{}{
-				"ready":   true,
 				"version": 1,
 				"implementation": map[string]interface{}{
 					"language": "go",

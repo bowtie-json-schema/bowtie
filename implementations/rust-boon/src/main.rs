@@ -16,7 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Err("not version 1")?;
                 }
                 let response = json!({
-                    "ready": true,
                     "version": 1,
                     "implementation": {
                         "language": "rust",

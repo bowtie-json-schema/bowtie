@@ -68,7 +68,7 @@ class Harness {
       Runtime.version().toString,
       List()
     )
-    StartResponse(startRequest.version, true, implementation).asJson.noSpaces
+    StartResponse(startRequest.version, implementation).asJson.noSpaces
   }
 
   def dialect(node: Json): String = {
@@ -136,7 +136,7 @@ case class Link(url: String, description: String)
 
 case class StartRequest(version: Int)
 
-case class StartResponse(version: Int, ready: Boolean, implementation: Implementation)
+case class StartResponse(version: Int, implementation: Implementation)
 
 case class DialectRequest(dialect: String)
 

@@ -92,7 +92,6 @@ public class BowtieJsonSchemaValidator {
 
     StartResponse startResponse = new StartResponse(
       1,
-      true,
       new Implementation(
         "java",
         attributes.getValue("Implementation-Name"),
@@ -227,7 +226,7 @@ public class BowtieJsonSchemaValidator {
 
 record StartRequest(int version) {}
 
-record StartResponse(int version, boolean ready, Implementation implementation) {}
+record StartResponse(int version, Implementation implementation) {}
 
 record DialectRequest(String dialect) {}
 

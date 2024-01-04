@@ -26,13 +26,6 @@ class StartupFailure(Exception):
 
 
 @frozen
-class ImplementationNotReady(Exception):
-    """
-    An implementation said it was not ready.
-    """
-
-
-@frozen
 class VersionMismatch(Exception):
     """
     The wrong protocol version was returned from an implementation.

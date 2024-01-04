@@ -37,7 +37,6 @@ class Runner:
         assert version == 1
         self._started = True
         return dict(
-            ready=True,
             version=1,
             implementation=dict(
                 language="python",

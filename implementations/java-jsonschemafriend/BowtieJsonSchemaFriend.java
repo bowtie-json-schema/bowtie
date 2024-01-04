@@ -57,7 +57,7 @@ public class BowtieJsonSchemaFriend {
         InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
         var attributes = new Manifest(is).getMainAttributes();
 
-        StartResponse startResponse = new StartResponse(1, true, new Implementation(
+        StartResponse startResponse = new StartResponse(1, new Implementation(
                 "java",
                 attributes.getValue("Implementation-Name"),
                 attributes.getValue("Implementation-Version"),
@@ -153,7 +153,7 @@ public class BowtieJsonSchemaFriend {
 
 record StartRequest(int version) {}
 
-record StartResponse(int version, boolean ready, Implementation implementation) {}
+record StartResponse(int version, Implementation implementation) {}
 
 record DialectRequest(String dialect) {}
 

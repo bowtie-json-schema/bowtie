@@ -6,7 +6,6 @@ import kotlinx.serialization.json.JsonObject
 
 @Serializable
 class StartResponse(
-    val ready: Boolean,
     val version: Int,
     val implementation: Implementation,
 )

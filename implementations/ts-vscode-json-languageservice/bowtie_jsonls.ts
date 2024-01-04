@@ -38,7 +38,6 @@ const cmds = {
     console.assert(args.version === 1, { args });
     started = true;
     return {
-      ready: true,
       version: 1,
       implementation: {
         language: "typescript",

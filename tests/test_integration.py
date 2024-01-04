@@ -113,7 +113,7 @@ always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
     read
-    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     while IFS= read -r input; do
@@ -151,28 +151,28 @@ fail_on_run = strimplementation(
     name="fail_on_run",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf 'BOOM!\n' >&2
+    CMD read && printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 wrong_version = strimplementation(
     name="wrong_version",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 0}\n' && read >&2
+    CMD read && printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "version": 0}\n' && read >&2
     """,  # noqa: E501
 )
 hit_the_network = strimplementation(
     name="hit_the_network",
     contents=r"""
     FROM alpine:3.16
-    CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "ready": true, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
+    CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
     """,  # noqa: E501
 )
 missing_homepage = shellplementation(
     name="missing_homepage",
     contents=r"""
     read
-    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "ready": true, "version": 1}\n'
+    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     """,  # noqa: E501

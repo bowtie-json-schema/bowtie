@@ -85,7 +85,6 @@ public class BowtieJsonSchema {
     );
     StartResponse startResponse = new StartResponse(
       1,
-      true,
       new Implementation(
         "java",
         fullName,
@@ -213,7 +212,7 @@ public class BowtieJsonSchema {
 
 record StartRequest(int version) {}
 
-record StartResponse(int version, boolean ready, Implementation implementation) {}
+record StartResponse(int version, Implementation implementation) {}
 
 record DialectRequest(String dialect) {}
 

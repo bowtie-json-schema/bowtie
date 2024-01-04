@@ -26,7 +26,6 @@ function start($request)
     }
 
     return [
-        'ready' => true,
         'version' => 1,
         'implementation' => [
             'language' => 'php',

@@ -271,7 +271,6 @@ Change your harness to contain:
         assert(request.version == 1, 'Wrong version!')
         STARTED = true
         return {
-          ready = true,
           version = 1,
           implementation = {
             language = 'lua',

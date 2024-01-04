@@ -16,12 +16,8 @@
       "$anchor": "response",
 
       "type": "object",
-      "required": ["ready", "version", "implementation"],
+      "required": ["version", "implementation"],
       "properties": {
-        "ready": {
-          "description": "Confirmation that the implementation is ready.",
-          "const": true
-        },
         "version": {
           "description": "Confirmation of the Bowtie version",
           "$ref": "tag:bowtie.report,2023:ihop#version"
