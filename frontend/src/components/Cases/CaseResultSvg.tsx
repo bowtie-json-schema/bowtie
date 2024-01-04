@@ -3,6 +3,11 @@ import {
   ExclamationOctagon,
   XCircleFill,
 } from "react-bootstrap-icons";
+import { CaseResult } from "../../data/parseReportData";
+
+interface CaseResultProps {
+  result: CaseResult;
+}
 
 const stateToTile = {
   successful: "Correct result",
@@ -11,7 +16,7 @@ const stateToTile = {
   errored: "Case errored",
 };
 
-const CaseResultSvg = ({ result }) => {
+const CaseResultSvg = ({ result }: CaseResultProps) => {
   if (result.state === "skipped" || result.state === "errored") {
     const borderClass =
       result.state === "skipped" ? "text-bg-warning" : "text-bg-danger";

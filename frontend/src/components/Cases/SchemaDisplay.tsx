@@ -1,6 +1,14 @@
 import CopyToClipboard from "../CopyToClipboard";
 
-const SchemaDisplay = ({ schema, instance }) => {
+const SchemaDisplay = ({
+  schema,
+  instance,
+}: {
+  instance: any;
+  schema: {
+    [k: string]: any;
+  };
+}) => {
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);
   return (

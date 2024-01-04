@@ -3,8 +3,19 @@ import SchemaDisplay from "./SchemaDisplay";
 import { useEffect, useState, useTransition } from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
+import {
+  Case,
+  CaseResult,
+  ImplementationData,
+} from "../../data/parseReportData";
 
-const CaseContent = ({ seq, caseData, implementations }) => {
+interface CaseProps {
+  seq: number;
+  caseData: Case;
+  implementations: ImplementationData[];
+}
+
+const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
   const [instance, setInstance] = useState();
 
   return (
@@ -43,12 +54,12 @@ const CaseContent = ({ seq, caseData, implementations }) => {
                   <p className="m-0">{test.description}</p>
                 </td>
                 {implementations.map((impl, i) => {
-                  let caseResults = impl.cases.get(seq);
-                  let result =
+                  const caseResults = impl.cases.get(seq);
+                  const result: CaseResult =
                     caseResults !== undefined
                       ? caseResults[index]
                       : { state: "errored" };
-                  <CaseResultSvg key={i} result={result} />;
+                  return <CaseResultSvg key={i} result={result} />;
                 })}
               </tr>
             ))}
@@ -59,8 +70,8 @@ const CaseContent = ({ seq, caseData, implementations }) => {
   );
 };
 
-const CaseItem = ({ seq, caseData, implementations }) => {
-  const [content, setContent] = useState(null);
+const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
+  const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
   useEffect(() => {
     startTransition(() =>
@@ -74,7 +85,7 @@ const CaseItem = ({ seq, caseData, implementations }) => {
     );
   }, [seq, caseData, implementations]);
   return (
-    <Accordion.Item eventKey={seq}>
+    <Accordion.Item eventKey={seq.toString()}>
       <Accordion.Header>{caseData.description}</Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
