@@ -18,9 +18,7 @@ updates:
   # Dependabot for Implementations (Harnesses)
   # ------------------------------------------
 
-  # ignore: clojure-json-schema - FIXME: Dependabot doesn't support clojure.
-  #        See https://github.com/frenchy64/dependabot-lein-via-mvn for
-  #        a possible workaround.
+  # ignore: clojure-json-schema - Dependabot doesn't support clojure.
   # - package-ecosystem: "clojure"
   #   directory: "/implementations/clojure-json-schema"
   #   schedule:
@@ -108,8 +106,8 @@ updates:
     schedule:
       interval: "daily"
 
-  # ignore: scala-mjs-validator - FIXME: Dependabot doesn't support Scala.
-  # ignore: scala-rc-circe-json-validator - FIXME: Dependabot doesn't support Scala.
+  # ignore: scala-mjs-validator - Dependabot doesn't support Scala.
+  # ignore: scala-rc-circe-json-validator - Dependabot doesn't support Scala.
 
   # Dependabot for Dockerfiles
   # --------------------------
