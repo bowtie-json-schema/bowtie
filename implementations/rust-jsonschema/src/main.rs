@@ -58,7 +58,6 @@ fn main() -> Result<()> {
                     panic!("Not version 1!")
                 };
                 let response = json!({
-                    "ready": true,
                     "version": 1,
                     "implementation": {
                         "language": "rust",
