@@ -3,10 +3,12 @@ import { ReactNode, createContext, useState, useEffect } from "react";
 type ThemeContextProviderProps = {
   isDarkMode: boolean;
   children?: ReactNode;
+  toggleDarkMode: () => void;
 };
 
 export const ThemeContext = createContext<ThemeContextProviderProps>({
   isDarkMode: false,
+  toggleDarkMode: () => null,
 });
 
 const ThemeContextProvider = ({ children }: ThemeContextProviderProps) => {
