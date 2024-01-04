@@ -1,7 +1,11 @@
 import readline from "readline/promises";
 import os from "os";
 import process from "process";
-import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import {
+  registerSchema,
+  unregisterSchema,
+  validate,
+} from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-2019-09";
 import "@hyperjump/json-schema/draft-07";
 import "@hyperjump/json-schema/draft-06";
@@ -27,15 +31,9 @@ var dialect = null;
 const keywordsNotInSchemaMessage =
   "Ignoring schema meta-data keywords in places that are not schemas (such as a $id in a const) is not supported. Because this implementation is dialect agnostic, there's no way to know whether a location is a schema or not. Especially because there's no reason for a schema to use keywords in places that aren't schemas, I'm not concerned about making it work.";
 const keywordsNotInSchemaSkippedTests = [
-  "id inside an enum is not a real identifier",
-  "$id inside an enum is not a real identifier",
-  "$id inside an unknown keyword is not a real identifier",
   "naive replacement of $ref with its destination is not correct",
   "$ref prevents a sibling id from changing the base uri",
   "$ref prevents a sibling $id from changing the base uri",
-  "$anchor inside an enum is not a real identifier",
-  "$anchor inside an enum is not a real identifier",
-  "$id inside an unknown keyword is not a real identifier",
 ].reduce((acc, description) => {
   acc[description] = keywordsNotInSchemaMessage;
   return acc;
@@ -47,10 +45,20 @@ const boundaryCrossingSkippedTests = {
   "base URI change - change folder in subschema": boundaryCrossingMessage,
 };
 
-const modernSkippedTests = { ...keywordsNotInSchemaSkippedTests };
+const fileSchemeMessage =
+  "Self-identifying with a `file:` URI is not allowed for security reasons.";
+const fileSchemeSkippedTests = {
+  "id with file URI still resolves pointers - *nix": fileSchemeMessage,
+  "id with file URI still resolves pointers - windows": fileSchemeMessage,
+  "$id with file URI still resolves pointers - *nix": fileSchemeMessage,
+  "$id with file URI still resolves pointers - windows": fileSchemeMessage,
+};
+
+const modernSkippedTests = { ...fileSchemeSkippedTests };
 const legacySkippedTests = {
   ...boundaryCrossingSkippedTests,
   ...keywordsNotInSchemaSkippedTests,
+  ...fileSchemeSkippedTests,
 };
 
 const dialectSkippedTests = {
@@ -69,7 +77,7 @@ const cmds = {
       version: 1,
       implementation: {
         language: "javascript",
-        name: "hyperjump-jsv",
+        name: "hyperjump-json-schema",
         version: hyperjump_version,
         homepage: "https://json-schema.hyperjump.io/",
         issues: "https://github.com/hyperjump-io/json-schema/issues",
@@ -100,12 +108,6 @@ const cmds = {
 
     const testCase = args.case;
 
-    for (const id in testCase.registry) {
-      try {
-        addSchema(testCase.registry[id], id, dialect);
-      } catch {}
-    }
-
     let results;
     if (testCase.description in dialectSkippedTests[dialect]) {
       results = testCase.tests.map((_) => {
@@ -115,15 +117,19 @@ const cmds = {
         };
       });
     } else {
+      const retrievalUri = `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+
       try {
-        const idToken =
-          dialect === "http://json-schema.org/draft-04/schema#" ? "id" : "$id";
-        const host = testCase.schema?.[idToken]?.startsWith("file:")
-          ? "file://"
-          : "https://example.com";
-        const fakeURI = `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
-        addSchema(testCase.schema, fakeURI, dialect);
-        const _validate = await validate(fakeURI);
+        for (const id in testCase.registry) {
+          const schema = testCase.registry[id];
+          if (!schema.$schema || schema.$schema === dialect) {
+            registerSchema(schema, id, dialect);
+          }
+        }
+
+        registerSchema(testCase.schema, retrievalUri, dialect);
+
+        const _validate = await validate(retrievalUri);
         results = testCase.tests.map((test) => {
           try {
             const result = _validate(test.instance);
@@ -137,6 +143,12 @@ const cmds = {
           errored: true,
           context: { message: error.message },
         }));
+      } finally {
+        unregisterSchema(retrievalUri);
+
+        for (const id in testCase.registry) {
+          unregisterSchema(id);
+        }
       }
     }
 
