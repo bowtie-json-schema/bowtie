@@ -4,9 +4,9 @@ const SchemaDisplay = ({
   schema,
   instance,
 }: {
-  instance: any;
+  instance: unknown;
   schema: {
-    [k: string]: any;
+    [k: string]: unknown;
   };
 }) => {
   const schemaFormatted = JSON.stringify(schema, null, 2);

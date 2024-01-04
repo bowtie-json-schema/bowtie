@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: 0 */
 export const parseReportData = (lines: any[]): ReportData => {
   const runInfoData = lines[0] as RunInfo;
   const implementationEntries = Object.entries(runInfoData.implementations);

@@ -10,7 +10,7 @@ import {
 type BowtieVersionProviderProps = {
   children?: ReactNode;
   version?: string;
-  setVersion?: Dispatch<SetStateAction<any>>;
+  setVersion?: Dispatch<SetStateAction<string>>;
 };
 
 export const BowtieVersionContext = createContext<BowtieVersionProviderProps>(
@@ -20,7 +20,7 @@ export const BowtieVersionContext = createContext<BowtieVersionProviderProps>(
 export const BowtieVersionContextProvider = ({
   children,
 }: BowtieVersionProviderProps) => {
-  const [version, setVersion] = useState();
+  const [version, setVersion] = useState("");
 
   const value = useMemo(() => ({ version, setVersion }), [version, setVersion]);
   return (
