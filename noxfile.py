@@ -361,3 +361,11 @@ def ui_style(session):
     if needs_install:
         session.run("pnpm", "install", "--dir", UI)
     session.run("pnpm", "run", "--dir", UI, "lint")
+
+
+@session(python=False, name="ui(tests)")
+def ui_tests(session):
+    """
+    Run the UI tests.
+    """
+    session.run("pnpm", "install-test", "--frozen-lockfile", "--dir", UI)
