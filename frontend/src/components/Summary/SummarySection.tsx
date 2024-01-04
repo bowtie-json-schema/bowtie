@@ -1,6 +1,7 @@
 import SummaryTable from "./SummaryTable";
+import { ReportData } from "../../data/parseReportData.ts";
 
-const SummarySection = ({ reportData }) => {
+const SummarySection = ({ reportData }: { reportData: ReportData }) => {
   return (
     <div className="card mx-auto mb-3 w-75" id="summary">
       <div className="card-header">Summary</div>

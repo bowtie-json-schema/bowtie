@@ -2,7 +2,6 @@
 import CasesSection from "./components/Cases/CasesSection";
 // @ts-expect-error: FIXME: Not yet typescripted
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
-// @ts-expect-error: FIXME: Not yet typescripted
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
 import { ReportData } from "./data/parseReportData.ts";
