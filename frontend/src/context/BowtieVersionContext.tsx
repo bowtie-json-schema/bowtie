@@ -1,13 +1,21 @@
-import { ReactNode, createContext, useMemo, useState } from "react";
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  createContext,
+  useMemo,
+  useState,
+} from "react";
 
 type BowtieVersionProviderProps = {
   children?: ReactNode;
   version?: string;
+  setVersion: Dispatch<SetStateAction<any>>;
 };
 
-export const BowtieVersionContext = createContext<BowtieVersionProviderProps>(
-  {},
-);
+export const BowtieVersionContext = createContext<BowtieVersionProviderProps>({
+  setVersion: () => null,
+});
 
 export const BowtieVersionContextProvider = ({
   children,
