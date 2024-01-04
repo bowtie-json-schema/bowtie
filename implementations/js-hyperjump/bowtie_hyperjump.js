@@ -1,7 +1,11 @@
 import readline from "readline/promises";
 import os from "os";
 import process from "process";
-import { registerSchema, unregisterSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import {
+  registerSchema,
+  unregisterSchema,
+  validate,
+} from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-2019-09";
 import "@hyperjump/json-schema/draft-07";
 import "@hyperjump/json-schema/draft-06";
@@ -113,8 +117,7 @@ const cmds = {
         };
       });
     } else {
-      const retrievalUri =
-        `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+      const retrievalUri = `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
 
       try {
         for (const id in testCase.registry) {
