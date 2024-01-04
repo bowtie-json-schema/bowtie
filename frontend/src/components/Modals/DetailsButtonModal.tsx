@@ -1,15 +1,21 @@
 import { Button, Modal } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
+import { Case, ImplementationData } from "../../data/parseReportData";
 
 export const DetailsButtonModal = ({
   show,
   handleClose,
   cases,
   implementation,
+}: {
+  show: boolean;
+  handleClose: () => void;
+  cases: Map<number, Case>;
+  implementation: ImplementationData;
 }) => {
-  const failedResults = [];
+  const failedResults: JSX.Element[] = [];
   Array.from(implementation.cases.entries()).forEach(([seq, results]) => {
-    const caseData = cases.get(seq);
+    const caseData = cases.get(seq)!;
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
       if (result.state === "successful") {
@@ -18,7 +24,7 @@ export const DetailsButtonModal = ({
 
       let message;
       if (result.state === "skipped" || result.state === "errored") {
-        message = implementation.cases.get(seq)[i].message;
+        message = implementation.cases.get(seq)![i].message!;
       } else if (result.valid) {
         message = "Unexpectedly valid";
       } else {
@@ -59,7 +65,17 @@ export const DetailsButtonModal = ({
   );
 };
 
-const DetailItem = ({ title, description, message, borderClass }) => {
+const DetailItem = ({
+  title,
+  description,
+  message,
+  borderClass,
+}: {
+  title: string;
+  description: string;
+  message: string;
+  borderClass: string;
+}) => {
   return (
     <div className="col">
       <div className={`card mb-3 ${borderClass}`}>
