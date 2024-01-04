@@ -311,12 +311,6 @@ class Implementation:
             raise StartupFailed(name=self.name)
         self.metadata = started.implementation
 
-    async def _restart_container(self):
-        self._restarts -= 1
-        await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
-        await self._start_container()
-        await self.start_speaking(dialect=self._dialect)
-
     @property
     def dialects(self):
         if self.metadata is None:
@@ -342,9 +336,11 @@ class Implementation:
         try:
             await self._stream.send(request)
         except AttributeError:
-            # FIXME: aiodocker doesn't appear to properly report when its
-            # stream is closed
-            await self._restart_container()
+            # FIXME: aiodocker doesn't appear to properly report stream closure
+            self._restarts -= 1
+            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
+            await self._start_container()
+            await self.start_speaking(dialect=self._dialect)
             await self._stream.send(request)
 
     async def _send(self, cmd: _commands.Command[Any], retry: int = 3) -> Any:
