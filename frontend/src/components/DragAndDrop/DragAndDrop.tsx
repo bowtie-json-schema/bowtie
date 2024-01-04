@@ -1,28 +1,28 @@
-import { useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import "./DragAndDrop.css";
 import { DialectReportView } from "../../DialectReportView";
-import { parseReportData } from "../../data/parseReportData";
+import { ReportData, parseReportData } from "../../data/parseReportData";
 
 export const DragAndDrop = () => {
   const [dragActive, setDragActive] = useState(false);
   const [invalidFile, setInvalidFile] = useState(false);
-  const [lines, setLines] = useState();
-  const inputRef = useRef(null);
+  const [lines, setLines] = useState<ReportData | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragEnter = function (e) {
+  const handleDragEnter = function (e: DragEvent<HTMLFormElement>) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(true);
   };
 
-  const handleDragLeave = function (e) {
+  const handleDragLeave = function (e: DragEvent<HTMLFormElement>) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
   };
 
-  const handleDrop = function (e) {
+  const handleDrop = function (e: DragEvent<HTMLFormElement>) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -32,7 +32,7 @@ export const DragAndDrop = () => {
     }
   };
 
-  const handleChange = function (e) {
+  const handleChange = function (e: ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     e.stopPropagation();
     if (e.target?.files?.[0]) {
@@ -42,15 +42,18 @@ export const DragAndDrop = () => {
   };
 
   const onButtonClick = () => {
-    inputRef.current.value = "";
-    inputRef.current.click();
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.click();
+    }
   };
 
-  const handleFiles = (file) => {
+  const handleFiles = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const result = e.target?.result as string;
       try {
-        const dataObjectsArray = e.target.result.trim().split(/\r?\n/);
+        const dataObjectsArray = result.trim().split(/\r?\n/);
         const lines = dataObjectsArray.map((line) => JSON.parse(line));
         setLines(parseReportData(lines));
       } catch (error) {
