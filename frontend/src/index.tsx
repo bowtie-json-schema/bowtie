@@ -9,7 +9,7 @@ import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import Dialect from "./data/Dialect";
-import { parseImplementationData } from "./data/parseReportData";
+import { parseImplementationData, ReportData } from "./data/parseReportData";
 import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
@@ -19,14 +19,14 @@ const reportHost =
     : window.location.href;
 const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
-const fetchReportData = async (dialect) => {
+const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
   return dialect.fetchReport(reportUri);
 };
 
-const fetchAllReportData = async (langImplementation) => {
+const fetchAllReportData = async (langImplementation: string) => {
   document.title = `Bowtie - ${langImplementation}`;
-  const loaderData = {};
+  const loaderData: { [key: string]: ReportData } = {};
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
@@ -54,7 +54,7 @@ const router = createHashRouter([
         path: "/dialects/:draftName",
         Component: ReportDataHandler,
         loader: async ({ params }) =>
-          fetchReportData(Dialect.forPath(params.draftName)),
+          fetchReportData(Dialect.forPath(params.draftName!)),
       },
       {
         path: "/local-report",
@@ -64,14 +64,14 @@ const router = createHashRouter([
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
         loader: async ({ params }) =>
-          fetchAllReportData(params.langImplementation),
+          fetchAllReportData(params.langImplementation!),
       },
     ],
   },
 ]);
 
 document.addEventListener("DOMContentLoaded", () => {
-  const root = createRoot(document.getElementById("root"));
+  const root = createRoot(document.getElementById("root")!);
   root.render(
     <ThemeContextProvider>
       <BowtieVersionContextProvider>

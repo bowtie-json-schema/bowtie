@@ -10,12 +10,12 @@ import {
 type BowtieVersionProviderProps = {
   children?: ReactNode;
   version?: string;
-  setVersion: Dispatch<SetStateAction<any>>;
+  setVersion?: Dispatch<SetStateAction<any>>;
 };
 
-export const BowtieVersionContext = createContext<BowtieVersionProviderProps>({
-  setVersion: () => null,
-});
+export const BowtieVersionContext = createContext<BowtieVersionProviderProps>(
+  {},
+);
 
 export const BowtieVersionContextProvider = ({
   children,

@@ -106,7 +106,7 @@ const NavBar = () => {
           <button
             id="theme-toggler"
             className="btn border-0 me-1"
-            onClick={() => toggleDarkMode()}
+            onClick={() => toggleDarkMode!()}
           >
             {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
           </button>

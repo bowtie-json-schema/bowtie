@@ -9,7 +9,7 @@ const ReportDataHandler = () => {
   const loaderData: ReportData = useLoaderData() as ReportData;
 
   useEffect(
-    () => setVersion(loaderData.runInfo.bowtie_version),
+    () => setVersion!(loaderData.runInfo.bowtie_version),
     [setVersion, loaderData.runInfo.bowtie_version],
   );
 
