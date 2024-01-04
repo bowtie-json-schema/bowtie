@@ -82,7 +82,8 @@ class TestCase:
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
     ) -> TestCase:
-        populated: SchemaRegistry = Registry().with_contents(  # type: ignore[reportUnknownMemberType]
+        empty: SchemaRegistry = Registry()
+        populated = empty.with_contents(
             registry.items(),
             default_specification=specification_with(
                 str(dialect),
