@@ -2,7 +2,6 @@ import { Card } from "react-bootstrap";
 import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
 import { Table, Container } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
-// @ts-expect-error: FIXME: Not yet typescripted.
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
