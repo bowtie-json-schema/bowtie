@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
+import logo from "../assets/landscape-logo.svg";
 import Dialect from "../data/Dialect";
 
 const NavBar = () => {
@@ -30,8 +31,8 @@ const NavBar = () => {
         }`}
       >
         <div className="container-fluid">
-          <Link className="navbar-brand mb-0 h1" to="/">
-            Bowtie
+          <Link className="navbar-brand me-4 py-1" to="/">
+            <img src={logo} alt="Bowtie" width="128px" />
           </Link>
           <button
             className="navbar-toggler"

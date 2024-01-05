@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-1, .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: #f05f80;
+      }
+    </style>
+  </defs>
+  <g id="Bowtie_Brand" data-name="Bowtie Brand">
+    <g>
+      <rect class="cls-2" width="24" height="24" rx="2.83" ry="2.83"/>
+      <path class="cls-1" d="M21.76,20.18l-11.62-7.89-1.09-.69-6.81,3.33V5.85l6.18,3.68.72.46,12.62-6.18v5.5l-2.62,2.36,2.62,2.4v6.12ZM10.52,10.88l.39.25,9.44,6.41v-2.85l-3.31-3.03,3.31-2.97v-2.62l-9.83,4.81ZM3.64,8.32v4.36l4.02-1.97-4.02-2.4Z"/>
+    </g>
+  </g>
+</svg>
