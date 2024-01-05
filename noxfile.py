@@ -15,7 +15,9 @@ BOWTIE = ROOT / "bowtie"
 SCHEMAS = BOWTIE / "schemas"
 IMPLEMENTATIONS = ROOT / "implementations"
 TESTS = ROOT / "tests"
+
 UI = ROOT / "frontend"
+UI_NEEDS_INSTALL = not UI.joinpath("node_modules").is_dir()
 
 REQUIREMENTS = dict(
     main=ROOT / "requirements.txt",
@@ -335,9 +337,7 @@ def ui(session):
     """
     Run a local development UI.
     """
-    needs_install = not UI.joinpath("node_modules").is_dir()
-    if needs_install:
-        session.run("pnpm", "install", "--dir", UI)
+    _maybe_install_ui(session)
     session.run("pnpm", "run", "--dir", UI, "start")
 
 
@@ -346,9 +346,7 @@ def ui_build(session):
     """
     Check that the UI properly builds.
     """
-    needs_install = not UI.joinpath("node_modules").is_dir()
-    if needs_install:
-        session.run("pnpm", "install", "--frozen-lockfile", "--dir", UI)
+    _maybe_install_ui(session)
     session.run("pnpm", "run", "--dir", UI, "build")
 
 
@@ -357,9 +355,7 @@ def ui_style(session):
     """
     Lint for style on Bowtie's frontend.
     """
-    needs_install = not UI.joinpath("node_modules").is_dir()
-    if needs_install:
-        session.run("pnpm", "install", "--dir", UI)
+    _maybe_install_ui(session)
     session.run("pnpm", "run", "--dir", UI, "lint")
 
 
@@ -369,3 +365,9 @@ def ui_tests(session):
     Run the UI tests.
     """
     session.run("pnpm", "install-test", "--frozen-lockfile", "--dir", UI)
+
+
+def _maybe_install_ui(session):
+    if UI.joinpath("node_modules").is_dir():
+        return
+    session.run("pnpm", "install", "--frozen-lockfile", "--dir", UI)
