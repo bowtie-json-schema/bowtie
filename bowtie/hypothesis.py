@@ -175,7 +175,7 @@ def errored_cases(implementations=implementation_images, seqs=seqs):
         implementation=implementations,
         seq=seqs,
         expected=lists(booleans() | none()),
-        context=dictionaries(  # FIXME
+        context=dictionaries(
             keys=text(),
             values=text() | integers(),
             max_size=5,
