@@ -54,7 +54,9 @@ export const DragAndDrop = () => {
       const result = e.target?.result as string;
       try {
         const dataObjectsArray = result.trim().split(/\r?\n/);
-        const lines = dataObjectsArray.map((line) => JSON.parse(line));
+        const lines = dataObjectsArray.map(
+          (line) => JSON.parse(line) as Record<string, unknown>,
+        );
         setLines(parseReportData(lines));
       } catch (error) {
         setInvalidFile(true);

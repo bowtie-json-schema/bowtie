@@ -37,7 +37,7 @@ export default class Dialect {
     const lines = jsonl
       .trim()
       .split(/\r?\n/)
-      .map((line) => JSON.parse(line));
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
     return parseReportData(lines);
   }
 

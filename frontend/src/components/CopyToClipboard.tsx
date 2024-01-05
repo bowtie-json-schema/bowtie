@@ -12,11 +12,10 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
+    navigator.clipboard.writeText(textToCopy).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
   };
 
   return (

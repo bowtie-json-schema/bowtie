@@ -1,6 +1,6 @@
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
-import { useEffect, useState, useTransition } from "react";
+import { SetStateAction, useEffect, useState, useTransition } from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
@@ -16,7 +16,7 @@ interface CaseProps {
 }
 
 const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
-  const [instance, setInstance] = useState();
+  const [instance, setInstance] = useState<SetStateAction<unknown>>();
 
   return (
     <>

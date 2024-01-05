@@ -1,6 +1,7 @@
-/* eslint @typescript-eslint/no-explicit-any: 0 */
-export const parseReportData = (lines: any[]): ReportData => {
-  const runInfoData = lines[0] as RunInfo;
+export const parseReportData = (
+  lines: Record<string, unknown>[],
+): ReportData => {
+  const runInfoData = lines[0] as unknown as RunInfo;
   const implementationEntries = Object.entries(runInfoData.implementations);
 
   implementationEntries.sort(([id1], [id2]) => id1.localeCompare(id2));
@@ -21,17 +22,21 @@ export const parseReportData = (lines: any[]): ReportData => {
   let didFailFast = false;
   for (const line of lines) {
     if (line.case) {
-      caseMap.set(line.seq, line.case as Case);
+      caseMap.set(line.seq as number, line.case as Case);
     } else if (line.implementation) {
-      const caseData = caseMap.get(line.seq)!;
-      const implementationData = implementationMap.get(line.implementation)!;
+      const caseData = caseMap.get(line.seq as number)!;
+      const implementationData = implementationMap.get(
+        line.implementation as string,
+      )!;
       if (line.caught !== undefined) {
-        const errorMessage = line.context?.message ?? line.context?.stderr;
+        const context = line.context as Record<string, unknown>;
+        const errorMessage: string = (context?.message ??
+          context?.stderr) as string;
         implementationData.erroredCases++;
         implementationData.erroredTests += caseData.tests.length;
         implementationData.cases.set(
-          line.seq,
-          new Array(caseData.tests.length).fill({
+          line.seq as number,
+          new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
           }),
@@ -39,36 +44,49 @@ export const parseReportData = (lines: any[]): ReportData => {
       } else if (line.skipped) {
         implementationData.skippedTests += caseData.tests.length;
         implementationData.cases.set(
-          line.seq,
-          new Array(caseData.tests.length).fill({
+          line.seq as number,
+          new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
-            message: line.message,
+            message: line.message as string,
           }),
         );
       } else if (line.implementation) {
-        const caseResults = (line.results as any[]).map<CaseResult>(
-          (res, idx) => {
-            if (res.errored) {
-              const errorMessage = res.context?.message ?? res.context?.stderr;
-              implementationData.erroredTests++;
-              return { state: "errored", message: errorMessage };
-            } else if (res.skipped) {
-              implementationData.skippedTests++;
-              return { state: "skipped", message: res.message };
+        const caseResults: CaseResult[] = (
+          line.results as Record<string, unknown>[]
+        ).map((res, idx) => {
+          if (res.errored) {
+            const context = res.context as Record<string, unknown>;
+            const errorMessage = context?.message ?? context?.stderr;
+            implementationData.erroredTests++;
+            return {
+              state: "errored",
+              message: errorMessage as string | undefined,
+            };
+          } else if (res.skipped) {
+            implementationData.skippedTests++;
+            return {
+              state: "skipped",
+              message: res.message as string | undefined,
+            };
+          } else {
+            const successful = res.valid === caseData.tests[idx].valid;
+            if (successful) {
+              return {
+                state: "successful",
+                valid: res.valid as boolean | undefined,
+              };
             } else {
-              const successful = res.valid === caseData.tests[idx].valid;
-              if (successful) {
-                return { state: "successful", valid: res.valid };
-              } else {
-                implementationData.failedTests++;
-                return { state: "failed", valid: res.valid };
-              }
+              implementationData.failedTests++;
+              return {
+                state: "failed",
+                valid: res.valid as boolean | undefined,
+              };
             }
-          },
-        );
-        implementationData.cases.set(line.seq, caseResults);
+          }
+        });
+        implementationData.cases.set(line.seq as number, caseResults);
       } else if (line.did_fail_fast !== undefined) {
-        didFailFast = line.did_fail_fast;
+        didFailFast = line.did_fail_fast as boolean;
       }
     }
   }
@@ -174,7 +192,7 @@ export interface RunInfo {
   bowtie_version: string;
   dialect: string;
   implementations: Record<string, Implementation>;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 export interface ImplementationData {
@@ -227,6 +245,6 @@ export interface Case {
 export interface Test {
   description: string;
   comment?: string;
-  instance: any;
+  instance: unknown;
   valid?: boolean;
 }
