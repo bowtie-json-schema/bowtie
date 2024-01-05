@@ -5,9 +5,7 @@ const SchemaDisplay = ({
   instance,
 }: {
   instance: unknown;
-  schema: {
-    [k: string]: unknown;
-  };
+  schema: Record<string, unknown> | boolean;
 }) => {
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);

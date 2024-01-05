@@ -8,9 +8,7 @@ import { mapLanguage } from "../../data/mapLanguage";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
-  const allImplementations = useLoaderData() as {
-    [key: string]: Implementation;
-  };
+  const allImplementations = useLoaderData() as Record<string, Implementation>;
 
   // Get the selected implementation's name from the URL parameters.
   const { langImplementation } = useParams();

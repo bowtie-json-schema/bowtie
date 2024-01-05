@@ -26,7 +26,7 @@ const fetchReportData = async (dialect: Dialect) => {
 
 const fetchAllReportData = async (langImplementation: string) => {
   document.title = `Bowtie - ${langImplementation}`;
-  const loaderData: { [key: string]: ReportData } = {};
+  const loaderData: Record<string, ReportData> = {};
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(

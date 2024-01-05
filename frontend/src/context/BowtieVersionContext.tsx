@@ -7,11 +7,11 @@ import {
   useState,
 } from "react";
 
-type BowtieVersionProviderProps = {
+interface BowtieVersionProviderProps {
   children?: ReactNode;
   version?: string;
   setVersion?: Dispatch<SetStateAction<string>>;
-};
+}
 
 export const BowtieVersionContext = createContext<BowtieVersionProviderProps>(
   {},

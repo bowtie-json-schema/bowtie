@@ -13,7 +13,7 @@ const NavBar = () => {
 
   const rootMatch = useMatch("/");
   const dialectsMatch = useMatch("/dialects/*");
-  const isDialectPage = rootMatch || dialectsMatch;
+  const isDialectPage = rootMatch ?? dialectsMatch;
 
   useEffect(() => {
     if (hash) {

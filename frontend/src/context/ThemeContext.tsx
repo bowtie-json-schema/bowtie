@@ -1,10 +1,10 @@
 import { ReactNode, createContext, useState, useEffect } from "react";
 
-type ThemeContextProviderProps = {
+interface ThemeContextProviderProps {
   isDarkMode?: boolean;
   children?: ReactNode;
   toggleDarkMode?: () => void;
-};
+}
 
 export const ThemeContext = createContext<ThemeContextProviderProps>({});
 

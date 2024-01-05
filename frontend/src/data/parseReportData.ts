@@ -19,9 +19,7 @@ export const parseReportData = (lines: any[]): ReportData => {
   );
 
   let didFailFast = false;
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-
+  for (const line of lines) {
     if (line.case) {
       caseMap.set(line.seq, line.case as Case);
     } else if (line.implementation) {
@@ -83,13 +81,11 @@ export const parseReportData = (lines: any[]): ReportData => {
   };
 };
 
-export const parseImplementationData = (loaderData: {
-  [key: string]: ReportData;
-}) => {
-  let allImplementations: { [key: string]: Implementation } = {};
-  const dialectCompliance: {
-    [key: string]: { [key: string]: Partial<Totals> };
-  } = {};
+export const parseImplementationData = (
+  loaderData: Record<string, ReportData>,
+) => {
+  let allImplementations: Record<string, Implementation> = {};
+  const dialectCompliance: Record<string, Record<string, Partial<Totals>>> = {};
 
   for (const [key, value] of Object.entries(loaderData)) {
     dialectCompliance[key] = calculateImplementationTotal(
@@ -110,10 +106,9 @@ export const parseImplementationData = (loaderData: {
             "results",
           )
         ) {
-          allImplementations[implementation]["results"] = {};
+          allImplementations[implementation].results = {};
         }
-        allImplementations[implementation]["results"][key] =
-          value[implementation];
+        allImplementations[implementation].results[key] = value[implementation];
       }
     });
   });
@@ -123,7 +118,7 @@ export const parseImplementationData = (loaderData: {
 const calculateImplementationTotal = (
   implementations: Map<string, ImplementationData>,
 ) => {
-  const implementationResult: { [key: string]: Partial<Totals> } = {};
+  const implementationResult: Record<string, Partial<Totals>> = {};
 
   Array.from(implementations.entries()).forEach(([key, value]) => {
     implementationResult[key] = {
@@ -216,7 +211,7 @@ export interface Implementation {
   os?: string;
   os_version?: string;
   language_version?: string;
-  results: { [key: string]: Partial<Totals> };
+  results: Record<string, Partial<Totals>>;
 
   [k: string]: unknown;
 }
@@ -224,12 +219,8 @@ export interface Implementation {
 export interface Case {
   description: string;
   comment?: string;
-  schema: {
-    [k: string]: unknown;
-  };
-  registry?: {
-    [k: string]: unknown;
-  };
+  schema: Record<string, unknown> | boolean;
+  registry?: Record<string, unknown>;
   tests: [Test, ...Test[]];
 }
 

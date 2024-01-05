@@ -4,9 +4,9 @@ import Button from "react-bootstrap/Button";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 
-type CopyProps = {
+interface CopyProps {
   textToCopy: string;
-};
+}
 
 function CopyToClipboard({ textToCopy }: CopyProps) {
   const [copied, setCopied] = useState(false);
