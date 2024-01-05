@@ -87,9 +87,7 @@ def audit(session):
     Audit Python dependencies for vulnerabilities.
     """
     session.install("pip-audit", "-r", REQUIREMENTS["main"])
-    # This "vulnerability" is incorrect. See aio-libs/aiohttp#6772.
-    AIOHTTP_WRONG = "PYSEC-2022-43059"
-    session.run("python", "-m", "pip_audit", "--ignore-vuln", AIOHTTP_WRONG)
+    session.run("python", "-m", "pip_audit")
 
 
 @session(tags=["build"])
@@ -339,6 +337,14 @@ def ui(session):
     """
     _maybe_install_ui(session)
     session.run("pnpm", "run", "--dir", UI, "start")
+
+
+@session(python=False, name="ui(audit)")
+def ui_audit(session):
+    """
+    Audit the UI dependencies.
+    """
+    session.run("pnpm", "--dir", UI, "audit")
 
 
 @session(python=False, name="ui(build)")
