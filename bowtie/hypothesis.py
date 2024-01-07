@@ -272,10 +272,9 @@ def report_data(
             )
         implementations = _implementations()
     impls = draw(implementations)
-    names = impls.keys()
 
     if cases_and_results is None:
-        cases_and_results = _cases_and_results(implementations=just(names))
+        cases_and_results = _cases_and_results(implementations=just(impls))
 
     seq_cases, results = draw(cases_and_results)
 
