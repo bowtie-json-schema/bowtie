@@ -96,14 +96,6 @@ class TestCase:
             **kwargs,
         )
 
-    def run(
-        self,
-        seq: Seq,
-        runner: DialectRunner,
-    ) -> Awaitable[AnyCaseResult]:
-        command = Run(seq=seq, case=self.without_expected_results())
-        return runner.run_validation(command=command, tests=self.tests)
-
     def serializable(self) -> dict[str, Any]:
         as_dict = asdict(
             self,
@@ -128,6 +120,23 @@ class TestCase:
             for test in serializable.pop("tests")
         ]
         return serializable
+
+
+@frozen
+class SeqCase:
+    seq: Seq
+    case: TestCase
+
+    @classmethod
+    def for_cases(cls, cases: Iterable[TestCase]):
+        return (cls(seq=i, case=case) for i, case in enumerate(cases))
+
+    def run(self, runner: DialectRunner) -> Awaitable[AnyCaseResult]:
+        command = Run(seq=self.seq, case=self.case.without_expected_results())
+        return runner.run_validation(command=command, tests=self.case.tests)
+
+    def serializable(self):
+        return dict(seq=self.seq, case=self.case.serializable())
 
 
 @frozen

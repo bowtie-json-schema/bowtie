@@ -48,7 +48,7 @@ def test_cases_and_results_with_not_all_responding(data):
     responding = data.draw(integers(min_value=1, max_value=n))
     strategy = strategies.cases_and_results(
         implementations=just(impls),
-        responding=lambda seq, case: sets(
+        responding=lambda seq_case: sets(
             sampled_from(sorted(impls)),
             min_size=responding,
             max_size=responding,

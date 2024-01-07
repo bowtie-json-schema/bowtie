@@ -223,7 +223,7 @@ def cases_and_results(
 
     if responding is None:
 
-        def responding(seq, case):
+        def responding(seq_case):
             return just(impls)
 
     strategy = lists(
@@ -231,15 +231,20 @@ def cases_and_results(
         min_size=min_cases,
         max_size=max_cases,
         unique_by=lambda each: each[0],
+    ).map(
+        lambda v: [_commands.SeqCase(seq=seq, case=case) for seq, case in v],
     )
     seq_cases = draw(strategy)
 
     return seq_cases, [
         draw(
-            case_results(seqs=just(seq), implementations=just(implementation)),
+            case_results(
+                seqs=just(seq_case.seq),
+                implementations=just(implementation),
+            ),
         )
-        for (seq, case) in seq_cases
-        for implementation in draw(responding(seq, case))
+        for seq_case in seq_cases
+        for implementation in draw(responding(seq_case))
     ]
 
 
@@ -293,7 +298,7 @@ def report_data(
         )
     return [  # FIXME: Combine with the logic in CaseReporter
         draw(run_metadata).serializable(),
-        *[dict(case=case.serializable(), seq=seq) for seq, case in seq_cases],
+        *[seq_case.serializable() for seq_case in seq_cases],
         *[asdict(result) for result in results],
         {"did_fail_fast": draw(fail_fast)},
     ]

@@ -33,7 +33,7 @@ from bowtie import GITHUB, _report
 from bowtie._commands import (
     AnyCaseResult,
     AnyTestResult,
-    Seq,
+    SeqCase,
     Test,
     TestCase,
     Unsuccessful,
@@ -701,10 +701,10 @@ async def _smoke(
                 case "json":
                     serializable: list[dict[str, Any]] = []
 
-                    def see(seq: Seq, case: TestCase, response: AnyCaseResult):
+                    def see(seq_case: SeqCase, response: AnyCaseResult):
                         serializable.append(  # noqa: B023
                             {
-                                "case": case.without_expected_results(),
+                                "case": seq_case.case.without_expected_results(),
                                 "response": dict(
                                     errored=response.errored,
                                     failed=response.failed,
@@ -714,24 +714,23 @@ async def _smoke(
 
                 case "pretty":
 
-                    def see(seq: Seq, case: TestCase, response: AnyCaseResult):
+                    def see(seq_case: SeqCase, response: AnyCaseResult):
                         if response.errored:
                             message = "❗ (error)"
-                            reporter.case_started(
-                                seq=seq,
-                                case=case,
-                            ).got_result(response)
+                            reporter.case_started(seq_case).got_result(
+                                response,
+                            )
                         elif response.failed:
                             message = "✗ (failed)"
                         else:
                             message = "✓"
-                        echo(f"  {message}: {case.description}")
+                        echo(f"  {message}: {seq_case.case.description}")
 
-            for seq, case in enumerate(cases):
-                response = await case.run(seq=seq, runner=runner)
+            for seq_case in SeqCase.for_cases(cases):
+                response = await seq_case.run(runner=runner)
                 if response.errored or response.failed:
                     exit_code |= os.EX_DATAERR
-                see(seq, case, response)
+                see(seq_case, response)
 
     finish()
     return exit_code
@@ -935,15 +934,17 @@ async def _run(
                 ),
             )
 
-            seq = 0
+            count = 0
             should_stop = False
-            for seq, case, case_reporter in sequenced(cases, reporter):
-                if set_schema and not isinstance(case.schema, bool):
-                    case.schema["$schema"] = str(dialect)
+            for count, seq_case in enumerate(  # noqa: B007
+                SeqCase.for_cases(cases),
+                1,
+            ):
+                case_reporter = reporter.case_started(seq_case)
+                if set_schema and not isinstance(seq_case.case.schema, bool):
+                    seq_case.case.schema["$schema"] = str(dialect)
 
-                responses = [
-                    case.run(seq=seq, runner=runner) for runner in runners
-                ]
+                responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
@@ -954,8 +955,8 @@ async def _run(
 
                 if should_stop:
                     break
-            reporter.finished(count=seq, did_fail_fast=should_stop)
-            if not seq:
+            reporter.finished(count=count, did_fail_fast=should_stop)
+            if not count:
                 exit_code = os.EX_NOINPUT
     return exit_code
 
@@ -975,14 +976,6 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
             )
             for image_name in image_names
         ]
-
-
-def sequenced(
-    cases: Iterable[TestCase],
-    reporter: _report.Reporter,
-) -> Iterable[tuple[int, TestCase, _report.CaseReporter]]:
-    for seq, case in enumerate(cases, 1):
-        yield seq, case, reporter.case_started(seq=seq, case=case)
 
 
 def _remotes_from(

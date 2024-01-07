@@ -16,6 +16,7 @@ from bowtie._commands import (
     CaseResult,
     CaseSkipped,
     Seq,
+    SeqCase,
     StartedDialect,
     TestCase,
     Unsuccessful,
@@ -154,16 +155,16 @@ class Reporter:
             response=response,
         )
 
-    def case_started(self, seq: Seq, case: TestCase):
+    def case_started(self, seq_case: SeqCase):
+        log = self._log.bind(
+            seq=seq_case.seq,
+            case=seq_case.case.description,
+            schema=seq_case.case.schema,
+        )
         return CaseReporter.case_started(
-            case=case,
-            seq=seq,
+            seq_case=seq_case,
             write=self._write,
-            log=self._log.bind(
-                seq=seq,
-                case=case.description,
-                schema=case.schema,
-            ),
+            log=log,
         )
 
 
@@ -177,11 +178,10 @@ class CaseReporter:
         cls,
         log: structlog.stdlib.BoundLogger,
         write: Callable[..., None],
-        case: TestCase,
-        seq: Seq,
+        seq_case: SeqCase,
     ) -> CaseReporter:
         self = cls(log=log, write=write)
-        self._write(case=case.serializable(), seq=seq)
+        self._write(**seq_case.serializable())
         return self
 
     def got_result(self, result: AnyCaseResult):
