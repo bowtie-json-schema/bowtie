@@ -189,9 +189,6 @@ class CaseReporter:
         serialized = result.log_and_be_serialized(log=log)
         self._write(**serialized)
 
-    def no_response(self, implementation: str):
-        self._log.error("No response", logger_name=implementation)
-
 
 @frozen
 class RunMetadata:
