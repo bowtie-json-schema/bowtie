@@ -211,6 +211,8 @@ async def bowtie(*args, exit_code=0):
 
         try:
             report = _report.Report.from_serialized(stdout.splitlines())
+        except _report._InvalidBowtieReport:
+            pytest.fail(f"Invalid report. Stderr had:\n{stderr}")
         except _report.EmptyReport:
             results = []
         else:
