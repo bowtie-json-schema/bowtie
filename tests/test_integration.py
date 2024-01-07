@@ -140,26 +140,39 @@ succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
 )
-fail_on_start = strimplementation(
+fail_on_start = shellplementation(
     name="fail_on_start",
-    contents=r"CMD read && printf 'BOOM!\n' >&2",
+    contents=r"""
+    read
+    printf 'BOOM!\n' >&2
+    """,
 )
-fail_on_run = strimplementation(
+fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
-    CMD read && printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf 'BOOM!\n' >&2
+    read
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n'
+    read
+    printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
-wrong_version = strimplementation(
+wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
-    CMD read && printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "version": 0}\n' && read >&2
+    read
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "version": 0}\n'
+    read >&2
     """,  # noqa: E501
 )
-hit_the_network = strimplementation(
+hit_the_network = shellplementation(
     name="hit_the_network",
     contents=r"""
-    CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
+    read
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    wget --timeout=1 -O - http://example.com >&2
     """,  # noqa: E501
 )
 missing_homepage = shellplementation(
