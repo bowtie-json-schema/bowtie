@@ -28,10 +28,10 @@ if TYPE_CHECKING:
         Sequence,
     )
 
+    from structlog.stdlib import BoundLogger
     from url import URL
 
     from bowtie._core import DialectRunner
-    from bowtie._report import CaseReporter
 
 
 Seq = int
@@ -100,7 +100,7 @@ class TestCase:
         self,
         seq: Seq,
         runner: DialectRunner,
-    ) -> Awaitable[ReportableResult]:
+    ) -> Awaitable[AnyCaseResult]:
         command = Run(seq=seq, case=self.without_expected_results())
         return runner.run_validation(command=command, tests=self.tests)
 
@@ -335,7 +335,15 @@ class ErroredTest:
         )
 
 
-class ReportableResult(Protocol):
+class AnyCaseResult(Protocol):
+    @property
+    def seq(self) -> Seq:
+        ...
+
+    @property
+    def results(self) -> Sequence[AnyTestResult]:
+        ...
+
     @property
     def errored(self) -> bool:
         ...
@@ -352,17 +360,7 @@ class ReportableResult(Protocol):
     def implementation(self) -> str:
         ...
 
-    def report(self, reporter: CaseReporter) -> None:
-        ...
-
-
-class AnyCaseResult(ReportableResult, Protocol):
-    @property
-    def seq(self) -> Seq:
-        ...
-
-    @property
-    def results(self) -> Sequence[AnyTestResult]:
+    def log_and_be_serialized(self, log: BoundLogger) -> Mapping[str, Any]:
         ...
 
     def unsuccessful(self) -> Unsuccessful:
@@ -402,8 +400,11 @@ class CaseResult:
                 failed += 1
         return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
-    def report(self, reporter: CaseReporter) -> None:
-        reporter.got_results(self)
+    def log_and_be_serialized(self, log: BoundLogger):
+        for result in self.results:
+            if result.errored:
+                log.error("", **result.context)  # type: ignore[reportGeneralTypeIssues, reportUnknownMemberType]
+        return asdict(self)
 
     def compare(self) -> Iterable[tuple[AnyTestResult, bool]]:
         for test, expected in zip(self.results, self.expected):
@@ -457,8 +458,10 @@ class CaseErrored:
     def unsuccessful(self) -> Unsuccessful:
         return Unsuccessful(errored=len(self.results))
 
-    def report(self, reporter: CaseReporter):
-        reporter.case_errored(self)
+    def log_and_be_serialized(self, log: BoundLogger):
+        message = "" if self.caught else "uncaught error"
+        log.error(message, **self.context)
+        return self.serializable()
 
     def serializable(self) -> Mapping[str, Any]:
         return asdict(self, filter=lambda attr, _: attr.name != "results")
@@ -489,8 +492,8 @@ class CaseSkipped:
     def unsuccessful(self) -> Unsuccessful:
         return Unsuccessful(skipped=len(self.results))
 
-    def report(self, reporter: CaseReporter):
-        reporter.skipped(self)
+    def log_and_be_serialized(self, log: BoundLogger):
+        return self.serializable()
 
     def serializable(self) -> Mapping[str, Any]:
         return asdict(self, filter=lambda attr, _: attr.name != "results")
@@ -506,9 +509,21 @@ class Empty:
     failed = skipped = False
 
     implementation: str
+    seq: Seq
 
-    def report(self, reporter: CaseReporter):
-        reporter.no_response(implementation=self.implementation)
+    expected: list[bool | None]
+    results: list[ErroredTest] = field(init=False)
+
+    def __attrs_post_init__(self):
+        results = [ErroredTest.in_errored_case() for _ in self.expected]
+        object.__setattr__(self, "results", results)
+
+    def log_and_be_serialized(self, log: BoundLogger) -> dict[str, Any]:
+        log.error("No response")
+        return {}
+
+    def unsuccessful(self) -> Unsuccessful:
+        return Unsuccessful(errored=len(self.results))
 
 
 @command(Response=_case_result)

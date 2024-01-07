@@ -165,27 +165,13 @@ class CaseReporter:
         self._write(case=case.serializable(), seq=seq)
         return self
 
-    def got_results(self, results: CaseResult):
-        for result in results.results:
-            if result.errored:
-                self._log.error(
-                    "",
-                    logger_name=results.implementation,
-                    **result.context,  # type: ignore[reportGeneralTypeIssues]
-                )
-        self._write(**asdict(results))
-
-    def skipped(self, skipped: CaseSkipped):
-        self._write(**skipped.serializable())
+    def got_result(self, result: AnyCaseResult):
+        log = self._log.bind(logger_name=result.implementation)
+        serialized = result.log_and_be_serialized(log=log)
+        self._write(**serialized)
 
     def no_response(self, implementation: str):
         self._log.error("No response", logger_name=implementation)
-
-    def case_errored(self, results: CaseErrored):
-        implementation, context = results.implementation, results.context
-        message = "" if results.caught else "uncaught error"
-        self._log.error(message, logger_name=implementation, **context)
-        self._write(**results.serializable())
 
 
 @frozen

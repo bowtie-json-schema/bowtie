@@ -157,13 +157,17 @@ class DialectRunner:
         self,
         command: _commands.Run,
         tests: Iterable[_commands.Test],
-    ) -> _commands.ReportableResult:
+    ) -> _commands.AnyCaseResult:
         expected = [test.valid for test in tests]
 
         try:
             response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
-                return _commands.Empty(implementation=self._name)
+                return _commands.Empty(
+                    implementation=self._name,
+                    seq=command.seq,
+                    expected=expected,
+                )
             elif response is INVALID:
                 return _commands.CaseErrored.uncaught(
                     implementation=self._name,

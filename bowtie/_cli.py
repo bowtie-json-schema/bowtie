@@ -31,8 +31,8 @@ import structlog.typing
 
 from bowtie import GITHUB, _report
 from bowtie._commands import (
+    AnyCaseResult,
     AnyTestResult,
-    ReportableResult as Result,
     Seq,
     Test,
     TestCase,
@@ -701,7 +701,7 @@ async def _smoke(
                 case "json":
                     serializable: list[dict[str, Any]] = []
 
-                    def see(seq: Seq, case: TestCase, response: Result):
+                    def see(seq: Seq, case: TestCase, response: AnyCaseResult):
                         serializable.append(  # noqa: B023
                             {
                                 "case": case.without_expected_results(),
@@ -714,15 +714,13 @@ async def _smoke(
 
                 case "pretty":
 
-                    def see(seq: Seq, case: TestCase, response: Result):
+                    def see(seq: Seq, case: TestCase, response: AnyCaseResult):
                         if response.errored:
                             message = "❗ (error)"
-                            response.report(
-                                reporter=reporter.case_started(
-                                    seq=seq,
-                                    case=case,
-                                ),
-                            )
+                            reporter.case_started(
+                                seq=seq,
+                                case=case,
+                            ).got_result(response)
                         elif response.failed:
                             message = "✗ (failed)"
                         else:
@@ -951,12 +949,12 @@ async def _run(
                     case.run(seq=seq, runner=runner) for runner in runners
                 ]
                 for each in asyncio.as_completed(responses):
-                    response = await each
-                    response.report(reporter=case_reporter)
+                    result = await each
+                    case_reporter.got_result(result=result)
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        should_stop = response.errored or response.failed
+                        should_stop = result.errored or result.failed
 
                 if should_stop:
                     break
