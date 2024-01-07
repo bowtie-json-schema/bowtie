@@ -769,14 +769,10 @@ class _TestSuiteCases(click.ParamType):
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
-            # Sigh. PyCQA/isort#1839
-            # isort: off
-            from github3 import (  # type: ignore[reportMissingTypeStubs]
-                GitHub,
+            from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+                NotFoundError,
             )
-            from github3.exceptions import NotFoundError  # type: ignore[reportMissingTypeStubs]
-
-            # isort: on
 
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
             org, repo_name, *rest = value.path_segments

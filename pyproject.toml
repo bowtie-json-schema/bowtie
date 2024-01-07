@@ -95,14 +95,6 @@ ignore = [
     "D001",  # one sentence per line, so max length doesn't make sense
 ]
 
-[tool.isort]
-combine_as_imports = true
-ensure_newline_before_comments = true
-from_first = true
-include_trailing_comma = true
-multi_line_output = 3
-use_parentheses = true
-
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true
 strict = ["**/*.py"]
