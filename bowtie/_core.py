@@ -289,10 +289,7 @@ class Implementation:
             raise StartupFailed(name=image_name, data=data) from error
 
         yield self
-        with suppress(GotStderr):  # XXX: Log this too?
-            await self._stop()
-        with suppress(aiodocker.exceptions.DockerError):
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
+        await self._stop()
 
     async def _start_container(self):
         self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
@@ -328,7 +325,11 @@ class Implementation:
         )
 
     async def _stop(self):
-        await self._send_no_response(_commands.STOP)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+        request = _commands.STOP.to_request(validate=self._maybe_validate)  # type: ignore[reportUnknownMemberType]  # uh?? no idea what's going on here.
+        with suppress(AttributeError):
+            await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
+        with suppress(aiodocker.exceptions.DockerError):
+            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
     async def _send_no_response(self, cmd: _commands.Command[Any]):
         request = cmd.to_request(validate=self._maybe_validate)
