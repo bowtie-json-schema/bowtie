@@ -30,12 +30,31 @@ if TYPE_CHECKING:
     from bowtie._core import Implementation
 
 
-class EmptyReport(Exception):
-    pass
+class Invalid(Exception):
+    """
+    The report is invalid.
+    """
 
 
-class _InvalidBowtieReport(Exception):
-    pass
+class EmptyReport(Invalid):
+    """
+    The report was totally empty.
+    """
+
+
+class DuplicateCase(Invalid):
+    """
+    A `Seq` appeared twice in the report.
+    """
+
+
+class MissingFooter(Invalid):
+    """
+    A report is missing its footer.
+
+    Even though that only tells us whether the report failed fast, it might
+    mean there's actual data missing too.
+    """
 
 
 _DIALECT_URI_TO_SHORTNAME = {
@@ -256,7 +275,7 @@ class Report:
             match data:
                 case {"seq": Seq(seq), "case": case}:
                     if seq in cases:
-                        raise _InvalidBowtieReport(f"Duplicate case: {seq}")
+                        raise DuplicateCase(seq)
                     case = TestCase.from_dict(dialect=metadata.dialect, **case)
                     cases = cases.insert(seq, case)
                     continue
@@ -280,7 +299,7 @@ class Report:
                 current.insert(result.seq, result),
             )
 
-        raise _InvalidBowtieReport("Report data is truncated, no footer found")
+        raise MissingFooter()
 
     @classmethod
     def from_serialized(cls, serialized: Iterable[str]) -> Self:
