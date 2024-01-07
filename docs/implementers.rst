@@ -71,7 +71,7 @@ Create a directory somewhere, and within it create a ``Dockerfile`` with these c
 
 .. code:: dockerfile
 
-    FROM alpine:3.16
+    FROM alpine:3.19
     RUN apk add --no-cache luajit luajit-dev pcre-dev gcc libc-dev curl make cmake && \
         wget 'https://luarocks.org/releases/luarocks-3.9.1.tar.gz' && \
         tar -xf luarocks-3.9.1.tar.gz && cd luarocks-3.9.1 && \

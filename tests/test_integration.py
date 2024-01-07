@@ -77,13 +77,14 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
-def strimplementation(name, contents, files={}):
+def strimplementation(name, contents, files={}, base="alpine:3.19"):
+    containerfile = f"FROM {base}\n{dedent(contents)}".encode()
+
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        contents = dedent(contents).encode("utf-8")
         info = tarfile.TarInfo(name="Dockerfile")
-        info.size = len(contents)
-        tar.addfile(info, BytesIO(contents))
+        info.size = len(containerfile)
+        tar.addfile(info, BytesIO(containerfile))
 
         for k, v in files.items():
             v = dedent(v).encode("utf-8")
@@ -100,7 +101,6 @@ def shellplementation(name, contents):
         name=name,
         files={"run.sh": contents},
         contents="""
-        FROM alpine:3.16
         COPY run.sh .
         CMD sh run.sh
         """,
@@ -138,33 +138,27 @@ always_valid = shellplementation(  # I'm sorry future me.
 )
 succeed_immediately = strimplementation(
     name="succeed",
-    contents="FROM alpine:3.16\nENTRYPOINT true\n",
+    contents="ENTRYPOINT true",
 )
 fail_on_start = strimplementation(
     name="fail_on_start",
-    contents=r"""
-    FROM alpine:3.16
-    CMD read && printf 'BOOM!\n' >&2
-    """,
+    contents=r"CMD read && printf 'BOOM!\n' >&2",
 )
 fail_on_run = strimplementation(
     name="fail_on_run",
     contents=r"""
-    FROM alpine:3.16
     CMD read && printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 wrong_version = strimplementation(
     name="wrong_version",
     contents=r"""
-    FROM alpine:3.16
     CMD read && printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "version": 0}\n' && read >&2
     """,  # noqa: E501
 )
 hit_the_network = strimplementation(
     name="hit_the_network",
     contents=r"""
-    FROM alpine:3.16
     CMD read && printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n' && read && printf '{"ok": true}\n' && read && wget --timeout=1 -O - http://example.com >&2 && printf '{"seq": 0, "results": [{"valid": true}]}\n' && read
     """,  # noqa: E501
 )
