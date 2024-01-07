@@ -210,6 +210,7 @@ any_case_results = case_results() | errored_cases() | skipped_cases()
 def cases_and_results(
     draw,
     implementations=implementations(),
+    responding=None,
     seqs=seqs,
     test_cases=test_cases(),
     min_cases=1,
@@ -218,6 +219,13 @@ def cases_and_results(
     """
     A set of test cases along with their results for generated implementations.
     """
+    impls = draw(implementations)
+
+    if responding is None:
+
+        def responding(seq, case):
+            return just(impls)
+
     strategy = lists(
         tuples(seqs, test_cases),
         min_size=min_cases,
@@ -230,8 +238,8 @@ def cases_and_results(
         draw(
             case_results(seqs=just(seq), implementations=just(implementation)),
         )
-        for implementation in draw(implementations)
-        for (seq, _) in seq_cases
+        for (seq, case) in seq_cases
+        for implementation in draw(responding(seq, case))
     ]
 
 

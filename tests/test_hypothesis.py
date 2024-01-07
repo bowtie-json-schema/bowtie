@@ -1,5 +1,5 @@
 from hypothesis import given
-from hypothesis.strategies import data, integers, just
+from hypothesis.strategies import data, integers, just, sampled_from, sets
 
 from bowtie import hypothesis as strategies
 from bowtie._report import Report
@@ -39,6 +39,24 @@ def test_cases_and_results_with_given_implementations(data):
     seq_cases, results = data.draw(strategy)
     # all implementations have results
     assert len(results) == n * len(seq_cases)
+
+
+@given(data())
+def test_cases_and_results_with_not_all_responding(data):
+    n = data.draw(integers(min_value=1, max_value=5))
+    impls = data.draw(strategies.implementations(min_size=n, max_size=n))
+    responding = data.draw(integers(min_value=1, max_value=n))
+    strategy = strategies.cases_and_results(
+        implementations=just(impls),
+        responding=lambda seq, case: sets(
+            sampled_from(sorted(impls)),
+            min_size=responding,
+            max_size=responding,
+        ),
+    )
+    seq_cases, results = data.draw(strategy)
+    # only responding implementations have results
+    assert len(results) == responding * len(seq_cases)
 
 
 @given(strategies.dialects)
