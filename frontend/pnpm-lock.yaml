@@ -16,7 +16,7 @@ dependencies:
     version: 18.2.0
   react-bootstrap:
     specifier: ^2.9.2
-    version: 2.9.2(@types/react@18.2.46)(react-dom@18.2.0)(react@18.2.0)
+    version: 2.9.2(@types/react@18.2.47)(react-dom@18.2.0)(react@18.2.0)
   react-bootstrap-icons:
     specifier: ^1.10.3
     version: 1.10.3(react@18.2.0)
@@ -35,8 +35,8 @@ devDependencies:
     specifier: ^29.7.0
     version: 29.7.0
   '@types/react':
-    specifier: ^18.2.46
-    version: 18.2.46
+    specifier: ^18.2.47
+    version: 18.2.47
   '@types/react-dom':
     specifier: ^18.2.18
     version: 18.2.18
@@ -1291,17 +1291,17 @@ packages:
   /@types/react-dom@18.2.18:
     resolution: {integrity: sha512-TJxDm6OfAX2KJWJdMEVTwWke5Sc/E/RlnPGvGfS0W7+6ocy2xhDVQVh/KvC2Uf7kACs+gDytdusDSdWfWkaNzw==}
     dependencies:
-      '@types/react': 18.2.46
+      '@types/react': 18.2.47
     dev: true
 
   /@types/react-transition-group@4.4.10:
     resolution: {integrity: sha512-hT/+s0VQs2ojCX823m60m5f0sL5idt9SO6Tj6Dg+rdphGPIeJbJ6CxvBYkgkGKrYeDjvIpKTR38UzmtHJOGW3Q==}
     dependencies:
-      '@types/react': 18.2.46
+      '@types/react': 18.2.47
     dev: false
 
-  /@types/react@18.2.46:
-    resolution: {integrity: sha512-nNCvVBcZlvX4NU1nRRNV/mFl1nNRuTuslAJglQsq+8ldXe5Xv0Wd2f7WTE3jOxhLH2BFfiZGC6GCp+kHQbgG+w==}
+  /@types/react@18.2.47:
+    resolution: {integrity: sha512-xquNkkOirwyCgoClNk85BjP+aqnIS+ckAJ8i37gAbDs14jfW/J23f2GItAf33oiUPQnqNMALiFeoM9Y5mbjpVQ==}
     dependencies:
       '@types/prop-types': 15.7.11
       '@types/scheduler': 0.16.8
@@ -3999,7 +3999,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-bootstrap@2.9.2(@types/react@18.2.46)(react-dom@18.2.0)(react@18.2.0):
+  /react-bootstrap@2.9.2(@types/react@18.2.47)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-a36B+EHsAI/aH+ZhXNILBFnqscE3zr10dWmjBmfhIb2QR7KSXJiGzYd6Faf/25G8G7/CP9TCL2B0WhUBOD2UBQ==}
     peerDependencies:
       '@types/react': '>=16.14.8'
@@ -4012,7 +4012,7 @@ packages:
       '@babel/runtime': 7.23.7
       '@restart/hooks': 0.4.15(react@18.2.0)
       '@restart/ui': 1.6.6(react-dom@18.2.0)(react@18.2.0)
-      '@types/react': 18.2.46
+      '@types/react': 18.2.47
       '@types/react-transition-group': 4.4.10
       classnames: 2.5.1
       dom-helpers: 5.2.1
@@ -4701,7 +4701,7 @@ packages:
       react: '>=15.0.0'
     dependencies:
       '@babel/runtime': 7.23.7
-      '@types/react': 18.2.46
+      '@types/react': 18.2.47
       invariant: 2.2.4
       react: 18.2.0
       react-lifecycles-compat: 3.0.4
