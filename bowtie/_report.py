@@ -197,9 +197,15 @@ class RunMetadata:
         repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
     )
-    bowtie_version: str = importlib.metadata.version("bowtie-json-schema")
+    bowtie_version: str = field(
+        default=importlib.metadata.version("bowtie-json-schema"),
+        repr=False,
+    )
     metadata: Mapping[str, Any] = field(factory=dict, repr=False)
-    started: datetime = field(factory=lambda: datetime.now(timezone.utc))
+    started: datetime = field(
+        factory=lambda: datetime.now(timezone.utc),
+        repr=False,
+    )
 
     @classmethod
     def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
@@ -248,7 +254,7 @@ class RunMetadata:
 
 @frozen
 class Report:
-    _cases: HashTrieMap[Seq, TestCase] = field(alias="cases")
+    _cases: HashTrieMap[Seq, TestCase] = field(alias="cases", repr=False)
     _results: HashTrieMap[str, HashTrieMap[Seq, AnyCaseResult]] = field(
         repr=False,
         alias="results",
