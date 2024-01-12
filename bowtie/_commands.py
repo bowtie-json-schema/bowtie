@@ -109,6 +109,16 @@ class TestCase:
             }
         return as_dict
 
+    def uniq(self) -> str:
+        """
+        An internally used unique identifier when we want unique cases.
+
+        Really this is just the JSON-serialized, normalized case.
+
+        But that can change.
+        """
+        return json.dumps(self.serializable(), sort_keys=True)
+
     def without_expected_results(self) -> dict[str, Any]:
         serializable = self.serializable()
         serializable["tests"] = [

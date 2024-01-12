@@ -230,7 +230,7 @@ def cases_and_results(
         tuples(seqs, test_cases),
         min_size=min_cases,
         max_size=max_cases,
-        unique_by=lambda each: each[0],
+        unique_by=(lambda sc: sc[0], lambda sc: sc[1].uniq()),
     ).map(
         lambda v: [_commands.SeqCase(seq=seq, case=case) for seq, case in v],
     )

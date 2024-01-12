@@ -41,6 +41,12 @@ def test_cases_and_results_with_given_implementations(data):
     assert len(results) == n * len(seq_cases)
 
 
+@given(strategies.cases_and_results(min_cases=2))  # no point for 1
+def test_cases_are_unique_by_default(cases_results):
+    seq_cases, _ = cases_results
+    assert len({each.case.uniq() for each in seq_cases}) == len(seq_cases)
+
+
 @given(data())
 def test_cases_and_results_with_not_all_responding(data):
     n = data.draw(integers(min_value=1, max_value=5))
