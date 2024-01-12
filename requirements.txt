@@ -87,14 +87,14 @@ rich==13.7.0
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   textual
-rpds-py==0.16.2
+rpds-py==0.17.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
     #   referencing
 six==1.16.0
     # via python-dateutil
-structlog==23.3.0
+structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
 textual==0.47.1
     # via trogon
