@@ -23,7 +23,10 @@ class Harness {
   // List of specific tests of a case that are not supported
   val UNSUPPORTED_TESTS: Map[String, TestSkip] = Map(
     "minLength validation" -> TestSkip("one supplementary Unicode code point is not long enough", NOT_IMPLEMENTED),
-    "maxLength validation" -> TestSkip("two supplementary Unicode code points is long enough", NOT_IMPLEMENTED)
+    "maxLength validation" -> TestSkip("two supplementary Unicode code points is long enough", NOT_IMPLEMENTED),
+    // The above two tests were renamed to the following two tests. We keep the old names for backward compatibility.
+    "minLength validation" -> TestSkip("one grapheme is not long enough", NOT_IMPLEMENTED),
+    "maxLength validation" -> TestSkip("two graphemes is long enough", NOT_IMPLEMENTED)
   )
 
   def operate(line: String) = {
