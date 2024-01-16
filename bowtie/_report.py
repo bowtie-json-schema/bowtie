@@ -199,11 +199,13 @@ class RunMetadata:
     )
     bowtie_version: str = field(
         default=importlib.metadata.version("bowtie-json-schema"),
+        eq=False,
         repr=False,
     )
     metadata: Mapping[str, Any] = field(factory=dict, repr=False)
     started: datetime = field(
         factory=lambda: datetime.now(timezone.utc),
+        eq=False,
         repr=False,
     )
 
@@ -309,14 +311,14 @@ class Report:
         return cls.from_input(json.loads(line) for line in serialized)
 
     @classmethod
-    def empty(cls, dialect: URL):
+    def empty(cls, **kwargs: Any):
         """
         'The' empty report.
         """
         return cls(
             cases=HashTrieMap(),
             results=HashTrieMap(),
-            metadata=RunMetadata(dialect=dialect, implementations={}),
+            metadata=RunMetadata(implementations={}, **kwargs),
             did_fail_fast=False,
         )
 
