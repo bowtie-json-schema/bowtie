@@ -338,7 +338,7 @@ def _validation_results_table(
         caption=f"{report.total_tests} {test} ran",
     )
 
-    # TODO: sort the columns?
+    # TODO: sort the columns by results?
     implementations = report.metadata.implementations
 
     for case, test_results in results:
@@ -353,9 +353,9 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                json.dumps(test.instance),
+                Text(json.dumps(test.instance)),
                 *(
-                    test_result[each["image"]].description
+                    Text(test_result[each["image"]].description)
                     for each in implementations
                 ),
             )
