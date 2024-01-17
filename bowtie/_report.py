@@ -254,8 +254,19 @@ class RunMetadata:
         return as_dict
 
 
-@frozen
+@frozen(eq=False)
 class Report:
+    r"""
+    A Bowtie report, containing (amongst other things) results about cases run.
+
+    In general, reports are assumed to be constructed by calling
+    `Report.from_serialized` or an equivalent (i.e. by 'replaying' JSON output
+    that was produced by Bowtie).
+
+    When comparing reports (e.g. for equality), only the relative order of
+    test cases is considered, not the exact `Seq`\ s used in the run.
+    """
+
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases", repr=False)
     _results: HashTrieMap[str, HashTrieMap[Seq, AnyCaseResult]] = field(
         repr=False,
@@ -263,6 +274,29 @@ class Report:
     )
     metadata: RunMetadata
     did_fail_fast: bool
+
+    def __eq__(self, other: object):
+        if type(other) is not Report:
+            return NotImplemented
+
+        if (  # short circuit for fewer/more cases or differing implementations
+            len(self._cases) != len(other._cases)
+            or self._results.keys() != other._results.keys()
+        ):
+            return False
+
+        this, that = asdict(self, recurse=False), asdict(other, recurse=False)
+
+        cases = [v for _, v in sorted(this.pop("_cases").items())]
+        if cases != [v for _, v in sorted(that.pop("_cases").items())]:
+            return False
+
+        other_results = that.pop("_results")
+        for name, results in this.pop("_results").items():
+            ordered = [v for _, v in sorted(results.items())]
+            if ordered != [v for _, v in sorted(other_results[name].items())]:
+                return False
+        return this == that
 
     @classmethod
     def from_input(cls, input: Iterable[Mapping[str, Any]]) -> Self:

@@ -419,11 +419,14 @@ class CaseResult:
                 failed += 1
         return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
+    def serializable(self):
+        return asdict(self)
+
     def log_and_be_serialized(self, log: BoundLogger):
         for result in self.results:
             if result.errored:
                 log.error("", **result.context)  # type: ignore[reportGeneralTypeIssues, reportUnknownMemberType]
-        return asdict(self)
+        return self.serializable()
 
     def compare(self) -> Iterable[tuple[AnyTestResult, bool]]:
         for test, expected in zip(self.results, self.expected):
