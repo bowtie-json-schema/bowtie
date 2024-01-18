@@ -1,3 +1,4 @@
+import data from "../../../data/dialects.json";
 import URI from "urijs";
 
 import { parseReportData } from "./parseReportData";
@@ -17,7 +18,7 @@ export default class Dialect {
     path: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: string,
+    firstPublicationDate: Date,
   ) {
     if (Dialect.all.has(path)) {
       throw new DialectError(`A "${path}" dialect already exists.`);
@@ -27,7 +28,7 @@ export default class Dialect {
     this.path = path;
     this.prettyName = prettyName;
     this.uri = uri;
-    this.firstPublicationDate = new Date(firstPublicationDate);
+    this.firstPublicationDate = firstPublicationDate;
   }
 
   async fetchReport(baseURI: URI) {
@@ -69,39 +70,12 @@ class DialectError extends Error {
   }
 }
 
-export const DRAFT202012 = new Dialect(
-  "draft2020-12",
-  "Draft 2020-12",
-  "https://json-schema.org/draft/2020-12/schema",
-  "January 28, 2020",
-);
-export const DRAFT201909 = new Dialect(
-  "draft2019-09",
-  "Draft 2019-09",
-  "https://json-schema.org/draft/2019-09/schema",
-  "September 17, 2019",
-);
-export const DRAFT7 = new Dialect(
-  "draft7",
-  "Draft 7",
-  "http://json-schema.org/draft-07/schema#",
-  "November 19, 2017",
-);
-export const DRAFT6 = new Dialect(
-  "draft6",
-  "Draft 6",
-  "http://json-schema.org/draft-06/schema#",
-  "April 21, 2017",
-);
-export const DRAFT4 = new Dialect(
-  "draft4",
-  "Draft 4",
-  "http://json-schema.org/draft-04/schema#",
-  "January 31, 2013",
-);
-export const DRAFT3 = new Dialect(
-  "draft3",
-  "Draft 3",
-  "http://json-schema.org/draft-03/schema#",
-  "November 22, 2010",
-);
+for (const each of data) {
+  // TODO: Replace Dialect.all so we aren't relying on side effects.
+  new Dialect(
+    each.shortName,
+    each.prettyName,
+    each.uri,
+    new Date(each.firstPublicationDate),
+  );
+}

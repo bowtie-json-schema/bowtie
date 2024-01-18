@@ -1,0 +1,44 @@
+[
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "https://json-schema.org/draft/2020-12/schema",
+    "shortName": "draft2020-12",
+    "prettyName": "Draft 2020-12",
+    "firstPublicationDate": "2020-01-28"
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "https://json-schema.org/draft/2019-09/schema",
+    "shortName": "draft2019-09",
+    "prettyName": "Draft 2019-09",
+    "firstPublicationDate": "2019-09-17"
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "http://json-schema.org/draft-07/schema#",
+    "shortName": "draft7",
+    "prettyName": "Draft 7",
+    "firstPublicationDate": "2017-11-19"
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "http://json-schema.org/draft-06/schema#",
+    "shortName": "draft6",
+    "prettyName": "Draft 6",
+    "firstPublicationDate": "2017-04-21"
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "http://json-schema.org/draft-04/schema#",
+    "shortName": "draft4",
+    "prettyName": "Draft 4",
+    "firstPublicationDate": "2013-01-31"
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "http://json-schema.org/draft-03/schema#",
+    "shortName": "draft3",
+    "prettyName": "Draft 3",
+    "firstPublicationDate": "2010-11-22"
+  }
+]

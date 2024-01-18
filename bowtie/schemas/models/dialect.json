@@ -1,0 +1,39 @@
+{
+  "description": "Dialect metadata for a dialect of JSON Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:models:dialect",
+
+  "type": "object",
+  "required": ["firstPublicationDate", "prettyName", "shortName", "uri"],
+  "properties": {
+    "uri": {
+      "description": "The URI representing this dialect, also known as its dialect identifier",
+      "readOnly": true,
+
+      "type": "string",
+      "format": "uri"
+    },
+    "prettyName": {
+      "description": "A human-readable name for the dialect",
+      "readOnly": true,
+
+      "type": "string"
+    },
+    "shortName": {
+      "description": "A shorter, slug-like name for the dialect (with no punctuation or spaces) but which still should be unique",
+      "readOnly": true,
+
+      "type": "string",
+      "pattern": "[a-z]+[a-z0-9-]*"
+    },
+    "firstPublicationDate": {
+      "description": "The date when the dialect was first published publicly as a document",
+      "readOnly": true,
+
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "additionalProperties": false
+}
