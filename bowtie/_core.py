@@ -314,6 +314,7 @@ class Implementation:
 
     @property
     def dialects(self):
+        # FIXME: Do this higher up
         if self.metadata is None:
             raise StartupFailed(name=self.name)
         # FIXME: Probably should return a set, but needs ordering occasionally
