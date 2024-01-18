@@ -571,7 +571,7 @@ async def _info(image_names: list[str], format: _F):
         make_validator=validator_for_dialect,
         reporter=_report.Reporter(),
     ) as starting:
-        for each in asyncio.as_completed(starting):
+        for each in starting:
             try:
                 implementation = await each
             except NoSuchImage as error:
@@ -660,7 +660,7 @@ async def _smoke(
         make_validator=validator_for_dialect,
         reporter=reporter,
     ) as starting:
-        for each in asyncio.as_completed(starting):
+        for each in starting:
             try:
                 implementation = await each
             except NoSuchImage as error:
@@ -890,7 +890,7 @@ async def _run(
         **kwargs,
     ) as starting:
         reporter.will_speak(dialect=dialect)
-        for each in asyncio.as_completed(starting):
+        for each in starting:
             try:
                 implementation = await each
             except StartupFailed as error:
@@ -969,7 +969,7 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(aiodocker.Docker())
 
-        yield [
+        implementations = [
             stack.enter_async_context(
                 Implementation.start(
                     docker=docker,
@@ -979,6 +979,7 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
             )
             for image_name in image_names
         ]
+        yield asyncio.as_completed(implementations)
 
 
 def _remotes_from(
