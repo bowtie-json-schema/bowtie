@@ -60,6 +60,7 @@ jobs:
             3.12
             pypy3.10
           allow-prereleases: true
+          cache: pip
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
 
@@ -81,6 +82,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
+          cache: pip
           python-version: "3.x"
       - name: Install dependencies
         run: python -m pip install build
