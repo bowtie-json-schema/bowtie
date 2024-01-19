@@ -5,9 +5,9 @@ Test Bowtie's schemas for proper functionality.
 from jsonschema.validators import validator_for
 import pytest
 
-from bowtie._cli import DRAFT2020, bowtie_schemas_registry
+from bowtie._cli import DRAFT2020, with_current_dialect
 
-REGISTRY = bowtie_schemas_registry(dialect=DRAFT2020).crawl()
+REGISTRY = with_current_dialect(DRAFT2020)
 
 TEST = {
     "description": "a test",

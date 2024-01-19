@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from fnmatch import fnmatch
-from functools import wraps
+from functools import cache, wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
@@ -52,7 +52,7 @@ from bowtie.exceptions import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
 
-    from referencing.jsonschema import SchemaRegistry
+    from referencing.jsonschema import Schema, SchemaRegistry
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -101,9 +101,6 @@ LATEST_DIALECT_NAME = "draft2020-12"
 
 # Magic constants assumed/used by the official test suite
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
-
-#: Should match the magic value used to validate `schema`s in `schemas/io/`
-CURRENT_DIALECT_URI = URL.parse("tag:bowtie.report,2023:ihop:__dialect__")
 
 FORMAT = click.option(
     "--format",
@@ -367,15 +364,26 @@ def _validation_results_table(
     return table
 
 
-def bowtie_schemas_registry(dialect: URL) -> SchemaRegistry:
-    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    base = referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
-
-    specification = referencing.jsonschema.specification_with(str(dialect))
-    return base.with_resource(
-        uri=str(CURRENT_DIALECT_URI),
-        resource=specification.create_resource({"$ref": str(dialect)}),
+def with_current_dialect(dialect: URL):
+    # it's of course unimportant what dialect is used for this referencing
+    # schema, what matters is that the target dialect is applied
+    return (
+        referencing.jsonschema.DRAFT202012.create_resource(
+            {
+                # Should match the magic value used for `schema` in `schemas/io/`
+                "$id": "tag:bowtie.report,2023:ihop:__dialect__",
+                "$ref": str(dialect),
+            },
+        )
+        @ bowtie_schemas_registry()
     )
+
+
+@cache
+def bowtie_schemas_registry() -> SchemaRegistry:
+    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
+    registry = referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
+    return registry.crawl()
 
 
 # FIXME: Make this take a `registry`, not a dialect
@@ -384,9 +392,9 @@ def validator_for_dialect(dialect: URL = DRAFT2020):
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    registry = bowtie_schemas_registry(dialect=dialect)
+    registry = with_current_dialect(dialect)
 
-    def validate(instance: Any, schema: referencing.jsonschema.Schema) -> None:
+    def validate(instance: Any, schema: Schema) -> None:
         Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
         # FIXME: There's work to do upstream in referencing, but we still are
         # probably able to make this a bit better here as well
