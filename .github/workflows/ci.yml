@@ -30,27 +30,33 @@ jobs:
 
   ci:
     needs: list
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
+        exclude:
+          - os: windows-latest
+            noxenv: "build"
+          - os: windows-latest
+            noxenv: "docs(style)"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: >
-          sudo apt-get update &&
-          sudo apt-get install -y libenchant-2-dev
-        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
-      - name: Install dependencies
-        run: brew install enchant podman
+      - name: Set up podman
+        run: |
+          brew install podman
+          podman machine init --now
+          echo "DOCKER_HOST=unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')" >> $GITHUB_ENV
         if: runner.os == 'macOS'
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
+      - name: Set up podman
+        run: |
+          choco install podman-cli
+          podman machine init --now
+          echo "DOCKER_HOST=npipe://$(podman machine inspect --format '{{.ConnectionInfo.PodmanPipe.Path}}')" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -60,8 +66,26 @@ jobs:
             3.12
             pypy3.10
           allow-prereleases: true
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
+
+      - name: Install docs dependencies
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y libenchant-2-dev
+        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
+      - name: Install docs dependencies
+        run: brew install enchant
+        if: runner.os == 'macOS' && startsWith(matrix.noxenv, 'docs')
+
+      - name: Speak UTF-8 on Windows
+        run: echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows' && startsWith(matrix.noxenv, 'tests')
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
