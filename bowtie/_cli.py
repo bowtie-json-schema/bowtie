@@ -56,6 +56,7 @@ if TYPE_CHECKING:
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
+_EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
@@ -732,7 +733,7 @@ async def _smoke(
             for seq_case in SeqCase.for_cases(cases):
                 response = await seq_case.run(runner=runner)
                 if response.errored or response.failed:
-                    exit_code |= os.EX_DATAERR
+                    exit_code |= _EX_DATAERR
                 see(seq_case, response)
 
     finish()
@@ -960,7 +961,7 @@ async def _run(
                     break
             reporter.finished(count=count, did_fail_fast=should_stop)
             if not count:
-                exit_code = os.EX_NOINPUT
+                exit_code = _EX_NOINPUT
     return exit_code
 
 
