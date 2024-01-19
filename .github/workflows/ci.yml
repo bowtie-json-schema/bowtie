@@ -31,6 +31,7 @@ jobs:
   ci:
     needs: list
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
@@ -67,12 +68,31 @@ jobs:
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
 
+  automerge:
+    needs: ci
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Automatically merge allowed PRs
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   packaging:
     needs: ci
     runs-on: ubuntu-latest
+
     environment:
       name: PyPI
       url: https://pypi.org/p/bowtie-json-schema
+
     permissions:
       contents: write
       id-token: write
