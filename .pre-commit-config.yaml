@@ -18,7 +18,7 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.1.13"
+    rev: "v0.1.14"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -99,7 +99,7 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.19.1
+    rev: v0.20.0
     hooks:
       - name: stylua (lua implementations)
         id: stylua
