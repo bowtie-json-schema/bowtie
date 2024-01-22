@@ -42,7 +42,7 @@ idna==3.6
     # via
     #   requests
     #   yarl
-jsonschema==4.21.0
+jsonschema==4.21.1
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.12.1
     # via jsonschema
