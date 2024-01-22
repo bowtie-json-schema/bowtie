@@ -45,10 +45,10 @@ Bowtie is available in a `tap <https://docs.brew.sh/Taps>`_ which is located :gi
 
     brew install bowtie-json-schema/tap/bowtie
 
-As a ``shiv`` / ``pyapp``
-^^^^^^^^^^^^^^^^^^^^^^^^^
+As a Single Executable
+^^^^^^^^^^^^^^^^^^^^^^
 
-There is an experimental `shiv` of Bowtie published to GitHub on each release.
+There is an experimental `PyApp <https://ofek.dev/pyapp/latest/>`_ of Bowtie published to GitHub on each release.
 
 You can find the :gh:`latest one here <releases/latest/>`.
 
