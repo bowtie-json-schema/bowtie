@@ -1,4 +1,4 @@
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import data, integers, just, sampled_from, sets
 
 from bowtie import hypothesis as strategies
@@ -31,6 +31,7 @@ def test_successful_case_results_have_at_least_one_test(result):
 
 
 @given(data())
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_cases_and_results_with_given_implementations(data):
     n = data.draw(integers(min_value=1, max_value=5))
     strategy = strategies.cases_and_results(
