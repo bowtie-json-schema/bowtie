@@ -17,7 +17,7 @@
 
     "strict": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
   },
-  "include": ["src", "jest.config.ts", "vite.config.ts"]
+  "include": ["src", "jest.config.ts", "vite.config.ts"],
 }
