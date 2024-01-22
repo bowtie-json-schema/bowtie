@@ -1,5 +1,5 @@
 [versions]
-validator = "2023.6"
+validator = "2024.1"
 
 kotlin = "1.9.22"
 build-jdk = "11"
