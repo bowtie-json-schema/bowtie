@@ -2,6 +2,6 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
-    "resolveJsonModule": true
-  }
+    "resolveJsonModule": true,
+  },
 }
