@@ -1,7 +1,7 @@
 {
   "overrides": [
     {
-      "files": ["tsconfig.json"],
+      "files": ["**/tsconfig.json"],
       "options": {
         "trailingComma": "none"
       }
