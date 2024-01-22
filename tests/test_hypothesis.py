@@ -43,6 +43,7 @@ def test_cases_and_results_with_given_implementations(data):
 
 
 @given(strategies.cases_and_results(min_cases=2))  # no point for 1
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_cases_are_unique_by_default(cases_results):
     seq_cases, _ = cases_results
     assert len({each.case.uniq() for each in seq_cases}) == len(seq_cases)
