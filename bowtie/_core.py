@@ -253,13 +253,13 @@ class Implementation:
             raise err from None
         except StreamClosed:
             raise StartupFailed(name=image_name) from None
-        except aiodocker.exceptions.DockerError as error:
+        except aiodocker.exceptions.DockerError as err:
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
 
-            status, data, *_ = error.args
+            status, data, *_ = err.args
             if data.get("cause") == "image not known":
-                raise NoSuchImage(name=image_name, data=data) from error
+                raise NoSuchImage(name=image_name, data=data) from err
 
             message = ghcr = data.get("message", "")
 
@@ -283,14 +283,14 @@ class Implementation:
                     # locally via podman on macOS...
 
                     # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("error", "")
-                except Exception:  # nonJSON / missing key # noqa: BLE001, S110
-                    pass
+                    error = json.loads(ghcr).get("message", "")
+                except Exception as err:  # noqa: BLE001, S110
+                    pass  # nonJSON / missing key
                 else:
                     if "403 (forbidden)" in error.casefold():
                         raise NoSuchImage(name=image_name, data=data)
 
-            raise StartupFailed(name=image_name, data=data) from error
+            raise StartupFailed(name=image_name, data=data) from err
 
         yield self
         await self._stop()
