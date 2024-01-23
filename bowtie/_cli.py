@@ -736,7 +736,7 @@ async def _smoke(
 
             for seq_case in SeqCase.for_cases(cases):
                 result = await seq_case.run(runner=runner)
-                if result.unsuccessful():
+                if result.unsuccessful().causes_stop:
                     exit_code |= _EX_DATAERR
                 see(seq_case, result)
 
