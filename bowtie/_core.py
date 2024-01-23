@@ -157,42 +157,27 @@ class DialectRunner:
         self,
         command: _commands.Run,
         tests: Iterable[_commands.Test],
-    ) -> _commands.AnyCaseResult:
-        expected = [test.valid for test in tests]
-
+    ) -> _commands.SeqResult:
         try:
             response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
-                return _commands.Empty(
-                    implementation=self._name,
-                    seq=command.seq,
-                    expected=expected,
-                )
+                result = _commands.Empty()
             elif response is INVALID:
-                return _commands.CaseErrored.uncaught(
-                    implementation=self._name,
-                    seq=command.seq,
-                    expected=expected,
-                )
-            try:
-                return response(implementation=self._name, expected=expected)
-            except Exception:  # noqa: BLE001
-                # TODO: This kind of error will almost certainly be caught by
-                # running with -V -- probably we should emit a diagnostic
-                # saying so (that you'll get a clearer error by using it)
-                return _commands.CaseErrored.uncaught(
-                    implementation=self._name,
-                    seq=command.seq,
-                    expected=expected,
-                )
-
+                result = _commands.CaseErrored.uncaught()
+            else:
+                # FIXME: seq here should just get validated against the run one
+                _, result = response
         except GotStderr as error:
-            return _commands.CaseErrored.uncaught(
-                seq=command.seq,
-                implementation=self._name,
-                expected=expected,
-                stderr=error.stderr.decode("utf-8"),
-            )
+            stderr = error.stderr.decode("utf-8")
+            result = _commands.CaseErrored.uncaught(stderr=stderr)
+
+        expected: list[bool] | list[None] = [test.valid for test in tests]  # type: ignore[reportAssignmentType]
+        return _commands.SeqResult(
+            seq=command.seq,
+            implementation=self._name,
+            expected=expected,
+            result=result,
+        )
 
 
 class _MakeValidator(Protocol):
@@ -284,7 +269,7 @@ class Implementation:
 
                     # message will be ... a JSON string !?! ...
                     error = json.loads(ghcr).get("message", "")
-                except Exception as err:  # noqa: BLE001, S110
+                except Exception:  # noqa: BLE001, S110
                     pass  # nonJSON / missing key
                 else:
                     if "403 (forbidden)" in error.casefold():

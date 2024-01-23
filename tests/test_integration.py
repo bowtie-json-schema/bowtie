@@ -563,8 +563,8 @@ async def test_smoke_pretty(envsonschema):
         dedent(stdout)
         == dedent(
             """
-          ✗ (failed): allow-everything schema
-          ✓: allow-nothing schema
+            · allow-everything schema: ✗✗
+            · allow-nothing schema: ✓
         """,
         ).lstrip("\n")
     ), stderr
@@ -581,7 +581,7 @@ async def test_smoke_json(envsonschema):
         "json",
         "-i",
         envsonschema,
-        exit_code=-1,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
     assert json.loads(stdout) == [
         {
@@ -595,7 +595,7 @@ async def test_smoke_json(envsonschema):
                     {"description": "Second", "instance": "foo"},
                 ],
             },
-            "response": {"errored": False, "failed": True},
+            "result": {"results": [{"valid": False}, {"valid": False}]},
         },
         {
             "case": {
@@ -606,7 +606,7 @@ async def test_smoke_json(envsonschema):
                 },
                 "tests": [{"description": "First", "instance": 12}],
             },
-            "response": {"errored": False, "failed": False},
+            "result": {"results": [{"valid": False}]},
         },
     ], stderr
 

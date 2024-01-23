@@ -20,14 +20,9 @@ def test_tests_invalid(test):
     assert not test.valid
 
 
-@given(strategies.any_case_results)
+@given(strategies.any_case_results())
 def test_successful_case_results_have_at_least_one_test(result):
-    assert (
-        result.failed
-        or result.errored
-        or result.skipped
-        or len(result.results) >= 1
-    )
+    assert result.results is None or len(result.results) >= 1
 
 
 @given(data())

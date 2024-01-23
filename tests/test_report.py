@@ -24,11 +24,11 @@ def test_eq():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -54,11 +54,11 @@ def test_eq_different_seqs():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -80,11 +80,11 @@ def test_eq_different_seqs():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=200,
@@ -110,11 +110,11 @@ def test_eq_different_order():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -144,11 +144,11 @@ def test_eq_different_order():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -167,11 +167,11 @@ def test_eq_different_seqs_different_order():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -201,11 +201,11 @@ def test_eq_different_seqs_different_order():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=100,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -223,11 +223,11 @@ def test_ne_different_results():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -249,11 +249,11 @@ def test_ne_different_results():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": False}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": False}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,
@@ -287,11 +287,11 @@ def test_ne_different_implementations():
                 tests=[_commands.Test(description="1", instance=1)],
             ),
         ).serializable(),
-        _commands.CaseResult(
+        _commands.SeqResult(
             seq=1,
             implementation="foo",
-            results=[{"valid": True}],
             expected=[None],
+            result=_commands.CaseResult(results=[{"valid": True}]),
         ).serializable(),
         _commands.SeqCase(
             seq=2,

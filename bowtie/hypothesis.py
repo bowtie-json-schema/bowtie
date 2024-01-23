@@ -7,7 +7,6 @@ Note that this module depends on you having installed Hypothesis.
 
 from string import ascii_lowercase, digits, printable
 
-from attrs import asdict
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -142,68 +141,65 @@ skipped_tests = builds(
 test_results = successful_tests | errored_tests | skipped_tests
 
 
-def case_results(
-    implementations=implementation_images,
-    seqs=seqs,
-    min_tests=1,
-    max_tests=10,
-):
+def case_results(min_tests=1, max_tests=10):
     """
     A successfully executed (though perhaps still failing) test case result.
-
-    Note that the `Seq` for this result will be arbitrary, so don't use this to
-    generate results in isolation without controlling for these IDs being what
-    they need to be (i.e. report-wide unique).
-    """
-    return integers(min_value=min_tests, max_value=max_tests).flatmap(
-        lambda size: builds(
-            _commands.CaseResult,
-            implementation=implementations,
-            seq=seqs,
-            results=lists(test_results, min_size=size, max_size=size),
-            expected=lists(booleans() | none(), min_size=size, max_size=size),
-        ),
-    )
-
-
-def errored_cases(implementations=implementation_images, seqs=seqs):
-    """
-    A test case which errored under an implementation (caught or not).
     """
     return builds(
-        _commands.CaseErrored,
-        implementation=implementations,
-        seq=seqs,
-        expected=lists(booleans() | none()),
-        context=dictionaries(
-            keys=text(),
-            values=text() | integers(),
-            max_size=5,
-        ),
-        caught=booleans(),
+        _commands.CaseResult,
+        results=lists(test_results, min_size=min_tests, max_size=max_tests),
     )
+
+
+def errored_cases(
+    context=dictionaries(keys=text(), values=text() | integers(), max_size=5),
+    caught=booleans(),
+):
+    """
+    A test case which errored (caught or otherwise).
+    """
+    return builds(_commands.CaseErrored, context=context, caught=caught)
 
 
 def skipped_cases(
-    implementations=implementation_images,
-    seqs=seqs,
     message=text(min_size=1, max_size=50) | none(),
     issue_url=text(min_size=1, max_size=50) | none(),
 ):
     """
     A test case which was skipped by an implementation.
     """
-    return builds(
-        _commands.CaseSkipped,
-        implementation=implementations,
-        seq=seqs,
-        expected=lists(booleans() | none()),
-        message=message,
-        issue_url=issue_url,
+    return builds(_commands.CaseSkipped, message=message, issue_url=issue_url)
+
+
+def any_case_results(min_tests=1, max_tests=10):
+    """
+    Any kind of case result.
+    """
+    happy = case_results(min_tests=min_tests, max_tests=max_tests)
+    return happy | errored_cases() | skipped_cases()
+
+
+def seq_results(
+    seqs=seqs,
+    implementations=implementation_images,
+    min_tests=1,
+    max_tests=10,
+):
+    """
+    A result with its seq and implementation.
+    """
+    return integers(min_value=min_tests, max_value=max_tests).flatmap(
+        lambda size: builds(
+            _commands.SeqResult,
+            seq=seqs,
+            implementation=implementation_images,
+            expected=(
+                lists(booleans(), min_size=size, max_size=size)
+                | lists(none(), min_size=size, max_size=size)
+            ),
+            result=any_case_results(min_tests=size, max_tests=size),
+        ),
     )
-
-
-any_case_results = case_results() | errored_cases() | skipped_cases()
 
 
 @composite
@@ -238,7 +234,7 @@ def cases_and_results(
 
     return seq_cases, [
         draw(
-            case_results(
+            seq_results(
                 seqs=just(seq_case.seq),
                 implementations=just(implementation),
             ),
@@ -299,7 +295,7 @@ def report_data(
     return [  # FIXME: Combine with the logic in CaseReporter
         draw(run_metadata).serializable(),
         *[seq_case.serializable() for seq_case in seq_cases],
-        *[asdict(result) for result in results],
+        *[result.serializable() for result in results],
         {"did_fail_fast": draw(fail_fast)},
     ]
 

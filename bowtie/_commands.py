@@ -57,6 +57,10 @@ class Unsuccessful:
         """
         return self.errored + self.failed + self.skipped
 
+    @property
+    def causes_stop(self) -> bool:
+        return bool(self.failed or self.errored)
+
 
 @frozen
 class Test:
@@ -81,7 +85,7 @@ class TestCase:
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
-    ) -> TestCase:
+    ):
         empty: SchemaRegistry = Registry()
         populated = empty.with_contents(
             registry.items(),
@@ -141,7 +145,7 @@ class SeqCase:
     def for_cases(cls, cases: Iterable[TestCase]):
         return (cls(seq=i, case=case) for i, case in enumerate(cases))
 
-    def run(self, runner: DialectRunner) -> Awaitable[AnyCaseResult]:
+    def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
         command = Run(seq=self.seq, case=self.case.without_expected_results())
         return runner.run_validation(command=command, tests=self.case.tests)
 
@@ -235,30 +239,6 @@ StartedDialect.OK = StartedDialect(ok=True)
 @command(Response=StartedDialect)
 class Dialect:
     dialect: str
-
-
-def _case_result(
-    errored: bool = False,
-    skipped: bool = False,
-    **response: Any,
-) -> Callable[[str, list[bool | None]], AnyCaseResult]:
-    if errored:
-        return lambda implementation, expected: CaseErrored(
-            implementation=implementation,
-            expected=expected,
-            **response,
-        )
-    elif skipped:
-        return lambda implementation, expected: CaseSkipped(
-            implementation=implementation,
-            expected=expected,
-            **response,
-        )
-    return lambda implementation, expected: CaseResult.from_dict(
-        response,
-        implementation=implementation,
-        expected=expected,
-    )
 
 
 class AnyTestResult(Protocol):
@@ -356,87 +336,126 @@ class ErroredTest:
 
 class AnyCaseResult(Protocol):
     @property
-    def seq(self) -> Seq:
+    def results(self) -> Sequence[AnyTestResult] | None:
         ...
 
-    @property
-    def results(self) -> Sequence[AnyTestResult]:
+    def result_for(self, i: int) -> AnyTestResult:
         ...
 
-    @property
-    def errored(self) -> bool:
+    def log(self, log: BoundLogger) -> None:
         ...
 
-    @property
-    def failed(self) -> bool:
+    def unsuccessful(
+        self,
+        expected: Sequence[bool] | Sequence[None],
+    ) -> Unsuccessful:
         ...
 
-    @property
-    def skipped(self) -> bool:
-        ...
 
-    @property
-    def implementation(self) -> str:
-        ...
+def _case_result(seq: Seq, **data: Any) -> tuple[Seq, AnyCaseResult]:
+    # FIXME: Remove passing seq through which is mostly to support future
+    #        validation that the seq we got back is the right one
+    match data:
+        case {"errored": True, **data}:
+            return seq, CaseErrored(**data)
+        case {"skipped": True, **skip}:
+            return seq, CaseSkipped(**skip)
+        case _:
+            return seq, CaseResult.from_results(**data)
 
-    def log_and_be_serialized(self, log: BoundLogger) -> Mapping[str, Any]:
-        ...
+
+@frozen
+class SeqResult:
+    """
+    A result along with its corresponding metadata.
+
+    Contains the implementation an test case it corresponds to.
+
+    Knows how long the result was *supposed* to be, and what the expected
+    validation results were supposed to be if that information was provided at
+    run-time.
+    """
+
+    seq: Seq
+    implementation: str
+
+    result: AnyCaseResult
+    expected: Sequence[bool] | Sequence[None]
+
+    @classmethod
+    def from_dict(
+        cls,
+        seq: Seq,
+        implementation: str,
+        expected: Sequence[bool] | Sequence[None],
+        **data: Mapping[str, Any],
+    ):
+        _, result = _case_result(seq=seq, **data)
+        return cls(
+            seq=seq,
+            implementation=implementation,
+            expected=expected,
+            result=result,
+        )
+
+    def compare(self) -> Iterable[bool] | Iterable[None]:
+        results = self.result.results
+        if results is None:
+            return (None for _ in self.expected)
+
+        for got, maybe in zip(results, self.expected):
+            expected = got if maybe is None else TestResult(valid=maybe)
+            yield got == expected
+
+    def result_for(self, i: int) -> AnyTestResult:
+        return self.result.result_for(i)
 
     def unsuccessful(self) -> Unsuccessful:
-        ...
+        return self.result.unsuccessful(expected=self.expected)
+
+    def log_and_be_serialized(self, log: BoundLogger) -> Mapping[str, Any]:
+        self.result.log(log)
+        return self.serializable()
+
+    def serializable(self):
+        serializable = asdict(self)
+        serializable.update(serializable.pop("result"))
+        return serializable
 
 
 @frozen
 class CaseResult:
-    errored = skipped = False
+    """
+    A test case which at least was run by the implementation.
+    """
 
-    implementation: str
-    seq: Seq
     results: list[AnyTestResult]
-    expected: list[bool | None]
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any], **kwargs: Any) -> CaseResult:
-        results = [TestResult.from_dict(t) for t in data["results"]]
-        return cls(
-            results=results,
-            **{k: v for k, v in data.items() if k != "results"},
-            **kwargs,
-        )
+    def from_results(cls, results: list[dict[str, Any]]):
+        return cls(results=[TestResult.from_dict(t) for t in results])
 
-    @property
-    def failed(self) -> bool:
-        return any(failed for _, failed in self.compare())
+    def result_for(self, i: int) -> AnyTestResult:
+        return self.results[i]
 
-    def unsuccessful(self) -> Unsuccessful:
+    def unsuccessful(
+        self,
+        expected: Sequence[bool] | Sequence[None],
+    ) -> Unsuccessful:
         skipped = errored = failed = 0
-        for test, failed in self.compare():
+        for test, expecting in zip(self.results, expected):
             if test.skipped:
                 skipped += 1
             elif test.errored:
                 errored += 1
-            elif failed:
+            elif expecting is not None and test != TestResult(valid=expecting):
                 failed += 1
         return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
-    def serializable(self):
-        return asdict(self)
-
-    def log_and_be_serialized(self, log: BoundLogger):
+    def log(self, log: BoundLogger):
         for result in self.results:
             if result.errored:
                 log.error("", **result.context)  # type: ignore[reportGeneralTypeIssues, reportUnknownMemberType]
-        return self.serializable()
-
-    def compare(self) -> Iterable[tuple[AnyTestResult, bool]]:
-        for test, expected in zip(self.results, self.expected):
-            failed: bool = (  # type: ignore[reportUnknownVariableType]
-                not test.skipped
-                and not test.errored
-                and expected is not None
-                and expected != test.valid  # type: ignore[reportUnknownMemberType]
-            )
-            yield test, failed
 
 
 @frozen
@@ -445,48 +464,28 @@ class CaseErrored:
     A full test case errored.
     """
 
-    errored = True
-    failed = skipped = False
+    results = None
 
-    expected: list[bool | None]
-    results: list[ErroredTest] = field(init=False)
-
-    implementation: str
-    seq: Seq
-    context: dict[str, Any]
-
-    caught: bool = True
-
-    def __attrs_post_init__(self):
-        results = [ErroredTest.in_errored_case() for _ in self.expected]
-        object.__setattr__(self, "results", results)
+    context: Mapping[str, Any] = field()
+    caught: bool = field(default=True)
+    errored: bool = field(default=True, init=False)
 
     @classmethod
-    def uncaught(
-        cls,
-        implementation: str,
-        seq: Seq,
-        expected: list[bool | None],
-        **context: Any,
-    ) -> CaseErrored:
-        return cls(
-            implementation=implementation,
-            seq=seq,
-            caught=False,
-            expected=expected,
-            context=context,
-        )
+    def uncaught(cls, **context: Any):
+        return cls(caught=False, context=context)
 
-    def unsuccessful(self) -> Unsuccessful:
-        return Unsuccessful(errored=len(self.results))
+    def result_for(self, i: int) -> ErroredTest:
+        return ErroredTest.in_errored_case()
 
-    def log_and_be_serialized(self, log: BoundLogger):
+    def unsuccessful(
+        self,
+        expected: Sequence[bool] | Sequence[None],
+    ) -> Unsuccessful:
+        return Unsuccessful(errored=len(expected))
+
+    def log(self, log: BoundLogger):
         message = "" if self.caught else "uncaught error"
         log.error(message, **self.context)
-        return self.serializable()
-
-    def serializable(self) -> Mapping[str, Any]:
-        return asdict(self, filter=lambda attr, _: attr.name != "results")
 
 
 @frozen
@@ -495,30 +494,23 @@ class CaseSkipped:
     A full test case was skipped.
     """
 
-    errored = failed = False
-
-    implementation: str
-    seq: Seq
-
-    expected: list[bool | None]
-    results: list[ErroredTest] = field(init=False)
+    results = None
 
     message: str | None = None
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
 
-    def __attrs_post_init__(self):
-        results = [SkippedTest.in_skipped_case() for _ in self.expected]
-        object.__setattr__(self, "results", results)
+    def result_for(self, i: int) -> SkippedTest:
+        return SkippedTest.in_skipped_case()
 
-    def unsuccessful(self) -> Unsuccessful:
-        return Unsuccessful(skipped=len(self.results))
+    def unsuccessful(
+        self,
+        expected: Sequence[bool] | Sequence[None],
+    ) -> Unsuccessful:
+        return Unsuccessful(skipped=len(expected))
 
-    def log_and_be_serialized(self, log: BoundLogger):
-        return self.serializable()
-
-    def serializable(self) -> Mapping[str, Any]:
-        return asdict(self, filter=lambda attr, _: attr.name != "results")
+    def log(self, log: BoundLogger):
+        log.info(self.message or "skipped case")
 
 
 @frozen
@@ -527,25 +519,19 @@ class Empty:
     An implementation didn't send a response.
     """
 
-    errored = True
-    failed = skipped = False
+    results = None
 
-    implementation: str
-    seq: Seq
+    def result_for(self, i: int) -> ErroredTest:
+        return ErroredTest.in_errored_case()
 
-    expected: list[bool | None]
-    results: list[ErroredTest] = field(init=False)
-
-    def __attrs_post_init__(self):
-        results = [ErroredTest.in_errored_case() for _ in self.expected]
-        object.__setattr__(self, "results", results)
-
-    def log_and_be_serialized(self, log: BoundLogger) -> dict[str, Any]:
+    def log(self, log: BoundLogger):
         log.error("No response")
-        return {}
 
-    def unsuccessful(self) -> Unsuccessful:
-        return Unsuccessful(errored=len(self.results))
+    def unsuccessful(
+        self,
+        expected: Sequence[bool] | Sequence[None],
+    ) -> Unsuccessful:
+        return Unsuccessful(errored=len(expected))
 
 
 @command(Response=_case_result)

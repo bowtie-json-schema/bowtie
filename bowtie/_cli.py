@@ -31,9 +31,9 @@ import structlog.typing
 
 from bowtie import GITHUB, _report
 from bowtie._commands import (
-    AnyCaseResult,
     AnyTestResult,
     SeqCase,
+    SeqResult,
     Test,
     TestCase,
     Unsuccessful,
@@ -680,7 +680,7 @@ async def _smoke(
                 )
                 continue
 
-            echo(f"Testing {implementation.name!r}...", file=sys.stderr)
+            echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
 
             if implementation.metadata is None:
                 exit_code |= _EX_CONFIG
@@ -713,36 +713,32 @@ async def _smoke(
                 case "json":
                     serializable: list[dict[str, Any]] = []
 
-                    def see(seq_case: SeqCase, response: AnyCaseResult):
+                    def see(seq_case: SeqCase, result: SeqResult):  # type: ignore[reportRedeclaration]
                         serializable.append(  # noqa: B023
-                            {
-                                "case": seq_case.case.without_expected_results(),
-                                "response": dict(
-                                    errored=response.errored,
-                                    failed=response.failed,
-                                ),
-                            },
+                            dict(
+                                case=seq_case.case.without_expected_results(),
+                                result=asdict(result.result),
+                            ),
                         )
 
                 case "pretty":
 
-                    def see(seq_case: SeqCase, response: AnyCaseResult):
-                        if response.errored:
-                            message = "❗ (error)"
-                            reporter.case_started(seq_case).got_result(
-                                response,
-                            )
-                        elif response.failed:
-                            message = "✗ (failed)"
-                        else:
-                            message = "✓"
-                        echo(f"  {message}: {seq_case.case.description}")
+                    def see(seq_case: SeqCase, response: SeqResult):
+                        signs = "".join(
+                            "❗"
+                            if succeeded is None
+                            else "✓"
+                            if succeeded
+                            else "✗"
+                            for succeeded in response.compare()
+                        )
+                        echo(f"  · {seq_case.case.description}: {signs}")
 
             for seq_case in SeqCase.for_cases(cases):
-                response = await seq_case.run(runner=runner)
-                if response.errored or response.failed:
+                result = await seq_case.run(runner=runner)
+                if result.unsuccessful():
                     exit_code |= _EX_DATAERR
-                see(seq_case, response)
+                see(seq_case, result)
 
     finish()
     return exit_code
@@ -963,7 +959,7 @@ async def _run(
 
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        should_stop = result.errored or result.failed
+                        should_stop = result.unsuccessful().causes_stop
 
                 if should_stop:
                     break

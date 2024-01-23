@@ -12,11 +12,9 @@ from url import URL
 import structlog.stdlib
 
 from bowtie._commands import (
-    CaseErrored,
-    CaseResult,
-    CaseSkipped,
     Seq,
     SeqCase,
+    SeqResult,
     StartedDialect,
     TestCase,
     Unsuccessful,
@@ -27,7 +25,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Any, Self, TextIO
 
-    from bowtie._commands import AnyCaseResult, AnyTestResult, Command, Test
+    from bowtie._commands import AnyTestResult, Command, Test
     from bowtie._core import Implementation
 
 
@@ -184,7 +182,7 @@ class CaseReporter:
         self._write(**seq_case.serializable())
         return self
 
-    def got_result(self, result: AnyCaseResult):
+    def got_result(self, result: SeqResult):
         log = self._log.bind(logger_name=result.implementation)
         serialized = result.log_and_be_serialized(log=log)
         self._write(**serialized)
@@ -268,7 +266,7 @@ class Report:
     """
 
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases", repr=False)
-    _results: HashTrieMap[str, HashTrieMap[Seq, AnyCaseResult]] = field(
+    _results: HashTrieMap[str, HashTrieMap[Seq, SeqResult]] = field(
         repr=False,
         alias="results",
     )
@@ -307,7 +305,7 @@ class Report:
         metadata = RunMetadata.from_dict(**header)
 
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
-        empty: HashTrieMap[Seq, AnyCaseResult] = HashTrieMap()
+        empty: HashTrieMap[Seq, SeqResult] = HashTrieMap()
         results = HashTrieMap.fromkeys(metadata.images, empty)
 
         for data in iterator:
@@ -325,12 +323,8 @@ class Report:
                         metadata=metadata,
                         did_fail_fast=did_fail_fast,
                     )
-                case data if "caught" in data:
-                    result = CaseErrored(**data)
-                case {"skipped": True, **skip}:
-                    result = CaseSkipped(**skip)
                 case _:
-                    result = CaseResult.from_dict(data)
+                    result = SeqResult.from_dict(**data)
 
             current = results.get(result.implementation, HashTrieMap())
             results = results.insert(  # TODO: Complain if present
@@ -407,7 +401,7 @@ class Report:
             test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
             for i, test in enumerate(case.tests):
                 test_result = {
-                    each: self._results[each][seq].results[i]
+                    each: self._results[each][seq].result_for(i)
                     for each in self.implementations
                 }
                 test_results.append((test, test_result))
