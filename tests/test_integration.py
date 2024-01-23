@@ -548,7 +548,7 @@ async def test_filter(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_pretty(envsonschema):
-    stdout, _ = await run(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -567,12 +567,12 @@ async def test_smoke_pretty(envsonschema):
           ✓: allow-nothing schema
         """,
         ).lstrip("\n")
-    ), stdout
+    ), stderr
 
 
 @pytest.mark.asyncio
 async def test_smoke_json(envsonschema):
-    stdout, _ = await run(
+    stdout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -608,7 +608,7 @@ async def test_smoke_json(envsonschema):
             },
             "response": {"errored": False, "failed": False},
         },
-    ]
+    ], stderr
 
 
 @pytest.mark.asyncio
