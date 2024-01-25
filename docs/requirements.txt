@@ -35,7 +35,7 @@ click==8.1.7
     #   bowtie-json-schema
     #   sphinx-click
     #   trogon
-cryptography==41.0.7
+cryptography==42.0.1
     # via pyjwt
 diagnostic==2.0.0
     # via bowtie-json-schema
