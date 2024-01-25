@@ -387,7 +387,7 @@ def bowtie_schemas_registry() -> SchemaRegistry:
 
 
 # FIXME: Make this take a `registry`, not a dialect
-def validator_for_dialect(dialect: URL = DRAFT2020):
+def validator_for_dialect(dialect: URL):
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )

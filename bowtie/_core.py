@@ -224,10 +224,12 @@ class Implementation:
         make_validator: _MakeValidator,
         **kwargs: Any,
     ) -> AsyncIterator[Implementation]:
+        from bowtie._cli import DRAFT2020
+
         self = cls(
             name=image_name,
             make_validator=make_validator,
-            maybe_validate=make_validator(),
+            maybe_validate=make_validator(dialect=DRAFT2020),
             **kwargs,
         )
 
