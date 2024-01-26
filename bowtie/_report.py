@@ -208,17 +208,25 @@ class RunMetadata:
     )
 
     @classmethod
-    def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
+    def from_dict(
+        cls,
+        dialect: str,
+        implementations: dict[str, dict[str, Any]],
+        started: str | None = None,
+        **kwargs: Any,
+    ) -> RunMetadata:
         from bowtie._core import ImplementationInfo
 
-        started = kwargs.pop("started")
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
-        kwargs["implementations"] = [
-            ImplementationInfo.from_dict(**implementation)
-            for implementation in kwargs["implementations"]
-        ]
-        return cls(dialect=URL.parse(dialect), **kwargs)
+        return cls(
+            dialect=URL.parse(dialect),
+            implementations=[
+                ImplementationInfo.from_dict(**each)
+                for each in implementations.values()
+            ],
+            **kwargs,
+        )
 
     @property
     def dialect_shortname(self):
@@ -228,8 +236,11 @@ class RunMetadata:
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
         as_dict.update(
             dialect=str(as_dict.pop("dialect")),
-            implementations=[i.serializable() for i in self.implementations],
             started=as_dict.pop("started").isoformat(),
+            # FIXME: This useless transformation is to support the UI parsing
+            implementations={
+                i.id: i.serializable() for i in self.implementations
+            },
         )
         return as_dict
 
