@@ -220,15 +220,6 @@ class RunMetadata:
         ]
         return cls(dialect=URL.parse(dialect), **kwargs)
 
-    @classmethod
-    def from_implementations(
-        cls,
-        implementations: Iterable[Implementation],
-        **kwargs: Any,
-    ) -> RunMetadata:
-        infos = [each.info() for each in implementations]
-        return cls(implementations=infos, **kwargs)
-
     @property
     def dialect_shortname(self):
         return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)

@@ -888,7 +888,7 @@ async def _run(
     **kwargs: Any,
 ) -> int:
     exit_code = 0
-    acknowledged: list[Implementation] = []
+    acknowledged: list[ImplementationInfo] = []
     runners: list[DialectRunner] = []
     async with _start(
         image_names=image_names,
@@ -920,7 +920,7 @@ async def _run(
                         )
                     else:
                         runner.warn_if_unacknowledged(reporter=reporter)
-                        acknowledged.append(implementation)
+                        acknowledged.append(implementation.info())
                         runners.append(runner)
                 else:
                     reporter.unsupported_dialect(
@@ -936,7 +936,7 @@ async def _run(
             reporter.no_implementations()
         else:
             reporter.ready(
-                _report.RunMetadata.from_implementations(
+                _report.RunMetadata(
                     implementations=acknowledged,
                     dialect=dialect,
                     metadata=run_metadata,
