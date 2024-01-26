@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
 import json
 
-from attrs import field, frozen, mutable
+from attrs import asdict, field, frozen, mutable
 from url import URL
 import aiodocker.containers
 import aiodocker.docker
@@ -16,7 +16,13 @@ import aiodocker.stream
 from bowtie import _commands, exceptions
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Callable,
+        Iterable,
+        Set,
+    )
 
     from bowtie._report import Reporter
 
@@ -185,6 +191,32 @@ class _MakeValidator(Protocol):
         ...
 
 
+@frozen(order=True)
+class ImplementationInfo:
+    # FIXME: Combine with / separate out `Implementation`
+    name: str
+    language: str
+    # FIXME: Probably should return a set, but needs ordering occasionally
+    dialects: Set[URL]
+    _image: _commands.ImplementationId = field(alias="image")
+
+    @classmethod
+    def from_dict(cls, dialects: list[str], **data: Any):
+        return cls(
+            dialects=frozenset(URL.parse(dialect) for dialect in dialects),
+            **data,
+        )
+
+    @property
+    def id(self) -> _commands.ImplementationId:
+        return self._image
+
+    def serializable(self):
+        as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
+        as_dict["dialects"] = [str(d) for d in as_dict["dialects"]]
+        return as_dict
+
+
 @mutable
 class Implementation:
     """
@@ -299,13 +331,18 @@ class Implementation:
             raise StartupFailed(name=self.name)
         self.metadata = started.implementation
 
-    @property
-    def dialects(self):
+    def info(self) -> ImplementationInfo:
         # FIXME: Do this higher up
         if self.metadata is None:
             raise StartupFailed(name=self.name)
-        # FIXME: Probably should return a set, but needs ordering occasionally
-        return [URL.parse(each) for each in self.metadata.get("dialects", [])]
+
+        dialects = frozenset(URL.parse(d) for d in self.metadata["dialects"])
+        return ImplementationInfo(
+            image=self.name,
+            name=self.metadata["name"],
+            language=self.metadata["language"],
+            dialects=dialects,
+        )
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect

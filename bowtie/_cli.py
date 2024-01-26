@@ -42,6 +42,7 @@ from bowtie._core import (
     DialectRunner,
     GotStderr,
     Implementation,
+    ImplementationInfo,
     NoSuchImage,
     StartupFailed,
 )
@@ -260,10 +261,10 @@ def summary(input: TextIO, format: _F, show: str):
         results = report.worst_to_best()
         to_table = _failure_table
 
-        def to_serializable(  # type: ignore[reportGeneralTypeIssues]
-            value: Iterable[tuple[Mapping[str, str], Unsuccessful]],
+        def to_serializable(  # type: ignore[reportRedeclaration]
+            value: Iterable[tuple[ImplementationInfo, Unsuccessful]],
         ):
-            return [(each["image"], asdict(counts)) for each, counts in value]
+            return [(each.id, asdict(counts)) for each, counts in value]
 
     else:
         results = report.cases_with_results()
@@ -301,7 +302,7 @@ def summary(input: TextIO, format: _F, show: str):
 
 def _failure_table(
     report: _report.Report,
-    results: list[tuple[Mapping[str, str], Unsuccessful]],
+    results: list[tuple[ImplementationInfo, Unsuccessful]],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
@@ -314,7 +315,7 @@ def _failure_table(
     )
     for each, unsuccessful in results:
         table.add_row(
-            Text.assemble(each["name"], (f" ({each['language']})", "dim")),
+            Text.assemble(each.name, (f" ({each.language})", "dim")),
             str(unsuccessful.skipped),
             str(unsuccessful.errored),
             str(unsuccessful.failed),
@@ -337,15 +338,15 @@ def _validation_results_table(
     )
 
     # TODO: sort the columns by results?
-    implementations = report.metadata.implementations
+    implementations = report.implementations
 
     for case, test_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
         for implementation in implementations:
             subtable.add_column(
                 Text.assemble(
-                    implementation["name"],
-                    (f" ({implementation['language']})", "dim"),
+                    implementation.name,
+                    (f" ({implementation.language})", "dim"),
                 ),
             )
 
@@ -353,7 +354,7 @@ def _validation_results_table(
             subtable.add_row(
                 Text(json.dumps(test.instance)),
                 *(
-                    Text(test_result[each["image"]].description)
+                    Text(test_result[each.id].description)
                     for each in implementations
                 ),
             )
@@ -687,8 +688,8 @@ async def _smoke(
                 echo("  ❗ (error): startup failed", file=sys.stderr)
                 continue
 
-            # FIXME: Sort by newer dialect
-            dialect = implementation.dialects[0]
+            # FIXME: All dialects / and/or newest dialect with proper sort
+            dialect = max(implementation.info().dialects, key=str)
             runner = await implementation.start_speaking(dialect)
 
             cases = [
@@ -908,7 +909,7 @@ async def _run(
                 continue
 
             try:
-                if dialect in implementation.dialects:
+                if dialect in implementation.info().dialects:
                     try:
                         runner = await implementation.start_speaking(dialect)
                     except GotStderr as error:

@@ -1,15 +1,27 @@
 from hypothesis import given
 from hypothesis.strategies import sets
+from url import URL
 import pytest
 
 from bowtie import _commands
+from bowtie._core import ImplementationInfo
 from bowtie._report import Report, RunMetadata
 from bowtie.hypothesis import dialects
 
-FOO_RUN = RunMetadata(
-    dialect="urn:example",
-    implementations={"foo": {"image": "foo"}},
+DIALECT = URL.parse("urn:example")
+FOO = ImplementationInfo(
+    name="foo",
+    language="blub",
+    image="foo",
+    dialects=frozenset([DIALECT]),
 )
+BAR = ImplementationInfo(
+    name="bar",
+    language="crust",
+    image="x/baz",
+    dialects=frozenset([DIALECT]),
+)
+FOO_RUN = RunMetadata(dialect=DIALECT, implementations=[FOO])
 NO_FAIL_FAST = dict(did_fail_fast=False)
 
 
@@ -272,11 +284,11 @@ def test_ne_different_results():
 def test_ne_different_implementations():
     foo = RunMetadata(
         dialect="urn:example",
-        implementations={"foo": {"image": "foo"}},
+        implementations=[FOO],
     )
     foo_and_bar = RunMetadata(
         dialect="urn:example",
-        implementations={"foo": {"image": "foo"}, "bar": {"image": "bar"}},
+        implementations=[FOO, BAR],
     )
     data = [
         _commands.SeqCase(

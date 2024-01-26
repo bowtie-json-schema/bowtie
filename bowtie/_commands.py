@@ -34,7 +34,11 @@ if TYPE_CHECKING:
     from bowtie._core import DialectRunner
 
 
+#: A unique identifier for a test case within a run or report.
 Seq = int
+
+#: A unique identifier for an implementation within a run or report.
+ImplementationId = str
 
 
 @frozen
@@ -377,7 +381,7 @@ class SeqResult:
     """
 
     seq: Seq
-    implementation: str
+    implementation: ImplementationId
 
     result: AnyCaseResult
     expected: Sequence[bool] | Sequence[None]

@@ -28,6 +28,7 @@ from hypothesis.strategies import (
 
 from bowtie import _commands
 from bowtie._cli import TEST_SUITE_DIALECT_URLS
+from bowtie._core import ImplementationInfo
 from bowtie._report import Report, RunMetadata
 
 # FIXME: probably via hypothesis-jsonschema
@@ -52,34 +53,39 @@ languages = text(printable, min_size=1, max_size=20)
 dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
 
 
-def implementations(
+@composite
+def implementation_infos(
+    draw,
     names=implementation_names,
     languages=languages,
+):
+    """
+    Generate an implementation (info).
+    """
+    name = draw(names)
+    language = draw(languages)
+    return ImplementationInfo(
+        name=name,
+        dialects=draw(sets(dialects, min_size=1).map(frozenset)),
+        language=language,
+        image=f"bowtie-hypothesis-generated/{language}/{name}",
+    )
+
+
+def implementations(
+    infos=implementation_infos(),
     min_size=1,
     max_size=5,
 ):
     """
-    Generate (unique) collections of implementations with their metadata.
+    Generate (unique) collections of implementations.
     """
-    return sets(
-        tuples(names, languages),
+    return lists(
+        infos,
         min_size=min_size,
         max_size=max_size,
-    ).map(
-        lambda values: {
-            (image := f"bowtie-hypothesis-generated/{language}/{name}"): dict(
-                image=image,
-                name=name,
-                language=language,
-            )
-            for name, language in values
-        },
+        unique_by=lambda info: info.id,
     )
-
-
-implementation_images = implementations(min_size=1, max_size=1).map(
-    lambda result: next(iter(result)),
-)
 
 
 def tests(
@@ -181,7 +187,7 @@ def any_case_results(min_tests=1, max_tests=10):
 
 def seq_results(
     seqs=seqs,
-    implementations=implementation_images,
+    implementations=implementation_names,
     min_tests=1,
     max_tests=10,
 ):
@@ -192,7 +198,7 @@ def seq_results(
         lambda size: builds(
             _commands.SeqResult,
             seq=seqs,
-            implementation=implementation_images,
+            implementation=implementations,
             expected=(
                 lists(booleans(), min_size=size, max_size=size)
                 | lists(none(), min_size=size, max_size=size)
@@ -236,7 +242,7 @@ def cases_and_results(
         draw(
             seq_results(
                 seqs=just(seq_case.seq),
-                implementations=just(implementation),
+                implementations=just(implementation.id),
             ),
         )
         for seq_case in seq_cases

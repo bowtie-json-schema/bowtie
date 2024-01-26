@@ -21,12 +21,12 @@ from bowtie._commands import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping, Sequence
     from pathlib import Path
     from typing import Any, Self, TextIO
 
-    from bowtie._commands import AnyTestResult, Command, Test
-    from bowtie._core import Implementation
+    from bowtie._commands import AnyTestResult, Command, ImplementationId, Test
+    from bowtie._core import Implementation, ImplementationInfo
 
 
 class Invalid(Exception):
@@ -191,7 +191,7 @@ class CaseReporter:
 @frozen
 class RunMetadata:
     dialect: URL
-    _implementations: Mapping[str, Mapping[str, Any]] = field(
+    implementations: Sequence[ImplementationInfo] = field(
         repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
     )
@@ -209,9 +209,15 @@ class RunMetadata:
 
     @classmethod
     def from_dict(cls, dialect: str, **kwargs: Any) -> RunMetadata:
+        from bowtie._core import ImplementationInfo
+
         started = kwargs.pop("started")
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
+        kwargs["implementations"] = [
+            ImplementationInfo.from_dict(**implementation)
+            for implementation in kwargs["implementations"]
+        ]
         return cls(dialect=URL.parse(dialect), **kwargs)
 
     @classmethod
@@ -220,33 +226,18 @@ class RunMetadata:
         implementations: Iterable[Implementation],
         **kwargs: Any,
     ) -> RunMetadata:
-        return cls(
-            implementations={
-                implementation.name: dict(
-                    implementation.metadata or {},
-                    image=implementation.name,
-                )
-                for implementation in implementations
-            },
-            **kwargs,
-        )
+        infos = [each.info() for each in implementations]
+        return cls(implementations=infos, **kwargs)
 
     @property
     def dialect_shortname(self):
         return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
 
-    @property
-    def implementations(self):
-        return self._implementations.values()
-
-    @property
-    def images(self):
-        return (each["image"] for each in self._implementations.values())
-
     def serializable(self):
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
         as_dict.update(
             dialect=str(as_dict.pop("dialect")),
+            implementations=[i.serializable() for i in self.implementations],
             started=as_dict.pop("started").isoformat(),
         )
         return as_dict
@@ -266,7 +257,10 @@ class Report:
     """
 
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases", repr=False)
-    _results: HashTrieMap[str, HashTrieMap[Seq, SeqResult]] = field(
+    _results: HashTrieMap[
+        ImplementationId,
+        HashTrieMap[Seq, SeqResult],
+    ] = field(
         repr=False,
         alias="results",
     )
@@ -306,7 +300,8 @@ class Report:
 
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
         empty: HashTrieMap[Seq, SeqResult] = HashTrieMap()
-        results = HashTrieMap.fromkeys(metadata.images, empty)
+        ids = (each.id for each in metadata.implementations)
+        results = HashTrieMap.fromkeys(ids, empty)
 
         for data in iterator:
             match data:
@@ -346,13 +341,13 @@ class Report:
         return cls(
             cases=HashTrieMap(),
             results=HashTrieMap(),
-            metadata=RunMetadata(implementations={}, **kwargs),
+            metadata=RunMetadata(implementations=[], **kwargs),
             did_fail_fast=False,
         )
 
     @property
-    def dialect(self):
-        return self.metadata.dialect
+    def implementations(self) -> Sequence[ImplementationInfo]:
+        return self.metadata.implementations
 
     @property
     def is_empty(self):
@@ -362,19 +357,12 @@ class Report:
     def total_tests(self):
         return sum(len(case.tests) for case in self._cases.values())
 
-    @property
-    def implementations(self):
-        return self.metadata.images
-
-    def unsuccessful(self, implementation: str) -> Unsuccessful:
+    def unsuccessful(self, implementation: ImplementationId) -> Unsuccessful:
         """
         A count of the unsuccessful tests for the given implementation.
         """
         results = self._results[implementation].values()
-        return sum(
-            (result.unsuccessful() for result in results),
-            Unsuccessful(),
-        )
+        return sum((each.unsuccessful() for each in results), Unsuccessful())
 
     def worst_to_best(self):
         """
@@ -383,10 +371,10 @@ class Report:
         Ties are then broken alphabetically.
         """
         unsuccessful = [
-            (implementation, self.unsuccessful(implementation["image"]))
-            for implementation in self.metadata.implementations
+            (implementation, self.unsuccessful(implementation.id))
+            for implementation in self.implementations
         ]
-        unsuccessful.sort(key=lambda each: (each[1].total, each[0]["name"]))
+        unsuccessful.sort(key=lambda each: (each[1].total, each[0].name))
         return unsuccessful
 
     def cases_with_results(
@@ -401,26 +389,24 @@ class Report:
             test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
             for i, test in enumerate(case.tests):
                 test_result = {
-                    each: self._results[each][seq].result_for(i)
+                    each.id: self._results[each.id][seq].result_for(i)
                     for each in self.implementations
                 }
                 test_results.append((test, test_result))
             yield case, test_results
 
     def generate_badges(self, target_dir: Path):
-        label = _DIALECT_URI_TO_SHORTNAME[self.dialect]
+        label = _DIALECT_URI_TO_SHORTNAME[self.metadata.dialect]
         total = self.total_tests
-        for impl in self.metadata.implementations:
-            dialect_versions = [URL.parse(each) for each in impl["dialects"]]
-            if self.dialect not in dialect_versions:
+        for implementation in self.implementations:
+            if self.metadata.dialect not in implementation.dialects:
                 continue
-            supported_drafts = ", ".join(
+            shortnames = (
                 _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
-                for each in reversed(dialect_versions)
+                for each in implementation.dialects
             )
-            name = impl["name"]
-            lang = impl["language"]
-            unsuccessful = self.unsuccessful(impl["image"])
+            supported = ", ".join(sorted(shortnames))  # FIXME: proper sort
+            unsuccessful = self.unsuccessful(implementation.id)
             passed = total - unsuccessful.total
             pct = (passed / total) * 100
             r, g, b = 100 - int(pct), int(pct), 0
@@ -430,16 +416,17 @@ class Report:
                 "message": "%d%% Passing" % int(pct),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            comp_dir = target_dir / f"{lang}-{name}" / "compliance"
+            impl_dir = f"{implementation.language}-{implementation.name}"
+            supp_dir = target_dir / impl_dir
+            comp_dir = supp_dir / "compliance"
             comp_dir.mkdir(parents=True, exist_ok=True)
             badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
             badge_path_per_draft.write_text(json.dumps(badge_per_draft))
             badge_supp_draft = {
                 "schemaVersion": 1,
                 "label": "JSON Schema Versions",
-                "message": supported_drafts,
+                "message": supported,
                 "color": "lightgreen",
             }
-            supp_dir = target_dir / f"{lang}-{name}"
-            badge_path_supp_drafts = supp_dir / "supported_versions.json"
-            badge_path_supp_drafts.write_text(json.dumps(badge_supp_draft))
+            badge_supported = supp_dir / "supported_versions.json"
+            badge_supported.write_text(json.dumps(badge_supp_draft))
