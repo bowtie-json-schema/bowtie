@@ -416,18 +416,15 @@ IMPLEMENTATION = click.option(
     "-i",
     "image_names",
     type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
-    help="A docker image which implements the bowtie IO protocol.",
     required=True,
     multiple=True,
+    metavar="IMPLEMENTATION",
+    help="A docker image which implements the bowtie IO protocol.",
 )
 DIALECT = click.option(
     "--dialect",
     "-D",
     "dialect",
-    help=(
-        "A URI or shortname identifying the dialect of each test case."
-        f"Shortnames include: {sorted(DIALECT_SHORTNAMES)}."
-    ),
     type=lambda dialect: (  # type: ignore[reportUnknownLambdaType]
         DIALECT_SHORTNAMES[dialect]  # type: ignore[reportUnknownArgumentType]
         if dialect in DIALECT_SHORTNAMES
@@ -435,11 +432,17 @@ DIALECT = click.option(
     ),
     default=LATEST_DIALECT_NAME,
     show_default=True,
+    metavar="URI_OR_NAME",
+    help=(
+        "A URI or shortname identifying the dialect of each test. Possible "
+        f"shortnames include: {', '.join(sorted(DIALECT_SHORTNAMES))}."
+    ),
 )
 FILTER = click.option(
     "-k",
     "filter",
     type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
+    metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
 )
 FAIL_FAST = click.option(
@@ -465,9 +468,9 @@ TIMEOUT = click.option(
     "--read-timeout",
     "-T",
     "read_timeout_sec",
-    metavar="SECONDS",
     default=2.0,
     show_default=True,
+    metavar="SECONDS",
     help=(
         "An explicit timeout to wait for each implementation to respond "
         "to *each* instance being validated. Set this to 0 if you wish "
