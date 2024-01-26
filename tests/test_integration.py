@@ -4,7 +4,7 @@ from pathlib import Path
 from pprint import pformat
 from textwrap import dedent, indent
 import asyncio
-import json
+import json as _json
 import os
 import re
 import sys
@@ -24,7 +24,7 @@ HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 
-async def run(*argv, stdin: str = "", exit_code=0):
+async def run(*argv, stdin: str = "", exit_code=0, json=False):
     """
     Run a subprocess asynchronously to completion.
 
@@ -36,15 +36,27 @@ async def run(*argv, stdin: str = "", exit_code=0):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await process.communicate(stdin.encode())
-    returned = stdout.decode(), stderr.decode()
+    raw_stdout, raw_stderr = await process.communicate(stdin.encode())
+    decoded = stdout, stderr = raw_stdout.decode(), raw_stderr.decode()
 
     if exit_code == -1:
-        assert process.returncode != 0, returned
+        assert process.returncode != 0, decoded
     else:
-        assert process.returncode == exit_code, returned[1]
+        assert process.returncode == exit_code, stderr
 
-    return returned
+    if json:
+        if stdout:
+            try:
+                jsonout = _json.loads(stdout)
+            except _json.JSONDecodeError:
+                pytest.fail(
+                    f"stdout had invalid JSON: {stdout!r}\n\n"
+                    f"stderr had {stderr}",
+                )
+            return jsonout, stderr
+        pytest.fail(f"stdout was empty. stderr contained {stderr}")
+
+    return decoded
 
 
 def tar_from_directory(directory):
@@ -572,7 +584,7 @@ async def test_smoke_pretty(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_json(envsonschema):
-    stdout, stderr = await run(
+    jsonout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -581,9 +593,10 @@ async def test_smoke_json(envsonschema):
         "json",
         "-i",
         envsonschema,
+        json=True,
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
-    assert json.loads(stdout) == [
+    assert jsonout == [
         {
             "case": {
                 "description": "allow-everything schema",
@@ -645,7 +658,7 @@ async def test_info_pretty(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_json(envsonschema):
-    stdout, stderr = await run(
+    jsonout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -654,8 +667,9 @@ async def test_info_json(envsonschema):
         "json",
         "-i",
         envsonschema,
+        json=True,
     )
-    assert json.loads(stdout) == {
+    assert jsonout == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
@@ -714,7 +728,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         tmp_path / "two.json",
     )
 
-    stdout, stderr = await run(
+    jsonout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -724,9 +738,10 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        json=True,
     )
     assert stderr == ""
-    assert json.loads(stdout) == [
+    assert jsonout == [
         [
             "bowtie-integration-tests/envsonschema",
             dict(failed=2, skipped=0, errored=0),
@@ -758,7 +773,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
         stdin=dedent(raw.strip("\n")),
     )
 
-    stdout, stderr = await run(
+    jsonout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -768,9 +783,10 @@ async def test_summary_show_validation(envsonschema, always_valid):
         "--show",
         "validation",
         stdin=run_stdout,
+        json=True,
     )
     assert stderr == ""
-    assert json.loads(stdout) == [
+    assert jsonout == [
         [
             {"type": "integer"},
             [
@@ -963,7 +979,7 @@ async def test_run_with_registry(always_valid):
         stdin=dedent(raw.strip("\n")),
     )
 
-    stdout, stderr = await run(
+    jsonout, stderr = await run(
         sys.executable,
         "-m",
         "bowtie",
@@ -973,9 +989,10 @@ async def test_run_with_registry(always_valid):
         "--show",
         "validation",
         stdin=run_stdout,
+        json=True,
     )
     assert stderr == ""
-    assert json.loads(stdout) == [
+    assert jsonout == [
         [
             {"type": "integer"},
             [
