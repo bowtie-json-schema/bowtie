@@ -625,6 +625,21 @@ async def test_smoke_json(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_smoke_quiet(envsonschema):
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "smoke",
+        "--quiet",
+        "-i",
+        envsonschema,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    assert stdout == "", stderr
+
+
+@pytest.mark.asyncio
 async def test_info_pretty(envsonschema):
     stdout, stderr = await run(
         sys.executable,
