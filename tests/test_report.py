@@ -6,7 +6,7 @@ import pytest
 from bowtie import _commands
 from bowtie._core import ImplementationInfo
 from bowtie._report import Report, RunMetadata
-from bowtie.hypothesis import dialects
+from bowtie.hypothesis import dialects, implementations
 
 DIALECT = URL.parse("urn:example")
 FOO = ImplementationInfo(
@@ -340,4 +340,11 @@ def test_eq_empty(dialect):
 
 @given(dialect=dialects)
 def test_empty_is_empty(dialect):
-    assert Report.empty(dialect=dialect).is_empty
+    report = Report.empty(dialect=dialect)
+    assert report.is_empty
+
+
+@given(dialect=dialects, implementations=implementations(min_size=0))
+def test_empty_with_implementations_is_empty(dialect, implementations):
+    report = Report.empty(dialect=dialect, implementations=implementations)
+    assert report.is_empty

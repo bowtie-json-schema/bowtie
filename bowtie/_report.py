@@ -334,14 +334,18 @@ class Report:
         return cls.from_input(json.loads(line) for line in serialized)
 
     @classmethod
-    def empty(cls, **kwargs: Any):
+    def empty(
+        cls,
+        implementations: Sequence[ImplementationInfo] = (),
+        **kwargs: Any,
+    ):
         """
         'The' empty report.
         """
         return cls(
             cases=HashTrieMap(),
             results=HashTrieMap(),
-            metadata=RunMetadata(implementations=[], **kwargs),
+            metadata=RunMetadata(implementations=implementations, **kwargs),
             did_fail_fast=False,
         )
 
