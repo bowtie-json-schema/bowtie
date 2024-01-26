@@ -191,6 +191,18 @@ class _MakeValidator(Protocol):
         ...
 
 
+class Link:
+    description: str
+    url: URL
+
+    @classmethod
+    def from_dict(cls, description: str, url: str):
+        return cls(description=description, url=URL.parse(url))
+
+    def serializable(self):
+        return dict(description=self.description, url=str(self.url))
+
+
 @frozen(order=True)
 class ImplementationInfo:
     # FIXME: Combine with / separate out more from `Implementation`
@@ -204,6 +216,13 @@ class ImplementationInfo:
     source: URL
     dialects: Set[URL]
 
+    version: str | None = None
+    language_version: str | None = None
+    os: str | None = None
+    os_version: str | None = None
+    documentation: URL | None = None
+    links: Iterable[Link] = ()
+
     @classmethod
     def from_dict(
         cls,
@@ -211,6 +230,7 @@ class ImplementationInfo:
         issues: str,
         source: str,
         dialects: list[str],
+        links: list[dict[str, Any]],
         **kwargs: Any,
     ):
         return cls(
@@ -218,6 +238,7 @@ class ImplementationInfo:
             issues=URL.parse(issues),
             source=URL.parse(source),
             dialects=frozenset(URL.parse(dialect) for dialect in dialects),
+            links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
 

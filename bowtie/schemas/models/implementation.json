@@ -60,10 +60,12 @@
       "type": "array",
       "items": {
         "type": "object",
+        "required": ["description", "url"],
         "properties": {
           "description": { "type": "string" },
           "url": { "type": "string", "format": "uri" }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "os": {
@@ -78,5 +80,6 @@
       "description": "Version of language used to run the implementation",
       "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }
