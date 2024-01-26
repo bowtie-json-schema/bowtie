@@ -193,18 +193,32 @@ class _MakeValidator(Protocol):
 
 @frozen(order=True)
 class ImplementationInfo:
-    # FIXME: Combine with / separate out `Implementation`
-    name: str
-    language: str
-    # FIXME: Probably should return a set, but needs ordering occasionally
-    dialects: Set[URL]
+    # FIXME: Combine with / separate out more from `Implementation`
+
     _image: _commands.ImplementationId = field(alias="image")
 
+    name: str
+    language: str
+    homepage: URL
+    issues: URL
+    source: URL
+    dialects: Set[URL]
+
     @classmethod
-    def from_dict(cls, dialects: list[str], **data: Any):
+    def from_dict(
+        cls,
+        homepage: str,
+        issues: str,
+        source: str,
+        dialects: list[str],
+        **kwargs: Any,
+    ):
         return cls(
+            homepage=URL.parse(homepage),
+            issues=URL.parse(issues),
+            source=URL.parse(source),
             dialects=frozenset(URL.parse(dialect) for dialect in dialects),
-            **data,
+            **kwargs,
         )
 
     @property
@@ -213,7 +227,12 @@ class ImplementationInfo:
 
     def serializable(self):
         as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
-        as_dict["dialects"] = [str(d) for d in as_dict["dialects"]]
+        as_dict.update(
+            homepage=str(as_dict["homepage"]),
+            issues=str(as_dict["issues"]),
+            source=str(as_dict["source"]),
+            dialects=[str(d) for d in as_dict["dialects"]],
+        )
         return as_dict
 
 
@@ -337,11 +356,11 @@ class Implementation:
             raise StartupFailed(name=self.name)
 
         dialects = frozenset(URL.parse(d) for d in self.metadata["dialects"])
+        required = ["name", "language", "homepage", "issues", "source"]
         return ImplementationInfo(
             image=self.name,
-            name=self.metadata["name"],
-            language=self.metadata["language"],
             dialects=dialects,
+            **{k: self.metadata[k] for k in required},
         )
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:

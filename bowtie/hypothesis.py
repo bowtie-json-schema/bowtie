@@ -7,6 +7,7 @@ Note that this module depends on you having installed Hypothesis.
 
 from string import ascii_lowercase, digits, printable
 
+from hypothesis.provisional import urls
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -25,6 +26,7 @@ from hypothesis.strategies import (
     text,
     tuples,
 )
+from url import URL
 
 from bowtie import _commands
 from bowtie._cli import TEST_SUITE_DIALECT_URLS
@@ -65,10 +67,13 @@ def implementation_infos(
     name = draw(names)
     language = draw(languages)
     return ImplementationInfo(
-        name=name,
-        dialects=draw(sets(dialects, min_size=1).map(frozenset)),
-        language=language,
         image=f"bowtie-hypothesis-generated/{language}/{name}",
+        name=name,
+        language=language,
+        homepage=draw(urls().map(URL.parse)),
+        issues=draw(urls().map(URL.parse)),
+        source=draw(urls().map(URL.parse)),
+        dialects=draw(sets(dialects, min_size=1).map(frozenset)),
     )
 
 

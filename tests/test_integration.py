@@ -163,7 +163,7 @@ fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -172,7 +172,7 @@ wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"]}, "version": 0}\n'
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
     read >&2
     """,  # noqa: E501
 )
@@ -180,7 +180,7 @@ hit_the_network = shellplementation(
     name="hit_the_network",
     contents=r"""
     read
-    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"]}, "version": 1}\n'
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     read

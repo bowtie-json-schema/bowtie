@@ -3,7 +3,7 @@ from hypothesis.strategies import sets
 from url import URL
 import pytest
 
-from bowtie import _commands
+from bowtie import HOMEPAGE, REPO, _commands
 from bowtie._core import ImplementationInfo
 from bowtie._report import Report, RunMetadata
 from bowtie.hypothesis import dialects, implementations
@@ -13,12 +13,18 @@ FOO = ImplementationInfo(
     name="foo",
     language="blub",
     image="foo",
+    homepage=HOMEPAGE,
+    issues=REPO / "issues",
+    source=REPO,
     dialects=frozenset([DIALECT]),
 )
 BAR = ImplementationInfo(
     name="bar",
     language="crust",
     image="x/baz",
+    homepage=HOMEPAGE,
+    issues=REPO / "issues",
+    source=REPO,
     dialects=frozenset([DIALECT]),
 )
 FOO_RUN = RunMetadata(dialect=DIALECT, implementations=[FOO])
