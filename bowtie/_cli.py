@@ -715,28 +715,6 @@ async def smoke(
     for implementation in implementations:
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
 
-        # FIXME: All dialects / and/or newest dialect with proper sort
-        dialect = max(implementation.info().dialects, key=str)
-        runner = await implementation.start_speaking(dialect)
-
-        cases = [
-            TestCase(
-                description="allow-everything schema",
-                schema={"$schema": str(dialect)},
-                tests=[
-                    Test(description="First", instance=1, valid=True),
-                    Test(description="Second", instance="foo", valid=True),
-                ],
-            ),
-            TestCase(
-                description="allow-nothing schema",
-                schema={"$schema": str(dialect), "not": {}},
-                tests=[
-                    Test(description="First", instance=12, valid=False),
-                ],
-            ),
-        ]
-
         match format:
             case "json":
                 serializable: list[dict[str, Any]] = []
@@ -758,8 +736,7 @@ async def smoke(
                     )
                     echo(f"  · {seq_case.case.description}: {signs}")
 
-        for seq_case in SeqCase.for_cases(cases):
-            result = await seq_case.run(runner=runner)
+        async for seq_case, result in implementation.smoke():
             if result.unsuccessful().causes_stop:
                 exit_code |= _EX_DATAERR
             see(seq_case, result)

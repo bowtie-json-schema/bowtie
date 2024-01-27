@@ -436,3 +436,53 @@ class Implementation:
                 )
                 break
         return INVALID
+
+    async def smoke(
+        self,
+    ) -> AsyncIterator[tuple[_commands.SeqCase, _commands.SeqResult],]:
+        """
+        Smoke test this implementation.
+        """
+        # FIXME: All dialects / and/or newest dialect with proper sort
+        dialect = max(self.info().dialects, key=str)
+        runner = await self.start_speaking(dialect)
+
+        instances = [
+            ("nil", None),
+            ("boolean", True),
+            ("integer", 37),
+            ("number", 37.37),
+            ("string", "37"),
+            ("array", [37]),
+            ("object", {"foo": 37}),
+        ]
+        cases = [
+            _commands.TestCase(
+                description="allow-everything",
+                schema={"$schema": str(dialect)},
+                tests=[
+                    _commands.Test(
+                        description=json_type,
+                        instance=instance,
+                        valid=True,
+                    )
+                    for json_type, instance in instances
+                ],
+            ),
+            _commands.TestCase(
+                description="allow-nothing",
+                schema={"$schema": str(dialect), "not": {}},
+                tests=[
+                    _commands.Test(
+                        description=json_type,
+                        instance=instance,
+                        valid=False,
+                    )
+                    for json_type, instance in instances
+                ],
+            ),
+        ]
+
+        for seq_case in _commands.SeqCase.for_cases(cases):
+            result = await seq_case.run(runner=runner)
+            yield seq_case, result

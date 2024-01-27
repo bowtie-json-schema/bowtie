@@ -146,7 +146,7 @@ class SeqCase:
     case: TestCase
 
     @classmethod
-    def for_cases(cls, cases: Iterable[TestCase]):
+    def for_cases(cls, cases: Iterable[TestCase]) -> Iterable[SeqCase]:
         return (cls(seq=i, case=case) for i, case in enumerate(cases))
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:

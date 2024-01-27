@@ -601,8 +601,8 @@ async def test_smoke_pretty(envsonschema):
         dedent(stdout)
         == dedent(
             """
-            · allow-everything schema: ✗✗
-            · allow-nothing schema: ✓
+            · allow-everything: ✗✗✗✗✗✗✗
+            · allow-nothing: ✓✓✓✓✓✓✓
         """,
         ).lstrip("\n")
     ), stderr
@@ -625,27 +625,60 @@ async def test_smoke_json(envsonschema):
     assert jsonout == [
         {
             "case": {
-                "description": "allow-everything schema",
+                "description": "allow-everything",
                 "schema": {
                     "$schema": "https://json-schema.org/draft/2020-12/schema",
                 },
                 "tests": [
-                    {"description": "First", "instance": 1},
-                    {"description": "Second", "instance": "foo"},
+                    {"description": "nil", "instance": None},
+                    {"description": "boolean", "instance": True},
+                    {"description": "integer", "instance": 37},
+                    {"description": "number", "instance": 37.37},
+                    {"description": "string", "instance": "37"},
+                    {"description": "array", "instance": [37]},
+                    {"description": "object", "instance": {"foo": 37}},
                 ],
             },
-            "result": {"results": [{"valid": False}, {"valid": False}]},
+            "result": {
+                "results": [
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                ],
+            },
         },
         {
             "case": {
-                "description": "allow-nothing schema",
+                "description": "allow-nothing",
                 "schema": {
                     "$schema": "https://json-schema.org/draft/2020-12/schema",
                     "not": {},
                 },
-                "tests": [{"description": "First", "instance": 12}],
+                "tests": [
+                    {"description": "nil", "instance": None},
+                    {"description": "boolean", "instance": True},
+                    {"description": "integer", "instance": 37},
+                    {"description": "number", "instance": 37.37},
+                    {"description": "string", "instance": "37"},
+                    {"description": "array", "instance": [37]},
+                    {"description": "object", "instance": {"foo": 37}},
+                ],
             },
-            "result": {"results": [{"valid": False}]},
+            "result": {
+                "results": [
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                    {"valid": False},
+                ],
+            },
         },
     ], stderr
 
