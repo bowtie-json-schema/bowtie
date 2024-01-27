@@ -810,6 +810,22 @@ async def test_info_links(links):
 
 
 @pytest.mark.asyncio
+async def test_info_unsuccessful_start(succeed_immediately):
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "info",
+        "-i",
+        succeed_immediately,
+        exit_code=-1,
+    )
+
+    assert stdout == ""
+    assert "failed to start" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")

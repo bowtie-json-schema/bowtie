@@ -203,6 +203,13 @@ def implementation_subcommand(fn: ImplementationSubcommand):
             for each in implementations:
                 try:
                     implementation = await each
+                except StartupFailed as error:
+                    exit_code |= _EX_CONFIG
+                    click.echo(  # FIXME: respect a possible --quiet
+                        f"❗ (error): {error.name!r} failed to start",
+                        file=sys.stderr,
+                    )
+                    continue
                 except NoSuchImage as error:
                     exit_code |= _EX_CONFIG
                     click.echo(  # FIXME: respect a possible --quiet
@@ -224,7 +231,10 @@ def implementation_subcommand(fn: ImplementationSubcommand):
 
                 running.append(implementation)
 
-            exit_code |= await fn(implementations=running, **kwargs) or 0
+            if running:
+                exit_code |= await fn(implementations=running, **kwargs) or 0
+            else:
+                exit_code |= _EX_CONFIG
 
         return exit_code
 
