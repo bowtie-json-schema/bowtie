@@ -191,6 +191,7 @@ class _MakeValidator(Protocol):
         ...
 
 
+@frozen
 class Link:
     description: str
     url: URL
@@ -258,6 +259,7 @@ class ImplementationInfo:
             issues=str(as_dict["issues"]),
             source=str(as_dict["source"]),
             dialects=sorted(dialects, reverse=True),
+            links=[link.serializable() for link in self.links],
         )
         return as_dict
 

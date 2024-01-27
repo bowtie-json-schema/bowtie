@@ -207,6 +207,17 @@ with_versions = shellplementation(
     printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
+links = shellplementation(
+    name="links",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["urn:example"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
 
 
 def _failed(message, stderr):
@@ -758,6 +769,43 @@ async def test_info_json(envsonschema):
             "http://json-schema.org/draft-03/schema#",
         ],
     }, stderr
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_links(links):
+    stdout, stderr = await run(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "info",
+        "--format",
+        "pretty",
+        "-i",
+        links,
+    )
+    assert stdout == dedent(
+        """\
+        name: "links"
+        language: "sh"
+        homepage: "urn:example"
+        issues: "urn:example"
+        source: "urn:example"
+        dialects: [
+          "urn:example"
+        ]
+        links: [
+          {
+            "description": "foo",
+            "url": "urn:example:foo"
+          },
+          {
+            "description": "bar",
+            "url": "urn:example:bar"
+          }
+        ]
+        """,
+    )
     assert stderr == ""
 
 
