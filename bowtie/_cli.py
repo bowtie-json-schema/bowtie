@@ -594,14 +594,16 @@ async def _info(image_names: list[str], format: _F):
                 )
                 continue
 
-            if implementation.metadata is None:
+            try:
+                info = implementation.info()
+            except StartupFailed:
                 exit_code |= _EX_CONFIG
                 click.echo("  ❗ (error): startup failed")
                 continue
 
             metadata = dict(
                 sorted(
-                    implementation.metadata.items(),
+                    info.serializable().items(),
                     key=lambda kv: (
                         kv[0] != "name",
                         kv[0] != "language",
@@ -686,9 +688,11 @@ async def _smoke(
 
             echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
 
-            if implementation.metadata is None:
+            try:
+                implementation.info()
+            except StartupFailed:
                 exit_code |= _EX_CONFIG
-                echo("  ❗ (error): startup failed", file=sys.stderr)
+                click.echo("  ❗ (error): startup failed")
                 continue
 
             # FIXME: All dialects / and/or newest dialect with proper sort

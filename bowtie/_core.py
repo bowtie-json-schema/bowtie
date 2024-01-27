@@ -230,7 +230,7 @@ class ImplementationInfo:
         issues: str,
         source: str,
         dialects: list[str],
-        links: list[dict[str, Any]],
+        links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
     ):
         return cls(
@@ -247,12 +247,17 @@ class ImplementationInfo:
         return self._image
 
     def serializable(self):
-        as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
+        as_dict = {
+            k: v
+            for k, v in asdict(self).items()
+            if not k.startswith("_") and v
+        }
+        dialects = (str(d) for d in as_dict["dialects"])
         as_dict.update(
             homepage=str(as_dict["homepage"]),
             issues=str(as_dict["issues"]),
             source=str(as_dict["source"]),
-            dialects=[str(d) for d in as_dict["dialects"]],
+            dialects=sorted(dialects, reverse=True),
         )
         return as_dict
 
@@ -283,7 +288,7 @@ class Implementation:
         repr=False,
     )
 
-    metadata: dict[str, Any] | None = None
+    _info: ImplementationInfo | None = None
 
     # FIXME: Still some refactoring into DialectRunner needed.
     _dialect: URL = None  # type: ignore[reportGeneralTypeIssues]
@@ -369,16 +374,16 @@ class Implementation:
         started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         if started is INVALID:
             raise StartupFailed(name=self.name)
-        self.metadata = started.implementation
+        self._info = ImplementationInfo.from_dict(
+            image=self.name,
+            **started.implementation,
+        )
 
     def info(self) -> ImplementationInfo:
         # FIXME: Do this higher up
-        if self.metadata is None:
+        if self._info is None:
             raise StartupFailed(name=self.name)
-
-        kwargs = dict(self.metadata)
-        dialects = frozenset(URL.parse(d) for d in kwargs.pop("dialects"))
-        return ImplementationInfo(image=self.name, dialects=dialects, **kwargs)
+        return self._info
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect

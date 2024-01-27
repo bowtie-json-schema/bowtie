@@ -222,8 +222,8 @@ class RunMetadata:
         return cls(
             dialect=URL.parse(dialect),
             implementations=[
-                ImplementationInfo.from_dict(**each)
-                for each in implementations.values()
+                ImplementationInfo.from_dict(image=image, **data)
+                for image, data in implementations.items()
             ],
             **kwargs,
         )
@@ -237,7 +237,7 @@ class RunMetadata:
         as_dict.update(
             dialect=str(as_dict.pop("dialect")),
             started=as_dict.pop("started").isoformat(),
-            # FIXME: This useless transformation is to support the UI parsing
+            # FIXME: This transformation is to support the UI parsing
             implementations={
                 i.id: i.serializable() for i in self.implementations
             },
