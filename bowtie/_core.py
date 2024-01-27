@@ -376,13 +376,9 @@ class Implementation:
         if self.metadata is None:
             raise StartupFailed(name=self.name)
 
-        dialects = frozenset(URL.parse(d) for d in self.metadata["dialects"])
-        required = ["name", "language", "homepage", "issues", "source"]
-        return ImplementationInfo(
-            image=self.name,
-            dialects=dialects,
-            **{k: self.metadata[k] for k in required},
-        )
+        kwargs = dict(self.metadata)
+        dialects = frozenset(URL.parse(d) for d in kwargs.pop("dialects"))
+        return ImplementationInfo(image=self.name, dialects=dialects, **kwargs)
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect

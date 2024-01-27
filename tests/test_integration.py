@@ -196,6 +196,17 @@ missing_homepage = shellplementation(
     printf '{"ok": true}\n'
     """,  # noqa: E501
 )
+with_versions = shellplementation(
+    name="with_versions",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
 
 
 def _failed(message, stderr):
@@ -474,6 +485,21 @@ async def test_it_handles_invalid_start_responses(missing_homepage):
     assert "startup failed" in stderr.lower(), stderr
     assert "'homepage' is a required" in stderr, stderr
     assert results == [], stderr
+
+
+@pytest.mark.asyncio
+async def test_it_preserves_all_metadata(with_versions):
+    async with bowtie("-i", with_versions, "-V") as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    # FIXME: we need to make bowtie() return the whole report
+    assert results == [
+        {"bowtie-integration-tests/with_versions": TestResult.VALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
