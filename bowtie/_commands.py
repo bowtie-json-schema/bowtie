@@ -411,7 +411,9 @@ class SeqResult:
             return "".join("❗" for _ in self.expected)
 
         return "".join(
-            "✓" if got == TestResult(valid=expected) else "✗"
+            "✓"
+            if got == (got if expected is None else TestResult(valid=expected))
+            else "✗"
             for got, expected in zip(results, self.expected)
         )
 
