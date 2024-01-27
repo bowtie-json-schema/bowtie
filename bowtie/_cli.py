@@ -6,7 +6,7 @@ from functools import cache, wraps
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TextIO
+from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
 import logging
@@ -51,7 +51,8 @@ from bowtie.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Awaitable, Callable, Iterable, Mapping
+    from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry
 
@@ -170,6 +171,70 @@ def subcommand(fn: Callable[P, int | None]):
         context.exit(0 if exit_code is None else exit_code)
 
     return run
+
+
+class ImplementationSubcommand(Protocol):
+    def __call__(
+        self,
+        implementations: Iterable[Implementation],
+        **kwargs: Any,
+    ) -> Awaitable[int]:
+        ...
+
+
+def implementation_subcommand(fn: ImplementationSubcommand):
+    """
+    Define a Bowtie subcommand which starts up some implementations.
+
+    Runs the wrapped function with only the successfully started
+    implementations.
+    """
+
+    async def run(image_names: list[str], **kwargs: Any) -> int:
+        exit_code = 0
+        start = _start(
+            image_names=image_names,
+            make_validator=validator_for_dialect,
+            reporter=_report.Reporter(write=lambda **_: None),  # type: ignore[reportUnknownArgumentType]
+        )
+
+        running: list[Implementation] = []
+        async with start as implementations:
+            for each in implementations:
+                try:
+                    implementation = await each
+                except NoSuchImage as error:
+                    exit_code |= _EX_CONFIG
+                    click.echo(  # FIXME: respect a possible --quiet
+                        f"❗ (error): {error.name!r} is not a "
+                        "known Bowtie implementation.",
+                        file=sys.stderr,
+                    )
+                    continue
+
+                try:
+                    implementation.info()
+                except StartupFailed:
+                    exit_code |= _EX_CONFIG
+                    click.echo(  # FIXME: respect a possible --quiet
+                        f"❗ (error): {implementation.name} failed to start",
+                        file=sys.stderr,
+                    )
+                    continue
+
+                running.append(implementation)
+
+            exit_code |= await fn(implementations=running, **kwargs)
+
+        return exit_code
+
+    @subcommand
+    @IMPLEMENTATION
+    @wraps(fn)
+    def cmd(image_names: list[str], *args: P.args, **kwargs: P.kwargs) -> int:
+        return asyncio.run(run(*args, image_names=image_names, **kwargs))
+
+    return cmd
 
 
 @subcommand
@@ -627,7 +692,7 @@ async def _info(image_names: list[str], format: _F):
     return exit_code
 
 
-@subcommand
+@implementation_subcommand  # type: ignore[reportArgumentType]
 @click.option(
     "-q",
     "--quiet",
@@ -640,115 +705,75 @@ async def _info(image_names: list[str], format: _F):
     help="Don't print any output, just exit with nonzero status on failure.",
 )
 @FORMAT
-@IMPLEMENTATION
-def smoke(**kwargs: Any):
-    """
-    Smoke test one or more implementations for basic correctness.
-    """
-    return asyncio.run(_smoke(**kwargs))
-
-
-async def _smoke(
-    image_names: list[str],
+async def smoke(
+    implementations: Iterable[Implementation],
     format: _F,
     echo: Callable[..., None],
-):
-    reporter = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType]
+) -> int:
     exit_code = 0
 
-    match format:
-        case "json":
+    for implementation in implementations:
+        echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
 
-            def finish() -> None:
-                echo(json.dumps(serializable, indent=2))
+        # FIXME: All dialects / and/or newest dialect with proper sort
+        dialect = max(implementation.info().dialects, key=str)
+        runner = await implementation.start_speaking(dialect)
 
-        case "pretty":
+        cases = [
+            TestCase(
+                description="allow-everything schema",
+                schema={"$schema": str(dialect)},
+                tests=[
+                    Test(description="First", instance=1, valid=True),
+                    Test(description="Second", instance="foo", valid=True),
+                ],
+            ),
+            TestCase(
+                description="allow-nothing schema",
+                schema={"$schema": str(dialect), "not": {}},
+                tests=[
+                    Test(description="First", instance=12, valid=False),
+                ],
+            ),
+        ]
 
-            def finish():
+        match format:
+            case "json":
+                serializable: list[dict[str, Any]] = []
+
+                def see(seq_case: SeqCase, result: SeqResult):  # type: ignore[reportRedeclaration]
+                    serializable.append(  # noqa: B023
+                        dict(
+                            case=seq_case.case.without_expected_results(),
+                            result=asdict(result.result),
+                        ),
+                    )
+
+            case "pretty":
+
+                def see(seq_case: SeqCase, response: SeqResult):
+                    signs = "".join(
+                        "❗" if succeeded is None else "✓" if succeeded else "✗"
+                        for succeeded in response.compare()
+                    )
+                    echo(f"  · {seq_case.case.description}: {signs}")
+
+        for seq_case in SeqCase.for_cases(cases):
+            result = await seq_case.run(runner=runner)
+            if result.unsuccessful().causes_stop:
+                exit_code |= _EX_DATAERR
+            see(seq_case, result)
+
+        match format:
+            case "json":
+                echo(json.dumps(serializable, indent=2))  # type: ignore[reportPossiblyUnboundVariable]
+
+            case "pretty":
                 if exit_code:
                     echo("\n❌ some failures", file=sys.stderr)
                 else:
                     echo("\n✅ all passed", file=sys.stderr)
 
-    async with _start(
-        image_names=image_names,
-        make_validator=validator_for_dialect,
-        reporter=reporter,
-    ) as starting:
-        for each in starting:
-            try:
-                implementation = await each
-            except NoSuchImage as error:
-                exit_code |= _EX_CONFIG
-                echo(
-                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",
-                    file=sys.stderr,
-                )
-                continue
-
-            echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
-
-            try:
-                implementation.info()
-            except StartupFailed:
-                exit_code |= _EX_CONFIG
-                click.echo("  ❗ (error): startup failed")
-                continue
-
-            # FIXME: All dialects / and/or newest dialect with proper sort
-            dialect = max(implementation.info().dialects, key=str)
-            runner = await implementation.start_speaking(dialect)
-
-            cases = [
-                TestCase(
-                    description="allow-everything schema",
-                    schema={"$schema": str(dialect)},
-                    tests=[
-                        Test(description="First", instance=1, valid=True),
-                        Test(description="Second", instance="foo", valid=True),
-                    ],
-                ),
-                TestCase(
-                    description="allow-nothing schema",
-                    schema={"$schema": str(dialect), "not": {}},
-                    tests=[
-                        Test(description="First", instance=12, valid=False),
-                    ],
-                ),
-            ]
-
-            match format:
-                case "json":
-                    serializable: list[dict[str, Any]] = []
-
-                    def see(seq_case: SeqCase, result: SeqResult):  # type: ignore[reportRedeclaration]
-                        serializable.append(  # noqa: B023
-                            dict(
-                                case=seq_case.case.without_expected_results(),
-                                result=asdict(result.result),
-                            ),
-                        )
-
-                case "pretty":
-
-                    def see(seq_case: SeqCase, response: SeqResult):
-                        signs = "".join(
-                            "❗"
-                            if succeeded is None
-                            else "✓"
-                            if succeeded
-                            else "✗"
-                            for succeeded in response.compare()
-                        )
-                        echo(f"  · {seq_case.case.description}: {signs}")
-
-            for seq_case in SeqCase.for_cases(cases):
-                result = await seq_case.run(runner=runner)
-                if result.unsuccessful().causes_stop:
-                    exit_code |= _EX_DATAERR
-                see(seq_case, result)
-
-    finish()
     return exit_code
 
 
