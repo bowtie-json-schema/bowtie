@@ -706,7 +706,7 @@ async def smoke(
                     echo(f"  · {seq_case.case.description}: {response.dots()}")
 
         async for seq_case, result in implementation.smoke():
-            if result.unsuccessful().causes_stop:
+            if result.unsuccessful():
                 exit_code |= _EX_DATAERR
             see(seq_case, result)
 
@@ -715,10 +715,8 @@ async def smoke(
                 echo(json.dumps(serializable, indent=2))  # type: ignore[reportPossiblyUnboundVariable]
 
             case "pretty":
-                if exit_code:
-                    echo("\n❌ some failures", file=sys.stderr)
-                else:
-                    echo("\n✅ all passed", file=sys.stderr)
+                message = "❌ some failures" if exit_code else "✅ all passed"
+                echo(f"\n{message}", file=sys.stderr)
 
     return exit_code
 

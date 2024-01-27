@@ -54,16 +54,19 @@ class Unsuccessful:
             skipped=self.skipped + other.skipped,
         )
 
+    def __bool__(self) -> bool:  # sigh, typing nonsense
+        return bool(self.failed or self.errored or self.skipped)
+
+    @property
+    def causes_stop(self) -> bool:  # sigh, typing nonsense
+        return bool(self.failed or self.errored)
+
     @property
     def total(self):
         """
         Any test which was not a successful result, including skips.
         """
         return self.errored + self.failed + self.skipped
-
-    @property
-    def causes_stop(self) -> bool:
-        return bool(self.failed or self.errored)
 
 
 @frozen
