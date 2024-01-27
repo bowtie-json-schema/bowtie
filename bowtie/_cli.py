@@ -710,6 +710,9 @@ async def smoke(
     format: _F,
     echo: Callable[..., None],
 ) -> int:
+    """
+    Smoke test one or more implementations for basic correctness.
+    """
     exit_code = 0
 
     for implementation in implementations:
