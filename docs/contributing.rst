@@ -81,6 +81,6 @@ Writing good documentation is challenging both to prioritize and to do well.
 
 Any help you may have would be great, especially if you're a beginner who's struggled to understand Bowtie.
 
-Documentation is written in `Sphinx-flavored reStructuredText <https://www.sphinx-doc.org>`_, so you'll want to familiarize yourself a bit with Sphinx.
+Documentation is written in `Sphinx-flavored reStructuredText <sphinx:index>`, so you'll want to at least have a quick look at the `tutorial <sphinx:tutorial>` if you have never written documentation using it.
 
 Feel free to file issues or pull requests as well if you wish something was better documented, as this too can help prioritize.
