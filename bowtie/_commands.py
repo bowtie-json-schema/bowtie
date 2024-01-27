@@ -402,14 +402,18 @@ class SeqResult:
             result=result,
         )
 
-    def compare(self) -> Iterable[bool] | Iterable[None]:
+    def dots(self):
+        """
+        Represent the result via dot glyphs.
+        """
         results = self.result.results
         if results is None:
-            return (None for _ in self.expected)
+            return "".join("❗" for _ in self.expected)
 
-        for got, maybe in zip(results, self.expected):
-            expected = got if maybe is None else TestResult(valid=maybe)
-            yield got == expected
+        return "".join(
+            "✓" if got == TestResult(valid=expected) else "✗"
+            for got, expected in zip(results, self.expected)
+        )
 
     def result_for(self, i: int) -> AnyTestResult:
         return self.result.result_for(i)

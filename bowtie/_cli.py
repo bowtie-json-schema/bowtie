@@ -703,11 +703,7 @@ async def smoke(
             case "pretty":
 
                 def see(seq_case: SeqCase, response: SeqResult):
-                    signs = "".join(
-                        "❗" if succeeded is None else "✓" if succeeded else "✗"
-                        for succeeded in response.compare()
-                    )
-                    echo(f"  · {seq_case.case.description}: {signs}")
+                    echo(f"  · {seq_case.case.description}: {response.dots()}")
 
         async for seq_case, result in implementation.smoke():
             if result.unsuccessful().causes_stop:
