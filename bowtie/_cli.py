@@ -224,7 +224,7 @@ def implementation_subcommand(fn: ImplementationSubcommand):
 
                 running.append(implementation)
 
-            exit_code |= await fn(implementations=running, **kwargs)
+            exit_code |= await fn(implementations=running, **kwargs) or 0
 
         return exit_code
 
@@ -632,64 +632,34 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-@subcommand
+@implementation_subcommand  # type: ignore[reportArgumentType]
 @FORMAT
-@IMPLEMENTATION
-def info(**kwargs: Any):
+async def info(implementations: Iterable[Implementation], format: _F):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
-    return asyncio.run(_info(**kwargs))
+    for each in implementations:
+        metadata = [(k, v) for k, v in each.info().serializable().items() if v]
+        metadata.sort(
+            key=lambda kv: (
+                kv[0] != "name",
+                kv[0] != "language",
+                kv[0] != "version",
+                kv[0] == "links",
+                kv[0] == "dialects",
+                kv[0],
+            ),
+        )
 
-
-async def _info(image_names: list[str], format: _F):
-    exit_code = 0
-    async with _start(
-        image_names=image_names,
-        make_validator=validator_for_dialect,
-        reporter=_report.Reporter(),
-    ) as starting:
-        for each in starting:
-            try:
-                implementation = await each
-            except NoSuchImage as error:
-                exit_code |= _EX_CONFIG
+        match format:
+            case "json":
+                click.echo(json.dumps(dict(metadata), indent=2))
+            case "pretty":
                 click.echo(
-                    f"❗ (error): {error.name!r} is not a known Bowtie implementation.",
-                )
-                continue
-
-            try:
-                info = implementation.info()
-            except StartupFailed:
-                exit_code |= _EX_CONFIG
-                click.echo("  ❗ (error): startup failed")
-                continue
-
-            metadata = dict(
-                sorted(
-                    info.serializable().items(),
-                    key=lambda kv: (
-                        kv[0] != "name",
-                        kv[0] != "language",
-                        kv[0] != "version",
-                        kv[0] == "dialects",
-                        kv[0],
+                    "\n".join(
+                        f"{k}: {json.dumps(v, indent=2)}" for k, v in metadata
                     ),
-                ),
-            )
-
-            match format:
-                case "json":
-                    click.echo(json.dumps(metadata, indent=2))
-                case "pretty":
-                    click.echo(
-                        "\n".join(
-                            f"{k}: {json.dumps(v, indent=2)}"
-                            for k, v in metadata.items()
-                        ),
-                    )
-    return exit_code
+                )
 
 
 @implementation_subcommand  # type: ignore[reportArgumentType]
