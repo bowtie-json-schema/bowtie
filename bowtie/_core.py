@@ -87,9 +87,12 @@ class Stream:
         read = self._stream.read_out()
         return asyncio.wait_for(read, timeout=self._read_timeout_sec)
 
-    def send(self, message: dict[str, Any]) -> Awaitable[None]:
+    async def send(self, message: dict[str, Any]) -> None:
         as_bytes = f"{json.dumps(message)}\n".encode()
-        return self._stream.write_in(as_bytes)
+        try:  # aiodocker doesn't appear to properly report stream closure
+            await self._stream.write_in(as_bytes)
+        except AttributeError:
+            raise StreamClosed(self) from None
 
     async def receive(self) -> bytes:
         if self._buffer:
@@ -410,7 +413,7 @@ class Implementation:
 
     async def _stop(self):
         request = _commands.STOP.to_request(validate=self._maybe_validate)  # type: ignore[reportUnknownMemberType]  # uh?? no idea what's going on here.
-        with suppress(AttributeError):
+        with suppress(StreamClosed):
             await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
         with suppress(aiodocker.exceptions.DockerError):
             await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
@@ -420,8 +423,7 @@ class Implementation:
 
         try:
             await self._stream.send(request)
-        except AttributeError:
-            # FIXME: aiodocker doesn't appear to properly report stream closure
+        except StreamClosed:
             self._restarts -= 1
             await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
             await self._start_container()
