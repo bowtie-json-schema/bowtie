@@ -24,6 +24,8 @@ if TYPE_CHECKING:
         Set,
     )
 
+    from referencing.jsonschema import SchemaResource
+
     from bowtie._report import Reporter
 
 
@@ -190,7 +192,7 @@ class DialectRunner:
 
 
 class _MakeValidator(Protocol):
-    def __call__(self, dialect: URL | None = None) -> Callable[..., None]:
+    def __call__(self, *more_schemas: SchemaResource) -> Callable[..., None]:
         ...
 
 
@@ -318,12 +320,10 @@ class Implementation:
         make_validator: _MakeValidator,
         **kwargs: Any,
     ) -> AsyncIterator[Implementation]:
-        from bowtie._cli import DRAFT2020
-
         self = cls(
             name=image_name,
             make_validator=make_validator,
-            maybe_validate=make_validator(dialect=DRAFT2020),
+            maybe_validate=make_validator(),
             **kwargs,
         )
 
@@ -404,7 +404,8 @@ class Implementation:
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         self._dialect = dialect
-        self._maybe_validate = self._make_validator(dialect)
+        current_dialect = current_dialect_resource(dialect)
+        self._maybe_validate = self._make_validator(current_dialect)
         return DialectRunner.start(
             name=self.name,
             send=self._send,
@@ -502,3 +503,17 @@ class Implementation:
         for seq_case in _commands.SeqCase.for_cases(cases):
             result = await seq_case.run(runner=runner)
             yield seq_case, result
+
+
+def current_dialect_resource(dialect: URL):
+    # it's of course unimportant what dialect is used for this referencing
+    # schema, what matters is that the target dialect is applied
+    from referencing.jsonschema import DRAFT202012
+
+    return DRAFT202012.create_resource(
+        {
+            # Should match the magic value used for `schema` in `schemas/io/`
+            "$id": "tag:bowtie.report,2023:ihop:__dialect__",
+            "$ref": str(dialect),
+        },
+    )

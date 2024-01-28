@@ -16,6 +16,7 @@ import zipfile
 
 from attrs import asdict
 from diagnostic import DiagnosticError
+from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
@@ -23,7 +24,6 @@ from trogon import tui  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import aiodocker
 import click
-import referencing.jsonschema
 import referencing_loaders
 import rich
 import structlog
@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping
     from typing import Any, TextIO
 
-    from referencing.jsonschema import Schema, SchemaRegistry
+    from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -198,7 +198,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             exit_code = 0
             start = _start(
                 image_names=image_names,
-                make_validator=validator_for_dialect,
+                make_validator=make_validator,
                 reporter=reporter,
             )
 
@@ -441,35 +441,18 @@ def _validation_results_table(
     return table
 
 
-def with_current_dialect(dialect: URL):
-    # it's of course unimportant what dialect is used for this referencing
-    # schema, what matters is that the target dialect is applied
-    return (
-        referencing.jsonschema.DRAFT202012.create_resource(
-            {
-                # Should match the magic value used for `schema` in `schemas/io/`
-                "$id": "tag:bowtie.report,2023:ihop:__dialect__",
-                "$ref": str(dialect),
-            },
-        )
-        @ bowtie_schemas_registry()
-    )
-
-
 @cache
 def bowtie_schemas_registry() -> SchemaRegistry:
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    registry = referencing.jsonschema.EMPTY_REGISTRY.with_resources(resources)
-    return registry.crawl()
+    return EMPTY_REGISTRY.with_resources(resources).crawl()
 
 
-# FIXME: Make this take a `registry`, not a dialect
-def validator_for_dialect(dialect: URL):
+def make_validator(*more_schemas: SchemaResource):
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    registry = with_current_dialect(dialect)
+    registry = more_schemas @ bowtie_schemas_registry()
 
     def validate(instance: Any, schema: Schema) -> None:
         Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
@@ -483,7 +466,7 @@ def validator_for_dialect(dialect: URL):
     return validate
 
 
-def do_not_validate(dialect: URL | None = None) -> Callable[..., None]:
+def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
@@ -561,7 +544,7 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: validator_for_dialect if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, v: make_validator if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
