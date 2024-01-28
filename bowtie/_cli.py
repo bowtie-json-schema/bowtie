@@ -45,6 +45,7 @@ from bowtie._core import (
     ImplementationInfo,
     NoSuchImage,
     StartupFailed,
+    _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
 from bowtie.exceptions import (
     _ProtocolError,  # type: ignore[reportPrivateUsage]
@@ -194,12 +195,18 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
 
     def wrapper(fn: ImplementationSubcommand):
-        async def run(image_names: list[str], **kw: Any) -> int:
+        async def run(
+            image_names: list[str],
+            read_timeout_sec: float,
+            make_validator: _MakeValidator = make_validator,
+            **kw: Any,
+        ) -> int:
             exit_code = 0
             start = _start(
                 image_names=image_names,
                 make_validator=make_validator,
                 reporter=reporter,
+                read_timeout_sec=read_timeout_sec,
             )
 
             running: list[Implementation] = []
@@ -235,13 +242,10 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
         @subcommand
         @IMPLEMENTATION
+        @TIMEOUT
         @wraps(fn)
-        def cmd(
-            image_names: list[str],
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> int:
-            return asyncio.run(run(*args, image_names=image_names, **kwargs))
+        def cmd(image_names: list[str], **kwargs: Any) -> int:
+            return asyncio.run(run(image_names=image_names, **kwargs))
 
         return cmd
 
