@@ -24,13 +24,16 @@ HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 
-async def run(*argv, stdin: str = "", exit_code=0, json=False):
+async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
     """
-    Run a subprocess asynchronously to completion.
+    Run a Bowtie subprocess asynchronously to completion.
 
     An exit code of `-1` means "any non-zero exit code".
     """
     process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
         *argv,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
@@ -226,22 +229,10 @@ def _failed(message, stderr):
 
 
 @asynccontextmanager
-async def bowtie(*args, exit_code=0):
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "bowtie",
-        "run",
-        *args,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-
+async def run(*args, **kwargs):
     async def _send(stdin=""):
-        input = dedent(stdin).lstrip("\n").encode()
-        stdout, stderr = await process.communicate(input)
-        stdout, stderr = stdout.decode(), stderr.decode()
+        input = dedent(stdin).lstrip("\n")
+        stdout, stderr = await bowtie("run", *args, stdin=input, **kwargs)
 
         try:
             report = _report.Report.from_serialized(stdout.splitlines())
@@ -255,12 +246,6 @@ async def bowtie(*args, exit_code=0):
                 for _, case_results in report.cases_with_results()
                 for _, test_result in case_results
             ]
-
-        if exit_code == -1:
-            assert process.returncode != 0, stderr
-        else:
-            assert process.returncode == exit_code, stderr
-
         return results, stderr
 
     yield _send
@@ -268,7 +253,7 @@ async def bowtie(*args, exit_code=0):
 
 @pytest.mark.asyncio
 async def test_validating_on_both_sides(lintsonschema):
-    async with bowtie("-i", lintsonschema, "-V") as send:
+    async with run("-i", lintsonschema, "-V") as send:
         results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
@@ -286,7 +271,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
     tests.write_text(
         """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
     )
-    async with bowtie("-i", envsonschema, tests) as send:
+    async with run("-i", envsonschema, tests) as send:
         results, stderr = await send()
 
     assert results == [
@@ -296,7 +281,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
 
 @pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
-    async with bowtie("-i", envsonschema, "--set-schema") as send:
+    async with run("-i", envsonschema, "--set-schema") as send:
         results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
@@ -310,7 +295,7 @@ async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
 
 @pytest.mark.asyncio
 async def test_no_tests_run(envsonschema):
-    async with bowtie("-i", envsonschema, exit_code=os.EX_NOINPUT) as send:
+    async with run("-i", envsonschema, exit_code=os.EX_NOINPUT) as send:
         results, stderr = await send("")
 
     assert results == []
@@ -320,7 +305,7 @@ async def test_no_tests_run(envsonschema):
 @pytest.mark.asyncio
 async def test_unsupported_dialect(envsonschema):
     dialect = "some://other/URI/"
-    async with bowtie(
+    async with run(
         "-i",
         envsonschema,
         "--dialect",
@@ -335,7 +320,7 @@ async def test_unsupported_dialect(envsonschema):
 
 @pytest.mark.asyncio
 async def test_restarts_crashed_implementations(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with run("-i", envsonschema) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -358,7 +343,7 @@ async def test_restarts_crashed_implementations(envsonschema):
 
 @pytest.mark.asyncio
 async def test_handles_dead_implementations(succeed_immediately, envsonschema):
-    async with bowtie(
+    async with run(
         "-i",
         succeed_immediately,
         "-i",
@@ -384,7 +369,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with bowtie("-i", succeed_immediately, exit_code=-1) as send:
+    async with run("-i", succeed_immediately, exit_code=-1) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
@@ -402,7 +387,7 @@ async def test_handles_broken_start_implementations(
     fail_on_start,
     envsonschema,
 ):
-    async with bowtie(
+    async with run(
         "-i",
         fail_on_start,
         "-i",
@@ -426,7 +411,7 @@ async def test_handles_broken_start_implementations(
 
 @pytest.mark.asyncio
 async def test_handles_broken_run_implementations(fail_on_run):
-    async with bowtie(
+    async with run(
         "-i",
         fail_on_run,
         "--dialect",
@@ -446,7 +431,7 @@ async def test_handles_broken_run_implementations(fail_on_run):
 
 @pytest.mark.asyncio
 async def test_implementations_can_signal_errors(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with run("-i", envsonschema) as send:
         results, stderr = await send(
             """
             {"description": "error:", "schema": {}, "tests": [{"description": "crash:1", "instance": {}}] }
@@ -471,7 +456,7 @@ async def test_implementations_can_signal_errors(envsonschema):
 
 @pytest.mark.asyncio
 async def test_it_handles_split_messages(envsonschema):
-    async with bowtie("-i", envsonschema) as send:
+    async with run("-i", envsonschema) as send:
         results, stderr = await send(
             """
             {"description": "split:1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}, {"description": "2 valid:0", "instance": {}}] }
@@ -486,7 +471,7 @@ async def test_it_handles_split_messages(envsonschema):
 
 @pytest.mark.asyncio
 async def test_it_handles_invalid_start_responses(missing_homepage):
-    async with bowtie("-i", missing_homepage, "-V", exit_code=-1) as send:
+    async with run("-i", missing_homepage, "-V", exit_code=-1) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
@@ -500,14 +485,14 @@ async def test_it_handles_invalid_start_responses(missing_homepage):
 
 @pytest.mark.asyncio
 async def test_it_preserves_all_metadata(with_versions):
-    async with bowtie("-i", with_versions, "-V") as send:
+    async with run("-i", with_versions, "-V") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    # FIXME: we need to make bowtie() return the whole report
+    # FIXME: we need to make run() return the whole report
     assert results == [
         {"bowtie-integration-tests/with_versions": TestResult.VALID},
     ], stderr
@@ -518,7 +503,7 @@ async def test_it_prevents_network_access(hit_the_network):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with bowtie(
+    async with run(
         "-i",
         hit_the_network,
         "--dialect",
@@ -543,7 +528,7 @@ async def test_wrong_version(wrong_version):
     """
     An implementation speaking the wrong version of the protocol is skipped.
     """
-    async with bowtie(
+    async with run(
         "-i",
         wrong_version,
         "--dialect",
@@ -562,7 +547,7 @@ async def test_wrong_version(wrong_version):
 
 @pytest.mark.asyncio
 async def test_fail_fast(envsonschema):
-    async with bowtie("-i", envsonschema, "-x") as send:
+    async with run("-i", envsonschema, "-x") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
@@ -580,7 +565,7 @@ async def test_fail_fast(envsonschema):
 
 @pytest.mark.asyncio
 async def test_filter(envsonschema):
-    async with bowtie("-i", envsonschema, "-k", "baz") as send:
+    async with run("-i", envsonschema, "-k", "baz") as send:
         results, stderr = await send(
             """
             {"description": "foo", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
@@ -597,10 +582,7 @@ async def test_filter(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_pretty(envsonschema):
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "smoke",
         "--format",
         "pretty",
@@ -621,10 +603,7 @@ async def test_smoke_pretty(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_json(envsonschema):
-    jsonout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    jsonout, stderr = await bowtie(
         "smoke",
         "--format",
         "json",
@@ -696,10 +675,7 @@ async def test_smoke_json(envsonschema):
 
 @pytest.mark.asyncio
 async def test_smoke_quiet(envsonschema):
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "smoke",
         "--quiet",
         "-i",
@@ -711,10 +687,7 @@ async def test_smoke_quiet(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_pretty(envsonschema):
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "info",
         "--format",
         "pretty",
@@ -743,10 +716,7 @@ async def test_info_pretty(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_json(envsonschema):
-    jsonout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    jsonout, stderr = await bowtie(
         "info",
         "--format",
         "json",
@@ -774,10 +744,7 @@ async def test_info_json(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_links(links):
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "info",
         "--format",
         "pretty",
@@ -811,10 +778,7 @@ async def test_info_links(links):
 
 @pytest.mark.asyncio
 async def test_info_unsuccessful_start(succeed_immediately):
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "info",
         "-i",
         succeed_immediately,
@@ -831,10 +795,7 @@ async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("a.json").write_text("12")
     tmp_path.joinpath("b.json").write_text('"foo"')
 
-    stdout, _ = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, _ = await bowtie(
         "validate",
         "-i",
         envsonschema,
@@ -852,10 +813,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
 
-    validate_stdout, _ = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    validate_stdout, _ = await bowtie(
         "validate",
         "-i",
         envsonschema,
@@ -866,10 +824,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         tmp_path / "two.json",
     )
 
-    jsonout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    jsonout, stderr = await bowtie(
         "summary",
         "--format",
         "json",
@@ -898,10 +853,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
-    run_stdout, run_stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    run_stdout, run_stderr = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -911,10 +863,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
         stdin=dedent(raw.strip("\n")),
     )
 
-    jsonout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    jsonout, stderr = await bowtie(
         "summary",
         "--format",
         "json",
@@ -1044,10 +993,7 @@ async def test_badges(envsonschema, tmp_path):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
-    run_stdout, _ = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    run_stdout, _ = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -1055,10 +1001,7 @@ async def test_badges(envsonschema, tmp_path):
     )
 
     badges = tmp_path / "badges"
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "badges",
         badges,
         stdin=run_stdout,
@@ -1074,10 +1017,7 @@ async def test_badges(envsonschema, tmp_path):
 
 @pytest.mark.asyncio
 async def test_badges_nothing_ran(envsonschema, tmp_path):
-    run_stdout, _ = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    run_stdout, _ = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -1086,10 +1026,7 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
     )
 
     badges = tmp_path / "badges"
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "badges",
         badges,
         stdin=run_stdout,
@@ -1106,10 +1043,7 @@ async def test_run_with_registry(always_valid):
         {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
     """  # noqa: E501
 
-    run_stdout, run_stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    run_stdout, run_stderr = await bowtie(
         "run",
         "-i",
         always_valid,
@@ -1117,10 +1051,7 @@ async def test_run_with_registry(always_valid):
         stdin=dedent(raw.strip("\n")),
     )
 
-    jsonout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    jsonout, stderr = await bowtie(
         "summary",
         "--format",
         "json",
@@ -1143,10 +1074,7 @@ async def test_run_with_registry(always_valid):
 
 @pytest.mark.asyncio
 async def test_no_such_image():
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "run",
         "-i",
         "no-such-image",
@@ -1158,10 +1086,7 @@ async def test_no_such_image():
         in stderr
     ), stderr
 
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "smoke",
         "-i",
         "no-such-image",
@@ -1172,10 +1097,7 @@ async def test_no_such_image():
         in stderr
     ), stderr
 
-    stdout, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    stdout, stderr = await bowtie(
         "validate",
         "-i",
         "no-such-image",
@@ -1192,10 +1114,7 @@ async def test_no_such_image():
 
 @pytest.mark.asyncio
 async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
-    _, stderr = await run(
-        sys.executable,
-        "-m",
-        "bowtie",
+    _, stderr = await bowtie(
         "suite",
         "-i",
         envsonschema,
