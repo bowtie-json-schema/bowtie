@@ -272,23 +272,35 @@ class Implementation:
 
     name: str
 
+    # TODO: Potential areas to split this class up on
+
+    # Request/response validation -- probably can wrap protocol
     _make_validator: _MakeValidator = field(alias="make_validator")
     _maybe_validate: Callable[..., None] = field(alias="maybe_validate")
+
+    # Error reporting
     _reporter: Reporter = field(alias="reporter")
 
+    # Low level network / communication
     _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _restarts: int = field(default=20, repr=False, alias="restarts")
     _container: aiodocker.containers.DockerContainer = field(
         default=None,
         repr=False,
         alias="container",
     )
     _stream: Stream = field(default=None, repr=False, alias="stream")
+
+    # Possibly also related to the above networking, but also potentially
+    # useful for not waiting forever for results that really will complete
     _read_timeout_sec: float | None = field(
         default=2.0,
         converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
         repr=False,
     )
+
+    # Protocol fragile-ness, but also tolerance for how broken an
+    # implementation is
+    _restarts: int = field(default=20, repr=False, alias="restarts")
 
     _info: ImplementationInfo | None = None
 
