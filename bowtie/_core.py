@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import deque
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING, Any, Protocol
 import asyncio
@@ -14,6 +13,13 @@ import aiodocker.exceptions
 import aiodocker.stream
 
 from bowtie import _commands, exceptions
+from bowtie._containers import (
+    GotStderr,
+    NoSuchImage,
+    StartupFailed,
+    Stream,
+    StreamClosed,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -29,107 +35,12 @@ if TYPE_CHECKING:
     from bowtie._report import Reporter
 
 
-@frozen
-class GotStderr(Exception):
-    stderr: bytes
-
-
-@frozen
-class StartupFailed(Exception):
-    name: str
-    stderr: str = ""
-    data: Any = None
-
-    def __str__(self) -> str:
-        if self.stderr:
-            return f"{self.name}'s stderr contained: {self.stderr}"
-        return self.name
-
-
-@frozen
-class NoSuchImage(Exception):
-    name: str
-    data: Any = None
-
-
-class StreamClosed(Exception):
-    pass
-
-
 class _InvalidResponse:
     def __repr__(self) -> str:
         return "<InvalidResponse>"
 
 
 INVALID = _InvalidResponse()
-
-
-@mutable
-class Stream:
-    """
-    Wrapper to make aiodocker's Stream more pleasant to use.
-    """
-
-    _stream: aiodocker.stream.Stream = field(alias="stream")
-    _container: aiodocker.containers.DockerContainer = field(alias="container")
-    _read_timeout_sec: float | None = field(alias="read_timeout_sec")
-    _buffer: deque[bytes] = field(factory=deque, alias="buffer")
-    _last: bytes = b""
-
-    @classmethod
-    def attached_to(
-        cls,
-        container: aiodocker.containers.DockerContainer,
-        **kwargs: Any,
-    ) -> Stream:
-        stream = container.attach(stdin=True, stdout=True, stderr=True)
-        return cls(stream=stream, container=container, **kwargs)
-
-    def _read_with_timeout(self) -> Awaitable[aiodocker.stream.Message | None]:
-        read = self._stream.read_out()
-        return asyncio.wait_for(read, timeout=self._read_timeout_sec)
-
-    async def send(self, message: dict[str, Any]) -> None:
-        as_bytes = f"{json.dumps(message)}\n".encode()
-        try:  # aiodocker doesn't appear to properly report stream closure
-            await self._stream.write_in(as_bytes)
-        except AttributeError:
-            raise StreamClosed(self) from None
-
-    async def receive(self) -> bytes:
-        if self._buffer:
-            return self._buffer.popleft()
-
-        while True:
-            message = await self._read_with_timeout()
-            if message is not None:
-                break
-            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
-            if info["State"]["FinishedAt"]:
-                raise StreamClosed(self)
-
-        if message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
-            data: list[bytes] = []
-
-            while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
-                data.append(message.data)  # type: ignore[reportUnknownMemberType]
-                message = await self._read_with_timeout()
-                if message is None:
-                    raise GotStderr(b"".join(data))
-
-        line: bytes
-        rest: list[bytes]
-        while True:
-            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]
-            if rest:
-                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]
-                self._buffer.extend(rest)
-                return line  # type: ignore[reportUnknownVariableType]
-
-            message = None
-            while message is None:
-                message = await self._read_with_timeout()
-            self._last += line  # type: ignore[reportUnknownMemberType]
 
 
 @frozen
@@ -260,11 +171,6 @@ class Implementation:
 
     # Low level network / communication
     _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _container: aiodocker.containers.DockerContainer = field(
-        default=None,
-        repr=False,
-        alias="container",
-    )
     _stream: Stream = field(default=None, repr=False, alias="stream")
 
     # Possibly also related to the above networking, but also potentially
@@ -349,7 +255,7 @@ class Implementation:
         await self._stop()
 
     async def _start_container(self):
-        self._container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
+        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
             config=dict(
                 Image=self.name,
                 OpenStdin=True,
@@ -357,7 +263,7 @@ class Implementation:
             ),
         )
         self._stream = Stream.attached_to(
-            self._container,
+            container,
             read_timeout_sec=self._read_timeout_sec,
         )
         started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
@@ -388,8 +294,7 @@ class Implementation:
         request = _commands.STOP.to_request(validate=self._maybe_validate)  # type: ignore[reportUnknownMemberType]  # uh?? no idea what's going on here.
         with suppress(StreamClosed):
             await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
-        with suppress(aiodocker.exceptions.DockerError):
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
+        await self._stream.ensure_deleted()
 
     async def _send_no_response(self, cmd: _commands.Command[Any]):
         request = cmd.to_request(validate=self._maybe_validate)
@@ -398,7 +303,7 @@ class Implementation:
             await self._stream.send(request)
         except StreamClosed:
             self._restarts -= 1
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
+            await self._stream.ensure_deleted()
             await self._start_container()
             await self.start_speaking(dialect=self._dialect)
             await self._stream.send(request)
