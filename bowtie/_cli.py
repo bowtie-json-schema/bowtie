@@ -203,6 +203,7 @@ def implementation_subcommand(fn: ImplementationSubcommand):
             for each in implementations:
                 try:
                     implementation = await each
+                    implementation.info()  # to check we got our metadata :/
                 except StartupFailed as error:
                     exit_code |= _EX_CONFIG
                     click.echo(  # FIXME: respect a possible --quiet
@@ -215,16 +216,6 @@ def implementation_subcommand(fn: ImplementationSubcommand):
                     click.echo(  # FIXME: respect a possible --quiet
                         f"❗ (error): {error.name!r} is not a "
                         "known Bowtie implementation.",
-                        file=sys.stderr,
-                    )
-                    continue
-
-                try:
-                    implementation.info()
-                except StartupFailed:
-                    exit_code |= _EX_CONFIG
-                    click.echo(  # FIXME: respect a possible --quiet
-                        f"❗ (error): {implementation.name} failed to start",
                         file=sys.stderr,
                     )
                     continue
