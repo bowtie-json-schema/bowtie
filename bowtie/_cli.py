@@ -178,11 +178,14 @@ class ImplementationSubcommand(Protocol):
         self,
         implementations: Iterable[Implementation],
         **kwargs: Any,
-    ) -> Awaitable[int]:
+    ) -> Awaitable[int | None]:
         ...
 
 
-def implementation_subcommand(fn: ImplementationSubcommand):
+SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
+
+
+def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -190,52 +193,59 @@ def implementation_subcommand(fn: ImplementationSubcommand):
     implementations.
     """
 
-    async def run(image_names: list[str], **kwargs: Any) -> int:
-        exit_code = 0
-        start = _start(
-            image_names=image_names,
-            make_validator=validator_for_dialect,
-            reporter=_report.Reporter(write=lambda **_: None),  # type: ignore[reportUnknownArgumentType]
-        )
+    def wrapper(fn: ImplementationSubcommand):
+        async def run(image_names: list[str], **kw: Any) -> int:
+            exit_code = 0
+            start = _start(
+                image_names=image_names,
+                make_validator=validator_for_dialect,
+                reporter=reporter,
+            )
 
-        running: list[Implementation] = []
-        async with start as implementations:
-            for each in implementations:
-                try:
-                    implementation = await each
-                    implementation.info()  # to check we got our metadata :/
-                except StartupFailed as error:
+            running: list[Implementation] = []
+            async with start as implementations:
+                for each in implementations:
+                    try:
+                        implementation = await each
+                        implementation.info()  # to check we got our metadata :/
+                    except StartupFailed as error:
+                        exit_code |= _EX_CONFIG
+                        click.echo(  # FIXME: respect a possible --quiet
+                            f"❗ (error): {error.name!r} failed to start",
+                            file=sys.stderr,
+                        )
+                        continue
+                    except NoSuchImage as error:
+                        exit_code |= _EX_CONFIG
+                        click.echo(  # FIXME: respect a possible --quiet
+                            f"❗ (error): {error.name!r} is not a "
+                            "known Bowtie implementation.",
+                            file=sys.stderr,
+                        )
+                        continue
+
+                    running.append(implementation)
+
+                if running:
+                    exit_code |= await fn(implementations=running, **kw) or 0
+                else:
                     exit_code |= _EX_CONFIG
-                    click.echo(  # FIXME: respect a possible --quiet
-                        f"❗ (error): {error.name!r} failed to start",
-                        file=sys.stderr,
-                    )
-                    continue
-                except NoSuchImage as error:
-                    exit_code |= _EX_CONFIG
-                    click.echo(  # FIXME: respect a possible --quiet
-                        f"❗ (error): {error.name!r} is not a "
-                        "known Bowtie implementation.",
-                        file=sys.stderr,
-                    )
-                    continue
 
-                running.append(implementation)
+            return exit_code
 
-            if running:
-                exit_code |= await fn(implementations=running, **kwargs) or 0
-            else:
-                exit_code |= _EX_CONFIG
+        @subcommand
+        @IMPLEMENTATION
+        @wraps(fn)
+        def cmd(
+            image_names: list[str],
+            *args: P.args,
+            **kwargs: P.kwargs,
+        ) -> int:
+            return asyncio.run(run(*args, image_names=image_names, **kwargs))
 
-        return exit_code
+        return cmd
 
-    @subcommand
-    @IMPLEMENTATION
-    @wraps(fn)
-    def cmd(image_names: list[str], *args: P.args, **kwargs: P.kwargs) -> int:
-        return asyncio.run(run(*args, image_names=image_names, **kwargs))
-
-    return cmd
+    return wrapper
 
 
 @subcommand
@@ -633,7 +643,7 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-@implementation_subcommand  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
 async def info(implementations: Iterable[Implementation], format: _F):
     """
@@ -663,7 +673,7 @@ async def info(implementations: Iterable[Implementation], format: _F):
                 )
 
 
-@implementation_subcommand  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "-q",
     "--quiet",
