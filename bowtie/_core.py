@@ -134,11 +134,9 @@ class Stream:
 
 @frozen
 class DialectRunner:
-    _name: str = field(alias="name")
-    _dialect: URL = field(alias="dialect")
-    _send: Callable[[_commands.Command[Any]], Awaitable[Any]] = field(
-        alias="send",
-    )
+    implementation: _commands.ImplementationId
+    dialect: URL
+    send: Callable[[_commands.Command[Any]], Awaitable[Any]]
     _start_response: _commands.StartedDialect = field(alias="start_response")
 
     @classmethod
@@ -146,11 +144,11 @@ class DialectRunner:
         cls,
         send: Callable[[_commands.Command[Any]], Awaitable[Any]],
         dialect: URL,
-        name: str,
+        implementation: _commands.ImplementationId,
     ) -> DialectRunner:
         request = _commands.Dialect(dialect=str(dialect))
         return cls(
-            name=name,
+            implementation=implementation,
             send=send,
             dialect=dialect,
             start_response=await send(request),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
@@ -159,36 +157,10 @@ class DialectRunner:
     def warn_if_unacknowledged(self, reporter: Reporter):
         if self._start_response != _commands.StartedDialect.OK:
             reporter.unacknowledged_dialect(
-                implementation=self._name,
-                dialect=self._dialect,
+                implementation=self.implementation,
+                dialect=self.dialect,
                 response=self._start_response,
             )
-
-    async def run_validation(
-        self,
-        command: _commands.Run,
-        tests: Iterable[_commands.Test],
-    ) -> _commands.SeqResult:
-        try:
-            response = await self._send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-            if response is None:
-                result = _commands.Empty()
-            elif response is INVALID:
-                result = _commands.CaseErrored.uncaught()
-            else:
-                # FIXME: seq here should just get validated against the run one
-                _, result = response
-        except GotStderr as error:
-            stderr = error.stderr.decode("utf-8")
-            result = _commands.CaseErrored.uncaught(stderr=stderr)
-
-        expected: list[bool] | list[None] = [test.valid for test in tests]  # type: ignore[reportAssignmentType]
-        return _commands.SeqResult(
-            seq=command.seq,
-            implementation=self._name,
-            expected=expected,
-            result=result,
-        )
 
 
 class _MakeValidator(Protocol):
@@ -407,7 +379,7 @@ class Implementation:
         current_dialect = current_dialect_resource(dialect)
         self._maybe_validate = self._make_validator(current_dialect)
         return DialectRunner.start(
-            name=self.name,
+            implementation=self.name,
             send=self._send,
             dialect=dialect,
         )

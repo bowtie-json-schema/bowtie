@@ -20,13 +20,7 @@ from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 from bowtie import HOMEPAGE, exceptions
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        Awaitable,
-        Callable,
-        Iterable,
-        Mapping,
-        Sequence,
-    )
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from structlog.stdlib import BoundLogger
     from url import URL
@@ -152,9 +146,29 @@ class SeqCase:
     def for_cases(cls, cases: Iterable[TestCase]) -> Iterable[SeqCase]:
         return (cls(seq=i, case=case) for i, case in enumerate(cases))
 
-    def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
+    async def run(self, runner: DialectRunner) -> SeqResult:
+        from bowtie._core import INVALID, GotStderr
+
         command = Run(seq=self.seq, case=self.case.without_expected_results())
-        return runner.run_validation(command=command, tests=self.case.tests)
+        try:
+            response = await runner.send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+            if response is None:
+                result = Empty()
+            elif response is INVALID:
+                result = CaseErrored.uncaught()
+            else:
+                # FIXME: seq here should just get validated against the run one
+                _, result = response
+        except GotStderr as error:
+            result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
+
+        expected: list[bool] | list[None] = [t.valid for t in self.case.tests]  # type: ignore[reportAssignmentType]
+        return SeqResult(
+            seq=command.seq,
+            implementation=runner.implementation,
+            expected=expected,
+            result=result,
+        )
 
     def serializable(self):
         return dict(seq=self.seq, case=self.case.serializable())
