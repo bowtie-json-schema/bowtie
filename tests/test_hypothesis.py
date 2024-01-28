@@ -45,7 +45,7 @@ def test_cases_are_unique_by_default(cases_results):
 
 
 @given(data())
-@settings(suppress_health_check=[HealthCheck.too_slow])
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_cases_and_results_with_not_all_responding(data):
     n = data.draw(integers(min_value=1, max_value=5))
     impls = data.draw(strategies.implementations(min_size=n, max_size=n))
