@@ -15,8 +15,6 @@ except ImportError:
 import json
 
 from attrs import asdict, field, frozen
-from referencing import Registry, Specification
-from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 
 from bowtie import HOMEPAGE, exceptions
 
@@ -24,9 +22,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from structlog.stdlib import BoundLogger
-    from url import URL
 
-    from bowtie._core import DialectRunner
+    from bowtie._core import DialectRunner, TestCase
 
 
 #: A unique identifier for a test case within a run or report.
@@ -62,80 +59,6 @@ class Unsuccessful:
         Any test which was not a successful result, including skips.
         """
         return self.errored + self.failed + self.skipped
-
-
-@frozen
-class Test:
-    description: str
-    instance: Any
-    comment: str | None = None
-    valid: bool | None = None
-
-
-@frozen
-class TestCase:
-    description: str
-    schema: Any
-    tests: list[Test]
-    comment: str | None = None
-    registry: SchemaRegistry = Registry()
-
-    @classmethod
-    def from_dict(
-        cls,
-        dialect: URL,
-        tests: Iterable[dict[str, Any]],
-        registry: Mapping[str, Schema] = {},
-        **kwargs: Any,
-    ):
-        empty: SchemaRegistry = Registry()
-        populated = empty.with_contents(
-            registry.items(),
-            default_specification=specification_with(
-                str(dialect),
-                default=Specification.OPAQUE,
-            ),
-        )
-        return cls(
-            tests=[Test(**test) for test in tests],
-            registry=populated,
-            **kwargs,
-        )
-
-    def serializable(self) -> dict[str, Any]:
-        as_dict = asdict(
-            self,
-            filter=lambda k, v: k.name != "registry"
-            and (k.name != "comment" or v is not None),
-        )
-        if self.registry:
-            # FIXME: Via python-jsonschema/referencing#16
-            as_dict["registry"] = {
-                k: v.contents for k, v in self.registry.items()
-            }
-        return as_dict
-
-    def uniq(self) -> str:
-        """
-        An internally used unique identifier when we want unique cases.
-
-        Really this is just the JSON-serialized, normalized case.
-
-        But that can change.
-        """
-        return json.dumps(self.serializable(), sort_keys=True)
-
-    def without_expected_results(self) -> dict[str, Any]:
-        serializable = self.serializable()
-        serializable["tests"] = [
-            {
-                k: v
-                for k, v in test.items()
-                if k != "valid" and (k != "comment" or v is not None)
-            }
-            for test in serializable.pop("tests")
-        ]
-        return serializable
 
 
 @frozen

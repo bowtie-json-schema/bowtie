@@ -16,17 +16,17 @@ from bowtie._commands import (
     SeqCase,
     SeqResult,
     StartedDialect,
-    TestCase,
     Unsuccessful,
 )
+from bowtie._core import TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from pathlib import Path
     from typing import Any, Self, TextIO
 
-    from bowtie._commands import AnyTestResult, Command, ImplementationId, Test
-    from bowtie._core import Implementation, ImplementationInfo
+    from bowtie._commands import AnyTestResult, Command, ImplementationId
+    from bowtie._core import Implementation, ImplementationInfo, Test
 
 
 class Invalid(Exception):

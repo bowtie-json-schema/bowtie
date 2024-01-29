@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 import asyncio
 import json
 
+from aiodocker.exceptions import DockerError
 from attrs import asdict, field, frozen, mutable
+from referencing import Registry, Specification
+from referencing.jsonschema import Schema, SchemaRegistry, specification_with
 from url import URL
-import aiodocker.containers
-import aiodocker.docker
-import aiodocker.exceptions
-import aiodocker.stream
 
 from bowtie import _commands, exceptions
 from bowtie._containers import (
@@ -27,10 +26,14 @@ if TYPE_CHECKING:
         Awaitable,
         Callable,
         Iterable,
+        Mapping,
         Set,
     )
 
     from referencing.jsonschema import SchemaResource
+    import aiodocker.containers
+    import aiodocker.docker
+    import aiodocker.stream
 
     from bowtie._report import Reporter
 
@@ -216,7 +219,7 @@ class Implementation:
             raise err from None
         except StreamClosed:
             raise StartupFailed(name=image_name) from None
-        except aiodocker.exceptions.DockerError as err:
+        except DockerError as err:
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
 
@@ -359,11 +362,11 @@ class Implementation:
             ("object", {"foo": 37}),
         ]
         cases = [
-            _commands.TestCase(
+            TestCase(
                 description="allow-everything",
                 schema={"$schema": str(dialect)},
                 tests=[
-                    _commands.Test(
+                    Test(
                         description=json_type,
                         instance=instance,
                         valid=True,
@@ -371,11 +374,11 @@ class Implementation:
                     for json_type, instance in instances
                 ],
             ),
-            _commands.TestCase(
+            TestCase(
                 description="allow-nothing",
                 schema={"$schema": str(dialect), "not": {}},
                 tests=[
-                    _commands.Test(
+                    Test(
                         description=json_type,
                         instance=instance,
                         valid=False,
@@ -402,3 +405,77 @@ def current_dialect_resource(dialect: URL):
             "$ref": str(dialect),
         },
     )
+
+
+@frozen
+class Test:
+    description: str
+    instance: Any
+    comment: str | None = None
+    valid: bool | None = None
+
+
+@frozen
+class TestCase:
+    description: str
+    schema: Any
+    tests: list[Test]
+    comment: str | None = None
+    registry: SchemaRegistry = Registry()
+
+    @classmethod
+    def from_dict(
+        cls,
+        dialect: URL,
+        tests: Iterable[dict[str, Any]],
+        registry: Mapping[str, Schema] = {},
+        **kwargs: Any,
+    ):
+        empty: SchemaRegistry = Registry()
+        populated = empty.with_contents(
+            registry.items(),
+            default_specification=specification_with(
+                str(dialect),
+                default=Specification.OPAQUE,
+            ),
+        )
+        return cls(
+            tests=[Test(**test) for test in tests],
+            registry=populated,
+            **kwargs,
+        )
+
+    def serializable(self) -> dict[str, Any]:
+        as_dict = asdict(
+            self,
+            filter=lambda k, v: k.name != "registry"
+            and (k.name != "comment" or v is not None),
+        )
+        if self.registry:
+            # FIXME: Via python-jsonschema/referencing#16
+            as_dict["registry"] = {
+                k: v.contents for k, v in self.registry.items()
+            }
+        return as_dict
+
+    def uniq(self) -> str:
+        """
+        An internally used unique identifier when we want unique cases.
+
+        Really this is just the JSON-serialized, normalized case.
+
+        But that can change.
+        """
+        return json.dumps(self.serializable(), sort_keys=True)
+
+    def without_expected_results(self) -> dict[str, Any]:
+        serializable = self.serializable()
+        serializable["tests"] = [
+            {
+                k: v
+                for k, v in test.items()
+                if k != "valid" and (k != "comment" or v is not None)
+            }
+            for test in serializable.pop("tests")
+        ]
+        return serializable

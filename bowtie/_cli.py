@@ -34,8 +34,6 @@ from bowtie._commands import (
     AnyTestResult,
     SeqCase,
     SeqResult,
-    Test,
-    TestCase,
     Unsuccessful,
 )
 from bowtie._core import (
@@ -45,6 +43,8 @@ from bowtie._core import (
     ImplementationInfo,
     NoSuchImage,
     StartupFailed,
+    Test,
+    TestCase,
     _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
 from bowtie.exceptions import (

@@ -30,7 +30,7 @@ from url import URL
 
 from bowtie import _commands
 from bowtie._cli import TEST_SUITE_DIALECT_URLS
-from bowtie._core import ImplementationInfo
+from bowtie._core import ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
 
 # FIXME: probably via hypothesis-jsonschema
@@ -100,10 +100,10 @@ def tests(
     comment=text() | none(),
 ):
     r"""
-    Generate `_commands.Test`\ s.
+    Generate `Test`\ s.
     """
     return builds(
-        _commands.Test,
+        Test,
         description=description,
         instance=instance,
         valid=valid,
@@ -117,10 +117,10 @@ def test_cases(
     tests=lists(tests(), min_size=1, max_size=8),
 ):
     r"""
-    Generate `_commands.TestCase`\ s.
+    Generate `TestCase`\ s.
     """
     return builds(
-        _commands.TestCase,
+        TestCase,
         description=description,
         schema=schema,
         tests=tests,
@@ -325,8 +325,8 @@ register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.CaseErrored, errored_cases())
 register_type_strategy(_commands.CaseSkipped, skipped_cases())
 register_type_strategy(_commands.Seq, seqs)
-register_type_strategy(_commands.Test, tests())
-register_type_strategy(_commands.TestCase, test_cases())
+register_type_strategy(Test, tests())
+register_type_strategy(TestCase, test_cases())
 register_type_strategy(_commands.TestResult, successful_tests)
 register_type_strategy(_commands.SkippedTest, skipped_tests)
 register_type_strategy(_commands.ErroredTest, errored_tests)
