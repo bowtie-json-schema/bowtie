@@ -843,6 +843,24 @@ async def test_summary_show_failures(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_validate_no_tests(envsonschema, tmp_path):
+    """
+    Don't bother starting up if we have nothing to run.
+    """
+    schema = tmp_path / "schema.json"
+    schema.write_text("{}")
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        schema,
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
 async def test_summary_show_validation(envsonschema, always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}

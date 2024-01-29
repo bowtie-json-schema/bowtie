@@ -615,6 +615,9 @@ def validate(
     """
     Validate one or more instances under a given schema across implementations.
     """
+    if not instances:
+        return _EX_NOINPUT
+
     case = TestCase(
         description="bowtie validate",
         schema=json.load(schema),
