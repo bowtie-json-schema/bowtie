@@ -1091,7 +1091,7 @@ async def test_run_with_registry(always_valid):
 
 
 @pytest.mark.asyncio
-async def test_no_such_image():
+async def test_no_such_image(tmp_path):
     stdout, stderr = await bowtie(
         "run",
         "-i",
@@ -1115,11 +1115,15 @@ async def test_no_such_image():
         in stderr
     ), stderr
 
+    foo = tmp_path / "foo.json"
+    foo.write_text("{}")
+
     stdout, stderr = await bowtie(
         "validate",
         "-i",
         "no-such-image",
         "-",
+        foo,
         stdin="{}",
         exit_code=-1,
     )
