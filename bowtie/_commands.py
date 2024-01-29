@@ -152,7 +152,7 @@ class SeqCase:
 
         command = Run(seq=self.seq, case=self.case.without_expected_results())
         try:
-            response = await runner.send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+            response: tuple[Seq, AnyCaseResult] | None = await runner.send(command)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
             if response is None:
                 result = Empty()
             elif response is INVALID:
@@ -193,12 +193,12 @@ class Command(Protocol[R_co]):
     def from_response(
         response: bytes,
         validate: Callable[..., None],
-    ) -> R_co | None: ...
+    ) -> R_co: ...
 
 
 @dataclass_transform()
 def command(
-    Response: Callable[..., R_co | None],
+    Response: Callable[..., R_co],
     name: str = "",
 ) -> Callable[[type], type[Command[R_co]]]:
     def _command(cls: type) -> type[Command[R_co]]:
@@ -222,7 +222,7 @@ def command(
         def from_response(
             response: bytes,
             validate: Callable[..., None],
-        ) -> R_co | None:
+        ) -> R_co:
             try:
                 instance = json.loads(response)
             except json.JSONDecodeError as error:
@@ -563,7 +563,7 @@ class Run:
     case: dict[str, Any]
 
 
-@command(Response=lambda: None)
+@command(Response=Empty)
 class Stop:
     pass
 

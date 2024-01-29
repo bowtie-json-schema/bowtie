@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 import asyncio
 import json
 
@@ -42,6 +42,8 @@ class _InvalidResponse:
 
 INVALID = _InvalidResponse()
 
+R = TypeVar("R")
+
 
 @frozen
 class DialectRunner:
@@ -53,7 +55,7 @@ class DialectRunner:
     @classmethod
     async def start(
         cls,
-        send: Callable[[_commands.Command[Any]], Awaitable[Any]],
+        send: Callable[[_commands.Command[R]], Awaitable[R]],
         dialect: URL,
         implementation: _commands.ImplementationId,
     ) -> DialectRunner:
@@ -268,7 +270,7 @@ class Implementation:
             container,
             read_timeout_sec=self._read_timeout_sec,
         )
-        started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
+        started: _commands.Started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
         if started is INVALID:
             raise StartupFailed(name=self.name)
         self._info = ImplementationInfo.from_dict(
@@ -298,7 +300,7 @@ class Implementation:
             await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
         await self._stream.ensure_deleted()
 
-    async def _send_no_response(self, cmd: _commands.Command[Any]):
+    async def _send_no_response(self, cmd: _commands.Command[R]) -> None:
         request = cmd.to_request(validate=self._maybe_validate)
 
         try:
@@ -310,7 +312,11 @@ class Implementation:
             await self.start_speaking(dialect=self._dialect)
             await self._stream.send(request)
 
-    async def _send(self, cmd: _commands.Command[Any], retry: int = 3) -> Any:
+    async def _send(
+        self,
+        cmd: _commands.Command[R],
+        retry: int = 3,
+    ) -> R | _InvalidResponse:
         await self._send_no_response(cmd)
         for _ in range(retry):
             try:
