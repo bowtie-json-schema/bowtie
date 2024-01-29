@@ -75,8 +75,9 @@ class DialectRunner:
 
 
 class _MakeValidator(Protocol):
-    def __call__(self, *more_schemas: SchemaResource) -> Callable[..., None]:
-        ...
+    def __call__(
+        self, *more_schemas: SchemaResource
+    ) -> Callable[..., None]: ...
 
 
 @frozen

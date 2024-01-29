@@ -179,8 +179,7 @@ class ImplementationSubcommand(Protocol):
         self,
         implementations: Iterable[Implementation],
         **kwargs: Any,
-    ) -> Awaitable[int | None]:
-        ...
+    ) -> Awaitable[int | None]: ...
 
 
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
