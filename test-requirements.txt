@@ -8,7 +8,7 @@ aiodocker==0.21.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-aiohttp==3.9.1
+aiohttp==3.9.3
     # via
     #   -r requirements.txt
     #   aiodocker
@@ -64,7 +64,7 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.97.1
+hypothesis==6.97.3
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
