@@ -38,6 +38,14 @@ if TYPE_CHECKING:
     from bowtie._report import Reporter
 
 
+DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
+DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
+DRAFT7 = URL.parse("http://json-schema.org/draft-07/schema#")
+DRAFT6 = URL.parse("http://json-schema.org/draft-06/schema#")
+DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
+DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
+
+
 class _InvalidResponse:
     def __repr__(self) -> str:
         return "<InvalidResponse>"

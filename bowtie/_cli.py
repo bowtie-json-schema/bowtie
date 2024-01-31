@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import cache, wraps
 from importlib.resources import files
-from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
@@ -12,7 +11,6 @@ import json
 import logging
 import os
 import sys
-import zipfile
 
 from attrs import asdict
 from diagnostic import DiagnosticError
@@ -21,7 +19,6 @@ from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
-from url import URL, RelativeURLWithoutBase
 import aiodocker
 import click
 import referencing_loaders
@@ -29,7 +26,7 @@ import rich
 import structlog
 import structlog.typing
 
-from bowtie import GITHUB, _report
+from bowtie import _report, _suite
 from bowtie._commands import (
     AnyTestResult,
     SeqCase,
@@ -56,6 +53,7 @@ if TYPE_CHECKING:
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
+    from url import URL
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -63,47 +61,7 @@ _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
-
-DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
-DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
-DRAFT7 = URL.parse("http://json-schema.org/draft-07/schema#")
-DRAFT6 = URL.parse("http://json-schema.org/draft-06/schema#")
-DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
-DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
-
-DIALECT_SHORTNAMES: Mapping[str, URL] = {
-    "2020": DRAFT2020,
-    "202012": DRAFT2020,
-    "2020-12": DRAFT2020,
-    "draft2020-12": DRAFT2020,
-    "draft202012": DRAFT2020,
-    "2019": DRAFT2019,
-    "201909": DRAFT2019,
-    "2019-09": DRAFT2019,
-    "draft2019-09": DRAFT2019,
-    "draft201909": DRAFT2019,
-    "7": DRAFT7,
-    "draft7": DRAFT7,
-    "6": DRAFT6,
-    "draft6": DRAFT6,
-    "4": DRAFT4,
-    "draft4": DRAFT4,
-    "3": DRAFT3,
-    "draft3": DRAFT3,
-}
-TEST_SUITE_DIALECT_URLS = {
-    DRAFT2020: TEST_SUITE_URL / "tree/main/tests/draft2020-12",
-    DRAFT2019: TEST_SUITE_URL / "tree/main/tests/draft2019-09",
-    DRAFT7: TEST_SUITE_URL / "tree/main/tests/draft7",
-    DRAFT6: TEST_SUITE_URL / "tree/main/tests/draft6",
-    DRAFT4: TEST_SUITE_URL / "tree/main/tests/draft4",
-    DRAFT3: TEST_SUITE_URL / "tree/main/tests/draft3",
-}
 LATEST_DIALECT_NAME = "draft2020-12"
-
-# Magic constants assumed/used by the official test suite
-SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 FORMAT = click.option(
     "--format",
@@ -487,17 +445,13 @@ DIALECT = click.option(
     "--dialect",
     "-D",
     "dialect",
-    type=lambda dialect: (  # type: ignore[reportUnknownLambdaType]
-        DIALECT_SHORTNAMES[dialect]  # type: ignore[reportUnknownArgumentType]
-        if dialect in DIALECT_SHORTNAMES
-        else URL.parse(dialect)  # type: ignore[reportUnknownArgumentType]
-    ),
+    type=_suite.dialect_from_str,
     default=LATEST_DIALECT_NAME,
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
         "A URI or shortname identifying the dialect of each test. Possible "
-        f"shortnames include: {', '.join(sorted(DIALECT_SHORTNAMES))}."
+        f"shortnames include: {', '.join(sorted(_suite.DIALECT_SHORTNAMES))}."
     ),
 )
 FILTER = click.option(
@@ -721,91 +675,6 @@ async def smoke(
     return exit_code
 
 
-def path_and_ref_from_gh_path(path: list[str]):
-    subpath: list[str] = []
-    while path[-1] != "tests":
-        subpath.append(path.pop())
-    subpath.append(path.pop())
-    # remove tree/ or blob/
-    return "/".join(reversed(subpath)).rstrip("/"), "/".join(path[1:])
-
-
-class _TestSuiteCases(click.ParamType):
-    name = "json-schema-org/JSON-Schema-Test-Suite test cases"
-
-    def convert(
-        self,
-        value: Any,
-        param: click.Parameter | None,
-        ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], URL, dict[str, Any]]:
-        if not isinstance(value, str):
-            return value
-
-        # Convert dialect URIs or shortnames to test suite URIs
-        value = DIALECT_SHORTNAMES.get(value, value)
-        value = TEST_SUITE_DIALECT_URLS.get(value, value)
-
-        try:
-            with suppress(TypeError):
-                value = URL.parse(value)
-        except RelativeURLWithoutBase:
-            cases, dialect = self._cases_and_dialect(path=Path(value))
-            run_metadata = {}
-        else:
-            from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
-            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
-                NotFoundError,
-            )
-
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-            org, repo_name, *rest = value.path_segments
-            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
-            path, ref = path_and_ref_from_gh_path(rest)
-            data = BytesIO()
-            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-            data.seek(0)
-            with zipfile.ZipFile(data) as zf:
-                (contents,) = zipfile.Path(zf).iterdir()
-                cases, dialect = self._cases_and_dialect(path=contents / path)
-                cases = list(cases)
-
-            try:
-                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-            except NotFoundError:
-                commit_info = ref
-            else:
-                # TODO: Make this the tree URL maybe, but I see tree(...)
-                #       doesn't come with an html_url
-                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
-            run_metadata: dict[str, Any] = {"Commit": commit_info}
-
-        return cases, dialect, run_metadata
-
-        self.fail(
-            f"{value} does not contain JSON Schema Test Suite cases.",
-            param,
-            ctx,
-        )
-
-    def _cases_and_dialect(self, path: Any):
-        if path.name.endswith(".json"):
-            paths, version_path = [path], path.parent
-        else:
-            paths, version_path = _glob(path, "*.json"), path
-
-        remotes = version_path.parent.parent / "remotes"
-
-        dialect = DIALECT_SHORTNAMES.get(version_path.name)
-        if dialect is None:
-            self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
-
-        cases = suite_cases_from(paths=paths, remotes=remotes, dialect=dialect)
-
-        return cases, dialect
-
-
 @subcommand
 @IMPLEMENTATION
 @FILTER
@@ -813,7 +682,7 @@ class _TestSuiteCases(click.ParamType):
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@click.argument("input", type=_TestSuiteCases())
+@click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], URL, dict[str, Any]],
     filter: str,
@@ -964,42 +833,6 @@ async def _start(image_names: Iterable[str], **kwargs: Any):
         yield asyncio.as_completed(implementations)
 
 
-def _remotes_from(
-    path: Path,
-    dialect: URL | None,
-) -> Iterable[tuple[URL, Any]]:
-    for each in _rglob(path, "*.json"):
-        schema = json.loads(each.read_text())
-        # FIXME: #40: for draft-next support
-        schema_dialect = schema.get("$schema")
-        if schema_dialect is not None and schema_dialect != str(dialect):
-            continue
-        relative = str(_relative_to(each, path)).replace("\\", "/")
-        yield SUITE_REMOTE_BASE_URI / relative, schema
-
-
-def suite_cases_from(
-    paths: Iterable[_P],
-    remotes: Path,
-    dialect: URL,
-) -> Iterable[TestCase]:
-    populated = {str(k): v for k, v in _remotes_from(remotes, dialect=dialect)}
-    for path in paths:
-        if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = populated
-        else:
-            registry = {}
-
-        for case in json.loads(path.read_text()):
-            for test in case["tests"]:
-                test["instance"] = test.pop("data")
-            yield TestCase.from_dict(
-                dialect=dialect,
-                registry=registry,
-                **case,
-            )
-
-
 def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     def stderr_processor(
         logger: structlog.typing.BindableLogger,
@@ -1051,33 +884,3 @@ def _redirect_structlog(
         logger_factory=structlog.WriteLoggerFactory(file),
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
     )
-
-
-_P = Path | zipfile.Path
-
-
-# Missing zipfile.Path methods...
-def _glob(path: _P, path_pattern: str) -> Iterable[_P]:
-    return (  # It's missing .match() too, so we fnmatch directly
-        each for each in path.iterdir() if fnmatch(each.name, path_pattern)
-    )
-
-
-def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
-    for each in path.iterdir():
-        if fnmatch(each.name, path_pattern):
-            yield each
-        elif each.is_dir():
-            yield from _rglob(each, path_pattern)
-
-
-def _relative_to(path: _P, other: Path) -> Path:
-    if hasattr(path, "relative_to"):
-        return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-
-
-def _stem(path: _P) -> str:  # Missing on < 3.11
-    if hasattr(path, "stem"):
-        return path.stem
-    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]

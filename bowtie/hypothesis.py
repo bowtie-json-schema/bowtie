@@ -29,9 +29,9 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
-from bowtie._cli import TEST_SUITE_DIALECT_URLS
 from bowtie._core import ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
+from bowtie._suite import URL_FOR_DIALECT
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -52,7 +52,7 @@ implementation_names = text(  # FIXME: see the start command schema
     max_size=50,
 )
 languages = text(printable, min_size=1, max_size=20)
-dialects = sampled_from(list(TEST_SUITE_DIALECT_URLS))
+dialects = sampled_from(list(URL_FOR_DIALECT))
 
 
 @composite
