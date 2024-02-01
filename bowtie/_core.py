@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         Callable,
         Iterable,
         Mapping,
+        Sequence,
         Set,
     )
 
@@ -426,6 +427,25 @@ class Test:
     instance: Any
     comment: str | None = None
     valid: bool | None = None
+
+
+@frozen
+class Group:
+    description: str
+    children: ChildTests
+    comment: str | None = None
+
+
+@frozen
+class LeafGroup:
+    description: str
+    schema: Schema
+    children: Sequence[Test]
+    comment: str | None = None
+    registry: SchemaRegistry = EMPTY_REGISTRY
+
+
+ChildTests = Group | LeafGroup
 
 
 @frozen
