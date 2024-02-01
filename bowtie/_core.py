@@ -7,8 +7,13 @@ import json
 
 from aiodocker.exceptions import DockerError
 from attrs import asdict, field, frozen, mutable
-from referencing import Registry, Specification
-from referencing.jsonschema import Schema, SchemaRegistry, specification_with
+from referencing import Specification
+from referencing.jsonschema import (
+    EMPTY_REGISTRY,
+    Schema,
+    SchemaRegistry,
+    specification_with,
+)
 from url import URL
 
 from bowtie import _commands, exceptions
@@ -429,7 +434,7 @@ class TestCase:
     schema: Any
     tests: list[Test]
     comment: str | None = None
-    registry: SchemaRegistry = Registry()
+    registry: SchemaRegistry = EMPTY_REGISTRY
 
     @classmethod
     def from_dict(
@@ -439,8 +444,7 @@ class TestCase:
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
     ):
-        empty: SchemaRegistry = Registry()
-        populated = empty.with_contents(
+        populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
             default_specification=specification_with(
                 str(dialect),
