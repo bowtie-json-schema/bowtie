@@ -105,6 +105,8 @@ exclude = [
 
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = [
   "A001",  # It's fine to shadow builtins
@@ -139,7 +141,8 @@ ignore = [
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
   "PYI025",  # No, importing it as Set is fine.
-  "RET503",  # Returning None implicitly is fine
+  "RET502",  # Returning None implicitly is fine
+  "RET503",
   "RET505",  # These push you to use `if` instead of `elif`, but for no reason
   "RET506",
   "RSE102",  # Ha, what, who even knew you could leave the parens off. But no.
@@ -152,14 +155,14 @@ ignore = [
 [tool.ruff.lint.flake8-pytest-style]
 mark-parentheses = false
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
 from-first = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
 "tests/*" = ["ANN", "D", "RUF012", "S"]
