@@ -95,20 +95,7 @@ class BowtieSampsonSchemaValidatorLauncher(
 
         @Suppress("detekt:TooGenericExceptionCaught")
         val schema = try {
-            JsonSchemaLoader.create()
-                .apply {
-                    currentDialect?.also(this::registerWellKnown)
-                    for ((uri, schema) in command.case.registry) {
-                        if (skipSchema(uri, schema)) {
-                            continue
-                        }
-                        try {
-                            register(schema, uri)
-                        } catch (ex: Exception) {
-                            throw RuntimeException("cannot register schema for URI '$uri'", ex)
-                        }
-                    }
-                }.fromJsonElement(schemaDefinition, currentDialect)
+            loadSchema(command, schemaDefinition)
         } catch (ex: Exception) {
             writer.writeLine(
                 json.encodeToString(
@@ -125,6 +112,25 @@ class BowtieSampsonSchemaValidatorLauncher(
         }
         runCase(command, schema)
     }
+
+    private fun loadSchema(
+        command: Command.Run,
+        schemaDefinition: JsonElement,
+    ): JsonSchema = JsonSchemaLoader.create()
+        .apply {
+            currentDialect?.also(this::registerWellKnown)
+            for ((uri, schema) in command.case.registry) {
+                if (skipSchema(uri, schema)) {
+                    continue
+                }
+                @Suppress("detekt:TooGenericExceptionCaught")
+                try {
+                    register(schema, uri)
+                } catch (ex: Exception) {
+                    throw IllegalStateException("cannot register schema for URI '$uri'", ex)
+                }
+            }
+        }.fromJsonElement(schemaDefinition, currentDialect)
 
     private fun skipSchema(uri: String, schema: JsonElement): Boolean {
         if (uri.contains("draft4", ignoreCase = true)) {
