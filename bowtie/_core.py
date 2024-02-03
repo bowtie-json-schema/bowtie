@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
-import asyncio
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Protocol, TypeVar
 import json
 
-from aiodocker.exceptions import DockerError
-from attrs import asdict, field, frozen, mutable
+from attrs import asdict, evolve, field, frozen, mutable
 from referencing import Specification
 from referencing.jsonschema import (
     EMPTY_REGISTRY,
@@ -16,14 +14,16 @@ from referencing.jsonschema import (
 )
 from url import URL
 
-from bowtie import _commands, exceptions
-from bowtie._containers import (
-    GotStderr,
-    NoSuchImage,
-    StartupFailed,
-    Stream,
-    StreamClosed,
+from bowtie._commands import (
+    START_V1,
+    STOP,
+    CaseErrored,
+    Dialect,
+    SeqCase,
+    SeqResult,
+    StartedDialect,
 )
+from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -35,12 +35,11 @@ if TYPE_CHECKING:
         Sequence,
         Set,
     )
+    from typing import Any, Self
 
     from referencing.jsonschema import SchemaResource
-    import aiodocker.containers
-    import aiodocker.docker
-    import aiodocker.stream
 
+    from bowtie._commands import Command, ImplementationId, Run
     from bowtie._report import Reporter
 
 
@@ -52,45 +51,37 @@ DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
 DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
 
 
-class _InvalidResponse:
-    def __repr__(self) -> str:
-        return "<InvalidResponse>"
+@frozen
+class NoSuchImplementation(Exception):
+    """
+    An implementation with the given name does not exist.
+    """
 
-
-INVALID = _InvalidResponse()
-
-R = TypeVar("R")
+    name: str
 
 
 @frozen
-class DialectRunner:
-    implementation: _commands.ImplementationId
-    dialect: URL
-    send: Callable[[_commands.Command[Any]], Awaitable[Any]]
-    _start_response: _commands.StartedDialect = field(alias="start_response")
+class GotStderr(Exception):
+    stderr: bytes
 
-    @classmethod
-    async def start(
-        cls,
-        send: Callable[[_commands.Command[R]], Awaitable[R]],
-        dialect: URL,
-        implementation: _commands.ImplementationId,
-    ) -> DialectRunner:
-        request = _commands.Dialect(dialect=str(dialect))
-        return cls(
-            implementation=implementation,
-            send=send,
-            dialect=dialect,
-            start_response=await send(request),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-        )
 
-    def warn_if_unacknowledged(self, reporter: Reporter):
-        if self._start_response != _commands.StartedDialect.OK:
-            reporter.unacknowledged_dialect(
-                implementation=self.implementation,
-                dialect=self.dialect,
-                response=self._start_response,
-            )
+class Restarted(Exception):
+    pass
+
+
+@frozen
+class StartupFailed(Exception):
+    name: str
+    stderr: str = ""
+    data: Any = None
+
+    def __str__(self) -> str:
+        if self.stderr:
+            return f"{self.name}'s stderr contained: {self.stderr}"
+        return self.name
+
+
+R = TypeVar("R")
 
 
 class _MakeValidator(Protocol):
@@ -117,7 +108,7 @@ class Link:
 class ImplementationInfo:
     # FIXME: Combine with / separate out more from `Implementation`
 
-    _image: _commands.ImplementationId = field(alias="image")
+    _image: ImplementationId = field(alias="image")
 
     name: str
     language: str
@@ -153,7 +144,7 @@ class ImplementationInfo:
         )
 
     @property
-    def id(self) -> _commands.ImplementationId:
+    def id(self):
         return self._image
 
     def serializable(self):
@@ -173,197 +164,200 @@ class ImplementationInfo:
         return as_dict
 
 
+class Connection(Protocol):
+    """
+    A connection to a specific JSON Schema implementation.
+
+    Concrete implementations of this protocol will decide what means of
+    communication are used -- e.g. sockets, files, in-memory -- as
+    well as how the JSON Schema implementation is running -- in a separate
+    process, in-memory, et cetera.
+    """
+
+    async def request(self, message: dict[str, Any]) -> dict[str, Any] | None:
+        """
+        Send a request to the harness.
+        """
+        ...
+
+    async def poison(self, message: dict[str, Any]) -> None:
+        """
+        Poison the harness by sending a message which causes it to stop itself.
+        """
+        ...
+
+
+@frozen
+class HarnessClient:
+    """
+    A client which speaks to a specific running implementation harness.
+    """
+
+    _connection: Connection = field(alias="connection")
+
+    _make_validator: _MakeValidator = field(alias="make_validator")
+    _resources_for_validation: Sequence[SchemaResource] = field(
+        default=(),
+        alias="resources_for_validation",
+    )
+
+    # FIXME: Remove this somehow by making the state machine even more explicit
+    #: A sequence of commands to replay if we end up restarting the connection.
+    _if_replaying: Sequence[Command[Any]] = ()
+
+    async def _get_back_up_to_date(self, then: dict[str, Any]):
+        for each in self._if_replaying:
+            await self.request(each)  # TODO: response assert?
+        return await self._connection.request(then)
+
+    async def transition(
+        self,
+        cmd: Command[R],
+        resources: Sequence[SchemaResource] = (),
+    ) -> tuple[Self, R | None]:
+        response = await self.request(cmd)
+        harness = evolve(
+            self,
+            if_replaying=[*self._if_replaying, cmd],
+            resources_for_validation=resources,
+        )
+        return harness, response
+
+    async def request(self, cmd: Command[R]) -> R | None:
+        """
+        Send a given command to the implementation and return its response.
+        """
+        validate = self._make_validator(*self._resources_for_validation)
+        request = cmd.to_request(validate=validate)
+        try:
+            response = await self._connection.request(request)
+        except Restarted:
+            response = await self._get_back_up_to_date(then=request)
+        if response is None:
+            return
+        return cmd.from_response(response, validate=validate)
+
+    async def poison(self) -> None:
+        validate = self._make_validator()
+        await self._connection.poison(STOP.to_request(validate=validate))  # type: ignore[reportArgumentType]
+
+
+@frozen
+class DialectRunner:
+    """
+    A running implementation which is speaking a specific dialect.
+    """
+
+    dialect: URL
+    implementation: ImplementationId
+    _harness: HarnessClient = field(repr=False, alias="harness")
+    _reporter: Reporter = field(alias="reporter")
+
+    @classmethod
+    async def for_dialect(
+        cls,
+        dialect: URL,
+        implementation: ImplementationId,
+        harness: HarnessClient,
+        reporter: Reporter,
+    ):
+        new_harness: HarnessClient
+        response: StartedDialect
+        new_harness, response = await harness.transition(
+            Dialect(dialect=str(dialect)),  # type: ignore[reportArgumentType]
+            resources=[current_dialect_resource(dialect)],
+        )
+
+        if response != StartedDialect.OK:
+            reporter.unacknowledged_dialect(
+                implementation=implementation,
+                dialect=dialect,
+                response=response,
+            )
+
+        return cls(
+            dialect=dialect,
+            implementation=implementation,
+            harness=new_harness,
+            reporter=reporter,
+        )
+
+    async def validate(
+        self,
+        run: Run,
+        expected: list[bool] | list[None],
+    ) -> SeqResult:
+        try:
+            response = await self._harness.request(run)  # type: ignore[reportArgumentType]
+            if response is None:
+                result = CaseErrored.uncaught()
+            else:
+                # FIXME: seq here should just get validated against the run one
+                _, result = response  # type: ignore[reportUnknownVariableType]
+        except GotStderr as error:
+            result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
+        return SeqResult(
+            seq=run.seq,
+            implementation=self.implementation,
+            expected=expected,
+            result=result,  # type: ignore[reportUnknownArgumentType]
+        )
+
+
 @mutable
 class Implementation:
     """
     A running implementation under test.
     """
 
-    name: str
-
-    # TODO: Potential areas to split this class up on
-
-    # Request/response validation -- probably can wrap protocol
-    _make_validator: _MakeValidator = field(alias="make_validator")
-    _maybe_validate: Callable[..., None] = field(alias="maybe_validate")
-
-    # Error reporting
+    info: ImplementationInfo
+    _harness: HarnessClient = field(repr=False, alias="harness")
     _reporter: Reporter = field(alias="reporter")
-
-    # Low level network / communication
-    _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _stream: Stream = field(default=None, repr=False, alias="stream")
-
-    # Possibly also related to the above networking, but also potentially
-    # useful for not waiting forever for results that really will complete
-    _read_timeout_sec: float | None = field(
-        default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
-        repr=False,
-    )
-
-    # Protocol fragile-ness, but also tolerance for how broken an
-    # implementation is
-    _restarts: int = field(default=20, repr=False, alias="restarts")
-
-    _info: ImplementationInfo | None = None
-
-    # FIXME: Still some refactoring into DialectRunner needed.
-    _dialect: URL = None  # type: ignore[reportGeneralTypeIssues]
 
     @classmethod
     @asynccontextmanager
     async def start(
         cls,
-        image_name: str,
-        make_validator: _MakeValidator,
+        id: ImplementationId,
+        reporter: Reporter,
         **kwargs: Any,
-    ) -> AsyncIterator[Implementation]:
-        self = cls(
-            name=image_name,
-            make_validator=make_validator,
-            maybe_validate=make_validator(),
-            **kwargs,
-        )
+    ) -> AsyncIterator[Self]:
+        _harness = HarnessClient(**kwargs)
 
         try:
-            await self._start_container()
-        except GotStderr as error:
-            err = StartupFailed(name=image_name, stderr=error.stderr.decode())
-            raise err from None
-        except StreamClosed:
-            raise StartupFailed(name=image_name) from None
-        except DockerError as err:
-            # This craziness can go wrong in various ways, none of them
-            # machine parseable.
+            harness, started = await _harness.transition(START_V1)  # type: ignore[reportArgumentType]
+        except ProtocolError as err:
+            raise StartupFailed(name=id) from err
+        except GotStderr as err:
+            raise StartupFailed(name=id, stderr=err.stderr.decode()) from err
+        else:
+            if started is None:
+                raise StartupFailed(name=id)
 
-            status, data, *_ = err.args
-            if data.get("cause") == "image not known":
-                raise NoSuchImage(name=image_name, data=data) from err
+        info = ImplementationInfo.from_dict(image=id, **started.implementation)  # type: ignore[reportUnknownArgumentType]
 
-            message = ghcr = data.get("message", "")
+        yield cls(harness=harness, info=info, reporter=reporter)
 
-            if status == 500:  # noqa: PLR2004
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no real good way to detect this specific case
-                    no_image = message.endswith('/tags/list": denied')
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImage(name=image_name, data=data)
+        await _harness.poison()
 
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # locally via podman on macOS...
-
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImage(name=image_name, data=data)
-
-            raise StartupFailed(name=image_name, data=data) from err
-
-        yield self
-        await self._stop()
-
-    async def _start_container(self):
-        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
-            config=dict(
-                Image=self.name,
-                OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
-            ),
-        )
-        self._stream = Stream.attached_to(
-            container,
-            read_timeout_sec=self._read_timeout_sec,
-        )
-        started: _commands.Started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-        if started is INVALID:
-            raise StartupFailed(name=self.name)
-        self._info = ImplementationInfo.from_dict(
-            image=self.name,
-            **started.implementation,
-        )
-
-    def info(self) -> ImplementationInfo:
-        # FIXME: Do this higher up
-        if self._info is None:
-            raise StartupFailed(name=self.name)
-        return self._info
+    @property
+    def name(self):
+        return self.info.id
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
-        self._dialect = dialect
-        current_dialect = current_dialect_resource(dialect)
-        self._maybe_validate = self._make_validator(current_dialect)
-        return DialectRunner.start(
-            implementation=self.name,
-            send=self._send,
+        return DialectRunner.for_dialect(
+            implementation=self.info.id,
             dialect=dialect,
+            harness=self._harness,
+            reporter=self._reporter,
         )
 
-    async def _stop(self):
-        request = _commands.STOP.to_request(validate=self._maybe_validate)  # type: ignore[reportUnknownMemberType]  # uh?? no idea what's going on here.
-        with suppress(StreamClosed):
-            await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
-        await self._stream.ensure_deleted()
-
-    async def _send_no_response(self, cmd: _commands.Command[R]) -> None:
-        request = cmd.to_request(validate=self._maybe_validate)
-
-        try:
-            await self._stream.send(request)
-        except StreamClosed:
-            self._restarts -= 1
-            await self._stream.ensure_deleted()
-            await self._start_container()
-            await self.start_speaking(dialect=self._dialect)
-            await self._stream.send(request)
-
-    async def _send(
-        self,
-        cmd: _commands.Command[R],
-        retry: int = 3,
-    ) -> R | _InvalidResponse:
-        await self._send_no_response(cmd)
-        for _ in range(retry):
-            try:
-                response = await self._stream.receive()
-            except asyncio.exceptions.TimeoutError:
-                continue
-
-            try:
-                return cmd.from_response(
-                    response=response,
-                    validate=self._maybe_validate,
-                )
-            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]
-                self._reporter.invalid_response(
-                    error=error,
-                    implementation=self,
-                    response=response,
-                    cmd=cmd,
-                )
-                break
-        return INVALID
-
-    async def smoke(
-        self,
-    ) -> AsyncIterator[tuple[_commands.SeqCase, _commands.SeqResult],]:
+    async def smoke(self) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
         """
         Smoke test this implementation.
         """
         # FIXME: All dialects / and/or newest dialect with proper sort
-        dialect = max(self.info().dialects, key=str)
+        dialect = max(self.info.dialects, key=str)
         runner = await self.start_speaking(dialect)
 
         instances = [
@@ -402,7 +396,7 @@ class Implementation:
             ),
         ]
 
-        for seq_case in _commands.SeqCase.for_cases(cases):
+        for seq_case in SeqCase.for_cases(cases):
             result = await seq_case.run(runner=runner)
             yield seq_case, result
 

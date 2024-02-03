@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 
+from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY
@@ -19,7 +20,6 @@ from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
-import aiodocker
 import click
 import referencing_loaders
 import rich
@@ -33,27 +33,33 @@ from bowtie._commands import (
     SeqResult,
     Unsuccessful,
 )
+from bowtie._containers import ContainerConnection
 from bowtie._core import (
-    DialectRunner,
     GotStderr,
     Implementation,
     ImplementationInfo,
-    NoSuchImage,
+    NoSuchImplementation,
     StartupFailed,
     Test,
     TestCase,
     _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
-from bowtie.exceptions import (
-    _ProtocolError,  # type: ignore[reportPrivateUsage]
-)
+from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Mapping
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Callable,
+        Iterable,
+        Mapping,
+    )
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
     from url import URL
+
+    from bowtie._core import DialectRunner
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -171,7 +177,6 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                 for each in implementations:
                     try:
                         implementation = await each
-                        implementation.info()  # to check we got our metadata :/
                     except StartupFailed as error:
                         exit_code |= _EX_CONFIG
                         click.echo(  # FIXME: respect a possible --quiet
@@ -179,7 +184,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                             file=sys.stderr,
                         )
                         continue
-                    except NoSuchImage as error:
+                    except NoSuchImplementation as error:
                         exit_code |= _EX_CONFIG
                         click.echo(  # FIXME: respect a possible --quiet
                             f"❗ (error): {error.name!r} is not a "
@@ -422,7 +427,7 @@ def make_validator(*more_schemas: SchemaResource):
         validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
         errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownVariableType]
         if errors:
-            raise _ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
+            raise ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 
     return validate
 
@@ -593,7 +598,7 @@ async def info(implementations: Iterable[Implementation], format: _F):
     Retrieve a particular implementation (harness)'s metadata.
     """
     for each in implementations:
-        metadata = [(k, v) for k, v in each.info().serializable().items() if v]
+        metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
@@ -748,13 +753,13 @@ async def _run(
                 exit_code = _EX_CONFIG
                 reporter.startup_failed(name=error.name, stderr=error.stderr)
                 continue
-            except NoSuchImage as error:
+            except NoSuchImplementation as error:
                 exit_code = _EX_CONFIG
                 reporter.no_such_image(name=error.name)
                 continue
 
             try:
-                if dialect in implementation.info().dialects:
+                if dialect in implementation.info.dialects:
                     try:
                         runner = await implementation.start_speaking(dialect)
                     except GotStderr as error:
@@ -764,8 +769,7 @@ async def _run(
                             stderr=error.stderr.decode(),
                         )
                     else:
-                        runner.warn_if_unacknowledged(reporter=reporter)
-                        acknowledged.append(implementation.info())
+                        acknowledged.append(implementation.info)
                         runners.append(runner)
                 else:
                     reporter.unsupported_dialect(
@@ -816,19 +820,38 @@ async def _run(
 
 
 @asynccontextmanager
-async def _start(image_names: Iterable[str], **kwargs: Any):
+async def _start(
+    image_names: Iterable[str],
+    make_validator: _MakeValidator,
+    read_timeout_sec: float,
+    **kwargs: Any,
+):
+    @asynccontextmanager
+    async def _client(
+        docker: Docker,
+        image_name: str,
+    ) -> AsyncIterator[Implementation]:
+        async with (
+            ContainerConnection.open(
+                docker=docker,
+                image_name=image_name,
+                read_timeout_sec=read_timeout_sec,
+            ) as connection,
+            Implementation.start(
+                id=image_name,
+                connection=connection,
+                make_validator=make_validator,
+                **kwargs,
+            ) as implementation,
+        ):
+            yield implementation
+
     async with AsyncExitStack() as stack:
-        docker = await stack.enter_async_context(aiodocker.Docker())
+        docker = await stack.enter_async_context(Docker())
 
         implementations = [
-            stack.enter_async_context(
-                Implementation.start(
-                    docker=docker,
-                    image_name=image_name,
-                    **kwargs,
-                ),
-            )
-            for image_name in image_names
+            stack.enter_async_context(_client(docker=docker, image_name=name))
+            for name in image_names
         ]
         yield asyncio.as_completed(implementations)
 

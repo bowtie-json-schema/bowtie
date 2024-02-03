@@ -51,7 +51,7 @@ class VersionMismatch(Exception):
 
 
 @frozen
-class _ProtocolError(Exception):  # type: ignore[reportUnusedClass]
+class ProtocolError(Exception):
     """
     An invalid request or response was sent.
     """
