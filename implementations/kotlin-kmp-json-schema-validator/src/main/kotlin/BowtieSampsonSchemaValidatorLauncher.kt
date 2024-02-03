@@ -132,8 +132,8 @@ class BowtieSampsonSchemaValidatorLauncher(
             return true
         }
         // ignore schemas for unsupported drafts
-        return schema is JsonObject
-            && schema["\$schema"]
+        return schema is JsonObject &&
+            schema["\$schema"]
                 ?.jsonPrimitive
                 ?.content
                 .let { it != null && SchemaType.find(it) == null }
