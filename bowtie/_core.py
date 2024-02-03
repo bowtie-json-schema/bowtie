@@ -261,7 +261,6 @@ class DialectRunner:
     dialect: URL
     implementation: ImplementationId
     _harness: HarnessClient = field(repr=False, alias="harness")
-    _reporter: Reporter = field(alias="reporter")
 
     @classmethod
     async def for_dialect(
@@ -289,7 +288,6 @@ class DialectRunner:
             dialect=dialect,
             implementation=implementation,
             harness=new_harness,
-            reporter=reporter,
         )
 
     async def validate(
