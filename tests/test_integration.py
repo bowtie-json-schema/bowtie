@@ -663,8 +663,8 @@ async def test_smoke_pretty(envsonschema):
         dedent(stdout)
         == dedent(
             """
-            · allow-everything: ✗✗✗✗✗✗✗
-            · allow-nothing: ✓✓✓✓✓✓✓
+            · allow-everything: ✗✗✗✗✗✗
+            · allow-nothing: ✓✓✓✓✓✓
         """,
         ).lstrip("\n")
     ), stderr
@@ -689,7 +689,6 @@ async def test_smoke_json(envsonschema):
                     "$schema": "https://json-schema.org/draft/2020-12/schema",
                 },
                 "tests": [
-                    {"description": "nil", "instance": None},
                     {"description": "boolean", "instance": True},
                     {"description": "integer", "instance": 37},
                     {"description": "number", "instance": 37.37},
@@ -700,7 +699,6 @@ async def test_smoke_json(envsonschema):
             },
             "result": {
                 "results": [
-                    {"valid": False},
                     {"valid": False},
                     {"valid": False},
                     {"valid": False},
@@ -718,7 +716,6 @@ async def test_smoke_json(envsonschema):
                     "not": {},
                 },
                 "tests": [
-                    {"description": "nil", "instance": None},
                     {"description": "boolean", "instance": True},
                     {"description": "integer", "instance": 37},
                     {"description": "number", "instance": 37.37},
@@ -729,7 +726,6 @@ async def test_smoke_json(envsonschema):
             },
             "result": {
                 "results": [
-                    {"valid": False},
                     {"valid": False},
                     {"valid": False},
                     {"valid": False},
