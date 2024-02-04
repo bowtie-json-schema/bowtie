@@ -298,6 +298,21 @@ def summary(input: TextIO, format: _F, show: str):
         )
         rich.print(error, file=sys.stderr)
         return _EX_NOINPUT
+    except _report.MissingFooter:
+        error = DiagnosticError(
+            code="truncated-report",
+            message="The Bowtie report looks corrupt..",
+            causes=[
+                f"{input.name} is missing its footer, which usually means "
+                "it has been somehow truncated.",
+            ],
+            hint_stmt=(
+                "Try running the command you used to produce the report, "
+                "without piping it. If it crashes, file a bug report!"
+            ),
+        )
+        rich.print(error, file=sys.stderr)
+        return _EX_NOINPUT
 
     if show == "failures":
         results = report.worst_to_best()
