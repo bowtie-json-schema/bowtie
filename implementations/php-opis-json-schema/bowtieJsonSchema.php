@@ -1,5 +1,7 @@
 <?php
 
+ini_set('display_errors', 'stderr');
+
 require_once 'vendor/autoload.php';
 
 use Opis\JsonSchema\{
