@@ -18,6 +18,7 @@ import aiodocker.exceptions
 
 from bowtie._core import (
     GotStderr,
+    InvalidResponse,
     NoSuchImplementation,
     Restarted,
     StartupFailed,
@@ -238,7 +239,10 @@ class ContainerConnection:
             except _ClosedStream:
                 return
 
-            return json.loads(response)
+            try:
+                return json.loads(response)
+            except json.JSONDecodeError as err:
+                raise InvalidResponse(contents=response) from err
 
     async def poison(self, message: dict[str, Any]) -> None:
         request = f"{json.dumps(message)}\n"

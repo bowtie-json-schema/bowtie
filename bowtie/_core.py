@@ -66,7 +66,18 @@ class GotStderr(Exception):
 
 
 class Restarted(Exception):
-    pass
+    """
+    A connection was restarted, so we may need to replay some messages.
+    """
+
+
+@frozen
+class InvalidResponse(Exception):
+    """
+    An invalid response was sent by a harnes.
+    """
+
+    contents: str
 
 
 @frozen
@@ -205,10 +216,9 @@ class HarnessClient:
     #: A sequence of commands to replay if we end up restarting the connection.
     _if_replaying: Sequence[Command[Any]] = ()
 
-    async def _get_back_up_to_date(self, then: Message):
+    async def _get_back_up_to_date(self):
         for each in self._if_replaying:
             await self.request(each)  # TODO: response assert?
-        return await self._connection.request(then)
 
     async def transition(
         self,
@@ -232,10 +242,10 @@ class HarnessClient:
         try:
             response = await self._connection.request(request)
         except Restarted:
-            response = await self._get_back_up_to_date(then=request)
-        if response is None:
-            return
-        return cmd.from_response(response, validate=validate)
+            await self._get_back_up_to_date()
+            response = await self._connection.request(request)
+        if response is not None:
+            return cmd.from_response(response, validate=validate)
 
     async def poison(self) -> None:
         validate = self._make_validator()
@@ -296,6 +306,8 @@ class DialectRunner:
                 _, result = response  # type: ignore[reportUnknownVariableType]
         except GotStderr as error:
             result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
+        except InvalidResponse as error:
+            result = CaseErrored.uncaught(response=error.contents)
         return SeqResult(
             seq=run.seq,
             implementation=self.implementation,

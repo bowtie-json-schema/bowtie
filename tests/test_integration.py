@@ -162,13 +162,35 @@ fail_on_start = shellplementation(
     printf 'BOOM!\n' >&2
     """,
 )
+fail_on_dialect = shellplementation(
+    name="fail_on_dialect",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read
+    printf 'BOOM!\n' >&2
+    """,  # noqa: E501
+)
 fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read
     printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
+    printf '{"ok": "true"}\n'
+    read
     printf 'BOOM!\n' >&2
+    """,  # noqa: E501
+)
+nonjson_on_run = shellplementation(
+    name="nonjson_on_run",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read
+    printf '{"ok": "true"}\n'
+    read
+    printf 'BOOM!\n'
     """,  # noqa: E501
 )
 wrong_version = shellplementation(
@@ -383,7 +405,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
 
 @pytest.mark.asyncio
-async def test_handles_broken_start_implementations(
+async def test_it_handles_broken_start_implementations(
     fail_on_start,
     envsonschema,
 ):
@@ -410,13 +432,31 @@ async def test_handles_broken_start_implementations(
 
 
 @pytest.mark.asyncio
-async def test_handles_broken_run_implementations(fail_on_run):
+async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
+    async with run(
+        "-i",
+        fail_on_dialect,
+        "--dialect",
+        "urn:foo",
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == []
+    assert "got an error" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_it_handles_broken_run_implementations(fail_on_run):
     async with run(
         "-i",
         fail_on_run,
         "--dialect",
         "urn:foo",
-        exit_code=-1,
     ) as send:
         results, stderr = await send(
             """
@@ -425,8 +465,37 @@ async def test_handles_broken_run_implementations(fail_on_run):
             """,  # noqa: E501
         )
 
-    assert results == []
-    assert "got an error" in stderr.lower(), stderr
+    assert results == [
+        {
+            "bowtie-integration-tests/fail_on_run": ErroredTest.in_errored_case(),
+        },
+        {
+            "bowtie-integration-tests/fail_on_run": ErroredTest.in_errored_case(),
+        },
+    ]
+    assert "boom!" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
+    async with run(
+        "-i",
+        nonjson_on_run,
+        "--dialect",
+        "urn:foo",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "bowtie-integration-tests/nonjson_on_run": ErroredTest.in_errored_case(),
+        },
+    ]
+    assert "response=boom!" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
