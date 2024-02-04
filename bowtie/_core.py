@@ -373,7 +373,9 @@ class Implementation:
         runner = await self.start_speaking(dialect)
 
         instances = [
-            ("nil", None),
+            # FIXME: When horejsek/python-fastjsonschema#181 is merged
+            #        and/or we special-case fastjsonschema...
+            # ("nil", None),  # noqa: ERA001
             ("boolean", True),
             ("integer", 37),
             ("number", 37.37),
