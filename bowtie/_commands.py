@@ -36,6 +36,9 @@ Seq = int
 #: A unique identifier for an implementation within a run or report.
 ImplementationId = str
 
+#: A JSON representation of the command
+Message = dict[str, Any]
+
 
 @frozen
 class Unsuccessful:
@@ -95,11 +98,11 @@ R_co = TypeVar("R_co", covariant=True)
 
 
 class Command(Protocol[R_co]):
-    def to_request(self, validate: Callable[..., None]) -> dict[str, Any]: ...
+    def to_request(self, validate: Callable[..., None]) -> Message: ...
 
     @staticmethod
     def from_response(
-        response: dict[str, Any],
+        response: Message,
         validate: Callable[..., None],
     ) -> R_co: ...
 
@@ -121,14 +124,14 @@ def command(
         def to_request(
             self: Command[R_co],
             validate: Callable[..., None],
-        ) -> dict[str, Any]:
+        ) -> Message:
             request = dict(cmd=name, **asdict(self))
             validate(instance=request, schema=request_schema)
             return request
 
         @staticmethod
         def from_response(
-            response: dict[str, Any],
+            response: Message,
             validate: Callable[..., None],
         ) -> R_co:
             validate(instance=response, schema=response_schema)
@@ -191,7 +194,7 @@ class TestResult:
         return "valid" if self.valid else "invalid"
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> AnyTestResult:
+    def from_dict(cls, data: Message) -> AnyTestResult:
         if data.pop("skipped", False):
             return SkippedTest(**data)
         elif data.pop("errored", False):

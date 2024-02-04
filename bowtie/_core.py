@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import SchemaResource
 
-    from bowtie._commands import Command, ImplementationId, Run
+    from bowtie._commands import Command, ImplementationId, Message, Run
     from bowtie._report import Reporter
 
 
@@ -174,13 +174,13 @@ class Connection(Protocol):
     process, in-memory, et cetera.
     """
 
-    async def request(self, message: dict[str, Any]) -> dict[str, Any] | None:
+    async def request(self, message: Message) -> Message | None:
         """
         Send a request to the harness.
         """
         ...
 
-    async def poison(self, message: dict[str, Any]) -> None:
+    async def poison(self, message: Message) -> None:
         """
         Poison the harness by sending a message which causes it to stop itself.
         """
@@ -205,7 +205,7 @@ class HarnessClient:
     #: A sequence of commands to replay if we end up restarting the connection.
     _if_replaying: Sequence[Command[Any]] = ()
 
-    async def _get_back_up_to_date(self, then: dict[str, Any]):
+    async def _get_back_up_to_date(self, then: Message):
         for each in self._if_replaying:
             await self.request(each)  # TODO: response assert?
         return await self._connection.request(then)
@@ -471,7 +471,7 @@ class TestCase:
             **kwargs,
         )
 
-    def serializable(self) -> dict[str, Any]:
+    def serializable(self) -> Message:
         as_dict = asdict(
             self,
             filter=lambda k, v: k.name != "registry"
@@ -494,7 +494,7 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def without_expected_results(self) -> dict[str, Any]:
+    def without_expected_results(self) -> Message:
         serializable = self.serializable()
         serializable["tests"] = [
             {

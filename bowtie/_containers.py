@@ -31,6 +31,8 @@ if TYPE_CHECKING:
     import aiodocker.docker
     import aiodocker.stream  # noqa: TCH004 ??? no it's not?
 
+    from bowtie._commands import Message
+
 
 class _ClosedStream(Exception):
     """
@@ -217,7 +219,7 @@ class ContainerConnection:
             read_timeout_sec=self._read_timeout_sec,
         )
 
-    async def request(self, message: dict[str, Any]) -> dict[str, Any] | None:
+    async def request(self, message: Message) -> Message | None:
         request = f"{json.dumps(message)}\n"
 
         try:
@@ -235,6 +237,7 @@ class ContainerConnection:
                 continue
             except _ClosedStream:
                 return
+
             return json.loads(response)
 
     async def poison(self, message: dict[str, Any]) -> None:
