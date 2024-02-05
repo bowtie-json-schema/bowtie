@@ -1,5 +1,5 @@
 {
-  "description": "A collection of related, runnable tests, either individually or themselves in subgroups",
+  "description": "A collection of related, runnable tests, either individually or themselves in subgroups. Groups are used only for organizing test input and reporting -- they are not sent to harnesses when actually running tests, as there's no need for the harness to have to deal with any grouping structure.",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "$id": "tag:bowtie.report,2023:ihop:group",
