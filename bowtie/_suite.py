@@ -13,8 +13,10 @@ import json
 import os
 import zipfile
 
+from diagnostic import DiagnosticError
 from url import URL, RelativeURLWithoutBase
 import click
+import rich
 
 from bowtie import GITHUB, _core
 
@@ -107,7 +109,24 @@ class ClickParam(click.ParamType):
 
             path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
-            repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+            if not succeeded:
+                message = "Fetching the test suite from GitHub failed."
+                error = DiagnosticError(
+                    code="suite-fetch-failed",
+                    message=message,
+                    causes=[
+                        f"Retrieved the tree {ref}",
+                        f"Tried to download {path} from within it.",
+                    ],
+                    hint_stmt=(
+                        f"Check that {ref} is an existing branch and that "
+                        "you have passed the right path to test cases."
+                    ),
+                    note_stmt="You also can pass a local path to test cases.",
+                )
+                rich.print(error)
+                return self.fail(message, param, ctx)
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
