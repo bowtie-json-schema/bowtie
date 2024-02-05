@@ -17,6 +17,7 @@ interface CaseProps {
 
 const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>();
+  const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(-1);
 
   return (
     <>
@@ -49,7 +50,14 @@ const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
           </thead>
           <tbody>
             {caseData.tests.map((test, index) => (
-              <tr key={index} onClick={() => setInstance(test.instance)}>
+              <tr
+                className={activeRow === index ? "table-active" : ""}
+                key={index}
+                onClick={() => {
+                  setInstance(test.instance);
+                  setActiveRow(index);
+                }}
+              >
                 <td>
                   <p className="m-0">{test.description}</p>
                 </td>
