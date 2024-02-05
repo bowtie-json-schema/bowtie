@@ -145,7 +145,7 @@ public class BowtieJsonSchemaValidator {
       JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
       JsonSchemaFactory.Builder factoryBuilder = JsonSchemaFactory
         .builder()
-        .schemaMappers(schemaMappers -> 
+        .schemaMappers(schemaMappers ->
           schemaMappers
             .mapPrefix("https://json-schema.org", "classpath:")
             .mapPrefix("http://json-schema.org", "classpath:"))
