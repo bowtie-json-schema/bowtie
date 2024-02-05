@@ -2,15 +2,13 @@ export const parseReportData = (
   lines: Record<string, unknown>[],
 ): ReportData => {
   const runInfoData = lines[0] as unknown as RunInfo;
-  const implementationEntries = Object.entries(runInfoData.implementations);
 
-  implementationEntries.sort(([id1], [id2]) => id1.localeCompare(id2));
   const caseMap = new Map() as Map<number, Case>;
   const implementationMap = new Map() as Map<string, ImplementationData>;
-  implementationEntries.forEach(([id, metadata]) =>
-    implementationMap.set(id, {
-      id,
-      metadata,
+  runInfoData.implementations.forEach(implementation =>
+    implementationMap.set(implementation.image, {
+      id: implementation.image,
+      metadata: implementation,
       cases: new Map(),
       erroredCases: 0,
       skippedTests: 0,
@@ -191,7 +189,7 @@ export interface RunInfo {
   started: string;
   bowtie_version: string;
   dialect: string;
-  implementations: Record<string, Implementation>;
+  implementations: Implementation[];
   metadata: Record<string, unknown>;
 }
 
