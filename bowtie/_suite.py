@@ -14,8 +14,10 @@ import os
 import zipfile
 
 from diagnostic import DiagnosticError
+from referencing import Resource
 from url import URL, RelativeURLWithoutBase
 import click
+import referencing.jsonschema
 import rich
 
 from bowtie import GITHUB, _core
@@ -49,7 +51,7 @@ class ClickParam(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[_core.TestCase], _core.Dialect, dict[str, Any]]:
+    ) -> tuple[Iterable[_core.Group], _core.Dialect, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
@@ -61,7 +63,7 @@ class ClickParam(click.ParamType):
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            cases, dialect = self._cases_and_dialect(path=Path(value))
+            groups, dialect = self._groups_and_dialect(path=Path(value))
             run_metadata = {}
         else:
             from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
@@ -96,8 +98,10 @@ class ClickParam(click.ParamType):
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                cases, dialect = self._cases_and_dialect(path=contents / path)
-                cases = list(cases)
+                groups, dialect = self._groups_and_dialect(
+                    path=contents / path,
+                )
+                groups = list(groups)
 
             try:
                 commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
@@ -109,11 +113,11 @@ class ClickParam(click.ParamType):
                 commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
             run_metadata: dict[str, Any] = {"Commit": commit_info}
 
-        return cases, dialect, run_metadata
+        return groups, dialect, run_metadata
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
-    def _cases_and_dialect(self, path: Any):
+    def _groups_and_dialect(self, path: Any):
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
@@ -125,9 +129,9 @@ class ClickParam(click.ParamType):
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
-        cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
+        groups = groups_from(paths=paths, remotes=remotes, dialect=dialect)
 
-        return cases, dialect
+        return groups, dialect
 
 
 _P = Path | zipfile.Path
@@ -136,13 +140,14 @@ _P = Path | zipfile.Path
 def remotes_in(
     path: Path,
     dialect: _core.Dialect,
-) -> Iterable[tuple[URL, Any]]:
+) -> Iterable[tuple[str, Any]]:
     # This messy logic is because the test suite is terrible at indicating
     # what remotes are needed for what drafts, and mixes in schemas which
     # have no $schema and which are invalid under earlier versions, in with
     # other schemas which are needed for tests.
     #
     # FIXME: #40: for draft-next support
+    specification = referencing.jsonschema.specification_with(str(dialect.uri))
 
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
@@ -160,29 +165,47 @@ def remotes_in(
             )
         ):
             continue
-        yield SUITE_REMOTE_BASE_URI / relative, schema
+        resource = Resource.from_contents(
+            schema,
+            default_specification=specification,
+        )
+        yield str(SUITE_REMOTE_BASE_URI / relative), resource
 
 
-def cases_from(
+def groups_from(
     paths: Iterable[_P],
     remotes: Path,
     dialect: _core.Dialect,
-) -> Iterable[_core.TestCase]:
-    populated = {str(k): v for k, v in remotes_in(remotes, dialect=dialect)}
+) -> Iterable[_core.Group]:
+    populated = referencing.jsonschema.EMPTY_REGISTRY.with_resources(
+        remotes_in(remotes, dialect=dialect),
+    )
+
     for path in paths:
-        if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
+        stem = _stem(path)
+
+        if stem in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = populated
         else:
-            registry = {}
+            registry = referencing.jsonschema.EMPTY_REGISTRY
 
-        for case in json.loads(path.read_text()):
-            for test in case["tests"]:
-                test["instance"] = test.pop("data")
-            yield _core.TestCase.from_dict(
-                dialect=dialect,
-                registry=registry,
-                **case,
-            )
+        yield _core.Group(
+            description=stem,
+            registry=registry,
+            children=[
+                _core.LeafGroup(
+                    children=[
+                        _core.Test(
+                            instance=test.pop("data"),
+                            **test,
+                        )
+                        for test in case.pop("tests")
+                    ],
+                    **case,
+                )
+                for case in json.loads(path.read_text())
+            ],
+        )
 
 
 def path_and_ref_from_gh_path(path: list[str]):
