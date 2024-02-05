@@ -50,11 +50,14 @@ const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
           </thead>
           <tbody>
             {caseData.tests.map((test, index) => (
-              <tr className={activeRow === index ? 'table-active' : ''} key={index} onClick={() => {
-                setInstance(test.instance)
-                setActiveRow(index)
-              }
-              }>
+              <tr
+                className={activeRow === index ? "table-active" : ""}
+                key={index}
+                onClick={() => {
+                  setInstance(test.instance);
+                  setActiveRow(index);
+                }}
+              >
                 <td>
                   <p className="m-0">{test.description}</p>
                 </td>
