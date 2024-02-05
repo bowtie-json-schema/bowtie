@@ -440,8 +440,9 @@ class Test:
 @frozen
 class Group:
     description: str
-    children: ChildTests
+    children: Sequence[ChildTests]
     comment: str | None = None
+    registry: SchemaRegistry = EMPTY_REGISTRY
 
 
 @frozen
