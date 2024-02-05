@@ -78,7 +78,7 @@ class SeqCase:
         return (cls(seq=i, case=case) for i, case in enumerate(cases))
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
-        run = Run(seq=self.seq, case=self.case.without_expected_results())
+        run = Validate(seq=self.seq, case=self.case.without_expected_results())
         expected = [t.valid for t in self.case.tests]
         return runner.validate(run, expected=expected)
 
@@ -149,7 +149,7 @@ class Start:
     version: int
 
 
-START_V1 = Start(version=1)
+START_V2 = Start(version=2)
 
 
 @frozen
@@ -452,7 +452,7 @@ class Empty:
 
 
 @command(Response=_case_result)
-class Run:
+class Validate:
     seq: Seq
     case: dict[str, Any]
 

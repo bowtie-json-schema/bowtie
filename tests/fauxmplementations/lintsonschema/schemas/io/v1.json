@@ -12,7 +12,7 @@
       "$anchor": "version",
 
       "type": "integer",
-      "const": 1
+      "const": 2
     },
 
     "command": {
@@ -22,7 +22,7 @@
       "oneOf": [
         { "$ref": "tag:bowtie.report,2023:ihop:command:start" },
         { "$ref": "tag:bowtie.report,2023:ihop:command:dialect" },
-        { "$ref": "tag:bowtie.report,2023:ihop:command:run" },
+        { "$ref": "tag:bowtie.report,2023:ihop:command:validate" },
         { "$ref": "tag:bowtie.report,2023:ihop:command:stop" }
       ]
     },

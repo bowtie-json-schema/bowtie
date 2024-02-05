@@ -15,7 +15,7 @@ from referencing.jsonschema import (
 from url import URL
 
 from bowtie._commands import (
-    START_V1,
+    START_V2,
     STOP,
     CaseErrored,
     Dialect,
@@ -337,7 +337,7 @@ class Implementation:
         _harness = HarnessClient(**kwargs)
 
         try:
-            harness, started = await _harness.transition(START_V1)  # type: ignore[reportArgumentType]
+            harness, started = await _harness.transition(START_V2)  # type: ignore[reportArgumentType]
         except ProtocolError as err:
             raise StartupFailed(name=id) from err
         except GotStderr as err:

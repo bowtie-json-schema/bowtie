@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 #: The current version of Bowtie's IO protocol.
-_PROTOCOL_VERSION = 1
+_PROTOCOL_VERSION = 2
 
 
 @frozen

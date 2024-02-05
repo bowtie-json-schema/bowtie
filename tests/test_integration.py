@@ -131,7 +131,7 @@ always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
     read
-    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     while IFS= read -r input; do
@@ -169,7 +169,7 @@ fail_on_dialect = shellplementation(
     name="fail_on_dialect",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -178,7 +178,7 @@ fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -189,7 +189,7 @@ nonjson_on_run = shellplementation(
     name="nonjson_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -200,7 +200,7 @@ wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read >&2
     """,  # noqa: E501
 )
@@ -208,7 +208,7 @@ hit_the_network = shellplementation(
     name="hit_the_network",
     contents=r"""
     read
-    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -219,7 +219,7 @@ missing_homepage = shellplementation(
     name="missing_homepage",
     contents=r"""
     read
-    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     """,  # noqa: E501
@@ -228,7 +228,7 @@ with_versions = shellplementation(
     name="with_versions",
     contents=r"""
     read
-    printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 1}\n'
+    printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -239,7 +239,7 @@ links = shellplementation(
     name="links",
     contents=r"""
     read
-    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["urn:example"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["urn:example"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 2}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -687,7 +687,7 @@ async def test_wrong_version(wrong_version):
         )
 
     assert results == [], stderr
-    assert "expected to speak version 1 " in stderr.lower(), stderr
+    assert "expected to speak version 2 " in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
