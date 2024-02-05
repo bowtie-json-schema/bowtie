@@ -9,6 +9,7 @@ import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.JsonSchemaVersion;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.resource.InputStreamSource;
@@ -140,30 +141,33 @@ public class BowtieJsonSchemaValidator {
     try {
 
       final JsonSchemaFactory factory;
-      if (runRequest.testCase().registry() == null) {
-        factory = JsonSchemaFactory.getInstance(versionFlag);
-      } else {
+      JsonSchemaVersion jsonSchemaVersion = JsonSchemaFactory.checkVersion(versionFlag);
+      JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
+      JsonSchemaFactory.Builder factoryBuilder = JsonSchemaFactory
+        .builder()
+        .schemaMappers(schemaMappers -> 
+          schemaMappers
+            .mapPrefix("https://json-schema.org", "classpath:")
+            .mapPrefix("http://json-schema.org", "classpath:"))
+        .defaultMetaSchemaURI(metaSchema.getUri())
+        .addMetaSchema(metaSchema);
+
+      if (runRequest.testCase().registry() != null) {
         CustomSchemaLoader schemaLoader = new CustomSchemaLoader(
           runRequest.testCase().registry()
         );
-
-        JsonSchemaVersion jsonSchemaVersion = JsonSchemaFactory.checkVersion(versionFlag);
-        JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
-        factory = JsonSchemaFactory
-          .builder()
-          .schemaLoaders(schemaLoaders -> schemaLoaders.add(schemaLoader))
-          .defaultMetaSchemaURI(metaSchema.getUri())
-          .addMetaSchema(metaSchema)
-          .build();
+        factoryBuilder.schemaLoaders(schemaLoaders -> schemaLoaders.add(schemaLoader));
       }
-
+      factory = factoryBuilder.build();
       List<TestResult> results = runRequest
         .testCase()
         .tests()
         .stream()
         .map(test -> {
+          SchemaValidatorsConfig config = new SchemaValidatorsConfig();
           JsonSchema jsonSchema = factory.getSchema(
-            runRequest.testCase().schema()
+            runRequest.testCase().schema(),
+            config
           );
           Set<ValidationMessage> errors = jsonSchema.validate(
             test.instance()
@@ -215,7 +219,9 @@ public class BowtieJsonSchemaValidator {
           mappingSchemaString.getBytes(StandardCharsets.UTF_8)
         );
       }
-
+      if (iriString.startsWith("classpath:")) {
+        return null;
+      }
       String emptySchema = "{}";
       return () -> new ByteArrayInputStream(
         emptySchema.getBytes(StandardCharsets.UTF_8)
