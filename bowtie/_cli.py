@@ -773,27 +773,23 @@ async def _run(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            try:
-                if dialect in implementation.info.dialects:
-                    try:
-                        runner = await implementation.start_speaking(dialect)
-                    except GotStderr as error:
-                        exit_code = _EX_CONFIG
-                        reporter.dialect_error(
-                            implementation=implementation,
-                            stderr=error.stderr.decode(),
-                        )
-                    else:
-                        acknowledged.append(implementation.info)
-                        runners.append(runner)
-                else:
-                    reporter.unsupported_dialect(
+            if dialect in implementation.info.dialects:
+                try:
+                    runner = await implementation.start_speaking(dialect)
+                except GotStderr as error:
+                    exit_code = _EX_CONFIG
+                    reporter.dialect_error(
                         implementation=implementation,
-                        dialect=dialect,
+                        stderr=error.stderr.decode(),
                     )
-            except StartupFailed as error:
-                exit_code = _EX_CONFIG
-                reporter.startup_failed(name=error.name, stderr=error.stderr)
+                else:
+                    acknowledged.append(implementation.info)
+                    runners.append(runner)
+            else:
+                reporter.unsupported_dialect(
+                    implementation=implementation,
+                    dialect=dialect,
+                )
 
         if not runners:
             exit_code = _EX_CONFIG
