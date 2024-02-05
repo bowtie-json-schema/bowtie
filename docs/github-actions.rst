@@ -5,7 +5,8 @@ Using Bowtie in GitHub Actions
 Bowtie can be used from within `GitHub Actions <https://docs.github.com/en/actions/learn-github-actions>`_ by using it in a GitHub workflow step.
 For example:
 
-.. code:: yaml
+.. code-block:: yaml
+    :substitutions:
 
     name: Run Bowtie
     on: [push]
@@ -16,9 +17,7 @@ For example:
 
         steps:
           - name: Install Bowtie
-            uses: bowtie-json-schema/bowtie@v2023.08.9
-
-You will likely wish to use the latest version of Bowtie available.
+            uses: bowtie-json-schema/bowtie@|version|
 
 .. seealso::
 

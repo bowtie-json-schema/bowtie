@@ -12,7 +12,7 @@ author = "Julian Berman"
 copyright = "2022, " + author
 
 release = importlib.metadata.version("bowtie-json-schema")
-version = release.partition("-")[0]
+version = ".".join(release.split(".")[:3])
 
 language = "en"
 default_role = "any"
@@ -29,6 +29,7 @@ extensions = [
     "sphinx_click",
     "sphinx_copybutton",
     "sphinx_json_schema_spec",
+    "sphinx_substitution_extensions",
     "sphinxcontrib.spelling",
     "sphinxext.opengraph",
 ]
@@ -43,6 +44,7 @@ html_theme_options = {"sidebar_hide_name": True}
 
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
+.. |version| replace:: {version}
 .. |gitpod| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
   :alt: Open in Gitpod
   :target: https://gitpod.io/#{REPO}
