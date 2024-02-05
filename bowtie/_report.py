@@ -29,25 +29,25 @@ if TYPE_CHECKING:
     from bowtie._core import Implementation, ImplementationInfo, Test
 
 
-class Invalid(Exception):
+class InvalidReport(Exception):
     """
     The report is invalid.
     """
 
 
-class EmptyReport(Invalid):
+class EmptyReport(InvalidReport):
     """
     The report was totally empty.
     """
 
 
-class DuplicateCase(Invalid):
+class DuplicateCase(InvalidReport):
     """
     A `Seq` appeared twice in the report.
     """
 
 
-class MissingFooter(Invalid):
+class MissingFooter(InvalidReport):
     """
     A report is missing its footer.
 

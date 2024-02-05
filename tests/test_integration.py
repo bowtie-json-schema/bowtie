@@ -14,10 +14,13 @@ from aiodocker.exceptions import DockerError
 import pytest
 import pytest_asyncio
 
-from bowtie import _report
 from bowtie._commands import ErroredTest, TestResult
+from bowtie._core import DRAFT7, Test, TestCase
+from bowtie._report import EmptyReport, InvalidReport, Report
 
-TestResult.__test__ = False  # frigging py.test
+Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
+    False  # frigging py.test
+)
 
 
 HERE = Path(__file__).parent
@@ -257,10 +260,10 @@ async def run(*args, **kwargs):
         stdout, stderr = await bowtie("run", *args, stdin=input, **kwargs)
 
         try:
-            report = _report.Report.from_serialized(stdout.splitlines())
-        except _report.EmptyReport:
+            report = Report.from_serialized(stdout.splitlines())
+        except EmptyReport:
             results = []
-        except _report.Invalid as err:
+        except InvalidReport as err:
             pytest.fail(f"Invalid report: {err}\nStderr had:\n{stderr}")
         else:
             results = [
@@ -299,6 +302,79 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
     assert results == [
         {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
     ], stderr
+
+
+@pytest.mark.asyncio
+async def test_suite(tmp_path, envsonschema):
+    # FIXME: maybe make suite not read the remotes until it needs them
+    tmp_path.joinpath("remotes").mkdir()
+
+    definitions = tmp_path / "tests/draft7/definitions.json"
+    definitions.parent.mkdir(parents=True)
+    definitions.write_text(
+        _json.dumps(  # trimmed down definitions.json from the suite
+            [
+                {
+                    "description": "the case",
+                    "schema": {
+                        "$ref": "http://json-schema.org/draft-07/schema#",
+                    },
+                    "tests": [
+                        {
+                            "description": "one",
+                            "data": {"definitions": {}},
+                            "valid": True,
+                        },
+                        {
+                            "description": "two",
+                            "data": {"definitions": 12},
+                            "valid": False,
+                        },
+                    ],
+                },
+            ],
+        ),
+    )
+
+    stdout, stderr = await bowtie("suite", "-i", envsonschema, definitions)
+    report = Report.from_serialized(stdout.splitlines())
+
+    one = Test(
+        description="one",
+        instance={"definitions": {}},
+        valid=True,
+    )
+    two = Test(
+        description="two",
+        instance={"definitions": 12},
+        valid=False,
+    )
+    assert (report.metadata.dialect, list(report.cases_with_results())) == (
+        DRAFT7,
+        [
+            (
+                TestCase(
+                    description="the case",
+                    schema={"$ref": "http://json-schema.org/draft-07/schema#"},
+                    tests=[one, two],
+                ),
+                [
+                    (
+                        one,
+                        {
+                            "bowtie-integration-tests/envsonschema": TestResult.INVALID,
+                        },
+                    ),
+                    (
+                        two,
+                        {
+                            "bowtie-integration-tests/envsonschema": TestResult.INVALID,
+                        },
+                    ),
+                ],
+            ),
+        ],
+    )
 
 
 @pytest.mark.asyncio
