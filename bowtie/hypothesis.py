@@ -204,10 +204,7 @@ def seq_results(
             _commands.SeqResult,
             seq=seqs,
             implementation=implementations,
-            expected=(
-                lists(booleans(), min_size=size, max_size=size)
-                | lists(none(), min_size=size, max_size=size)
-            ),
+            expected=lists(booleans() | none(), min_size=size, max_size=size),
             result=any_case_results(min_tests=size, max_tests=size),
         ),
     )

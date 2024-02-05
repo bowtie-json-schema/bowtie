@@ -295,7 +295,7 @@ class DialectRunner:
     async def validate(
         self,
         run: Run,
-        expected: list[bool] | list[None],
+        expected: Sequence[bool | None],
     ) -> SeqResult:
         try:
             response = await self._harness.request(run)  # type: ignore[reportArgumentType]

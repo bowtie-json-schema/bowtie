@@ -79,7 +79,7 @@ class SeqCase:
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
         run = Run(seq=self.seq, case=self.case.without_expected_results())
-        expected: list[bool] | list[None] = [t.valid for t in self.case.tests]  # type: ignore[reportAssignmentType]
+        expected = [t.valid for t in self.case.tests]
         return runner.validate(run, expected=expected)
 
     def serializable(self):
@@ -268,7 +268,7 @@ class AnyCaseResult(Protocol):
 
     def unsuccessful(
         self,
-        expected: Sequence[bool] | Sequence[None],
+        expected: Sequence[bool | None],
     ) -> Unsuccessful: ...
 
 
@@ -300,15 +300,15 @@ class SeqResult:
     implementation: ImplementationId
 
     result: AnyCaseResult
-    expected: Sequence[bool] | Sequence[None]
+    expected: Sequence[bool | None]
 
     @classmethod
     def from_dict(
         cls,
         seq: Seq,
         implementation: str,
-        expected: Sequence[bool] | Sequence[None],
-        **data: Mapping[str, Any],
+        expected: list[bool | None],
+        **data: dict[str, Any],
     ):
         _, result = _case_result(seq=seq, **data)
         return cls(
@@ -367,10 +367,7 @@ class CaseResult:
     def result_for(self, i: int) -> AnyTestResult:
         return self.results[i]
 
-    def unsuccessful(
-        self,
-        expected: Sequence[bool] | Sequence[None],
-    ) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
         skipped = errored = failed = 0
         for test, expecting in zip(self.results, expected):
             if test.skipped:
@@ -406,10 +403,7 @@ class CaseErrored:
     def result_for(self, i: int) -> ErroredTest:
         return ErroredTest.in_errored_case()
 
-    def unsuccessful(
-        self,
-        expected: Sequence[bool] | Sequence[None],
-    ) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
         return Unsuccessful(errored=len(expected))
 
     def log(self, log: BoundLogger):
@@ -432,10 +426,7 @@ class CaseSkipped:
     def result_for(self, i: int) -> SkippedTest:
         return SkippedTest.in_skipped_case()
 
-    def unsuccessful(
-        self,
-        expected: Sequence[bool] | Sequence[None],
-    ) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
         return Unsuccessful(skipped=len(expected))
 
     def log(self, log: BoundLogger):
@@ -456,10 +447,7 @@ class Empty:
     def log(self, log: BoundLogger):
         log.error("No response")
 
-    def unsuccessful(
-        self,
-        expected: Sequence[bool] | Sequence[None],
-    ) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
         return Unsuccessful(errored=len(expected))
 
 
