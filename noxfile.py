@@ -156,7 +156,7 @@ def typing(session):
     Check Bowtie's codebase using pyright.
     """
     session.install("pyright", f"{ROOT}[strategies]")
-    session.run("pyright", BOWTIE)
+    session.run("pyright", *session.posargs, BOWTIE)
 
 
 @session(tags=["docs"])
