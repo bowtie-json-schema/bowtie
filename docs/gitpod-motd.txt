@@ -50,12 +50,11 @@ Examples:
       Description:
       To run the draft 7 type-keyword tests on the Lua jsonschema implementation
 
-  3.  bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') 
-       https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 
+  3.  bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')
+       https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7
         | bowtie summary --show failures
 
       Description:
-      The following will run all Draft 7 tests from the official test suite 
-      (which it will automatically retrieve) across all implementations supporting Draft 7, 
+      The following will run all Draft 7 tests from the official test suite
+      (which it will automatically retrieve) across all implementations supporting Draft 7,
       and generate an HTML report named bowtie-report.html in the current directory
-

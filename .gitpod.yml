@@ -16,4 +16,3 @@ tasks:
 
   - name: Pull Bowtie Images
     init: for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done
-  
