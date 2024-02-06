@@ -384,7 +384,7 @@ class Implementation:
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(
-            implementation=self.info.id,
+            implementation=self.name,
             dialect=dialect,
             harness=self._harness,
             reporter=self._reporter,
