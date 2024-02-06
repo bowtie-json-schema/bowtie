@@ -1,0 +1,61 @@
+
+bowtie
+  A meta-validator for the JSON Schema specifications.
+
+  Bowtie gives you access to JSON Schema across every programming language and
+  implementation.
+
+  It lets you compare implementations to each other, or to known correct
+  results from the JSON Schema test suite.
+
+  If you don't know where to begin, ``bowtie validate`` (for checking what any
+  given implementations think of your schema) or ``bowtie suite`` (for running
+  the official test suite against implementations) are likely good places to
+  start.
+
+  Full documentation can also be found at https://docs.bowtie.report
+
+Usage:
+  bowtie [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --version                       Show the version and exit.
+  -L, --log-level [debug|info|warning|error|critical]
+                                  How verbose should Bowtie be?  [default:
+                                  (info)]
+  -h, --help                      Show this message and exit.
+
+Commands:
+  badges    Generate Bowtie badges from a previous run.
+  info      Retrieve a particular implementation (harness)'s metadata.
+  run       Run a sequence of cases provided on standard input.
+  smoke     Smoke test one or more implementations for basic correctness.
+  suite     Run test cases from the official JSON Schema test suite.
+  summary   Generate an (in-terminal) summary of a Bowtie run.
+  tui       Open a simple interactive TUI for executing Bowtie commands.
+  validate  Validate one or more instances under a given schema across...
+
+Examples:
+  1.  bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"')
+
+      Description:
+      Given some collection of implementations to check - here perhaps two Javascript
+      implementations - it takes a single schema and one or more instances to check
+      against it.
+
+  2.  bowtie suite -i lua-jsonschema
+       https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json
+        | bowtie summary --show failures
+
+      Description:
+      To run the draft 7 type-keyword tests on the Lua jsonschema implementation
+
+  3.  bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') 
+       https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 
+        | bowtie summary --show failures
+
+      Description:
+      The following will run all Draft 7 tests from the official test suite 
+      (which it will automatically retrieve) across all implementations supporting Draft 7, 
+      and generate an HTML report named bowtie-report.html in the current directory
+

@@ -8,8 +8,12 @@ additionalRepositories:
   # TODO: referencing-suite and others, once Bowtie supports them
 
 tasks:
+  - name: Populate MOTD with documentation
+    init: sudo chown -R gitpod:gitpod /etc/motd && cp /workspace/bowtie/docs/gitpod-motd.txt /etc/motd
+
   - name: Install Bowtie
     init: python3 -m pip install -r requirements.txt -e . && pyenv rehash
 
   - name: Pull Bowtie Images
     init: for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done
+  
