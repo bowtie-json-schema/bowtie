@@ -39,7 +39,14 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import SchemaResource
 
-    from bowtie._commands import Command, ImplementationId, Message, Run
+    from bowtie._commands import (
+        AnyCaseResult,
+        Command,
+        ImplementationId,
+        Message,
+        Run,
+        Seq,
+    )
     from bowtie._report import Reporter
 
 
@@ -243,6 +250,7 @@ class HarnessClient:
             response = await self._connection.request(request)
         except Restarted:
             await self._get_back_up_to_date()
+            # FIXME: Probably handle infinitely restarting harnesses
             response = await self._connection.request(request)
         if response is not None:
             return cmd.from_response(response, validate=validate)
@@ -296,12 +304,14 @@ class DialectRunner:
         expected: Sequence[bool | None],
     ) -> SeqResult:
         try:
-            response = await self._harness.request(run)  # type: ignore[reportArgumentType]
+            response: tuple[Seq, AnyCaseResult] | None = (
+                await self._harness.request(run)  # type: ignore[reportArgumentType]
+            )
             if response is None:
                 result = CaseErrored.uncaught()
             else:
                 # FIXME: seq here should just get validated against the run one
-                _, result = response  # type: ignore[reportUnknownVariableType]
+                _, result = response
         except GotStderr as error:
             result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
         except InvalidResponse as error:
@@ -310,7 +320,7 @@ class DialectRunner:
             seq=run.seq,
             implementation=self.implementation,
             expected=expected,
-            result=result,  # type: ignore[reportUnknownArgumentType]
+            result=result,
         )
 
 
