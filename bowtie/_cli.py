@@ -27,12 +27,7 @@ import structlog
 import structlog.typing
 
 from bowtie import _report, _suite
-from bowtie._commands import (
-    AnyTestResult,
-    SeqCase,
-    SeqResult,
-    Unsuccessful,
-)
+from bowtie._commands import AnyTestResult, SeqCase, Unsuccessful
 from bowtie._containers import ContainerConnection
 from bowtie._core import (
     GotStderr,
@@ -675,32 +670,27 @@ async def smoke(
 
     for implementation in implementations:
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
+        serializable: list[dict[str, Any]] = []
 
-        match format:
-            case "json":
-                serializable: list[dict[str, Any]] = []
+        async for seq_case, result in implementation.smoke():
+            if result.unsuccessful():
+                exit_code |= _EX_DATAERR
 
-                def see(seq_case: SeqCase, result: SeqResult):  # type: ignore[reportRedeclaration]
-                    serializable.append(  # noqa: B023
+            match format:
+                case "json":
+                    serializable.append(
                         dict(
                             case=seq_case.case.without_expected_results(),
                             result=asdict(result.result),
                         ),
                     )
 
-            case "pretty":
-
-                def see(seq_case: SeqCase, response: SeqResult):
-                    echo(f"  · {seq_case.case.description}: {response.dots()}")
-
-        async for seq_case, result in implementation.smoke():
-            if result.unsuccessful():
-                exit_code |= _EX_DATAERR
-            see(seq_case, result)
+                case "pretty":
+                    echo(f"  · {seq_case.case.description}: {result.dots()}")
 
         match format:
             case "json":
-                echo(json.dumps(serializable, indent=2))  # type: ignore[reportPossiblyUnboundVariable]
+                echo(json.dumps(serializable, indent=2))
 
             case "pretty":
                 message = "❌ some failures" if exit_code else "✅ all passed"
