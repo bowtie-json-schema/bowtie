@@ -91,11 +91,17 @@ def image(name, fileobj):
 
 
 def fauxmplementation(name):
+    """
+    A fake implementation built from files in the fauxmplementations directory.
+    """
     fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
     return image(name=name, fileobj=fileobj)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.19"):
+    """
+    A fake implementation built from the given Dockerfile contents.
+    """
     containerfile = f"FROM {base}\n{dedent(contents)}".encode()
 
     fileobj = BytesIO()
@@ -115,6 +121,9 @@ def strimplementation(name, contents, files={}, base="alpine:3.19"):
 
 
 def shellplementation(name, contents):
+    """
+    A fake implementation which runs an assembled shell script for results.
+    """
     return strimplementation(
         name=name,
         files={"run.sh": contents},
