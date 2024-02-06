@@ -16,3 +16,6 @@ tasks:
 
   - name: Pull Bowtie Images
     init: for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done
+
+  - name: Open Bowtie Documentation by default in web-ui
+    init: gp open /workspace/bowtie/docs/gitpod-motd.txt
