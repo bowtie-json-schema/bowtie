@@ -310,8 +310,14 @@ class DialectRunner:
             if response is None:
                 result = CaseErrored.uncaught()
             else:
-                # FIXME: seq here should just get validated against the run one
-                _, result = response
+                seq, result = response
+                if seq != run.seq:
+                    result = CaseErrored.uncaught(
+                        message="mismatched seq",
+                        expected=run.seq,
+                        got=seq,
+                        response=result,
+                    )
         except GotStderr as error:
             result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
         except InvalidResponse as error:

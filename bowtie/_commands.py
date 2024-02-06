@@ -393,12 +393,13 @@ class CaseErrored:
     results = None
 
     context: Mapping[str, Any] = field()
+    message: str = field(default="")
     caught: bool = field(default=True)
     errored: bool = field(default=True, init=False)
 
     @classmethod
-    def uncaught(cls, **context: Any):
-        return cls(caught=False, context=context)
+    def uncaught(cls, message: str = "uncaught error", **context: Any):
+        return cls(caught=False, message=message, context=context)
 
     def result_for(self, i: int) -> ErroredTest:
         return ErroredTest.in_errored_case()
@@ -407,8 +408,7 @@ class CaseErrored:
         return Unsuccessful(errored=len(expected))
 
     def log(self, log: BoundLogger):
-        message = "" if self.caught else "uncaught error"
-        log.error(message, **self.context)
+        log.error(self.message, **self.context)
 
 
 @frozen

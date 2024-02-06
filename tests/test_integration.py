@@ -205,6 +205,17 @@ nonjson_on_run = shellplementation(
     printf 'BOOM!\n'
     """,  # noqa: E501
 )
+wrong_seq = shellplementation(
+    name="wrong_seq",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read
+    printf '{"ok": "true"}\n'
+    read
+    printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
 wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
@@ -241,7 +252,7 @@ with_versions = shellplementation(
     read
     printf '{"ok": true}\n'
     read
-    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    printf '{"seq": 0, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 links = shellplementation(
@@ -697,6 +708,32 @@ async def test_wrong_version(wrong_version):
 
     assert results == [], stderr
     assert "expected to speak version 1 " in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_wrong_seq(wrong_seq):
+    """
+    Sending the wrong seq for a test case produces an error.
+    """
+    async with run(
+        "-i",
+        wrong_seq,
+        "--dialect",
+        "urn:foo",
+        exit_code=0,  # FIXME: It'd be nice if this was nonzero.
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "bowtie-integration-tests/wrong_seq": ErroredTest.in_errored_case(),
+        },
+    ], stderr
+    assert "mismatched seq " in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
