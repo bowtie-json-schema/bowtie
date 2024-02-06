@@ -356,6 +356,18 @@ class Implementation:
     def name(self):
         return self.info.id
 
+    async def validate(
+        self,
+        dialect: URL,
+        cases: Iterable[TestCase],
+    ) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
+        """
+        Run a collection of test cases under the given dialect.
+        """
+        runner = await self.start_speaking(dialect)
+        for seq_case in SeqCase.for_cases(cases):
+            yield seq_case, await seq_case.run(runner=runner)
+
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(
             implementation=self.info.id,
@@ -364,13 +376,12 @@ class Implementation:
             reporter=self._reporter,
         )
 
-    async def smoke(self) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
+    def smoke(self) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
         """
         Smoke test this implementation.
         """
         # FIXME: All dialects / and/or newest dialect with proper sort
         dialect = max(self.info.dialects, key=str)
-        runner = await self.start_speaking(dialect)
 
         instances = [
             # FIXME: When horejsek/python-fastjsonschema#181 is merged
@@ -410,9 +421,7 @@ class Implementation:
             ),
         ]
 
-        for seq_case in SeqCase.for_cases(cases):
-            result = await seq_case.run(runner=runner)
-            yield seq_case, result
+        return self.validate(dialect=dialect, cases=cases)
 
 
 def current_dialect_resource(dialect: URL):
