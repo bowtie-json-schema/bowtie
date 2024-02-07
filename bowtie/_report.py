@@ -160,7 +160,7 @@ class Reporter:
             case=seq_case.case.description,
             schema=seq_case.case.schema,
         )
-        return CaseReporter(seq_case=seq_case, write=self._write, log=log)
+        return CaseReporter(write=self._write, log=log)
 
 
 @frozen
