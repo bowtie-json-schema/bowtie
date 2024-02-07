@@ -672,21 +672,22 @@ async def smoke(
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
         serializable: list[dict[str, Any]] = []
 
-        async for seq_case, result in implementation.smoke():
-            if result.unsuccessful():
-                exit_code |= _EX_DATAERR
+        async for _, results in implementation.smoke():
+            async for case, result in results:
+                if result.unsuccessful():
+                    exit_code |= _EX_DATAERR
 
-            match format:
-                case "json":
-                    serializable.append(
-                        dict(
-                            case=seq_case.case.without_expected_results(),
-                            result=asdict(result.result),
-                        ),
-                    )
+                match format:
+                    case "json":
+                        serializable.append(
+                            dict(
+                                case=case.without_expected_results(),
+                                result=asdict(result.result),
+                            ),
+                        )
 
-                case "pretty":
-                    echo(f"  · {seq_case.case.description}: {result.dots()}")
+                    case "pretty":
+                        echo(f"  · {case.description}: {result.dots()}")
 
         match format:
             case "json":

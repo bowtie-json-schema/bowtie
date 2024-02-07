@@ -374,13 +374,13 @@ class Implementation:
         self,
         dialect: URL,
         cases: Iterable[TestCase],
-    ) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
+    ) -> AsyncIterator[tuple[TestCase, SeqResult]]:
         """
         Run a collection of test cases under the given dialect.
         """
         runner = await self.start_speaking(dialect)
         for seq_case in SeqCase.for_cases(cases):
-            yield seq_case, await seq_case.run(runner=runner)
+            yield seq_case.case, await seq_case.run(runner=runner)
 
     def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(
@@ -390,13 +390,12 @@ class Implementation:
             reporter=self._reporter,
         )
 
-    def smoke(self) -> AsyncIterator[tuple[SeqCase, SeqResult]]:
+    async def smoke(
+        self,
+    ) -> AsyncIterator[tuple[URL, AsyncIterator[tuple[TestCase, SeqResult]]]]:
         """
         Smoke test this implementation.
         """
-        # FIXME: All dialects / and/or newest dialect with proper sort
-        dialect = max(self.info.dialects, key=str)
-
         instances = [
             # FIXME: When horejsek/python-fastjsonschema#181 is merged
             #        and/or we special-case fastjsonschema...
@@ -408,34 +407,37 @@ class Implementation:
             ("array", [37]),
             ("object", {"foo": 37}),
         ]
-        cases = [
-            TestCase(
-                description="allow-everything",
-                schema={"$schema": str(dialect)},
-                tests=[
-                    Test(
-                        description=json_type,
-                        instance=instance,
-                        valid=True,
-                    )
-                    for json_type, instance in instances
-                ],
-            ),
-            TestCase(
-                description="allow-nothing",
-                schema={"$schema": str(dialect), "not": {}},
-                tests=[
-                    Test(
-                        description=json_type,
-                        instance=instance,
-                        valid=False,
-                    )
-                    for json_type, instance in instances
-                ],
-            ),
-        ]
 
-        return self.validate(dialect=dialect, cases=cases)
+        # FIXME: All dialects / and/or newest dialect with proper sort
+        for dialect in [max(self.info.dialects, key=str)]:
+            cases = [
+                TestCase(
+                    description="allow-everything",
+                    schema={"$schema": str(dialect)},
+                    tests=[
+                        Test(
+                            description=json_type,
+                            instance=instance,
+                            valid=True,
+                        )
+                        for json_type, instance in instances
+                    ],
+                ),
+                TestCase(
+                    description="allow-nothing",
+                    schema={"$schema": str(dialect), "not": {}},
+                    tests=[
+                        Test(
+                            description=json_type,
+                            instance=instance,
+                            valid=False,
+                        )
+                        for json_type, instance in instances
+                    ],
+                ),
+            ]
+
+            yield dialect, self.validate(dialect=dialect, cases=cases)
 
 
 def current_dialect_resource(dialect: URL):
