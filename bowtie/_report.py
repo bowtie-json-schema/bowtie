@@ -154,33 +154,19 @@ class Reporter:
         )
 
     def case_started(self, seq_case: SeqCase):
+        self._write(**seq_case.serializable())
         log = self._log.bind(
             seq=seq_case.seq,
             case=seq_case.case.description,
             schema=seq_case.case.schema,
         )
-        return CaseReporter.case_started(
-            seq_case=seq_case,
-            write=self._write,
-            log=log,
-        )
+        return CaseReporter(seq_case=seq_case, write=self._write, log=log)
 
 
 @frozen
 class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
-
-    @classmethod
-    def case_started(
-        cls,
-        log: structlog.stdlib.BoundLogger,
-        write: Callable[..., None],
-        seq_case: SeqCase,
-    ) -> CaseReporter:
-        self = cls(log=log, write=write)
-        self._write(**seq_case.serializable())
-        return self
 
     def got_result(self, result: SeqResult):
         log = self._log.bind(logger_name=result.implementation)
