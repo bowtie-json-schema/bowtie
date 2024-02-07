@@ -15,9 +15,7 @@ class Harness {
     "escaped pointer ref" -> NOT_IMPLEMENTED,
     "empty tokens in $ref json-pointer" -> NOT_IMPLEMENTED,
     "schema that uses custom metaschema with with no validation vocabulary" -> NOT_IMPLEMENTED,
-    "small multiple of large integer" -> NOT_IMPLEMENTED,
-    "$ref to $ref finds detached $anchor" -> NOT_IMPLEMENTED,
-    "$ref to $dynamicRef finds detached $dynamicAnchor" -> NOT_IMPLEMENTED
+    "small multiple of large integer" -> NOT_IMPLEMENTED
   )
 
   // List of specific tests of a case that are not supported
