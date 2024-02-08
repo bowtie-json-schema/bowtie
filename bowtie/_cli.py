@@ -22,7 +22,7 @@ from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import click
 import markdown
-import pandas as pd
+import pandas as pd  # type: ignore[reportMissingTypeStubs]
 import referencing_loaders
 import rich
 import structlog
@@ -398,11 +398,9 @@ def _failure_table(
 
 def _failure_table_in_markdown(
     report: _report.Report,
-    results: Iterable[
-        tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
-    ],
+    results: list[tuple[ImplementationInfo, Unsuccessful]],
 ):
-    main_df_data = []
+    main_df_data: list[list[str]] = []
     test = "tests" if report.total_tests != 1 else "test"
 
     main_table_columns = [
@@ -426,7 +424,7 @@ def _failure_table_in_markdown(
     main_df = pd.DataFrame(main_df_data, columns=main_table_columns)
     return (
         "# Bowtie Failures Summary\n\n"
-        + main_df.to_markdown(index=False)
+        + str(main_df.to_markdown(index=False))  # type: ignore[reportUnknownMemberType]
         + "\n\n"
         + f"{report.total_tests} {test} ran\n"
     )
@@ -480,7 +478,7 @@ def _validation_results_table_in_markdown(
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
 ):
-    rows_data = []
+    rows_data: list[list[str | None]] = []
     final_content = ""
 
     inner_table_columns = ["Instance"]
@@ -491,7 +489,7 @@ def _validation_results_table_in_markdown(
     )
 
     for case, test_results in results:
-        inner_df_data = []
+        inner_df_data: list[list[str]] = []
         for test, test_result in test_results:
             inner_df_data.append(
                 [
@@ -504,7 +502,7 @@ def _validation_results_table_in_markdown(
             )
 
         inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)
-        inner_markdown_table = inner_df.to_markdown(index=False)
+        inner_markdown_table = inner_df.to_markdown(index=False)  # type: ignore[reportMissingTypeStubs]
         schema_name = json.dumps(case.schema, indent=2)
         row_data = [schema_name, inner_markdown_table]
         rows_data.append(row_data)
@@ -514,10 +512,10 @@ def _validation_results_table_in_markdown(
             markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + "\n\n"
         )
         final_content += markdown.markdown("### Results:") + "\n\n"
-        final_content += row_data[1]
+        final_content += str(row_data[1])
         final_content += "\n\n"
 
-    return final_content
+    return str(final_content)
 
 
 @cache
