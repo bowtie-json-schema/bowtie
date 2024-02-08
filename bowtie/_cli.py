@@ -419,19 +419,17 @@ def _failure_table_in_markdown(
                 str(unsuccessful.skipped),
                 str(unsuccessful.errored),
                 str(unsuccessful.failed),
-            ]
+            ],
         )
 
     # Convert DataFrame to Markdown format
     main_df = pd.DataFrame(main_df_data, columns=main_table_columns)
-    markdown_table = main_df.to_markdown(index=False)
-    markdown_table = (
+    return (
         "# Bowtie Failures Summary\n\n"
-        + markdown_table
+        + main_df.to_markdown(index=False)
         + "\n\n"
         + f"{report.total_tests} {test} ran\n"
     )
-    return markdown_table
 
 
 def _validation_results_table(
@@ -487,22 +485,23 @@ def _validation_results_table_in_markdown(
 
     inner_table_columns = ["Instance"]
     implementations = report.implementations
-    for implementation in implementations:
-        inner_table_columns.append(
-            f"{implementation.name} ({implementation.language})"
-        )
+    inner_table_columns.extend(
+        f"{implementation.name} ({implementation.language})"
+        for implementation in implementations
+    )
 
     for case, test_results in results:
         inner_df_data = []
         for test, test_result in test_results:
-            inner_row_data = [
-                json.dumps(test.instance),
-                *(
-                    test_result[each.id].description
-                    for each in implementations
-                ),
-            ]
-            inner_df_data.append(inner_row_data)
+            inner_df_data.append(
+                [
+                    json.dumps(test.instance),
+                    *(
+                        test_result[each.id].description
+                        for each in implementations
+                    ),
+                ],
+            )
 
         inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)
         inner_markdown_table = inner_df.to_markdown(index=False)
@@ -737,11 +736,11 @@ async def info(implementations: Iterable[Implementation], format: _F):
                 click.echo(
                     "\n".join(
                         markdown.markdown(
-                            f"**{k}**: {json.dumps(v, indent=2)}"
+                            f"**{k}**: {json.dumps(v, indent=2)}",
                         )
                         for k, v in metadata
                     ),
-                ),
+                )
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
@@ -791,8 +790,8 @@ async def smoke(
                     case "markdown":
                         echo(
                             markdown.markdown(
-                                f"* {case.description}: {result.dots()}"
-                            )
+                                f"* {case.description}: {result.dots()}",
+                            ),
                         )
 
         match format:
