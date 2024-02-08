@@ -22,7 +22,6 @@ from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import click
 import markdown
-import pandas as pd  # type: ignore[reportMissingTypeStubs]
 import referencing_loaders
 import rich
 import structlog
@@ -373,6 +372,30 @@ def summary(input: TextIO, format: _F, show: str):
             console.Console().print(table)
 
 
+def _convert_table_to_markdown(
+    columns: list[Any], 
+    rows: list[list[Any]]
+):
+    widths = [max(len(line[i]) for line in columns) for i in range(len(columns))]
+    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
+
+    header = '| ' + ' | '.join(columns) + ' |'
+    border_left   =  '|:'
+    border_center = ':|:'
+    border_right  = ':|'
+    
+    separator = border_left + border_center.join(['-'*w for w in widths]) + border_right
+
+    # body of the table
+    body = [''] * len(rows)  # empty string list that we fill after
+    for idx, line in enumerate(rows):
+        # for each line, change the body at the correct index
+        body[idx] = '| ' + ' | '.join(line) + ' |'
+    body = '\n'.join(body)
+
+    return '\n\n' + header + '\n' + separator + '\n' + body + '\n\n'
+
+
 def _failure_table(
     report: _report.Report,
     results: list[tuple[ImplementationInfo, Unsuccessful]],
@@ -400,10 +423,9 @@ def _failure_table_in_markdown(
     report: _report.Report,
     results: list[tuple[ImplementationInfo, Unsuccessful]],
 ):
-    main_df_data: list[list[str]] = []
     test = "tests" if report.total_tests != 1 else "test"
-
-    main_table_columns = [
+    rows: list[list[str]] = []
+    columns = [
         "Implementation",
         "Skips",
         "Errors",
@@ -411,7 +433,7 @@ def _failure_table_in_markdown(
     ]
 
     for each, unsuccessful in results:
-        main_df_data.append(
+        rows.append(
             [
                 f"{each.name} ({each.language})",
                 str(unsuccessful.skipped),
@@ -420,13 +442,11 @@ def _failure_table_in_markdown(
             ],
         )
 
-    # Convert DataFrame to Markdown format
-    main_df = pd.DataFrame(main_df_data, columns=main_table_columns)  # type: ignore[reportArgumentType]
+    markdown_table = _convert_table_to_markdown(columns, rows)
     return (
-        "# Bowtie Failures Summary\n\n"
-        + str(main_df.to_markdown(index=False))  # type: ignore[reportUnknownMemberType]
-        + "\n\n"
-        + f"{report.total_tests} {test} ran\n"
+        markdown.markdown("# Bowtie Failures Summary")
+        + markdown_table
+        + markdown.markdown(f"{report.total_tests} {test} ran\n")
     )
 
 
@@ -478,7 +498,7 @@ def _validation_results_table_in_markdown(
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
 ):
-    rows_data: list[list[str | None]] = []
+    rows_data: list[list[str]] = []
     final_content = ""
 
     inner_table_columns = ["Instance"]
@@ -489,9 +509,9 @@ def _validation_results_table_in_markdown(
     )
 
     for case, test_results in results:
-        inner_df_data: list[list[str]] = []
+        inner_table_rows: list[list[str]] = []
         for test, test_result in test_results:
-            inner_df_data.append(
+            inner_table_rows.append(
                 [
                     json.dumps(test.instance),
                     *(
@@ -500,9 +520,9 @@ def _validation_results_table_in_markdown(
                     ),
                 ],
             )
-
-        inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)  # type: ignore[reportArgumentType]
-        inner_markdown_table = inner_df.to_markdown(index=False)  # type: ignore[reportMissingTypeStubs]
+        inner_markdown_table = _convert_table_to_markdown(
+            inner_table_columns, inner_table_rows
+        )
         schema_name = json.dumps(case.schema, indent=2)
         row_data = [schema_name, inner_markdown_table]
         rows_data.append(row_data)
@@ -511,9 +531,8 @@ def _validation_results_table_in_markdown(
         final_content += (
             markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + "\n\n"
         )
-        final_content += markdown.markdown("### Results:") + "\n\n"
-        final_content += str(row_data[1])
-        final_content += "\n\n"
+        final_content += markdown.markdown("### Results:")
+        final_content += row_data[1]
 
     return str(final_content)
 
