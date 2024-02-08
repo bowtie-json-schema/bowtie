@@ -421,7 +421,7 @@ def _failure_table_in_markdown(
         )
 
     # Convert DataFrame to Markdown format
-    main_df = pd.DataFrame(main_df_data, columns=main_table_columns)
+    main_df = pd.DataFrame(main_df_data, columns=main_table_columns)  # type: ignore[reportArgumentType]
     return (
         "# Bowtie Failures Summary\n\n"
         + str(main_df.to_markdown(index=False))  # type: ignore[reportUnknownMemberType]
@@ -501,7 +501,7 @@ def _validation_results_table_in_markdown(
                 ],
             )
 
-        inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)
+        inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)  # type: ignore[reportArgumentType]
         inner_markdown_table = inner_df.to_markdown(index=False)  # type: ignore[reportMissingTypeStubs]
         schema_name = json.dumps(case.schema, indent=2)
         row_data = [schema_name, inner_markdown_table]
