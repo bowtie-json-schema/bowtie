@@ -793,6 +793,31 @@ async def test_smoke_pretty(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_smoke_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    assert (
+        dedent(stdout)
+        == dedent(
+            """
+            <ul>
+            <li>allow-everything: ✗✗✗✗✗✗</li>
+            </ul>
+            <ul>
+            <li>allow-nothing: ✓✓✓✓✓✓</li>
+            </ul>
+        """,
+        ).lstrip("\n")
+    ), stderr
+
+
+@pytest.mark.asyncio
 async def test_smoke_json(envsonschema):
     jsonout, stderr = await bowtie(
         "smoke",
@@ -896,6 +921,35 @@ async def test_info_pretty(envsonschema):
           "http://json-schema.org/draft-04/schema#",
           "http://json-schema.org/draft-03/schema#"
         ]
+        """,
+    )
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "info",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+    )
+    assert stdout == dedent(
+        """\
+        <p><strong>name</strong>: "envsonschema"</p>
+        <p><strong>language</strong>: "python"</p>
+        <p><strong>homepage</strong>: "https://github.com/bowtie-json-schema/bowtie"</p>
+        <p><strong>issues</strong>: "https://github.com/bowtie-json-schema/bowtie/issues"</p>
+        <p><strong>source</strong>: "https://github.com/bowtie-json-schema/bowtie"</p>
+        <p><strong>dialects</strong>: [
+          "https://json-schema.org/draft/2020-12/schema",
+          "https://json-schema.org/draft/2019-09/schema",
+          "http://json-schema.org/draft-07/schema#",
+          "http://json-schema.org/draft-06/schema#",
+          "http://json-schema.org/draft-04/schema#",
+          "http://json-schema.org/draft-03/schema#"
+        ]</p>
         """,
     )
     assert stderr == ""
@@ -1027,6 +1081,45 @@ async def test_summary_show_failures(envsonschema, tmp_path):
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
+
+
+@pytest.mark.asyncio
+async def test_summary_show_failures_markdown(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    validate_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    stdout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "markdown",
+        "--show",
+        "failures",
+        stdin=validate_stdout,
+    )
+    assert stderr == ""
+    assert stdout == dedent(
+        """\
+        <h1>Bowtie Failures Summary</h1>
+
+        | Implementation | Skips | Errors | Failures |
+        |:-:|:-:|:-:|:-:|
+        | envsonschema (python) | 0 | 0 | 2 |
+
+        <p>2 tests ran</p>
+        """,
+    )
 
 
 @pytest.mark.asyncio
