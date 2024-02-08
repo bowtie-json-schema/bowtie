@@ -163,7 +163,7 @@ class ClickParam(click.ParamType):
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
-        cases = suite_cases_from(paths=paths, remotes=remotes, dialect=dialect)
+        cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
         return cases, dialect
 
@@ -171,10 +171,7 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-def remotes_from(
-    path: Path,
-    dialect: URL | None,
-) -> Iterable[tuple[URL, Any]]:
+def remotes_in(path: Path, dialect: URL) -> Iterable[tuple[URL, Any]]:
     # FIXME: #40: for draft-next support
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
@@ -194,12 +191,12 @@ def remotes_from(
         yield SUITE_REMOTE_BASE_URI / relative, schema
 
 
-def suite_cases_from(
+def cases_from(
     paths: Iterable[_P],
     remotes: Path,
     dialect: URL,
 ) -> Iterable[_core.TestCase]:
-    populated = {str(k): v for k, v in remotes_from(remotes, dialect=dialect)}
+    populated = {str(k): v for k, v in remotes_in(remotes, dialect=dialect)}
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = populated
