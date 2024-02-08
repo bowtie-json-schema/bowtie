@@ -373,27 +373,33 @@ def summary(input: TextIO, format: _F, show: str):
 
 
 def _convert_table_to_markdown(
-    columns: list[Any], 
-    rows: list[list[Any]]
+    columns: list[Any],
+    rows: list[list[Any]],
 ):
-    widths = [max(len(line[i]) for line in columns) for i in range(len(columns))]
+    widths = [
+        max(len(line[i]) for line in columns) for i in range(len(columns))
+    ]
     rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
 
-    header = '| ' + ' | '.join(columns) + ' |'
-    border_left   =  '|:'
-    border_center = ':|:'
-    border_right  = ':|'
-    
-    separator = border_left + border_center.join(['-'*w for w in widths]) + border_right
+    header = "| " + " | ".join(columns) + " |"
+    border_left = "|:"
+    border_center = ":|:"
+    border_right = ":|"
+
+    separator = (
+        border_left
+        + border_center.join(["-" * w for w in widths])
+        + border_right
+    )
 
     # body of the table
-    body = [''] * len(rows)  # empty string list that we fill after
+    body = [""] * len(rows)  # empty string list that we fill after
     for idx, line in enumerate(rows):
         # for each line, change the body at the correct index
-        body[idx] = '| ' + ' | '.join(line) + ' |'
-    body = '\n'.join(body)
+        body[idx] = "| " + " | ".join(line) + " |"
+    body = "\n".join(body)
 
-    return '\n\n' + header + '\n' + separator + '\n' + body + '\n\n'
+    return "\n\n" + header + "\n" + separator + "\n" + body + "\n\n"
 
 
 def _failure_table(
@@ -521,7 +527,8 @@ def _validation_results_table_in_markdown(
                 ],
             )
         inner_markdown_table = _convert_table_to_markdown(
-            inner_table_columns, inner_table_rows
+            inner_table_columns,
+            inner_table_rows,
         )
         schema_name = json.dumps(case.schema, indent=2)
         row_data = [schema_name, inner_markdown_table]
