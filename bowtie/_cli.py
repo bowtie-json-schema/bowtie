@@ -11,6 +11,8 @@ import json
 import logging
 import os
 import sys
+import markdown
+import pandas as pd
 
 from aiodocker import Docker
 from attrs import asdict
@@ -71,9 +73,9 @@ FORMAT = click.option(
     help="What format to use for the output",
     default=lambda: "pretty" if sys.stdout.isatty() else "json",
     show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
+    type=click.Choice(["json", "pretty", "markdown"]),
 )
-_F = Literal["json", "pretty"]
+_F = Literal["json", "pretty", "markdown"]
 
 
 @tui(help="Open a simple interactive TUI for executing Bowtie commands.")
@@ -326,6 +328,7 @@ def summary(input: TextIO, format: _F, show: str):
     if show == "failures":
         results = report.worst_to_best()
         to_table = _failure_table
+        to_markdown_table = _failure_table_in_markdown
 
         def to_serializable(  # type: ignore[reportRedeclaration]
             value: Iterable[tuple[ImplementationInfo, Unsuccessful]],
@@ -335,6 +338,7 @@ def summary(input: TextIO, format: _F, show: str):
     else:
         results = report.cases_with_results()
         to_table = _validation_results_table
+        to_markdown_table = _validation_results_table_in_markdown
 
         def to_serializable(
             value: Iterable[
@@ -364,6 +368,9 @@ def summary(input: TextIO, format: _F, show: str):
         case "pretty":
             table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
+        case "markdown":
+            table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            console.Console().print(table)
 
 
 def _failure_table(
@@ -387,6 +394,37 @@ def _failure_table(
             str(unsuccessful.failed),
         )
     return table
+
+
+def _failure_table_in_markdown(
+    report: _report.Report,
+    results: Iterable[
+        tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
+    ],
+):
+    main_df_data = []
+    test = "tests" if report.total_tests != 1 else "test"
+    
+    main_table_columns = [
+        "Implementation", 
+        "Skips",
+        "Errors",
+        "Failures"
+    ]
+
+    for each, unsuccessful in results:
+        main_df_data.append([
+            f"{each.name} ({each.language})",
+            str(unsuccessful.skipped),
+            str(unsuccessful.errored),
+            str(unsuccessful.failed),
+        ])
+
+    # Convert DataFrame to Markdown format
+    main_df = pd.DataFrame(main_df_data, columns=main_table_columns)
+    markdown_table = main_df.to_markdown(index=False)
+    markdown_table = "# Bowtie Failures Summary\n\n" + markdown_table + "\n\n" + f"{report.total_tests} {test} ran\n"
+    return markdown_table
 
 
 def _validation_results_table(
@@ -429,6 +467,47 @@ def _validation_results_table(
         table.add_section()
 
     return table
+
+
+def _validation_results_table_in_markdown(
+    report: _report.Report,
+    results: Iterable[
+        tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
+    ],
+):
+    rows_data = []
+    final_content = ""
+
+    inner_table_columns = ["Instance"]
+    implementations = report.implementations
+    for implementation in implementations:
+        inner_table_columns.append(f"{implementation.name} ({implementation.language})")
+
+    for case, test_results in results:
+        inner_df_data = []
+        for test, test_result in test_results:
+            inner_row_data = [
+                json.dumps(test.instance), 
+                *(
+                    test_result[each.id].description
+                    for each in implementations
+                )
+            ]
+            inner_df_data.append(inner_row_data)
+
+        inner_df = pd.DataFrame(inner_df_data, columns=inner_table_columns)
+        inner_markdown_table = inner_df.to_markdown(index=False)
+        schema_name = json.dumps(case.schema, indent=2)
+        row_data = [schema_name, inner_markdown_table]
+        rows_data.append(row_data)
+
+    for idx, row_data in enumerate(rows_data):
+        final_content += markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + '\n\n'
+        final_content += markdown.markdown(f"### Results:") + '\n\n'
+        final_content += row_data[1]
+        final_content += "\n\n"
+
+    return final_content
 
 
 @cache
@@ -643,6 +722,13 @@ async def info(implementations: Iterable[Implementation], format: _F):
                         f"{k}: {json.dumps(v, indent=2)}" for k, v in metadata
                     ),
                 )
+            case "markdown":
+                click.echo(
+                    "\n".join(
+                        markdown.markdown(f"**{k}**: {json.dumps(v, indent=2)}")
+                        for k, v in metadata
+                    )
+                ),
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
@@ -689,6 +775,9 @@ async def smoke(
                     case "pretty":
                         echo(f"  · {case.description}: {result.dots()}")
 
+                    case "markdown":
+                        echo(markdown.markdown(f"* {case.description}: {result.dots()}"))
+
         match format:
             case "json":
                 echo(json.dumps(serializable, indent=2))
@@ -696,6 +785,10 @@ async def smoke(
             case "pretty":
                 message = "❌ some failures" if exit_code else "✅ all passed"
                 echo(f"\n{message}", file=sys.stderr)
+
+            case "markdown":
+                message = "❌ some failures" if exit_code else "✅ all passed"
+                echo(markdown.markdown(f"\n{message}"), file=sys.stderr)
 
     return exit_code
 
