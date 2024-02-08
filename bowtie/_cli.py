@@ -11,8 +11,6 @@ import json
 import logging
 import os
 import sys
-import markdown
-import pandas as pd
 
 from aiodocker import Docker
 from attrs import asdict
@@ -23,6 +21,8 @@ from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import click
+import markdown
+import pandas as pd
 import referencing_loaders
 import rich
 import structlog
@@ -404,26 +404,33 @@ def _failure_table_in_markdown(
 ):
     main_df_data = []
     test = "tests" if report.total_tests != 1 else "test"
-    
+
     main_table_columns = [
-        "Implementation", 
+        "Implementation",
         "Skips",
         "Errors",
-        "Failures"
+        "Failures",
     ]
 
     for each, unsuccessful in results:
-        main_df_data.append([
-            f"{each.name} ({each.language})",
-            str(unsuccessful.skipped),
-            str(unsuccessful.errored),
-            str(unsuccessful.failed),
-        ])
+        main_df_data.append(
+            [
+                f"{each.name} ({each.language})",
+                str(unsuccessful.skipped),
+                str(unsuccessful.errored),
+                str(unsuccessful.failed),
+            ]
+        )
 
     # Convert DataFrame to Markdown format
     main_df = pd.DataFrame(main_df_data, columns=main_table_columns)
     markdown_table = main_df.to_markdown(index=False)
-    markdown_table = "# Bowtie Failures Summary\n\n" + markdown_table + "\n\n" + f"{report.total_tests} {test} ran\n"
+    markdown_table = (
+        "# Bowtie Failures Summary\n\n"
+        + markdown_table
+        + "\n\n"
+        + f"{report.total_tests} {test} ran\n"
+    )
     return markdown_table
 
 
@@ -481,17 +488,19 @@ def _validation_results_table_in_markdown(
     inner_table_columns = ["Instance"]
     implementations = report.implementations
     for implementation in implementations:
-        inner_table_columns.append(f"{implementation.name} ({implementation.language})")
+        inner_table_columns.append(
+            f"{implementation.name} ({implementation.language})"
+        )
 
     for case, test_results in results:
         inner_df_data = []
         for test, test_result in test_results:
             inner_row_data = [
-                json.dumps(test.instance), 
+                json.dumps(test.instance),
                 *(
                     test_result[each.id].description
                     for each in implementations
-                )
+                ),
             ]
             inner_df_data.append(inner_row_data)
 
@@ -502,8 +511,10 @@ def _validation_results_table_in_markdown(
         rows_data.append(row_data)
 
     for idx, row_data in enumerate(rows_data):
-        final_content += markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + '\n\n'
-        final_content += markdown.markdown(f"### Results:") + '\n\n'
+        final_content += (
+            markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + "\n\n"
+        )
+        final_content += markdown.markdown("### Results:") + "\n\n"
         final_content += row_data[1]
         final_content += "\n\n"
 
@@ -725,9 +736,11 @@ async def info(implementations: Iterable[Implementation], format: _F):
             case "markdown":
                 click.echo(
                     "\n".join(
-                        markdown.markdown(f"**{k}**: {json.dumps(v, indent=2)}")
+                        markdown.markdown(
+                            f"**{k}**: {json.dumps(v, indent=2)}"
+                        )
                         for k, v in metadata
-                    )
+                    ),
                 ),
 
 
@@ -776,7 +789,11 @@ async def smoke(
                         echo(f"  · {case.description}: {result.dots()}")
 
                     case "markdown":
-                        echo(markdown.markdown(f"* {case.description}: {result.dots()}"))
+                        echo(
+                            markdown.markdown(
+                                f"* {case.description}: {result.dots()}"
+                            )
+                        )
 
         match format:
             case "json":
