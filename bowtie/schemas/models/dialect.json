@@ -33,6 +33,15 @@
 
       "type": "string",
       "format": "date"
+    },
+    "aliases": {
+      "description": "Other names by which someone may refer to this dialect, officially or otherwise. Such aliases should unambiguously refer to this dialect and no other, so they should be unique not just in the array but also globally, though they may be so short so as to never be used in practice other than when it is clear that dialects are being referred to. For instance simply the number '7' is so short that no one would likely use it in conversation, but would unambiguously refer to the Draft 7 dialect. The dialect's short name is implicitly considered an alias, so it need not appear in this list but should generally be included when using these aliases.",
+
+      "default": [],
+
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
     }
   },
   "additionalProperties": false
