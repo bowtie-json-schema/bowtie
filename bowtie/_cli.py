@@ -71,9 +71,9 @@ FORMAT = click.option(
     help="What format to use for the output",
     default=lambda: "pretty" if sys.stdout.isatty() else "json",
     show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty"]),
+    type=click.Choice(["json", "pretty", "markdown"]),
 )
-_F = Literal["json", "pretty"]
+_F = Literal["json", "pretty", "markdown"]
 
 
 @tui(help="Open a simple interactive TUI for executing Bowtie commands.")
@@ -326,6 +326,7 @@ def summary(input: TextIO, format: _F, show: str):
     if show == "failures":
         results = report.worst_to_best()
         to_table = _failure_table
+        to_markdown_table = _failure_table_in_markdown
 
         def to_serializable(  # type: ignore[reportRedeclaration]
             value: Iterable[tuple[ImplementationInfo, Unsuccessful]],
@@ -335,6 +336,7 @@ def summary(input: TextIO, format: _F, show: str):
     else:
         results = report.cases_with_results()
         to_table = _validation_results_table
+        to_markdown_table = _validation_results_table_in_markdown
 
         def to_serializable(
             value: Iterable[
@@ -364,6 +366,39 @@ def summary(input: TextIO, format: _F, show: str):
         case "pretty":
             table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
+        case "markdown":
+            table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            console.Console().print(table)
+
+
+def _convert_table_to_markdown(
+    columns: list[Any],
+    rows: list[list[Any]],
+):
+    widths = [
+        max(len(line[i]) for line in columns) for i in range(len(columns))
+    ]
+    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
+
+    header = "| " + " | ".join(columns) + " |"
+    border_left = "|:"
+    border_center = ":|:"
+    border_right = ":|"
+
+    separator = (
+        border_left
+        + border_center.join(["-" * w for w in widths])
+        + border_right
+    )
+
+    # body of the table
+    body = [""] * len(rows)  # empty string list that we fill after
+    for idx, line in enumerate(rows):
+        # for each line, change the body at the correct index
+        body[idx] = "| " + " | ".join(line) + " |"
+    body = "\n".join(body)
+
+    return "\n\n" + header + "\n" + separator + "\n" + body + "\n\n"
 
 
 def _failure_table(
@@ -387,6 +422,37 @@ def _failure_table(
             str(unsuccessful.failed),
         )
     return table
+
+
+def _failure_table_in_markdown(
+    report: _report.Report,
+    results: list[tuple[ImplementationInfo, Unsuccessful]],
+):
+    test = "tests" if report.total_tests != 1 else "test"
+    rows: list[list[str]] = []
+    columns = [
+        "Implementation",
+        "Skips",
+        "Errors",
+        "Failures",
+    ]
+
+    for each, unsuccessful in results:
+        rows.append(
+            [
+                f"{each.name} ({each.language})",
+                str(unsuccessful.skipped),
+                str(unsuccessful.errored),
+                str(unsuccessful.failed),
+            ],
+        )
+
+    markdown_table = _convert_table_to_markdown(columns, rows)
+    return (
+        "# Bowtie Failures Summary"
+        + markdown_table
+        + f"**{report.total_tests} {test} ran**\n"
+    )
 
 
 def _validation_results_table(
@@ -429,6 +495,50 @@ def _validation_results_table(
         table.add_section()
 
     return table
+
+
+def _validation_results_table_in_markdown(
+    report: _report.Report,
+    results: Iterable[
+        tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
+    ],
+):
+    rows_data: list[list[str]] = []
+    final_content = ""
+
+    inner_table_columns = ["Instance"]
+    implementations = report.implementations
+    inner_table_columns.extend(
+        f"{implementation.name} ({implementation.language})"
+        for implementation in implementations
+    )
+
+    for case, test_results in results:
+        inner_table_rows: list[list[str]] = []
+        for test, test_result in test_results:
+            inner_table_rows.append(
+                [
+                    json.dumps(test.instance),
+                    *(
+                        test_result[each.id].description
+                        for each in implementations
+                    ),
+                ],
+            )
+        inner_markdown_table = _convert_table_to_markdown(
+            inner_table_columns,
+            inner_table_rows,
+        )
+        schema_name = json.dumps(case.schema, indent=2)
+        row_data = [schema_name, inner_markdown_table]
+        rows_data.append(row_data)
+
+    for idx, row_data in enumerate(rows_data):
+        final_content += f"### {idx+1}. Schema:\n {row_data[0]}\n\n"
+        final_content += "### Results:"
+        final_content += row_data[1]
+
+    return final_content
 
 
 @cache
@@ -643,6 +753,13 @@ async def info(implementations: Iterable[Implementation], format: _F):
                         f"{k}: {json.dumps(v, indent=2)}" for k, v in metadata
                     ),
                 )
+            case "markdown":
+                click.echo(
+                    "\n".join(
+                        f"**{k}**: {json.dumps(v, indent=2)}"
+                        for k, v in metadata
+                    ),
+                )
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
@@ -689,12 +806,23 @@ async def smoke(
                     case "pretty":
                         echo(f"  · {case.description}: {result.dots()}")
 
+                    case "markdown":
+                        echo(f"* {case.description}: {result.dots()}")
+
         match format:
             case "json":
                 echo(json.dumps(serializable, indent=2))
 
             case "pretty":
                 message = "❌ some failures" if exit_code else "✅ all passed"
+                echo(f"\n{message}", file=sys.stderr)
+
+            case "markdown":
+                message = (
+                    "**❌ some failures**"
+                    if exit_code
+                    else "**✅ all passed**"
+                )
                 echo(f"\n{message}", file=sys.stderr)
 
     return exit_code
