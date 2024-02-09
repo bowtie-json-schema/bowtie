@@ -534,9 +534,7 @@ def _validation_results_table_in_markdown(
         rows_data.append(row_data)
 
     for idx, row_data in enumerate(rows_data):
-        final_content += (
-            (f"### {idx+1}. Schema:\n {row_data[0]}\n\n")
-        )
+        final_content += f"### {idx+1}. Schema:\n {row_data[0]}\n\n"
         final_content += "### Results:"
         final_content += row_data[1]
 
@@ -757,8 +755,9 @@ async def info(implementations: Iterable[Implementation], format: _F):
                 )
             case "markdown":
                 click.echo(
-                    "\n".join
-                        (f"**{k}**: {json.dumps(v, indent=2)}" for k, v in metadata
+                    "\n".join(
+                        f"**{k}**: {json.dumps(v, indent=2)}"
+                        for k, v in metadata
                     ),
                 )
 
@@ -819,7 +818,11 @@ async def smoke(
                 echo(f"\n{message}", file=sys.stderr)
 
             case "markdown":
-                message = "**❌ some failures**" if exit_code else "**✅ all passed**"
+                message = (
+                    "**❌ some failures**"
+                    if exit_code
+                    else "**✅ all passed**"
+                )
                 echo(f"\n{message}", file=sys.stderr)
 
     return exit_code
