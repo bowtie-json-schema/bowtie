@@ -172,7 +172,7 @@ sphinxext-opengraph==0.9.1
     # via -r docs/requirements.in
 structlog==24.1.0
     # via bowtie-json-schema
-textual==0.48.2
+textual==0.50.1
     # via trogon
 trogon==0.5.0
     # via bowtie-json-schema
@@ -180,7 +180,7 @@ typing-extensions==4.9.0
     # via
     #   aiodocker
     #   textual
-uc-micro-py==1.0.2
+uc-micro-py==1.0.3
     # via linkify-it-py
 uritemplate==4.1.1
     # via github3-py
