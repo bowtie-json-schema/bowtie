@@ -56,7 +56,7 @@ dependencies = [
   "structlog",
   "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
-  "url.py"
+  "url.py",
 ]
 
 [project.optional-dependencies]
