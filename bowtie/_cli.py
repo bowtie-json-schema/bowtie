@@ -21,7 +21,6 @@ from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
 import click
-import markdown
 import referencing_loaders
 import rich
 import structlog
@@ -450,9 +449,9 @@ def _failure_table_in_markdown(
 
     markdown_table = _convert_table_to_markdown(columns, rows)
     return (
-        markdown.markdown("# Bowtie Failures Summary")
+        "# Bowtie Failures Summary"
         + markdown_table
-        + markdown.markdown(f"{report.total_tests} {test} ran\n")
+        + f"**{report.total_tests} {test} ran**\n"
     )
 
 
@@ -536,12 +535,12 @@ def _validation_results_table_in_markdown(
 
     for idx, row_data in enumerate(rows_data):
         final_content += (
-            markdown.markdown(f"### {idx+1}. Schema:\n {row_data[0]}") + "\n\n"
+            (f"### {idx+1}. Schema:\n {row_data[0]}\n\n")
         )
-        final_content += markdown.markdown("### Results:")
+        final_content += "### Results:"
         final_content += row_data[1]
 
-    return str(final_content)
+    return final_content
 
 
 @cache
@@ -758,11 +757,8 @@ async def info(implementations: Iterable[Implementation], format: _F):
                 )
             case "markdown":
                 click.echo(
-                    "\n".join(
-                        markdown.markdown(
-                            f"**{k}**: {json.dumps(v, indent=2)}",
-                        )
-                        for k, v in metadata
+                    "\n".join
+                        (f"**{k}**: {json.dumps(v, indent=2)}" for k, v in metadata
                     ),
                 )
 
@@ -812,11 +808,7 @@ async def smoke(
                         echo(f"  · {case.description}: {result.dots()}")
 
                     case "markdown":
-                        echo(
-                            markdown.markdown(
-                                f"* {case.description}: {result.dots()}",
-                            ),
-                        )
+                        echo(f"* {case.description}: {result.dots()}")
 
         match format:
             case "json":
@@ -827,8 +819,8 @@ async def smoke(
                 echo(f"\n{message}", file=sys.stderr)
 
             case "markdown":
-                message = "❌ some failures" if exit_code else "✅ all passed"
-                echo(markdown.markdown(f"\n{message}"), file=sys.stderr)
+                message = "**❌ some failures**" if exit_code else "**✅ all passed**"
+                echo(f"\n{message}", file=sys.stderr)
 
     return exit_code
 

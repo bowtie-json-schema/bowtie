@@ -806,12 +806,8 @@ async def test_smoke_markdown(envsonschema):
         dedent(stdout)
         == dedent(
             """
-            <ul>
-            <li>allow-everything: ✗✗✗✗✗✗</li>
-            </ul>
-            <ul>
-            <li>allow-nothing: ✓✓✓✓✓✓</li>
-            </ul>
+            * allow-everything: ✗✗✗✗✗✗
+            * allow-nothing: ✓✓✓✓✓✓
         """,
         ).lstrip("\n")
     ), stderr
@@ -937,19 +933,19 @@ async def test_info_markdown(envsonschema):
     )
     assert stdout == dedent(
         """\
-        <p><strong>name</strong>: "envsonschema"</p>
-        <p><strong>language</strong>: "python"</p>
-        <p><strong>homepage</strong>: "https://github.com/bowtie-json-schema/bowtie"</p>
-        <p><strong>issues</strong>: "https://github.com/bowtie-json-schema/bowtie/issues"</p>
-        <p><strong>source</strong>: "https://github.com/bowtie-json-schema/bowtie"</p>
-        <p><strong>dialects</strong>: [
+        **name**: "envsonschema"
+        **language**: "python"
+        **homepage**: "https://github.com/bowtie-json-schema/bowtie"
+        **issues**: "https://github.com/bowtie-json-schema/bowtie/issues"
+        **source**: "https://github.com/bowtie-json-schema/bowtie"
+        **dialects**: [
           "https://json-schema.org/draft/2020-12/schema",
           "https://json-schema.org/draft/2019-09/schema",
           "http://json-schema.org/draft-07/schema#",
           "http://json-schema.org/draft-06/schema#",
           "http://json-schema.org/draft-04/schema#",
           "http://json-schema.org/draft-03/schema#"
-        ]</p>
+        ]
         """,
     )
     assert stderr == ""
@@ -1111,13 +1107,14 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
     assert stderr == ""
     assert stdout == dedent(
         """\
-        <h1>Bowtie Failures Summary</h1>
+        # Bowtie Failures Summary
 
         | Implementation | Skips | Errors | Failures |
         |:-:|:-:|:-:|:-:|
         | envsonschema (python) | 0 | 0 | 2 |
 
-        <p>2 tests ran</p>
+        **2 tests ran**
+
         """,
     )
 
