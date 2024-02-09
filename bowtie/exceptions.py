@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from attrs import frozen
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from bowtie._core import Implementation
 
 
@@ -56,4 +58,4 @@ class ProtocolError(Exception):
     An invalid request or response was sent.
     """
 
-    errors: list[Exception]
+    errors: Sequence[Exception]
