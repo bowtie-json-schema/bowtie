@@ -58,6 +58,9 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                                 "http://json-schema.org/draft-07/schema#",
                                 "http://json-schema.org/draft-06/schema#",
                             },
+                        ["os"] = Environment.OSVersion.Platform.ToString(),
+                        ["os_version"] = Environment.OSVersion.Version.ToString(),
+                        ["language_version"] = Environment.Version.ToString()
                     },
             };
             Console.WriteLine(startResult.ToJsonString());
