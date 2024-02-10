@@ -69,12 +69,12 @@ const CaseContent = ({
                 onClick={() => {
                   setInstance(test.instance);
                   setActiveRow(index);
-                  if(schemaDisplayRef){
+                  if (schemaDisplayRef) {
                     schemaDisplayRef.current?.scrollIntoView({
                       behavior: "smooth",
                       block: "start",
                     });
-                  } 
+                  }
                 }}
               >
                 <td>
