@@ -42,26 +42,23 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             var startResult = new JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new JsonObject {
-                        ["language"] = "dotnet",
-                        ["name"] = "JsonSchema.Net",
-                        ["version"] = GetLibVersion(),
-                        ["homepage"] = "https://json-everything.net/json-schema/",
-                        ["documentation"] = "https://docs.json-everything.net/schema/basics/",
-                        ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
-                        ["source"] = "https://github.com/gregsdennis/json-everything",
+                    new JsonObject { ["language"] = "dotnet", ["name"] = "JsonSchema.Net",
+                                     ["version"] = GetLibVersion(),
+                                     ["homepage"] = "https://json-everything.net/json-schema/",
+                                     ["documentation"] = "https://docs.json-everything.net/schema/basics/",
+                                     ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
+                                     ["source"] = "https://github.com/gregsdennis/json-everything",
 
-                        ["dialects"] =
-                            new JsonArray {
-                                "https://json-schema.org/draft/2020-12/schema",
-                                "https://json-schema.org/draft/2019-09/schema",
-                                "http://json-schema.org/draft-07/schema#",
-                                "http://json-schema.org/draft-06/schema#",
-                            },
-                        ["os"] = Environment.OSVersion.Platform.ToString(),
-                        ["os_version"] = Environment.OSVersion.Version.ToString(),
-                        ["language_version"] = Environment.Version.ToString()
-                    },
+                                     ["dialects"] =
+                                         new JsonArray {
+                                             "https://json-schema.org/draft/2020-12/schema",
+                                             "https://json-schema.org/draft/2019-09/schema",
+                                             "http://json-schema.org/draft-07/schema#",
+                                             "http://json-schema.org/draft-06/schema#",
+                                         },
+                                     ["os"] = Environment.OSVersion.Platform.ToString(),
+                                     ["os_version"] = Environment.OSVersion.Version.ToString(),
+                                     ["language_version"] = Environment.Version.ToString() },
             };
             Console.WriteLine(startResult.ToJsonString());
             break;
