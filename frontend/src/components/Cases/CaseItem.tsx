@@ -1,6 +1,13 @@
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
-import { SetStateAction, useEffect, useState, useTransition } from "react";
+import {
+  SetStateAction,
+  useEffect,
+  useState,
+  useTransition,
+  useRef,
+  RefObject,
+} from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
@@ -12,10 +19,16 @@ import {
 interface CaseProps {
   seq: number;
   caseData: Case;
+  schemaDisplayRef?: RefObject<HTMLDivElement>;
   implementations: ImplementationData[];
 }
 
-const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
+const CaseContent = ({
+  seq,
+  schemaDisplayRef,
+  caseData,
+  implementations,
+}: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>();
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(-1);
 
@@ -56,6 +69,12 @@ const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
                 onClick={() => {
                   setInstance(test.instance);
                   setActiveRow(index);
+                  if (schemaDisplayRef) {
+                    schemaDisplayRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }
                 }}
               >
                 <td>
@@ -81,6 +100,8 @@ const CaseContent = ({ seq, caseData, implementations }: CaseProps) => {
 const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
   const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
+  const schemaDisplayRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     startTransition(() =>
       setContent(
@@ -88,12 +109,13 @@ const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
           seq={seq}
           caseData={caseData}
           implementations={implementations}
+          schemaDisplayRef={schemaDisplayRef}
         />,
       ),
     );
   }, [seq, caseData, implementations]);
   return (
-    <Accordion.Item eventKey={seq.toString()}>
+    <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
       <Accordion.Header>{caseData.description}</Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
