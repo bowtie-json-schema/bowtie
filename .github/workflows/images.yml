@@ -76,7 +76,7 @@ jobs:
         # if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Set DOCKER_HOST to find the image
-        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV && echo "Hello World" >> $GITHUB_STEP_SUMMARY
 
       - name: Install Bowtie
         uses: ./
