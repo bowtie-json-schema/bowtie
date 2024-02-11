@@ -727,12 +727,42 @@ def validate(
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Iterable[Implementation], format: _F):
+@click.option(
+    "--no-remote-data",
+    is_flag=True,
+    default=False,
+    help="Fetch implementation repo stats from GitHub"
+)
+async def info(implementations: Iterable[Implementation], format: _F, no_remote_data: bool):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
     for each in implementations:
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
+        if not no_remote_data:
+            from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+            import re
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+            pattern = r"https://github\.com/([^/]+)/([^/]+)"
+            match = re.search(pattern, dict(metadata).get("source"))
+            org, repo_name = match.group(1), match.group(2)
+            repo = gh.repository(org, repo_name)
+            last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+            last_commit = repo.commits().next()
+            last_commit_date = last_commit.commit.author['date']    
+            watchers_count = repo.subscribers_count
+            stars_count = repo.stargazers_count
+            open_prs_count = sum(1 for _ in repo.pull_requests(state='open'))
+            open_issues = list(repo.issues(state='open'))
+            open_issues_count = len(open_issues)
+            metadata.extend([
+                ("last_release_date", last_release_date),
+                ("last_commit_date", last_commit_date),
+                ("watchers_count", watchers_count),
+                ("stars_count", stars_count),
+                ("open_prs_count", open_prs_count),
+                ("open_issues_count", open_issues_count),
+            ])
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
