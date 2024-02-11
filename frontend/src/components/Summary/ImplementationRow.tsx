@@ -58,14 +58,18 @@ const ImplementationRow = ({
           Details
         </button>
         &nbsp;&nbsp;
-        {implementation.isNew &&
-          <OverlayTrigger placement="right" overlay={<Tooltip id="tooltip">
-            <strong>Newly added Implementation</strong>
-          </Tooltip>}>
+        {implementation.isNew && (
+          <OverlayTrigger
+            placement="right"
+            overlay={
+              <Tooltip id="tooltip">
+                <strong>Newly added Implementation</strong>
+              </Tooltip>
+            }
+          >
             <Plus />
           </OverlayTrigger>
-
-        }
+        )}
       </td>
       <DetailsButtonModal
         show={showDetails}

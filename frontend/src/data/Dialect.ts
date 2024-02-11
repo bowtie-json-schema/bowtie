@@ -31,7 +31,11 @@ export default class Dialect {
   }
 
   async fetchReport(baseURI: URI) {
-    const curVersionUrl = baseURI.clone().filename(this.path).suffix("json").href();
+    const curVersionUrl = baseURI
+      .clone()
+      .filename(this.path)
+      .suffix("json")
+      .href();
     const response = await fetch(curVersionUrl);
     const jsonl = await response.text();
     const curReportLines = jsonl
@@ -39,7 +43,12 @@ export default class Dialect {
       .split(/\r?\n/)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-    const prevVersionUrl = baseURI.clone().directory('previous').filename(this.path).suffix("json").href();
+    const prevVersionUrl = baseURI
+      .clone()
+      .directory("previous")
+      .filename(this.path)
+      .suffix("json")
+      .href();
     const response2 = await fetch(prevVersionUrl);
     const jsonl2 = await response2.text();
     const prevReportLines = jsonl2
