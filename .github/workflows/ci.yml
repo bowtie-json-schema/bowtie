@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         with:
           version: 8
           run_install: false
