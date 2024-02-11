@@ -4,7 +4,8 @@ import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink } from "react-router-dom";
 import { Case, ImplementationData } from "../../data/parseReportData";
-
+import { Plus } from "react-bootstrap-icons";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 const ImplementationRow = ({
   cases,
   implementation,
@@ -56,6 +57,15 @@ const ImplementationRow = ({
         >
           Details
         </button>
+        &nbsp;&nbsp;
+        {implementation.isNew &&
+          <OverlayTrigger placement="right" overlay={<Tooltip id="tooltip">
+            <strong>Newly added Implementation</strong>
+          </Tooltip>}>
+            <Plus />
+          </OverlayTrigger>
+
+        }
       </td>
       <DetailsButtonModal
         show={showDetails}
