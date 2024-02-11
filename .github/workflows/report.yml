@@ -54,7 +54,7 @@ jobs:
       # Besides fixing that, probably we should atomically move files into place.
       - name: Check Report is Valid
         run: |
-          bowtie summary --show failures ${{ matrix.version }}.json
+          bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
 
       - uses: actions/upload-artifact@v3
         with:
