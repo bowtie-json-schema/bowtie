@@ -39,7 +39,7 @@ export default class Dialect {
       .split(/\r?\n/)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-    const prevVersionUrl = baseURI.clone().directory('prev-version-dialects').filename(this.path).suffix("json").href();
+    const prevVersionUrl = baseURI.clone().directory('previous').filename(this.path).suffix("json").href();
     const response2 = await fetch(prevVersionUrl);
     const jsonl2 = await response2.text();
     const prevReportLines = jsonl2
