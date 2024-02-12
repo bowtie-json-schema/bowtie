@@ -901,7 +901,7 @@ async def test_info_pretty(envsonschema):
         "pretty",
         "-i",
         envsonschema,
-        "--no-remote-data"
+        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -931,7 +931,7 @@ async def test_info_markdown(envsonschema):
         "markdown",
         "-i",
         envsonschema,
-        "--no-remote-data"
+        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -990,7 +990,7 @@ async def test_info_links(links):
         "pretty",
         "-i",
         links,
-        "--no-remote-data"
+        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -1016,6 +1016,7 @@ async def test_info_links(links):
     )
     assert stderr == ""
 
+
 @pytest.mark.asyncio
 async def test_info_remote_data(envsonschema):
     jsonout, stderr = await bowtie(
@@ -1024,36 +1025,38 @@ async def test_info_remote_data(envsonschema):
         "json",
         "-i",
         envsonschema,
-        json=True
+        json=True,
     )
-    
+
     open_issues_count = 0
     open_prs_count = 0
     stars_count = 0
     watchers_count = 0
     last_commit_date = ""
     last_release_date = ""
-    
+
     try:
-        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
         import re
+
+        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+
         gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
         pattern = r"https://github\.com/([^/]+)/([^/]+)"
-        match = re.search(pattern, "https://github.com/bowtie-json-schema/bowtie") # type: ignore
-        org = match.group(1) # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
-        repo_name = match.group(2) # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
-        repo = gh.repository(org, repo_name) # type: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType]
-        last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ") # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        last_commit = repo.commits().next() # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        last_commit_date = last_commit.commit.author['date']  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        watchers_count = repo.subscribers_count # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        stars_count = repo.stargazers_count # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        open_prs_count = sum(1 for _ in repo.pull_requests(state='open')) # type: ignore
-        open_issues = list(repo.issues(state='open')) # type: ignore
-        open_issues_count = len(open_issues) # type: ignore
+        match = re.search(pattern, "https://github.com/bowtie-json-schema/bowtie")  # type: ignore
+        org = match.group(1)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        repo_name = match.group(2)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType]
+        last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        open_prs_count = sum(1 for _ in repo.pull_requests(state="open"))  # type: ignore
+        open_issues = list(repo.issues(state="open"))  # type: ignore
+        open_issues_count = len(open_issues)  # type: ignore
     except Exception as err:
         pytest.fail(f"Fetching harness's metadata from GitHub failed: {err}")
-    
+
     assert jsonout == {
         "name": "envsonschema",
         "language": "python",
@@ -1075,8 +1078,7 @@ async def test_info_remote_data(envsonschema):
             "http://json-schema.org/draft-03/schema#",
         ],
     }, stderr
-    
-    
+
     assert stderr == ""
 
 
