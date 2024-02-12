@@ -20,17 +20,17 @@ const ImplementationRow = ({
   const implementationPath = getImplementationPath(implementation);
 
   return (
-    <tr>
+    <tr className={implementation.isNew ? "table-success" : ""}>
       <th scope="row">
-        <NavLink to={`/implementations/${implementationPath}`}>
+        <NavLink className={implementation.isNew ? "text-primary" : ""} to={`/implementations/${implementationPath}`}>
           {implementation.metadata.name}
         </NavLink>
-        <small className="text-muted ps-1">
+        <small className={"ps-1 " + (implementation.isNew ? "text-dark" : "text-muted")}>
           {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
       <td>
-        <small className="font-monospace text-muted">
+        <small className={"font-monospace " + (implementation.isNew ? "text-dark" : "text-muted")}>
           {implementation.metadata.version ?? ""}
         </small>
       </td>

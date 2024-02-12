@@ -2,8 +2,8 @@ export const parseReportWithDiff = (
   lines: Record<string, unknown>[],
   prev_lines: Record<string, unknown>[],
 ): ReportData => {
-  let curParsedReport = parseReportData(lines);
-  let prevParsedReport = parseReportData(prev_lines);
+  const curParsedReport = parseReportData(lines);
+  const prevParsedReport = parseReportData(prev_lines);
   curParsedReport.implementations.forEach((value, key) => {
     value.isNew = !prevParsedReport.implementations.has(key);
   });
@@ -211,7 +211,7 @@ export interface ImplementationData {
   id: string;
   metadata: Implementation;
   cases: Map<number, CaseResult[]>;
-  isNew?: Boolean;
+  isNew?: boolean;
   erroredCases: number;
   skippedTests: number;
   failedTests: number;
