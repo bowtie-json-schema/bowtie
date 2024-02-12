@@ -731,7 +731,7 @@ def validate(
     "--no-remote-data",
     is_flag=True,
     default=False,
-    help="Fetch implementation repo stats from GitHub"
+    help="Disable retrieving implementation (harness)'s metadata from GitHub"
 )
 async def info(implementations: Iterable[Implementation], format: _F, no_remote_data: bool):
     """
@@ -740,29 +740,36 @@ async def info(implementations: Iterable[Implementation], format: _F, no_remote_
     for each in implementations:
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         if not no_remote_data:
-            from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
-            import re
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-            pattern = r"https://github\.com/([^/]+)/([^/]+)"
-            match = re.search(pattern, dict(metadata).get("source"))
-            org, repo_name = match.group(1), match.group(2)
-            repo = gh.repository(org, repo_name)
-            last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ")
-            last_commit = repo.commits().next()
-            last_commit_date = last_commit.commit.author['date']    
-            watchers_count = repo.subscribers_count
-            stars_count = repo.stargazers_count
-            open_prs_count = sum(1 for _ in repo.pull_requests(state='open'))
-            open_issues = list(repo.issues(state='open'))
-            open_issues_count = len(open_issues)
-            metadata.extend([
-                ("last_release_date", last_release_date),
-                ("last_commit_date", last_commit_date),
-                ("watchers_count", watchers_count),
-                ("stars_count", stars_count),
-                ("open_prs_count", open_prs_count),
-                ("open_issues_count", open_issues_count),
-            ])
+            try:
+                from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+                import re
+                gh = GitHub(token=os.environ.get("GITHUB_TOKEN", "")) # ignore
+                pattern = r"https://github\.com/([^/]+)/([^/]+)"
+                metadata_dict = dict(metadata) # ignore
+                if "source" in metadata_dict:
+                    match = re.search(pattern, metadata_dict.get("source")) # type: ignore
+                    if match:
+                        org = match.group(1) # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                        repo_name = match.group(2) # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                        repo = gh.repository(org, repo_name) # type: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType]
+                        last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ") # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        last_commit = repo.commits().next() # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        last_commit_date = last_commit.commit.author['date']  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        watchers_count = repo.subscribers_count # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        stars_count = repo.stargazers_count # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        open_prs_count = sum(1 for _ in repo.pull_requests(state='open')) # type: ignore
+                        open_issues = list(repo.issues(state='open')) # type: ignore
+                        open_issues_count = len(open_issues) # type: ignore
+                        metadata.extend([ # type: ignore
+                            ("last_release_date", last_release_date),
+                            ("last_commit_date", last_commit_date),
+                            ("watchers_count", watchers_count),
+                            ("stars_count", stars_count),
+                            ("open_prs_count", open_prs_count),
+                            ("open_issues_count", open_issues_count),
+                        ])
+            except Exception as err:
+                print(f"Failed retrieving {each.info.language}-{each.info.name}'s metadata from GitHub, error: {err}")
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
