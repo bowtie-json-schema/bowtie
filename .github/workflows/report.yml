@@ -19,26 +19,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  store-prev-reports:
+  download-prev-reports:
     runs-on: ubuntu-latest
     steps:
-      - name: Download previous latest test report
+      - name: Download previous test report from local artifact
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: report.yml
-          branch: main
+          branch: test-workflow
           name: report
           path: report/previous
 
-      - name: Upload previous test report to "previous" folder in artifact
+      - name: Remove already existing previous folder to prevent recursive folders
+        run: rm -rf report/previous/previous
+
+      - name: Upload previous test report to temporary artifact
         uses: actions/upload-artifact@v3
         with:
-          name: report
+          name: prev-report
           path: |
             report/
 
   test:
-    needs: store-prev-reports
+    needs: download-prev-reports
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -82,8 +85,25 @@ jobs:
             ${{ matrix.version }}.json
             badges/
 
-  deploy-frontend:
+  store-prev-reports:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download previous test report from temp artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: prev-report
+          path: report/
+
+      - name: Upload previous test report to previous folder in artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: report
+          path: |
+            report/
+
+  deploy-frontend:
+    needs: store-prev-reports
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
