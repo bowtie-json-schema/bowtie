@@ -1039,22 +1039,29 @@ async def test_info_remote_data(envsonschema):
         import re
 
         from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+            NotFoundError,
+            ForbiddenError
+        )
 
         gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
         pattern = r"https://github\.com/([^/]+)/([^/]+)"
-        match = re.search(pattern, "https://github.com/bowtie-json-schema/bowtie")  # type: ignore
+        match = re.search(pattern, "https://github.com/bowtie-json-schema/bowtie") # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         org = match.group(1)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
         repo_name = match.group(2)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
         repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType]
-        last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        latest_release = repo.latest_release() # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        last_release = latest_release.published_at # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ") # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
         last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
         last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
         watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
         stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        open_prs_count = sum(1 for _ in repo.pull_requests(state="open"))  # type: ignore
-        open_issues = list(repo.issues(state="open"))  # type: ignore
-        open_issues_count = len(open_issues)  # type: ignore
-    except Exception as err:
+        pull_requests = repo.pull_requests(state="open") # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        open_prs_count = sum(1 for _ in pull_requests) # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+        open_issues = list(repo.issues(state="open")) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        open_issues_count = len(open_issues) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+    except (NotFoundError,ForbiddenError) as err:
         pytest.fail(f"Fetching harness's metadata from GitHub failed: {err}")
 
     assert jsonout == {

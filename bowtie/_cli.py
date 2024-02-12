@@ -746,28 +746,34 @@ async def info(
         if not no_remote_data:
             try:
                 import re
-
                 from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+                    NotFoundError,
+                    ForbiddenError
+                )
 
-                gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))  # ignore
+                gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
                 pattern = r"https://github\.com/([^/]+)/([^/]+)"
-                metadata_dict = dict(metadata)  # ignore
+                metadata_dict = dict(metadata)
                 if "source" in metadata_dict:
-                    match = re.search(pattern, metadata_dict.get("source"))  # type: ignore
+                    match = re.search(pattern, metadata_dict.get("source")) # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                     if match:
-                        org = match.group(1)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                        repo_name = match.group(2)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                        repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType]
-                        last_release_date = repo.latest_release().published_at.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        open_prs_count = sum(1 for _ in repo.pull_requests(state="open"))  # type: ignore
-                        open_issues = list(repo.issues(state="open"))  # type: ignore
-                        open_issues_count = len(open_issues)  # type: ignore
-                        metadata.extend(
-                            [  # type: ignore
+                        org = match.group(1) # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                        repo_name = match.group(2) # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                        repo = gh.repository(org, repo_name) # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
+                        latest_release = repo.latest_release() # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        last_release = latest_release.published_at # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                        last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ") # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                        last_commit = repo.commits().next() # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        last_commit_date = last_commit.commit.author["date"] # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        watchers_count = repo.subscribers_count # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        stars_count = repo.stargazers_count # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        pull_requests = repo.pull_requests(state="open") # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        open_prs_count = sum(1 for _ in pull_requests) # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+                        open_issues = list(repo.issues(state="open")) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        open_issues_count = len(open_issues) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        metadata.extend( # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                            [  
                                 ("last_release_date", last_release_date),
                                 ("last_commit_date", last_commit_date),
                                 ("watchers_count", watchers_count),
@@ -776,10 +782,10 @@ async def info(
                                 ("open_issues_count", open_issues_count),
                             ],
                         )
-            except Exception as err:
-                print(
-                    f"Failed retrieving {each.info.language}-{each.info.name}'s metadata from GitHub, error: {err}",
-                )
+            except NotFoundError as not_found_err:
+                pass
+            except ForbiddenError as forbidden_err:
+                pass
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
