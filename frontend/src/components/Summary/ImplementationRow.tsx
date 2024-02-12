@@ -22,15 +22,27 @@ const ImplementationRow = ({
   return (
     <tr className={implementation.isNew ? "table-success" : ""}>
       <th scope="row">
-        <NavLink className={implementation.isNew ? "text-primary" : ""} to={`/implementations/${implementationPath}`}>
+        <NavLink
+          className={implementation.isNew ? "text-primary" : ""}
+          to={`/implementations/${implementationPath}`}
+        >
           {implementation.metadata.name}
         </NavLink>
-        <small className={"ps-1 " + (implementation.isNew ? "text-dark" : "text-muted")}>
+        <small
+          className={
+            "ps-1 " + (implementation.isNew ? "text-dark" : "text-muted")
+          }
+        >
           {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
       <td>
-        <small className={"font-monospace " + (implementation.isNew ? "text-dark" : "text-muted")}>
+        <small
+          className={
+            "font-monospace " +
+            (implementation.isNew ? "text-dark" : "text-muted")
+          }
+        >
           {implementation.metadata.version ?? ""}
         </small>
       </td>
