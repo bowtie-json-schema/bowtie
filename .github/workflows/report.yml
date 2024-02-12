@@ -22,18 +22,20 @@ jobs:
   store-prev-reports:
     runs-on: ubuntu-latest
     steps:
-      - name: Download previous test report from local artifact
-        uses: actions/download-artifact@v3
+      - name: Download previous latest test report
+        uses: dawidd6/action-download-artifact@v3
         with:
+          workflow: report.yml
+          branch: main
           name: report
-          path: previous
+          path: report/previous
 
-      - name: Upload previous test report to previous folder in artifact
+      - name: Upload previous test report to "previous" folder in artifact
         uses: actions/upload-artifact@v3
         with:
           name: report
           path: |
-            previous/
+            report/
 
   test:
     needs: store-prev-reports
