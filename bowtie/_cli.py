@@ -733,7 +733,9 @@ def validate(
     default=False,
     help="Disable retrieving implementation (harness)'s metadata from GitHub"
 )
-async def info(implementations: Iterable[Implementation], format: _F, no_remote_data: bool):
+async def info(
+    implementations: Iterable[Implementation], format: _F, no_remote_data: bool
+):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
