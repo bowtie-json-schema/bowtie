@@ -772,9 +772,8 @@ async def info(
                         open_prs_count = sum(1 for _ in pull_requests) # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
                         open_issues = list(repo.issues(state="open")) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
                         open_issues_count = len(open_issues) # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        metadata.extend( # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                            [  
-                                ("last_release_date", last_release_date),
+                        metadata.extend([ # type: ignore[reportUnknownArgumentType]
+                                ("last_release_date", last_release_date), 
                                 ("last_commit_date", last_commit_date),
                                 ("watchers_count", watchers_count),
                                 ("stars_count", stars_count),
@@ -782,9 +781,9 @@ async def info(
                                 ("open_issues_count", open_issues_count),
                             ],
                         )
-            except NotFoundError as not_found_err:
+            except NotFoundError as not_found_err: # type: ignore[reportPossiblyUnboundVariable]
                 pass
-            except ForbiddenError as forbidden_err:
+            except ForbiddenError as forbidden_err: # type: ignore[reportPossiblyUnboundVariable]
                 pass
         metadata.sort(
             key=lambda kv: (
