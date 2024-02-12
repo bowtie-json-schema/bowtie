@@ -27,7 +27,7 @@ jobs:
 
       - name: Generate all implementations (harness)'s metadata
         run: |
-          `bowtie info $(ls implementations/ | sed 's/^/-i /')  | tee implementationsMetadata.json`
+          `bowtie info $(ls implementations/ | sed 's/^/-i /') --format json  | tee implementations.json`
 
       - uses: actions/setup-node@v4
         with:
@@ -62,4 +62,4 @@ jobs:
           name: frontend-build
           path: |
             frontend/build
-            implementationsMetadata.json
+            implementations.json
