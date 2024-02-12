@@ -746,17 +746,18 @@ async def info(
         if not no_remote_data:
             try:
                 import re
+
                 from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
                 from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+                    ForbiddenError,
                     NotFoundError,
-                    ForbiddenError
                 )
 
                 gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
                 pattern = r"https://github\.com/([^/]+)/([^/]+)"
                 metadata_dict = dict(metadata)
                 if "source" in metadata_dict:
-                    match = re.search(pattern, metadata_dict.get("source")) # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                    match = re.search(pattern, metadata_dict.get("source"))  # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                     if match:
                         org = match.group(1) # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
                         repo_name = match.group(2) # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
