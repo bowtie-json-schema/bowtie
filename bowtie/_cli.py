@@ -774,11 +774,11 @@ async def info(
                                 ("stars_count", stars_count),
                                 ("open_prs_count", open_prs_count),
                                 ("open_issues_count", open_issues_count),
-                            ]
+                            ],
                         )
             except Exception as err:
                 print(
-                    f"Failed retrieving {each.info.language}-{each.info.name}'s metadata from GitHub, error: {err}"
+                    f"Failed retrieving {each.info.language}-{each.info.name}'s metadata from GitHub, error: {err}",
                 )
         metadata.sort(
             key=lambda kv: (
