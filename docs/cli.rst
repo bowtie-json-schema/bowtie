@@ -18,6 +18,9 @@ Below are a few sample command lines you might be interested in.
     If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
 
+Examples
+--------
+
 Validating a Specific Instance Against One or More Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
