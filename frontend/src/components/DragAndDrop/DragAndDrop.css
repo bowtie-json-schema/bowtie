@@ -16,3 +16,7 @@
 #label-file-upload.drag-active {
   background-color: #b6b5b5;
 }
+
+.tooltip > div.tooltip-inner {
+  max-width: 100%;
+}
