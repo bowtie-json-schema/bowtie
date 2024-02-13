@@ -7,6 +7,7 @@ import json
 import sys
 
 from attrs import asdict, field, frozen
+from attrs.filters import exclude
 from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
@@ -18,7 +19,7 @@ from bowtie._commands import (
     StartedDialect,
     Unsuccessful,
 )
-from bowtie._core import TestCase
+from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -56,16 +57,6 @@ class MissingFooter(InvalidReport):
     """
 
 
-_DIALECT_URI_TO_SHORTNAME = {
-    URL.parse("https://json-schema.org/draft/2020-12/schema"): "Draft 2020-12",
-    URL.parse("https://json-schema.org/draft/2019-09/schema"): "Draft 2019-09",
-    URL.parse("http://json-schema.org/draft-07/schema#"): "Draft 7",
-    URL.parse("http://json-schema.org/draft-06/schema#"): "Draft 6",
-    URL.parse("http://json-schema.org/draft-04/schema#"): "Draft 4",
-    URL.parse("http://json-schema.org/draft-03/schema#"): "Draft 3",
-}
-
-
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 
@@ -80,18 +71,18 @@ class Reporter:
     def unsupported_dialect(
         self,
         implementation: Implementation,
-        dialect: URL,
+        dialect: Dialect,
     ):
         self._log.warn(
             "Unsupported dialect, skipping implementation.",
             logger_name=implementation.name,
-            dialect=dialect,
+            dialect=dialect.pretty_name,
         )
 
     def unacknowledged_dialect(
         self,
         implementation: str,
-        dialect: URL,
+        dialect: Dialect,
         response: StartedDialect,
     ):
         self._log.warn(
@@ -101,14 +92,14 @@ class Reporter:
                 "itself to handle schemas without $schema."
             ),
             logger_name=implementation,
-            dialect=dialect,
+            dialect=dialect.pretty_name,
             response=response,
         )
 
     def ready(self, run_metadata: RunMetadata):
         self._write(**run_metadata.serializable())
 
-    def will_speak(self, dialect: URL):
+    def will_speak(self, dialect: Dialect):
         self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
@@ -176,7 +167,7 @@ class CaseReporter:
 
 @frozen
 class RunMetadata:
-    dialect: URL
+    dialect: Dialect
     implementations: Sequence[ImplementationInfo] = field(
         repr=lambda value: f"({len(value)} implementations)",
         alias="implementations",
@@ -206,7 +197,7 @@ class RunMetadata:
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
         return cls(
-            dialect=URL.parse(dialect),
+            dialect=Dialect.by_uri()[URL.parse(dialect)],
             implementations=[
                 ImplementationInfo.from_dict(image=image, **data)
                 for image, data in implementations.items()
@@ -214,14 +205,14 @@ class RunMetadata:
             **kwargs,
         )
 
-    @property
-    def dialect_shortname(self):
-        return _DIALECT_URI_TO_SHORTNAME.get(self.dialect, self.dialect)
-
     def serializable(self):
-        as_dict = {k.lstrip("_"): v for k, v in asdict(self).items()}
+        as_dict = asdict(
+            self,
+            filter=exclude("dialect"),
+            recurse=False,
+        )
         as_dict.update(
-            dialect=str(as_dict.pop("dialect")),
+            dialect=str(self.dialect.uri),
             started=as_dict.pop("started").isoformat(),
             # FIXME: This transformation is to support the UI parsing
             implementations={
@@ -388,13 +379,13 @@ class Report:
             yield case, test_results
 
     def generate_badges(self, target_dir: Path):
-        label = _DIALECT_URI_TO_SHORTNAME[self.metadata.dialect]
+        label = self.metadata.dialect.pretty_name
         total = self.total_tests
         for implementation in self.implementations:
             if self.metadata.dialect not in implementation.dialects:
                 continue
             shortnames = (
-                _DIALECT_URI_TO_SHORTNAME[each].removeprefix("Draft ")
+                each.pretty_name.removeprefix("Draft ")
                 for each in implementation.dialects
             )
             supported = ", ".join(sorted(shortnames))  # FIXME: proper sort

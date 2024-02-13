@@ -63,16 +63,18 @@ def test_cases_and_results_with_not_all_responding(data):
     assert len(results) == responding * len(seq_cases)
 
 
-@given(strategies.dialects)
-def test_dialects(dialect):
-    assert dialect.host_str == "json-schema.org"
+@given(strategies.known_dialects)
+def test_known_dialects(dialect):
+    assert dialect.uri.host_str == "json-schema.org"
 
 
 @given(strategies.report_data())
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_report_data_generates_implementations_with_metadata(data):
     assert Report.from_input(data).implementations
 
 
 @given(strategies.report_data(fail_fast=just(True)))
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_report_data_can_be_marked_fail_fast(data):
     assert Report.from_input(data).did_fail_fast

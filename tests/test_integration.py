@@ -15,7 +15,7 @@ import pytest
 import pytest_asyncio
 
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import DRAFT7, Test, TestCase
+from bowtie._core import Dialect, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -178,7 +178,7 @@ fail_on_dialect = shellplementation(
     name="fail_on_dialect",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -187,7 +187,7 @@ fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -198,7 +198,7 @@ nonjson_on_run = shellplementation(
     name="nonjson_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -209,7 +209,7 @@ wrong_seq = shellplementation(
     name="wrong_seq",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -220,7 +220,7 @@ wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
     read >&2
     """,  # noqa: E501
 )
@@ -228,7 +228,7 @@ hit_the_network = shellplementation(
     name="hit_the_network",
     contents=r"""
     read
-    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -259,7 +259,18 @@ links = shellplementation(
     name="links",
     contents=r"""
     read
-    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["urn:example"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
+only_draft3 = shellplementation(
+    name="only_draft3",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "only-draft3", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-03/schema#"]}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -370,7 +381,7 @@ async def test_suite(tmp_path, envsonschema):
         valid=False,
     )
     assert (report.metadata.dialect, list(report.cases_with_results())) == (
-        DRAFT7,
+        Dialect.by_short_name()["draft7"],
         [
             (
                 TestCase(
@@ -421,13 +432,44 @@ async def test_no_tests_run(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_unsupported_dialect(envsonschema):
+async def test_unknown_dialect(envsonschema):
     dialect = "some://other/URI/"
     async with run(
         "-i",
         envsonschema,
         "--dialect",
         dialect,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send("")
+
+    assert results == []
+    assert "not a known dialect" in stderr.lower()
+
+
+@pytest.mark.asyncio
+async def test_nonurl_dialect(envsonschema):
+    dialect = ";;;;;"
+    async with run(
+        "-i",
+        envsonschema,
+        "--dialect",
+        dialect,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send("")
+
+    assert results == []
+    assert "not a known dialect" in stderr.lower()
+
+
+@pytest.mark.asyncio
+async def test_unsupported_known_dialect(only_draft3):
+    async with run(
+        "-i",
+        only_draft3,
+        "--dialect",
+        str(Dialect.by_alias()["draft2020-12"].uri),
         exit_code=-1,
     ) as send:
         results, stderr = await send("")
@@ -533,7 +575,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         "-i",
         fail_on_dialect,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=-1,
     ) as send:
         results, stderr = await send(
@@ -552,7 +594,7 @@ async def test_it_handles_broken_run_implementations(fail_on_run):
         "-i",
         fail_on_run,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
@@ -578,7 +620,7 @@ async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
         "-i",
         nonjson_on_run,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
@@ -672,7 +714,7 @@ async def test_it_prevents_network_access(hit_the_network):
         "-i",
         hit_the_network,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
@@ -697,7 +739,7 @@ async def test_wrong_version(wrong_version):
         "-i",
         wrong_version,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=-1,
     ) as send:
         results, stderr = await send(
@@ -719,7 +761,7 @@ async def test_wrong_seq(wrong_seq):
         "-i",
         wrong_seq,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=0,  # FIXME: It'd be nice if this was nonzero.
     ) as send:
         results, stderr = await send(
@@ -996,7 +1038,7 @@ async def test_info_links(links):
         issues: "urn:example"
         source: "urn:example"
         dialects: [
-          "urn:example"
+          "http://json-schema.org/draft-07/schema#"
         ]
         links: [
           {
