@@ -2,7 +2,7 @@ import "./ImplementationRow.css";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from "react-router-dom";
 import { Case, ImplementationData } from "../../data/parseReportData";
 
 const ImplementationRow = ({
@@ -20,7 +20,11 @@ const ImplementationRow = ({
 
   return (
     <tr>
-      <th className="table-implementation-name" onClick={() => navigate(`/implementations/${implementationPath}`)} scope="row">
+      <th
+        className="table-implementation-name"
+        onClick={() => navigate(`/implementations/${implementationPath}`)}
+        scope="row"
+      >
         <NavLink to={`/implementations/${implementationPath}`}>
           {implementation.metadata.name}
         </NavLink>
