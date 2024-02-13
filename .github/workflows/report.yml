@@ -26,7 +26,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: report.yml
-          branch: main
           name: report
           path: report/previous
 
