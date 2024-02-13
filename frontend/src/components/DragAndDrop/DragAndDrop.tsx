@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import "./DragAndDrop.css";
 import { DialectReportView } from "../../DialectReportView";
 import { ReportData, parseReportData } from "../../data/parseReportData";
-import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 export const DragAndDrop = () => {
   const location = useLocation();
