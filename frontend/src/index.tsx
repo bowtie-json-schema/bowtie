@@ -36,7 +36,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data))
+        .then((data) => (loaderData[dialect.path] = data)),
     );
   }
   await Promise.all(promises);
@@ -84,7 +84,7 @@ const router = createHashRouter([
         Component: ImplementationReportView,
         loader: async ({ params }) => {
           const allReportsData = await fetchAllReportData(
-            params.langImplementation!
+            params.langImplementation!,
           );
           const implementationStatsData = await fetchImplementationStatsData();
           return { allReportsData, implementationStatsData };
@@ -101,6 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });

@@ -33,7 +33,7 @@ export const ImplementationReportView = () => {
     : "";
 
   const implementationStats: Implementation = implementationStatsData.find(
-    (impl: Implementation) => impl.source === allReportsData[image].source
+    (impl: Implementation) => impl.source === allReportsData[image].source,
   )!;
 
   const implementation = {
@@ -220,7 +220,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                     {implementation.dialects.map(
                       (dialect: string, index: number) => (
                         <li key={index}>{dialect}</li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
