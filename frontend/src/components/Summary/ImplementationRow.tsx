@@ -75,7 +75,7 @@ const ImplementationRow = ({
             placement="right"
             overlay={
               <Tooltip id="tooltip">
-                <strong>Newly added Implementation</strong>
+                <strong>Newly added implementation</strong>
               </Tooltip>
             }
           >
