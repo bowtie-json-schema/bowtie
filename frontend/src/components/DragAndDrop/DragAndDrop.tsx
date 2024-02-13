@@ -126,8 +126,16 @@ export const DragAndDrop = () => {
                     overlay={
                       <Tooltip id="tooltip">
                         <span>
-                          <p>You can generate a report by running <a href="https://docs.bowtie.report/en/stable/cli/">Bowtie's CLI</a> via e.g.:</p>
-                          <p><kbd>{`bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7/refRemote.json > output`}</kbd></p>
+                          <p>
+                            You can generate a report by running{" "}
+                            <a href="https://docs.bowtie.report/en/stable/cli/">
+                              Bowtie's CLI
+                            </a>{" "}
+                            via e.g.:
+                          </p>
+                          <p>
+                            <kbd>{`bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7/refRemote.json > output`}</kbd>
+                          </p>
                           <p>{`which will run the 'refRemote.json' test file from the official suite against the specified implementation, emitting a file called 'output' which you can then upload here!`}</p>
                         </span>
                       </Tooltip>
@@ -137,7 +145,6 @@ export const DragAndDrop = () => {
                       Upload report
                     </button>
                   </OverlayTrigger>
-
                 </>
               )}
             </div>
