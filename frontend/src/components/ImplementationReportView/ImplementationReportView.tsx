@@ -1,14 +1,28 @@
-import { Card } from "react-bootstrap";
+import { Card, Table, Container } from "react-bootstrap";
 import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
-import { Table, Container } from "react-bootstrap";
+import {
+  Eye,
+  StarFill,
+  BoxFill,
+  ArrowCounterclockwise,
+  RecordCircle,
+  Tools,
+} from "react-bootstrap-icons";
 import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
+import { formatDate } from "../../utils/formatDate";
+
+interface LoaderData {
+  allReportsData: Record<string, Implementation>;
+  implementationStatsData: Implementation[];
+}
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
-  const allImplementations = useLoaderData() as Record<string, Implementation>;
+  const { allReportsData, implementationStatsData } =
+    useLoaderData() as LoaderData;
 
   // Get the selected implementation's name from the URL parameters.
   const { langImplementation } = useParams();
@@ -17,10 +31,18 @@ export const ImplementationReportView = () => {
   const image = langImplementation
     ? `ghcr.io/bowtie-json-schema/${langImplementation}`
     : "";
-  const implementation = allImplementations[image];
+
+  const implementationStats: Implementation = implementationStatsData.find(
+    (impl: Implementation) => impl.source === allReportsData[image].source
+  )!;
+
+  const implementation = {
+    ...allReportsData[image],
+    ...implementationStats,
+  };
 
   // FIXME: Probably redirect to /implementations if/when that's a thing.
-  return allImplementations ? (
+  return allReportsData ? (
     implementation ? (
       <ReportComponent implementation={implementation} />
     ) : (
@@ -74,6 +96,86 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   </Link>
                 </td>
               </tr>
+              {implementation.last_release_date && (
+                <tr>
+                  <th>
+                    <div className="d-flex align-items-center">
+                      <BoxFill size={17} style={{ marginRight: "5px" }} />
+                      Last Release Date:
+                    </div>
+                  </th>
+                  <td>{formatDate(implementation.last_release_date)}</td>
+                </tr>
+              )}
+              {implementation.last_commit_date && (
+                <tr>
+                  <th>
+                    <div className="d-flex align-items-center">
+                      <ArrowCounterclockwise
+                        size={20}
+                        style={{ marginRight: "5px" }}
+                      />
+                      Last Commit Date:
+                    </div>
+                  </th>
+                  <td>{formatDate(implementation.last_commit_date)}</td>
+                </tr>
+              )}
+              {implementation.stars_count !== undefined &&
+                implementation.stars_count >= 0 && (
+                  <tr>
+                    <th>
+                      <div className="d-flex align-items-center">
+                        <StarFill
+                          color="yellow"
+                          size={20}
+                          style={{ marginRight: "5px" }}
+                        />
+                        Stars:
+                      </div>
+                    </th>
+                    <td>{implementation.stars_count}</td>
+                  </tr>
+                )}
+              {implementation.watchers_count !== undefined &&
+                implementation.watchers_count >= 0 && (
+                  <tr>
+                    <th>
+                      <div className="d-flex align-items-center">
+                        <Eye size={20} style={{ marginRight: "5px" }} />
+                        Watchers:
+                      </div>
+                    </th>
+                    <td>{implementation.watchers_count}</td>
+                  </tr>
+                )}
+              {implementation.open_issues_count !== undefined &&
+                implementation.open_issues_count >= 0 && (
+                  <tr>
+                    <th>
+                      <div className="d-flex align-items-center">
+                        <RecordCircle
+                          size={20}
+                          style={{ marginRight: "5px" }}
+                        />
+                        Open Issues:
+                      </div>
+                    </th>
+                    <td>{implementation.open_issues_count}</td>
+                  </tr>
+                )}
+              {implementation.open_prs_count !== undefined &&
+                implementation.open_prs_count >= 0 && (
+                  <tr>
+                    <th>
+                      <div className="d-flex align-items-center">
+                        <Tools size={17} style={{ marginRight: "5px" }} />
+                        Open Pull Requests:
+                      </div>
+                    </th>
+                    <td>{implementation.open_prs_count}</td>
+                  </tr>
+                )}
               <tr>
                 <th>Issues:</th>
                 <td>
@@ -82,10 +184,12 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   </Link>
                 </td>
               </tr>
-              <tr>
-                <th>Version:</th>
-                <td>{implementation.version}</td>
-              </tr>
+              {implementation.version && (
+                <tr>
+                  <th>Version:</th>
+                  <td>{implementation.version}</td>
+                </tr>
+              )}
               <tr>
                 <th>Language:</th>
                 <td>
@@ -116,7 +220,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                     {implementation.dialects.map(
                       (dialect: string, index: number) => (
                         <li key={index}>{dialect}</li>
-                      ),
+                      )
                     )}
                   </ul>
                 </td>
