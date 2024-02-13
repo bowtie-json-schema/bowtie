@@ -49,13 +49,13 @@ const ImplementationRow = ({
       </td>
 
       <td>
-        <button
+        {implementation.failedTests + implementation.erroredTests + implementation.skippedTests > 0 && <button
           type="button"
           className="btn btn-sm btn-primary"
           onClick={() => setShowDetails(true)}
         >
           Details
-        </button>
+        </button>}
       </td>
       <DetailsButtonModal
         show={showDetails}
