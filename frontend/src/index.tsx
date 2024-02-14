@@ -32,7 +32,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data)),
+        .then((data) => (loaderData[dialect.path] = data))
     );
   }
   await Promise.all(promises);
@@ -48,13 +48,24 @@ const router = createHashRouter([
       {
         index: true,
         Component: ReportDataHandler,
-        loader: async () => fetchReportData(Dialect.forPath("draft2020-12")),
+        loader: async () => {
+          const reportData = await fetchReportData(
+            Dialect.forPath("draft2020-12")
+          );
+          const allImplementationsData = await fetchImplementationStatsData();
+          return { reportData, allImplementationsData };
+        },
       },
       {
         path: "/dialects/:draftName",
         Component: ReportDataHandler,
-        loader: async ({ params }) =>
-          fetchReportData(Dialect.forPath(params.draftName!)),
+        loader: async ({ params }) => {
+          const reportData = await fetchReportData(
+            Dialect.forPath(params.draftName!)
+          );
+          const allImplementationsData = await fetchImplementationStatsData();
+          return { reportData, allImplementationsData };
+        },
       },
       {
         path: "/local-report",
@@ -63,8 +74,13 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
-        loader: async ({ params }) =>
-          fetchAllReportData(params.langImplementation!),
+        loader: async ({ params }) => {
+          const allReportsData = await fetchAllReportData(
+            params.langImplementation!
+          );
+          const implementationStatsData = await fetchImplementationStatsData();
+          return { allReportsData, implementationStatsData };
+        },
       },
     ],
   },
@@ -77,6 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
