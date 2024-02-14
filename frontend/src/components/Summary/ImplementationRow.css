@@ -1,3 +1,7 @@
+td{
+  height: 40px;
+}
+
 .details-required {
   position: relative;
 }
