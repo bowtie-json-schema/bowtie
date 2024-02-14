@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -9,7 +10,6 @@ import os
 import re
 import sys
 import tarfile
-from datetime import datetime
 
 from aiodocker.exceptions import DockerError
 import pytest
@@ -1028,19 +1028,19 @@ async def test_info_remote_data(envsonschema):
         envsonschema,
         json=True,
     )
-    
+
     faked_response = {
-        "name": "envsonschema", 
-        "language": "python", 
+        "name": "envsonschema",
+        "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "source": "https://github.com/bowtie-json-schema/bowtie",
-        "last_commit_date": "2020-10-27T01:00:38Z", 
-        "last_release_date": "2019-10-15T16:05:23Z", 
-        "open_issues_count": 134, 
-        "open_prs_count": 29, 
-        "stars_count": 2417, 
-        "watchers_count": 39, 
+        "last_commit_date": "2020-10-27T01:00:38Z",
+        "last_release_date": "2019-10-15T16:05:23Z",
+        "open_issues_count": 134,
+        "open_prs_count": 29,
+        "stars_count": 2417,
+        "watchers_count": 39,
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
             "https://json-schema.org/draft/2019-09/schema",
@@ -1048,27 +1048,27 @@ async def test_info_remote_data(envsonschema):
             "http://json-schema.org/draft-06/schema#",
             "http://json-schema.org/draft-04/schema#",
             "http://json-schema.org/draft-03/schema#",
-        ]
+        ],
     }
-    
-    for key in faked_response.keys():
+
+    for key in faked_response:
         assert key in jsonout
-    
-    assert isinstance(jsonout["watchers_count"], int) # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["stars_count"], int) # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["open_prs_count"], int) # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["open_issues_count"], int) # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["last_commit_date"], str) # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["last_release_date"], str) # type: ignore[reportArgumentType]
-    
+
+    assert isinstance(jsonout["watchers_count"], int)  # type: ignore[reportArgumentType]
+    assert isinstance(jsonout["stars_count"], int)  # type: ignore[reportArgumentType]
+    assert isinstance(jsonout["open_prs_count"], int)  # type: ignore[reportArgumentType]
+    assert isinstance(jsonout["open_issues_count"], int)  # type: ignore[reportArgumentType]
+    assert isinstance(jsonout["last_commit_date"], str)  # type: ignore[reportArgumentType]
+    assert isinstance(jsonout["last_release_date"], str)  # type: ignore[reportArgumentType]
+
     date_format = "%Y-%m-%dT%H:%M:%SZ"
     try:
-        datetime.strptime(jsonout["last_commit_date"], date_format) # type: ignore[reportArgumentType]
+        datetime.strptime(jsonout["last_commit_date"], date_format)  # type: ignore[reportArgumentType]
     except ValueError:
         pytest.fail("last_commit_date has incorrect date format")
-    
+
     try:
-        datetime.strptime(jsonout["last_release_date"], date_format) # type: ignore[reportArgumentType]
+        datetime.strptime(jsonout["last_release_date"], date_format)  # type: ignore[reportArgumentType]
     except ValueError:
         pytest.fail("last_release_date has incorrect date format")
 
