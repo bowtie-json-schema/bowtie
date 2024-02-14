@@ -6,10 +6,12 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build]
-packages = ["bowtie"]
-exclude = ["implementations/"]
+exclude = [".github", "implementations"]
 
-[tool.hatch.build.wheel.force-include]
+[tool.hatch.build.targets.wheel]
+packages = ["bowtie"]
+
+[tool.hatch.build.targets.wheel.force-include]
 data = "bowtie/data"
 
 [project]
