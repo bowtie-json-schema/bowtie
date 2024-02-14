@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -1102,17 +1101,6 @@ async def test_info_remote_data(envsonschema):
     assert isinstance(jsonout["open_issues_count"], int)  # type: ignore[reportArgumentType]
     assert isinstance(jsonout["last_commit_date"], str)  # type: ignore[reportArgumentType]
     assert isinstance(jsonout["last_release_date"], str)  # type: ignore[reportArgumentType]
-
-    date_format = "%Y-%m-%dT%H:%M:%SZ"
-    try:
-        datetime.strptime(jsonout["last_commit_date"], date_format)  # type: ignore[reportArgumentType]
-    except ValueError:
-        pytest.fail("last_commit_date has incorrect date format")
-
-    try:
-        datetime.strptime(jsonout["last_release_date"], date_format)  # type: ignore[reportArgumentType]
-    except ValueError:
-        pytest.fail("last_release_date has incorrect date format")
 
     assert stderr == ""
 

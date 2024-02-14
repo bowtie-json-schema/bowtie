@@ -258,7 +258,6 @@ class ImplementationInfo:
             source=str(as_dict["source"]),
             dialects=sorted(dialects, reverse=True),
             links=[link.serializable() for link in self.links],
-            id=str(self.id),
         )
         return as_dict
 

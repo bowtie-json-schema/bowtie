@@ -577,8 +577,8 @@ def make_remote_data_getter():
         from urllib.parse import urlparse
 
         from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
-        from github3.exceptions import (
-            GitHubError,  # type: ignore[reportMissingTypeStubs]
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+            GitHubError,
         )
 
         try:
@@ -599,7 +599,9 @@ def make_remote_data_getter():
             open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
             open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-
+        except GitHubError:
+            return []
+        else:
             return [
                 ("last_release_date", last_release_date),
                 ("last_commit_date", last_commit_date),
@@ -608,9 +610,6 @@ def make_remote_data_getter():
                 ("open_prs_count", open_prs_count),
                 ("open_issues_count", open_issues_count),
             ]
-
-        except GitHubError:
-            return []
 
     return get_remote_data
 
@@ -824,12 +823,12 @@ class _MakeRemoteDataGetter(Protocol):
     help="What format to use for the output",
     default=lambda: "pretty" if sys.stdout.isatty() else "json",
     show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "jsonFile", "pretty", "markdown"]),
+    type=click.Choice(["json", "file", "pretty", "markdown"]),
 )
 @NOREMOTEDATA
 async def info(
     implementations: Iterable[Implementation],
-    format: Literal["json", "jsonFile", "pretty", "markdown"],
+    format: Literal["json", "file", "pretty", "markdown"],
     make_remote_data_getter: _MakeRemoteDataGetter,
 ):
     """
@@ -843,11 +842,11 @@ async def info(
         repo_activity_data = []
 
         if "source" in metadata_dict:
-            source_url = metadata_dict["source"]  # type: ignore[reportUnknownVariableType]
-            repo_activity_data = remote_data_getter(source_url)  # type: ignore[reportUnknownArgumentType]
+            source_url = metadata_dict["source"]
+            repo_activity_data = remote_data_getter(source_url)
 
         if repo_activity_data is not None:
-            metadata.extend(repo_activity_data)  # type: ignore[reportArgumentType]
+            metadata.extend(repo_activity_data)
 
         metadata.sort(
             key=lambda kv: (
@@ -863,7 +862,7 @@ async def info(
         match format:
             case "json":
                 click.echo(json.dumps(dict(metadata), indent=2))
-            case "jsonFile":
+            case "file":
                 click.echo(json.dumps(dict(metadata)))
             case "pretty":
                 click.echo(
