@@ -336,7 +336,7 @@ def ui(session):
     Run a local development UI.
     """
     _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "start")
+    session.run("pnpm", "run", "--dir", UI, "start", external=True)
 
 
 @session(python=False, name="ui(audit)")
@@ -344,7 +344,7 @@ def ui_audit(session):
     """
     Audit the UI dependencies.
     """
-    session.run("pnpm", "--dir", UI, "audit")
+    session.run("pnpm", "--dir", UI, "audit", external=True)
 
 
 @session(python=False, name="ui(build)")
@@ -353,7 +353,7 @@ def ui_build(session):
     Check that the UI properly builds.
     """
     _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "build")
+    session.run("pnpm", "run", "--dir", UI, "build", external=True)
 
 
 @session(tags=["style"], python=False, name="ui(style)")
@@ -362,7 +362,7 @@ def ui_style(session):
     Lint for style on Bowtie's frontend.
     """
     _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "lint")
+    session.run("pnpm", "run", "--dir", UI, "lint", external=True)
 
 
 @session(python=False, name="ui(tests)")
@@ -370,10 +370,24 @@ def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.run("pnpm", "install-test", "--frozen-lockfile", "--dir", UI)
+    session.run(
+        "pnpm",
+        "install-test",
+        "--frozen-lockfile",
+        "--dir",
+        UI,
+        external=True,
+    )
 
 
 def _maybe_install_ui(session):
     if UI.joinpath("node_modules").is_dir():
         return
-    session.run("pnpm", "install", "--frozen-lockfile", "--dir", UI)
+    session.run(
+        "pnpm",
+        "install",
+        "--frozen-lockfile",
+        "--dir",
+        UI,
+        external=True,
+    )
