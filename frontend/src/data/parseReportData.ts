@@ -1,5 +1,5 @@
 export const parseReportData = (
-  lines: Record<string, unknown>[]
+  lines: Record<string, unknown>[],
 ): ReportData => {
   const runInfoData = lines[0] as unknown as RunInfo;
   const implementationEntries = Object.entries(runInfoData.implementations);
@@ -16,7 +16,7 @@ export const parseReportData = (
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    })
+    }),
   );
 
   let didFailFast = false;
@@ -26,7 +26,7 @@ export const parseReportData = (
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
       const implementationData = implementationMap.get(
-        line.implementation as string
+        line.implementation as string,
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
@@ -39,7 +39,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          })
+          }),
         );
       } else if (line.skipped) {
         implementationData.skippedTests += caseData.tests.length;
@@ -48,7 +48,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
             message: line.message as string,
-          })
+          }),
         );
       } else if (line.implementation) {
         const caseResults: CaseResult[] = (
@@ -100,14 +100,14 @@ export const parseReportData = (
 };
 
 export const parseImplementationData = (
-  loaderData: Record<string, ReportData>
+  loaderData: Record<string, ReportData>,
 ) => {
   let allImplementations: Record<string, Implementation> = {};
   const dialectCompliance: Record<string, Record<string, Partial<Totals>>> = {};
 
   for (const [key, value] of Object.entries(loaderData)) {
     dialectCompliance[key] = calculateImplementationTotal(
-      value.implementations
+      value.implementations,
     );
     allImplementations = {
       ...allImplementations,
@@ -121,7 +121,7 @@ export const parseImplementationData = (
         if (
           !Object.prototype.hasOwnProperty.call(
             allImplementations[implementation],
-            "results"
+            "results",
           )
         ) {
           allImplementations[implementation].results = {};
@@ -134,7 +134,7 @@ export const parseImplementationData = (
 };
 
 const calculateImplementationTotal = (
-  implementations: Map<string, ImplementationData>
+  implementations: Map<string, ImplementationData>,
 ) => {
   const implementationResult: Record<string, Partial<Totals>> = {};
 
@@ -152,7 +152,7 @@ const calculateImplementationTotal = (
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0
+    0,
   );
   return Array.from(data.implementations.values()).reduce(
     (prev, curr) => ({
@@ -168,7 +168,7 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    }
+    },
   );
 };
 

@@ -22,7 +22,7 @@ export const DialectReportView = ({
 
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
-      (impl) => impl.metadata.language
+      (impl) => impl.metadata.language,
     );
     return Array.from(new Set(langs).values());
   }, [reportData]);
@@ -34,26 +34,26 @@ export const DialectReportView = ({
 
     if (selectedLanguages.length > 0) {
       const filteredReportArray = Array.from(
-        reportData.implementations.entries()
+        reportData.implementations.entries(),
       ).filter(([, data]) =>
-        selectedLanguages.includes(data.metadata.language)
+        selectedLanguages.includes(data.metadata.language),
       );
       const filteredReportImplementationsMap = new Map(filteredReportArray);
       filteredReportData.implementations = filteredReportImplementationsMap;
       filteredOtherImplementationsData = filterOtherImplementations(
         allImplementationsData,
         selectedLanguages,
-        filteredReportImplementationsMap
+        filteredReportImplementationsMap,
       );
     } else {
       const filteredReportArray = Array.from(
-        reportData.implementations.entries()
+        reportData.implementations.entries(),
       );
       const filteredReportImplementationsMap = new Map(filteredReportArray);
       filteredOtherImplementationsData = filterOtherImplementations(
         allImplementationsData,
         languages,
-        filteredReportImplementationsMap
+        filteredReportImplementationsMap,
       );
     }
     return { filteredReportData, filteredOtherImplementationsData };
@@ -81,11 +81,11 @@ export const DialectReportView = ({
 const filterOtherImplementations = (
   allImplementationsData: Implementation[],
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationData>
+  filteredReportImplementationsMap: Map<string, ImplementationData>,
 ) => {
   const filteredOtherImplementationsArray: Implementation[] =
     allImplementationsData.filter((impl: Implementation) =>
-      langs.includes(impl.language)
+      langs.includes(impl.language),
     );
   const filteredOtherImplementationsData =
     filteredOtherImplementationsArray.filter((impl: Implementation) => {
