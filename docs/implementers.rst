@@ -1,6 +1,6 @@
-==================================
-Tutorial: Adding An Implementation
-==================================
+===========================
+Adding a New Implementation
+===========================
 
 The purpose of `Bowtie` is to support passing :term:`instances <instance>` and :term:`schemas <schema>` through a large number of JSON Schema implementations, collecting their output for comparison.
 

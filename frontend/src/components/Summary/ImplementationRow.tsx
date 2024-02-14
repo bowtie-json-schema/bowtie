@@ -2,7 +2,7 @@ import "./ImplementationRow.css";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Case, ImplementationData } from "../../data/parseReportData";
 import { Plus } from "react-bootstrap-icons";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -16,12 +16,16 @@ const ImplementationRow = ({
   index: number;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-
+  const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementation);
 
   return (
     <tr className={implementation.isNew ? "table-success" : ""}>
-      <th scope="row">
+      <th
+        className="table-implementation-name"
+        onClick={() => navigate(`/implementations/${implementationPath}`)}
+        scope="row"
+      >
         <NavLink
           className={implementation.isNew ? "text-primary" : ""}
           to={`/implementations/${implementationPath}`}
@@ -62,13 +66,18 @@ const ImplementationRow = ({
       </td>
 
       <td>
-        <button
-          type="button"
-          className="btn btn-sm btn-primary"
-          onClick={() => setShowDetails(true)}
-        >
-          Details
-        </button>
+        {implementation.failedTests +
+          implementation.erroredTests +
+          implementation.skippedTests >
+          0 && (
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => setShowDetails(true)}
+          >
+            Details
+          </button>
+        )}
         &nbsp;&nbsp;
         {implementation.isNew && (
           <OverlayTrigger
@@ -81,7 +90,6 @@ const ImplementationRow = ({
           >
             <Plus />
           </OverlayTrigger>
-        )}
       </td>
       <DetailsButtonModal
         show={showDetails}

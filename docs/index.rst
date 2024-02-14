@@ -17,9 +17,9 @@ Also because it's elegant – we hope.
   :hidden:
 
   cli
-  implementers
-  contributing
   github-actions
+  contributing
+  implementers
 
 
 Installation

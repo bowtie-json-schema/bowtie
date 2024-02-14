@@ -9,6 +9,9 @@ source = "vcs"
 packages = ["bowtie"]
 exclude = ["implementations/"]
 
+[tool.hatch.build.wheel.force-include]
+data = "bowtie/data"
+
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
@@ -50,7 +53,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
-  "rpds.py>=0.16.2",
+  "rpds.py>=0.18.0",
   "structlog",
   "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
@@ -163,5 +166,5 @@ from-first = true
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"tests/*" = ["ANN", "D", "RUF012", "S"]
+"tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]

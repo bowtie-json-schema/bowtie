@@ -19,7 +19,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  download-prev-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download previous test report from local artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: report.yml
+          name: report
+          path: report/previous
+
+      - name: Remove already existing previous folder to prevent recursive folders
+        run: rm -rf report/previous/previous
+
+      - name: Upload previous test report to temporary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: prev-report
+          path: |
+            report/
+
   test:
+    needs: download-prev-reports
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -54,7 +75,7 @@ jobs:
       # Besides fixing that, probably we should atomically move files into place.
       - name: Check Report is Valid
         run: |
-          bowtie summary --show failures ${{ matrix.version }}.json
+          bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
 
       - uses: actions/upload-artifact@v3
         with:
@@ -63,8 +84,25 @@ jobs:
             ${{ matrix.version }}.json
             badges/
 
-  deploy-frontend:
+  store-prev-reports:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download previous test report from temp artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: prev-report
+          path: report/
+
+      - name: Upload previous test report to previous folder in artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: report
+          path: |
+            report/
+
+  deploy-frontend:
+    needs: store-prev-reports
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
