@@ -97,7 +97,7 @@ def implementation_infos(
         homepage=draw(urls().map(URL.parse)),
         issues=draw(urls().map(URL.parse)),
         source=draw(urls().map(URL.parse)),
-        dialects=draw(frozensets(dialects, min_size=1)),
+        dialects=draw(frozensets(dialects, min_size=1, max_size=4)),
     )
 
 
