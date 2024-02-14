@@ -614,10 +614,11 @@ def make_remote_data_getter():
 
     return get_remote_data
 
+
 def no_remote_data() -> Callable[[str], None]:
     return lambda source_url: None
-  
-  
+
+
 class _Dialect(click.ParamType):
 
     name = "dialect"
