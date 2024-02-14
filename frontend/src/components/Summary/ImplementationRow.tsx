@@ -70,15 +70,14 @@ const ImplementationRow = ({
           implementation.erroredTests +
           implementation.skippedTests >
           0 && (
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            onClick={() => setShowDetails(true)}
-          >
-            Details
-          </button>
-        )}
-        &nbsp;&nbsp;
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => setShowDetails(true)}
+            >
+              Details
+            </button>
+          )}
         {implementation.isNew && (
           <OverlayTrigger
             placement="right"
@@ -90,6 +89,7 @@ const ImplementationRow = ({
           >
             <Plus />
           </OverlayTrigger>
+        )}
       </td>
       <DetailsButtonModal
         show={showDetails}
