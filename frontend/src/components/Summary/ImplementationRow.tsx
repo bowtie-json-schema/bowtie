@@ -21,7 +21,7 @@ const ImplementationRow = ({
   return (
     <tr>
       <th
-        className="table-implementation-name align-middle"
+        className="table-implementation-name align-middle p-0"
         onClick={() => navigate(`/implementations/${implementationPath}`)}
         scope="row"
       >
@@ -56,7 +56,7 @@ const ImplementationRow = ({
         </div>
       </td>
 
-      <td>
+      <td className="align-middle p-0">
         {implementation.failedTests +
           implementation.erroredTests +
           implementation.skippedTests >
