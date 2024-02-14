@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import date
+from functools import cache
+from importlib.resources import files
+from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeVar
 import json
 
@@ -12,13 +16,14 @@ from referencing.jsonschema import (
     SchemaRegistry,
     specification_with,
 )
+from rpds import HashTrieMap
 from url import URL
 
 from bowtie._commands import (
     START_V1,
     STOP,
     CaseErrored,
-    Dialect,
+    Dialect as DialectCommand,
     SeqCase,
     SeqResult,
     StartedDialect,
@@ -50,12 +55,86 @@ if TYPE_CHECKING:
     from bowtie._report import Reporter
 
 
-DRAFT2020 = URL.parse("https://json-schema.org/draft/2020-12/schema")
-DRAFT2019 = URL.parse("https://json-schema.org/draft/2019-09/schema")
-DRAFT7 = URL.parse("http://json-schema.org/draft-07/schema#")
-DRAFT6 = URL.parse("http://json-schema.org/draft-06/schema#")
-DRAFT4 = URL.parse("http://json-schema.org/draft-04/schema#")
-DRAFT3 = URL.parse("http://json-schema.org/draft-03/schema#")
+@frozen
+class Dialect:
+    """
+    A dialect of JSON Schema.
+    """
+
+    pretty_name: str
+    uri: URL = field(repr=False)
+    short_name: str = field(repr=False)
+    first_publication_date: date = field(repr=False)
+    aliases: Set[str] = field(default=frozenset(), repr=False)
+    has_boolean_schemas: bool = field(default=True, repr=False)
+
+    def __lt__(self, other: Any):
+        if other.__class__ is not Dialect:
+            return NotImplemented
+        return self.first_publication_date < other.first_publication_date
+
+    @classmethod
+    @cache
+    def by_short_name(cls) -> HashTrieMap[str, Dialect]:
+        return HashTrieMap((each.short_name, each) for each in cls.known())
+
+    @classmethod
+    @cache
+    def by_alias(cls) -> HashTrieMap[str, Dialect]:
+        return cls.by_short_name().update(
+            (alias, dialect)
+            for dialect in cls.known()
+            for alias in dialect.aliases
+        )
+
+    @classmethod
+    @cache
+    def by_uri(cls) -> HashTrieMap[URL, Dialect]:
+        return HashTrieMap((each.uri, each) for each in cls.known())
+
+    @classmethod
+    @cache
+    def known(cls) -> Iterable[Dialect]:
+        data = files("bowtie") / "data"
+        if not data.is_dir():
+            data = Path(__file__).parent.parent / "data"
+
+        return frozenset(
+            Dialect.from_dict(**each)
+            for each in json.loads(data.joinpath("dialects.json").read_text())
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        firstPublicationDate: str,
+        prettyName: str,
+        shortName: str,
+        uri: str,
+        aliases: Iterable[str] = (),
+        **_: Any,
+    ) -> Self:
+
+        return cls(
+            uri=URL.parse(uri),
+            pretty_name=prettyName,
+            short_name=shortName,
+            first_publication_date=date.fromisoformat(firstPublicationDate),
+            aliases=frozenset(aliases),
+        )
+
+    def current_dialect_resource(self) -> SchemaResource:
+        # it's of course unimportant what dialect is used for this referencing
+        # schema, what matters is that the target dialect is applied
+        from referencing.jsonschema import DRAFT202012
+
+        return DRAFT202012.create_resource(
+            {
+                # Should match the magic value used for `schema` in `schemas/io/`
+                "$id": "tag:bowtie.report,2023:ihop:__dialect__",
+                "$ref": str(self.uri),
+            },
+        )
 
 
 @frozen
@@ -133,7 +212,7 @@ class ImplementationInfo:
     homepage: URL
     issues: URL
     source: URL
-    dialects: Set[URL]
+    dialects: Set[Dialect]
 
     version: str | None = None
     language_version: str | None = None
@@ -152,11 +231,12 @@ class ImplementationInfo:
         links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
     ):
+        BY_URI = Dialect.by_uri()
         return cls(
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
             source=URL.parse(source),
-            dialects=frozenset(URL.parse(dialect) for dialect in dialects),
+            dialects=frozenset(BY_URI[URL.parse(each)] for each in dialects),
             links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
@@ -168,10 +248,10 @@ class ImplementationInfo:
     def serializable(self):
         as_dict = {
             k: v
-            for k, v in asdict(self).items()
+            for k, v in asdict(self, recurse=False).items()
             if not k.startswith("_") and v
         }
-        dialects = (str(d) for d in as_dict["dialects"])
+        dialects = (str(dialect.uri) for dialect in as_dict["dialects"])
         as_dict.update(
             homepage=str(as_dict["homepage"]),
             issues=str(as_dict["issues"]),
@@ -267,14 +347,14 @@ class DialectRunner:
     A running implementation which is speaking a specific dialect.
     """
 
-    dialect: URL
+    dialect: Dialect
     implementation: ImplementationId
     _harness: HarnessClient = field(repr=False, alias="harness")
 
     @classmethod
     async def for_dialect(
         cls,
-        dialect: URL,
+        dialect: Dialect,
         implementation: ImplementationId,
         harness: HarnessClient,
         reporter: Reporter,
@@ -282,8 +362,8 @@ class DialectRunner:
         new_harness: HarnessClient
         response: StartedDialect
         new_harness, response = await harness.transition(
-            Dialect(dialect=str(dialect)),  # type: ignore[reportArgumentType]
-            resources=[current_dialect_resource(dialect)],
+            DialectCommand(dialect=str(dialect.uri)),  # type: ignore[reportArgumentType]
+            resources=[dialect.current_dialect_resource()],
         )
 
         if response != StartedDialect.OK:
@@ -373,7 +453,7 @@ class Implementation:
 
     async def validate(
         self,
-        dialect: URL,
+        dialect: Dialect,
         cases: Iterable[TestCase],
     ) -> AsyncIterator[tuple[TestCase, SeqResult]]:
         """
@@ -383,7 +463,7 @@ class Implementation:
         for seq_case in SeqCase.for_cases(cases):
             yield seq_case.case, await seq_case.run(runner=runner)
 
-    def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
+    def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(
             implementation=self.name,
             dialect=dialect,
@@ -393,7 +473,9 @@ class Implementation:
 
     async def smoke(
         self,
-    ) -> AsyncIterator[tuple[URL, AsyncIterator[tuple[TestCase, SeqResult]]]]:
+    ) -> AsyncIterator[
+        tuple[Dialect, AsyncIterator[tuple[TestCase, SeqResult]]]
+    ]:
         """
         Smoke test this implementation.
         """
@@ -409,12 +491,12 @@ class Implementation:
             ("object", {"foo": 37}),
         ]
 
-        # FIXME: All dialects / and/or newest dialect with proper sort
-        for dialect in [max(self.info.dialects, key=str)]:
+        # FIXME: All dialects
+        for dialect in [max(self.info.dialects)]:
             cases = [
                 TestCase(
                     description="allow-everything",
-                    schema={"$schema": str(dialect)},
+                    schema={"$schema": str(dialect.uri)},
                     tests=[
                         Test(
                             description=json_type,
@@ -426,7 +508,7 @@ class Implementation:
                 ),
                 TestCase(
                     description="allow-nothing",
-                    schema={"$schema": str(dialect), "not": {}},
+                    schema={"$schema": str(dialect.uri), "not": {}},
                     tests=[
                         Test(
                             description=json_type,
@@ -439,20 +521,6 @@ class Implementation:
             ]
 
             yield dialect, self.validate(dialect=dialect, cases=cases)
-
-
-def current_dialect_resource(dialect: URL):
-    # it's of course unimportant what dialect is used for this referencing
-    # schema, what matters is that the target dialect is applied
-    from referencing.jsonschema import DRAFT202012
-
-    return DRAFT202012.create_resource(
-        {
-            # Should match the magic value used for `schema` in `schemas/io/`
-            "$id": "tag:bowtie.report,2023:ihop:__dialect__",
-            "$ref": str(dialect),
-        },
-    )
 
 
 @frozen
@@ -494,7 +562,7 @@ class TestCase:
     @classmethod
     def from_dict(
         cls,
-        dialect: URL,
+        dialect: Dialect,
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,

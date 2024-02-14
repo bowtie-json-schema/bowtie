@@ -21,54 +21,20 @@ import rich
 from bowtie import GITHUB, _core
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
     from typing import Any
 
 
 TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
+TESTS_DIR_URL = TEST_SUITE_URL / "tree/main/tests"
 
 URL_FOR_DIALECT = {
-    _core.DRAFT2020: TEST_SUITE_URL / "tree/main/tests/draft2020-12",
-    _core.DRAFT2019: TEST_SUITE_URL / "tree/main/tests/draft2019-09",
-    _core.DRAFT7: TEST_SUITE_URL / "tree/main/tests/draft7",
-    _core.DRAFT6: TEST_SUITE_URL / "tree/main/tests/draft6",
-    _core.DRAFT4: TEST_SUITE_URL / "tree/main/tests/draft4",
-    _core.DRAFT3: TEST_SUITE_URL / "tree/main/tests/draft3",
-}
-
-DIALECT_SHORTNAMES: Mapping[str, URL] = {
-    "2020": _core.DRAFT2020,
-    "202012": _core.DRAFT2020,
-    "2020-12": _core.DRAFT2020,
-    "draft2020-12": _core.DRAFT2020,
-    "draft202012": _core.DRAFT2020,
-    "2019": _core.DRAFT2019,
-    "201909": _core.DRAFT2019,
-    "2019-09": _core.DRAFT2019,
-    "draft2019-09": _core.DRAFT2019,
-    "draft201909": _core.DRAFT2019,
-    "7": _core.DRAFT7,
-    "draft7": _core.DRAFT7,
-    "6": _core.DRAFT6,
-    "draft6": _core.DRAFT6,
-    "4": _core.DRAFT4,
-    "draft4": _core.DRAFT4,
-    "3": _core.DRAFT3,
-    "draft3": _core.DRAFT3,
+    dialect: TESTS_DIR_URL / dialect.short_name
+    for dialect in _core.Dialect.known()
 }
 
 # Magic constants assumed/used by the official test suite for $ref tests
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
-
-
-def dialect_from_str(s: str) -> URL:
-    """
-    Decide on a dialect either from either a dialect ID (URI) or short name.
-    """
-    uri = DIALECT_SHORTNAMES.get(s)
-    if uri is not None:
-        return uri
-    return URL.parse(s)
 
 
 class ClickParam(click.ParamType):
@@ -83,12 +49,12 @@ class ClickParam(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[_core.TestCase], URL, dict[str, Any]]:
+    ) -> tuple[Iterable[_core.TestCase], _core.Dialect, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
-        value = DIALECT_SHORTNAMES.get(value, value)
+        value = _core.Dialect.by_alias().get(value, value)
         value = URL_FOR_DIALECT.get(value, value)
 
         try:
@@ -126,7 +92,7 @@ class ClickParam(click.ParamType):
                     note_stmt="You also can pass a local path to test cases.",
                 )
                 rich.print(error)
-                return self.fail(message, param, ctx)
+                return self.fail(message)
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
@@ -145,11 +111,7 @@ class ClickParam(click.ParamType):
 
         return cases, dialect, run_metadata
 
-        self.fail(
-            f"{value} does not contain JSON Schema Test Suite cases.",
-            param,
-            ctx,
-        )
+        self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
     def _cases_and_dialect(self, path: Any):
         if path.name.endswith(".json"):
@@ -159,7 +121,7 @@ class ClickParam(click.ParamType):
 
         remotes = version_path.parent.parent / "remotes"
 
-        dialect = DIALECT_SHORTNAMES.get(version_path.name)
+        dialect = _core.Dialect.by_short_name().get(version_path.name)
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
@@ -171,7 +133,10 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-def remotes_in(path: Path, dialect: URL) -> Iterable[tuple[URL, Any]]:
+def remotes_in(
+    path: Path,
+    dialect: _core.Dialect,
+) -> Iterable[tuple[URL, Any]]:
     # FIXME: #40: for draft-next support
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
@@ -183,9 +148,9 @@ def remotes_in(path: Path, dialect: URL) -> Iterable[tuple[URL, Any]]:
         # have no $schema and which are invalid under earlier versions, in with
         # other schemas which are needed for tests.
         if (
-            "$schema" in schema and schema["$schema"] != str(dialect)
+            "$schema" in schema and schema["$schema"] != str(dialect.uri)
         ) or (  # invalid boolean schema
-            dialect in {_core.DRAFT3, _core.DRAFT4} and relative == "tree.json"
+            not dialect.has_boolean_schemas and relative == "tree.json"
         ):
             continue
         yield SUITE_REMOTE_BASE_URI / relative, schema
@@ -194,7 +159,7 @@ def remotes_in(path: Path, dialect: URL) -> Iterable[tuple[URL, Any]]:
 def cases_from(
     paths: Iterable[_P],
     remotes: Path,
-    dialect: URL,
+    dialect: _core.Dialect,
 ) -> Iterable[_core.TestCase]:
     populated = {str(k): v for k, v in remotes_in(remotes, dialect=dialect)}
     for path in paths:

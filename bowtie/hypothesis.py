@@ -12,9 +12,11 @@ from hypothesis.strategies import (
     booleans,
     builds,
     composite,
+    dates,
     dictionaries,
     fixed_dictionaries,
     floats,
+    frozensets,
     integers,
     just,
     lists,
@@ -22,16 +24,14 @@ from hypothesis.strategies import (
     recursive,
     register_type_strategy,
     sampled_from,
-    sets,
     text,
     tuples,
 )
 from url import URL
 
 from bowtie import _commands
-from bowtie._core import ImplementationInfo, Test, TestCase
+from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
-from bowtie._suite import URL_FOR_DIALECT
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -52,13 +52,37 @@ implementation_names = text(  # FIXME: see the start command schema
     max_size=50,
 )
 languages = text(printable, min_size=1, max_size=20)
-dialects = sampled_from(list(URL_FOR_DIALECT))
+
+
+def dialects(
+    prety_names=text(max_size=15),
+    short_names=text(max_size=10),
+    uris=urls().map(URL.parse),
+    publication_dates=dates(),
+    aliases=frozensets(text(), max_size=2),
+):
+    """
+    Generate a dialect.
+    """
+    return builds(
+        Dialect,
+        pretty_name=prety_names,
+        short_name=prety_names,
+        uri=uris,
+        first_publication_date=publication_dates,
+        aliases=aliases,
+    )
+
+
+#: Only one of our "real" dialects.
+known_dialects = sampled_from(sorted(Dialect.known()))
 
 
 @composite
 def implementation_infos(
     draw,
     names=implementation_names,
+    dialects=dialects(),
     languages=languages,
 ):
     """
@@ -73,7 +97,7 @@ def implementation_infos(
         homepage=draw(urls().map(URL.parse)),
         issues=draw(urls().map(URL.parse)),
         source=draw(urls().map(URL.parse)),
-        dialects=draw(sets(dialects, min_size=1).map(frozenset)),
+        dialects=draw(frozensets(dialects, min_size=1, max_size=4)),
     )
 
 
@@ -252,10 +276,19 @@ def cases_and_results(
     ]
 
 
-def run_metadata(dialects=dialects, implementations=implementations()):
+# Evade the s h a d o w
+_implementations = implementations
+_cases_and_results = cases_and_results
+
+
+def run_metadata(dialects=dialects(), implementations=None):
     """
     Generate just a report's metadata.
     """
+    if implementations is None:
+        implementations = _implementations(
+            infos=implementation_infos(dialects=dialects),
+        )
     return builds(
         RunMetadata,
         dialect=dialects,
@@ -263,16 +296,13 @@ def run_metadata(dialects=dialects, implementations=implementations()):
     )
 
 
-# Evade the s h a d o w
-_implementations = implementations
-_cases_and_results = cases_and_results
 _run_metadata = run_metadata
 
 
 @composite
 def report_data(
     draw,
-    dialects=dialects,
+    dialects=known_dialects,
     implementations=None,
     run_metadata=None,
     cases_and_results=None,
@@ -287,7 +317,8 @@ def report_data(
                 "Providing cases+results without implementations can lead to "
                 "inconsistent reports.",
             )
-        implementations = _implementations()
+        infos = implementation_infos(dialects=dialects)
+        implementations = _implementations(infos=infos)
     impls = draw(implementations)
 
     if cases_and_results is None:
@@ -318,6 +349,7 @@ def reports(**kwargs):
 # FIXME: These don't seem to do anything (in that builds() still fails?)
 #        I also don't really understand why the builtin attrs support doesn't
 #        autodetect more than it seems to be.
+register_type_strategy(Dialect, dialects())
 register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.CaseErrored, errored_cases())
 register_type_strategy(_commands.CaseSkipped, skipped_cases())

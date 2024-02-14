@@ -5,12 +5,13 @@
 
 #label-file-upload {
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 1.5rem;
   border-style: dashed;
   box-shadow: 0 4px 8px #00000039;
+}
+
+.flex-div {
+  margin-top: 7.5%;
 }
 
 #label-file-upload.drag-active {
