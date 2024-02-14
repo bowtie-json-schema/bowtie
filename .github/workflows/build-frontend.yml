@@ -8,18 +8,10 @@ on:
       - "frontend/**"
       - ".github/workflows/build-frontend.yml"
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Freed up the disk space just in case if it gives error later
-      - name: Free up disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
-
       - uses: actions/checkout@v4
 
       - name: Install Bowtie
@@ -27,7 +19,7 @@ jobs:
 
       - name: Generate all implementations (harness)'s metadata
         run: |
-          `bowtie info $(ls implementations/ | sed 's/^/-i /') --format json  | tee implementations.json`
+          bowtie info $(ls implementations/ | sed 's/^/-i /') --format jsonFile  | tee implementations.json
 
       - uses: actions/setup-node@v4
         with:

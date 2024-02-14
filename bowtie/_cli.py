@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 from functools import cache, wraps
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
+from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol, List, Tuple
 import asyncio
 import json
 import logging
@@ -569,6 +569,49 @@ def make_validator(*more_schemas: SchemaResource):
 def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
+def make_remote_data_getter():
+    
+    def get_remote_data(source_url: str) -> List[Tuple[str, str | int]]:
+        from urllib.parse import urlparse
+        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+        from github3.exceptions import GitHubError  # type: ignore[reportMissingTypeStubs]
+        
+        try:
+            parsed_url = urlparse(source_url)  
+            repo_owner = parsed_url.path.split('/')[1]
+            repo_name = parsed_url.path.split('/')[2]
+            
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+            repo = gh.repository(repo_owner, repo_name)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
+            latest_release = repo.latest_release()  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            last_release = latest_release.published_at  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+            last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            pull_requests = repo.pull_requests(state="open")  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            
+            return [
+                ("last_release_date", last_release_date),
+                ("last_commit_date", last_commit_date),
+                ("watchers_count", watchers_count),
+                ("stars_count", stars_count),
+                ("open_prs_count", open_prs_count),
+                ("open_issues_count", open_issues_count),
+            ]
+            
+        except GitHubError:
+            return []
+    
+    return get_remote_data
+
+def no_remote_data() -> Callable[[str], None]:
+    return lambda source_url: None
+
 
 IMPLEMENTATION = click.option(
     "--implementation",
@@ -650,6 +693,13 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
+NOREMOTEDATA = click.option(
+    "--no-remote-data",
+    "make_remote_data_getter",
+    callback=lambda _, __, v: no_remote_data if v else make_remote_data_getter,  # type: ignore[reportUnknownLambdaType]
+    is_flag=True,
+    help="Disable retrieving additional implementation metadata from its repository"
+)
 EXPECT = click.option(
     "--expect",
     show_default=True,
@@ -724,69 +774,44 @@ def validate(
     )
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
+class _MakeRemoteDataGetter(Protocol):
+    def __call__(
+        self,
+    ) -> Callable[[str], None | List[Tuple[str, str | int]]]: ...
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
-@FORMAT
 @click.option(
-    "--no-remote-data",
-    is_flag=True,
-    default=False,
-    help="Disable retrieving implementation (harness)'s metadata from GitHub",
+    "--format",
+    "-f",
+    "format",
+    help="What format to use for the output",
+    default=lambda: "pretty" if sys.stdout.isatty() else "json",
+    show_default="pretty if stdout is a tty, otherwise JSON",
+    type=click.Choice(["json", "jsonFile", "pretty", "markdown"]),
 )
+@NOREMOTEDATA
 async def info(
     implementations: Iterable[Implementation],
-    format: _F,
-    no_remote_data: bool,
+    format: Literal["json", "jsonFile", "pretty", "markdown"],
+    make_remote_data_getter: _MakeRemoteDataGetter,
 ):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
     for each in implementations:
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
-        if not no_remote_data:
-            try:
-                import re
+        metadata_dict = dict(metadata)
+        
+        remote_data_getter = make_remote_data_getter()
+        repo_activity_data = []
+        
+        if "source" in metadata_dict:
+            source_url = metadata_dict["source"] # type: ignore[reportUnknownVariableType]
+            repo_activity_data = remote_data_getter(source_url) # type: ignore[reportUnknownArgumentType]
 
-                from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
-                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
-                    ForbiddenError,
-                    NotFoundError,
-                )
-
-                gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-                pattern = r"https://github\.com/([^/]+)/([^/]+)"
-                metadata_dict = dict(metadata)
-                if "source" in metadata_dict:
-                    match = re.search(pattern, metadata_dict.get("source"))  # type: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                    if match:
-                        org = match.group(1)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                        repo_name = match.group(2)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                        repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
-                        latest_release = repo.latest_release()  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        last_release = latest_release.published_at  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                        last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                        last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                        last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        pull_requests = repo.pull_requests(state="open")  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-                        open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        metadata.extend(
-                            [  # type: ignore[reportUnknownArgumentType]
-                                ("last_release_date", last_release_date),
-                                ("last_commit_date", last_commit_date),
-                                ("watchers_count", watchers_count),
-                                ("stars_count", stars_count),
-                                ("open_prs_count", open_prs_count),
-                                ("open_issues_count", open_issues_count),
-                            ],
-                        )
-            except NotFoundError:  # type: ignore[reportPossiblyUnboundVariable]
-                pass
-            except ForbiddenError:  # type: ignore[reportPossiblyUnboundVariable]
-                pass
+        if repo_activity_data is not None:
+            metadata.extend(repo_activity_data) # type: ignore[reportArgumentType]
+            
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
@@ -801,6 +826,8 @@ async def info(
         match format:
             case "json":
                 click.echo(json.dumps(dict(metadata), indent=2))
+            case "jsonFile":
+                click.echo(json.dumps(dict(metadata)))
             case "pretty":
                 click.echo(
                     "\n".join(
