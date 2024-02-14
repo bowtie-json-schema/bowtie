@@ -20,6 +20,7 @@ from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
 from trogon import tui  # type: ignore[reportMissingTypeStubs]
+from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
 import rich
@@ -30,6 +31,7 @@ from bowtie import _report, _suite
 from bowtie._commands import AnyTestResult, SeqCase, Unsuccessful
 from bowtie._containers import ContainerConnection
 from bowtie._core import (
+    Dialect,
     GotStderr,
     Implementation,
     ImplementationInfo,
@@ -52,7 +54,6 @@ if TYPE_CHECKING:
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
-    from url import URL
 
     from bowtie._core import DialectRunner
 
@@ -61,8 +62,8 @@ _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
+
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-LATEST_DIALECT_NAME = "draft2020-12"
 
 FORMAT = click.option(
     "--format",
@@ -570,6 +571,35 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
+class _Dialect(click.ParamType):
+
+    name = "dialect"
+
+    def convert(
+        self,
+        value: str | Dialect,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> Dialect:
+        if not isinstance(value, str):
+            return value
+
+        dialect = Dialect.by_alias().get(value)
+        if dialect is not None:
+            return dialect
+
+        try:
+            url = URL.parse(value)
+        except RelativeURLWithoutBase:
+            pass
+        else:
+            dialect = Dialect.by_uri().get(url)
+            if dialect is not None:
+                return dialect
+
+        self.fail(f"{value!r} is not a known dialect URI or short name.")
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -584,13 +614,13 @@ DIALECT = click.option(
     "--dialect",
     "-D",
     "dialect",
-    type=_suite.dialect_from_str,
-    default=LATEST_DIALECT_NAME,
+    type=_Dialect(),
+    default=max(Dialect.known()),
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
         "A URI or shortname identifying the dialect of each test. Possible "
-        f"shortnames include: {', '.join(sorted(_suite.DIALECT_SHORTNAMES))}."
+        f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
     ),
 )
 FILTER = click.option(
@@ -676,7 +706,7 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, dialect: URL, **kwargs: Any):
+def run(input: Iterable[str], filter: str, dialect: Dialect, **kwargs: Any):
     """
     Run a sequence of cases provided on standard input.
     """
@@ -837,7 +867,7 @@ async def smoke(
 @VALIDATE
 @click.argument("input", type=_suite.ClickParam())
 def suite(
-    input: tuple[Iterable[TestCase], URL, dict[str, Any]],
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: str,
     **kwargs: Any,
 ):
@@ -878,7 +908,7 @@ def suite(
 async def _run(
     image_names: list[str],
     cases: Iterable[TestCase],
-    dialect: URL,
+    dialect: Dialect,
     fail_fast: bool,
     set_schema: bool,
     run_metadata: dict[str, Any] = {},

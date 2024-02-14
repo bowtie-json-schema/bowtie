@@ -1,18 +1,17 @@
 from hypothesis import given
 from hypothesis.strategies import sets
-from url import URL
 import pytest
 
 from bowtie import HOMEPAGE, REPO
 from bowtie._commands import CaseResult, SeqCase, SeqResult
-from bowtie._core import ImplementationInfo, Test, TestCase
+from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
-from bowtie.hypothesis import dialects, implementations
+from bowtie.hypothesis import dialects, implementations, known_dialects
 
 Test.__test__ = TestCase.__test__ = False  # frigging py.test
 
 
-DIALECT = URL.parse("urn:example")
+DIALECT = Dialect.by_alias()["2020"]
 FOO = ImplementationInfo(
     name="foo",
     language="blub",
@@ -291,13 +290,14 @@ def test_ne_different_results():
     assert Report.from_input(data) != Report.from_input(different_result)
 
 
-def test_ne_different_implementations():
+@given(dialect=known_dialects)
+def test_ne_different_implementations(dialect):
     foo = RunMetadata(
-        dialect="urn:example",
+        dialect=dialect,
         implementations=[FOO],
     )
     foo_and_bar = RunMetadata(
-        dialect="urn:example",
+        dialect=dialect,
         implementations=[FOO, BAR],
     )
     data = [
@@ -330,31 +330,31 @@ def test_ne_different_implementations():
     assert Report.from_input([foo_and_bar.serializable(), *data]) != foo_report
 
 
-@given(dialect=dialects)
+@given(dialect=dialects())
 def test_eq_different_bowtie_version(dialect):
     one = Report.empty(dialect=dialect, bowtie_version="1970-1-1")
     two = Report.empty(dialect=dialect, bowtie_version="2000-12-31")
     assert one == two
 
 
-@given(dialects=sets(dialects, min_size=2, max_size=2))
+@given(dialects=sets(dialects(), min_size=2, max_size=2))
 def test_ne_different_dialect(dialects):
     one, two = dialects
     assert Report.empty(dialect=one) != Report.empty(dialect=two)
 
 
-@given(dialect=dialects)
+@given(dialect=dialects())
 def test_eq_empty(dialect):
     assert Report.empty(dialect=dialect) == Report.empty(dialect=dialect)
 
 
-@given(dialect=dialects)
+@given(dialect=dialects())
 def test_empty_is_empty(dialect):
     report = Report.empty(dialect=dialect)
     assert report.is_empty
 
 
-@given(dialect=dialects, implementations=implementations(min_size=0))
+@given(dialect=dialects(), implementations=implementations(min_size=0))
 def test_empty_with_implementations_is_empty(dialect, implementations):
     report = Report.empty(dialect=dialect, implementations=implementations)
     assert report.is_empty

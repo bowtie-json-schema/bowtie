@@ -6,9 +6,10 @@ from jsonschema.validators import validator_for
 import pytest
 
 from bowtie._cli import bowtie_schemas_registry
-from bowtie._core import DRAFT2020, current_dialect_resource
+from bowtie._core import Dialect
 
-REGISTRY = current_dialect_resource(DRAFT2020) @ bowtie_schemas_registry()
+DRAFT2020 = Dialect.by_alias()["2020"]
+REGISTRY = DRAFT2020.current_dialect_resource() @ bowtie_schemas_registry()
 
 TEST = {
     "description": "a test",
