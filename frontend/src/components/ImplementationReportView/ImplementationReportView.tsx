@@ -121,7 +121,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   </ul>
                 </td>
               </tr>
-              {implementation.links && !!implementation.links.length && (
+              {implementation.links?.length && (
                 <tr>
                   <th>Additional Links:</th>
                   <td>
