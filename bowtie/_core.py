@@ -459,8 +459,8 @@ class Implementation:
         Run a collection of test cases under the given dialect.
         """
         runner = await self.start_speaking(dialect)
-        for seq_case in SeqCase.for_cases(cases):
-            yield seq_case.case, await seq_case.run(runner=runner)
+        for i, case in enumerate(cases, 1):
+            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
 
     def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(

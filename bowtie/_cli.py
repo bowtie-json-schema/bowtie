@@ -968,10 +968,8 @@ async def _run(
 
             count = 0
             should_stop = False
-            for count, seq_case in enumerate(  # noqa: B007
-                SeqCase.for_cases(cases),
-                1,
-            ):
+            for count, case in enumerate(cases, 1):
+                seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
                 if set_schema and not isinstance(seq_case.case.schema, bool):
                     seq_case.case.schema["$schema"] = str(dialect)
