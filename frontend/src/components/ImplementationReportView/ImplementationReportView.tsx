@@ -121,6 +121,22 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   </ul>
                 </td>
               </tr>
+              {implementation.links && !!implementation.links.length && 
+              <tr>
+                <th>Additional Links:</th>
+                <td>
+                  <ul>
+                    {implementation.links.map(({description, url}, index: number ) => 
+                      <li key={index}>
+                        <Link to={url ?? ''}>
+                          {description}
+                        </Link>
+                      </li>
+                     )}
+                  </ul>
+                </td>
+              </tr>
+              }
             </tbody>
           </Table>
         </Card.Body>
