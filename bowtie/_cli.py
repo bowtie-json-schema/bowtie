@@ -891,7 +891,7 @@ def suite(
               to run a single file directly from a branch which exists in GitHub
 
         * short name versions of the previous URLs (similar to those providable
-          to ``bowtie validate`` via its ``--dialect`` option), e.g.:
+          to `bowtie validate --dialect`, e.g.:
 
             - ``7``, to run the draft 7 tests directly from GitHub (as in the
               URL example above)
