@@ -39,7 +39,6 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
-    _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
 from bowtie.exceptions import ProtocolError
 
@@ -55,7 +54,7 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._core import DialectRunner
+    from bowtie._core import DialectRunner, MakeValidator
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -157,7 +156,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
         async def run(
             image_names: list[str],
             read_timeout_sec: float,
-            make_validator: _MakeValidator = make_validator,
+            make_validator: MakeValidator = make_validator,
             **kw: Any,
         ) -> int:
             exit_code = 0
@@ -994,7 +993,7 @@ async def _run(
 @asynccontextmanager
 async def _start(
     image_names: Iterable[str],
-    make_validator: _MakeValidator,
+    make_validator: MakeValidator,
     read_timeout_sec: float,
     **kwargs: Any,
 ):

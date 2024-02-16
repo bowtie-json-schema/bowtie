@@ -181,7 +181,7 @@ class StartupFailed(Exception):
 R = TypeVar("R")
 
 
-class _MakeValidator(Protocol):
+class MakeValidator(Protocol):
     def __call__(
         self,
         *more_schemas: SchemaResource,
@@ -293,7 +293,7 @@ class HarnessClient:
 
     _connection: Connection = field(alias="connection")
 
-    _make_validator: _MakeValidator = field(alias="make_validator")
+    _make_validator: MakeValidator = field(alias="make_validator")
     _resources_for_validation: Sequence[SchemaResource] = field(
         default=(),
         alias="resources_for_validation",
