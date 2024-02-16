@@ -497,7 +497,7 @@ class Implementation:
             cases = [
                 TestCase(
                     description="allow-everything",
-                    schema={"$schema": str(dialect.uri)},
+                    schema={},
                     tests=[
                         Test(
                             description=json_type,
@@ -506,10 +506,10 @@ class Implementation:
                         )
                         for json_type, instance in instances
                     ],
-                ),
+                ).with_explicit_dialect(dialect),
                 TestCase(
                     description="allow-nothing",
-                    schema={"$schema": str(dialect.uri), "not": {}},
+                    schema={"not": {}},
                     tests=[
                         Test(
                             description=json_type,
@@ -518,7 +518,7 @@ class Implementation:
                         )
                         for json_type, instance in instances
                     ],
-                ),
+                ).with_explicit_dialect(dialect),
             ]
 
             yield dialect, self.validate(dialect=dialect, cases=cases)
@@ -577,6 +577,15 @@ class TestCase:
             registry=populated,
             **kwargs,
         )
+
+    def with_explicit_dialect(self, dialect: Dialect):
+        """
+        Return a version of this test case with an explicit dialect ID.
+        """
+        schema = self.schema
+        if not isinstance(self.schema, bool):
+            schema = {"$schema": str(dialect.uri), **self.schema}
+        return evolve(self, schema=schema)
 
     def serializable(self) -> Message:
         as_dict = asdict(

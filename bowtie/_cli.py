@@ -615,6 +615,17 @@ class _Filter(click.ParamType):
         )
 
 
+def _set_schema(dialect: Dialect) -> CaseTransform:
+    """
+    Explicitly set a dialect on schemas passing through by setting ``$schema``.
+    """
+    return lambda cases: (c.with_explicit_dialect(dialect) for c in cases)
+
+
+def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
+    return lambda cases: cases
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -654,9 +665,14 @@ FAIL_FAST = click.option(
     help="Fail immediately after the first error or disagreement.",
 )
 SET_SCHEMA = click.option(
-    "--set-schema/--no-set-schema",
+    "--set-schema",
     "-S",
-    "set_schema",
+    "maybe_set_schema",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: _set_schema if v else _do_nothing,  # type: ignore[reportUnknownLambdaType]
+    is_flag=True,
     show_default=True,
     default=False,
     help=(
@@ -927,7 +943,7 @@ async def _run(
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
-    set_schema: bool,
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -985,11 +1001,9 @@ async def _run(
 
             count = 0
             should_stop = False
-            for count, case in enumerate(cases, 1):
+            for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
-                if set_schema and not isinstance(seq_case.case.schema, bool):
-                    seq_case.case.schema["$schema"] = str(dialect.uri)
 
                 responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):
