@@ -112,6 +112,7 @@ class Dialect:
         shortName: str,
         uri: str,
         aliases: Iterable[str] = (),
+        hasBooleanSchemas: bool = True,
         **_: Any,
     ) -> Self:
 
@@ -121,6 +122,7 @@ class Dialect:
             short_name=shortName,
             first_publication_date=date.fromisoformat(firstPublicationDate),
             aliases=frozenset(aliases),
+            has_boolean_schemas=hasBooleanSchemas,
         )
 
     def current_dialect_resource(self) -> SchemaResource:
