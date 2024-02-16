@@ -124,7 +124,7 @@ class Stream:
 
 
 @mutable
-class ContainerConnection:
+class Connection:
     """
     A connection with a restartable container over stdio via request/responses.
 

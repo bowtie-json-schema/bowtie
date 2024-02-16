@@ -27,14 +27,12 @@ import rich
 import structlog
 import structlog.typing
 
-from bowtie import _report, _suite
-from bowtie._commands import AnyTestResult, SeqCase, Unsuccessful
-from bowtie._containers import ContainerConnection
+from bowtie import _containers, _report, _suite
+from bowtie._commands import SeqCase
 from bowtie._core import (
     Dialect,
     GotStderr,
     Implementation,
-    ImplementationInfo,
     NoSuchImplementation,
     StartupFailed,
     Test,
@@ -48,7 +46,8 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._core import DialectRunner, MakeValidator
+    from bowtie._commands import AnyTestResult, Unsuccessful
+    from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -595,7 +594,7 @@ class _Dialect(click.ParamType):
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
 
-CaseFilter = Callable[[Iterable[TestCase]], Iterable[TestCase]]
+CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
 
 class _Filter(click.ParamType):
@@ -610,7 +609,7 @@ class _Filter(click.ParamType):
         value: str,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> CaseFilter:
+    ) -> CaseTransform:
         return lambda cases: (
             case for case in cases if fnmatch(case.description, f"*{value}*")
         )
@@ -725,7 +724,7 @@ EXPECT = click.option(
 )
 def run(
     input: Iterable[str],
-    filter: CaseFilter,
+    filter: CaseTransform,
     dialect: Dialect,
     **kwargs: Any,
 ):
@@ -888,7 +887,7 @@ async def smoke(
 @click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    filter: CaseFilter,
+    filter: CaseTransform,
     **kwargs: Any,
 ):
     """
@@ -1023,7 +1022,7 @@ async def _start(
         image_name: str,
     ) -> AsyncIterator[Implementation]:
         async with (
-            ContainerConnection.open(
+            _containers.Connection.open(
                 docker=docker,
                 image_name=image_name,
                 read_timeout_sec=read_timeout_sec,
