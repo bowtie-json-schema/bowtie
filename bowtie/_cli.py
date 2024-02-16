@@ -15,6 +15,7 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
+from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
@@ -571,52 +572,45 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
-def make_remote_data_getter():
+def get_remote_data(source_url: str) -> list[tuple[str, str | int]]:
+    from urllib.parse import urlparse
 
-    def get_remote_data(source_url: str) -> list[tuple[str, str | int]]:
-        from urllib.parse import urlparse
+    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+        GitHubError,
+    )
 
-        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
-        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
-            GitHubError,
-        )
+    try:
+        parsed_url = urlparse(source_url)
+        repo_owner = parsed_url.path.split("/")[1]
+        repo_name = parsed_url.path.split("/")[2]
 
-        try:
-            parsed_url = urlparse(source_url)
-            repo_owner = parsed_url.path.split("/")[1]
-            repo_name = parsed_url.path.split("/")[2]
+        gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+        repo = gh.repository(repo_owner, repo_name)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
+        latest_release = repo.latest_release()  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        last_release = latest_release.published_at  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        pull_requests = repo.pull_requests(state="open")  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+        open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
+    except GitHubError:
+        return []
+    else:
+        return [
+            ("last_release_date", last_release_date),
+            ("last_commit_date", last_commit_date),
+            ("watchers_count", watchers_count),
+            ("stars_count", stars_count),
+            ("open_prs_count", open_prs_count),
+            ("open_issues_count", open_issues_count),
+        ]
 
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-            repo = gh.repository(repo_owner, repo_name)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
-            latest_release = repo.latest_release()  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            last_release = latest_release.published_at  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            pull_requests = repo.pull_requests(state="open")  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-            open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        except GitHubError:
-            return []
-        else:
-            return [
-                ("last_release_date", last_release_date),
-                ("last_commit_date", last_commit_date),
-                ("watchers_count", watchers_count),
-                ("stars_count", stars_count),
-                ("open_prs_count", open_prs_count),
-                ("open_issues_count", open_issues_count),
-            ]
-
-    return get_remote_data
-
-
-def no_remote_data() -> Callable[[str], None]:
-    return lambda source_url: None
-
+def no_remote_data(source_url: str) -> None:
+    return None
 
 class _Dialect(click.ParamType):
 
@@ -729,8 +723,8 @@ VALIDATE = click.option(
 )
 NOREMOTEDATA = click.option(
     "--no-remote-data",
-    "make_remote_data_getter",
-    callback=lambda _, __, v: no_remote_data if v else make_remote_data_getter,  # type: ignore[reportUnknownLambdaType]
+    "get_remote_data",
+    callback=lambda _, __, v: no_remote_data if v else get_remote_data,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help="Disable retrieving additional implementation metadata from its repository",
 )
@@ -809,27 +803,13 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-class _MakeRemoteDataGetter(Protocol):
-    def __call__(
-        self,
-    ) -> Callable[[str], None | list[tuple[str, str | int]]]: ...
-
-
 @implementation_subcommand()  # type: ignore[reportArgumentType]
-@click.option(
-    "--format",
-    "-f",
-    "format",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "file", "pretty", "markdown"]),
-)
+@FORMAT
 @NOREMOTEDATA
 async def info(
     implementations: Iterable[Implementation],
-    format: Literal["json", "file", "pretty", "markdown"],
-    make_remote_data_getter: _MakeRemoteDataGetter,
+    format: _F,
+    get_remote_data: Callable[[str], None | list[tuple[str, str | int]]],
 ):
     """
     Retrieve a particular implementation (harness)'s metadata.
@@ -838,12 +818,11 @@ async def info(
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         metadata_dict = dict(metadata)
 
-        remote_data_getter = make_remote_data_getter()
-        repo_activity_data = []
+        repo_activity_data = None
 
         if "source" in metadata_dict:
             source_url = metadata_dict["source"]
-            repo_activity_data = remote_data_getter(source_url)
+            repo_activity_data = get_remote_data(source_url)
 
         if repo_activity_data is not None:
             metadata.extend(repo_activity_data)
@@ -861,9 +840,11 @@ async def info(
 
         match format:
             case "json":
-                click.echo(json.dumps(dict(metadata), indent=2))
-            case "file":
-                click.echo(json.dumps(dict(metadata)))
+                kwargs = {}
+                implementations_len = len(implementations) # type: ignore[reportArgumentType]
+                if sys.stdout.isatty() and implementations_len == 1:
+                    kwargs["indent"] = 2
+                click.echo(json.dumps(dict(metadata), **kwargs)) # type: ignore[reportArgumentType]
             case "pretty":
                 click.echo(
                     "\n".join(

@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
 from textwrap import dedent, indent
+from unittest.mock import Mock
 import asyncio
 import json as _json
 import os
@@ -1058,9 +1060,29 @@ async def test_info_links(links):
     )
     assert stderr == ""
 
+@pytest.fixture()
+def mocked_github_client(mocker):
+    from github3 import GitHub
+    mock = Mock(spec=GitHub)
+    mocker.patch("bowtie._cli.GitHub", return_value=mock)
+    return mock
 
 @pytest.mark.asyncio
-async def test_info_remote_data(envsonschema):
+async def test_info_remote_data(envsonschema, mocked_github_client):
+    mock_repo = Mock()
+    published_at_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    mock_latest_release = Mock(published_at=published_at_date)
+    mock_repo.latest_release.return_value = mock_latest_release
+    mock_commit = Mock(commit=Mock(author={"date": "2023-01-01T00:00:00Z"}))
+    mock_repo.commits.return_value = [mock_commit]
+    mock_repo.subscribers_count = 10
+    mock_repo.stargazers_count = 100
+    mock_pull_requests = [Mock() for _ in range(3)]
+    mock_repo.pull_requests.return_value = mock_pull_requests
+    mock_issues = [Mock() for _ in range(5)]
+    mock_repo.issues.return_value = mock_issues
+    mocked_github_client().repository.return_value = mock_repo # type: ignore[reportUnknownMemberType]
+
     jsonout, stderr = await bowtie(
         "info",
         "--format",
@@ -1070,18 +1092,18 @@ async def test_info_remote_data(envsonschema):
         json=True,
     )
 
-    faked_response = {
+    assert jsonout == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "source": "https://github.com/bowtie-json-schema/bowtie",
-        "last_commit_date": "2020-10-27T01:00:38Z",
-        "last_release_date": "2019-10-15T16:05:23Z",
-        "open_issues_count": 134,
-        "open_prs_count": 29,
-        "stars_count": 2417,
-        "watchers_count": 39,
+        "last_commit_date": "2023-01-01T00:00:00Z",
+        "last_release_date": "2023-01-01T00:00:00Z",
+        "open_issues_count": 5,
+        "open_prs_count": 3,
+        "stars_count": 100,
+        "watchers_count": 10,
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
             "https://json-schema.org/draft/2019-09/schema",
@@ -1090,18 +1112,7 @@ async def test_info_remote_data(envsonschema):
             "http://json-schema.org/draft-04/schema#",
             "http://json-schema.org/draft-03/schema#",
         ],
-    }
-
-    for key in faked_response:
-        assert key in jsonout
-
-    assert isinstance(jsonout["watchers_count"], int)  # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["stars_count"], int)  # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["open_prs_count"], int)  # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["open_issues_count"], int)  # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["last_commit_date"], str)  # type: ignore[reportArgumentType]
-    assert isinstance(jsonout["last_release_date"], str)  # type: ignore[reportArgumentType]
-
+    }, stderr
     assert stderr == ""
 
 

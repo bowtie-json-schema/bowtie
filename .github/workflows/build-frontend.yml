@@ -19,7 +19,7 @@ jobs:
 
       - name: Generate all implementations (harness)'s metadata
         run: |
-          bowtie info $(ls implementations/ | sed 's/^/-i /') --format file  | tee implementations.json
+          bowtie info $(ls implementations/ | sed 's/^/-i /') --format file > implementations.json
 
       - uses: actions/setup-node@v4
         with:
