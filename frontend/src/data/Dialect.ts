@@ -63,6 +63,7 @@ export default class Dialect {
     return await fetch(url)
       .then((response) => {
         if (!response?.ok || !response?.body) {
+          //  If the old report isnt available 
           return null;
         }
         const reader = response.body.getReader();
@@ -84,6 +85,7 @@ export default class Dialect {
         return readChunk();
       })
       .catch(() => {
+        //  If the old report isnt available 
         return null;
       });
   }
