@@ -7,6 +7,11 @@ from bowtie import GITHUB, HOMEPAGE, ORG, REPO
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
+IMPLEMENTATIONS = Path(__file__).parent.parent / "implementations"
+IMPLEMENTATION_COUNT = sum(
+    1 for path in IMPLEMENTATIONS.iterdir() if not path.name.startswith(".")
+)
+
 project = "bowtie"
 author = "Julian Berman"
 copyright = "2022, " + author
@@ -45,6 +50,9 @@ html_theme_options = {"sidebar_hide_name": True}
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
 .. |version| replace:: {version}
+
+.. |implementation-count| replace:: {IMPLEMENTATION_COUNT}
+
 .. |gitpod| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
   :alt: Open in Gitpod
   :target: https://gitpod.io/#{REPO}

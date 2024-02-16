@@ -147,11 +147,15 @@ class Reporter:
     def case_started(self, seq_case: SeqCase):
         self._write(**seq_case.serializable())
         log = self._log.bind(
-            seq=seq_case.seq,
             case=seq_case.case.description,
             schema=seq_case.case.schema,
         )
         return CaseReporter(write=self._write, log=log)
+
+    def failed_fast(self, seq_case: SeqCase):
+        self._log.warning(
+            "Stopping -- the maximum number of unsuccessful tests was reached",
+        )
 
 
 @frozen

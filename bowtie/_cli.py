@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import cache, wraps
@@ -19,7 +20,6 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
-from trogon import tui  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
@@ -39,23 +39,16 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
-    _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Callable,
-        Iterable,
-        Mapping,
-    )
+    from collections.abc import AsyncIterator, Awaitable, Mapping
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._core import DialectRunner
+    from bowtie._core import DialectRunner, MakeValidator
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -77,15 +70,14 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@tui(help="Open a simple interactive TUI for executing Bowtie commands.")
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
     "-L",
     help="How verbose should Bowtie be?",
-    default="info",
-    show_default="info",
+    default="warning",
+    show_default="warning",
     type=click.Choice(
         [
             "debug",
@@ -157,7 +149,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
         async def run(
             image_names: list[str],
             read_timeout_sec: float,
-            make_validator: _MakeValidator = make_validator,
+            make_validator: MakeValidator = make_validator,
             **kw: Any,
         ) -> int:
             exit_code = 0
@@ -572,6 +564,9 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
 
 
 class _Dialect(click.ParamType):
+    """
+    Select a JSON Schema dialect.
+    """
 
     name = "dialect"
 
@@ -600,6 +595,27 @@ class _Dialect(click.ParamType):
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
 
+CaseFilter = Callable[[Iterable[TestCase]], Iterable[TestCase]]
+
+
+class _Filter(click.ParamType):
+    """
+    Filter some test cases by a pattern.
+    """
+
+    name = "filter"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> CaseFilter:
+        return lambda cases: (
+            case for case in cases if fnmatch(case.description, f"*{value}*")
+        )
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -626,7 +642,8 @@ DIALECT = click.option(
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
+    default="",
+    type=_Filter(),
     metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
 )
@@ -706,16 +723,19 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, dialect: Dialect, **kwargs: Any):
+def run(
+    input: Iterable[str],
+    filter: CaseFilter,
+    dialect: Dialect,
+    **kwargs: Any,
+):
     """
     Run a sequence of cases provided on standard input.
     """
-    cases = (
+    cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
     return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
@@ -868,7 +888,7 @@ async def smoke(
 @click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    filter: str,
+    filter: CaseFilter,
     **kwargs: Any,
 ):
     """
@@ -891,16 +911,14 @@ def suite(
               to run a single file directly from a branch which exists in GitHub
 
         * short name versions of the previous URLs (similar to those providable
-          to ``bowtie validate`` via its ``--dialect`` option), e.g.:
+          to `bowtie validate --dialect`, e.g.:
 
             - ``7``, to run the draft 7 tests directly from GitHub (as in the
               URL example above)
 
     """  # noqa: E501
-    cases, dialect, metadata = input
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
-
+    _cases, dialect, metadata = input
+    cases = filter(_cases)
     task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
     return asyncio.run(task)
 
@@ -968,13 +986,11 @@ async def _run(
 
             count = 0
             should_stop = False
-            for count, seq_case in enumerate(  # noqa: B007
-                SeqCase.for_cases(cases),
-                1,
-            ):
+            for count, case in enumerate(cases, 1):
+                seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
                 if set_schema and not isinstance(seq_case.case.schema, bool):
-                    seq_case.case.schema["$schema"] = str(dialect)
+                    seq_case.case.schema["$schema"] = str(dialect.uri)
 
                 responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):
@@ -986,6 +1002,7 @@ async def _run(
                         should_stop = result.unsuccessful().causes_stop
 
                 if should_stop:
+                    reporter.failed_fast(seq_case=seq_case)
                     break
             reporter.finished(count=count, did_fail_fast=should_stop)
             if not count:
@@ -996,7 +1013,7 @@ async def _run(
 @asynccontextmanager
 async def _start(
     image_names: Iterable[str],
-    make_validator: _MakeValidator,
+    make_validator: MakeValidator,
     read_timeout_sec: float,
     **kwargs: Any,
 ):
@@ -1057,10 +1074,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def _redirect_structlog(
-    log_level: int = logging.INFO,
-    file: TextIO = sys.stderr,
-):
+def _redirect_structlog(log_level: int, file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """

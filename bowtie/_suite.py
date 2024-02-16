@@ -137,20 +137,27 @@ def remotes_in(
     path: Path,
     dialect: _core.Dialect,
 ) -> Iterable[tuple[URL, Any]]:
+    # This messy logic is because the test suite is terrible at indicating
+    # what remotes are needed for what drafts, and mixes in schemas which
+    # have no $schema and which are invalid under earlier versions, in with
+    # other schemas which are needed for tests.
+    #
     # FIXME: #40: for draft-next support
+
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
 
         relative = str(_relative_to(each, path)).replace("\\", "/")
 
-        # This messy logic is because the test suite is terrible at indicating
-        # what remotes are needed for what drafts, and mixes in schemas which
-        # have no $schema and which are invalid under earlier versions, in with
-        # other schemas which are needed for tests.
         if (
-            "$schema" in schema and schema["$schema"] != str(dialect.uri)
-        ) or (  # invalid boolean schema
-            not dialect.has_boolean_schemas and relative == "tree.json"
+            ("$schema" in schema and schema["$schema"] != str(dialect.uri))
+            or (  # draft<NotThisDialect>/*.json
+                relative.startswith("draft")
+                and not relative.startswith(dialect.short_name)
+            )
+            or (  # invalid boolean schema
+                not dialect.has_boolean_schemas and relative == "tree.json"
+            )
         ):
             continue
         yield SUITE_REMOTE_BASE_URI / relative, schema

@@ -252,7 +252,7 @@ with_versions = shellplementation(
     read
     printf '{"ok": true}\n'
     read
-    printf '{"seq": 0, "results": [{"valid": true}]}\n'
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 links = shellplementation(
@@ -810,7 +810,7 @@ async def test_filter(envsonschema):
     assert results == [
         {"bowtie-integration-tests/envsonschema": TestResult.VALID},
     ], stderr
-    assert stderr != ""
+    assert stderr == ""
 
 
 @pytest.mark.asyncio

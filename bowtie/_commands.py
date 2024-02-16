@@ -17,13 +17,7 @@ from attrs import asdict, field, frozen
 from bowtie import HOMEPAGE, exceptions
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        Awaitable,
-        Callable,
-        Iterable,
-        Mapping,
-        Sequence,
-    )
+    from collections.abc import Awaitable, Callable, Mapping, Sequence
 
     from structlog.stdlib import BoundLogger
 
@@ -72,10 +66,6 @@ class Unsuccessful:
 class SeqCase:
     seq: Seq
     case: TestCase
-
-    @classmethod
-    def for_cases(cls, cases: Iterable[TestCase]) -> Iterable[SeqCase]:
-        return (cls(seq=i, case=case) for i, case in enumerate(cases))
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
         run = Run(seq=self.seq, case=self.case.without_expected_results())

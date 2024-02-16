@@ -112,6 +112,7 @@ class Dialect:
         shortName: str,
         uri: str,
         aliases: Iterable[str] = (),
+        hasBooleanSchemas: bool = True,
         **_: Any,
     ) -> Self:
 
@@ -121,6 +122,7 @@ class Dialect:
             short_name=shortName,
             first_publication_date=date.fromisoformat(firstPublicationDate),
             aliases=frozenset(aliases),
+            has_boolean_schemas=hasBooleanSchemas,
         )
 
     def current_dialect_resource(self) -> SchemaResource:
@@ -181,7 +183,7 @@ class StartupFailed(Exception):
 R = TypeVar("R")
 
 
-class _MakeValidator(Protocol):
+class MakeValidator(Protocol):
     def __call__(
         self,
         *more_schemas: SchemaResource,
@@ -293,7 +295,7 @@ class HarnessClient:
 
     _connection: Connection = field(alias="connection")
 
-    _make_validator: _MakeValidator = field(alias="make_validator")
+    _make_validator: MakeValidator = field(alias="make_validator")
     _resources_for_validation: Sequence[SchemaResource] = field(
         default=(),
         alias="resources_for_validation",
@@ -459,8 +461,8 @@ class Implementation:
         Run a collection of test cases under the given dialect.
         """
         runner = await self.start_speaking(dialect)
-        for seq_case in SeqCase.for_cases(cases):
-            yield seq_case.case, await seq_case.run(runner=runner)
+        for i, case in enumerate(cases, 1):
+            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
 
     def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(
@@ -533,7 +535,7 @@ class Test:
 @frozen
 class Group:
     description: str
-    children: Sequence[ChildTests]
+    children: Sequence[Group | LeafGroup]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
@@ -545,9 +547,6 @@ class LeafGroup:
     children: Sequence[Test]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
-
-
-ChildTests = Group | LeafGroup
 
 
 @frozen
@@ -569,7 +568,7 @@ class TestCase:
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
             default_specification=specification_with(
-                str(dialect),
+                str(dialect.uri),
                 default=Specification.OPAQUE,
             ),
         )

@@ -29,7 +29,7 @@ const ImplementationRow = ({
     >
       <tr className={implementation.isNew ? "table-success" : ""}>
         <th
-          className="table-implementation-name"
+          className="table-implementation-name align-middle p-0"
           onClick={() => navigate(`/implementations/${implementationPath}`)}
           scope="row"
         >
@@ -47,7 +47,7 @@ const ImplementationRow = ({
             {mapLanguage(implementation.metadata.language)}
           </small>
         </th>
-        <td>
+        <td className="align-middle">
           <small
             className={
               "font-monospace " +
@@ -58,9 +58,9 @@ const ImplementationRow = ({
           </small>
         </td>
 
-        <td className="text-center">{implementation.erroredCases}</td>
-        <td className="text-center">{implementation.skippedTests}</td>
-        <td className="text-center details-required">
+        <td className="text-center align-middle">{implementation.erroredCases}</td>
+        <td className="text-center align-middle">{implementation.skippedTests}</td>
+        <td className="text-center align-middle details-required">
           {implementation.failedTests + implementation.erroredTests}
           <div className="hover-details text-center">
             <p>
@@ -72,7 +72,7 @@ const ImplementationRow = ({
           </div>
         </td>
 
-        <td>
+        <td className="align-middle p-0">
           {implementation.failedTests +
             implementation.erroredTests +
             implementation.skippedTests >
