@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import cache, wraps
@@ -42,13 +43,7 @@ from bowtie._core import (
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Callable,
-        Iterable,
-        Mapping,
-    )
+    from collections.abc import AsyncIterator, Awaitable, Mapping
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
@@ -569,6 +564,9 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
 
 
 class _Dialect(click.ParamType):
+    """
+    Select a JSON Schema dialect.
+    """
 
     name = "dialect"
 
@@ -597,6 +595,27 @@ class _Dialect(click.ParamType):
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
 
+CaseFilter = Callable[[Iterable[TestCase]], Iterable[TestCase]]
+
+
+class _Filter(click.ParamType):
+    """
+    Filter some test cases by a pattern.
+    """
+
+    name = "filter"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> CaseFilter:
+        return lambda cases: (
+            case for case in cases if fnmatch(case.description, f"*{value}*")
+        )
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -623,7 +642,8 @@ DIALECT = click.option(
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
+    default="",
+    type=_Filter(),
     metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
 )
@@ -703,16 +723,19 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, dialect: Dialect, **kwargs: Any):
+def run(
+    input: Iterable[str],
+    filter: CaseFilter,
+    dialect: Dialect,
+    **kwargs: Any,
+):
     """
     Run a sequence of cases provided on standard input.
     """
-    cases = (
+    cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
     return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
@@ -865,7 +888,7 @@ async def smoke(
 @click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    filter: str,
+    filter: CaseFilter,
     **kwargs: Any,
 ):
     """
@@ -894,10 +917,8 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    cases, dialect, metadata = input
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
-
+    _cases, dialect, metadata = input
+    cases = filter(_cases)
     task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
     return asyncio.run(task)
 
