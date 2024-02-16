@@ -609,8 +609,10 @@ def get_remote_data(source_url: str) -> list[tuple[str, str | int]]:
             ("open_issues_count", open_issues_count),
         ]
 
+
 def no_remote_data(source_url: str) -> None:
     return None
+
 
 class _Dialect(click.ParamType):
 
@@ -841,10 +843,10 @@ async def info(
         match format:
             case "json":
                 kwargs = {}
-                implementations_len = len(implementations) # type: ignore[reportArgumentType]
+                implementations_len = len(implementations)  # type: ignore[reportArgumentType]
                 if sys.stdout.isatty() and implementations_len == 1:
                     kwargs["indent"] = 2
-                click.echo(json.dumps(dict(metadata), **kwargs)) # type: ignore[reportArgumentType]
+                click.echo(json.dumps(dict(metadata), **kwargs))  # type: ignore[reportArgumentType]
             case "pretty":
                 click.echo(
                     "\n".join(

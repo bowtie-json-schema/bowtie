@@ -1060,12 +1060,15 @@ async def test_info_links(links):
     )
     assert stderr == ""
 
+
 @pytest.fixture()
 def mocked_github_client(mocker):
     from github3 import GitHub
+
     mock = Mock(spec=GitHub)
     mocker.patch("bowtie._cli.GitHub", return_value=mock)
     return mock
+
 
 @pytest.mark.asyncio
 async def test_info_remote_data(envsonschema, mocked_github_client):
@@ -1081,7 +1084,7 @@ async def test_info_remote_data(envsonschema, mocked_github_client):
     mock_repo.pull_requests.return_value = mock_pull_requests
     mock_issues = [Mock() for _ in range(5)]
     mock_repo.issues.return_value = mock_issues
-    mocked_github_client().repository.return_value = mock_repo # type: ignore[reportUnknownMemberType]
+    mocked_github_client().repository.return_value = mock_repo  # type: ignore[reportUnknownMemberType]
 
     jsonout, stderr = await bowtie(
         "info",
