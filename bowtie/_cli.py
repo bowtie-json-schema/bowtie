@@ -972,7 +972,7 @@ async def _run(
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
                 if set_schema and not isinstance(seq_case.case.schema, bool):
-                    seq_case.case.schema["$schema"] = str(dialect)
+                    seq_case.case.schema["$schema"] = str(dialect.uri)
 
                 responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):

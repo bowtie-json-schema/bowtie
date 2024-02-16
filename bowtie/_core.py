@@ -566,7 +566,7 @@ class TestCase:
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
             default_specification=specification_with(
-                str(dialect),
+                str(dialect.uri),
                 default=Specification.OPAQUE,
             ),
         )
