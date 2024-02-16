@@ -147,7 +147,6 @@ class Reporter:
     def case_started(self, seq_case: SeqCase):
         self._write(**seq_case.serializable())
         log = self._log.bind(
-            seq=seq_case.seq,
             case=seq_case.case.description,
             schema=seq_case.case.schema,
         )
