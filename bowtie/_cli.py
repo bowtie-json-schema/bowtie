@@ -76,8 +76,8 @@ _F = Literal["json", "pretty", "markdown"]
     "--log-level",
     "-L",
     help="How verbose should Bowtie be?",
-    default="info",
-    show_default="info",
+    default="warning",
+    show_default="warning",
     type=click.Choice(
         [
             "debug",
@@ -1073,10 +1073,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def _redirect_structlog(
-    log_level: int = logging.INFO,
-    file: TextIO = sys.stderr,
-):
+def _redirect_structlog(log_level: int, file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """
