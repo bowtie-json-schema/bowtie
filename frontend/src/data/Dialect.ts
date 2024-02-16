@@ -54,26 +54,27 @@ export default class Dialect {
     const prevReportLines = await this.fetchReportMetadata(prevVersionUrl);
     if (prevReportLines) {
       const prevReportMetaData = JSON.parse(prevReportLines) as RunInfo;
-      curReport = this.compareReportToOld(curReport, prevReportMetaData)
+      curReport = this.compareReportToOld(curReport, prevReportMetaData);
     }
     return curReport;
   }
 
   async fetchReportMetadata(url: string) {
     return await fetch(url)
-      .then(response => {
+      .then((response) => {
         if (!response.ok || !response || !response.body) {
           return null;
         }
         const reader = response.body.getReader();
-        let buffer = '';
+        let buffer = "";
         const readChunk = async (): Promise<string | null> => {
           return reader.read().then(({ value }) => {
             const chunk = new TextDecoder("utf-8").decode(value);
-            const newlineIndex = chunk.indexOf('\n');
+            const newlineIndex = chunk.indexOf("\n");
             if (newlineIndex !== -1) {
-              const dataUntilNewline = buffer + chunk.substring(0, newlineIndex + 1);
-              return dataUntilNewline
+              const dataUntilNewline =
+                buffer + chunk.substring(0, newlineIndex + 1);
+              return dataUntilNewline;
             } else {
               buffer += chunk;
             }
@@ -81,17 +82,18 @@ export default class Dialect {
           });
         };
         return readChunk();
-      }).catch(()=>{
+      })
+      .catch(() => {
         return null;
       });
-  };
+  }
 
   compareReportToOld(curReport: ReportData, prevReportMetaData: RunInfo) {
     curReport.implementations.forEach((value, key) => {
-      value.isNew = key in prevReportMetaData.implementations ? false: true;
+      value.isNew = key in prevReportMetaData.implementations ? false : true;
     });
     return curReport;
-  };
+  }
 
   static known(): Iterable<Dialect> {
     return Dialect.all.values();
