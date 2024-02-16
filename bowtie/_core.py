@@ -533,7 +533,7 @@ class Test:
 @frozen
 class Group:
     description: str
-    children: Sequence[ChildTests]
+    children: Sequence[Group | LeafGroup]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
@@ -545,9 +545,6 @@ class LeafGroup:
     children: Sequence[Test]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
-
-
-ChildTests = Group | LeafGroup
 
 
 @frozen
