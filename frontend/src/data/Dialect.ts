@@ -1,6 +1,6 @@
 import data from "../../../data/dialects.json";
 import URI from "urijs";
-import { parseReportWithDiff } from "./parseReportData";
+import { parseReportData, RunInfo, ReportData } from "./parseReportData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -43,20 +43,55 @@ export default class Dialect {
       .split(/\r?\n/)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
 
+    let curReport = parseReportData(curReportLines);
+
     const prevVersionUrl = baseURI
       .clone()
       .directory("previous")
       .filename(this.path)
       .suffix("json")
       .href();
-    const response2 = await fetch(prevVersionUrl);
-    const jsonl2 = await response2.text();
-    const prevReportLines = jsonl2
-      .trim()
-      .split(/\r?\n/)
-      .map((line) => JSON.parse(line) as Record<string, unknown>);
-    return parseReportWithDiff(curReportLines, prevReportLines);
+    const prevReportLines = await this.fetchReportMetadata(prevVersionUrl);
+    if (prevReportLines) {
+      const prevReportMetaData = JSON.parse(prevReportLines) as RunInfo;
+      curReport = this.compareReportToOld(curReport, prevReportMetaData)
+    }
+    return curReport;
   }
+
+  async fetchReportMetadata(url: string) {
+    return await fetch(url)
+      .then(response => {
+        if (!response.ok || !response || !response.body) {
+          return null;
+        }
+        const reader = response.body.getReader();
+        let buffer = '';
+        const readChunk = async (): Promise<string | null> => {
+          return reader.read().then(({ value }) => {
+            const chunk = new TextDecoder("utf-8").decode(value);
+            const newlineIndex = chunk.indexOf('\n');
+            if (newlineIndex !== -1) {
+              const dataUntilNewline = buffer + chunk.substring(0, newlineIndex + 1);
+              return dataUntilNewline
+            } else {
+              buffer += chunk;
+            }
+            return readChunk();
+          });
+        };
+        return readChunk();
+      }).catch(()=>{
+        return null;
+      });
+  };
+
+  compareReportToOld(curReport: ReportData, prevReportMetaData: RunInfo) {
+    curReport.implementations.forEach((value, key) => {
+      value.isNew = key in prevReportMetaData.implementations ? false: true;
+    });
+    return curReport;
+  };
 
   static known(): Iterable<Dialect> {
     return Dialect.all.values();
