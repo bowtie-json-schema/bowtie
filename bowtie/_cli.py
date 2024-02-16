@@ -19,7 +19,6 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
-from trogon import tui  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
@@ -76,7 +75,6 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@tui(help="Open a simple interactive TUI for executing Bowtie commands.")
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
