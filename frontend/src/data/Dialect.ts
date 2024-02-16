@@ -62,7 +62,7 @@ export default class Dialect {
   async fetchReportMetadata(url: string) {
     return await fetch(url)
       .then((response) => {
-        if (!response.ok || !response || !response.body) {
+        if (!response?.ok || !response?.body) {
           return null;
         }
         const reader = response.body.getReader();
