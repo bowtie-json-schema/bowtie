@@ -810,7 +810,7 @@ async def test_filter(envsonschema):
     assert results == [
         {"bowtie-integration-tests/envsonschema": TestResult.VALID},
     ], stderr
-    assert stderr != ""
+    assert stderr == ""
 
 
 @pytest.mark.asyncio

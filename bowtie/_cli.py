@@ -1002,6 +1002,7 @@ async def _run(
                         should_stop = result.unsuccessful().causes_stop
 
                 if should_stop:
+                    reporter.failed_fast(seq_case=seq_case)
                     break
             reporter.finished(count=count, did_fail_fast=should_stop)
             if not count:

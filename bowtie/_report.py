@@ -153,6 +153,11 @@ class Reporter:
         )
         return CaseReporter(write=self._write, log=log)
 
+    def failed_fast(self, seq_case: SeqCase):
+        self._log.warning(
+            "Stopping -- the maximum number of unsuccessful tests was reached",
+        )
+
 
 @frozen
 class CaseReporter:
