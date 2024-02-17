@@ -252,7 +252,7 @@ class Connection:
             except _ClosedStream as err:
                 stderr: list[str] = await err.container.log(stderr=True)  # type: ignore[reportUnknownVariableType]
                 if stderr:
-                    raise GotStderr("\n".join(stderr).encode())  # type: ignore[reportUnknownVariableType]
+                    raise GotStderr("".join(stderr).encode())  # type: ignore[reportUnknownVariableType]
                 return
 
             try:

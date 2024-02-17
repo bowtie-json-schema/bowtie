@@ -164,12 +164,22 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                 for each in implementations:
                     try:
                         implementation = await each
-                    except StartupFailed as error:
+                    except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} failed to start",
-                            file=sys.stderr,
+                        error = DiagnosticError(
+                            code="startup-failed",
+                            message=f"{err.name!r} failed to start.",
+                            causes=["stderr appears below"],
+                            hint_stmt=(
+                                "If you are developing a new harness, "
+                                "check if stderr shown above contains harness-"
+                                "specific information which can help. "
+                                "Otherwise, you may have an issue with your "
+                                "local container setup (podman, docker, etc.)."
+                            ),
                         )
+                        stderr = panel.Panel(err.stderr, title="stderr")
+                        rich.print(error, stderr, file=sys.stderr)
                         continue
                     except NoSuchImplementation as error:
                         exit_code |= _EX_CONFIG
