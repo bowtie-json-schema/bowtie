@@ -37,7 +37,7 @@ export const DialectReportView = ({
   return (
     <div>
       <div className="container p-4">
-        <BowtieInfoSection/>
+        <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
