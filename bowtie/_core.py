@@ -132,7 +132,7 @@ class Dialect:
 
         return DRAFT202012.create_resource(
             {
-                # Should match the magic value used for `schema` in `schemas/io/`
+                # Should match the magic value for `schema` in `schemas/io/`
                 "$id": "tag:bowtie.report,2023:ihop:__dialect__",
                 "$ref": str(self.uri),
             },
