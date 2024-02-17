@@ -9,9 +9,7 @@ const BowtieInfoSection = () => {
               <td>
                 Bowtie is tool for understanding and comparing implementations
                 of the &nbsp;
-                <a
-                  href={"https://json-schema.org/"}
-                >
+                <a href={"https://json-schema.org/"}>
                   {"JSON Schema specification"}
                 </a>
                 &nbsp; across all programming languages. The report below uses
@@ -26,12 +24,7 @@ const BowtieInfoSection = () => {
                 &nbsp; to display bugs or functionality gaps in implementations.
                 You can also use Bowtie to get this information about your own
                 schemas. You can find out how in its &nbsp;
-                <a
-                  href={"https://docs.bowtie.report/"}
-                >
-                  {"documentation"}
-                </a>
-                .
+                <a href={"https://docs.bowtie.report/"}>{"documentation"}</a>.
               </td>
             </tr>
           </thead>
