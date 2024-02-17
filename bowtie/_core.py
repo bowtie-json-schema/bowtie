@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Protocol, TypeVar
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
+from diagnostic import DiagnosticError
 from referencing import Specification
 from referencing.jsonschema import (
     EMPTY_REGISTRY,
@@ -147,6 +148,19 @@ class NoSuchImplementation(Exception):
 
     name: str
 
+    def diagnostic(self):
+        return DiagnosticError(
+            code="no-such-implementation",
+            message=f"{self.name!r} is not a known Bowtie implementation.",
+            causes=[],
+            hint_stmt=(
+                "Check Bowtie's supported list of implementations "
+                "to ensure you have the name correct. "
+                "If you are developing a new harness, ensure you have "
+                "built and tagged it properly."
+            ),
+        )
+
 
 @frozen
 class GotStderr(Exception):
@@ -178,6 +192,19 @@ class StartupFailed(Exception):
         if self.stderr:
             return f"{self.name}'s stderr contained: {self.stderr}"
         return self.name
+
+    def diagnostic(self):
+        return DiagnosticError(
+            code="startup-failed",
+            message=f"{self.name!r} failed to start.",
+            causes=[],
+            hint_stmt=(
+                "If you are developing a new harness, check if stderr "
+                "(shown below) contains harness-specific information "
+                "which can help. Otherwise, you may have an issue with your "
+                "local container setup (podman, docker, etc.)."
+            ),
+        )
 
 
 R = TypeVar("R")

@@ -161,33 +161,17 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
             running: list[Implementation] = []
             async with start as implementations:
-                for each in implementations:
+                for each in implementations:  # FIXME: respect --quiet
                     try:
                         implementation = await each
                     except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        error = DiagnosticError(
-                            code="startup-failed",
-                            message=f"{err.name!r} failed to start.",
-                            causes=["stderr appears below"],
-                            hint_stmt=(
-                                "If you are developing a new harness, "
-                                "check if stderr shown above contains harness-"
-                                "specific information which can help. "
-                                "Otherwise, you may have an issue with your "
-                                "local container setup (podman, docker, etc.)."
-                            ),
-                        )
                         stderr = panel.Panel(err.stderr, title="stderr")
-                        rich.print(error, stderr, file=sys.stderr)
+                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
                         continue
-                    except NoSuchImplementation as error:
+                    except NoSuchImplementation as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} is not a "
-                            "known Bowtie implementation.",
-                            file=sys.stderr,
-                        )
+                        rich.print(err.diagnostic(), file=sys.stderr)
                         continue
 
                     running.append(implementation)

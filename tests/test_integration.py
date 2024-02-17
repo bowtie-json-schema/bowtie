@@ -1470,10 +1470,7 @@ async def test_no_such_image(tmp_path):
         "no-such-image",
         exit_code=-1,
     )
-    assert (
-        "'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
-        in stderr
-    ), stderr
+    assert "/no-such-image' is not a known" in stderr, stderr
 
     foo = tmp_path / "foo.json"
     foo.write_text("{}")
