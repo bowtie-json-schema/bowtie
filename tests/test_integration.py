@@ -167,6 +167,12 @@ succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
 )
+fail_immediately = shellplementation(
+    name="fail_immediately",
+    contents=r"""
+    printf 'BOOM!\n' >&2
+    """,
+)
 fail_on_start = shellplementation(
     name="fail_on_start",
     contents=r"""
@@ -224,8 +230,8 @@ wrong_version = shellplementation(
     read >&2
     """,  # noqa: E501
 )
-hit_the_network = shellplementation(
-    name="hit_the_network",
+hit_the_network_once = shellplementation(
+    name="hit_the_network_once",
     contents=r"""
     read
     printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
@@ -233,6 +239,8 @@ hit_the_network = shellplementation(
     printf '{"ok": true}\n'
     read
     wget --timeout=1 -O - http://example.com >&2
+    read
+    printf '{"seq": 2, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 missing_homepage = shellplementation(
@@ -543,6 +551,33 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
 
 @pytest.mark.asyncio
+async def test_it_handles_immediately_broken_implementations(
+    fail_immediately,
+    envsonschema,
+):
+    async with run(
+        "-i",
+        fail_immediately,
+        "-i",
+        envsonschema,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert "startup failed" in stderr.lower(), stderr
+    assert "BOOM!" in stderr, stderr
+    assert results == [
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+    ], stderr
+
+
+@pytest.mark.asyncio
 async def test_it_handles_broken_start_implementations(
     fail_on_start,
     envsonschema,
@@ -706,26 +741,28 @@ async def test_it_preserves_all_metadata(with_versions):
 
 
 @pytest.mark.asyncio
-async def test_it_prevents_network_access(hit_the_network):
+async def test_it_prevents_network_access(hit_the_network_once):
     """
     Don't uselessly "run" tests on no implementations.
     """
     async with run(
         "-i",
-        hit_the_network,
+        hit_the_network_once,
         "--dialect",
         "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             """,  # noqa: E501
         )
 
     assert results == [
         {
-            "bowtie-integration-tests/hit_the_network": ErroredTest.in_errored_case(),
+            "bowtie-integration-tests/hit_the_network_once": ErroredTest.in_errored_case(),
         },
+        {"bowtie-integration-tests/hit_the_network_once": TestResult.VALID},
     ], stderr
     assert "bad address" in stderr.lower(), stderr
 

@@ -461,6 +461,7 @@ class Implementation:
         Run a collection of test cases under the given dialect.
         """
         runner = await self.start_speaking(dialect)
+
         for i, case in enumerate(cases, 1):
             yield case, await SeqCase(seq=i, case=case).run(runner=runner)
 

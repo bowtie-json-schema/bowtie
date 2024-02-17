@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import asyncio
 import json
 
-from attrs import field, mutable
+from attrs import field, frozen, mutable
 import aiodocker.exceptions
 
 from bowtie._core import (
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from bowtie._commands import Message
 
 
+@frozen
 class _ClosedStream(Exception):
     """
     The stream is closed, and we tried to send something on it.
@@ -42,6 +43,8 @@ class _ClosedStream(Exception):
     This exception should never bubble out of this module, it should be handled
     by the connection.
     """
+
+    container: aiodocker.containers.DockerContainer
 
 
 @mutable
@@ -79,28 +82,38 @@ class Stream:
         try:  # aiodocker doesn't appear to properly report stream closure
             await self._stream.write_in(message.encode())
         except aiodocker.exceptions.DockerError as err:
-            raise _ClosedStream(self) from err
+            raise _ClosedStream(self._container) from err
         except AttributeError:
-            raise _ClosedStream(self) from None
+            raise _ClosedStream(self._container) from None
 
     async def receive(self) -> str:
         if self._buffer:
             return self._buffer.popleft().decode()
 
         while True:
-            message = await self._read_with_timeout()
+            try:
+                message = await self._read_with_timeout()
+            except asyncio.exceptions.TimeoutError:
+                info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
+                if not info["State"]["Running"]:
+                    raise _ClosedStream(self._container)
+                raise
+
             if message is not None:
                 break
             info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
-            if info["State"]["FinishedAt"]:
-                raise _ClosedStream(self)
+            if not info["State"]["Running"]:
+                raise _ClosedStream(self._container)
 
         if message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
             data: list[bytes] = []
 
             while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
                 data.append(message.data)  # type: ignore[reportUnknownMemberType]
-                message = await self._read_with_timeout()
+                try:
+                    message = await self._read_with_timeout()
+                except asyncio.exceptions.TimeoutError:
+                    message = None
                 if message is None:
                     raise GotStderr(b"".join(data))
 
@@ -236,7 +249,10 @@ class Connection:
                 response = await self._stream.receive()
             except asyncio.exceptions.TimeoutError:
                 continue
-            except _ClosedStream:
+            except _ClosedStream as err:
+                stderr: list[str] = await err.container.log(stderr=True)  # type: ignore[reportUnknownVariableType]
+                if stderr:
+                    raise GotStderr("\n".join(stderr).encode())  # type: ignore[reportUnknownVariableType]
                 return
 
             try:
