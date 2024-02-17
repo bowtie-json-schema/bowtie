@@ -15,7 +15,7 @@
     "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.1",
-    "react-bootstrap-icons": "^1.10.3",
+    "react-bootstrap-icons": "^1.11.3",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",
     "urijs": "^1.19.11"
