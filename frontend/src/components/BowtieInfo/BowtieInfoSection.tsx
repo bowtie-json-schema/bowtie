@@ -12,7 +12,7 @@ const BowtieInfoSection = () => {
                 <a
                   href={"https://json-schema.org/"}
                   target={"_blank"}
-                  rel={"noopener"}
+                  rel={"noopener noreferrer"}
                 >
                   {"JSON Schema specification"}
                 </a>{" "}
@@ -23,7 +23,7 @@ const BowtieInfoSection = () => {
                     "https://github.com/json-schema-org/JSON-Schema-Test-Suite"
                   }
                   target={"_blank"}
-                  rel={"noopener"}
+                  rel={"noopener noreferrer"}
                 >
                   {"official JSON Schema Test Suite"}
                 </a>{" "}
@@ -33,7 +33,7 @@ const BowtieInfoSection = () => {
                 <a
                   href={"https://docs.bowtie.report/"}
                   target={"_blank"}
-                  rel={"noopener"}
+                  rel={"noopener noreferrer"}
                 >
                   {"documentation"}
                 </a>
