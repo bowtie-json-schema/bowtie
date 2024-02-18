@@ -1,0 +1,9 @@
+{
+  "name": "bowtie-jsonschema",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "jsonschema": "^1.4.0",
+    "json-metaschema": "^1.2.0"
+  }
+}

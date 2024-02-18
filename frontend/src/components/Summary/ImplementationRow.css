@@ -47,3 +47,7 @@
   color: rgb(112, 112, 112);
   font-size: 0.8rem;
 }
+
+.table-implementation-name:hover {
+  cursor: pointer;
+}

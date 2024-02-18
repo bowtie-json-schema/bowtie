@@ -86,6 +86,7 @@ export const DragAndDrop = () => {
   return (
     <div>
       <div aria-live="polite" aria-atomic="true"></div>
+
       <div className="card-body d-grid justify-content-center">
         <form
           className="form-file-upload"
@@ -108,7 +109,24 @@ export const DragAndDrop = () => {
             className={dragActive ? "drag-active" : ""}
             style={{ backgroundColor: `${invalidFile ? "#f00b0b39" : ""}` }}
           >
-            <div className="text-center">
+            <div className="flex-div text-center">
+              <p>
+                You can generate a report by running{" "}
+                <a href="https://docs.bowtie.report/en/stable/cli/">
+                  Bowtie&apos;s CLI
+                </a>{" "}
+                via e.g.:
+              </p>
+              <p>
+                <kbd>{`bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7/refRemote.json > output`}</kbd>
+              </p>
+              <p>
+                which will run the &apos;refRemote.json&apos; test file from the
+                official suite against the specified implementation, emitting a
+                file called &apos;output&apos; which you can then upload here!
+              </p>
+            </div>
+            <div className="flex-div text-center">
               <CloudArrowUpFill size={80} />
               {invalidFile ? (
                 <h5 className={"pt-3 text-danger"}>

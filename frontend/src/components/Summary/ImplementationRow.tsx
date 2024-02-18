@@ -2,7 +2,7 @@ import "./ImplementationRow.css";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Case, ImplementationData } from "../../data/parseReportData";
 
 const ImplementationRow = ({
@@ -15,12 +15,16 @@ const ImplementationRow = ({
   index: number;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-
+  const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementation);
 
   return (
     <tr>
-      <th scope="row">
+      <th
+        className="table-implementation-name align-middle p-0"
+        onClick={() => navigate(`/implementations/${implementationPath}`)}
+        scope="row"
+      >
         <NavLink to={`/implementations/${implementationPath}`}>
           {implementation.metadata.name}
         </NavLink>
@@ -28,15 +32,19 @@ const ImplementationRow = ({
           {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
-      <td>
+      <td className="align-middle">
         <small className="font-monospace text-muted">
           {implementation.metadata.version ?? ""}
         </small>
       </td>
 
-      <td className="text-center">{implementation.erroredCases}</td>
-      <td className="text-center">{implementation.skippedTests}</td>
-      <td className="text-center details-required">
+      <td className="text-center align-middle">
+        {implementation.erroredCases}
+      </td>
+      <td className="text-center align-middle">
+        {implementation.skippedTests}
+      </td>
+      <td className="text-center align-middle details-required">
         {implementation.failedTests + implementation.erroredTests}
         <div className="hover-details text-center">
           <p>
@@ -48,14 +56,19 @@ const ImplementationRow = ({
         </div>
       </td>
 
-      <td>
-        <button
-          type="button"
-          className="btn btn-sm btn-primary"
-          onClick={() => setShowDetails(true)}
-        >
-          Details
-        </button>
+      <td className="align-middle p-0">
+        {implementation.failedTests +
+          implementation.erroredTests +
+          implementation.skippedTests >
+          0 && (
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => setShowDetails(true)}
+          >
+            Details
+          </button>
+        )}
       </td>
       <DetailsButtonModal
         show={showDetails}

@@ -37,6 +37,7 @@
     "shortName": "draft4",
     "prettyName": "Draft 4",
     "firstPublicationDate": "2013-01-31",
+    "hasBooleanSchemas": false,
     "aliases": ["4"]
   },
   {
@@ -45,6 +46,7 @@
     "shortName": "draft3",
     "prettyName": "Draft 3",
     "firstPublicationDate": "2010-11-22",
+    "hasBooleanSchemas": false,
     "aliases": ["3"]
   }
 ]

@@ -1,4 +1,5 @@
 import CasesSection from "./components/Cases/CasesSection";
+import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
@@ -66,6 +67,7 @@ export const DialectReportView = ({
   return (
     <div>
       <div className="container p-4">
+        <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.filteredReportData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData.filteredReportData} />

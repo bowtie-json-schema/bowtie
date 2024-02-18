@@ -15,7 +15,7 @@ import pytest
 import pytest_asyncio
 
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import DRAFT7, Test, TestCase
+from bowtie._core import Dialect, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -25,6 +25,10 @@ Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
 
 HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
+
+
+def tag(name: str):
+    return f"bowtie-integration-tests/{name}"
 
 
 async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
@@ -78,14 +82,14 @@ def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
         images = docker.images
-        tag = f"bowtie-integration-tests/{name}"
-        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=tag)
+        t = tag(name)
+        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=t)
         try:
-            await docker.images.inspect(tag)
+            await docker.images.inspect(t)
         except DockerError:
             pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
-        yield tag
-        await images.delete(name=tag, force=True)
+        yield t
+        await images.delete(name=t, force=True)
 
     return _image
 
@@ -167,6 +171,12 @@ succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
 )
+fail_immediately = shellplementation(
+    name="fail_immediately",
+    contents=r"""
+    printf 'BOOM!\n' >&2
+    """,
+)
 fail_on_start = shellplementation(
     name="fail_on_start",
     contents=r"""
@@ -178,7 +188,7 @@ fail_on_dialect = shellplementation(
     name="fail_on_dialect",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -187,7 +197,7 @@ fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -198,7 +208,7 @@ nonjson_on_run = shellplementation(
     name="nonjson_on_run",
     contents=r"""
     read
-    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -209,7 +219,7 @@ wrong_seq = shellplementation(
     name="wrong_seq",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": "true"}\n'
     read
@@ -220,19 +230,21 @@ wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
     read
-    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
     read >&2
     """,  # noqa: E501
 )
-hit_the_network = shellplementation(
-    name="hit_the_network",
+hit_the_network_once = shellplementation(
+    name="hit_the_network_once",
     contents=r"""
     read
-    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["urn:foo"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     read
     wget --timeout=1 -O - http://example.com >&2
+    read
+    printf '{"seq": 2, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 missing_homepage = shellplementation(
@@ -252,14 +264,25 @@ with_versions = shellplementation(
     read
     printf '{"ok": true}\n'
     read
-    printf '{"seq": 0, "results": [{"valid": true}]}\n'
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 links = shellplementation(
     name="links",
     contents=r"""
     read
-    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["urn:example"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
+only_draft3 = shellplementation(
+    name="only_draft3",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "only-draft3", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-03/schema#"]}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
     read
@@ -306,7 +329,7 @@ async def test_validating_on_both_sides(lintsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/lintsonschema": TestResult.VALID},
+        {tag("lintsonschema"): TestResult.VALID},
     ], stderr
 
 
@@ -320,7 +343,7 @@ async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
         results, stderr = await send()
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
     ], stderr
 
 
@@ -370,7 +393,7 @@ async def test_suite(tmp_path, envsonschema):
         valid=False,
     )
     assert (report.metadata.dialect, list(report.cases_with_results())) == (
-        DRAFT7,
+        Dialect.by_short_name()["draft7"],
         [
             (
                 TestCase(
@@ -382,13 +405,13 @@ async def test_suite(tmp_path, envsonschema):
                     (
                         one,
                         {
-                            "bowtie-integration-tests/envsonschema": TestResult.INVALID,
+                            tag("envsonschema"): TestResult.INVALID,
                         },
                     ),
                     (
                         two,
                         {
-                            "bowtie-integration-tests/envsonschema": TestResult.INVALID,
+                            tag("envsonschema"): TestResult.INVALID,
                         },
                     ),
                 ],
@@ -407,7 +430,7 @@ async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+        {tag("envsonschema"): TestResult.VALID},
     ], stderr
 
 
@@ -421,13 +444,44 @@ async def test_no_tests_run(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_unsupported_dialect(envsonschema):
+async def test_unknown_dialect(envsonschema):
     dialect = "some://other/URI/"
     async with run(
         "-i",
         envsonschema,
         "--dialect",
         dialect,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send("")
+
+    assert results == []
+    assert "not a known dialect" in stderr.lower()
+
+
+@pytest.mark.asyncio
+async def test_nonurl_dialect(envsonschema):
+    dialect = ";;;;;"
+    async with run(
+        "-i",
+        envsonschema,
+        "--dialect",
+        dialect,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send("")
+
+    assert results == []
+    assert "not a known dialect" in stderr.lower()
+
+
+@pytest.mark.asyncio
+async def test_unsupported_known_dialect(only_draft3):
+    async with run(
+        "-i",
+        only_draft3,
+        "--dialect",
+        str(Dialect.by_alias()["draft2020-12"].uri),
         exit_code=-1,
     ) as send:
         results, stderr = await send("")
@@ -449,11 +503,11 @@ async def test_restarts_crashed_implementations(envsonschema):
 
     assert results == [
         {
-            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+            tag("envsonschema"): ErroredTest.in_errored_case(),
         },
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
         {
-            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+            tag("envsonschema"): ErroredTest.in_errored_case(),
         },
     ], stderr
     assert stderr != ""
@@ -476,8 +530,8 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
     ], stderr
     assert "startup failed" in stderr.lower(), stderr
 
@@ -498,6 +552,33 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
     assert results == []
     assert "startup failed" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_it_handles_immediately_broken_implementations(
+    fail_immediately,
+    envsonschema,
+):
+    async with run(
+        "-i",
+        fail_immediately,
+        "-i",
+        envsonschema,
+        exit_code=-1,
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert "startup failed" in stderr.lower(), stderr
+    assert "BOOM!" in stderr, stderr
+    assert results == [
+        {tag("envsonschema"): TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
+    ], stderr
 
 
 @pytest.mark.asyncio
@@ -522,8 +603,8 @@ async def test_it_handles_broken_start_implementations(
     assert "startup failed" in stderr.lower(), stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
     ], stderr
 
 
@@ -533,7 +614,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         "-i",
         fail_on_dialect,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=-1,
     ) as send:
         results, stderr = await send(
@@ -552,7 +633,7 @@ async def test_it_handles_broken_run_implementations(fail_on_run):
         "-i",
         fail_on_run,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
@@ -563,10 +644,10 @@ async def test_it_handles_broken_run_implementations(fail_on_run):
 
     assert results == [
         {
-            "bowtie-integration-tests/fail_on_run": ErroredTest.in_errored_case(),
+            tag("fail_on_run"): ErroredTest.in_errored_case(),
         },
         {
-            "bowtie-integration-tests/fail_on_run": ErroredTest.in_errored_case(),
+            tag("fail_on_run"): ErroredTest.in_errored_case(),
         },
     ]
     assert "boom!" in stderr.lower(), stderr
@@ -578,7 +659,7 @@ async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
         "-i",
         nonjson_on_run,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
@@ -588,7 +669,7 @@ async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
 
     assert results == [
         {
-            "bowtie-integration-tests/nonjson_on_run": ErroredTest.in_errored_case(),
+            tag("nonjson_on_run"): ErroredTest.in_errored_case(),
         },
     ]
     assert "response=boom!" in stderr.lower(), stderr
@@ -607,14 +688,14 @@ async def test_implementations_can_signal_errors(envsonschema):
 
     assert results == [
         {
-            "bowtie-integration-tests/envsonschema": ErroredTest.in_errored_case(),
+            tag("envsonschema"): ErroredTest.in_errored_case(),
         },
         {
-            "bowtie-integration-tests/envsonschema": ErroredTest(
+            tag("envsonschema"): ErroredTest(
                 context=dict(message="boom"),
             ),
         },
-        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+        {tag("envsonschema"): TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -629,8 +710,8 @@ async def test_it_handles_split_messages(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.INVALID},
     ], stderr
 
 
@@ -659,31 +740,33 @@ async def test_it_preserves_all_metadata(with_versions):
 
     # FIXME: we need to make run() return the whole report
     assert results == [
-        {"bowtie-integration-tests/with_versions": TestResult.VALID},
+        {tag("with_versions"): TestResult.VALID},
     ], stderr
 
 
 @pytest.mark.asyncio
-async def test_it_prevents_network_access(hit_the_network):
+async def test_it_prevents_network_access(hit_the_network_once):
     """
     Don't uselessly "run" tests on no implementations.
     """
     async with run(
         "-i",
-        hit_the_network,
+        hit_the_network_once,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
     ) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
             """,  # noqa: E501
         )
 
     assert results == [
         {
-            "bowtie-integration-tests/hit_the_network": ErroredTest.in_errored_case(),
+            tag("hit_the_network_once"): ErroredTest.in_errored_case(),
         },
+        {tag("hit_the_network_once"): TestResult.VALID},
     ], stderr
     assert "bad address" in stderr.lower(), stderr
 
@@ -697,7 +780,7 @@ async def test_wrong_version(wrong_version):
         "-i",
         wrong_version,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=-1,
     ) as send:
         results, stderr = await send(
@@ -719,7 +802,7 @@ async def test_wrong_seq(wrong_seq):
         "-i",
         wrong_seq,
         "--dialect",
-        "urn:foo",
+        "http://json-schema.org/draft-07/schema#",
         exit_code=0,  # FIXME: It'd be nice if this was nonzero.
     ) as send:
         results, stderr = await send(
@@ -730,7 +813,7 @@ async def test_wrong_seq(wrong_seq):
 
     assert results == [
         {
-            "bowtie-integration-tests/wrong_seq": ErroredTest.in_errored_case(),
+            tag("wrong_seq"): ErroredTest.in_errored_case(),
         },
     ], stderr
     assert "mismatched seq " in stderr.lower(), stderr
@@ -748,8 +831,8 @@ async def test_fail_fast(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
-        {"bowtie-integration-tests/envsonschema": TestResult.INVALID},
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.INVALID},
     ], stderr
     assert stderr != ""
 
@@ -766,9 +849,9 @@ async def test_filter(envsonschema):
         )
 
     assert results == [
-        {"bowtie-integration-tests/envsonschema": TestResult.VALID},
+        {tag("envsonschema"): TestResult.VALID},
     ], stderr
-    assert stderr != ""
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -996,7 +1079,7 @@ async def test_info_links(links):
         issues: "urn:example"
         source: "urn:example"
         dialects: [
-          "urn:example"
+          "http://json-schema.org/draft-07/schema#"
         ]
         links: [
           {
@@ -1073,7 +1156,7 @@ async def test_summary_show_failures(envsonschema, tmp_path):
     assert stderr == ""
     assert jsonout == [
         [
-            "bowtie-integration-tests/envsonschema",
+            tag("envsonschema"),
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
@@ -1175,15 +1258,15 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     12,
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "valid",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "valid",
                     },
                 ],
                 [
                     12.5,
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "invalid",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "invalid",
                     },
                 ],
             ],
@@ -1194,8 +1277,8 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "{}",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "error",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "error",
                     },
                 ],
             ],
@@ -1206,15 +1289,15 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "{}",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "error",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "error",
                     },
                 ],
                 [
                     37,
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "error",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "error",
                     },
                 ],
             ],
@@ -1225,8 +1308,8 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "skipped",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "skipped",
                     },
                 ],
             ],
@@ -1237,8 +1320,8 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "skipped",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "skipped",
                     },
                 ],
             ],
@@ -1249,15 +1332,15 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "error",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "error",
                     },
                 ],
                 [
                     12,
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "invalid",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "invalid",
                     },
                 ],
             ],
@@ -1268,8 +1351,8 @@ async def test_summary_show_validation(envsonschema, always_valid):
                 [
                     "",
                     {
-                        "bowtie-integration-tests/always_valid": "valid",
-                        "bowtie-integration-tests/envsonschema": "error",
+                        tag("always_valid"): "valid",
+                        tag("envsonschema"): "error",
                     },
                 ],
             ],
@@ -1360,8 +1443,8 @@ async def test_run_with_registry(always_valid):
         [
             {"type": "integer"},
             [
-                [12, {"bowtie-integration-tests/always_valid": "valid"}],
-                [12.5, {"bowtie-integration-tests/always_valid": "valid"}],
+                [12, {tag("always_valid"): "valid"}],
+                [12.5, {tag("always_valid"): "valid"}],
             ],
         ],
     ], run_stderr
@@ -1387,10 +1470,7 @@ async def test_no_such_image(tmp_path):
         "no-such-image",
         exit_code=-1,
     )
-    assert (
-        "'ghcr.io/bowtie-json-schema/no-such-image' is not a known Bowtie implementation.\n"  # noqa: E501
-        in stderr
-    ), stderr
+    assert "/no-such-image' is not a known" in stderr, stderr
 
     foo = tmp_path / "foo.json"
     foo.write_text("{}")
