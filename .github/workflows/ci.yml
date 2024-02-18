@@ -72,6 +72,10 @@ jobs:
           package_json_file: frontend/package.json
           run_install: false
         if: startsWith(matrix.noxenv, 'ui')
+      # We temporarily build images in the noxfile, and do so with podman.
+      - name: Set DOCKER_HOST so podman-built images are findable
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        if: startsWith(matrix.noxenv, 'ui')
 
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
