@@ -1,4 +1,5 @@
 import { Button, Modal } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { mapLanguage } from "../../data/mapLanguage";
 import { Case, ImplementationData } from "../../data/parseReportData";
 
@@ -35,11 +36,13 @@ export const DetailsButtonModal = ({
       failedResults.push(
         <DetailItem
           key={`${seq}-${i}`}
+          eventKey={seq.toString()}
+          closeModal={handleClose}
           title={caseData.description}
           description={caseData.tests[i].description}
           message={message}
           borderClass={borderClass}
-        />,
+        />
       );
     }
   });
@@ -66,19 +69,32 @@ export const DetailsButtonModal = ({
 };
 
 const DetailItem = ({
+  eventKey,
+  closeModal,
   title,
   description,
   message,
   borderClass,
 }: {
+  eventKey: string;
+  closeModal: VoidFunction;
   title: string;
   description: string;
   message: string;
   borderClass: string;
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="col">
-      <div className={`card mb-3 ${borderClass}`}>
+      <div
+        className={`card mb-3 ${borderClass}`}
+        style={{ cursor: "pointer" }}
+        onClick={() => {
+          navigate(`#${eventKey}`);
+          closeModal();
+        }}
+      >
         <div className="card-body">
           <h5 className="card-title">{title}</h5>
           <p className="card-text">{description}</p>

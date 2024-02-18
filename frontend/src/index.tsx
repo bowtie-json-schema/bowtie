@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
@@ -32,7 +32,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data)),
+        .then((data) => (loaderData[dialect.path] = data))
     );
   }
   await Promise.all(promises);
@@ -47,8 +47,7 @@ const router = createHashRouter([
     children: [
       {
         index: true,
-        Component: ReportDataHandler,
-        loader: async () => fetchReportData(Dialect.forPath("draft2020-12")),
+        element: <Navigate to="/dialects/draft2020-12" replace />,
       },
       {
         path: "/dialects/:draftName",
@@ -77,6 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

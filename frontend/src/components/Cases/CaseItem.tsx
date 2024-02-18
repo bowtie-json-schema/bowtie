@@ -7,6 +7,7 @@ import {
   useTransition,
   useRef,
   RefObject,
+  memo,
 } from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
@@ -15,6 +16,7 @@ import {
   CaseResult,
   ImplementationData,
 } from "../../data/parseReportData";
+import LoadingAnimation from "../LoadingAnimation";
 
 interface CaseProps {
   seq: number;
@@ -97,9 +99,13 @@ const CaseContent = ({
   );
 };
 
-const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
+const CaseItem = memo(function CaseItem({
+  seq,
+  caseData,
+  implementations,
+}: CaseProps) {
   const [content, setContent] = useState(<></>);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,16 +116,22 @@ const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
           caseData={caseData}
           implementations={implementations}
           schemaDisplayRef={schemaDisplayRef}
-        />,
-      ),
+        />
+      )
     );
   }, [seq, caseData, implementations]);
   return (
-    <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
+    <Accordion.Item
+      ref={schemaDisplayRef}
+      eventKey={seq.toString()}
+      id={seq.toString()}
+    >
       <Accordion.Header>{caseData.description}</Accordion.Header>
-      <Accordion.Body>{content}</Accordion.Body>
+      <Accordion.Body>
+        {isPending ? <LoadingAnimation /> : content}
+      </Accordion.Body>
     </Accordion.Item>
   );
-};
+});
 
 export default CaseItem;
