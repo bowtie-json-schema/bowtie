@@ -9,7 +9,6 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
-from url import URL
 import structlog.stdlib
 
 from bowtie._commands import (
@@ -201,7 +200,7 @@ class RunMetadata:
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
         return cls(
-            dialect=Dialect.by_uri()[URL.parse(dialect)],
+            dialect=Dialect.from_str(dialect),
             implementations=[
                 ImplementationInfo.from_dict(image=image, **data)
                 for image, data in implementations.items()
@@ -216,7 +215,7 @@ class RunMetadata:
             recurse=False,
         )
         as_dict.update(
-            dialect=str(self.dialect.uri),
+            dialect=self.dialect.serializable(),
             started=as_dict.pop("started").isoformat(),
             # FIXME: This transformation is to support the UI parsing
             implementations={

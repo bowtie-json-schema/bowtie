@@ -126,6 +126,13 @@ class Dialect:
             has_boolean_schemas=hasBooleanSchemas,
         )
 
+    @classmethod
+    def from_str(cls, uri: str):
+        return cls.by_uri()[URL.parse(uri)]
+
+    def serializable(self):
+        return str(self.uri)
+
     def current_dialect_resource(self) -> SchemaResource:
         # it's of course unimportant what dialect is used for this referencing
         # schema, what matters is that the target dialect is applied
