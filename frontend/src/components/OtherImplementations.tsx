@@ -48,7 +48,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   );
 };
 
-const getImplementationPath = (implementation: Implementation) => {
-  const pathSegment = implementation.id.split("/");
+const getImplementationPath = (implementation: Implementation): string => {
+  const pathSegment = implementation.image.split("/");
   return pathSegment[pathSegment.length - 1];
 };

@@ -212,7 +212,6 @@ export interface CaseResult {
 }
 
 export interface Implementation {
-  id: string;
   language: string;
   name: string;
   version?: string;

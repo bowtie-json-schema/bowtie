@@ -16,7 +16,7 @@ export const DialectReportView = ({
   allImplementationsData,
 }: {
   reportData: ReportData;
-  allImplementationsData: Implementation[];
+  allImplementationsData?: Implementation[];
 }) => {
   const params = useSearchParams();
 
@@ -40,21 +40,25 @@ export const DialectReportView = ({
       );
       const filteredReportImplementationsMap = new Map(filteredReportArray);
       filteredReportData.implementations = filteredReportImplementationsMap;
-      filteredOtherImplementationsData = filterOtherImplementations(
-        allImplementationsData,
-        selectedLanguages,
-        filteredReportImplementationsMap,
-      );
+      if (allImplementationsData) {
+        filteredOtherImplementationsData = filterOtherImplementations(
+          allImplementationsData,
+          selectedLanguages,
+          filteredReportImplementationsMap
+        );
+      }
     } else {
       const filteredReportArray = Array.from(
         reportData.implementations.entries(),
       );
       const filteredReportImplementationsMap = new Map(filteredReportArray);
-      filteredOtherImplementationsData = filterOtherImplementations(
-        allImplementationsData,
-        languages,
-        filteredReportImplementationsMap,
-      );
+      if (allImplementationsData) {
+        filteredOtherImplementationsData = filterOtherImplementations(
+          allImplementationsData,
+          languages,
+          filteredReportImplementationsMap
+        );
+      }
     }
     return { filteredReportData, filteredOtherImplementationsData };
   }, [reportData, params, allImplementationsData, languages]);
