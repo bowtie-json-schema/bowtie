@@ -365,19 +365,42 @@ def ui_style(session):
     session.run("pnpm", "run", "--dir", UI, "lint", external=True)
 
 
-@session(python=False, name="ui(tests)")
+@session(name="ui(tests)")
 def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.run(
-        "pnpm",
-        "install-test",
-        "--frozen-lockfile",
-        "--dir",
-        UI,
+    session.install("-r", REQUIREMENTS["main"])
+    podman = os.environ.get("CONTAINER_BUILDER", "podman")
+    image_id = session.run_always(  # TODO: do this from the TS test suite
+        podman,
+        "build",
+        "--quiet",
+        "-f",
+        TESTS / "fauxmplementations/envsonschema/Dockerfile",
+        "-t",
+        "bowtie-ui-tests/envsonschema",
         external=True,
+        silent=True,
     )
+    try:
+        session.run(
+            "pnpm",
+            "install-test",
+            "--frozen-lockfile",
+            "--dir",
+            UI,
+            external=True,
+        )
+    finally:
+        if image_id is not None:
+            session.run_always(
+                podman,
+                "rmi",
+                "--force",
+                image_id.strip(),
+                external=True,
+            )
 
 
 def _maybe_install_ui(session):
