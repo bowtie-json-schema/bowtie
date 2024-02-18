@@ -3,6 +3,5 @@ file:.#egg=bowtie-json-schema
 hypothesis
 jsonschema
 pytest
-pytest-mock
 pytest-asyncio==0.21.1
 pytest-icdiff

@@ -1,10 +1,8 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
 from textwrap import dedent, indent
-from unittest.mock import Mock
 import asyncio
 import json as _json
 import os
@@ -945,7 +943,6 @@ async def test_info_pretty(envsonschema):
         "pretty",
         "-i",
         envsonschema,
-        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -975,7 +972,6 @@ async def test_info_markdown(envsonschema):
         "markdown",
         "-i",
         envsonschema,
-        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -1005,7 +1001,6 @@ async def test_info_json(envsonschema):
         "json",
         "-i",
         envsonschema,
-        "--no-remote-data",
         json=True,
     )
     assert jsonout == {
@@ -1034,7 +1029,6 @@ async def test_info_links(links):
         "pretty",
         "-i",
         links,
-        "--no-remote-data",
     )
     assert stdout == dedent(
         """\
@@ -1060,72 +1054,12 @@ async def test_info_links(links):
     )
     assert stderr == ""
 
-
-@pytest.fixture()
-def mocked_github_client(mocker):
-    from github3 import GitHub
-
-    mock = Mock(spec=GitHub)
-    mocker.patch("bowtie._cli.GitHub", return_value=mock)
-    return mock
-
-
-@pytest.mark.asyncio
-async def test_info_remote_data(envsonschema, mocked_github_client):
-    mock_repo = Mock()
-    published_at_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    mock_latest_release = Mock(published_at=published_at_date)
-    mock_repo.latest_release.return_value = mock_latest_release
-    mock_commit = Mock(commit=Mock(author={"date": "2023-01-01T00:00:00Z"}))
-    mock_repo.commits.return_value = [mock_commit]
-    mock_repo.subscribers_count = 10
-    mock_repo.stargazers_count = 100
-    mock_pull_requests = [Mock() for _ in range(3)]
-    mock_repo.pull_requests.return_value = mock_pull_requests
-    mock_issues = [Mock() for _ in range(5)]
-    mock_repo.issues.return_value = mock_issues
-    mocked_github_client().repository.return_value = mock_repo  # type: ignore[reportUnknownMemberType]
-
-    jsonout, stderr = await bowtie(
-        "info",
-        "--format",
-        "json",
-        "-i",
-        envsonschema,
-        json=True,
-    )
-
-    assert jsonout == {
-        "name": "envsonschema",
-        "language": "python",
-        "homepage": "https://github.com/bowtie-json-schema/bowtie",
-        "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
-        "source": "https://github.com/bowtie-json-schema/bowtie",
-        "last_commit_date": "2023-01-01T00:00:00Z",
-        "last_release_date": "2023-01-01T00:00:00Z",
-        "open_issues_count": 5,
-        "open_prs_count": 3,
-        "stars_count": 100,
-        "watchers_count": 10,
-        "dialects": [
-            "https://json-schema.org/draft/2020-12/schema",
-            "https://json-schema.org/draft/2019-09/schema",
-            "http://json-schema.org/draft-07/schema#",
-            "http://json-schema.org/draft-06/schema#",
-            "http://json-schema.org/draft-04/schema#",
-            "http://json-schema.org/draft-03/schema#",
-        ],
-    }, stderr
-    assert stderr == ""
-
-
 @pytest.mark.asyncio
 async def test_info_unsuccessful_start(succeed_immediately):
     stdout, stderr = await bowtie(
         "info",
         "-i",
         succeed_immediately,
-        "--no-remote-data",
         exit_code=-1,
     )
 

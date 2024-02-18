@@ -15,7 +15,6 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
-from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
@@ -572,48 +571,6 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
-def get_remote_data(source_url: str) -> list[tuple[str, str | int]]:
-    from urllib.parse import urlparse
-
-    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
-        GitHubError,
-    )
-
-    try:
-        parsed_url = urlparse(source_url)
-        repo_owner = parsed_url.path.split("/")[1]
-        repo_name = parsed_url.path.split("/")[2]
-
-        gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-        repo = gh.repository(repo_owner, repo_name)  # type: ignore[reportUnknownMemberType,reportUnknownVariableType,reportUnknownArgumentType]
-        latest_release = repo.latest_release()  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        last_release = latest_release.published_at  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        last_release_date = last_release.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        last_commit = repo.commits().next()  # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        last_commit_date = last_commit.commit.author["date"]  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        watchers_count = repo.subscribers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        stars_count = repo.stargazers_count  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        pull_requests = repo.pull_requests(state="open")  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        open_prs_count = sum(1 for _ in pull_requests)  # type: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-        open_issues = list(repo.issues(state="open"))  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        open_issues_count = len(open_issues)  # type: ignore[reportUnknownVariableType,reportUnknownMemberType]
-    except GitHubError:
-        return []
-    else:
-        return [
-            ("last_release_date", last_release_date),
-            ("last_commit_date", last_commit_date),
-            ("watchers_count", watchers_count),
-            ("stars_count", stars_count),
-            ("open_prs_count", open_prs_count),
-            ("open_issues_count", open_issues_count),
-        ]
-
-
-def no_remote_data(source_url: str) -> None:
-    return None
-
-
 class _Dialect(click.ParamType):
 
     name = "dialect"
@@ -723,13 +680,6 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
-NOREMOTEDATA = click.option(
-    "--no-remote-data",
-    "get_remote_data",
-    callback=lambda _, __, v: no_remote_data if v else get_remote_data,  # type: ignore[reportUnknownLambdaType]
-    is_flag=True,
-    help="Disable retrieving additional implementation metadata from its repository",
-)
 EXPECT = click.option(
     "--expect",
     show_default=True,
@@ -807,28 +757,15 @@ def validate(
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-@NOREMOTEDATA
 async def info(
     implementations: Iterable[Implementation],
     format: _F,
-    get_remote_data: Callable[[str], None | list[tuple[str, str | int]]],
 ):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
     for each in implementations:
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
-        metadata_dict = dict(metadata)
-
-        repo_activity_data = None
-
-        if "source" in metadata_dict:
-            source_url = metadata_dict["source"]
-            repo_activity_data = get_remote_data(source_url)
-
-        if repo_activity_data is not None:
-            metadata.extend(repo_activity_data)
-
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
@@ -843,10 +780,15 @@ async def info(
         match format:
             case "json":
                 kwargs = {}
+                output_data = {}
                 implementations_len = len(implementations)  # type: ignore[reportArgumentType]
                 if sys.stdout.isatty() and implementations_len == 1:
                     kwargs["indent"] = 2
-                click.echo(json.dumps(dict(metadata), **kwargs))  # type: ignore[reportArgumentType]
+                    output_data = dict(metadata)
+                else:
+                    metadata_with_image = [*metadata, ("image", each.info.id)]
+                    output_data = dict(metadata_with_image)
+                click.echo(json.dumps(output_data, **kwargs))  # type: ignore[reportArgumentType]
             case "pretty":
                 click.echo(
                     "\n".join(
