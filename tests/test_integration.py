@@ -1055,6 +1055,7 @@ async def test_info_links(links):
     )
     assert stderr == ""
 
+
 @pytest.mark.asyncio
 async def test_info_unsuccessful_start(succeed_immediately):
     stdout, stderr = await bowtie(
