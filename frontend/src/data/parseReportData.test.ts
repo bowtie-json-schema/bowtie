@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { describe, expect, test } from "@jest/globals";
 
 import Dialect from "./Dialect";
-import { parseReportData } from "./parseReportData";
+import { fromSerialized } from "./parseReportData";
 
 function tag(image: string) {
   // Should match what's used in our `noxfile`, certainly until we handle image
@@ -36,14 +36,12 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
     `;
     throw error;
   }
-
-  const lines = result.stdout.toString().trimEnd().split("\n");
-  return lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+  return result.stdout.toString();
 }
 
 describe("parseReportData", () => {
   test("it parses reports", async () => {
-    let lines: Record<string, unknown>[];
+    let lines: string;
 
     const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
@@ -59,7 +57,7 @@ describe("parseReportData", () => {
       await rm(tempdir, { recursive: true });
     }
 
-    const report = parseReportData(lines);
+    const report = fromSerialized(lines);
 
     const metadata = report.implementations.get(tag("envsonschema"))?.metadata;
     const testCase = report.cases.get(1);
