@@ -267,12 +267,11 @@ class ImplementationInfo:
         links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
     ):
-        BY_URI = Dialect.by_uri()
         return cls(
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
             source=URL.parse(source),
-            dialects=frozenset(BY_URI[URL.parse(each)] for each in dialects),
+            dialects=frozenset(Dialect.from_str(each) for each in dialects),
             links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
