@@ -1007,6 +1007,7 @@ async def test_info_json(envsonschema):
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
+        "image": "bowtie-integration-tests/envsonschema"
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "source": "https://github.com/bowtie-json-schema/bowtie",
         "dialects": [
