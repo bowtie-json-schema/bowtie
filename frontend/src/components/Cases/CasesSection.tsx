@@ -8,11 +8,11 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const location = useLocation();
   const implementations = useMemo(
     () => Array.from(reportData.implementations.values()),
-    [reportData.implementations]
+    [reportData.implementations],
   );
   const reportCases = useMemo(
     () => Array.from(reportData.cases.entries()),
-    [reportData.cases]
+    [reportData.cases],
   );
   const [activeKey, setActiveKey] = useState<
     string | string[] | null | undefined

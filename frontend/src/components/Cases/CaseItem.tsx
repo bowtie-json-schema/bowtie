@@ -116,8 +116,8 @@ const CaseItem = memo(function CaseItem({
           caseData={caseData}
           implementations={implementations}
           schemaDisplayRef={schemaDisplayRef}
-        />
-      )
+        />,
+      ),
     );
   }, [seq, caseData, implementations]);
   return (

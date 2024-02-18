@@ -42,7 +42,7 @@ export const DetailsButtonModal = ({
           description={caseData.tests[i].description}
           message={message}
           borderClass={borderClass}
-        />
+        />,
       );
     }
   });
