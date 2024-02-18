@@ -370,7 +370,7 @@ def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.install("-r", REQUIREMENTS["main"])
+    session.install("-r", REQUIREMENTS["main"], ROOT)
     podman = os.environ.get("CONTAINER_BUILDER", "podman")
     image_id = session.run_always(  # TODO: do this from the TS test suite
         podman,
