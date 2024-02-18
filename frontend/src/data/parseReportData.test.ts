@@ -28,11 +28,11 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
       `
       stdout contained:
 
-        ${result.stdout.toString()}
+        ${result.stdout?.toString()}
 
       stderr contained:
 
-        ${result.stderr.toString()}
+        ${result.stderr?.toString()}
     `;
     throw error;
   }
