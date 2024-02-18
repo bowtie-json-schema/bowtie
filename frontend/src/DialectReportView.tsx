@@ -45,7 +45,7 @@ export const DialectReportView = ({
         filteredOtherImplementationsData = filterOtherImplementations(
           allImplementationsData,
           selectedLanguages,
-          filteredReportImplementationsMap
+          filteredReportImplementationsMap,
         );
       }
     } else {
@@ -57,7 +57,7 @@ export const DialectReportView = ({
         filteredOtherImplementationsData = filterOtherImplementations(
           allImplementationsData,
           languages,
-          filteredReportImplementationsMap
+          filteredReportImplementationsMap,
         );
       }
     }
