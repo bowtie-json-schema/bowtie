@@ -705,7 +705,11 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+    type=lambda name: (  # type: ignore[reportUnknownLambdaType]
+        name
+        if "/" in name or name.startswith("@")
+        else f"{IMAGE_REPOSITORY}/{name}"
+    ),
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
@@ -1140,20 +1144,32 @@ async def _start(
         docker: Docker,
         image_name: str,
     ) -> AsyncIterator[Implementation]:
-        async with (
-            _containers.Connection.open(
-                docker=docker,
-                image_name=image_name,
-                read_timeout_sec=read_timeout_sec,
-            ) as connection,
-            Implementation.start(
+        if image_name.startswith("@"):
+            from bowtie._python import Unconnection
+
+            connection = getattr(Unconnection, image_name.removeprefix("@"))()
+            async with Implementation.start(
                 id=image_name,
                 connection=connection,
                 make_validator=make_validator,
                 **kwargs,
-            ) as implementation,
-        ):
-            yield implementation
+            ) as implementation:
+                yield implementation
+        else:
+            async with (
+                _containers.Connection.open(
+                    docker=docker,
+                    image_name=image_name,
+                    read_timeout_sec=read_timeout_sec,
+                ) as connection,
+                Implementation.start(
+                    id=image_name,
+                    connection=connection,
+                    make_validator=make_validator,
+                    **kwargs,
+                ) as implementation,
+            ):
+                yield implementation
 
     async with AsyncExitStack() as stack:
         docker = await stack.enter_async_context(Docker())
