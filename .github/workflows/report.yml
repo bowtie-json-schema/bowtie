@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  download-prev-reports:
+  fetch-previous:
     runs-on: ubuntu-latest
     steps:
       - name: Download previous test report from local artifact
@@ -39,8 +39,8 @@ jobs:
           path: |
             report/
 
-  test:
-    needs: download-prev-reports
+  regenerate:
+    needs: fetch-previous
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -84,8 +84,8 @@ jobs:
             ${{ matrix.version }}.json
             badges/
 
-  store-prev-reports:
-    needs: test
+  store-previous:
+    needs: regenerate
     runs-on: ubuntu-latest
     steps:
       - name: Download previous test report from temp artifact
@@ -102,7 +102,7 @@ jobs:
             report/
 
   deploy-frontend:
-    needs: store-prev-reports
+    needs: store-previous
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
