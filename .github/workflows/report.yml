@@ -69,7 +69,7 @@ jobs:
 
       - name: Generate the Report
         run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges
+          bowtie suite $(ls implementations/ | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges
 
       # This unfortunately can go wrong if we ran out of memory in the above...
       # Besides fixing that, probably we should atomically move files into place.
