@@ -12,6 +12,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Freed up the disk space just in case if it gives error later
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+
       - uses: actions/checkout@v4
 
       - name: Install Bowtie
