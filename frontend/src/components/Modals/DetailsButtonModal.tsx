@@ -37,6 +37,8 @@ export const DetailsButtonModal = ({
           key={`${seq}-${i}`}
           title={caseData.description}
           description={caseData.tests[i].description}
+          schema={caseData.schema}
+          instance={caseData.tests[i].instance}
           message={message}
           borderClass={borderClass}
         />,
@@ -47,6 +49,9 @@ export const DetailsButtonModal = ({
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
+        <small className="text-muted ps-2">
+          JSON Schema test cases that need attention : &nbsp;
+          </small> 
           <b>{implementation.metadata.name}</b>
           <small className="text-muted ps-2">
             {mapLanguage(implementation.metadata.language)}
@@ -54,7 +59,7 @@ export const DetailsButtonModal = ({
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <div className="row row-cols-1 row-cols-md-2 g-4">{failedResults}</div>
+        <div className="row row-cols-1">{failedResults}</div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
@@ -69,22 +74,36 @@ const DetailItem = ({
   title,
   description,
   message,
+  schema,
+  instance,
   borderClass,
 }: {
   title: string;
   description: string;
   message: string;
+  schema: Record<string, unknown> | boolean;
+  instance: unknown;
   borderClass: string;
 }) => {
+  const schemaFormatted = JSON.stringify(schema, null, 2);
+  const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
     <div className="col">
       <div className={`card mb-3 ${borderClass}`}>
         <div className="card-body">
-          <h5 className="card-title">{title}</h5>
-          <p className="card-text">{description}</p>
+          <h5 className="card-title">Case : {title}</h5>
+          <p className="card-text">Test : {description}</p>
+          <div className="card-body">
+            <pre id="schema-code">Schema: {schemaFormatted}</pre>
+          </div>
+          <div className="card-body">
+            <pre id="schema-code">Instance: {instanceFormatted}</pre>
+          </div>
         </div>
-        <div className="card-footer text-muted text-center">{message}</div>
+        <div className="card-footer text-muted text-center">Result: {message}</div>
       </div>
     </div>
   );
 };
+
+
