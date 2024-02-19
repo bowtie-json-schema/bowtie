@@ -10,7 +10,6 @@ import json
 
 from attrs import asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
-from referencing import Specification
 from referencing.jsonschema import (
     EMPTY_REGISTRY,
     Schema,
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
     )
     from typing import Any, Self
 
+    from referencing import Specification
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import (
@@ -132,6 +132,9 @@ class Dialect:
 
     def serializable(self):
         return str(self.uri)
+
+    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+        return specification_with(str(self.uri), **kwargs)
 
     def current_dialect_resource(self) -> SchemaResource:
         # it's of course unimportant what dialect is used for this referencing
@@ -601,10 +604,7 @@ class TestCase:
     ):
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
-            default_specification=specification_with(
-                str(dialect.uri),
-                default=Specification.OPAQUE,
-            ),
+            default_specification=dialect.specification(),
         )
         return cls(
             tests=[Test(**test) for test in tests],
