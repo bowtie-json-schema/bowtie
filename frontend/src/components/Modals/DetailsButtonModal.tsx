@@ -59,7 +59,7 @@ export const DetailsButtonModal = ({
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <div className="row row-cols-1">{failedResults}</div>
+        <div className="row row-cols-1 row-cols-md-2 g-4">{failedResults}</div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
@@ -100,7 +100,7 @@ const DetailItem = ({
             <pre id="schema-code">Instance: {instanceFormatted}</pre>
           </div>
         </div>
-        <div className="card-footer text-muted text-center">Result: {message}</div>
+        <div className="card-footer text-muted text-center">Result : {message}</div>
       </div>
     </div>
   );
