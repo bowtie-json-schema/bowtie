@@ -36,12 +36,16 @@ Most commonly, you can use it to validate an instance (some data) using a specif
 replacing ``lua-jsonschema`` and the filenames with your implementation and schema of choice.
 For full details on the commands available, see the `CLI documentation <cli>`.
 
-Including Bowtie Output in Workflow summary
+Including Bowtie Output in Workflow Summary
 -------------------------------------------
 
-Commands such as bowtie summary, bowtie smoke and bowtie info support outputting in markdown format using the
-\--format markdown flag. This output can be shown in the workflow summary for eg. output validation results for
-a schema + instance as part of a workflow run.
+Commands such as `bowtie summary <cli:summary>`, `bowtie smoke <cli:smoke>` and `bowtie info <cli:info>` support outputting in markdown format using the `--format markdown <bowtie summary --format>` flag. This output can be shown in the workflow summary for eg. output validation results for a schema + instance as part of a workflow run.
+
+.. seealso::
+
+    `Displaying a Workflow Job's Summary <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary>`_
+
+        for details on displaying job summary for a workflow
 
 Example:
 
