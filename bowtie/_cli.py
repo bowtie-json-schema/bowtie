@@ -1027,11 +1027,9 @@ async def _run(
                         # Stop after this case, since we still have futures out
                         should_stop = unsucessful.causes_stop
                     else:
-                        if (max_fail is not None and
-                            unsucessful.failed >= max_fail):
+                        if max_fail and unsucessful.failed == max_fail:
                             should_stop = True
-                        if (max_error is not None and
-                            unsucessful.errored >= max_error):
+                        if max_error and unsucessful.errored == max_error:
                             should_stop = True
 
                 if should_stop:
