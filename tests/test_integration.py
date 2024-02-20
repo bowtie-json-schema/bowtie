@@ -835,6 +835,25 @@ async def test_fail_fast(envsonschema):
         {tag("envsonschema"): TestResult.INVALID},
     ], stderr
     assert stderr != ""
+   
+@pytest.mark.asyncio 
+async def test_max_fail(envsonschema):
+    async with run("-i", envsonschema, "--max-fail", 2) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "4", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
+    ], stderr
+    assert stderr != ""
 
 
 @pytest.mark.asyncio

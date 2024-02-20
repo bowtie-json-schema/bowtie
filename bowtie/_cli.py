@@ -658,6 +658,18 @@ FAIL_FAST = click.option(
     default=False,
     help="Fail immediately after the first error or disagreement.",
 )
+MAX_FAIL = click.option(
+    "-mf",
+    "--max-fail",
+    type=click.IntRange(min=1),
+    help="Fail immediately if N tests fail in total across implementations"
+)
+MAX_ERROR = click.option(
+    "-me",
+    "--max-error",
+    type=click.IntRange(min=1),
+    help="Fail immediately if N errors occur in total across implementations"
+)
 SET_SCHEMA = click.option(
     "--set-schema",
     "-S",
@@ -724,6 +736,8 @@ EXPECT = click.option(
 @DIALECT
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -891,6 +905,8 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -937,6 +953,8 @@ async def _run(
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
+    max_fail: int | None,
+    max_error: int | None,
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
@@ -995,6 +1013,7 @@ async def _run(
 
             count = 0
             should_stop = False
+            unsucessful = Unsuccessful()
             for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
@@ -1003,11 +1022,16 @@ async def _run(
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
-
+                    unsucessful += result.unsuccessful()
                     if fail_fast:
                         # Stop after this case, since we still have futures out
-                        should_stop = result.unsuccessful().causes_stop
-
+                        should_stop = unsucessful.causes_stop
+                    else:
+                        if max_fail is not None and unsucessful.failed >= max_fail:
+                            should_stop = True
+                        if max_error is not None and unsucessful.errored >= max_error:
+                            should_stop = True
+                            
                 if should_stop:
                     reporter.failed_fast(seq_case=seq_case)
                     break
