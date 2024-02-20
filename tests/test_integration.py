@@ -835,8 +835,8 @@ async def test_fail_fast(envsonschema):
         {tag("envsonschema"): TestResult.INVALID},
     ], stderr
     assert stderr != ""
-   
-@pytest.mark.asyncio 
+
+@pytest.mark.asyncio
 async def test_max_fail(envsonschema):
     async with run("-i", envsonschema, "--max-fail", 2) as send:
         results, stderr = await send(
