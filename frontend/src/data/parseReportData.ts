@@ -1,3 +1,16 @@
+/**
+ * Parse a report from some JSONL data.
+ */
+export const fromSerialized = (jsonl: string): ReportData => {
+  const lines = jsonl.trim().split(/\r?\n/);
+  return parseReportData(
+    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
+  );
+};
+
+/**
+ * Parse a report from some deserialized JSON objects.
+ */
 export const parseReportData = (
   lines: Record<string, unknown>[],
 ): ReportData => {

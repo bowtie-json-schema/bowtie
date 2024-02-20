@@ -52,10 +52,6 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          run_install: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -66,6 +62,21 @@ jobs:
             pypy3.10
           allow-prereleases: true
           cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/package.json
+        if: startsWith(matrix.noxenv, 'ui')
+      - uses: pnpm/action-setup@v3
+        with:
+          package_json_file: frontend/package.json
+          run_install: false
+        if: startsWith(matrix.noxenv, 'ui')
+      # We temporarily build images in the noxfile, and do so with podman.
+      - name: Set DOCKER_HOST so podman-built images are findable
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        if: startsWith(matrix.noxenv, 'ui')
+
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
 

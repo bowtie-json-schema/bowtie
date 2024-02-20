@@ -27,14 +27,12 @@ import rich
 import structlog
 import structlog.typing
 
-from bowtie import _report, _suite
-from bowtie._commands import AnyTestResult, SeqCase, Unsuccessful
-from bowtie._containers import ContainerConnection
+from bowtie import _containers, _report, _suite
+from bowtie._commands import SeqCase
 from bowtie._core import (
     Dialect,
     GotStderr,
     Implementation,
-    ImplementationInfo,
     NoSuchImplementation,
     StartupFailed,
     Test,
@@ -48,7 +46,8 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._core import DialectRunner, MakeValidator
+    from bowtie._commands import AnyTestResult, Unsuccessful
+    from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -162,23 +161,17 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
             running: list[Implementation] = []
             async with start as implementations:
-                for each in implementations:
+                for each in implementations:  # FIXME: respect --quiet
                     try:
                         implementation = await each
-                    except StartupFailed as error:
+                    except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} failed to start",
-                            file=sys.stderr,
-                        )
+                        stderr = panel.Panel(err.stderr, title="stderr")
+                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
                         continue
-                    except NoSuchImplementation as error:
+                    except NoSuchImplementation as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} is not a "
-                            "known Bowtie implementation.",
-                            file=sys.stderr,
-                        )
+                        rich.print(err.diagnostic(), file=sys.stderr)
                         continue
 
                     running.append(implementation)
@@ -595,7 +588,7 @@ class _Dialect(click.ParamType):
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
 
-CaseFilter = Callable[[Iterable[TestCase]], Iterable[TestCase]]
+CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
 
 class _Filter(click.ParamType):
@@ -610,10 +603,21 @@ class _Filter(click.ParamType):
         value: str,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> CaseFilter:
+    ) -> CaseTransform:
         return lambda cases: (
             case for case in cases if fnmatch(case.description, f"*{value}*")
         )
+
+
+def _set_schema(dialect: Dialect) -> CaseTransform:
+    """
+    Explicitly set a dialect on schemas passing through by setting ``$schema``.
+    """
+    return lambda cases: (c.with_explicit_dialect(dialect) for c in cases)
+
+
+def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
+    return lambda cases: cases
 
 
 IMPLEMENTATION = click.option(
@@ -655,9 +659,14 @@ FAIL_FAST = click.option(
     help="Fail immediately after the first error or disagreement.",
 )
 SET_SCHEMA = click.option(
-    "--set-schema/--no-set-schema",
+    "--set-schema",
     "-S",
-    "set_schema",
+    "maybe_set_schema",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: _set_schema if v else _do_nothing,  # type: ignore[reportUnknownLambdaType]
+    is_flag=True,
     show_default=True,
     default=False,
     help=(
@@ -725,7 +734,7 @@ EXPECT = click.option(
 )
 def run(
     input: Iterable[str],
-    filter: CaseFilter,
+    filter: CaseTransform,
     dialect: Dialect,
     **kwargs: Any,
 ):
@@ -888,7 +897,7 @@ async def smoke(
 @click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    filter: CaseFilter,
+    filter: CaseTransform,
     **kwargs: Any,
 ):
     """
@@ -928,7 +937,7 @@ async def _run(
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
-    set_schema: bool,
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -986,11 +995,9 @@ async def _run(
 
             count = 0
             should_stop = False
-            for count, case in enumerate(cases, 1):
+            for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
-                if set_schema and not isinstance(seq_case.case.schema, bool):
-                    seq_case.case.schema["$schema"] = str(dialect.uri)
 
                 responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):
@@ -1023,7 +1030,7 @@ async def _start(
         image_name: str,
     ) -> AsyncIterator[Implementation]:
         async with (
-            ContainerConnection.open(
+            _containers.Connection.open(
                 docker=docker,
                 image_name=image_name,
                 read_timeout_sec=read_timeout_sec,

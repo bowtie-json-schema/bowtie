@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Protocol, TypeVar
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
-from referencing import Specification
+from diagnostic import DiagnosticError
 from referencing.jsonschema import (
     EMPTY_REGISTRY,
     Schema,
@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     )
     from typing import Any, Self
 
+    from referencing import Specification
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import (
@@ -125,6 +126,16 @@ class Dialect:
             has_boolean_schemas=hasBooleanSchemas,
         )
 
+    @classmethod
+    def from_str(cls, uri: str):
+        return cls.by_uri()[URL.parse(uri)]
+
+    def serializable(self):
+        return str(self.uri)
+
+    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+        return specification_with(str(self.uri), **kwargs)
+
     def current_dialect_resource(self) -> SchemaResource:
         # it's of course unimportant what dialect is used for this referencing
         # schema, what matters is that the target dialect is applied
@@ -132,7 +143,7 @@ class Dialect:
 
         return DRAFT202012.create_resource(
             {
-                # Should match the magic value used for `schema` in `schemas/io/`
+                # Should match the magic value for `schema` in `schemas/io/`
                 "$id": "tag:bowtie.report,2023:ihop:__dialect__",
                 "$ref": str(self.uri),
             },
@@ -146,6 +157,19 @@ class NoSuchImplementation(Exception):
     """
 
     name: str
+
+    def diagnostic(self):
+        return DiagnosticError(
+            code="no-such-implementation",
+            message=f"{self.name!r} is not a known Bowtie implementation.",
+            causes=[],
+            hint_stmt=(
+                "Check Bowtie's supported list of implementations "
+                "to ensure you have the name correct. "
+                "If you are developing a new harness, ensure you have "
+                "built and tagged it properly."
+            ),
+        )
 
 
 @frozen
@@ -178,6 +202,19 @@ class StartupFailed(Exception):
         if self.stderr:
             return f"{self.name}'s stderr contained: {self.stderr}"
         return self.name
+
+    def diagnostic(self):
+        return DiagnosticError(
+            code="startup-failed",
+            message=f"{self.name!r} failed to start.",
+            causes=[],
+            hint_stmt=(
+                "If you are developing a new harness, check if stderr "
+                "(shown below) contains harness-specific information "
+                "which can help. Otherwise, you may have an issue with your "
+                "local container setup (podman, docker, etc.)."
+            ),
+        )
 
 
 R = TypeVar("R")
@@ -233,12 +270,11 @@ class ImplementationInfo:
         links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
     ):
-        BY_URI = Dialect.by_uri()
         return cls(
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
             source=URL.parse(source),
-            dialects=frozenset(BY_URI[URL.parse(each)] for each in dialects),
+            dialects=frozenset(Dialect.from_str(each) for each in dialects),
             links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
@@ -461,6 +497,7 @@ class Implementation:
         Run a collection of test cases under the given dialect.
         """
         runner = await self.start_speaking(dialect)
+
         for i, case in enumerate(cases, 1):
             yield case, await SeqCase(seq=i, case=case).run(runner=runner)
 
@@ -497,7 +534,7 @@ class Implementation:
             cases = [
                 TestCase(
                     description="allow-everything",
-                    schema={"$schema": str(dialect.uri)},
+                    schema={},
                     tests=[
                         Test(
                             description=json_type,
@@ -506,10 +543,10 @@ class Implementation:
                         )
                         for json_type, instance in instances
                     ],
-                ),
+                ).with_explicit_dialect(dialect),
                 TestCase(
                     description="allow-nothing",
-                    schema={"$schema": str(dialect.uri), "not": {}},
+                    schema={"not": {}},
                     tests=[
                         Test(
                             description=json_type,
@@ -518,7 +555,7 @@ class Implementation:
                         )
                         for json_type, instance in instances
                     ],
-                ),
+                ).with_explicit_dialect(dialect),
             ]
 
             yield dialect, self.validate(dialect=dialect, cases=cases)
@@ -567,16 +604,22 @@ class TestCase:
     ):
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
-            default_specification=specification_with(
-                str(dialect.uri),
-                default=Specification.OPAQUE,
-            ),
+            default_specification=dialect.specification(),
         )
         return cls(
             tests=[Test(**test) for test in tests],
             registry=populated,
             **kwargs,
         )
+
+    def with_explicit_dialect(self, dialect: Dialect):
+        """
+        Return a version of this test case with an explicit dialect ID.
+        """
+        schema = self.schema
+        if not isinstance(self.schema, bool):
+            schema = {"$schema": str(dialect.uri), **self.schema}
+        return evolve(self, schema=schema)
 
     def serializable(self) -> Message:
         as_dict = asdict(
