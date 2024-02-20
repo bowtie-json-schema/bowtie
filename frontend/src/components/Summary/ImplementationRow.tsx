@@ -3,31 +3,33 @@ import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Case, Implementation, ImplementationData } from "../../data/parseReportData";
+import {
+  Case,
+  Implementation,
+  ImplementationData,
+} from "../../data/parseReportData";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 const ImplementationRow = ({
   cases,
   implementation,
-  prevImplementations
+  prevImplementations,
 }: {
   cases: Map<number, Case>;
   implementation: ImplementationData;
-  prevImplementations?: Record<string, Implementation> | null; 
+  prevImplementations?: Record<string, Implementation> | null;
   key: number;
   index: number;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementation);
-  
-  const [isImplementationNew] = useState(
-    () => {
-      if(prevImplementations){
-        return implementation.id in prevImplementations ? false : true;
-      }
-      return false;
+
+  const [isImplementationNew] = useState(() => {
+    if (prevImplementations) {
+      return implementation.id in prevImplementations ? false : true;
     }
-  )
+    return false;
+  });
 
   return (
     <OverlayTrigger

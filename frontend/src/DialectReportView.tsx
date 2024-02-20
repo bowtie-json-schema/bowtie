@@ -42,7 +42,10 @@ export const DialectReportView = ({
         <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
-        <SummarySection reportData={filteredData} prevImplementations={prevImplementations}/>
+        <SummarySection
+          reportData={filteredData}
+          prevImplementations={prevImplementations}
+        />
         <CasesSection reportData={filteredData} />
       </div>
     </div>

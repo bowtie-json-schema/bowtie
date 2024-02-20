@@ -54,9 +54,9 @@ export default class Dialect {
       });
     if (prevReportLines) {
       const prevReportMetaData = JSON.parse(prevReportLines) as RunInfo;
-      return prevReportMetaData.implementations
+      return prevReportMetaData.implementations;
     }
-    return null
+    return null;
   }
 
   // Helper function to stream and fetch the first `num_lines`
@@ -72,8 +72,8 @@ export default class Dialect {
         const chunks = new TextDecoder("utf-8").decode(value).split("\n");
         for (let chunk of chunks) {
           buffer += chunk;
-          if (--num_lines==0) return buffer;
-          buffer += "\n"
+          if (--num_lines == 0) return buffer;
+          buffer += "\n";
         }
         return readChunk();
       });

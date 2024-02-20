@@ -1,8 +1,18 @@
 import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
-import { Implementation, ReportData, calculateTotals } from "../../data/parseReportData";
+import {
+  Implementation,
+  ReportData,
+  calculateTotals,
+} from "../../data/parseReportData";
 
-const SummaryTable = ({ reportData, prevImplementations }: { reportData: ReportData, prevImplementations?: Record<string, Implementation> | null }) => {
+const SummaryTable = ({
+  reportData,
+  prevImplementations,
+}: {
+  reportData: ReportData;
+  prevImplementations?: Record<string, Implementation> | null;
+}) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);
   return (
     <table className="table table-hover">
