@@ -199,7 +199,6 @@ export interface ImplementationData {
   id: string;
   metadata: Implementation;
   cases: Map<number, CaseResult[]>;
-  isNew?: boolean;
   erroredCases: number;
   skippedTests: number;
   failedTests: number;

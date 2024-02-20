@@ -3,45 +3,56 @@ import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Case, ImplementationData } from "../../data/parseReportData";
+import { Case, Implementation, ImplementationData } from "../../data/parseReportData";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 const ImplementationRow = ({
   cases,
   implementation,
+  prevImplementations
 }: {
   cases: Map<number, Case>;
   implementation: ImplementationData;
+  prevImplementations?: Record<string, Implementation> | null; 
   key: number;
   index: number;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementation);
+  
+  const [isImplementationNew] = useState(
+    () => {
+      if(prevImplementations){
+        return implementation.id in prevImplementations ? false : true;
+      }
+      return false;
+    }
+  )
 
   return (
     <OverlayTrigger
       placement="right"
       overlay={
-        <Tooltip className={implementation.isNew ? "" : "d-none"} id="tooltip">
+        <Tooltip className={isImplementationNew ? "" : "d-none"} id="tooltip">
           <strong>Newly added implementation</strong>
         </Tooltip>
       }
     >
-      <tr className={implementation.isNew ? "table-success" : ""}>
+      <tr className={isImplementationNew ? "table-success" : ""}>
         <th
           className="table-implementation-name align-middle p-0"
           onClick={() => navigate(`/implementations/${implementationPath}`)}
           scope="row"
         >
           <NavLink
-            className={implementation.isNew ? "text-primary" : ""}
+            className={isImplementationNew ? "text-primary" : ""}
             to={`/implementations/${implementationPath}`}
           >
             {implementation.metadata.name}
           </NavLink>
           <small
             className={
-              "ps-1 " + (implementation.isNew ? "text-dark" : "text-muted")
+              "ps-1 " + (isImplementationNew ? "text-dark" : "text-muted")
             }
           >
             {mapLanguage(implementation.metadata.language)}
@@ -51,7 +62,7 @@ const ImplementationRow = ({
           <small
             className={
               "font-monospace " +
-              (implementation.isNew ? "text-dark" : "text-muted")
+              (isImplementationNew ? "text-dark" : "text-muted")
             }
           >
             {implementation.metadata.version ?? ""}

@@ -1,8 +1,8 @@
 import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
-import { ReportData, calculateTotals } from "../../data/parseReportData";
+import { Implementation, ReportData, calculateTotals } from "../../data/parseReportData";
 
-const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
+const SummaryTable = ({ reportData, prevImplementations }: { reportData: ReportData, prevImplementations?: Record<string, Implementation> | null }) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);
   return (
     <table className="table table-hover">
@@ -73,6 +73,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               implementation={implementation}
               key={index}
               index={index}
+              prevImplementations={prevImplementations}
             />
           ))}
       </tbody>
