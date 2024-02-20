@@ -36,4 +36,28 @@ Most commonly, you can use it to validate an instance (some data) using a specif
 replacing ``lua-jsonschema`` and the filenames with your implementation and schema of choice.
 For full details on the commands available, see the `CLI documentation <cli>`.
 
+Including Bowtie Output in Workflow Summary
+-------------------------------------------
+
+Commands such as `bowtie summary <cli:summary>`, `bowtie smoke <cli:smoke>` and `bowtie info <cli:info>` support outputting in markdown format using the `--format markdown <bowtie summary --format>` flag. This output can be shown in the workflow summary for Eg. output validation results for a schema + instance as part of a workflow run.
+
+.. seealso::
+
+    `Displaying a Workflow Job's Summary <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary>`_
+
+        for details on displaying job summary for a workflow
+
+Example:
+
+.. code:: yaml
+
+    - name: Show Report Summary
+      run: bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --format markdown >> $GITHUB_STEP_SUMMARY
+
+.. code:: yaml
+
+    - name: Checking An Implementation Functions On Basic Input
+      run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
+
+
 A fully working example of the above code can also be found :org:`here <github-actions-example>`.
