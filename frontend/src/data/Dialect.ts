@@ -39,6 +39,7 @@ export default class Dialect {
   async fetchPrevReportImplementations(baseURI: URI) {
     const prevVersionUrl = baseURI
       .clone()
+      .directory("previous")
       .filename(this.path)
       .suffix("json")
       .href();
