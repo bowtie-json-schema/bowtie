@@ -39,7 +39,7 @@ For full details on the commands available, see the `CLI documentation <cli>`.
 Including Bowtie Output in Workflow Summary
 -------------------------------------------
 
-Commands such as `bowtie summary <cli:summary>`, `bowtie smoke <cli:smoke>` and `bowtie info <cli:info>` support outputting in markdown format using the `--format markdown <bowtie summary --format>` flag. This output can be shown in the workflow summary for eg. output validation results for a schema + instance as part of a workflow run.
+Commands such as `bowtie summary <cli:summary>`, `bowtie smoke <cli:smoke>` and `bowtie info <cli:info>` support outputting in markdown format using the `--format markdown <bowtie summary --format>` flag. This output can be shown in the workflow summary for Eg. output validation results for a schema + instance as part of a workflow run.
 
 .. seealso::
 
