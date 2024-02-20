@@ -836,6 +836,7 @@ async def test_fail_fast(envsonschema):
     ], stderr
     assert stderr != ""
 
+
 @pytest.mark.asyncio
 async def test_max_fail(envsonschema):
     async with run("-i", envsonschema, "--max-fail", "2") as send:
