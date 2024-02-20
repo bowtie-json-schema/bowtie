@@ -28,7 +28,7 @@ import structlog
 import structlog.typing
 
 from bowtie import _containers, _report, _suite
-from bowtie._commands import SeqCase
+from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     GotStderr,
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._commands import AnyTestResult, Unsuccessful
+    from bowtie._commands import AnyTestResult
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
@@ -662,13 +662,13 @@ MAX_FAIL = click.option(
     "-mf",
     "--max-fail",
     type=click.IntRange(min=1),
-    help="Fail immediately if N tests fail in total across implementations"
+    help="Fail immediately if N tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
     "-me",
     "--max-error",
     type=click.IntRange(min=1),
-    help="Fail immediately if N errors occur in total across implementations"
+    help="Fail immediately if N errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
@@ -953,9 +953,9 @@ async def _run(
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
-    max_fail: int | None,
-    max_error: int | None,
     maybe_set_schema: Callable[[Dialect], CaseTransform],
+    max_fail: int | None = None,
+    max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -1027,11 +1027,13 @@ async def _run(
                         # Stop after this case, since we still have futures out
                         should_stop = unsucessful.causes_stop
                     else:
-                        if max_fail is not None and unsucessful.failed >= max_fail:
+                        if (max_fail is not None and 
+                            unsucessful.failed >= max_fail):
                             should_stop = True
-                        if max_error is not None and unsucessful.errored >= max_error:
+                        if (max_error is not None and 
+                            unsucessful.errored >= max_error):
                             should_stop = True
-                            
+
                 if should_stop:
                     reporter.failed_fast(seq_case=seq_case)
                     break
