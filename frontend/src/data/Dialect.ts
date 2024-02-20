@@ -71,7 +71,7 @@ export default class Dialect {
     const readChunk = async (): Promise<string | null> => {
       return reader.read().then(({ value }) => {
         const chunks = new TextDecoder("utf-8").decode(value).split("\n");
-        for (let chunk of chunks) {
+        for (const chunk of chunks) {
           buffer += chunk;
           if (--num_lines == 0) return buffer;
           buffer += "\n";
