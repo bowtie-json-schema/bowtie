@@ -40,7 +40,7 @@ Including Bowtie Output in Workflow summary
 -------------------------------------------
 
 Commands such as bowtie summary, bowtie smoke and bowtie info support outputting in markdown format using the
---format markdown flag. This output can be shown in the workflow summary for eg. output validation results for 
+--format markdown flag. This output can be shown in the workflow summary for eg. output validation results for
 a schema + instance as part of a workflow run.
 
 Example:
