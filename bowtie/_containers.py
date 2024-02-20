@@ -225,7 +225,10 @@ class Connection:
             config=dict(
                 Image=self._image,
                 OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
+                HostConfig=dict(
+                    LogConfig=dict(Config={"max-size": "10m"}),
+                    NetworkMode="none",
+                ),
             ),
         )
         self._stream = Stream.attached_to(
