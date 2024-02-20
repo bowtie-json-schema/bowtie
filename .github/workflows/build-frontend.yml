@@ -15,7 +15,11 @@ jobs:
       # Freed up the disk space just in case if it gives error later
       - name: Free up disk space
         run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          docker rmi $(docker image ls -aq)
+          df -h
 
       - uses: actions/checkout@v4
 
