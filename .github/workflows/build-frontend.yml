@@ -15,10 +15,9 @@ jobs:
       # Freed up the disk space just in case if it gives error later
       - name: Free up disk space
         run: |
-          sudo swapoff -a
-          sudo rm -f /swapfile
+          sudo swapoff /swapfile
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo apt clean
-          docker rmi $(docker image ls -aq)
           df -h
 
       - uses: actions/checkout@v4
