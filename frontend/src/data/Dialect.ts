@@ -43,43 +43,11 @@ export default class Dialect {
       .filename(this.path)
       .suffix("json")
       .href();
-
-    let prevReportLines: string | null = null;
-    await fetch(prevVersionUrl)
-      .then(async (response) => {
-        prevReportLines = await this.fetchResponseStream(response, 1);
-      })
-      .catch(() => {
-        //  If the old report isnt available
-        prevReportLines = null;
-      });
-    if (prevReportLines) {
-      const prevReportMetaData = JSON.parse(prevReportLines) as RunInfo;
-      return prevReportMetaData.implementations;
-    }
-    return null;
-  }
-
-  // Helper function to stream and fetch the first `num_lines`
-  async fetchResponseStream(response: Response, num_lines: number) {
-    if (!response?.ok || !response?.body) {
-      //  If the old report isnt available
-      return null;
-    }
-    const reader = response.body.getReader();
-    let buffer = "";
-    const readChunk = async (): Promise<string | null> => {
-      return reader.read().then(({ value }) => {
-        const chunks = new TextDecoder("utf-8").decode(value).split("\n");
-        for (const chunk of chunks) {
-          buffer += chunk;
-          if (--num_lines == 0) return buffer;
-          buffer += "\n";
-        }
-        return readChunk();
-      });
-    };
-    return readChunk();
+    const response = await fetch(prevVersionUrl);
+    const jsonl = await response.text();
+    const prevReportFirstLine = jsonl.trim().split(/\r?\n/)[0];    
+    const prevReportMetaData = JSON.parse(prevReportFirstLine) as RunInfo;
+    return prevReportMetaData.implementations;
   }
 
   static known(): Iterable<Dialect> {
