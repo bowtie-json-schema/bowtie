@@ -101,7 +101,7 @@ const DetailItem = ({
           </div>
         </div>
         <div className="card-footer text-muted text-center">
-          Result : {message}
+          Result: {message}
         </div>
       </div>
     </div>
