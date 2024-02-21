@@ -6,6 +6,7 @@ from fnmatch import fnmatch
 from functools import cache, wraps
 from importlib.resources import files
 from pathlib import Path
+from pprint import pformat
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -197,50 +198,96 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
 @subcommand
 @click.option(
-    "--input",
-    default="-",
-    type=click.File(mode="r"),
+    "--site",
+    default=Path("site"),
+    show_default=True,
+    type=click.Path(
+        path_type=Path,
+        file_okay=False,
+        dir_okay=True,
+        exists=True,
+    ),
+    help=(
+        "The path to a previously generated collection of reports, "
+        "used to generate the badges."
+    ),
 )
-@click.argument(
-    "output",
-    default=Path("badges"),
-    type=click.Path(path_type=Path),
-)
-def badges(input: TextIO, output: Path):
+def badges(site: Path):
     """
-    Generate Bowtie badges from a previous run.
-    """
-    report = _report.Report.from_serialized(input)
-    if report.is_empty:
-        error = DiagnosticError(
-            code="empty-report",
-            message="The Bowtie report is empty.",
-            causes=[f"{input.name} contains no test result data."],
-            hint_stmt=(
-                "If you are piping data into bowtie badges, "
-                "check to ensure that what you've run has succeeded, "
-                "otherwise it may be emitting no report data."
-            ),
-        )
-        rich.print(error, file=sys.stderr)
-        return _EX_NOINPUT
+    Generate Bowtie badges from previous runs.
 
+    Will generate badges for any existing dialects, and ignore any for which a
+    report was not generated.
+    """
+    outdir = site / "badges"
     try:
-        output.mkdir()
+        outdir.mkdir()
     except FileExistsError:
         error = DiagnosticError(
             code="already-exists",
             message="Badge output directory already exists.",
-            causes=[f"{output} is an existing directory."],
+            causes=[f"{outdir} is an existing directory."],
             hint_stmt=(
                 "If you intended to replace its contents with new badges, "
                 "delete the directory first."
             ),
         )
-        rich.print(error, file=sys.stderr)
-        return _EX_NOINPUT
+        rich.print(error)
+        return _EX_CONFIG
 
-    report.generate_badges(output)
+    supported_versions: dict[Path, Iterable[Dialect]] = {}
+
+    for name, dialect in Dialect.by_short_name().items():
+        try:
+            file = site.joinpath(f"{name}.json").open()
+        except FileNotFoundError:
+            continue
+        with file:
+            report = _report.Report.from_serialized(file)
+            if report.is_empty:
+                error = DiagnosticError(
+                    code="empty-report",
+                    message="A Bowtie report is empty.",
+                    causes=[f"The {name} report contains no results."],
+                    hint_stmt="Check that site generation has not failed.",
+                )
+                rich.print(error)
+                return _EX_DATAERR
+
+            badge_name = f"{dialect.pretty_name.replace(' ', '_')}.json"
+
+            for each, badge in report.compliance_badges():
+                dir = outdir / f"{each.language}-{each.name}"
+
+                compliance = dir / "compliance"
+                compliance.mkdir(parents=True, exist_ok=True)
+                compliance.joinpath(badge_name).write_text(json.dumps(badge))
+
+                dialects = each.dialects
+                seen = supported_versions.setdefault(dir, dialects)
+                if seen != dialects:
+                    message = (
+                        f"{dir.name} appears with different "
+                        "supported dialects in the provided reports."
+                    )
+                    error = DiagnosticError(
+                        code="inconsistent-reports",
+                        message=message,
+                        causes=[
+                            f"{file.name} contains:\n{pformat(dialects)}",
+                            f"{pformat(seen)} was previously seen.",
+                        ],
+                        hint_stmt=(
+                            "Check that the implementation produces "
+                            "consistent output and that a run has not failed."
+                        ),
+                    )
+                    rich.print(error)
+                    return _EX_CONFIG
+
+    for dir, dialects in supported_versions.items():
+        badge = _report.supported_version_badge(dialects=dialects)
+        dir.joinpath("supported_versions.json").write_text(json.dumps(badge))
 
 
 @subcommand

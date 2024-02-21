@@ -1405,6 +1405,9 @@ async def test_summary_show_validation(envsonschema, always_valid):
 
 @pytest.mark.asyncio
 async def test_badges(envsonschema, tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -1414,6 +1417,7 @@ async def test_badges(envsonschema, tmp_path):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
+
     run_stdout, _ = await bowtie(
         "run",
         "-i",
@@ -1421,13 +1425,11 @@ async def test_badges(envsonschema, tmp_path):
         stdin=dedent(raw.strip("\n")),
     )
 
-    badges = tmp_path / "badges"
-    stdout, stderr = await bowtie(
-        "badges",
-        badges,
-        stdin=run_stdout,
-    )
+    site.joinpath("draft2020-12.json").write_text(run_stdout)
 
+    stdout, stderr = await bowtie("badges", "--site", site)
+
+    badges = site / "badges"
     assert {path.relative_to(badges) for path in badges.rglob("*")} == {
         Path("python-envsonschema"),
         Path("python-envsonschema/supported_versions.json"),
