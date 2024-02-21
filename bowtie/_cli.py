@@ -28,7 +28,7 @@ import structlog
 import structlog.typing
 
 from bowtie import _containers, _report, _suite
-from bowtie._commands import SeqCase
+from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     GotStderr,
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._commands import AnyTestResult, Unsuccessful
+    from bowtie._commands import AnyTestResult
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
@@ -620,6 +620,40 @@ def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
 
 
+def _set_max_fail_and_max_error(
+    ctx: click.Context,
+    _,
+    value: bool,
+) -> None:
+    if value:
+        if ctx.params.get("max_fail") or ctx.params.get("max_error"):
+            ctx.ensure_object(dict)
+            ctx.obj["max_fail_or_error_provided"] = True
+            return
+        ctx.params["max_fail"] = 1
+        ctx.params["max_error"] = 1
+        ctx.ensure_object(dict)
+        ctx.obj["fail_fast_provided"] = True
+    return
+
+
+def _check_fail_fast_provided(
+    ctx: click.Context,
+    _,
+    value: int | None,
+) -> int | None:
+    if ctx.obj:
+        if (
+            "fail_fast_provided" in ctx.obj and value is not None
+        ) or "max_fail_or_error_provided" in ctx.obj:
+            raise click.UsageError(
+                "Cannot use --fail-fast with --max-fail / --max-error",
+            )
+        else:
+            return ctx.params["max_fail"] and ctx.params["max_error"]
+    return value
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -656,7 +690,20 @@ FAIL_FAST = click.option(
     "--fail-fast",
     is_flag=True,
     default=False,
+    callback=_set_max_fail_and_max_error,
     help="Fail immediately after the first error or disagreement.",
+)
+MAX_FAIL = click.option(
+    "--max-fail",
+    type=click.IntRange(min=1),
+    callback=_check_fail_fast_provided,
+    help="Fail immediately if N tests fail in total across implementations",
+)
+MAX_ERROR = click.option(
+    "--max-error",
+    type=click.IntRange(min=1),
+    callback=_check_fail_fast_provided,
+    help="Fail immediately if N errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
@@ -724,6 +771,8 @@ EXPECT = click.option(
 @DIALECT
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -891,6 +940,8 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -938,6 +989,8 @@ async def _run(
     dialect: Dialect,
     fail_fast: bool,
     maybe_set_schema: Callable[[Dialect], CaseTransform],
+    max_fail: int | None = None,
+    max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -995,6 +1048,7 @@ async def _run(
 
             count = 0
             should_stop = False
+            unsucessful = Unsuccessful()
             for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
@@ -1003,10 +1057,11 @@ async def _run(
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
-
-                    if fail_fast:
-                        # Stop after this case, since we still have futures out
-                        should_stop = result.unsuccessful().causes_stop
+                    unsucessful += result.unsuccessful()
+                    if max_fail and unsucessful.failed == max_fail:
+                        should_stop = True
+                    if max_error and unsucessful.errored == max_error:
+                        should_stop = True
 
                 if should_stop:
                     reporter.failed_fast(seq_case=seq_case)
