@@ -92,7 +92,7 @@ const DetailItem = ({
       <div className={`card mb-3 ${borderClass}`}>
         <div className="card-body">
           <h5 className="card-title">Case : {title}</h5>
-          <p className="card-text">Test : {description}</p>
+          <p className="card-text">Test: {description}</p>
           <div className="card-body">
             <pre id="schema-code">Schema: {schemaFormatted}</pre>
           </div>
