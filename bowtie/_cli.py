@@ -619,14 +619,14 @@ def _set_schema(dialect: Dialect) -> CaseTransform:
 def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
 
+
 def _set_max_fail_and_max_error(
     ctx: click.Context,
     _,
     value: bool,
 ) -> None:
     if value:
-        if (ctx.params.get("max_fail") or
-            ctx.params.get("max_error")):
+        if ctx.params.get("max_fail") or ctx.params.get("max_error"):
             ctx.ensure_object(dict)
             ctx.obj["max_fail_or_error_provided"] = True
             return
@@ -636,21 +636,23 @@ def _set_max_fail_and_max_error(
         ctx.obj["fail_fast_provided"] = True
     return
 
+
 def _check_fail_fast_provided(
     ctx: click.Context,
     _,
     value: int | None,
 ) -> int | None:
     if ctx.obj:
-        if (("fail_fast_provided" in ctx.obj and
-            value is not None) or
-            "max_fail_or_error_provided" in ctx.obj):
+        if (
+            "fail_fast_provided" in ctx.obj and value is not None
+        ) or "max_fail_or_error_provided" in ctx.obj:
             raise click.UsageError(
                 "Cannot use --fail-fast with --max-fail / --max-error",
             )
         else:
             return ctx.params["max_fail"] and ctx.params["max_error"]
     return value
+
 
 IMPLEMENTATION = click.option(
     "--implementation",
