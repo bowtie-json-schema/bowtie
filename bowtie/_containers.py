@@ -172,7 +172,7 @@ class Connection:
         self = cls(image=image_name, **kwargs)
 
         try:
-            await self._start_container()
+            await self._start_container_maybe_pull()
         except GotStderr as error:
             err = StartupFailed(name=image_name, stderr=error.stderr.decode())
             raise err from None
@@ -220,14 +220,29 @@ class Connection:
         yield self
         await self._stream.ensure_deleted()
 
+    async def _start_container_maybe_pull(self):
+        # You would think we would use aiodocker's container.start() function
+        # which essentially does the below. You would think wrong.
+        # That function will pull the *entire* image repository if it ends up
+        # pulling our harness image -- so here we reimplement it, but only
+        # pull :latest when the image is missing.
+        try:
+            await self._start_container()
+        except aiodocker.exceptions.DockerError as err:
+            if err.status != 404:  # noqa: PLR2004
+                raise
+            await self._docker.pull(from_image=self._image, tag="latest")  # type: ignore[reportUnknownMemberType]
+            await self._start_container()
+
     async def _start_container(self):
-        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
-            config=dict(
-                Image=self._image,
-                OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
-            ),
+        config = dict(
+            Image=self._image,
+            OpenStdin=True,
+            HostConfig=dict(NetworkMode="none"),
         )
+        # FIXME: name + labels
+        container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
+        await container.start()  # type: ignore[reportUnknownMemberType]
         self._stream = Stream.attached_to(
             container,
             read_timeout_sec=self._read_timeout_sec,
