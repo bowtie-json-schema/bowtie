@@ -848,7 +848,7 @@ async def smoke(
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
         serializable: list[dict[str, Any]] = []
         implementation_exit_code = 0
-        
+
         async for _, results in implementation.smoke():
             async for case, result in results:
                 if result.unsuccessful():
@@ -874,7 +874,11 @@ async def smoke(
                 echo(json.dumps(serializable, indent=2))
 
             case "pretty":
-                message = "❌ some failures" if implementation_exit_code else "✅ all passed"
+                message = (
+                    "❌ some failures"
+                    if implementation_exit_code
+                    else "✅ all passed"
+                )
                 echo(f"\n{message}", file=sys.stderr)
 
             case "markdown":
@@ -884,7 +888,7 @@ async def smoke(
                     else "**✅ all passed**"
                 )
                 echo(f"\n{message}", file=sys.stderr)
-        
+
         exit_code |= implementation_exit_code
 
     return exit_code
