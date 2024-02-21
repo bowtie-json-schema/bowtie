@@ -36,28 +36,29 @@ Most commonly, you can use it to validate an instance (some data) using a specif
 replacing ``lua-jsonschema`` and the filenames with your implementation and schema of choice.
 For full details on the commands available, see the `CLI documentation <cli>`.
 
-Including Bowtie Output in Workflow Summary
--------------------------------------------
+A fully working example of the above code can also be found :org:`here <github-actions-example>`.
 
-Commands such as `bowtie summary <cli:summary>`, `bowtie smoke <cli:smoke>` and `bowtie info <cli:info>` support outputting in markdown format using the `--format markdown <bowtie summary --format>` flag. This output can be shown in the workflow summary for Eg. output validation results for a schema + instance as part of a workflow run.
 
-.. seealso::
+Including Bowtie Output in a Workflow Summary
+---------------------------------------------
 
-    `Displaying a Workflow Job's Summary <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary>`_
-
-        for details on displaying job summary for a workflow
+Some of Bowtie's commands, notably `bowtie summary <cli:summary>`, support outputting in markdown format using the `--format markdown <bowtie summary --format>` option.
+This can be useful for including their output in GitHub Actions' workflow summaries, e.g. to show validation results within the GitHub UI.
 
 Example:
 
 .. code:: yaml
 
-    - name: Show Report Summary
-      run: bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --format markdown >> $GITHUB_STEP_SUMMARY
+    - name: Validate 37 is an Integer
+      run: bowtie validate -i python-jsonschema <(printf '{"type": "integer"}') <(printf '37') | bowtie summary --format markdown >> $GITHUB_STEP_SUMMARY
 
 .. code:: yaml
 
-    - name: Checking An Implementation Functions On Basic Input
+    - name: Smoke Test a Bowtie Implementation
       run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
 
+.. seealso::
 
-A fully working example of the above code can also be found :org:`here <github-actions-example>`.
+    `Displaying a Workflow Job's Summary <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary>`_
+
+        for further details on ``GITHUB_STEP_SUMMARY``
