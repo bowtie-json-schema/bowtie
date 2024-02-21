@@ -45,17 +45,18 @@ Including Bowtie Output in a Workflow Summary
 Some of Bowtie's commands, notably `bowtie summary <cli:summary>`, support outputting in markdown format using the `--format markdown <bowtie summary --format>` option.
 This can be useful for including their output in GitHub Actions' workflow summaries, e.g. to show validation results within the GitHub UI.
 
-Example:
+For example:
 
 .. code:: yaml
 
     - name: Validate 37 is an Integer
-      run: bowtie validate -i python-jsonschema <(printf '{"type": "integer"}') <(printf '37') | bowtie summary --format markdown >> $GITHUB_STEP_SUMMARY
+      run: |
+        bowtie validate -i python-jsonschema <(printf '{"type": "integer"}') <(printf '37') | bowtie summary --format markdown >> $GITHUB_STEP_SUMMARY
 
 .. code:: yaml
 
     - name: Smoke Test a Bowtie Implementation
-      run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
+    run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
 
 .. seealso::
 
