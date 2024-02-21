@@ -3,6 +3,7 @@ import io.github.optimumcode.json.schema.JsonSchema
 import io.github.optimumcode.json.schema.JsonSchemaLoader
 import io.github.optimumcode.json.schema.SchemaType
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -21,6 +22,7 @@ fun main() {
             ignoreUnknownKeys = true
             prettyPrint = false
             encodeDefaults = true
+            classDiscriminatorMode = ClassDiscriminatorMode.NONE
         }
         val processor = BowtieSampsonSchemaValidatorLauncher(outputWriter, json)
         input.lines().forEach {
