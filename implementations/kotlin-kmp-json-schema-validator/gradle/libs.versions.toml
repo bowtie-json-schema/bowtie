@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.22"
-json-schema-validator = "0.0.7"
+json-schema-validator = "0.0.8"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
