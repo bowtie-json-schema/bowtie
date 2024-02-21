@@ -23,13 +23,7 @@ const ImplementationRow = ({
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementation);
-
-  const [isImplementationNew] = useState(() => {
-    if (prevImplementations) {
-      return implementation.id in prevImplementations ? false : true;
-    }
-    return false;
-  });
+  const isImplementationNew = prevImplementations && !(implementation.id in prevImplementations);
 
   return (
     <OverlayTrigger
