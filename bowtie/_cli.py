@@ -692,14 +692,12 @@ FAIL_FAST = click.option(
     help="Fail immediately after the first error or disagreement.",
 )
 MAX_FAIL = click.option(
-    "-mf",
     "--max-fail",
     type=click.IntRange(min=1),
     callback=_check_fail_fast_provided,
     help="Fail immediately if N tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
-    "-me",
     "--max-error",
     type=click.IntRange(min=1),
     callback=_check_fail_fast_provided,
