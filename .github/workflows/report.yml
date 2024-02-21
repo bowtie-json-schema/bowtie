@@ -41,21 +41,10 @@ jobs:
       dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Bowtie
-        run: python3 -m pip install -r requirements.txt .
-      - id: dialects-matrix
+      - name: Collect supported dialects
+        id: dialects-matrix
         run: |
-          python3 -c '
-          import os
-          import json
-
-          from bowtie._core import Dialect
-
-          dialects = [each.short_name for each in Dialect.known()]
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as GITHUB_OUTPUT:
-            GITHUB_OUTPUT.write(f"dialects={json.dumps(dialects)}")
-          '
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
 
   regenerate-reports:
     needs: dialects
