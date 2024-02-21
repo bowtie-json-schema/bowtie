@@ -45,7 +45,7 @@ export default class Dialect {
       .href();
     const response = await fetch(prevVersionUrl);
     const jsonl = await response.text();
-    const prevReportFirstLine = jsonl.trim().split(/\r?\n/)[0];    
+    const prevReportFirstLine = jsonl.trim().split(/\r?\n/)[0];
     const prevReportMetaData = JSON.parse(prevReportFirstLine) as RunInfo;
     return prevReportMetaData.implementations;
   }
