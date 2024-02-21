@@ -844,7 +844,7 @@ async def test_max_fail(envsonschema):
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
             {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
-            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": 8, "valid": true}] }
             {"description": "4", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
             """,  # noqa: E501
         )
@@ -856,6 +856,23 @@ async def test_max_fail(envsonschema):
     ], stderr
     assert stderr != ""
 
+@pytest.mark.asyncio
+async def test_max_fail_with_fail_fast(envsonschema):
+        async with run(
+            "-i", envsonschema, "--max-fail", "2", "--fail-fast",
+            ) as send:
+            with pytest.raises(AssertionError) as exec_info:
+                results, stderr = await send(
+                    """
+                    {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+                    {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+                    {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+                    """,  # noqa: E501
+                )
+            assert (
+                "Error: Cannot use --fail-fast with --max-fail / --max-error"
+                in exec_info.value.args[0]
+            )
 
 @pytest.mark.asyncio
 async def test_filter(envsonschema):
