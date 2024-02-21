@@ -28,8 +28,7 @@ keywords = [
     "json schema",
 ]
 authors = [
-  {email = "Julian+bowtie@GrayVines.com"},
-  {name = "Julian Berman"},
+  { name = "Julian Berman", email = "Julian+bowtie@GrayVines.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
