@@ -24,7 +24,7 @@ const fetchReportData = async (dialect: Dialect) => {
   return Promise.all([
     dialect.fetchReport(reportUri),
     dialect.fetchPrevReportImplementations(reportUri),
-  ])
+  ]);
 };
 
 const fetchAllReportData = async (langImplementation: string) => {
