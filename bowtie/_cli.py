@@ -200,6 +200,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     return wrapper
 
+
 def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
     """
     Define a Bowtie subcommand which starts up all implementations.
@@ -261,6 +262,7 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
         return cmd
 
     return wrapper
+
 
 @subcommand
 @click.option(
@@ -795,17 +797,41 @@ LANGUAGE = click.option(
     "-l",
     "language",
     help="Filter implementations by programming languages",
-    type=click.Choice(["clojure", "c++", "dotnet",
-                       "go", "java", "javascript",
-                       "kotlin", "lua", "php",
-                       "python", "ruby", "rust",
-                       "scala", "typescript"]),
+    type=click.Choice(
+        [
+            "clojure",
+            "c++",
+            "dotnet",
+            "go",
+            "java",
+            "javascript",
+            "kotlin",
+            "lua",
+            "php",
+            "python",
+            "ruby",
+            "rust",
+            "scala",
+            "typescript",
+        ],
+    ),
 )
-_L = Literal["clojure", "c++", "dotnet",
-            "go", "java", "javascript",
-            "kotlin", "lua", "php",
-            "python", "ruby", "rust",
-            "scala", "typescript"]
+_L = Literal[
+    "clojure",
+    "c++",
+    "dotnet",
+    "go",
+    "java",
+    "javascript",
+    "kotlin",
+    "lua",
+    "php",
+    "python",
+    "ruby",
+    "rust",
+    "scala",
+    "typescript",
+]
 FILTER = click.option(
     "-k",
     "filter",
@@ -961,7 +987,8 @@ def validate(
     )
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
-@all_implementations_subcommand() # type: ignore[reportArgumentType]
+
+@all_implementations_subcommand()  # type: ignore[reportArgumentType]
 @DIALECT
 @LANGUAGE
 async def filter_implementations(
@@ -972,18 +999,18 @@ async def filter_implementations(
     supporting_implementations: list[str] = []
     for each in implementations:
         metadata = each.info.serializable()
-        if ("dialects" in metadata and
-            str(dialect.uri) in metadata["dialects"]):
-                impl_img = each.info.id
-                impl_name = impl_img.split("/")[-1]
-                if language is not None:
-                    if each.info.language == language:
-                        supporting_implementations.append(impl_name)
-                else:
+        if "dialects" in metadata and str(dialect.uri) in metadata["dialects"]:
+            impl_img = each.info.id
+            impl_name = impl_img.split("/")[-1]
+            if language is not None:
+                if each.info.language == language:
                     supporting_implementations.append(impl_name)
+            else:
+                supporting_implementations.append(impl_name)
 
     for impl in supporting_implementations:
         click.echo(impl)
+
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
