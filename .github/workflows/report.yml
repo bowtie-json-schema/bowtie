@@ -119,6 +119,9 @@ jobs:
           pattern: report-*
           path: site/
 
+      - name: Install Bowtie
+        uses: ./
+
       - name: Generate Badges
         run: bowtie badges
 
