@@ -116,7 +116,7 @@ jobs:
       - name: Include New Reports
         uses: actions/download-artifact@v4
         with:
-          name: report-*
+          pattern: report-*
           path: site/
 
       - name: Generate Badges
