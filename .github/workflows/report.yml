@@ -107,6 +107,7 @@ jobs:
         run: mkdir site
 
       - name: Include Previous Report
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: previous-report
