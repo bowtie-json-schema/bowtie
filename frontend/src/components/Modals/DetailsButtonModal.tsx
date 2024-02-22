@@ -98,7 +98,7 @@ const DetailItem = ({
             <label className="me-1">Test:</label>
             {description}
           </p>
-          <SchemaDisplay schema={schema} instance={instance}/>
+          <SchemaDisplay schema={schema} instance={instance} />
         </div>
         <div className="card-footer text-muted text-center">
           <label className="me-1">Result:</label>
