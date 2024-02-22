@@ -26,7 +26,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: report.yml
-          name: report-*
+          name: report-.*
           path: previous
 
       - name: Store previous reports for inclusion
