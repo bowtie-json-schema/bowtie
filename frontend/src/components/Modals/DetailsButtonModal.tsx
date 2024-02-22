@@ -49,11 +49,11 @@ export const DetailsButtonModal = ({
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
-           <label className="me-1">Unsuccessful Tests:</label>
-           <b>{implementation.metadata.name}</b>
-           <small className="text-muted ps-2">
-             {mapLanguage(implementation.metadata.language)}
-           </small>
+          <label className="me-1">Unsuccessful Tests:</label>
+          <b>{implementation.metadata.name}</b>
+          <small className="text-muted ps-2">
+            {mapLanguage(implementation.metadata.language)}
+          </small>
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -94,7 +94,7 @@ const DetailItem = ({
             {title}
           </h5>
           <p className="card-text">
-          <label className="me-1">Test:</label>
+            <label className="me-1">Test:</label>
             {description}
           </p>
           <div className="card-body">
