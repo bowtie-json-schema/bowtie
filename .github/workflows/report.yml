@@ -118,6 +118,7 @@ jobs:
         with:
           pattern: report-*
           path: site/
+          merge-multiple: true
 
       - uses: actions/checkout@v4
       - name: Install Bowtie
