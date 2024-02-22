@@ -138,7 +138,6 @@ class ImplementationSubcommand(Protocol):
 
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
-
 def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
     Define a Bowtie subcommand which starts up some implementations.
@@ -146,69 +145,6 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     Runs the wrapped function with only the successfully started
     implementations.
     """
-
-    def wrapper(fn: ImplementationSubcommand):
-        async def run(
-            image_names: list[str],
-            read_timeout_sec: float,
-            make_validator: MakeValidator = make_validator,
-            **kw: Any,
-        ) -> int:
-            exit_code = 0
-            start = _start(
-                image_names=image_names,
-                make_validator=make_validator,
-                reporter=reporter,
-                read_timeout_sec=read_timeout_sec,
-            )
-
-            running: list[Implementation] = []
-            async with start as implementations:
-                for each in implementations:  # FIXME: respect --quiet
-                    try:
-                        implementation = await each
-                    except StartupFailed as err:
-                        exit_code |= _EX_CONFIG
-                        show: list[console.RenderableType] = [err.diagnostic()]
-                        if err.stderr:
-                            stderr = panel.Panel(err.stderr, title="stderr")
-                            show.append(stderr)
-                        rich.print(*show, file=sys.stderr)
-                        continue
-                    except NoSuchImplementation as err:
-                        exit_code |= _EX_CONFIG
-                        rich.print(err.diagnostic(), file=sys.stderr)
-                        continue
-
-                    running.append(implementation)
-
-                if running:
-                    exit_code |= await fn(implementations=running, **kw) or 0
-                else:
-                    exit_code |= _EX_CONFIG
-
-            return exit_code
-
-        @subcommand
-        @IMPLEMENTATION
-        @TIMEOUT
-        @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
-            return asyncio.run(run(image_names=image_names, **kwargs))
-
-        return cmd
-
-    return wrapper
-
-
-def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
-    """
-    Define a Bowtie subcommand which starts up all implementations.
-
-    Runs the wrapped function with only the successfully started
-    implementations.
-    """
-
     def wrapper(fn: ImplementationSubcommand):
         async def run(
             image_names: list[str],
@@ -249,6 +185,34 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
             return exit_code
 
         @subcommand
+        @IMPLEMENTATION
+        @TIMEOUT
+        @wraps(fn)
+        def cmd(image_names: list[str], **kwargs: Any) -> int:
+            return asyncio.run(
+                _run_implementations(
+                    image_names=image_names,
+                    fn=fn,
+                    reporter=reporter,
+                    **kwargs,
+                    ),
+                )
+
+        return cmd
+
+    return wrapper
+
+
+def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
+    """
+    Define a Bowtie subcommand which starts up all implementations.
+
+    Runs the wrapped function with only the successfully started
+    implementations.
+    """
+
+    def wrapper(fn: ImplementationSubcommand):
+        @subcommand
         @TIMEOUT
         @wraps(fn)
         def cmd(**kwargs: Any) -> int:
@@ -257,7 +221,14 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
                 for implementation in IMPLEMENTATIONS.iterdir()
                 if implementation.is_dir()
             ]
-            return asyncio.run(run(image_names=image_names, **kwargs))
+            return asyncio.run(
+                _run_implementations(
+                    image_names=image_names,
+                    fn=fn,
+                    reporter=reporter,
+                    **kwargs,
+                    ),
+                )
 
         return cmd
 
@@ -949,7 +920,7 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
+    return asyncio.run(_run_cases(**kwargs, cases=cases, dialect=dialect))
 
 
 @subcommand
@@ -985,7 +956,7 @@ def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+    return asyncio.run(_run_cases(fail_fast=False, **kwargs, cases=[case]))
 
 
 @all_implementations_subcommand()  # type: ignore[reportArgumentType]
@@ -1174,11 +1145,55 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
+    task = _run_cases(
+        **kwargs,
+        dialect=dialect,
+        cases=cases,
+        run_metadata=metadata,
+    )
     return asyncio.run(task)
 
+async def _run_implementations(
+    image_names: list[str],
+    read_timeout_sec: float,
+    fn: ImplementationSubcommand,
+    reporter: _report.Reporter = SILENT,
+    make_validator: MakeValidator = make_validator,
+    **kw: Any,
+) -> int:
+    exit_code = 0
+    start = _start(
+        image_names=image_names,
+        make_validator=make_validator,
+        reporter=reporter,
+        read_timeout_sec=read_timeout_sec,
+    )
 
-async def _run(
+    running: list[Implementation] = []
+    async with start as implementations:
+        for each in implementations:  # FIXME: respect --quiet
+            try:
+                implementation = await each
+            except StartupFailed as err:
+                exit_code |= _EX_CONFIG
+                stderr = panel.Panel(err.stderr, title="stderr")
+                rich.print(err.diagnostic(), stderr, file=sys.stderr)
+                continue
+            except NoSuchImplementation as err:
+                exit_code |= _EX_CONFIG
+                rich.print(err.diagnostic(), file=sys.stderr)
+                continue
+
+            running.append(implementation)
+
+        if running:
+            exit_code |= await fn(implementations=running, **kw) or 0
+        else:
+            exit_code |= _EX_CONFIG
+
+    return exit_code
+
+async def _run_cases(
     image_names: list[str],
     cases: Iterable[TestCase],
     dialect: Dialect,
