@@ -103,6 +103,10 @@ jobs:
       - previous-reports
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Install Bowtie
+        uses: ./
+
       - name: Create our Site Structure
         run: mkdir site
 
@@ -119,10 +123,6 @@ jobs:
           pattern: report-*
           path: site/
           merge-multiple: true
-
-      - uses: actions/checkout@v4
-      - name: Install Bowtie
-        uses: ./
 
       - name: Generate Badges
         run: bowtie badges
