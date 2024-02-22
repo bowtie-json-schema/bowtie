@@ -66,6 +66,11 @@ jobs:
         run: |
           bowtie suite $(ls implementations/ | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
 
+      - run: docker images
+        if: always()
+      - run: docker system df
+        if: always()
+
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
       # Probably we should also atomically move files into place.
       - name: Check Report is Valid
