@@ -210,10 +210,10 @@ class Connection:
                         # GitHub Registry saying an image doesn't exist as
                         # reported within GitHub Actions' version of Podman...
                         # This is some crazy string like:
-                        #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
+                        #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
                         # with seemingly no other indication elsewhere and
                         # obviously no good way to detect this specific case
-                        no_image = message.endswith('/tags/list": denied')
+                        no_image = message.endswith('/latest": denied')
                     except Exception:  # noqa: BLE001, S110
                         pass
                     else:
