@@ -28,6 +28,7 @@ jobs:
           workflow: report.yml
           name: report-*
           path: previous
+          if_no_artifact_found: warn
 
       - name: Store previous reports for inclusion
         uses: actions/upload-artifact@v4
