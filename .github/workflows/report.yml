@@ -119,6 +119,7 @@ jobs:
           pattern: report-*
           path: site/
 
+      - uses: actions/checkout@v4
       - name: Install Bowtie
         uses: ./
 
