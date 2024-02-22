@@ -1,6 +1,7 @@
 import { Button, Modal } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
 import { Case, ImplementationData } from "../../data/parseReportData";
+import SchemaDisplay from "../Cases/SchemaDisplay";
 
 export const DetailsButtonModal = ({
   show,
@@ -97,12 +98,7 @@ const DetailItem = ({
             <label className="me-1">Test:</label>
             {description}
           </p>
-          <div className="card-body">
-            <pre id="schema-code">Schema: {schemaFormatted}</pre>
-          </div>
-          <div className="card-body">
-            <pre id="schema-code">Instance: {instanceFormatted}</pre>
-          </div>
+          <SchemaDisplay schema={schema} instance={instance}/>
         </div>
         <div className="card-footer text-muted text-center">
           <label className="me-1">Result:</label>
