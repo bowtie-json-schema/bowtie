@@ -160,7 +160,7 @@ class Connection:
     )
 
     #: A per-request number of retries, before giving up
-    _retry: int = 3
+    _retry: int = field(default=3, repr=False)
 
     @classmethod
     @asynccontextmanager
