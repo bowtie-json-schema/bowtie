@@ -49,13 +49,11 @@ export const DetailsButtonModal = ({
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
-          <small className="text-muted ps-2">
-            JSON Schema test cases that need attention : &nbsp;
-          </small>
-          <b>{implementation.metadata.name}</b>
-          <small className="text-muted ps-2">
-            {mapLanguage(implementation.metadata.language)}
-          </small>
+           <label className="me-1">Unsuccessful Tests:</label>
+           <b>{implementation.metadata.name}</b>
+           <small className="text-muted ps-2">
+             {mapLanguage(implementation.metadata.language)}
+           </small>
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -91,8 +89,14 @@ const DetailItem = ({
     <div className="col">
       <div className={`card mb-3 ${borderClass}`}>
         <div className="card-body">
-          <h5 className="card-title">Case: {title}</h5>
-          <p className="card-text">Test: {description}</p>
+          <h5 className="card-title">
+            <label className="me-1">Case:</label>
+            {title}
+          </h5>
+          <p className="card-text">
+          <label className="me-1">Test:</label>
+            {description}
+          </p>
           <div className="card-body">
             <pre id="schema-code">Schema: {schemaFormatted}</pre>
           </div>
@@ -101,7 +105,8 @@ const DetailItem = ({
           </div>
         </div>
         <div className="card-footer text-muted text-center">
-          Result: {message}
+          <label className="me-1">Result:</label>
+          {message}
         </div>
       </div>
     </div>
