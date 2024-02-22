@@ -138,6 +138,7 @@ class ImplementationSubcommand(Protocol):
 
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
+
 def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
     Define a Bowtie subcommand which starts up some implementations.
@@ -145,6 +146,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     Runs the wrapped function with only the successfully started
     implementations.
     """
+
     def wrapper(fn: ImplementationSubcommand):
         async def run(
             image_names: list[str],
@@ -195,8 +197,8 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                     fn=fn,
                     reporter=reporter,
                     **kwargs,
-                    ),
-                )
+                ),
+            )
 
         return cmd
 
@@ -227,8 +229,8 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
                     fn=fn,
                     reporter=reporter,
                     **kwargs,
-                    ),
-                )
+                ),
+            )
 
         return cmd
 
@@ -1153,6 +1155,7 @@ def suite(
     )
     return asyncio.run(task)
 
+
 async def _run_implementations(
     image_names: list[str],
     read_timeout_sec: float,
@@ -1192,6 +1195,7 @@ async def _run_implementations(
             exit_code |= _EX_CONFIG
 
     return exit_code
+
 
 async def _run_cases(
     image_names: list[str],
