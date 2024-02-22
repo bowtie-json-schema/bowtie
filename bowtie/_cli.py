@@ -813,7 +813,7 @@ LANGUAGE = click.option(
             "rust",
             "scala",
             "typescript",
-        ],
+        ]
     ),
 )
 _L = Literal[
