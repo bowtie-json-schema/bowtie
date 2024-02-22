@@ -50,8 +50,6 @@ if TYPE_CHECKING:
     from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
-IMPLEMENTATIONS = Path(__file__).parent.parent / "implementations"
-
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
@@ -180,15 +178,14 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
         @TIMEOUT
         @wraps(fn)
         def cmd(**kwargs: Any) -> int:
-            if(not kwargs.get('dialect') and 
-               not kwargs.get('language')):
+            if not kwargs.get("dialect") and not kwargs.get("language"):
                 raise click.UsageError(
-                    "Please provide either --dialect filter or --language filter"
+                    "Please provide either --dialect filter "
+                    "or --language filter",
                 )
             implementations = list(Implementation.known())
             image_names: list[str] = [
-                f"{IMAGE_REPOSITORY}/{impl}"
-                for impl in implementations
+                f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations
             ]
             return asyncio.run(
                 _run_implementations(
@@ -719,9 +716,11 @@ IMPLEMENTATION = click.option(
     metavar="IMPLEMENTATION",
     help="A docker image which implements the bowtie IO protocol.",
 )
+
+
 def create_dialect_option():
     def wrapper(default: Any | None = max(Dialect.known())):
-        option = click.option(
+        return click.option(
             "--dialect",
             "-D",
             "dialect",
@@ -730,12 +729,15 @@ def create_dialect_option():
             show_default=True,
             metavar="URI_OR_NAME",
             help=(
-                "A URI or shortname identifying the dialect of each test. Possible "
-                f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
+                "A URI or shortname identifying the dialect of each test. "
+                "Possible shortnames include: "
+                f"{', '.join(sorted(Dialect.by_alias()))}."
             ),
         )
-        return option
+
     return wrapper
+
+
 DIALECT = create_dialect_option()
 LANGUAGE = click.option(
     "--language",
@@ -947,9 +949,11 @@ async def filter_implementations(
         impl_id = each.info.id
         impl_name = impl_id.split("/")[-1]
 
-        if ("dialects" in metadata and
-            (not dialect or str(dialect.uri) in metadata["dialects"]) and
-            (not language or each.info.language == language)):
+        if (
+            "dialects" in metadata
+            and (not dialect or str(dialect.uri) in metadata["dialects"])
+            and (not language or each.info.language == language)
+        ):
             supporting_implementations.append(impl_name)
 
     for impl in supporting_implementations:
