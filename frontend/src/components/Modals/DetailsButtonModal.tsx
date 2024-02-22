@@ -84,8 +84,6 @@ const DetailItem = ({
   instance: unknown;
   borderClass: string;
 }) => {
-  const schemaFormatted = JSON.stringify(schema, null, 2);
-  const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
     <div className="col">
       <div className={`card mb-3 ${borderClass}`}>
