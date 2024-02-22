@@ -114,7 +114,7 @@ jobs:
       - name: Include Previous Report
         uses: actions/download-artifact@v4
         with:
-          name: previous-report
+          name: previous-reports
           path: site/previous/
 
       - name: Include New Reports
