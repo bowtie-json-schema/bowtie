@@ -136,6 +136,7 @@ class ImplementationSubcommand(Protocol):
 
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
+
 def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
     Define a Bowtie subcommand which starts up some implementations.
@@ -143,6 +144,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     Runs the wrapped function with only the successfully started
     implementations.
     """
+
     def wrapper(fn: ImplementationSubcommand):
         @subcommand
         @IMPLEMENTATION
