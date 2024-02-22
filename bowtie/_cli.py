@@ -50,6 +50,8 @@ if TYPE_CHECKING:
     from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
+IMPLEMENTATIONS = Path(__file__).parent.parent / "implementations"
+
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
@@ -198,6 +200,67 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     return wrapper
 
+def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
+    """
+    Define a Bowtie subcommand which starts up all implementations.
+
+    Runs the wrapped function with only the successfully started
+    implementations.
+    """
+
+    def wrapper(fn: ImplementationSubcommand):
+        async def run(
+            image_names: list[str],
+            read_timeout_sec: float,
+            make_validator: MakeValidator = make_validator,
+            **kw: Any,
+        ) -> int:
+            exit_code = 0
+            start = _start(
+                image_names=image_names,
+                make_validator=make_validator,
+                reporter=reporter,
+                read_timeout_sec=read_timeout_sec,
+            )
+
+            running: list[Implementation] = []
+            async with start as implementations:
+                for each in implementations:  # FIXME: respect --quiet
+                    try:
+                        implementation = await each
+                    except StartupFailed as err:
+                        exit_code |= _EX_CONFIG
+                        stderr = panel.Panel(err.stderr, title="stderr")
+                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
+                        continue
+                    except NoSuchImplementation as err:
+                        exit_code |= _EX_CONFIG
+                        rich.print(err.diagnostic(), file=sys.stderr)
+                        continue
+
+                    running.append(implementation)
+
+                if running:
+                    exit_code |= await fn(implementations=running, **kw) or 0
+                else:
+                    exit_code |= _EX_CONFIG
+
+            return exit_code
+
+        @subcommand
+        @TIMEOUT
+        @wraps(fn)
+        def cmd(**kwargs: Any) -> int:
+            image_names: list[str] = [
+                f"{IMAGE_REPOSITORY}/{implementation.name}"
+                for implementation in IMPLEMENTATIONS.iterdir()
+                if implementation.is_dir()
+            ]
+            return asyncio.run(run(image_names=image_names, **kwargs))
+
+        return cmd
+
+    return wrapper
 
 @subcommand
 @click.option(
@@ -727,6 +790,22 @@ DIALECT = click.option(
         f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
     ),
 )
+LANGUAGE = click.option(
+    "--language",
+    "-l",
+    "language",
+    help="Filter implementations by programming languages",
+    type=click.Choice(["clojure", "c++", "dotnet",
+                       "go", "java", "javascript",
+                       "kotlin", "lua", "php",
+                       "python", "ruby", "rust",
+                       "scala", "typescript"]),
+)
+_L = Literal["clojure", "c++", "dotnet",
+            "go", "java", "javascript",
+            "kotlin", "lua", "php",
+            "python", "ruby", "rust",
+            "scala", "typescript"]
 FILTER = click.option(
     "-k",
     "filter",
@@ -882,6 +961,29 @@ def validate(
     )
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
+@all_implementations_subcommand() # type: ignore[reportArgumentType]
+@DIALECT
+@LANGUAGE
+async def filter_implementations(
+    implementations: Iterable[Implementation],
+    dialect: Dialect,
+    language: _L | None,
+):
+    supporting_implementations: list[str] = []
+    for each in implementations:
+        metadata = each.info.serializable()
+        if ("dialects" in metadata and
+            str(dialect.uri) in metadata["dialects"]):
+                impl_img = each.info.id
+                impl_name = impl_img.split("/")[-1]
+                if language is not None:
+                    if each.info.language == language:
+                        supporting_implementations.append(impl_name)
+                else:
+                    supporting_implementations.append(impl_name)
+
+    for impl in supporting_implementations:
+        click.echo(impl)
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
