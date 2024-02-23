@@ -12,15 +12,15 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
     <div className="card mx-auto mb-3 w-75" id="run-info">
       <div className="card-header">Run Info</div>
 
-      <div className="card-body">
+      <div className="card-body table-responsive-sm">
         <table className="table table-sm table-hover">
           <thead>
             <tr>
-              <td>Dialect</td>
+              <td className="align-top">Dialect</td>
               <td>{runInfo.dialect}</td>
             </tr>
             <tr>
-              <td>Ran</td>
+              <td className="align-top">Ran</td>
               <td>{ranTime(runInfo.started)} ago</td>
             </tr>
           </thead>
@@ -35,7 +35,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
                   if (typeof value === "string") {
                     return (
                       <tr key={label}>
-                        <td>{label}</td>
+                        <td className="align-top">{label}</td>
                         <td>{value}</td>
                       </tr>
                     );
@@ -49,7 +49,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
                   ) {
                     return (
                       <tr key={label}>
-                        <td>{label}</td>
+                        <td className="align-top">{label}</td>
                         <td>
                           <a href={value.href}>{value.text}</a>
                         </td>
