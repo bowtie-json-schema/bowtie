@@ -50,7 +50,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
                     return (
                       <tr key={label}>
                         <td>{label}</td>
-                        <td style={{ maxWidth: "200px" }}>
+                        <td style={{ maxWidth: "50vw" }}>
                           <a href={value.href}>{value.text}</a>
                         </td>
                       </tr>
