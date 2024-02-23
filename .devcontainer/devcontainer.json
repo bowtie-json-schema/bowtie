@@ -7,5 +7,5 @@
 
   "onCreateCommand": "sudo chown -R vscode /var/run/docker.sock; pip install -r requirements.txt -e .",
 
-  "postCreateCommand": "for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; sudo cp /workspaces/bowtie/docs/gitpod-motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt; done;"
+  "postCreateCommand": "for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each:latest; sudo cp /workspaces/bowtie/docs/motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt; done;"
 }
