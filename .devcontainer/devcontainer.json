@@ -4,7 +4,7 @@
 
   "runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
   
-  "onCreateCommand": "sudo chown -R vscode /var/run/docker.sock && pip install -r requirements.txt -e .",
+  "onCreateCommand": "sudo chown -R vscode /var/run/docker.sock && pip install -r requirements.txt -e . && code /docs/gitpod-motd.txt",
   "postCreateCommand": "for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done",
 
   "settings": {
