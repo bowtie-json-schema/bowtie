@@ -64,27 +64,14 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - run: docker system df
-
-      # FIXME: This definitely should not be necessary, as Bowtie should pull
-      #        images, but we're observing strange behavior where that ends up
-      #        pulling every single version of every single image.
-      #        It only seems to happen with Docker (not Podman), and seems to
-      #        be the case even though we now use create() rather than run()
-      #        in aiodocker. More diagnosis needed to see what the heck is
-      #        happening.
-      - name: Pre-fetch all images
-        run: |
-          for each in implementations/*; do
-            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
-          done
-          wait
-
       - name: Generate a New Report
         run: |
           bowtie suite $(ls implementations/ | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
 
-      - run: docker system df
+      # This is useful to debug whether Bowtie accidentally fetched some huge
+      # number of container images.
+      - name: Show what images we fetched
+        run: docker images
         if: always()
 
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
@@ -106,20 +93,11 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - run: docker system df
-
-      - name: Pre-fetch all images
-        run: |
-          for each in implementations/*; do
-            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
-          done
-          wait
-
       - name: Generate implementations.json file
         run: |
           bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
 
-      - run: docker system df
+      - run: docker images
         if: always()
 
       - uses: actions/upload-artifact@v4
