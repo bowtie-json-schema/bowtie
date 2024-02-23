@@ -9,7 +9,7 @@
   :target: https://gitpod.io/#https://github.com/bowtie-json-schema/bowtie
 
 .. image:: https://github.com/codespaces/badge.svg
-  :alt: Open in GitHub Codespaces
+  :alt: Open in GitHub Codespace
   :target: https://codespaces.new/bowtie-json-schema/bowtie
   :height: 22px
 
