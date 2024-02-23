@@ -11,6 +11,7 @@
 .. image:: https://github.com/codespaces/badge.svg
   :alt: Open in GitHub Codespaces
   :target: https://codespaces.new/bowtie-json-schema/bowtie
+  :height: 22px
 
 .. image:: https://zenodo.org/badge/531839193.svg
   :alt: DOI
