@@ -45,7 +45,7 @@ jobs:
         with:
           workflow: report.yml
           branch: main
-          name: report
+          name: site
           path: _site
 
       - name: Upload artifact
