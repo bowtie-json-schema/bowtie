@@ -21,7 +21,10 @@ const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport(reportUri);
+  return Promise.all([
+    dialect.fetchReport(reportUri),
+    dialect.fetchPrevReportImplementations(reportUri),
+  ]);
 };
 
 const fetchAllReportData = async (langImplementation: string) => {

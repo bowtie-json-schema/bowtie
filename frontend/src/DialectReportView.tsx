@@ -3,14 +3,16 @@ import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
-import { ReportData } from "./data/parseReportData.ts";
+import { Implementation, ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
 export const DialectReportView = ({
   reportData,
+  prevImplementations,
 }: {
   reportData: ReportData;
+  prevImplementations?: Record<string, Implementation> | null;
 }) => {
   const params = useSearchParams();
 
@@ -40,7 +42,10 @@ export const DialectReportView = ({
         <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
-        <SummarySection reportData={filteredData} />
+        <SummarySection
+          reportData={filteredData}
+          prevImplementations={prevImplementations}
+        />
         <CasesSection reportData={filteredData} />
       </div>
     </div>

@@ -1,7 +1,6 @@
 import data from "../../../data/dialects.json";
 import URI from "urijs";
-
-import { fromSerialized } from "./parseReportData";
+import { fromSerialized, RunInfo } from "./parseReportData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -35,6 +34,20 @@ export default class Dialect {
     const url = baseURI.clone().filename(this.path).suffix("json").href();
     const response = await fetch(url);
     return fromSerialized(await response.text());
+  }
+
+  async fetchPrevReportImplementations(baseURI: URI) {
+    const prevVersionUrl = baseURI
+      .clone()
+      .directory("previous")
+      .filename(this.path)
+      .suffix("json")
+      .href();
+    const response = await fetch(prevVersionUrl);
+    const jsonl = await response.text();
+    const prevReportFirstLine = jsonl.trim().split(/\r?\n/)[0];
+    const prevReportMetaData = JSON.parse(prevReportFirstLine) as RunInfo;
+    return prevReportMetaData.implementations;
   }
 
   static known(): Iterable<Dialect> {
