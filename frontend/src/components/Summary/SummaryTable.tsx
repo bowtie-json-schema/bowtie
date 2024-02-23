@@ -5,6 +5,7 @@ import { ReportData, calculateTotals } from "../../data/parseReportData";
 const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);
   return (
+    <div className="table-responsive">
     <table className="table table-hover">
       <thead>
         <tr>
@@ -98,6 +99,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
         </tr>
       </tfoot>
     </table>
+    </div>
   );
 };
 
