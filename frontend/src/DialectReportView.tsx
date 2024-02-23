@@ -88,11 +88,11 @@ export const DialectReportView = ({
 const filterOtherImplementations = (
   allImplementationsData: Record<string, Implementation>,
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationData>
+  filteredReportImplementationsMap: Map<string, ImplementationData>,
 ): Record<string, Implementation> => {
   const filteredOtherImplementationsArray: [string, Implementation][] =
     Object.entries(allImplementationsData).filter(
-      ([, impl]: [string, Implementation]) => langs.includes(impl.language)
+      ([, impl]: [string, Implementation]) => langs.includes(impl.language),
     );
 
   const filteredOtherImplementationsData: Record<string, Implementation> = {};

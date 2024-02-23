@@ -40,7 +40,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                       </td>
                     </tr>
                   );
-                }
+                },
               )}
             </tbody>
           </table>
