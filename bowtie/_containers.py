@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import asyncio
 import json
 
-from attrs import field, mutable
+from attrs import field, frozen, mutable
 import aiodocker.exceptions
 
 from bowtie._core import (
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from bowtie._commands import Message
 
 
+@frozen
 class _ClosedStream(Exception):
     """
     The stream is closed, and we tried to send something on it.
@@ -42,6 +43,8 @@ class _ClosedStream(Exception):
     This exception should never bubble out of this module, it should be handled
     by the connection.
     """
+
+    container: aiodocker.containers.DockerContainer
 
 
 @mutable
@@ -79,28 +82,38 @@ class Stream:
         try:  # aiodocker doesn't appear to properly report stream closure
             await self._stream.write_in(message.encode())
         except aiodocker.exceptions.DockerError as err:
-            raise _ClosedStream(self) from err
+            raise _ClosedStream(self._container) from err
         except AttributeError:
-            raise _ClosedStream(self) from None
+            raise _ClosedStream(self._container) from None
 
     async def receive(self) -> str:
         if self._buffer:
             return self._buffer.popleft().decode()
 
         while True:
-            message = await self._read_with_timeout()
+            try:
+                message = await self._read_with_timeout()
+            except asyncio.exceptions.TimeoutError:
+                info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
+                if not info["State"]["Running"]:
+                    raise _ClosedStream(self._container)
+                raise
+
             if message is not None:
                 break
             info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
-            if info["State"]["FinishedAt"]:
-                raise _ClosedStream(self)
+            if not info["State"]["Running"]:
+                raise _ClosedStream(self._container)
 
         if message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
             data: list[bytes] = []
 
             while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
                 data.append(message.data)  # type: ignore[reportUnknownMemberType]
-                message = await self._read_with_timeout()
+                try:
+                    message = await self._read_with_timeout()
+                except asyncio.exceptions.TimeoutError:
+                    message = None
                 if message is None:
                     raise GotStderr(b"".join(data))
 
@@ -124,7 +137,7 @@ class Stream:
 
 
 @mutable
-class ContainerConnection:
+class Connection:
     """
     A connection with a restartable container over stdio via request/responses.
 
@@ -147,7 +160,7 @@ class ContainerConnection:
     )
 
     #: A per-request number of retries, before giving up
-    _retry: int = 3
+    _retry: int = field(default=3, repr=False)
 
     @classmethod
     @asynccontextmanager
@@ -159,62 +172,78 @@ class ContainerConnection:
         self = cls(image=image_name, **kwargs)
 
         try:
-            await self._start_container()
+            await self._start_container_maybe_pull()
         except GotStderr as error:
             err = StartupFailed(name=image_name, stderr=error.stderr.decode())
             raise err from None
         except _ClosedStream:
             raise StartupFailed(name=image_name) from None
-        except aiodocker.exceptions.DockerError as err:
-            # This craziness can go wrong in various ways, none of them
-            # machine parseable.
-
-            status, data, *_ = err.args
-            if data.get("cause") == "image not known":
-                raise NoSuchImplementation(image_name) from err
-
-            message = ghcr = data.get("message", "")
-
-            if status == 500:  # noqa: PLR2004
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no real good way to detect this specific case
-                    no_image = message.endswith('/tags/list": denied')
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImplementation(image_name)
-
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # locally via podman on macOS...
-
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImplementation(image_name)
-
-            raise StartupFailed(name=image_name, data=data) from err
 
         yield self
         await self._stream.ensure_deleted()
 
+    async def _start_container_maybe_pull(self):
+        # You would think we would use aiodocker's container.start() function
+        # which essentially does the below. You would think wrong.
+        # That function will pull the *entire* image repository if it ends up
+        # pulling our harness image -- so here we reimplement it, but only
+        # pull :latest when the image is missing.
+        try:
+            await self._start_container()
+        except aiodocker.exceptions.DockerError as err:
+            if err.status != 404:  # noqa: PLR2004
+                raise
+            try:
+                await self._docker.pull(from_image=self._image, tag="latest")  # type: ignore[reportUnknownMemberType]
+            except aiodocker.exceptions.DockerError as err:
+                # This craziness can go wrong in various ways, none of them
+                # machine parseable.
+
+                status, data, *_ = err.args
+                if data.get("cause") == "image not known":
+                    raise NoSuchImplementation(self._image) from err
+
+                message = ghcr = data.get("message", "")
+
+                if status == 500:  # noqa: PLR2004
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported within GitHub Actions' version of Podman...
+                        # This is some crazy string like:
+                        #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
+                        # with seemingly no other indication elsewhere and
+                        # obviously no good way to detect this specific case
+                        no_image = message.endswith('/latest": denied')
+                    except Exception:  # noqa: BLE001, S110
+                        pass
+                    else:
+                        if no_image:
+                            raise NoSuchImplementation(self._image)
+
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported locally via podman on macOS...
+
+                        # message will be ... a JSON string !?! ...
+                        error = json.loads(ghcr).get("message", "")
+                    except Exception:  # noqa: BLE001, S110
+                        pass  # nonJSON / missing key
+                    else:
+                        if "403 (forbidden)" in error.casefold():
+                            raise NoSuchImplementation(self._image)
+
+                raise StartupFailed(name=self._image, data=data) from err
+            await self._start_container()
+
     async def _start_container(self):
-        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
-            config=dict(
-                Image=self._image,
-                OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
-            ),
+        config = dict(
+            Image=self._image,
+            OpenStdin=True,
+            HostConfig=dict(NetworkMode="none"),
         )
+        # FIXME: name + labels
+        container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
+        await container.start()  # type: ignore[reportUnknownMemberType]
         self._stream = Stream.attached_to(
             container,
             read_timeout_sec=self._read_timeout_sec,
@@ -236,7 +265,10 @@ class ContainerConnection:
                 response = await self._stream.receive()
             except asyncio.exceptions.TimeoutError:
                 continue
-            except _ClosedStream:
+            except _ClosedStream as err:
+                stderr: list[str] = await err.container.log(stderr=True)  # type: ignore[reportUnknownVariableType]
+                if stderr:
+                    raise GotStderr("".join(stderr).encode())  # type: ignore[reportUnknownVariableType]
                 return
 
             try:

@@ -47,7 +47,7 @@ jobs:
         id: dialects-matrix
         run: |
           printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
-
+  
   regenerate-reports:
     needs: dialects
     runs-on: ubuntu-latest
@@ -132,6 +132,7 @@ jobs:
       - regenerate-reports
       - previous-reports
       - generate-implementations-json-file
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

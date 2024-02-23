@@ -28,8 +28,7 @@ keywords = [
     "json schema",
 ]
 authors = [
-  {email = "Julian+bowtie@GrayVines.com"},
-  {name = "Julian Berman"},
+  { name = "Julian Berman", email = "Julian+bowtie@GrayVines.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -57,7 +56,6 @@ dependencies = [
   "rich",
   "rpds.py>=0.18.0",
   "structlog",
-  "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
   "url.py",
 ]
@@ -107,7 +105,7 @@ exclude = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 79
 
 [tool.ruff.lint]
 select = ["ALL"]

@@ -52,6 +52,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
+    directory: "/implementations/js-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
     directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
@@ -147,6 +152,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-hyperjump"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-jsonschema"
     schedule:
       interval: "daily"
 

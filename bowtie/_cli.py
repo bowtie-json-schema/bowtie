@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import cache, wraps
 from importlib.resources import files
 from pathlib import Path
+from pprint import pformat
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -19,7 +21,6 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
-from trogon import tui  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
@@ -27,35 +28,27 @@ import rich
 import structlog
 import structlog.typing
 
-from bowtie import _report, _suite
-from bowtie._commands import AnyTestResult, SeqCase, Unsuccessful
-from bowtie._containers import ContainerConnection
+from bowtie import _containers, _report, _suite
+from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     GotStderr,
     Implementation,
-    ImplementationInfo,
     NoSuchImplementation,
     StartupFailed,
     Test,
     TestCase,
-    _MakeValidator,  # type: ignore[reportPrivateUsage]
 )
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Callable,
-        Iterable,
-        Mapping,
-    )
+    from collections.abc import AsyncIterator, Awaitable, Mapping
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._core import DialectRunner
+    from bowtie._commands import AnyTestResult
+    from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -77,15 +70,14 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@tui(help="Open a simple interactive TUI for executing Bowtie commands.")
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
     "-L",
     help="How verbose should Bowtie be?",
-    default="info",
-    show_default="info",
+    default="warning",
+    show_default="warning",
     type=click.Choice(
         [
             "debug",
@@ -157,7 +149,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
         async def run(
             image_names: list[str],
             read_timeout_sec: float,
-            make_validator: _MakeValidator = make_validator,
+            make_validator: MakeValidator = make_validator,
             **kw: Any,
         ) -> int:
             exit_code = 0
@@ -170,23 +162,17 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
             running: list[Implementation] = []
             async with start as implementations:
-                for each in implementations:
+                for each in implementations:  # FIXME: respect --quiet
                     try:
                         implementation = await each
-                    except StartupFailed as error:
+                    except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} failed to start",
-                            file=sys.stderr,
-                        )
+                        stderr = panel.Panel(err.stderr, title="stderr")
+                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
                         continue
-                    except NoSuchImplementation as error:
+                    except NoSuchImplementation as err:
                         exit_code |= _EX_CONFIG
-                        click.echo(  # FIXME: respect a possible --quiet
-                            f"❗ (error): {error.name!r} is not a "
-                            "known Bowtie implementation.",
-                            file=sys.stderr,
-                        )
+                        rich.print(err.diagnostic(), file=sys.stderr)
                         continue
 
                     running.append(implementation)
@@ -212,50 +198,96 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
 @subcommand
 @click.option(
-    "--input",
-    default="-",
-    type=click.File(mode="r"),
+    "--site",
+    default=Path("site"),
+    show_default=True,
+    type=click.Path(
+        path_type=Path,
+        file_okay=False,
+        dir_okay=True,
+        exists=True,
+    ),
+    help=(
+        "The path to a previously generated collection of reports, "
+        "used to generate the badges."
+    ),
 )
-@click.argument(
-    "output",
-    default=Path("badges"),
-    type=click.Path(path_type=Path),
-)
-def badges(input: TextIO, output: Path):
+def badges(site: Path):
     """
-    Generate Bowtie badges from a previous run.
-    """
-    report = _report.Report.from_serialized(input)
-    if report.is_empty:
-        error = DiagnosticError(
-            code="empty-report",
-            message="The Bowtie report is empty.",
-            causes=[f"{input.name} contains no test result data."],
-            hint_stmt=(
-                "If you are piping data into bowtie badges, "
-                "check to ensure that what you've run has succeeded, "
-                "otherwise it may be emitting no report data."
-            ),
-        )
-        rich.print(error, file=sys.stderr)
-        return _EX_NOINPUT
+    Generate Bowtie badges from previous runs.
 
+    Will generate badges for any existing dialects, and ignore any for which a
+    report was not generated.
+    """
+    outdir = site / "badges"
     try:
-        output.mkdir()
+        outdir.mkdir()
     except FileExistsError:
         error = DiagnosticError(
             code="already-exists",
             message="Badge output directory already exists.",
-            causes=[f"{output} is an existing directory."],
+            causes=[f"{outdir} is an existing directory."],
             hint_stmt=(
                 "If you intended to replace its contents with new badges, "
                 "delete the directory first."
             ),
         )
-        rich.print(error, file=sys.stderr)
-        return _EX_NOINPUT
+        rich.print(error)
+        return _EX_CONFIG
 
-    report.generate_badges(output)
+    supported_versions: dict[Path, Iterable[Dialect]] = {}
+
+    for name, dialect in Dialect.by_short_name().items():
+        try:
+            file = site.joinpath(f"{name}.json").open()
+        except FileNotFoundError:
+            continue
+        with file:
+            report = _report.Report.from_serialized(file)
+            if report.is_empty:
+                error = DiagnosticError(
+                    code="empty-report",
+                    message="A Bowtie report is empty.",
+                    causes=[f"The {name} report contains no results."],
+                    hint_stmt="Check that site generation has not failed.",
+                )
+                rich.print(error)
+                return _EX_DATAERR
+
+            badge_name = f"{dialect.pretty_name.replace(' ', '_')}.json"
+
+            for each, badge in report.compliance_badges():
+                dir = outdir / f"{each.language}-{each.name}"
+
+                compliance = dir / "compliance"
+                compliance.mkdir(parents=True, exist_ok=True)
+                compliance.joinpath(badge_name).write_text(json.dumps(badge))
+
+                dialects = each.dialects
+                seen = supported_versions.setdefault(dir, dialects)
+                if seen != dialects:
+                    message = (
+                        f"{dir.name} appears with different "
+                        "supported dialects in the provided reports."
+                    )
+                    error = DiagnosticError(
+                        code="inconsistent-reports",
+                        message=message,
+                        causes=[
+                            f"{file.name} contains:\n{pformat(dialects)}",
+                            f"{pformat(seen)} was previously seen.",
+                        ],
+                        hint_stmt=(
+                            "Check that the implementation produces "
+                            "consistent output and that a run has not failed."
+                        ),
+                    )
+                    rich.print(error)
+                    return _EX_CONFIG
+
+    for dir, dialects in supported_versions.items():
+        badge = _report.supported_version_badge(dialects=dialects)
+        dir.joinpath("supported_versions.json").write_text(json.dumps(badge))
 
 
 @subcommand
@@ -572,6 +604,9 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
 
 
 class _Dialect(click.ParamType):
+    """
+    Select a JSON Schema dialect.
+    """
 
     name = "dialect"
 
@@ -600,6 +635,72 @@ class _Dialect(click.ParamType):
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
 
+CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
+
+
+class _Filter(click.ParamType):
+    """
+    Filter some test cases by a pattern.
+    """
+
+    name = "filter"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> CaseTransform:
+        return lambda cases: (
+            case for case in cases if fnmatch(case.description, f"*{value}*")
+        )
+
+
+def _set_schema(dialect: Dialect) -> CaseTransform:
+    """
+    Explicitly set a dialect on schemas passing through by setting ``$schema``.
+    """
+    return lambda cases: (c.with_explicit_dialect(dialect) for c in cases)
+
+
+def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
+    return lambda cases: cases
+
+
+def _set_max_fail_and_max_error(
+    ctx: click.Context,
+    _,
+    value: bool,
+) -> None:
+    if value:
+        if ctx.params.get("max_fail") or ctx.params.get("max_error"):
+            ctx.ensure_object(dict)
+            ctx.obj["max_fail_or_error_provided"] = True
+            return
+        ctx.params["max_fail"] = 1
+        ctx.params["max_error"] = 1
+        ctx.ensure_object(dict)
+        ctx.obj["fail_fast_provided"] = True
+    return
+
+
+def _check_fail_fast_provided(
+    ctx: click.Context,
+    _,
+    value: int | None,
+) -> int | None:
+    if ctx.obj:
+        if (
+            "fail_fast_provided" in ctx.obj and value is not None
+        ) or "max_fail_or_error_provided" in ctx.obj:
+            raise click.UsageError(
+                "Cannot use --fail-fast with --max-fail / --max-error",
+            )
+        else:
+            return ctx.params["max_fail"] and ctx.params["max_error"]
+    return value
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -626,7 +727,8 @@ DIALECT = click.option(
 FILTER = click.option(
     "-k",
     "filter",
-    type=lambda pattern: f"*{pattern}*",  # type: ignore[reportUnknownLambdaType]
+    default="",
+    type=_Filter(),
     metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
 )
@@ -635,12 +737,30 @@ FAIL_FAST = click.option(
     "--fail-fast",
     is_flag=True,
     default=False,
+    callback=_set_max_fail_and_max_error,
     help="Fail immediately after the first error or disagreement.",
 )
+MAX_FAIL = click.option(
+    "--max-fail",
+    type=click.IntRange(min=1),
+    callback=_check_fail_fast_provided,
+    help="Fail immediately if N tests fail in total across implementations",
+)
+MAX_ERROR = click.option(
+    "--max-error",
+    type=click.IntRange(min=1),
+    callback=_check_fail_fast_provided,
+    help="Fail immediately if N errors occur in total across implementations",
+)
 SET_SCHEMA = click.option(
-    "--set-schema/--no-set-schema",
+    "--set-schema",
     "-S",
-    "set_schema",
+    "maybe_set_schema",
+    # I have no idea why Click makes this so hard, but no combination of:
+    #     type, default, is_flag, flag_value, nargs, ...
+    # makes this work without doing it manually with callback.
+    callback=lambda _, __, v: _set_schema if v else _do_nothing,  # type: ignore[reportUnknownLambdaType]
+    is_flag=True,
     show_default=True,
     default=False,
     help=(
@@ -698,6 +818,8 @@ EXPECT = click.option(
 @DIALECT
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -706,16 +828,19 @@ EXPECT = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(input: Iterable[str], filter: str, dialect: Dialect, **kwargs: Any):
+def run(
+    input: Iterable[str],
+    filter: CaseTransform,
+    dialect: Dialect,
+    **kwargs: Any,
+):
     """
     Run a sequence of cases provided on standard input.
     """
-    cases = (
+    cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
     return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
@@ -871,13 +996,15 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @FAIL_FAST
+@MAX_FAIL
+@MAX_ERROR
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
 @click.argument("input", type=_suite.ClickParam())
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    filter: str,
+    filter: CaseTransform,
     **kwargs: Any,
 ):
     """
@@ -900,16 +1027,14 @@ def suite(
               to run a single file directly from a branch which exists in GitHub
 
         * short name versions of the previous URLs (similar to those providable
-          to ``bowtie validate`` via its ``--dialect`` option), e.g.:
+          to `bowtie validate --dialect`, e.g.:
 
             - ``7``, to run the draft 7 tests directly from GitHub (as in the
               URL example above)
 
     """  # noqa: E501
-    cases, dialect, metadata = input
-    if filter:
-        cases = (case for case in cases if fnmatch(case.description, filter))
-
+    _cases, dialect, metadata = input
+    cases = filter(_cases)
     task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
     return asyncio.run(task)
 
@@ -919,7 +1044,9 @@ async def _run(
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
-    set_schema: bool,
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    max_fail: int | None = None,
+    max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
     **kwargs: Any,
@@ -977,24 +1104,23 @@ async def _run(
 
             count = 0
             should_stop = False
-            for count, seq_case in enumerate(  # noqa: B007
-                SeqCase.for_cases(cases),
-                1,
-            ):
+            unsucessful = Unsuccessful()
+            for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+                seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
-                if set_schema and not isinstance(seq_case.case.schema, bool):
-                    seq_case.case.schema["$schema"] = str(dialect)
 
                 responses = [seq_case.run(runner=runner) for runner in runners]
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
-
-                    if fail_fast:
-                        # Stop after this case, since we still have futures out
-                        should_stop = result.unsuccessful().causes_stop
+                    unsucessful += result.unsuccessful()
+                    if max_fail and unsucessful.failed == max_fail:
+                        should_stop = True
+                    if max_error and unsucessful.errored == max_error:
+                        should_stop = True
 
                 if should_stop:
+                    reporter.failed_fast(seq_case=seq_case)
                     break
             reporter.finished(count=count, did_fail_fast=should_stop)
             if not count:
@@ -1005,7 +1131,7 @@ async def _run(
 @asynccontextmanager
 async def _start(
     image_names: Iterable[str],
-    make_validator: _MakeValidator,
+    make_validator: MakeValidator,
     read_timeout_sec: float,
     **kwargs: Any,
 ):
@@ -1015,7 +1141,7 @@ async def _start(
         image_name: str,
     ) -> AsyncIterator[Implementation]:
         async with (
-            ContainerConnection.open(
+            _containers.Connection.open(
                 docker=docker,
                 image_name=image_name,
                 read_timeout_sec=read_timeout_sec,
@@ -1066,10 +1192,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def _redirect_structlog(
-    log_level: int = logging.INFO,
-    file: TextIO = sys.stderr,
-):
+def _redirect_structlog(log_level: int, file: TextIO = sys.stderr):
     """
     Reconfigure structlog's defaults to go to the given location.
     """

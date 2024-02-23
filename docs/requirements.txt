@@ -34,8 +34,7 @@ click==8.1.7
     # via
     #   bowtie-json-schema
     #   sphinx-click
-    #   trogon
-cryptography==42.0.2
+cryptography==42.0.4
     # via pyjwt
 diagnostic==2.0.0
     # via bowtie-json-schema
@@ -65,20 +64,14 @@ jsonschema==4.21.1
     # via bowtie-json-schema
 jsonschema-specifications==2023.12.1
     # via jsonschema
-linkify-it-py==2.0.3
-    # via markdown-it-py
 lxml==5.1.0
     # via sphinx-json-schema-spec
 markdown-it-py==3.0.0
     # via
     #   diagnostic
-    #   mdit-py-plugins
     #   rich
-    #   textual
 markupsafe==2.1.5
     # via jinja2
-mdit-py-plugins==0.4.0
-    # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
 multidict==6.0.5
@@ -100,9 +93,7 @@ pygments==2.17.2
 pygments-github-lexers==0.0.5
     # via -r docs/requirements.in
 pyjwt==2.8.0
-    # via
-    #   github3-py
-    #   pyjwt
+    # via github3-py
 python-dateutil==2.8.2
     # via github3-py
 referencing==0.33.0
@@ -121,7 +112,6 @@ rich==13.7.0
     # via
     #   bowtie-json-schema
     #   diagnostic
-    #   textual
 rpds-py==0.18.0
     # via
     #   bowtie-json-schema
@@ -172,23 +162,15 @@ sphinxext-opengraph==0.9.1
     # via -r docs/requirements.in
 structlog==24.1.0
     # via bowtie-json-schema
-textual==0.50.1
-    # via trogon
-trogon==0.5.0
-    # via bowtie-json-schema
 typing-extensions==4.9.0
-    # via
-    #   aiodocker
-    #   textual
-uc-micro-py==1.0.3
-    # via linkify-it-py
+    # via aiodocker
 uritemplate==4.1.1
     # via github3-py
 url-py==0.10.0
     # via
     #   -r docs/requirements.in
     #   bowtie-json-schema
-urllib3==2.2.0
+urllib3==2.2.1
     # via requests
 yarl==1.9.4
     # via aiohttp
