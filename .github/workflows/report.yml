@@ -19,47 +19,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  download-prev-reports:
+  previous-reports:
     runs-on: ubuntu-latest
     steps:
-      - name: Download previous test report from local artifact
+      - name: Download the previous reports
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: report.yml
-          name: report
-          path: report/previous
+          name: report-.*
+          name_is_regexp: true
+          path: previous
+          if_no_artifact_found: warn
 
-      - name: Remove already existing previous folder to prevent recursive folders
-        run: rm -rf report/previous/previous
-
-      - name: Upload previous test report to temporary artifact
-        uses: actions/upload-artifact@v3
+      - name: Store previous reports for inclusion
+        uses: actions/upload-artifact@v4
         with:
-          name: prev-report
-          path: |
-            report/
+          name: previous-reports
+          path: previous
 
-  test:
-    needs: download-prev-reports
+  dialects:
+    runs-on: ubuntu-latest
+    outputs:
+      dialects: ${{ steps.dialects-matrix.outputs.dialects }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect supported dialects
+        id: dialects-matrix
+        run: |
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+
+  regenerate-reports:
+    needs: dialects
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - draft2020-12
-          - draft2019-09
-          - draft7
-          - draft6
-          - draft4
-          - draft3
+        version: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      # Ha ha, without me, reports sometimes claim they're running out of disk
-      # space... See e.g. https://github.com/actions/runner-images/issues/2840
-      - name: Free up disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
-
       # FIXME: we can skip checking out if we are able to list all images in
       #        the image repository
       - uses: actions/checkout@v4
@@ -67,42 +64,113 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - name: Generate the Report
-        run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges
+      - run: docker system df
 
-      # This unfortunately can go wrong if we ran out of memory in the above...
-      # Besides fixing that, probably we should atomically move files into place.
+      # FIXME: This definitely should not be necessary, as Bowtie should pull
+      #        images, but we're observing strange behavior where that ends up
+      #        pulling every single version of every single image.
+      #        It only seems to happen with Docker (not Podman), and seems to
+      #        be the case even though we now use create() rather than run()
+      #        in aiodocker. More diagnosis needed to see what the heck is
+      #        happening.
+      - name: Pre-fetch all images
+        run: |
+          for each in implementations/*; do
+            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
+          done
+          wait
+
+      - name: Generate a New Report
+        run: |
+          bowtie suite $(ls implementations/ | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
+
+      - run: docker system df
+        if: always()
+
+      # This unfortunately can go wrong if e.g. we ever run out of memory above.
+      # Probably we should also atomically move files into place.
       - name: Check Report is Valid
         run: |
           bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: |
-            ${{ matrix.version }}.json
-            badges/
+          name: report-${{ matrix.version }}
+          path: ${{ matrix.version }}.json
 
-  store-prev-reports:
-    needs: test
+  generate-implementations-json-file:
     runs-on: ubuntu-latest
     steps:
-      - name: Download previous test report from temp artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: prev-report
-          path: report/
+      - uses: actions/checkout@v4
 
-      - name: Upload previous test report to previous folder in artifact
-        uses: actions/upload-artifact@v3
+      - name: Install Bowtie
+        uses: ./
+
+      - run: docker system df
+
+      - name: Pre-fetch all images
+        run: |
+          for each in implementations/*; do
+            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
+          done
+          wait
+
+      - name: Generate implementations.json file
+        run: |
+          bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
+
+      - run: docker system df
+        if: always()
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: |
-            report/
+          name: implementations
+          path: implementations.json
+
+  site:
+    needs:
+      - regenerate-reports
+      - previous-reports
+      - generate-implementations-json-file
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Create our Site Structure
+        run: mkdir site
+
+      - name: Include Previous Report
+        uses: actions/download-artifact@v4
+        with:
+          name: previous-reports
+          path: site/previous/
+
+      - name: Include New Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          path: site/
+          merge-multiple: true
+
+      - name: Include implementations.json file
+        uses: actions/download-artifact@v4
+        with:
+          pattern: implementations
+          path: site/
+
+      - name: Generate Badges
+        run: bowtie badges
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site
 
   deploy-frontend:
-    needs: store-prev-reports
+    needs: site
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
