@@ -1079,19 +1079,17 @@ async def test_info_markdown(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_json(envsonschema):
-    jsonout, stderr = await bowtie(
+    stdout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
         envsonschema,
-        json=True,
     )
-    assert jsonout == {
+    assert _json.loads(stdout) == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
-        "image": "bowtie-integration-tests/envsonschema",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "source": "https://github.com/bowtie-json-schema/bowtie",
         "dialects": [
@@ -1102,6 +1100,49 @@ async def test_info_json(envsonschema):
             "http://json-schema.org/draft-04/schema#",
             "http://json-schema.org/draft-03/schema#",
         ],
+    }, stderr
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_json_multiple_implementations(envsonschema, links):
+    stdout, stderr = await bowtie(
+        "info",
+        "--format",
+        "json",
+        "-i",
+        envsonschema,
+        "-i",
+        links,
+    )
+    assert _json.loads(stdout) == {
+        tag("envsonschema"): {
+            "name": "envsonschema",
+            "language": "python",
+            "homepage": "https://github.com/bowtie-json-schema/bowtie",
+            "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
+            "source": "https://github.com/bowtie-json-schema/bowtie",
+            "dialects": [
+                "https://json-schema.org/draft/2020-12/schema",
+                "https://json-schema.org/draft/2019-09/schema",
+                "http://json-schema.org/draft-07/schema#",
+                "http://json-schema.org/draft-06/schema#",
+                "http://json-schema.org/draft-04/schema#",
+                "http://json-schema.org/draft-03/schema#",
+            ],
+        },
+        tag("links"): {
+            "name": "links",
+            "language": "sh",
+            "homepage": "urn:example",
+            "issues": "urn:example",
+            "source": "urn:example",
+            "dialects": ["http://json-schema.org/draft-07/schema#"],
+            "links": [
+                {"description": "foo", "url": "urn:example:foo"},
+                {"description": "bar", "url": "urn:example:bar"},
+            ],
+        },
     }, stderr
     assert stderr == ""
 

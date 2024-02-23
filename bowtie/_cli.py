@@ -42,12 +42,12 @@ from bowtie._core import (
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Mapping
+    from collections.abc import AsyncIterator, Awaitable, Mapping, Sequence
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
-    from bowtie._commands import AnyTestResult
+    from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 # Windows fallbacks...
@@ -882,10 +882,12 @@ def validate(
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Iterable[Implementation], format: _F):
+async def info(implementations: Sequence[Implementation], format: _F):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
+    serializable: dict[ImplementationId, dict[str, Any]] = {}
+
     for each in implementations:
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         metadata.sort(
@@ -901,16 +903,7 @@ async def info(implementations: Iterable[Implementation], format: _F):
 
         match format:
             case "json":
-                kwargs = {}
-                output_data = {}
-                implementations_len = len(implementations)  # type: ignore[reportArgumentType]
-                if sys.stdout.isatty() and implementations_len == 1:
-                    kwargs["indent"] = 2
-                    output_data = dict(metadata)
-                else:
-                    metadata_with_image = [*metadata, ("image", each.info.id)]
-                    output_data = dict(metadata_with_image)
-                click.echo(json.dumps(output_data, **kwargs))  # type: ignore[reportArgumentType]
+                serializable[each.name] = dict(metadata)
             case "pretty":
                 click.echo(
                     "\n".join(
@@ -924,6 +917,13 @@ async def info(implementations: Iterable[Implementation], format: _F):
                         for k, v in metadata
                     ),
                 )
+
+    if format == "json":
+        if len(serializable) == 1:
+            (output,) = serializable.values()
+        else:
+            output = serializable
+        click.echo(json.dumps(output, indent=2))
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
