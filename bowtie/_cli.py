@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
 import sys
 
 from aiodocker import Docker
@@ -1126,6 +1127,69 @@ async def _run(
             if not count:
                 exit_code = _EX_NOINPUT
     return exit_code
+
+
+@subcommand
+@click.argument(
+    "output",
+    default=Path("site"),
+    type=click.Path(path_type=Path),
+)
+@click.pass_context
+def site(context, output):
+    """
+    Generate the data needed for Bowtie's UI.
+
+    This subcommand is not really public API, and is mostly used by Bowtie
+    itself.
+    """
+    implementations = [
+        each.name
+        for each in Path("implementations").iterdir()
+        if not each.name.startswith(".")
+    ]
+
+    output.mkdir()
+    output.joinpath("implementations").mkdir()
+
+    with click.progressbar(implementations, label="bowtie info") as metadata:
+        for each in metadata:
+            command = [
+                sys.executable,
+                "-m",
+                "bowtie",
+                "info",
+                "-i",
+                each,
+                "--format",
+                "json",
+            ]
+
+            out = output.joinpath(f"implementations/{each}.json")
+            with out.open("x") as stdout:
+                subprocess.run(command, stdout=stdout, check=True)
+
+    with click.progressbar(Dialect.known(), label="bowtie suite") as dialects:
+        for dialect in dialects:
+            command = [
+                sys.executable,
+                "-m",
+                "bowtie",
+                "suite",
+                *[f"-i{each}" for each in implementations],
+                f"https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/{dialect.short_name}",
+            ]
+            out = output.joinpath(f"{dialect.short_name}.json")
+            with out.open("x") as stdout:
+                subprocess.run(command, stdout=stdout, check=True)
+
+    with click.progressbar(Dialect.known(), label="bowtie badges") as dialects:
+        badges = str(output / "badges")
+        command = [sys.executable, "-m", "bowtie", "badges", badges]
+
+        for dialect in dialects:
+            with output.joinpath(f"{dialect.short_name}.json").open() as stdin:
+                subprocess.run(command, stdin=stdin, check=True)
 
 
 @asynccontextmanager
