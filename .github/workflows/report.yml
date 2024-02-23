@@ -157,7 +157,7 @@ jobs:
       - name: Include implementations.json file
         uses: actions/download-artifact@v4
         with:
-          pattern: implementations
+          name: implementations
           path: site/
 
       - name: Generate Badges
