@@ -155,7 +155,7 @@ jobs:
           path: site/
           merge-multiple: true
 
-      - name: Include implementations.json file
+      - name: Include Implementation Metadata
         uses: actions/download-artifact@v4
         with:
           name: implementations
