@@ -1,5 +1,9 @@
 import CopyToClipboard from "../CopyToClipboard";
 
+const schemaStyle = {
+  maxHeight: "30em",
+};
+
 const SchemaDisplay = ({
   schema,
   instance,
@@ -22,7 +26,9 @@ const SchemaDisplay = ({
             </div>
           </div>
           <div className="card-body">
-            <pre id="schema-code">{schemaFormatted}</pre>
+            <pre id="schema-code" style={schemaStyle}>
+              {schemaFormatted}
+            </pre>
           </div>
         </div>
         <div className="col-4 border-start ps-0">
@@ -35,7 +41,9 @@ const SchemaDisplay = ({
             </div>
           </div>
           <div id="instance-info" className="card-body">
-            <pre id="schema-code">{instanceFormatted}</pre>
+            <pre id="schema-code" style={schemaStyle}>
+              {instanceFormatted}
+            </pre>
           </div>
         </div>
       </div>
