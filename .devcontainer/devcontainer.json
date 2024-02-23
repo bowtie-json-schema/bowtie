@@ -1,0 +1,13 @@
+{
+  "name": "Bowtie",
+  "dockerFile": ".codespace.Dockerfile",
+
+  "runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
+  
+  "onCreateCommand": "sudo chown -R vscode /var/run/docker.sock && pip install -r requirements.txt -e .",
+  "postCreateCommand": "for each in $(ls implementations); do docker pull ghcr.io/bowtie-json-schema/$each; done",
+
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/zsh"
+  }
+}
