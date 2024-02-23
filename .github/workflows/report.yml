@@ -6,8 +6,8 @@ on:
   workflow_call:
   workflow_dispatch:
   schedule:
-    # Daily at 2:15
-    - cron: "15 2 * * *"
+    # Every 6 hours, at 15 past the hour
+    - cron: "15 */6 * * *"
 
 permissions:
   contents: read
@@ -85,7 +85,7 @@ jobs:
           name: report-${{ matrix.version }}
           path: ${{ matrix.version }}.json
 
-  generate-implementations-json-file:
+  generate-implementation-metadata:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,9 +97,6 @@ jobs:
         run: |
           bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
 
-      - run: docker images
-        if: always()
-
       - uses: actions/upload-artifact@v4
         with:
           name: implementations
@@ -109,7 +106,7 @@ jobs:
     needs:
       - regenerate-reports
       - previous-reports
-      - generate-implementations-json-file
+      - generate-implementation-metadata
 
     runs-on: ubuntu-latest
     steps:
