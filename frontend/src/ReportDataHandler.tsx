@@ -6,7 +6,7 @@ import { Implementation, ReportData } from "./data/parseReportData";
 
 interface LoaderData {
   reportData: ReportData;
-  allImplementationsData: Implementation[];
+  allImplementationsData: Record<string, Implementation>;
 }
 
 const ReportDataHandler = () => {
@@ -15,7 +15,7 @@ const ReportDataHandler = () => {
 
   useEffect(
     () => setVersion!(loaderData.reportData.runInfo.bowtie_version),
-    [setVersion, loaderData.reportData.runInfo.bowtie_version],
+    [setVersion, loaderData.reportData.runInfo.bowtie_version]
   );
 
   return (

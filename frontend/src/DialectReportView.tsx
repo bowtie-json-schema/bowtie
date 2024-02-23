@@ -17,7 +17,7 @@ export const DialectReportView = ({
   allImplementationsData,
 }: {
   reportData: ReportData;
-  allImplementationsData?: Implementation[];
+  allImplementationsData?: Record<string, Implementation>;
 }) => {
   const params = useSearchParams();
 
@@ -30,7 +30,7 @@ export const DialectReportView = ({
 
   const filteredData = useMemo(() => {
     const filteredReportData = { ...reportData };
-    let filteredOtherImplementationsData: Implementation[] = [];
+    let filteredOtherImplementationsData: Record<string, Implementation> = {};
     const selectedLanguages = params.getAll("language");
 
     if (selectedLanguages.length > 0) {
@@ -71,7 +71,8 @@ export const DialectReportView = ({
         <RunInfoSection runInfo={filteredData.filteredReportData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData.filteredReportData} />
-        {filteredData.filteredOtherImplementationsData.length > 0 && (
+        {Object.keys(filteredData.filteredOtherImplementationsData).length >
+          0 && (
           <OtherImplementations
             otherImplementationsData={
               filteredData.filteredOtherImplementationsData
@@ -85,22 +86,28 @@ export const DialectReportView = ({
 };
 
 const filterOtherImplementations = (
-  allImplementationsData: Implementation[],
+  allImplementationsData: Record<string, Implementation>,
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationData>,
-) => {
-  const filteredOtherImplementationsArray: Implementation[] =
-    allImplementationsData.filter((impl: Implementation) =>
-      langs.includes(impl.language),
+  filteredReportImplementationsMap: Map<string, ImplementationData>
+): Record<string, Implementation> => {
+  const filteredOtherImplementationsArray: [string, Implementation][] =
+    Object.entries(allImplementationsData).filter(
+      ([, impl]: [string, Implementation]) => langs.includes(impl.language)
     );
-  const filteredOtherImplementationsData =
-    filteredOtherImplementationsArray.filter((impl: Implementation) => {
-      for (const val of filteredReportImplementationsMap.values()) {
-        if (impl.source === val.metadata.source) {
-          return false;
-        }
+
+  const filteredOtherImplementationsData: Record<string, Implementation> = {};
+  filteredOtherImplementationsArray.forEach(([key, impl]) => {
+    let isFiltered = false;
+    for (const val of filteredReportImplementationsMap.values()) {
+      if (impl.source === val.metadata.source) {
+        isFiltered = true;
+        break;
       }
-      return true;
-    });
+    }
+    if (!isFiltered) {
+      filteredOtherImplementationsData[key] = impl;
+    }
+  });
+
   return filteredOtherImplementationsData;
 };

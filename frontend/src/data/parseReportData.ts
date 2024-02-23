@@ -220,7 +220,6 @@ export interface Implementation {
   documentation?: string;
   issues: string;
   source: string;
-  image: string;
   links?: {
     description?: string;
     url?: string;

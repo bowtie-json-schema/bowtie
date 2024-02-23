@@ -36,7 +36,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data)),
+        .then((data) => (loaderData[dialect.path] = data))
     );
   }
   await Promise.all(promises);
@@ -50,11 +50,10 @@ const fetchImplementationStatsData = async () => {
     .suffix("json")
     .href();
   const response = await fetch(url);
-  const jsonl = await response.text();
-  const implementations: Implementation[] = jsonl
-    .trim()
-    .split(/\r?\n/)
-    .map((line) => JSON.parse(line) as Implementation);
+  const implementations = (await response.json()) as Record<
+    string,
+    Implementation
+  >;
   return implementations;
 };
 
@@ -69,7 +68,7 @@ const router = createHashRouter([
         Component: ReportDataHandler,
         loader: async () => {
           const reportData = await fetchReportData(
-            Dialect.forPath("draft2020-12"),
+            Dialect.forPath("draft2020-12")
           );
           const allImplementationsData = await fetchImplementationStatsData();
           return { reportData, allImplementationsData };
@@ -80,7 +79,7 @@ const router = createHashRouter([
         Component: ReportDataHandler,
         loader: async ({ params }) => {
           const reportData = await fetchReportData(
-            Dialect.forPath(params.draftName!),
+            Dialect.forPath(params.draftName!)
           );
           const allImplementationsData = await fetchImplementationStatsData();
           return { reportData, allImplementationsData };
@@ -93,13 +92,8 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
-        loader: async ({ params }) => {
-          const allReportsData = await fetchAllReportData(
-            params.langImplementation!,
-          );
-          const implementationStatsData = await fetchImplementationStatsData();
-          return { allReportsData, implementationStatsData };
-        },
+        loader: async ({ params }) =>
+          fetchAllReportData(params.langImplementation!),
       },
     ],
   },
@@ -112,6 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
