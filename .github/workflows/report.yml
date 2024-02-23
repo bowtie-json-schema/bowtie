@@ -98,10 +98,41 @@ jobs:
           name: report-${{ matrix.version }}
           path: ${{ matrix.version }}.json
 
+  generate-implementations-json-file:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - run: docker system df
+
+      - name: Pre-fetch all images
+        run: |
+          for each in implementations/*; do
+            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
+          done
+          wait
+
+      - name: Generate implementations.json file
+        run: |
+          bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
+
+      - run: docker system df
+        if: always()
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: implementations
+          path: implementations.json
+
   site:
     needs:
       - regenerate-reports
       - previous-reports
+      - generate-implementations-json-file
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,6 +154,12 @@ jobs:
           pattern: report-*
           path: site/
           merge-multiple: true
+
+      - name: Include implementations.json file
+        uses: actions/download-artifact@v4
+        with:
+          name: implementations
+          path: site/
 
       - name: Generate Badges
         run: bowtie badges
