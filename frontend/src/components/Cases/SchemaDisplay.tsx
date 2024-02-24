@@ -14,9 +14,9 @@ const SchemaDisplay = ({
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
-    <div className="card mb-3 mw-100">
+    <div className="card mb-3 mw-100 overflow-auto">
       <div className="row">
-        <div className="col-8 pe-0">
+        <div className="col-6 pe-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
             <small className="font-monospace text-body-secondary text-uppercase">
               Schema
@@ -31,7 +31,7 @@ const SchemaDisplay = ({
             </pre>
           </div>
         </div>
-        <div className="col-4 border-start ps-0">
+        <div className="col-6 border-start ps-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
             <small className="font-monospace text-body-secondary text-uppercase">
               Instance
