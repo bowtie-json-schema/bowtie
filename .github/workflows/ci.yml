@@ -123,10 +123,11 @@ jobs:
             docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
           done
           wait
-      - name: Generate implementations.json file
+      - name: Generate implementations metadata file
         run: |
           bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
-      - run: echo "IMPLEMENTATIONS_METADATA_FILE_PATH=$(pwd)/implementations.json" >> $GITHUB_ENV
+      - name: Set the generated file path env variable
+        run: echo "IMPLEMENTATIONS_METADATA_FILE_PATH=$(pwd)/implementations.json" >> $GITHUB_ENV
       - run: docker system df
         if: always()
       - name: Set up Python
@@ -141,6 +142,8 @@ jobs:
       - name: Set up nox
         uses: wntrblm/nox@2023.04.22
       - name: Build a Bowtie PyApp
+        env:
+          RUNNING_HATCH_SESSION: "true"
         run: nox -s app -- .
       - uses: actions/upload-artifact@v4
         with:
