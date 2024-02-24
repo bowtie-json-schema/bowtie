@@ -1,11 +1,11 @@
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 import os
 
-class ImplementationsMetadataHook(BuildHookInterface): # type: ignore[reportMissingTypeArgument]
+class CustomBuildHook(BuildHookInterface):
     def initialize(
         self, 
         version: str, 
-        build_data # type: ignore[reportMissingParameterType]
+        build_data: dict[str, Any]
     ) -> None:
         """
         Reads the JSON file path from environment variable and adds it to shared data.
@@ -18,6 +18,4 @@ class ImplementationsMetadataHook(BuildHookInterface): # type: ignore[reportMiss
             )
 
         # Add file to shared data
-        build_data["shared-data"] = {
-            json_file_path: "bowtie/data/implementations.json"
-        }
+        build_data['force_include']['implementations.json'] = json_file_path
