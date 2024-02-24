@@ -114,6 +114,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install Bowtie
+        uses: ./
+      - run: docker system df
+      - name: Pre-fetch all images
+        run: |
+          for each in implementations/*; do
+            docker pull "ghcr.io/bowtie-json-schema/$(basename $each):latest" &
+          done
+          wait
+      - name: Generate implementations.json file
+        run: |
+          bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
+      - run: echo "IMPLEMENTATIONS_METADATA_FILE_PATH=$(pwd)/implementations.json" >> $GITHUB_ENV
+      - run: docker system df
+        if: always()
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
