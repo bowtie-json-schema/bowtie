@@ -121,13 +121,13 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                             width={"auto"}
                             height={20}
                             src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                              implementation.language
+                              implementation.language,
                             )}-${
                               implementation.name
                             }%2Fsupported_versions.json`}
                           />
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
@@ -142,7 +142,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>
