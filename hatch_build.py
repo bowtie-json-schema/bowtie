@@ -35,7 +35,6 @@ class CustomBuildHook(BuildHookInterface):
         if not json_file_path or not Path(json_file_path).exists():
             raise RuntimeError(
                 "Generated JSON file not found",
-                "Generated JSON file not found",
             )
 
         build_data["force_include"]["implementations.json"] = json_file_path
