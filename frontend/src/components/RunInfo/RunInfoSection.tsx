@@ -49,7 +49,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
                   ) {
                     return (
                       <tr key={label}>
-                        <td className="align-top">{label}</td>
+                        <td className="align-top w-25">{label}</td>
                         <td>
                           <a href={value.href}>{value.text}</a>
                         </td>
