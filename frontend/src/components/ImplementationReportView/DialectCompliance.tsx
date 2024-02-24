@@ -37,12 +37,23 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate,
+                    +Dialect.forPath(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.forPath(dialectName).uri}</td>
+                    <td>
+                      {Dialect.forPath(dialectName).uri}{" "}
+                      <img
+                        width={140}
+                        height={20}
+                        src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
+                          implementation.language
+                        )}-${implementation.name}%2Fcompliance%2FDraft_${
+                          Dialect.forPath(dialectName).prettyName.split(" ")[1]
+                        }.json`}
+                      ></img>
+                    </td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
