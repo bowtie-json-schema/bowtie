@@ -167,6 +167,19 @@ always_valid = shellplementation(  # I'm sorry future me.
     done
     """,  # noqa: E501
 )
+passes_smoke = shellplementation(
+    name="passes_smoke",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n'
+    read
+    printf '{"seq": 2, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n'
+    """,  # noqa: E501
+)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
@@ -1017,6 +1030,48 @@ async def test_smoke_quiet(envsonschema):
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
     assert stdout == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke_multiple(envsonschema, passes_smoke):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "pretty",
+        "-i",
+        envsonschema,
+        "-i",
+        passes_smoke,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    assert (
+        dedent(stderr)
+        == dedent(
+            """\
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures
+            """,
+        )
+        or dedent(stderr)
+        == dedent(
+            """\
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            """,
+        )
+    ), stdout
 
 
 @pytest.mark.asyncio
