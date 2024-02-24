@@ -1,12 +1,14 @@
-from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 from typing import Any
 import os
 
+from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+
+
 class CustomBuildHook(BuildHookInterface):
     def initialize(
-        self, 
-        version: str, 
-        build_data: dict[str, Any]
+        self,
+        version: str,
+        build_data: dict[str, Any],
     ) -> None:
         """
         Reads the JSON file path from environment variable and adds it to shared data.
@@ -17,7 +19,7 @@ class CustomBuildHook(BuildHookInterface):
 
         if not json_file_path or not os.path.exists(json_file_path):
             raise RuntimeError(
-                "Generated JSON file not found"
+                "Generated JSON file not found",
             )
 
-        build_data['force_include']['implementations.json'] = json_file_path
+        build_data["force_include"]["implementations.json"] = json_file_path
