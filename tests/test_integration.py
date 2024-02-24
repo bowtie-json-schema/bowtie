@@ -167,6 +167,38 @@ always_valid = shellplementation(  # I'm sorry future me.
     done
     """,  # noqa: E501
 )
+passes_smoke = shellplementation(
+    name="passes_smoke",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    while IFS= read -r input; do
+      [[ "$input" == '{"cmd": "stop"}' ]] && exit
+      echo $input | awk '{
+       seq = gensub(/.*"seq": ([^,]+).*/, "\\1", "g", $0);
+       tests = gensub(/.*"tests": \[([^]]+)\].*/, "\\1", "g", $0);
+       gsub(/}, \{/, "\n", tests);
+       count = split(tests, tests_array, ",");
+       result = sprintf("{\"seq\": %s, \"results\": [", seq);
+       for (i = 1; i <= count; i++) {
+         if(seq == "1"){
+            result = result "{\"valid\": true}";
+        }
+        else{
+            result = result "{\"valid\": false}";
+        }
+         if (i < count) {
+             result = result ",";
+         }
+       }
+       result = result "]}";
+       print result;
+      }'
+    done
+    """,  # noqa: E501
+)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
@@ -1017,6 +1049,46 @@ async def test_smoke_quiet(envsonschema):
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
     assert stdout == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke_multiple(envsonschema, passes_smoke):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "pretty",
+        "-i",
+        envsonschema,
+        "-i",
+        passes_smoke,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    assert (
+        dedent(stderr) == dedent(
+            """
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures
+            """
+        ).lstrip("\n") 
+        or dedent(stderr) == dedent(
+            """
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures            
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            """
+        )
+    ), stdout
 
 
 @pytest.mark.asyncio
