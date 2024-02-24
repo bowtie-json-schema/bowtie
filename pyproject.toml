@@ -9,7 +9,7 @@ source = "vcs"
 exclude = [".github", "implementations"]
 
 [tool.hatch.build.targets.wheel]
-hooks = {"build-implementations-metadata-hook": {path = "build-hooks/implementations_metadata.py"}}
+hooks = {build-implementations-metadata-hook = {path = "build-hooks/implementations_metadata.py"}}
 packages = ["bowtie"]
 
 [tool.hatch.build.targets.wheel.force-include]
