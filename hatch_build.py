@@ -1,4 +1,5 @@
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+from typing import Any
 import os
 
 class CustomBuildHook(BuildHookInterface):
