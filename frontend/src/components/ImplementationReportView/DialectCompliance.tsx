@@ -45,7 +45,7 @@ const DialectCompliance: React.FC<{
                     <td>
                       {Dialect.forPath(dialectName).uri}{" "}
                       <img
-                        width={140}
+                        width={"auto"}
                         height={20}
                         src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
                           implementation.language
