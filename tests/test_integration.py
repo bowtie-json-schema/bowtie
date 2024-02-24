@@ -1064,7 +1064,8 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
     assert (
-        dedent(stderr) == dedent(
+        dedent(stderr)
+        == dedent(
             """
             Testing 'bowtie-integration-tests/passes_smoke'...
 
@@ -1074,19 +1075,20 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
 
 
             ❌ some failures
-            """
-        ).lstrip("\n") 
-        or dedent(stderr) == dedent(
+            """,
+        ).lstrip("\n")
+        or dedent(stderr)
+        == dedent(
             """
             Testing 'bowtie-integration-tests/envsonschema'...
 
 
-            ❌ some failures            
+            ❌ some failures
             Testing 'bowtie-integration-tests/passes_smoke'...
 
 
             ✅ all passed
-            """
+            """,
         )
     ), stdout
 
