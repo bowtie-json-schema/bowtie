@@ -7,10 +7,6 @@ import os
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-
-from hatchling.builders.hooks.plugin.interface import BuildHookInterface
-
-
 class CustomBuildHook(BuildHookInterface):
     """
     A custom build hook plugin class.
@@ -44,5 +40,4 @@ class CustomBuildHook(BuildHookInterface):
                 "Generated JSON file not found",
             )
 
-        build_data["force_include"]["implementations.json"] = json_file_path
         build_data["force_include"]["implementations.json"] = json_file_path
