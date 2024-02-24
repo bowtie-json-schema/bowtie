@@ -13,6 +13,7 @@ class CustomBuildHook(BuildHookInterface):
         """
         if not os.environ.get("RUNNING_HATCH_SESSION"):
             return
+        print('in here')
         json_file_path = os.environ.get("IMPLEMENTATIONS_METADATA_FILE_PATH")
 
         if not json_file_path or not os.path.exists(json_file_path):
