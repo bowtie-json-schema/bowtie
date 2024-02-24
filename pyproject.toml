@@ -9,7 +9,7 @@ source = "vcs"
 exclude = [".github", "implementations"]
 
 [tool.hatch.build.hooks]
-build-implementations-metadata-hook = "build-hooks/implementations_metadata.py"
+"build-implementations-metadata-hook" = {path = "build-hooks/implementations_metadata.py"}
 
 [tool.hatch.build.targets.wheel]
 hooks = ["build-implementations-metadata-hook"]
