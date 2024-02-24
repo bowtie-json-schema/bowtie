@@ -1,7 +1,7 @@
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 import os
 
-class CustomBuildHook(BuildHookInterface): # type: ignore[reportMissingTypeArgument]
+class ImplementationsMetadataHook(BuildHookInterface): # type: ignore[reportMissingTypeArgument]
     def initialize(
         self, 
         version: str, 
