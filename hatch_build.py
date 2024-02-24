@@ -1,7 +1,6 @@
 """
 Responsible for defining the custom build hook plugin class.
 """
-
 from pathlib import Path
 from typing import Any
 import os
