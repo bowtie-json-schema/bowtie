@@ -174,29 +174,10 @@ passes_smoke = shellplementation(
     printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
     read
     printf '{"ok": true}\n'
-    while IFS= read -r input; do
-      [[ "$input" == '{"cmd": "stop"}' ]] && exit
-      echo $input | awk '{
-       seq = gensub(/.*"seq": ([^,]+).*/, "\\1", "g", $0);
-       tests = gensub(/.*"tests": \[([^]]+)\].*/, "\\1", "g", $0);
-       gsub(/}, \{/, "\n", tests);
-       count = split(tests, tests_array, ",");
-       result = sprintf("{\"seq\": %s, \"results\": [", seq);
-       for (i = 1; i <= count; i++) {
-         if(seq == "1"){
-            result = result "{\"valid\": true}";
-        }
-        else{
-            result = result "{\"valid\": false}";
-        }
-         if (i < count) {
-             result = result ",";
-         }
-       }
-       result = result "]}";
-       print result;
-      }'
-    done
+    read
+    printf '{"seq": 1, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n'
+    read
+    printf '{"seq": 2, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n'
     """,  # noqa: E501
 )
 succeed_immediately = strimplementation(
@@ -1066,7 +1047,7 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
     assert (
         dedent(stderr)
         == dedent(
-            """
+            """\
             Testing 'bowtie-integration-tests/passes_smoke'...
 
 
@@ -1076,10 +1057,10 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
 
             ❌ some failures
             """,
-        ).lstrip("\n")
+        )
         or dedent(stderr)
         == dedent(
-            """
+            """\
             Testing 'bowtie-integration-tests/envsonschema'...
 
 
