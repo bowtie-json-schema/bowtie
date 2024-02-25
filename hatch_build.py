@@ -5,6 +5,8 @@ Responsible for defining the custom build hook plugin class.
 from pathlib import Path
 from typing import Any
 import os
+import shlex
+import subprocess
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
@@ -24,18 +26,35 @@ class CustomBuildHook(BuildHookInterface):
         build_data: dict[str, Any],
     ) -> None:
         """
-        Includes the json file in the final build.
+        Build the implementations metadata file.
 
-        Reads the JSON file path from environment variable and
-        force includes it in the final build.
+        Runs various commands and build / generates the
+        implementations.json file to force include in the
+        final built package.
         """
         if not os.environ.get("RUNNING_HATCH_SESSION"):
             return
-        json_file_path = os.environ.get("IMPLEMENTATIONS_METADATA_FILE_PATH")
 
-        if not json_file_path or not Path(json_file_path).exists():
-            raise RuntimeError(
-                "Generated JSON file not found",
+        pip_path = "pip"
+        subprocess.run(
+            [pip_path, "install", "-r", "requirements.txt"],
+            check=True,
+        )
+
+        bowtie_info_cmd = ["bowtie", "info"]
+        impls = os.listdir("implementations")
+        for impl in impls:
+            bowtie_info_cmd.extend(["-i", impl])
+        bowtie_info_cmd.extend(["--format", "json"])
+
+        output_file_path = Path("implementations.json").absolute()
+
+        with Path.open(output_file_path, "w") as output_file:
+            command = " ".join(shlex.quote(arg) for arg in bowtie_info_cmd)
+            subprocess.run(
+                command,
+                stdout=output_file,
+                check=True,
             )
 
-        build_data["force_include"]["implementations.json"] = json_file_path
+        build_data["force_include"]["implementations.json"] = output_file_path
