@@ -34,7 +34,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                         </span>
                       </p>
                     );
-                  }
+                  },
                 )}
               </Popover.Body>
             </Popover>
