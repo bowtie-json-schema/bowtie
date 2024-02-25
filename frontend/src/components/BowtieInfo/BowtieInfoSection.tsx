@@ -1,5 +1,13 @@
+import { useLocation } from "react-router-dom";
+
 const BowtieInfoSection = () => {
   // prettier-ignore
+  const location = useLocation();
+
+  if (location.pathname === '/local-report') {
+    return null;
+  }
+
   return (
     <div className="card mx-auto mb-3" id="bowtie-info">
       <div className="card-header">About Bowtie</div>
