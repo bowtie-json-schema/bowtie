@@ -36,7 +36,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data))
+        .then((data) => (loaderData[dialect.path] = data)),
     );
   }
   await Promise.all(promises);
@@ -103,6 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
