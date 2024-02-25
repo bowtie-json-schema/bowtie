@@ -167,8 +167,11 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                         implementation = await each
                     except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        stderr = panel.Panel(err.stderr, title="stderr")
-                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
+                        show: list[console.RenderableType] = [err.diagnostic()]
+                        if err.stderr:
+                            stderr = panel.Panel(err.stderr, title="stderr")
+                            show.append(stderr)
+                        rich.print(*show, file=sys.stderr)
                         continue
                     except NoSuchImplementation as err:
                         exit_code |= _EX_CONFIG
