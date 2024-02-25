@@ -39,6 +39,10 @@
   flex-direction: row;
   justify-content: space-between;
   gap: 0.7rem;
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-primary); 
+  text-wrap: nowrap;
 }
 
 
