@@ -13,7 +13,7 @@ export const DialectReportView = ({
   reportData: ReportData;
 }) => {
   const params = useSearchParams();
-  
+
   function showAboutBowtie() {
     const initialUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
     const currentUrl = window.location.href;
@@ -23,7 +23,7 @@ export const DialectReportView = ({
       `${initialUrl}#/#run-info`,
       `${initialUrl}#/`,
     ];
-  
+
     return validUrls.includes(currentUrl);
   }
 
