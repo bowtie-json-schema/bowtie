@@ -1,4 +1,5 @@
 import { Button, OverlayTrigger, Popover } from "react-bootstrap";
+import { InfoCircleFill } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
 import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
@@ -9,33 +10,42 @@ interface Props {
 
 export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   return (
-    <OverlayTrigger
-      trigger="focus"
-      placement="left-end"
-      overlay={
-        <Popover id="popover-basic">
-          <Popover.Body>
-            {Object.entries(otherImplementationsData).map(
-              ([id, impl], index) => {
-                const implementationPath = getImplementationPath(id);
-                return (
-                  <p key={index}>
-                    <NavLink to={`/implementations/${implementationPath}`}>
-                      {impl.name}
-                    </NavLink>
-                    <small className="ps-1">{mapLanguage(impl.language)}</small>
-                  </p>
-                );
-              }
-            )}
-          </Popover.Body>
-        </Popover>
-      }
-    >
-      <Button variant="link" style={{ padding: 0 }}>
+    <div className="d-flex align-items-center">
+      <div className="text-body-secondary">
         {"There are other implementations besides the above"}
-      </Button>
-    </OverlayTrigger>
+      </div>
+      <div>
+        <OverlayTrigger
+          trigger="focus"
+          placement="left-end"
+          overlay={
+            <Popover id="popover-basic">
+              <Popover.Body>
+                {Object.entries(otherImplementationsData).map(
+                  ([id, impl], index) => {
+                    const implementationPath = getImplementationPath(id);
+                    return (
+                      <p key={index}>
+                        <NavLink to={`/implementations/${implementationPath}`}>
+                          {impl.name}
+                        </NavLink>
+                        <small className="ps-1">
+                          {mapLanguage(impl.language)}
+                        </small>
+                      </p>
+                    );
+                  }
+                )}
+              </Popover.Body>
+            </Popover>
+          }
+        >
+          <Button variant="none" style={{ border: "none" }}>
+            <InfoCircleFill />
+          </Button>
+        </OverlayTrigger>
+      </div>
+    </div>
   );
 };
 
