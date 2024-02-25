@@ -26,7 +26,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                     <small className="ps-1">{mapLanguage(impl.language)}</small>
                   </p>
                 );
-              }
+              },
             )}
           </Popover.Body>
         </Popover>
