@@ -1,5 +1,6 @@
-import { Button, OverlayTrigger, Popover } from "react-bootstrap";
-import { InfoCircleFill } from "react-bootstrap-icons";
+import { useRef, useState } from "react";
+import { Overlay, Popover } from "react-bootstrap";
+import { InfoCircle } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
 import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
@@ -9,14 +10,33 @@ interface Props {
 }
 
 export const OtherImplementations = ({ otherImplementationsData }: Props) => {
+  const [showPopover, setShowPopover] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const popoverTimeoutRef = useRef<number | undefined>(undefined);
+
   return (
-    <div className="d-flex align-items-center">
+    <div
+      ref={overlayRef}
+      className="d-flex align-items-center"
+      onMouseEnter={() => {
+        setShowPopover(true);
+        clearTimeout(popoverTimeoutRef.current);
+      }}
+      onMouseLeave={() => {
+        popoverTimeoutRef.current = window.setTimeout(() => {
+          setShowPopover(false);
+        }, 400);
+      }}
+    >
       <div>
-        <OverlayTrigger
-          trigger="click"
+        <Overlay
           placement="left-end"
-          overlay={
-            <Popover id="popover-basic">
+          show={showPopover}
+          target={overlayRef.current}
+          transition={false}
+        >
+          {(props) => (
+            <Popover id="popover-basic" {...props}>
               <Popover.Body>
                 {Object.entries(otherImplementationsData).map(
                   ([id, impl], index) => {
@@ -38,18 +58,13 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                 )}
               </Popover.Body>
             </Popover>
-          }
-        >
-          <Button
-            className="d-flex align-items-center"
-            variant="none"
-            style={{ border: "none" }}
-          >
-            <InfoCircleFill />
-          </Button>
-        </OverlayTrigger>
+          )}
+        </Overlay>
+        <div className="d-flex align-items-center text-body-secondary">
+          <InfoCircle />
+        </div>
       </div>
-      <div className="text-body-secondary">
+      <div className="text-body-secondary ps-2">
         {
           "Other implementations are available which do not support the current dialect and filters."
         }
