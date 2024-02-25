@@ -1,7 +1,7 @@
 const BowtieInfoSection = () => {
   // prettier-ignore
   return (
-    <div className="card mx-auto mb-3 w-75" id="bowtie-info">
+    <div className="card mx-auto mb-3" id="bowtie-info">
       <div className="card-header">About Bowtie</div>
       <div className="card-body">
         <p>

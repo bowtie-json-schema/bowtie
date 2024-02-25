@@ -7,6 +7,7 @@ const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
   return (
+
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
       <Card.Body>

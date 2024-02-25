@@ -37,6 +37,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
+
       <Card className="mx-auto mb-3 col-md-9">
         <Card.Header>
           <span className="px-1 text-muted">

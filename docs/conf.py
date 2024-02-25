@@ -53,9 +53,22 @@ rst_prolog = f"""
 
 .. |implementation-count| replace:: {IMPLEMENTATION_COUNT}
 
-.. |gitpod| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
-  :alt: Open in Gitpod
-  :target: https://gitpod.io/#{REPO}
+.. |codespaces| image:: https://github.com/codespaces/badge.svg
+    :alt: Open in GitHub Codespaces
+    :target: https://codespaces.new{REPO.path}
+
+.. |codespaces-badge| image:: https://github.com/codespaces/badge.svg
+    :alt: Open in GitHub Codespaces
+    :target: https://codespaces.new{REPO.path}
+
+.. |gitpod| image:: https://gitpod.io/button/open-in-gitpod.svg
+    :alt: Open in Gitpod
+    :target: https://gitpod.io/#{REPO}
+
+.. |gitpod-badge| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
+    :alt: Open in Gitpod
+    :target: https://gitpod.io/#{REPO}
+    :height: 32px
 
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite

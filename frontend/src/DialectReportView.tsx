@@ -35,14 +35,14 @@ export const DialectReportView = ({
   }, [reportData, params]);
 
   return (
-    <div>
-      <div className="container p-4">
+    <main className="container-lg">
+      <div className="col col-lg-8 mx-auto">
         <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
         <CasesSection reportData={filteredData} />
       </div>
-    </div>
+    </main>
   );
 };

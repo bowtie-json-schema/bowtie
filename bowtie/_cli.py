@@ -167,8 +167,11 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                         implementation = await each
                     except StartupFailed as err:
                         exit_code |= _EX_CONFIG
-                        stderr = panel.Panel(err.stderr, title="stderr")
-                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
+                        show: list[console.RenderableType] = [err.diagnostic()]
+                        if err.stderr:
+                            stderr = panel.Panel(err.stderr, title="stderr")
+                            show.append(stderr)
+                        rich.print(*show, file=sys.stderr)
                         continue
                     except NoSuchImplementation as err:
                         exit_code |= _EX_CONFIG
@@ -952,11 +955,12 @@ async def smoke(
     for implementation in implementations:
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
         serializable: list[dict[str, Any]] = []
+        implementation_exit_code = 0
 
         async for _, results in implementation.smoke():
             async for case, result in results:
                 if result.unsuccessful():
-                    exit_code |= _EX_DATAERR
+                    implementation_exit_code |= _EX_DATAERR
 
                 match format:
                     case "json":
@@ -978,16 +982,22 @@ async def smoke(
                 echo(json.dumps(serializable, indent=2))
 
             case "pretty":
-                message = "❌ some failures" if exit_code else "✅ all passed"
+                message = (
+                    "❌ some failures"
+                    if implementation_exit_code
+                    else "✅ all passed"
+                )
                 echo(f"\n{message}", file=sys.stderr)
 
             case "markdown":
                 message = (
                     "**❌ some failures**"
-                    if exit_code
+                    if implementation_exit_code
                     else "**✅ all passed**"
                 )
                 echo(f"\n{message}", file=sys.stderr)
+
+        exit_code |= implementation_exit_code
 
     return exit_code
 

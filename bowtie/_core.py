@@ -204,16 +204,29 @@ class StartupFailed(Exception):
         return self.name
 
     def diagnostic(self):
-        return DiagnosticError(
-            code="startup-failed",
-            message=f"{self.name!r} failed to start.",
-            causes=[],
-            hint_stmt=(
+        causes: list[str] = []
+        if self.__cause__ is None:
+            hint = (
                 "If you are developing a new harness, check if stderr "
                 "(shown below) contains harness-specific information "
                 "which can help. Otherwise, you may have an issue with your "
                 "local container setup (podman, docker, etc.)."
-            ),
+            )
+        else:
+            hint = (
+                "The harness sent an invalid response for Bowtie's protocol. "
+                "Details for what was wrong are above. If you are developing "
+                "support for a new harness you should address them, otherwise "
+                "if you are not, this is a bug in Bowtie's harness for this "
+                "implementation! File an issue on Bowtie's issue tracker."
+            )
+            causes.extend(str(error) for error in self.__cause__.errors)  # type: ignore[reportUnknownArgumentType]
+
+        return DiagnosticError(
+            code="startup-failed",
+            message=f"{self.name!r} failed to start.",
+            causes=causes,
+            hint_stmt=hint,
         )
 
 
