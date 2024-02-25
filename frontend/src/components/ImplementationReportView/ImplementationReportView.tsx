@@ -36,7 +36,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3 w-75">
+      <Card className="mx-auto mb-3">
         <Card.Header>
           <span className="px-1 text-muted">
             {mapLanguage(implementation.language)}

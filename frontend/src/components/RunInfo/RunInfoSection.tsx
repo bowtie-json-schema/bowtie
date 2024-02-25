@@ -9,7 +9,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
   };
 
   return (
-    <div className="card mx-auto mb-3 w-75" id="run-info">
+    <div className="card mx-auto mb-3" id="run-info">
       <div className="card-header">Run Info</div>
 
       <div className="card-body table-responsive-sm">

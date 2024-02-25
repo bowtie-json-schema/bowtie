@@ -9,7 +9,7 @@ export const FilterSection = ({ languages }: { languages: string[] }) => {
   const params = useSearchParams();
 
   return (
-    <Card className="mx-auto mb-3 w-75">
+    <Card className="mx-auto mb-3">
       <Card.Header>Filtering</Card.Header>
       <Card.Body>
         <Card.Title>Language</Card.Title>
