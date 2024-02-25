@@ -13,7 +13,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
     <div className="d-flex align-items-center">
       <div>
         <OverlayTrigger
-          trigger="focus"
+          trigger="click"
           placement="left-end"
           overlay={
             <Popover id="popover-basic">
@@ -34,13 +34,17 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                         </span>
                       </p>
                     );
-                  },
+                  }
                 )}
               </Popover.Body>
             </Popover>
           }
         >
-          <Button variant="none" style={{ border: "none" }}>
+          <Button
+            className="d-flex align-items-center"
+            variant="none"
+            style={{ border: "none" }}
+          >
             <InfoCircleFill />
           </Button>
         </OverlayTrigger>
