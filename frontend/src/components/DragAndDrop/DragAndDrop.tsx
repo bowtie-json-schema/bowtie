@@ -64,7 +64,7 @@ export const DragAndDrop = () => {
       try {
         const dataObjectsArray = result.trim().split(/\r?\n/);
         const lines = dataObjectsArray.map(
-          (line) => JSON.parse(line) as Record<string, unknown>,
+          (line) => JSON.parse(line) as Record<string, unknown>
         );
         setLines(parseReportData(lines));
       } catch (error) {
@@ -80,7 +80,7 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <DialectReportView reportData={lines} />;
+    return <DialectReportView reportData={lines} allImplementationsData={{}} />;
   }
 
   return (

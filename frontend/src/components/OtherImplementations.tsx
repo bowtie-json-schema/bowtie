@@ -38,24 +38,22 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
           {(props) => (
             <Popover id="popover-basic" {...props}>
               <Popover.Body>
-                {Object.entries(otherImplementationsData).map(
-                  ([id, impl], index) => {
-                    const implementationPath = getImplementationPath(id);
-                    return (
-                      <p key={index}>
-                        <NavLink
-                          style={{ fontSize: "1rem", fontWeight: "bold" }}
-                          to={`/implementations/${implementationPath}`}
-                        >
-                          {impl.name}
-                        </NavLink>
-                        <span className="ps-1 text-body-secondary fw-bold">
-                          {mapLanguage(impl.language)}
-                        </span>
-                      </p>
-                    );
-                  },
-                )}
+                {Object.entries(otherImplementationsData).map(([id, impl]) => {
+                  const implementationPath = getImplementationPath(id);
+                  return (
+                    <p key={id}>
+                      <NavLink
+                        style={{ fontSize: "1rem", fontWeight: "bold" }}
+                        to={`/implementations/${implementationPath}`}
+                      >
+                        {impl.name}
+                      </NavLink>
+                      <span className="ps-1 text-body-secondary fw-bold">
+                        {mapLanguage(impl.language)}
+                      </span>
+                    </p>
+                  );
+                })}
               </Popover.Body>
             </Popover>
           )}
@@ -65,9 +63,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
         </div>
       </div>
       <div className="text-body-secondary ps-2">
-        {
-          "Other implementations are available which do not support the current dialect and filters."
-        }
+        Other implementations are available which do not support the current
+        dialect and filters.
       </div>
     </div>
   );
