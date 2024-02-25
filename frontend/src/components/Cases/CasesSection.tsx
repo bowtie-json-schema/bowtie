@@ -4,7 +4,7 @@ import CaseItem from "./CaseItem";
 import { Accordion, Row, Col, DropdownButton, Dropdown } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>("");
   const [filterCriteria, setFilterCriteria] = useState<string | null>(null);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -18,7 +18,10 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   return (
     <Accordion id="cases">
       <Row>
-        <Col md={{ span: 6, offset: 6 }} className="d-flex align-items-center justify-content-end">
+        <Col
+          md={{ span: 6, offset: 6 }}
+          className="d-flex align-items-center justify-content-end"
+        >
           <input
             type="text"
             onChange={handleSearchChange}
@@ -30,31 +33,43 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
             variant="secondary"
             id="dropdown-basic-button"
           >
-            <Dropdown.Item onClick={() => handleFilterChange(null)}>All</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("errors")}>Errors</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("skipped")}>Skipped</Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("failed")}>Failed</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange(null)}>
+              All
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("errors")}>
+              Errors
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("skipped")}>
+              Skipped
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("failed")}>
+              Failed
+            </Dropdown.Item>
           </DropdownButton>
         </Col>
       </Row>
       {Array.from(reportData.cases.entries())
-        .filter(([seq, ]) => {
+        .filter(([seq]) => {
           if (!filterCriteria) return true;
-          const caseResults: (CaseResult | undefined)[] = Array.from(reportData.implementations.values())
-            .map(impl => impl.cases.get(seq))
+          const caseResults: (CaseResult | undefined)[] = Array.from(
+            reportData.implementations.values(),
+          )
+            .map((impl) => impl.cases.get(seq))
             .flat();
           switch (filterCriteria) {
             case "errors":
-              return caseResults.some(result => result?.state === "errored");
+              return caseResults.some((result) => result?.state === "errored");
             case "skipped":
-              return caseResults.some(result => result?.state === "skipped");
+              return caseResults.some((result) => result?.state === "skipped");
             case "failed":
-              return caseResults.some(result => result?.state === "failed");
+              return caseResults.some((result) => result?.state === "failed");
             default:
               return true;
           }
         })
-        .filter(([, caseData]) => caseData.description.toLowerCase().includes(searchText))
+        .filter(([, caseData]) =>
+          caseData.description.toLowerCase().includes(searchText),
+        )
         .map(([seq, caseData], index) => (
           <CaseItem
             key={index}
