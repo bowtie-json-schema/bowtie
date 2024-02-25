@@ -12,7 +12,9 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   return (
     <div className="d-flex align-items-center">
       <div className="text-body-secondary">
-        {"There are other implementations besides the above"}
+        {
+          "Other implementations are available which do not support the current dialect and filters."
+        }
       </div>
       <div>
         <OverlayTrigger
