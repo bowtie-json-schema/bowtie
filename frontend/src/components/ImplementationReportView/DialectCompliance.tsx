@@ -7,7 +7,7 @@ const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
   return (
-    <Card className="mx-auto mb-3 w-75">
+    <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
       <Card.Body>
         <Table className="table-hover sm">
@@ -37,22 +37,32 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate,
+                    +Dialect.forPath(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
                 return (
                   <tr key={index}>
                     <td>
-                      {Dialect.forPath(dialectName).uri}{" "}
-                      <img
-                        width={"auto"}
-                        height={20}
-                        src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                          implementation.language,
-                        )}-${implementation.name}%2Fcompliance%2FDraft_${
-                          Dialect.forPath(dialectName).prettyName.split(" ")[1]
-                        }.json`}
-                      ></img>
+                      {Dialect.forPath(dialectName).uri}
+                      <a
+                        className="mx-1"
+                        href={`${Dialect.forPath(dialectName).uri}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-block",
+                          width: "fit-content",
+                        }}
+                      >
+                        <img
+                          alt={`${Dialect.forPath(dialectName).prettyName}`}
+                          src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
+                            implementation.language
+                          )}-${implementation.name}%2Fcompliance%2F${
+                            Dialect.forPath(dialectName).badgeName
+                          }.json`}
+                        />
+                      </a>
                     </td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>

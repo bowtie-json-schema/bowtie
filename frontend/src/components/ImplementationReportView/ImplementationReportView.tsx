@@ -5,6 +5,7 @@ import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
+import Dialect from "../../data/Dialect";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -36,7 +37,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3 w-75">
+      <Card className="mx-auto mb-3 col-md-9">
         <Card.Header>
           <span className="px-1 text-muted">
             {mapLanguage(implementation.language)}
@@ -110,22 +111,44 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Supported Dialects:</th>
-                <td>
+                <th>
+                  Supported Dialects:
+                  <br />
+                  <img
+                    alt={`${implementation.language}`}
+                    className="my-1"
+                    src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
+                      implementation.language
+                    )}-${implementation.name}%2Fsupported_versions.json`}
+                    style={{ maxWidth: "100%" }}
+                  />
+                </th>
+                <td className="col-7">
                   <ul>
-                    {implementation.dialects.map(
-                      (dialect: string, index: number) => (
+                    {Object.entries(implementation.results).map(
+                      ([dialectName], index) => (
                         <li key={index}>
-                          {dialect}{" "}
-                          <img
-                            width={"auto"}
-                            height={20}
-                            src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                              implementation.language
-                            )}-${
-                              implementation.name
-                            }%2Fsupported_versions.json`}
-                          />
+                          <a
+                            className="mx-1"
+                            href={`${Dialect.forPath(dialectName).uri}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              width: "fit-content",
+                            }}
+                          >
+                            <img
+                              alt={`${Dialect.forPath(dialectName).prettyName}`}
+                              src={`https://img.shields.io/endpoint?url=${encodeURIComponent(
+                                `https://bowtie-json-schema.github.io/bowtie/badges/${
+                                  implementation.language
+                                }-${implementation.name}/compliance/${
+                                  Dialect.forPath(dialectName).badgeName
+                                }.json`
+                              )}`}
+                            />
+                          </a>
                         </li>
                       )
                     )}
