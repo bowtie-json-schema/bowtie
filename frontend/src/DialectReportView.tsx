@@ -50,7 +50,7 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-        { showAboutBowtie() && <BowtieInfoSection />}
+        {showAboutBowtie() && <BowtieInfoSection />}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
