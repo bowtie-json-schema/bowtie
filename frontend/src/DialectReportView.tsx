@@ -13,6 +13,19 @@ export const DialectReportView = ({
   reportData: ReportData;
 }) => {
   const params = useSearchParams();
+  
+  function showAboutBowtie() {
+    const initialUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+    const currentUrl = window.location.href;
+    const validUrls = [
+      `${initialUrl}#/#cases`,
+      `${initialUrl}#/#summary`,
+      `${initialUrl}#/#run-info`,
+      `${initialUrl}#/`,
+    ];
+  
+    return validUrls.includes(currentUrl);
+  }
 
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
@@ -37,7 +50,7 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-        <BowtieInfoSection />
+        { showAboutBowtie() && <BowtieInfoSection />}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
