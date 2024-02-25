@@ -11,11 +11,6 @@ interface Props {
 export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   return (
     <div className="d-flex align-items-center">
-      <div className="text-body-secondary">
-        {
-          "Other implementations are available which do not support the current dialect and filters."
-        }
-      </div>
       <div>
         <OverlayTrigger
           trigger="focus"
@@ -28,15 +23,18 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                     const implementationPath = getImplementationPath(id);
                     return (
                       <p key={index}>
-                        <NavLink to={`/implementations/${implementationPath}`}>
+                        <NavLink
+                          style={{ fontSize: "1rem", fontWeight: "bold" }}
+                          to={`/implementations/${implementationPath}`}
+                        >
                           {impl.name}
                         </NavLink>
-                        <small className="ps-1">
+                        <span className="ps-1 text-body-secondary fw-bold">
                           {mapLanguage(impl.language)}
-                        </small>
+                        </span>
                       </p>
                     );
-                  },
+                  }
                 )}
               </Popover.Body>
             </Popover>
@@ -46,6 +44,11 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
             <InfoCircleFill />
           </Button>
         </OverlayTrigger>
+      </div>
+      <div className="text-body-secondary">
+        {
+          "Other implementations are available which do not support the current dialect and filters."
+        }
       </div>
     </div>
   );
