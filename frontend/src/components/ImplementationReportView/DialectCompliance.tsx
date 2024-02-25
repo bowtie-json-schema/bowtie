@@ -7,7 +7,6 @@ const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
   return (
-
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
       <Card.Body>
@@ -38,7 +37,7 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate
+                    +Dialect.forPath(a[0]).firstPublicationDate,
               )
               .map(([dialectName, result], index) => {
                 return (
@@ -58,7 +57,7 @@ const DialectCompliance: React.FC<{
                         <img
                           alt={`${Dialect.forPath(dialectName).prettyName}`}
                           src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                            implementation.language
+                            implementation.language,
                           )}-${implementation.name}%2Fcompliance%2F${
                             Dialect.forPath(dialectName).badgeName
                           }.json`}

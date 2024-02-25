@@ -37,7 +37,6 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
-
       <Card className="mx-auto mb-3 col-md-9">
         <Card.Header>
           <span className="px-1 text-muted">
@@ -119,7 +118,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                     alt={`${implementation.language}`}
                     className="my-1"
                     src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                      implementation.language
+                      implementation.language,
                     )}-${implementation.name}%2Fsupported_versions.json`}
                     style={{ maxWidth: "100%" }}
                   />
@@ -146,12 +145,12 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                                   implementation.language
                                 }-${implementation.name}/compliance/${
                                   Dialect.forPath(dialectName).badgeName
-                                }.json`
+                                }.json`,
                               )}`}
                             />
                           </a>
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
@@ -166,7 +165,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>
