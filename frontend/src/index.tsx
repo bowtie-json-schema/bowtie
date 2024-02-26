@@ -10,14 +10,8 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import Dialect from "./data/Dialect";
 import { parseImplementationData, ReportData } from "./data/parseReportData";
-import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
-
-const reportHost =
-  import.meta.env.MODE === "development"
-    ? "https://bowtie.report"
-    : window.location.href;
-const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
+import { reportUri } from "./data/ReportHost";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
@@ -32,7 +26,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data)),
+        .then((data) => (loaderData[dialect.path] = data))
     );
   }
   await Promise.all(promises);
@@ -77,6 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

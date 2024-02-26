@@ -4,7 +4,6 @@
     "uri": "https://json-schema.org/draft/2020-12/schema",
     "shortName": "draft2020-12",
     "prettyName": "Draft 2020-12",
-    "badgeName": "Draft_2020-12",
     "firstPublicationDate": "2020-01-28",
     "aliases": ["2020", "202012", "2020-12", "draft202012"]
   },
@@ -13,7 +12,6 @@
     "uri": "https://json-schema.org/draft/2019-09/schema",
     "shortName": "draft2019-09",
     "prettyName": "Draft 2019-09",
-    "badgeName": "Draft_2019-09",
     "firstPublicationDate": "2019-09-17",
     "aliases": ["2019", "201909", "2019-09", "draft201909"]
   },
@@ -22,7 +20,6 @@
     "uri": "http://json-schema.org/draft-07/schema#",
     "shortName": "draft7",
     "prettyName": "Draft 7",
-    "badgeName": "Draft_7",
     "firstPublicationDate": "2017-11-19",
     "aliases": ["7"]
   },
@@ -31,7 +28,6 @@
     "uri": "http://json-schema.org/draft-06/schema#",
     "shortName": "draft6",
     "prettyName": "Draft 6",
-    "badgeName": "Draft_6",
     "firstPublicationDate": "2017-04-21",
     "aliases": ["6"]
   },
@@ -40,7 +36,6 @@
     "uri": "http://json-schema.org/draft-04/schema#",
     "shortName": "draft4",
     "prettyName": "Draft 4",
-    "badgeName": "Draft_4",
     "firstPublicationDate": "2013-01-31",
     "hasBooleanSchemas": false,
     "aliases": ["4"]
@@ -50,7 +45,6 @@
     "uri": "http://json-schema.org/draft-03/schema#",
     "shortName": "draft3",
     "prettyName": "Draft 3",
-    "badgeName": "Draft_3",
     "firstPublicationDate": "2010-11-22",
     "hasBooleanSchemas": false,
     "aliases": ["3"]

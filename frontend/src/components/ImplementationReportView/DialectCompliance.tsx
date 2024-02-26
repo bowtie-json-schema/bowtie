@@ -2,10 +2,21 @@ import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
+import { reportUri } from "../../data/ReportHost";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
+  const reportURIpath: string = reportUri.href();
+
+  const complianceBadgeURI = (dialectName: string): string => {
+    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
+      `${reportURIpath}badges/${implementation.language}-${
+        implementation.name
+      }/compliance/${Dialect.forPath(dialectName).shortName}.json`
+    )}`;
+  };
+
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -56,11 +67,7 @@ const DialectCompliance: React.FC<{
                       >
                         <img
                           alt={`${Dialect.forPath(dialectName).prettyName}`}
-                          src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                            implementation.language
-                          )}-${implementation.name}%2Fcompliance%2F${
-                            Dialect.forPath(dialectName).badgeName
-                          }.json`}
+                          src={complianceBadgeURI(dialectName)}
                         />
                       </a>
                     </td>

@@ -6,6 +6,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 import Dialect from "../../data/Dialect";
+import { reportUri } from "../../data/ReportHost";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -35,6 +36,20 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   implementation,
 }) => {
+  const reportURIpath: string = reportUri.href();
+
+  const complianceBadgeURI = (dialectName: string): string => {
+    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
+      `${reportURIpath}badges/${implementation.language}-${
+        implementation.name
+      }/compliance/${Dialect.forPath(dialectName).shortName}.json`
+    )}`;
+  };
+
+  const supportedBadgeURI = `https://img.shields.io/endpoint?url=${encodeURIComponent(
+    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`
+  )}`;
+
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
@@ -117,9 +132,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   <img
                     alt={`${implementation.language}`}
                     className="my-1"
-                    src={`https://img.shields.io/endpoint?url=https%3A%2F%2Fbowtie-json-schema.github.io%2Fbowtie%2Fbadges%2F${encodeURIComponent(
-                      implementation.language
-                    )}-${implementation.name}%2Fsupported_versions.json`}
+                    src={supportedBadgeURI}
                     style={{ maxWidth: "100%" }}
                   />
                 </th>
@@ -140,13 +153,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           >
                             <img
                               alt={`${Dialect.forPath(dialectName).prettyName}`}
-                              src={`https://img.shields.io/endpoint?url=${encodeURIComponent(
-                                `https://bowtie-json-schema.github.io/bowtie/badges/${
-                                  implementation.language
-                                }-${implementation.name}/compliance/${
-                                  Dialect.forPath(dialectName).badgeName
-                                }.json`
-                              )}`}
+                              src={complianceBadgeURI(dialectName)}
                             />
                           </a>
                         </li>

@@ -9,7 +9,7 @@ import { fromSerialized } from "./parseReportData";
 export default class Dialect {
   readonly path: string;
   readonly prettyName: string;
-  readonly badgeName: string;
+  readonly shortName: string;
   readonly uri: string;
   readonly firstPublicationDate: Date;
 
@@ -18,7 +18,7 @@ export default class Dialect {
   constructor(
     path: string,
     prettyName: string,
-    badgeName: string,
+    shortName: string,
     uri: string,
     firstPublicationDate: Date
   ) {
@@ -29,7 +29,7 @@ export default class Dialect {
 
     this.path = path;
     this.prettyName = prettyName;
-    this.badgeName = badgeName;
+    this.shortName = shortName;
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
   }
@@ -73,7 +73,7 @@ for (const each of data) {
   new Dialect(
     each.shortName,
     each.prettyName,
-    each.badgeName,
+    each.shortName,
     each.uri,
     new Date(each.firstPublicationDate)
   );
