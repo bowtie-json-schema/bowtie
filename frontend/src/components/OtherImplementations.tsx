@@ -15,7 +15,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData
+    otherImplementationsData,
   );
   return (
     <div
@@ -102,7 +102,7 @@ const getImplementationPath = (id: string): string => {
 
 const getLatestSupportedDialect = (impl: Implementation): string => {
   const latestSupportedDialect = impl.dialects.sort((a, b) =>
-    b.localeCompare(a)
+    b.localeCompare(a),
   )[0];
   const uri = new URI(latestSupportedDialect);
   const pathParts = uri.path().split("/");
