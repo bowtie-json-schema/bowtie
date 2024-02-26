@@ -2,6 +2,7 @@ import data from "../../../data/dialects.json";
 import URI from "urijs";
 
 import { fromSerialized } from "./parseReportData";
+import siteURI from "./Site";
 
 /**
  * An individual dialect of JSON Schema.
@@ -31,7 +32,7 @@ export default class Dialect {
     this.firstPublicationDate = firstPublicationDate;
   }
 
-  async fetchReport(baseURI: URI) {
+  async fetchReport(baseURI: URI = siteURI) {
     const url = baseURI.clone().filename(this.path).suffix("json").href();
     const response = await fetch(url);
     return fromSerialized(await response.text());

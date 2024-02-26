@@ -10,16 +10,16 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import Dialect from "./data/Dialect";
+import { implementationMetadataURI } from "./data/Site";
 import {
   Implementation,
   parseImplementationData,
   ReportData,
 } from "./data/parseReportData";
-import siteURI from "./data/Site";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport(siteURI);
+  return dialect.fetchReport();
 };
 
 const fetchAllReportData = async (langImplementation: string) => {
@@ -28,9 +28,7 @@ const fetchAllReportData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect
-        .fetchReport(siteURI)
-        .then((data) => (loaderData[dialect.path] = data)),
+      dialect.fetchReport().then((data) => (loaderData[dialect.path] = data)),
     );
   }
   await Promise.all(promises);
@@ -38,8 +36,7 @@ const fetchAllReportData = async (langImplementation: string) => {
 };
 
 const fetchImplementationMetadata = async () => {
-  const url = siteURI.clone().filename("implementations").suffix("json").href();
-  const response = await fetch(url);
+  const response = await fetch(implementationMetadataURI);
   const implementations = (await response.json()) as Record<
     string,
     Implementation

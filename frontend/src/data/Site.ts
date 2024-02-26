@@ -5,4 +5,13 @@ const base =
     ? "https://bowtie.report"
     : window.location.href;
 
-export default new URI(base).directory(import.meta.env.BASE_URL);
+export const siteURI = new URI(base).directory(import.meta.env.BASE_URL);
+
+// FIXME: Presumably a future `Implementation` can handle this as `Dialect`
+//        handles it for dialect reports.
+export const implementationMetadataURI = siteURI
+  .clone()
+  .filename("implementations.json")
+  .href();
+
+export default siteURI;
