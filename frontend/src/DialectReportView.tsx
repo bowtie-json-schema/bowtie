@@ -22,7 +22,7 @@ export const DialectReportView = ({
 
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
-      (impl) => impl.metadata.language,
+      (impl) => impl.metadata.language
     );
     return Array.from(new Set(langs).values());
   }, [reportData]);
@@ -33,42 +33,32 @@ export const DialectReportView = ({
 
     if (selectedLanguages.length > 0) {
       const filteredReportArray = Array.from(
-        reportData.implementations.entries(),
+        reportData.implementations.entries()
       ).filter(([, data]) =>
-        selectedLanguages.includes(data.metadata.language),
+        selectedLanguages.includes(data.metadata.language)
       );
-      const filteredReportImplementationsMap = new Map(filteredReportArray);
-      filteredData.implementations = filteredReportImplementationsMap;
+      filteredData.implementations = new Map(filteredReportArray);
     }
 
     return filteredData;
   }, [reportData, params]);
 
   const filteredOtherImplementationsData = useMemo(() => {
-    let filteredData: Record<string, Implementation> = {};
     const selectedLanguages = params.getAll("language");
+    const availableLanguages =
+      selectedLanguages.length > 0 ? selectedLanguages : languages;
 
-    if (selectedLanguages.length > 0) {
-      const filteredReportArray = Array.from(
-        reportData.implementations.entries(),
-      ).filter(([, data]) =>
-        selectedLanguages.includes(data.metadata.language),
-      );
-      const filteredReportImplementationsMap = new Map(filteredReportArray);
-      filteredData = filterOtherImplementations(
-        allImplementationsData,
-        selectedLanguages,
-        filteredReportImplementationsMap,
-      );
-    } else {
-      filteredData = filterOtherImplementations(
-        allImplementationsData,
-        languages,
-        reportData.implementations,
-      );
-    }
-    return filteredData;
-  }, [reportData, params, allImplementationsData, languages]);
+    return filterOtherImplementations(
+      allImplementationsData,
+      availableLanguages,
+      filteredReportData.implementations
+    );
+  }, [
+    params,
+    allImplementationsData,
+    languages,
+    filteredReportData.implementations,
+  ]);
 
   return (
     <div>
@@ -89,19 +79,12 @@ export const DialectReportView = ({
 const filterOtherImplementations = (
   allImplementationsData: Record<string, Implementation>,
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationData>,
+  filteredReportImplementationsMap: Map<string, ImplementationData>
 ): Record<string, Implementation> => {
-  const filteredOtherImplementationsArray: [string, Implementation][] =
-    Object.entries(allImplementationsData).filter(
-      ([, impl]: [string, Implementation]) => langs.includes(impl.language),
-    );
-
-  const filteredOtherImplementationsData: Record<string, Implementation> = {};
-  filteredOtherImplementationsArray.map(([key, impl]) => {
-    if (!filteredReportImplementationsMap.get(key)) {
-      filteredOtherImplementationsData[key] = impl;
-    }
-  });
-
-  return filteredOtherImplementationsData;
+  const filteredOtherImplementationsArray = Object.entries(
+    allImplementationsData
+  )
+    .filter(([, impl]) => langs.includes(impl.language))
+    .filter(([key]) => !filteredReportImplementationsMap.has(key));
+  return Object.fromEntries(filteredOtherImplementationsArray);
 };

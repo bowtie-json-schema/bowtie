@@ -18,7 +18,7 @@ export default class Dialect {
     path: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: Date,
+    firstPublicationDate: Date
   ) {
     if (Dialect.all.has(path)) {
       throw new DialectError(`A "${path}" dialect already exists.`);
@@ -49,7 +49,7 @@ export default class Dialect {
   static newest_to_oldest(): Dialect[] {
     return Array.from(Dialect.known()).sort(
       (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
+        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf()
     );
   }
 
@@ -76,6 +76,6 @@ for (const each of data) {
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(each.firstPublicationDate)
   );
 }
