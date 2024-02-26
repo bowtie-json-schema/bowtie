@@ -148,44 +148,6 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
 
     def wrapper(fn: ImplementationSubcommand):
-        async def run(
-            image_names: list[str],
-            read_timeout_sec: float,
-            make_validator: MakeValidator = make_validator,
-            **kw: Any,
-        ) -> int:
-            exit_code = 0
-            start = _start(
-                image_names=image_names,
-                make_validator=make_validator,
-                reporter=reporter,
-                read_timeout_sec=read_timeout_sec,
-            )
-
-            running: list[Implementation] = []
-            async with start as implementations:
-                for each in implementations:  # FIXME: respect --quiet
-                    try:
-                        implementation = await each
-                    except StartupFailed as err:
-                        exit_code |= _EX_CONFIG
-                        stderr = panel.Panel(err.stderr, title="stderr")
-                        rich.print(err.diagnostic(), stderr, file=sys.stderr)
-                        continue
-                    except NoSuchImplementation as err:
-                        exit_code |= _EX_CONFIG
-                        rich.print(err.diagnostic(), file=sys.stderr)
-                        continue
-
-                    running.append(implementation)
-
-                if running:
-                    exit_code |= await fn(implementations=running, **kw) or 0
-                else:
-                    exit_code |= _EX_CONFIG
-
-            return exit_code
-
         @subcommand
         @IMPLEMENTATION
         @TIMEOUT
@@ -218,10 +180,15 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
         @TIMEOUT
         @wraps(fn)
         def cmd(**kwargs: Any) -> int:
+            if(not kwargs.get('dialect') and 
+               not kwargs.get('language')):
+                raise click.UsageError(
+                    "Please provide either --dialect filter or --language filter"
+                )
+            implementations = list(Implementation.known())
             image_names: list[str] = [
-                f"{IMAGE_REPOSITORY}/{implementation.name}"
-                for implementation in IMPLEMENTATIONS.iterdir()
-                if implementation.is_dir()
+                f"{IMAGE_REPOSITORY}/{impl}"
+                for impl in implementations
             ]
             return asyncio.run(
                 _run_implementations(
@@ -752,19 +719,24 @@ IMPLEMENTATION = click.option(
     metavar="IMPLEMENTATION",
     help="A docker image which implements the bowtie IO protocol.",
 )
-DIALECT = click.option(
-    "--dialect",
-    "-D",
-    "dialect",
-    type=_Dialect(),
-    default=max(Dialect.known()),
-    show_default=True,
-    metavar="URI_OR_NAME",
-    help=(
-        "A URI or shortname identifying the dialect of each test. Possible "
-        f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
-    ),
-)
+def create_dialect_option():
+    def wrapper(default: Any | None = max(Dialect.known())):
+        option = click.option(
+            "--dialect",
+            "-D",
+            "dialect",
+            type=_Dialect(),
+            default=default,
+            show_default=True,
+            metavar="URI_OR_NAME",
+            help=(
+                "A URI or shortname identifying the dialect of each test. Possible "
+                f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
+            ),
+        )
+        return option
+    return wrapper
+DIALECT = create_dialect_option()
 LANGUAGE = click.option(
     "--language",
     "-l",
@@ -786,7 +758,7 @@ LANGUAGE = click.option(
             "rust",
             "scala",
             "typescript",
-        ]
+        ],
     ),
 )
 _L = Literal[
@@ -896,7 +868,7 @@ EXPECT = click.option(
 
 @subcommand
 @IMPLEMENTATION
-@DIALECT
+@DIALECT()
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -927,7 +899,7 @@ def run(
 
 @subcommand
 @IMPLEMENTATION
-@DIALECT
+@DIALECT()
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -962,24 +934,23 @@ def validate(
 
 
 @all_implementations_subcommand()  # type: ignore[reportArgumentType]
-@DIALECT
+@DIALECT(default=None)
 @LANGUAGE
 async def filter_implementations(
     implementations: Iterable[Implementation],
-    dialect: Dialect,
+    dialect: Dialect | None,
     language: _L | None,
 ):
     supporting_implementations: list[str] = []
     for each in implementations:
         metadata = each.info.serializable()
-        if "dialects" in metadata and str(dialect.uri) in metadata["dialects"]:
-            impl_img = each.info.id
-            impl_name = impl_img.split("/")[-1]
-            if language is not None:
-                if each.info.language == language:
-                    supporting_implementations.append(impl_name)
-            else:
-                supporting_implementations.append(impl_name)
+        impl_id = each.info.id
+        impl_name = impl_id.split("/")[-1]
+
+        if ("dialects" in metadata and
+            (not dialect or str(dialect.uri) in metadata["dialects"]) and
+            (not language or each.info.language == language)):
+            supporting_implementations.append(impl_name)
 
     for impl in supporting_implementations:
         click.echo(impl)
