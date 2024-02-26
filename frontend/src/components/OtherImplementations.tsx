@@ -15,7 +15,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
+    otherImplementationsData
   );
   return (
     <div
@@ -79,7 +79,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
           <InfoCircle />
         </div>
       </div>
-      <div className="text-body-secondary ps-2">
+      <div className="ps-2 text-body-secondary">
         Other implementations are available which do not support the current
         dialect and filters.
       </div>
@@ -96,6 +96,6 @@ const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   return impl.dialects
     .map((dialectUri) => Dialect.forURI(dialectUri))
     .reduce((acc, curr) =>
-      curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
+      curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
     );
 };
