@@ -8,10 +8,10 @@ import { useSearchParams } from "./hooks/useSearchParams.ts";
 
 export const DialectReportView = ({
   reportData,
-  topPageInfoComponent,
+  topPageInfoSection,
 }: {
   reportData: ReportData;
-  topPageInfoComponent: React.ReactElement | null;
+  topPageInfoSection?: React.ReactElement;
 }) => {
   const params = useSearchParams();
   const languages = useMemo(() => {
@@ -37,9 +37,7 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-        {topPageInfoComponent &&
-          React.isValidElement(topPageInfoComponent) &&
-          topPageInfoComponent}
+       {topPageInfoSection}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />

@@ -80,7 +80,7 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <DialectReportView reportData={lines} topPageInfoComponent={null} />;
+    return <DialectReportView reportData={lines} />;
   }
 
   return (
