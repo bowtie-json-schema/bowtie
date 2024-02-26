@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build]
-exclude = [".github", "implementations"]
+exclude = [".github"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["bowtie"]
