@@ -3,6 +3,7 @@ import { DialectReportView } from "./DialectReportView";
 import { useContext, useEffect } from "react";
 import { BowtieVersionContext } from "./context/BowtieVersionContext";
 import { Implementation, ReportData } from "./data/parseReportData";
+import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 
 interface LoaderData {
   reportData: ReportData;
@@ -15,7 +16,7 @@ const ReportDataHandler = () => {
 
   useEffect(
     () => setVersion!(loaderData.reportData.runInfo.bowtie_version),
-    [setVersion, loaderData.reportData.runInfo.bowtie_version],
+    [setVersion, loaderData.reportData.runInfo.bowtie_version]
   );
 
   return (
