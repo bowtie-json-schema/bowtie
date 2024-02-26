@@ -15,7 +15,7 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
     navigator.clipboard.writeText(textToCopy).then(
       () => {
         setCopied(true);
-        // Reset 'copied' state after 5 seconds
+        // Reset 'copied' state after 3 seconds
         setTimeout(() => {
           setCopied(false);
         }, 3000);
