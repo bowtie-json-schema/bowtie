@@ -1,32 +1,19 @@
 import CasesSection from "./components/Cases/CasesSection";
-import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
 export const DialectReportView = ({
   reportData,
+  topPageInfoComponent,
 }: {
   reportData: ReportData;
+  topPageInfoComponent:  React.ReactElement | null;
 }) => {
   const params = useSearchParams();
-
-  function showAboutBowtie() {
-    const initialUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-    const currentUrl = window.location.href;
-    const validUrls = [
-      `${initialUrl}#/#cases`,
-      `${initialUrl}#/#summary`,
-      `${initialUrl}#/#run-info`,
-      `${initialUrl}#/`,
-    ];
-
-    return validUrls.includes(currentUrl);
-  }
-
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
       (impl) => impl.metadata.language,
@@ -50,7 +37,7 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-        {showAboutBowtie() && <BowtieInfoSection />}
+       {topPageInfoComponent && React.isValidElement(topPageInfoComponent) && topPageInfoComponent}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
