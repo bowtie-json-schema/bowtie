@@ -472,6 +472,20 @@ class Implementation:
     _reporter: Reporter = field(alias="reporter")
 
     @classmethod
+    def known(cls) -> Set[str]:
+        # TODO: Possibly this should return running instances.
+        #       For now it just returns image names clearly.
+        data = files("bowtie") / "data"
+        if data.is_dir():
+            path = data / "known_implementations.json"
+            known = json.loads(path.read_text())
+        else:
+            root = Path(__file__).parent.parent
+            dir = root.joinpath("implementations").iterdir()
+            known = (d.name for d in dir if not d.name.startswith("."))
+        return frozenset(known)
+
+    @classmethod
     @asynccontextmanager
     async def start(
         cls,
