@@ -13,7 +13,7 @@ const DialectCompliance: React.FC<{
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(
       `${reportURIpath}badges/${implementation.language}-${
         implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`
+      }/compliance/${Dialect.forPath(dialectName).path}.json`,
     )}`;
   };
 
@@ -48,7 +48,7 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate
+                    +Dialect.forPath(a[0]).firstPublicationDate,
               )
               .map(([dialectName, result], index) => {
                 return (
