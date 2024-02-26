@@ -1,0 +1,11 @@
+{
+  "name": "Bowtie",
+
+  "dockerFile": ".codespace.Dockerfile",
+
+  "runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"],
+
+  "onCreateCommand": "sudo chown -R vscode /var/run/docker.sock; pip install -r requirements.txt -e .",
+
+  "postCreateCommand": "sudo cp /workspaces/bowtie/docs/motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt"
+}
