@@ -6,5 +6,5 @@ export const reportHost =
     : window.location.href;
 
 export const reportUri = new URI(reportHost).directory(
-  import.meta.env.BASE_URL
+  import.meta.env.BASE_URL,
 );
