@@ -11,7 +11,7 @@ export const DialectReportView = ({
   topPageInfoComponent,
 }: {
   reportData: ReportData;
-  topPageInfoComponent:  React.ReactElement | null;
+  topPageInfoComponent: React.ReactElement | null;
 }) => {
   const params = useSearchParams();
   const languages = useMemo(() => {
@@ -37,7 +37,9 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-       {topPageInfoComponent && React.isValidElement(topPageInfoComponent) && topPageInfoComponent}
+        {topPageInfoComponent &&
+          React.isValidElement(topPageInfoComponent) &&
+          topPageInfoComponent}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />

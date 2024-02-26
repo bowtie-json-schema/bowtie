@@ -14,7 +14,12 @@ const ReportDataHandler = () => {
     [setVersion, loaderData.runInfo.bowtie_version],
   );
 
-  return <DialectReportView reportData={loaderData} topPageInfoComponent={<BowtieInfoSection />} />;
+  return (
+    <DialectReportView
+      reportData={loaderData}
+      topPageInfoComponent={<BowtieInfoSection />}
+    />
+  );
 };
 
 export default ReportDataHandler;
