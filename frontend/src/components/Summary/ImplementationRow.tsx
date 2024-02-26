@@ -32,7 +32,7 @@ const ImplementationRow = ({
           {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
-      <td className="align-middle">
+      <td className="align-middle d-none d-sm-table-cell">
         <small className="font-monospace text-muted">
           {implementation.metadata.version ?? ""}
         </small>
