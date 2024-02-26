@@ -17,7 +17,7 @@ export const DragAndDrop = () => {
     setLines(null);
     setDragActive(false);
     setInvalidFile(false);
-  }, [location]);
+  }, [location.key]);
 
   const handleDragEnter = function (e: DragEvent<HTMLFormElement>) {
     e.preventDefault();

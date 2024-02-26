@@ -9,7 +9,11 @@ import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import Dialect from "./data/Dialect";
-import { parseImplementationData, ReportData } from "./data/parseReportData";
+import {
+  Implementation,
+  parseImplementationData,
+  ReportData,
+} from "./data/parseReportData";
 import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
@@ -39,6 +43,21 @@ const fetchAllReportData = async (langImplementation: string) => {
   return parseImplementationData(loaderData);
 };
 
+const fetchImplementationStatsData = async () => {
+  const url = reportUri
+    .clone()
+    .filename("implementations")
+    .suffix("json")
+    .href();
+  const response = await fetch(url);
+  const jsonl = await response.text();
+  const implementations: Implementation[] = jsonl
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => JSON.parse(line) as Implementation);
+  return implementations;
+};
+
 const router = createHashRouter([
   {
     path: "/",
@@ -63,8 +82,13 @@ const router = createHashRouter([
       {
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
-        loader: async ({ params }) =>
-          fetchAllReportData(params.langImplementation!),
+        loader: async ({ params }) => {
+          const allReportsData = await fetchAllReportData(
+            params.langImplementation!,
+          );
+          const implementationStatsData = await fetchImplementationStatsData();
+          return { allReportsData, implementationStatsData };
+        },
       },
     ],
   },

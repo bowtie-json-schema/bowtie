@@ -242,6 +242,12 @@ export interface Implementation {
   os?: string;
   os_version?: string;
   language_version?: string;
+  last_release_date?: string;
+  last_commit_date?: string;
+  watchers_count?: number;
+  stars_count?: number;
+  open_prs_count?: number;
+  open_issues_count?: number;
   results: Record<string, Partial<Totals>>;
 
   [k: string]: unknown;
