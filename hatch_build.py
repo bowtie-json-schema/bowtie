@@ -2,23 +2,25 @@
 Responsible for defining the custom build hook plugin class.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
-import os
-import shlex
-import subprocess
+import json
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
-class CustomBuildHook(BuildHookInterface):
+class BowtieDataIncluder(BuildHookInterface):
     """
-    A custom build hook plugin class.
+    Include Bowtie implementation data when building a distribution.
+    """
 
-    Subclasses the BuildHookInterface to let know hatchling
-    about a custom build hook plugin and defines the
-    initialize method.
-    """
+    def known_implementations(self):
+        """
+        Our temporary file location.
+        """
+        return Path(self.directory) / "known_implementations.json"
 
     def initialize(
         self,
@@ -26,35 +28,24 @@ class CustomBuildHook(BuildHookInterface):
         build_data: dict[str, Any],
     ) -> None:
         """
-        Build the implementations metadata file.
-
-        Runs various commands and build / generates the
-        implementations.json file to force include in the
-        final built package.
+        Grab our implementations by looking at the sibling directory.
         """
-        if not os.environ.get("RUNNING_HATCH_SESSION"):
-            return
+        path = Path(__file__).parent.joinpath("implementations")
+        known = [d.name for d in path.iterdir() if not d.name.startswith(".")]
 
-        pip_path = "pip"
-        subprocess.run(
-            [pip_path, "install", "-r", "requirements.txt"],
-            check=True,
-        )
+        target_path = "bowtie/data/known_implementations.json"
 
-        bowtie_info_cmd = ["bowtie", "info"]
-        impls = os.listdir("implementations")
-        for impl in impls:
-            bowtie_info_cmd.extend(["-i", impl])
-        bowtie_info_cmd.extend(["--format", "json"])
+        out = self.known_implementations()
+        out.write_text(json.dumps(known))
+        build_data["force_include"][str(out)] = target_path
 
-        output_file_path = Path("implementations.json").absolute()
-
-        with Path.open(output_file_path, "w") as output_file:
-            command = " ".join(shlex.quote(arg) for arg in bowtie_info_cmd)
-            subprocess.run(
-                command,
-                stdout=output_file,
-                check=True,
-            )
-
-        build_data["force_include"]["implementations.json"] = output_file_path
+    def finalize(
+        self,
+        version: str,
+        build_data: dict[str, Any],
+        artifact_path: str,
+    ) -> None:
+        """
+        Clean up our generated temporary file.
+        """
+        self.known_implementations().unlink()
