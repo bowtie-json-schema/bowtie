@@ -138,7 +138,6 @@ def app(session):
     Build a PyApp which will run Bowtie.
     """
     session.install("hatch")
-    session.env["RUNNING_HATCH_SESSION"] = "True"
     session.run("hatch", "build", "-t", "app", *session.posargs)
 
 
