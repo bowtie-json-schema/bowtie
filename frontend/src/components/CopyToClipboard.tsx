@@ -17,7 +17,7 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
         setCopied(true);
         setTimeout(() => {
           setCopied(false);
-        }, 3000);
+        }, 7000);
       },
       () => setCopied(false),
     );
