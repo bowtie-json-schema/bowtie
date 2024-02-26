@@ -2,21 +2,11 @@ import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
-import siteURI from "../../data/Site";
+import { complianceBadgeFor } from "../../data/Badge";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const reportURIpath: string = siteURI.href();
-
-  const complianceBadgeURI = (dialectName: string): string => {
-    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
-      `${reportURIpath}badges/${implementation.language}-${
-        implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`,
-    )}`;
-  };
-
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -51,13 +41,14 @@ const DialectCompliance: React.FC<{
                     +Dialect.forPath(a[0]).firstPublicationDate,
               )
               .map(([dialectName, result], index) => {
+                const dialect = Dialect.forPath(dialectName);
                 return (
                   <tr key={index}>
                     <td>
-                      {Dialect.forPath(dialectName).uri}
+                      {dialect.uri}
                       <a
                         className="mx-1"
-                        href={`${Dialect.forPath(dialectName).uri}`}
+                        href={`${dialect.uri}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -66,8 +57,8 @@ const DialectCompliance: React.FC<{
                         }}
                       >
                         <img
-                          alt={`${Dialect.forPath(dialectName).prettyName}`}
-                          src={complianceBadgeURI(dialectName)}
+                          alt={`${dialect.prettyName}`}
+                          src={`${complianceBadgeFor(implementation, dialect)}`}
                         />
                       </a>
                     </td>
