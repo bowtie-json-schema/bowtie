@@ -2,12 +2,23 @@ import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
+import { reportUri } from "../../data/ReportHost";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
+  const reportURIpath: string = reportUri.href();
+
+  const complianceBadgeURI = (dialectName: string): string => {
+    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
+      `${reportURIpath}badges/${implementation.language}-${
+        implementation.name
+      }/compliance/${Dialect.forPath(dialectName).path}.json`,
+    )}`;
+  };
+
   return (
-    <Card className="mx-auto mb-3">
+    <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
       <Card.Body>
         <Table className="table-hover sm">
@@ -42,7 +53,24 @@ const DialectCompliance: React.FC<{
               .map(([dialectName, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.forPath(dialectName).uri}</td>
+                    <td>
+                      {Dialect.forPath(dialectName).uri}
+                      <a
+                        className="mx-1"
+                        href={`${Dialect.forPath(dialectName).uri}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-block",
+                          width: "fit-content",
+                        }}
+                      >
+                        <img
+                          alt={`${Dialect.forPath(dialectName).prettyName}`}
+                          src={complianceBadgeURI(dialectName)}
+                        />
+                      </a>
+                    </td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>

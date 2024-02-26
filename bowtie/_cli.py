@@ -257,7 +257,7 @@ def badges(site: Path):
                 rich.print(error)
                 return _EX_DATAERR
 
-            badge_name = f"{dialect.pretty_name.replace(' ', '_')}.json"
+            badge_name = f"{dialect.short_name}.json"
 
             for each, badge in report.compliance_badges():
                 dir = outdir / f"{each.language}-{each.name}"

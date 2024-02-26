@@ -5,6 +5,8 @@ import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
+import Dialect from "../../data/Dialect";
+import { reportUri } from "../../data/ReportHost";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -34,9 +36,23 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   implementation,
 }) => {
+  const reportURIpath: string = reportUri.href();
+
+  const complianceBadgeURI = (dialectName: string): string => {
+    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
+      `${reportURIpath}badges/${implementation.language}-${
+        implementation.name
+      }/compliance/${Dialect.forPath(dialectName).path}.json`,
+    )}`;
+  };
+
+  const supportedBadgeURI = `https://img.shields.io/endpoint?url=${encodeURIComponent(
+    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`,
+  )}`;
+
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3">
+      <Card className="mx-auto mb-3 col-md-9">
         <Card.Header>
           <span className="px-1 text-muted">
             {mapLanguage(implementation.language)}
@@ -110,12 +126,37 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Supported Dialects:</th>
-                <td>
+                <th>
+                  Supported Dialects:
+                  <br />
+                  <img
+                    alt={`${implementation.language}`}
+                    className="my-1"
+                    src={supportedBadgeURI}
+                    style={{ maxWidth: "100%" }}
+                  />
+                </th>
+                <td className="col-7">
                   <ul>
-                    {implementation.dialects.map(
-                      (dialect: string, index: number) => (
-                        <li key={index}>{dialect}</li>
+                    {Object.entries(implementation.results).map(
+                      ([dialectName], index) => (
+                        <li key={index}>
+                          <a
+                            className="mx-1"
+                            href={`${Dialect.forPath(dialectName).uri}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              width: "fit-content",
+                            }}
+                          >
+                            <img
+                              alt={`${Dialect.forPath(dialectName).prettyName}`}
+                              src={complianceBadgeURI(dialectName)}
+                            />
+                          </a>
+                        </li>
                       ),
                     )}
                   </ul>
