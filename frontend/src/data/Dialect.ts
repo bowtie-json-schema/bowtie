@@ -9,7 +9,6 @@ import { fromSerialized } from "./parseReportData";
 export default class Dialect {
   readonly path: string;
   readonly prettyName: string;
-  readonly shortName: string;
   readonly uri: string;
   readonly firstPublicationDate: Date;
 
@@ -18,9 +17,8 @@ export default class Dialect {
   constructor(
     path: string,
     prettyName: string,
-    shortName: string,
     uri: string,
-    firstPublicationDate: Date,
+    firstPublicationDate: Date
   ) {
     if (Dialect.all.has(path)) {
       throw new DialectError(`A "${path}" dialect already exists.`);
@@ -29,7 +27,6 @@ export default class Dialect {
 
     this.path = path;
     this.prettyName = prettyName;
-    this.shortName = shortName;
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
   }
@@ -47,7 +44,7 @@ export default class Dialect {
   static newest_to_oldest(): Dialect[] {
     return Array.from(Dialect.known()).sort(
       (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
+        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf()
     );
   }
 
@@ -73,8 +70,7 @@ for (const each of data) {
   new Dialect(
     each.shortName,
     each.prettyName,
-    each.shortName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(each.firstPublicationDate)
   );
 }

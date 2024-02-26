@@ -1531,7 +1531,7 @@ async def test_badges(envsonschema, tmp_path):
         Path("python-envsonschema"),
         Path("python-envsonschema/supported_versions.json"),
         Path("python-envsonschema/compliance"),
-        Path("python-envsonschema/compliance/Draft_2020-12.json"),
+        Path("python-envsonschema/compliance/draft2020-12.json"),
     }
 
 

@@ -13,7 +13,7 @@ const DialectCompliance: React.FC<{
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(
       `${reportURIpath}badges/${implementation.language}-${
         implementation.name
-      }/compliance/${Dialect.forPath(dialectName).shortName}.json`
+      }/compliance/${Dialect.forPath(dialectName).path}.json`
     )}`;
   };
 
