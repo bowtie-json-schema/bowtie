@@ -2,12 +2,12 @@ import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
-import { reportUri } from "../../data/ReportHost";
+import siteURI from "../../data/Site";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const reportURIpath: string = reportUri.href();
+  const reportURIpath: string = siteURI.href();
 
   const complianceBadgeURI = (dialectName: string): string => {
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(

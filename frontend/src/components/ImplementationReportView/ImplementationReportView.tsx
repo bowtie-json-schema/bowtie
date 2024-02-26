@@ -6,7 +6,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 import Dialect from "../../data/Dialect";
-import { reportUri } from "../../data/ReportHost";
+import siteURI from "../../data/Site";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -36,7 +36,7 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   implementation,
 }) => {
-  const reportURIpath: string = reportUri.href();
+  const reportURIpath: string = siteURI.href();
 
   const complianceBadgeURI = (dialectName: string): string => {
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(

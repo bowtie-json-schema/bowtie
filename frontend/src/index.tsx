@@ -8,18 +8,18 @@ import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
+import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import Dialect from "./data/Dialect";
 import {
   Implementation,
   parseImplementationData,
   ReportData,
 } from "./data/parseReportData";
-import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
-import { reportUri } from "./data/ReportHost";
+import siteURI from "./data/Site";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport(reportUri);
+  return dialect.fetchReport(siteURI);
 };
 
 const fetchAllReportData = async (langImplementation: string) => {
@@ -29,7 +29,7 @@ const fetchAllReportData = async (langImplementation: string) => {
   for (const dialect of Dialect.known()) {
     promises.push(
       dialect
-        .fetchReport(reportUri)
+        .fetchReport(siteURI)
         .then((data) => (loaderData[dialect.path] = data)),
     );
   }
@@ -38,11 +38,7 @@ const fetchAllReportData = async (langImplementation: string) => {
 };
 
 const fetchImplementationMetadata = async () => {
-  const url = reportUri
-    .clone()
-    .filename("implementations")
-    .suffix("json")
-    .href();
+  const url = siteURI.clone().filename("implementations").suffix("json").href();
   const response = await fetch(url);
   const implementations = (await response.json()) as Record<
     string,

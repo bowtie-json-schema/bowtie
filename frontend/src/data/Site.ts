@@ -1,10 +1,8 @@
 import URI from "urijs";
 
-export const reportHost =
+const base =
   import.meta.env.MODE === "development"
     ? "https://bowtie.report"
     : window.location.href;
 
-export const reportUri = new URI(reportHost).directory(
-  import.meta.env.BASE_URL,
-);
+export default new URI(base).directory(import.meta.env.BASE_URL);
