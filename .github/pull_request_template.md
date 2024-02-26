@@ -6,7 +6,6 @@
 
 Describe the purpose and scope of your pull request here. Include a brief overview of the changes introduced and any relevant context that reviewers should be aware of.
 
-
 ### Changes Made
 
 Provide a detailed list of the changes made in this pull request. Include specific files, components, or functionalities affected by your modifications.
@@ -14,7 +13,6 @@ Provide a detailed list of the changes made in this pull request. Include specif
 - file1
 - file2
 - file3
-
 
 ### Screenshots (if applicable)
 
