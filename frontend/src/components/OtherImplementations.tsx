@@ -15,7 +15,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
+    otherImplementationsData
   );
   return (
     <div
@@ -28,7 +28,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
       onMouseLeave={() => {
         popoverTimeoutRef.current = window.setTimeout(() => {
           setShowPopover(false);
-        }, 400);
+        }, 300);
       }}
     >
       <div>
@@ -59,7 +59,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                               {mapLanguage(impl.language)}
                             </span>
                           </div>
-                          <span className="text-body-secondary">
+                          <span className="text-body-secondary text-nowrap">
                             (latest supported dialect:{" "}
                             <NavLink to={`/dialects/${ltsDialect.path}`}>
                               {ltsDialect.prettyName}
@@ -93,8 +93,9 @@ const getImplementationPath = (id: string): string => {
 };
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
-  const latestSupportedDialect = impl.dialects.sort((a, b) =>
-    b.localeCompare(a),
-  )[0];
-  return Dialect.forURI(latestSupportedDialect);
+  return impl.dialects
+    .map((dialectUri) => Dialect.forURI(dialectUri))
+    .reduce((acc, curr) =>
+      curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
+    );
 };
