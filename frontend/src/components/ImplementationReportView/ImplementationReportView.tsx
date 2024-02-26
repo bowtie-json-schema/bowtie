@@ -42,12 +42,12 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(
       `${reportURIpath}badges/${implementation.language}-${
         implementation.name
-      }/compliance/${Dialect.forPath(dialectName).shortName}.json`
+      }/compliance/${Dialect.forPath(dialectName).shortName}.json`,
     )}`;
   };
 
   const supportedBadgeURI = `https://img.shields.io/endpoint?url=${encodeURIComponent(
-    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`
+    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`,
   )}`;
 
   return (
@@ -157,7 +157,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                             />
                           </a>
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </td>
@@ -172,7 +172,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>
