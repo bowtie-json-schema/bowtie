@@ -13,7 +13,13 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(textToCopy).then(
-      () => setCopied(true),
+      () => {
+        setCopied(true);
+        // Reset 'copied' state after 5 seconds
+        setTimeout(() => {
+          setCopied(false);
+        }, 3000);
+      },
       () => setCopied(false),
     );
   };
@@ -32,6 +38,7 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
           variant="outline-primary"
           className="btn mt-0 me-0"
           onClick={handleCopy}
+          disabled={copied} // Disable the button while it's copied
         >
           {copied ? <Check /> : <Clipboard />}
         </Button>
