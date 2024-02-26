@@ -1,7 +1,7 @@
 import CasesSection from "./components/Cases/CasesSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
