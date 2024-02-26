@@ -160,7 +160,7 @@ class Connection:
     )
 
     #: A per-request number of retries, before giving up
-    _retry: int = 3
+    _retry: int = field(default=3, repr=False)
 
     @classmethod
     @asynccontextmanager
@@ -172,62 +172,78 @@ class Connection:
         self = cls(image=image_name, **kwargs)
 
         try:
-            await self._start_container()
+            await self._start_container_maybe_pull()
         except GotStderr as error:
             err = StartupFailed(name=image_name, stderr=error.stderr.decode())
             raise err from None
         except _ClosedStream:
             raise StartupFailed(name=image_name) from None
-        except aiodocker.exceptions.DockerError as err:
-            # This craziness can go wrong in various ways, none of them
-            # machine parseable.
-
-            status, data, *_ = err.args
-            if data.get("cause") == "image not known":
-                raise NoSuchImplementation(image_name) from err
-
-            message = ghcr = data.get("message", "")
-
-            if status == 500:  # noqa: PLR2004
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no real good way to detect this specific case
-                    no_image = message.endswith('/tags/list": denied')
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImplementation(image_name)
-
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # locally via podman on macOS...
-
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImplementation(image_name)
-
-            raise StartupFailed(name=image_name, data=data) from err
 
         yield self
         await self._stream.ensure_deleted()
 
+    async def _start_container_maybe_pull(self):
+        # You would think we would use aiodocker's container.start() function
+        # which essentially does the below. You would think wrong.
+        # That function will pull the *entire* image repository if it ends up
+        # pulling our harness image -- so here we reimplement it, but only
+        # pull :latest when the image is missing.
+        try:
+            await self._start_container()
+        except aiodocker.exceptions.DockerError as err:
+            if err.status != 404:  # noqa: PLR2004
+                raise
+            try:
+                await self._docker.pull(from_image=self._image, tag="latest")  # type: ignore[reportUnknownMemberType]
+            except aiodocker.exceptions.DockerError as err:
+                # This craziness can go wrong in various ways, none of them
+                # machine parseable.
+
+                status, data, *_ = err.args
+                if data.get("cause") == "image not known":
+                    raise NoSuchImplementation(self._image) from err
+
+                message = ghcr = data.get("message", "")
+
+                if status == 500:  # noqa: PLR2004
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported within GitHub Actions' version of Podman...
+                        # This is some crazy string like:
+                        #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
+                        # with seemingly no other indication elsewhere and
+                        # obviously no good way to detect this specific case
+                        no_image = message.endswith('/latest": denied')
+                    except Exception:  # noqa: BLE001, S110
+                        pass
+                    else:
+                        if no_image:
+                            raise NoSuchImplementation(self._image)
+
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported locally via podman on macOS...
+
+                        # message will be ... a JSON string !?! ...
+                        error = json.loads(ghcr).get("message", "")
+                    except Exception:  # noqa: BLE001, S110
+                        pass  # nonJSON / missing key
+                    else:
+                        if "403 (forbidden)" in error.casefold():
+                            raise NoSuchImplementation(self._image)
+
+                raise StartupFailed(name=self._image, data=data) from err
+            await self._start_container()
+
     async def _start_container(self):
-        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
-            config=dict(
-                Image=self._image,
-                OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
-            ),
+        config = dict(
+            Image=self._image,
+            OpenStdin=True,
+            HostConfig=dict(NetworkMode="none"),
         )
+        # FIXME: name + labels
+        container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
+        await container.start()  # type: ignore[reportUnknownMemberType]
         self._stream = Stream.attached_to(
             container,
             read_timeout_sec=self._read_timeout_sec,

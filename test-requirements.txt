@@ -42,7 +42,7 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-cryptography==42.0.3
+cryptography==42.0.4
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -63,7 +63,7 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.98.6
+hypothesis==6.98.9
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -115,7 +115,7 @@ pyjwt==2.8.0
     # via
     #   -r requirements.txt
     #   github3-py
-pytest==8.0.0
+pytest==8.0.1
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
@@ -176,7 +176,7 @@ url-py==0.10.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-urllib3==2.2.0
+urllib3==2.2.1
     # via
     #   -r requirements.txt
     #   requests

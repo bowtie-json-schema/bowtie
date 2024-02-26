@@ -10,7 +10,6 @@ import json
 
 from attrs import asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
-from referencing import Specification
 from referencing.jsonschema import (
     EMPTY_REGISTRY,
     Schema,
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
     )
     from typing import Any, Self
 
+    from referencing import Specification
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import (
@@ -126,6 +126,16 @@ class Dialect:
             has_boolean_schemas=hasBooleanSchemas,
         )
 
+    @classmethod
+    def from_str(cls, uri: str):
+        return cls.by_uri()[URL.parse(uri)]
+
+    def serializable(self):
+        return str(self.uri)
+
+    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+        return specification_with(str(self.uri), **kwargs)
+
     def current_dialect_resource(self) -> SchemaResource:
         # it's of course unimportant what dialect is used for this referencing
         # schema, what matters is that the target dialect is applied
@@ -194,16 +204,29 @@ class StartupFailed(Exception):
         return self.name
 
     def diagnostic(self):
-        return DiagnosticError(
-            code="startup-failed",
-            message=f"{self.name!r} failed to start.",
-            causes=[],
-            hint_stmt=(
+        causes: list[str] = []
+        if self.__cause__ is None:
+            hint = (
                 "If you are developing a new harness, check if stderr "
                 "(shown below) contains harness-specific information "
                 "which can help. Otherwise, you may have an issue with your "
                 "local container setup (podman, docker, etc.)."
-            ),
+            )
+        else:
+            hint = (
+                "The harness sent an invalid response for Bowtie's protocol. "
+                "Details for what was wrong are above. If you are developing "
+                "support for a new harness you should address them, otherwise "
+                "if you are not, this is a bug in Bowtie's harness for this "
+                "implementation! File an issue on Bowtie's issue tracker."
+            )
+            causes.extend(str(error) for error in self.__cause__.errors)  # type: ignore[reportUnknownArgumentType]
+
+        return DiagnosticError(
+            code="startup-failed",
+            message=f"{self.name!r} failed to start.",
+            causes=causes,
+            hint_stmt=hint,
         )
 
 
@@ -260,12 +283,11 @@ class ImplementationInfo:
         links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
     ):
-        BY_URI = Dialect.by_uri()
         return cls(
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
             source=URL.parse(source),
-            dialects=frozenset(BY_URI[URL.parse(each)] for each in dialects),
+            dialects=frozenset(Dialect.from_str(each) for each in dialects),
             links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
@@ -450,6 +472,20 @@ class Implementation:
     _reporter: Reporter = field(alias="reporter")
 
     @classmethod
+    def known(cls) -> Set[str]:
+        # TODO: Possibly this should return running instances.
+        #       For now it just returns image names clearly.
+        data = files("bowtie") / "data"
+        if data.is_dir():
+            path = data / "known_implementations.json"
+            known = json.loads(path.read_text())
+        else:
+            root = Path(__file__).parent.parent
+            dir = root.joinpath("implementations").iterdir()
+            known = (d.name for d in dir if not d.name.startswith("."))
+        return frozenset(known)
+
+    @classmethod
     @asynccontextmanager
     async def start(
         cls,
@@ -595,10 +631,7 @@ class TestCase:
     ):
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
-            default_specification=specification_with(
-                str(dialect.uri),
-                default=Specification.OPAQUE,
-            ),
+            default_specification=dialect.specification(),
         )
         return cls(
             tests=[Test(**test) for test in tests],

@@ -106,7 +106,7 @@ class ClickParam(click.ParamType):
             else:
                 # TODO: Make this the tree URL maybe, but I see tree(...)
                 #       doesn't come with an html_url
-                commit_info = {"text": commit.sha, "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
+                commit_info = {"text": commit.sha[:7], "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
             run_metadata: dict[str, Any] = {"Commit": commit_info}
 
         return cases, dialect, run_metadata

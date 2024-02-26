@@ -21,6 +21,7 @@ const ReportDataHandler = () => {
   return (
     <DialectReportView
       reportData={loaderData.reportData}
+      topPageInfoSection={<BowtieInfoSection />}
       allImplementationsData={loaderData.allImplementationsData}
     />
   );

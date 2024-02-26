@@ -24,7 +24,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via bowtie-json-schema (pyproject.toml)
-cryptography==42.0.3
+cryptography==42.0.5
     # via pyjwt
 diagnostic==2.0.0
     # via bowtie-json-schema (pyproject.toml)
@@ -85,13 +85,13 @@ six==1.16.0
     # via python-dateutil
 structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via aiodocker
 uritemplate==4.1.1
     # via github3-py
 url-py==0.10.0
     # via bowtie-json-schema (pyproject.toml)
-urllib3==2.2.0
+urllib3==2.2.1
     # via requests
 yarl==1.9.4
     # via aiohttp

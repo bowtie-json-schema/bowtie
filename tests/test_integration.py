@@ -167,6 +167,19 @@ always_valid = shellplementation(  # I'm sorry future me.
     done
     """,  # noqa: E501
 )
+passes_smoke = shellplementation(
+    name="passes_smoke",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    read
+    printf '{"ok": true}\n'
+    read
+    printf '{"seq": 1, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n'
+    read
+    printf '{"seq": 2, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n'
+    """,  # noqa: E501
+)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
@@ -838,6 +851,49 @@ async def test_fail_fast(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_max_fail(envsonschema):
+    async with run("-i", envsonschema, "--max-fail", "2") as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": 8, "valid": true}] }
+            {"description": "4", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.INVALID},
+        {tag("envsonschema"): TestResult.INVALID},
+    ], stderr
+    assert stderr != ""
+
+
+@pytest.mark.asyncio
+async def test_max_fail_with_fail_fast(envsonschema):
+    async with run(
+        "-i",
+        envsonschema,
+        "--max-fail",
+        "2",
+        "--fail-fast",
+    ) as send:
+        with pytest.raises(AssertionError) as exec_info:
+            results, stderr = await send(
+                """
+                    {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+                    {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
+                    {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+                    """,  # noqa: E501
+            )
+        assert (
+            "Error: Cannot use --fail-fast with --max-fail / --max-error"
+            in exec_info.value.args[0]
+        )
+
+
+@pytest.mark.asyncio
 async def test_filter(envsonschema):
     async with run("-i", envsonschema, "-k", "baz") as send:
         results, stderr = await send(
@@ -977,6 +1033,48 @@ async def test_smoke_quiet(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_smoke_multiple(envsonschema, passes_smoke):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "pretty",
+        "-i",
+        envsonschema,
+        "-i",
+        passes_smoke,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    assert (
+        dedent(stderr)
+        == dedent(
+            """\
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures
+            """,
+        )
+        or dedent(stderr)
+        == dedent(
+            """\
+            Testing 'bowtie-integration-tests/envsonschema'...
+
+
+            ❌ some failures
+            Testing 'bowtie-integration-tests/passes_smoke'...
+
+
+            ✅ all passed
+            """,
+        )
+    ), stdout
+
+
+@pytest.mark.asyncio
 async def test_info_pretty(envsonschema):
     stdout, stderr = await bowtie(
         "info",
@@ -1036,15 +1134,14 @@ async def test_info_markdown(envsonschema):
 
 @pytest.mark.asyncio
 async def test_info_json(envsonschema):
-    jsonout, stderr = await bowtie(
+    stdout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
         envsonschema,
-        json=True,
     )
-    assert jsonout == {
+    assert _json.loads(stdout) == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
@@ -1058,6 +1155,49 @@ async def test_info_json(envsonschema):
             "http://json-schema.org/draft-04/schema#",
             "http://json-schema.org/draft-03/schema#",
         ],
+    }, stderr
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_json_multiple_implementations(envsonschema, links):
+    stdout, stderr = await bowtie(
+        "info",
+        "--format",
+        "json",
+        "-i",
+        envsonschema,
+        "-i",
+        links,
+    )
+    assert _json.loads(stdout) == {
+        tag("envsonschema"): {
+            "name": "envsonschema",
+            "language": "python",
+            "homepage": "https://github.com/bowtie-json-schema/bowtie",
+            "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
+            "source": "https://github.com/bowtie-json-schema/bowtie",
+            "dialects": [
+                "https://json-schema.org/draft/2020-12/schema",
+                "https://json-schema.org/draft/2019-09/schema",
+                "http://json-schema.org/draft-07/schema#",
+                "http://json-schema.org/draft-06/schema#",
+                "http://json-schema.org/draft-04/schema#",
+                "http://json-schema.org/draft-03/schema#",
+            ],
+        },
+        tag("links"): {
+            "name": "links",
+            "language": "sh",
+            "homepage": "urn:example",
+            "issues": "urn:example",
+            "source": "urn:example",
+            "dialects": ["http://json-schema.org/draft-07/schema#"],
+            "links": [
+                {"description": "foo", "url": "urn:example:foo"},
+                {"description": "bar", "url": "urn:example:bar"},
+            ],
+        },
     }, stderr
     assert stderr == ""
 
@@ -1362,6 +1502,9 @@ async def test_summary_show_validation(envsonschema, always_valid):
 
 @pytest.mark.asyncio
 async def test_badges(envsonschema, tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -1371,6 +1514,7 @@ async def test_badges(envsonschema, tmp_path):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
+
     run_stdout, _ = await bowtie(
         "run",
         "-i",
@@ -1378,13 +1522,11 @@ async def test_badges(envsonschema, tmp_path):
         stdin=dedent(raw.strip("\n")),
     )
 
-    badges = tmp_path / "badges"
-    stdout, stderr = await bowtie(
-        "badges",
-        badges,
-        stdin=run_stdout,
-    )
+    site.joinpath("draft2020-12.json").write_text(run_stdout)
 
+    stdout, stderr = await bowtie("badges", "--site", site)
+
+    badges = site / "badges"
     assert {path.relative_to(badges) for path in badges.rglob("*")} == {
         Path("python-envsonschema"),
         Path("python-envsonschema/supported_versions.json"),

@@ -1,6 +1,7 @@
 import { Button, Modal } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
 import { Case, ImplementationData } from "../../data/parseReportData";
+import SchemaDisplay from "../Cases/SchemaDisplay";
 
 export const DetailsButtonModal = ({
   show,
@@ -37,6 +38,8 @@ export const DetailsButtonModal = ({
           key={`${seq}-${i}`}
           title={caseData.description}
           description={caseData.tests[i].description}
+          schema={caseData.schema}
+          instance={caseData.tests[i].instance}
           message={message}
           borderClass={borderClass}
         />,
@@ -47,6 +50,7 @@ export const DetailsButtonModal = ({
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
+          <label className="me-1">Unsuccessful Tests:</label>
           <b>{implementation.metadata.name}</b>
           <small className="text-muted ps-2">
             {mapLanguage(implementation.metadata.language)}
@@ -69,21 +73,35 @@ const DetailItem = ({
   title,
   description,
   message,
+  schema,
+  instance,
   borderClass,
 }: {
   title: string;
   description: string;
   message: string;
+  schema: Record<string, unknown> | boolean;
+  instance: unknown;
   borderClass: string;
 }) => {
   return (
     <div className="col">
       <div className={`card mb-3 ${borderClass}`}>
         <div className="card-body">
-          <h5 className="card-title">{title}</h5>
-          <p className="card-text">{description}</p>
+          <h5 className="card-title">
+            <label className="me-1">Case:</label>
+            {title}
+          </h5>
+          <p className="card-text">
+            <label className="me-1">Test:</label>
+            {description}
+          </p>
+          <SchemaDisplay schema={schema} instance={instance} />
         </div>
-        <div className="card-footer text-muted text-center">{message}</div>
+        <div className="card-footer text-muted text-center">
+          <label className="me-1">Result:</label>
+          {message}
+        </div>
       </div>
     </div>
   );

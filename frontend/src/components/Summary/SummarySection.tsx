@@ -10,7 +10,7 @@ const SummarySection = ({
   otherImplementationsData: Record<string, Implementation>;
 }) => {
   return (
-    <div className="card mx-auto mb-3 w-75" id="summary">
+    <div className="card mx-auto mb-3" id="summary">
       <div className="card-header">Summary</div>
       <div className="card-body">
         <SummaryTable reportData={reportData} />

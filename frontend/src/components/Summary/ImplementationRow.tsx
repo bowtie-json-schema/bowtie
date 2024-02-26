@@ -32,7 +32,7 @@ const ImplementationRow = ({
           {mapLanguage(implementation.metadata.language)}
         </small>
       </th>
-      <td className="align-middle">
+      <td className="align-middle d-none d-sm-table-cell">
         <small className="font-monospace text-muted">
           {implementation.metadata.version ?? ""}
         </small>
@@ -48,10 +48,10 @@ const ImplementationRow = ({
         {implementation.failedTests + implementation.erroredTests}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>:{implementation.failedTests}
+            <b>failed</b>: &nbsp;{implementation.failedTests}
           </p>
           <p>
-            <b>errored</b>:{implementation.erroredTests}
+            <b>errored</b>: &nbsp;{implementation.erroredTests}
           </p>
         </div>
       </td>

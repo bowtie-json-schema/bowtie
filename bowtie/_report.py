@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
 import sys
@@ -9,7 +9,6 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
-from url import URL
 import structlog.stdlib
 
 from bowtie._commands import (
@@ -23,8 +22,7 @@ from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
-    from pathlib import Path
-    from typing import Any, Self, TextIO
+    from typing import Any, Literal, Self, TextIO
 
     from bowtie._commands import AnyTestResult, Command, ImplementationId
     from bowtie._core import Implementation, ImplementationInfo, Test
@@ -201,7 +199,7 @@ class RunMetadata:
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
         return cls(
-            dialect=Dialect.by_uri()[URL.parse(dialect)],
+            dialect=Dialect.from_str(dialect),
             implementations=[
                 ImplementationInfo.from_dict(image=image, **data)
                 for image, data in implementations.items()
@@ -216,7 +214,7 @@ class RunMetadata:
             recurse=False,
         )
         as_dict.update(
-            dialect=str(self.dialect.uri),
+            dialect=self.dialect.serializable(),
             started=as_dict.pop("started").isoformat(),
             # FIXME: This transformation is to support the UI parsing
             implementations={
@@ -382,38 +380,35 @@ class Report:
                 test_results.append((test, test_result))
             yield case, test_results
 
-    def generate_badges(self, target_dir: Path):
-        label = self.metadata.dialect.pretty_name
-        total = self.total_tests
+    def compliance_badges(self) -> Iterable[tuple[ImplementationInfo, Badge]]:
         for implementation in self.implementations:
-            if self.metadata.dialect not in implementation.dialects:
-                continue
-            shortnames = (
-                each.pretty_name.removeprefix("Draft ")
-                for each in implementation.dialects
-            )
-            supported = ", ".join(sorted(shortnames))  # FIXME: proper sort
             unsuccessful = self.unsuccessful(implementation.id)
-            passed = total - unsuccessful.total
-            pct = (passed / total) * 100
-            r, g, b = 100 - int(pct), int(pct), 0
-            badge_per_draft = {
+            passed = self.total_tests - unsuccessful.total
+            percentage = 100 * (passed / self.total_tests)
+            r, g, b = 100 - int(percentage), int(percentage), 0
+            yield implementation, {
                 "schemaVersion": 1,
-                "label": label,
-                "message": "%d%% Passing" % int(pct),
+                "label": self.metadata.dialect.pretty_name,
+                "message": "%d%% Passing" % int(percentage),
                 "color": f"{r:02x}{g:02x}{b:02x}",
             }
-            impl_dir = f"{implementation.language}-{implementation.name}"
-            supp_dir = target_dir / impl_dir
-            comp_dir = supp_dir / "compliance"
-            comp_dir.mkdir(parents=True, exist_ok=True)
-            badge_path_per_draft = comp_dir / f"{label.replace(' ', '_')}.json"
-            badge_path_per_draft.write_text(json.dumps(badge_per_draft))
-            badge_supp_draft = {
-                "schemaVersion": 1,
-                "label": "JSON Schema Versions",
-                "message": supported,
-                "color": "lightgreen",
-            }
-            badge_supported = supp_dir / "supported_versions.json"
-            badge_supported.write_text(json.dumps(badge_supp_draft))
+
+
+class Badge(TypedDict):
+    schemaVersion: Literal[1]
+    label: str
+    message: str
+    color: str
+
+
+def supported_version_badge(dialects: Iterable[Dialect]) -> Badge:
+    message = ", ".join(
+        each.pretty_name.removeprefix("Draft ")
+        for each in sorted(dialects, reverse=True)
+    )
+    return Badge(
+        schemaVersion=1,
+        label="JSON Schema Versions",
+        message=message,
+        color="lightgreen",
+    )
