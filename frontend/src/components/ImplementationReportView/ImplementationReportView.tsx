@@ -116,9 +116,9 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   Supported Dialects:
                   <br />
                   <img
-                    alt={`${implementation.name}`}
+                    alt={implementation.name}
                     className="my-1"
-                    src={`${versionsBadgeFor(implementation)}`}
+                    src={versionsBadgeFor(implementation).href()}
                     style={{ maxWidth: "100%" }}
                   />
                 </th>
@@ -131,7 +131,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <a
                               className="mx-1"
-                              href={`${dialect.uri}`}
+                              href={dialect.uri}
                               target="_blank"
                               rel="noreferrer"
                               style={{
@@ -141,10 +141,10 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                             >
                               <img
                                 alt={`${dialect.prettyName} compliance`}
-                                src={`${complianceBadgeFor(
+                                src={complianceBadgeFor(
                                   implementation,
                                   dialect,
-                                )}`}
+                                ).href()}
                               />
                             </a>
                           </li>

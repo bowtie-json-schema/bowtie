@@ -48,7 +48,7 @@ const DialectCompliance: React.FC<{
                       {dialect.uri}
                       <a
                         className="mx-1"
-                        href={`${dialect.uri}`}
+                        href={dialect.uri}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -57,8 +57,11 @@ const DialectCompliance: React.FC<{
                         }}
                       >
                         <img
-                          alt={`${dialect.prettyName}`}
-                          src={`${complianceBadgeFor(implementation, dialect)}`}
+                          alt={dialect.prettyName}
+                          src={complianceBadgeFor(
+                            implementation,
+                            dialect,
+                          ).href()}
                         />
                       </a>
                     </td>
