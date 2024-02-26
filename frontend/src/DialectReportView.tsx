@@ -3,7 +3,7 @@ import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
-import { ReportData } from "./data/parseReportData.ts";
+import { ReportData, Case } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
@@ -21,6 +21,29 @@ export const DialectReportView = ({
     return Array.from(new Set(langs).values());
   }, [reportData]);
 
+  const Cases: Map<number, Case> = reportData.cases;
+  const vocabularies: string[] = useMemo(() => {
+    const vocabSet: Set<string> = new Set();
+
+    Array.from(Cases.values())
+      .filter((value) => !!value.registry)
+      .forEach((value) => {
+        const registry = value.registry!;
+        Object.keys(registry).forEach((url) => {
+          const vocabObject = (registry[url] as any).$vocabulary;
+          if (vocabObject) {
+            Object.keys(vocabObject).forEach((key) => {
+              const segments = key.split("/");
+              vocabSet.add(segments[segments.length - 1]);
+            });
+          }
+        });
+      });
+
+    return Array.from(vocabSet);
+  }, [reportData]);
+
+  // console.log(vocabularies);
   const filteredData = useMemo(() => {
     let filteredData = reportData;
     if (params.getAll("language").length) {
@@ -39,7 +62,7 @@ export const DialectReportView = ({
       <div className="col col-lg-8 mx-auto">
         <BowtieInfoSection />
         <RunInfoSection runInfo={filteredData.runInfo} />
-        <FilterSection languages={languages} />
+        <FilterSection languages={languages} vocabularies={vocabularies} />
         <SummarySection reportData={filteredData} />
         <CasesSection reportData={filteredData} />
       </div>
