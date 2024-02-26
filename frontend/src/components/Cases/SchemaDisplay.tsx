@@ -33,7 +33,7 @@ const SchemaDisplay = ({
         </div>
         <div className="col-4 border-start ps-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
-            <small className="font-monospace text-body-secondary text-uppercase">
+            <small className="font-monospace text-body-secondary text-uppercase pe-4">
               Instance
             </small>
             <div className="d-flex ms-auto">
