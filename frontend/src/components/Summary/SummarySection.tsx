@@ -1,7 +1,14 @@
 import SummaryTable from "./SummaryTable";
-import { ReportData } from "../../data/parseReportData.ts";
+import { Implementation, ReportData } from "../../data/parseReportData.ts";
+import { OtherImplementations } from "../OtherImplementations.tsx";
 
-const SummarySection = ({ reportData }: { reportData: ReportData }) => {
+const SummarySection = ({
+  reportData,
+  otherImplementationsData,
+}: {
+  reportData: ReportData;
+  otherImplementationsData: Record<string, Implementation>;
+}) => {
   return (
     <div className="card mx-auto mb-3" id="summary">
       <div className="card-header">Summary</div>
@@ -11,6 +18,11 @@ const SummarySection = ({ reportData }: { reportData: ReportData }) => {
           <div className="alert alert-warning" role="alert">
             This run failed fast, so some input cases may not have been run.
           </div>
+        )}
+        {Object.keys(otherImplementationsData).length > 0 && (
+          <OtherImplementations
+            otherImplementationsData={otherImplementationsData}
+          />
         )}
       </div>
     </div>
