@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { Col, Container, Overlay, Popover, Row } from "react-bootstrap";
 import { InfoCircle } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
-import URI from "urijs";
 import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
 import Dialect from "../data/Dialect";
@@ -16,7 +15,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
+    otherImplementationsData
   );
   return (
     <div
@@ -43,19 +42,12 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
             <Popover id="popover-basic" {...props}>
               <Popover.Body>
                 <Container className="p-0">
-                  <Row className="flex-column">
-                    {otherImplementationsDataArray.map(([id, impl], index) => {
+                  <Row className="d-grid gap-2">
+                    {otherImplementationsDataArray.map(([id, impl]) => {
                       const implementationPath = getImplementationPath(id);
                       const ltsDialect = getLatestSupportedDialect(impl);
                       return (
-                        <Col
-                          key={id}
-                          className={
-                            index === otherImplementationsDataArray.length - 1
-                              ? ""
-                              : "mb-2"
-                          }
-                        >
+                        <Col key={id}>
                           <div>
                             <NavLink
                               style={{ fontSize: "1rem", fontWeight: "bold" }}
@@ -68,7 +60,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                             </span>
                           </div>
                           <span className="text-body-secondary">
-                            (LTS Dialect:{" "}
+                            (latest supported dialect:{" "}
                             <NavLink to={`/dialects/${ltsDialect.path}`}>
                               {ltsDialect.prettyName}
                             </NavLink>
@@ -102,7 +94,7 @@ const getImplementationPath = (id: string): string => {
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   const latestSupportedDialect = impl.dialects.sort((a, b) =>
-    b.localeCompare(a),
+    b.localeCompare(a)
   )[0];
-  return Dialect.forURI(new URI(latestSupportedDialect));
+  return Dialect.forURI(latestSupportedDialect);
 };

@@ -56,14 +56,14 @@ export default class Dialect {
     return dialect;
   }
 
-  static forURI(baseURI: URI): Dialect {
-    const path = baseURI.path().split("/");
-    const draft = path[1] + path[2];
-    const dialect = Dialect.all.get(draft);
+  static forURI(uri: string): Dialect {
+    const dialect = Array.from(Dialect.all.entries()).find(
+      ([, dialect]) => dialect.uri === uri
+    );
     if (!dialect) {
-      throw new DialectError(`A ${draft} dialect does not exist.`);
+      throw new DialectError(`A ${uri} dialect does not exist.`);
     }
-    return dialect;
+    return dialect[1];
   }
 }
 
