@@ -18,7 +18,7 @@ export default class Dialect {
     path: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: Date,
+    firstPublicationDate: Date
   ) {
     if (Dialect.all.has(path)) {
       throw new DialectError(`A "${path}" dialect already exists.`);
@@ -44,7 +44,7 @@ export default class Dialect {
   static newest_to_oldest(): Dialect[] {
     return Array.from(Dialect.known()).sort(
       (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
+        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf()
     );
   }
 
@@ -52,6 +52,16 @@ export default class Dialect {
     const dialect = Dialect.all.get(path);
     if (!dialect) {
       throw new DialectError(`A ${path} dialect does not exist.`);
+    }
+    return dialect;
+  }
+
+  static forURI(baseURI: URI): Dialect {
+    const path = baseURI.path().split("/");
+    const draft = path[1] + path[2];
+    const dialect = Dialect.all.get(draft);
+    if (!dialect) {
+      throw new DialectError(`A ${draft} dialect does not exist.`);
     }
     return dialect;
   }
@@ -71,6 +81,6 @@ for (const each of data) {
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(each.firstPublicationDate)
   );
 }

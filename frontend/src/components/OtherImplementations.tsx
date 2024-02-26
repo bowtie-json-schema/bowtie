@@ -5,6 +5,7 @@ import { NavLink } from "react-router-dom";
 import URI from "urijs";
 import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
+import Dialect from "../data/Dialect";
 
 interface Props {
   otherImplementationsData: Record<string, Implementation>;
@@ -15,7 +16,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
+    otherImplementationsData
   );
   return (
     <div
@@ -45,8 +46,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                   <Row className="flex-column">
                     {otherImplementationsDataArray.map(([id, impl], index) => {
                       const implementationPath = getImplementationPath(id);
-                      const latestSupportedDialect =
-                        getLatestSupportedDialect(impl);
+                      const ltsDialect = getLatestSupportedDialect(impl);
                       return (
                         <Col
                           key={id}
@@ -69,8 +69,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                           </div>
                           <span className="text-body-secondary">
                             (LTS Dialect:{" "}
-                            <NavLink to={`/dialects/${latestSupportedDialect}`}>
-                              {latestSupportedDialect}
+                            <NavLink to={`/dialects/${ltsDialect.path}`}>
+                              {ltsDialect.prettyName}
                             </NavLink>
                             )
                           </span>
@@ -100,11 +100,9 @@ const getImplementationPath = (id: string): string => {
   return pathSegment[pathSegment.length - 1];
 };
 
-const getLatestSupportedDialect = (impl: Implementation): string => {
+const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   const latestSupportedDialect = impl.dialects.sort((a, b) =>
-    b.localeCompare(a),
+    b.localeCompare(a)
   )[0];
-  const uri = new URI(latestSupportedDialect);
-  const pathParts = uri.path().split("/");
-  return pathParts[1] + pathParts[2];
+  return Dialect.forURI(new URI(latestSupportedDialect));
 };
