@@ -59,7 +59,6 @@ const DialectCompliance: React.FC<{
                         // implementation-specific page, not the global dialect
                         // one.
                         href={`/dialects/${dialect.path}`}
-                        target="_blank"
                       >
                         <img
                           alt={dialect.prettyName}
