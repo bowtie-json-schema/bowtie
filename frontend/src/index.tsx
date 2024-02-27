@@ -27,7 +27,7 @@ const fetchAllReportData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => (loaderData[dialect.path] = data))
+      dialect.fetchReport().then((data) => (loaderData[dialect.path] = data)),
     );
   }
   await Promise.all(promises);
@@ -88,6 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
