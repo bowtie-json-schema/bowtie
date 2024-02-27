@@ -1,13 +1,13 @@
 import URI from "urijs";
 
 const base =
-  import.meta.env.MODE === "development"
+  import.meta.env == undefined || import.meta.env.MODE === "development"
     ? "https://bowtie.report"
     : window.location.href;
 
 export const siteURI = new URI(base)
   .fragment("")
-  .directory(import.meta.env.BASE_URL);
+  .directory(import.meta.env?.BASE_URL ?? "");
 
 // FIXME: Presumably a future `Implementation` can handle the below, just
 //        as `Dialect` handles it for dialect reports.

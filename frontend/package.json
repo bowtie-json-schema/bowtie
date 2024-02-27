@@ -12,7 +12,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings 0",
-    "test": "jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "dependencies": {
     "bootstrap": "^5.3.2",
