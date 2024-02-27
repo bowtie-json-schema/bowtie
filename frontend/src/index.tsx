@@ -28,7 +28,9 @@ const fetchAllReportData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => (loaderData[dialect.path] = data)),
+      dialect
+        .fetchReport()
+        .then((data) => (loaderData[dialect.shortName] = data)),
     );
   }
   await Promise.all(promises);
@@ -47,7 +49,7 @@ const fetchImplementationMetadata = async () => {
 const reportDataLoader = async ({ params }: { params: Params<string> }) => {
   const draftName = params?.draftName ?? "draft2020-12";
   const [reportData, allImplementationsData] = await Promise.all([
-    fetchReportData(Dialect.forPath(draftName)),
+    fetchReportData(Dialect.withName(draftName)),
     fetchImplementationMetadata(),
   ]);
   return { reportData, allImplementationsData };

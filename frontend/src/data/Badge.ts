@@ -31,6 +31,6 @@ export const complianceBadgeFor = (
     implementationBadges(implementation)
       .clone()
       .segment("compliance")
-      .segment(dialect.path)
+      .segment(dialect.shortName)
       .suffix("json"),
   );

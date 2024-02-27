@@ -40,11 +40,11 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate,
+                  +Dialect.withName(b[0]).firstPublicationDate -
+                    +Dialect.withName(a[0]).firstPublicationDate,
               )
               .map(([dialectName, result], index) => {
-                const dialect = Dialect.forPath(dialectName);
+                const dialect = Dialect.withName(dialectName);
                 return (
                   <tr key={index}>
                     <td>{dialect.prettyName}</td>
@@ -58,7 +58,7 @@ const DialectCompliance: React.FC<{
                         // Double FIXME: This should go to the
                         // implementation-specific page, not the global dialect
                         // one.
-                        href={`/dialects/${dialect.path}`}
+                        href={`/dialects/${dialect.shortName}`}
                       >
                         <img
                           alt={dialect.prettyName}

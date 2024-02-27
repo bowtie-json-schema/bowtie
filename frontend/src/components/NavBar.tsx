@@ -77,11 +77,11 @@ const NavBar = () => {
                 </a>
                 <ul className="dropdown-menu">
                   {Dialect.newest_to_oldest().map((dialect) => (
-                    <li key={dialect.path}>
+                    <li key={dialect.shortName}>
                       <NavLink
                         className="dropdown-item"
                         // FIXME: surely this shouldn't be hardcoded
-                        to={`/dialects/${dialect.path}`}
+                        to={`/dialects/${dialect.shortName}`}
                       >
                         {dialect.prettyName}
                       </NavLink>
