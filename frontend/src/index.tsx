@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
-import { createHashRouter, Params, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
@@ -38,24 +38,6 @@ const fetchAllReportData = async (langImplementation: string) => {
   return parseImplementationData(loaderData);
 };
 
-const fetchImplementationMetadata = async () => {
-  const response = await fetch(implementationMetadataURI);
-  const implementations = (await response.json()) as Record<
-    string,
-    Implementation
-  >;
-  return implementations;
-};
-
-const reportDataLoader = async ({ params }: { params: Params<string> }) => {
-  const draftName = params?.draftName ?? "draft2020-12";
-  const [reportData, allImplementationsData] = await Promise.all([
-    fetchReportData(Dialect.forPath(draftName)),
-    fetchImplementationMetadata(),
-  ]);
-  return { reportData, allImplementationsData };
-};
-
 const router = createHashRouter([
   {
     path: "/",
@@ -65,12 +47,13 @@ const router = createHashRouter([
       {
         index: true,
         Component: ReportDataHandler,
-        loader: reportDataLoader,
+        loader: async () => fetchReportData(Dialect.forPath("draft2020-12")),
       },
       {
         path: "/dialects/:draftName",
         Component: ReportDataHandler,
-        loader: reportDataLoader,
+        loader: async ({ params }) =>
+          fetchReportData(Dialect.forPath(params.draftName!)),
       },
       {
         path: "/local-report",
