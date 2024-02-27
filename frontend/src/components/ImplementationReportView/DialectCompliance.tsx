@@ -48,7 +48,11 @@ const DialectCompliance: React.FC<{
                       {dialect.uri}
                       <a
                         className="mx-1"
-                        href={dialect.uri}
+                        // FIXME: surely this shouldn't be hardcoded
+                        // Double FIXME: This should go to the
+                        // implementation-specific page, not the global dialect
+                        // one.
+                        href={`/dialects/${dialect.path}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{

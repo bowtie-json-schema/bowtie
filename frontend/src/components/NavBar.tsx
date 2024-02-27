@@ -80,6 +80,7 @@ const NavBar = () => {
                     <li key={dialect.path}>
                       <NavLink
                         className="dropdown-item"
+                        // FIXME: surely this shouldn't be hardcoded
                         to={`/dialects/${dialect.path}`}
                       >
                         {dialect.prettyName}
