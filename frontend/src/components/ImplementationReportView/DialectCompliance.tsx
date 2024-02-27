@@ -20,6 +20,9 @@ const DialectCompliance: React.FC<{
               <th colSpan={3} className="text-center">
                 Tests
               </th>
+              <th rowSpan={2} scope="col" className="text-center align-middle">
+                Badge
+              </th>
             </tr>
             <tr className="text-center">
               <th>Failed</th>
@@ -44,8 +47,11 @@ const DialectCompliance: React.FC<{
                 const dialect = Dialect.forPath(dialectName);
                 return (
                   <tr key={index}>
+                    <td>{dialect.prettyName}</td>
+                    <td className="text-center">{result.failedTests}</td>
+                    <td className="text-center">{result.skippedTests}</td>
+                    <td className="text-center">{result.erroredTests}</td>
                     <td>
-                      {dialect.uri}
                       <a
                         className="mx-1"
                         // FIXME: surely this shouldn't be hardcoded
@@ -54,14 +60,10 @@ const DialectCompliance: React.FC<{
                         // one.
                         href={`/dialects/${dialect.path}`}
                         target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: "inline-block",
-                          width: "fit-content",
-                        }}
                       >
                         <img
                           alt={dialect.prettyName}
+                          className="float-end"
                           src={complianceBadgeFor(
                             implementation,
                             dialect,
@@ -69,9 +71,6 @@ const DialectCompliance: React.FC<{
                         />
                       </a>
                     </td>
-                    <td className="text-center">{result.failedTests}</td>
-                    <td className="text-center">{result.skippedTests}</td>
-                    <td className="text-center">{result.erroredTests}</td>
                   </tr>
                 );
               })}
