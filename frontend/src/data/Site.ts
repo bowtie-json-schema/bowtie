@@ -1,19 +1,15 @@
-import URI from "urijs";
-
 const base =
   import.meta.env.MODE === "development"
     ? "https://bowtie.report"
     : window.location.href;
 
-export const siteURI = new URI(base)
-  .fragment("")
-  .directory(import.meta.env.BASE_URL);
+export const siteURL = new URL(base);
+siteURL.hash = "";
+siteURL.pathname = import.meta.env.BASE_URL;
 
-// FIXME: Presumably a future `Implementation` can handle the below, just
-//        as `Dialect` handles it for dialect reports.
-export const implementationMetadataURI = siteURI
-  .clone()
-  .filename("implementations.json")
-  .href();
+export const implementationMetadataURL: string = new URL(
+  "implementations.json",
+  siteURL
+).href;
 
-export default siteURI;
+export default siteURL;
