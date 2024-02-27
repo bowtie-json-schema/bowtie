@@ -50,7 +50,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
           <Table>
             <tbody>
               <tr>
-                <th>Homepage:</th>
+                <th>Homepage</th>
                 <td>
                   <Link to={implementation.homepage}>
                     {implementation.homepage}
@@ -59,7 +59,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.documentation && (
                 <tr>
-                  <th>Documentation:</th>
+                  <th>Documentation</th>
                   <td>
                     <Link to={implementation.documentation}>
                       {implementation.documentation}
@@ -68,7 +68,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Source:</th>
+                <th>Source</th>
                 <td>
                   <Link to={implementation.source}>
                     {implementation.source}
@@ -76,7 +76,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Issues:</th>
+                <th>Issues</th>
                 <td>
                   <Link to={implementation.issues}>
                     {implementation.issues}
@@ -84,11 +84,11 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Version:</th>
+                <th>Version</th>
                 <td>{implementation.version}</td>
               </tr>
               <tr>
-                <th>Language:</th>
+                <th>Language</th>
                 <td>
                   {mapLanguage(implementation.language)}
                   <span className="text-muted">
@@ -100,7 +100,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.os && (
                 <tr>
-                  <th>OS:</th>
+                  <th>OS</th>
                   <td>
                     {implementation.os}
                     <span className="text-muted">
@@ -111,7 +111,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Supported Dialects:</th>
+                <th>Supported Dialects</th>
                 <td className="col-7">
                   <img
                     alt={implementation.name}
@@ -123,7 +123,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.links && !!implementation.links.length && (
                 <tr>
-                  <th>Additional Links:</th>
+                  <th>Additional Links</th>
                   <td>
                     <ul>
                       {implementation.links.map(
