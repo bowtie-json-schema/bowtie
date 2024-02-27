@@ -10,18 +10,17 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import Dialect from "./data/Dialect";
 import { parseImplementationData, ReportData } from "./data/parseReportData";
-import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 
 const reportHost =
   import.meta.env.MODE === "development"
     ? "https://bowtie.report"
     : window.location.href;
-const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
+const reportUrl = new URL(reportHost);
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport(reportUri);
+  return dialect.fetchReport(reportUrl);
 };
 
 const fetchAllReportData = async (langImplementation: string) => {
@@ -31,7 +30,7 @@ const fetchAllReportData = async (langImplementation: string) => {
   for (const dialect of Dialect.known()) {
     promises.push(
       dialect
-        .fetchReport(reportUri)
+        .fetchReport(reportUrl)
         .then((data) => (loaderData[dialect.path] = data)),
     );
   }

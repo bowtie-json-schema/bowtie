@@ -1,5 +1,4 @@
 import data from "../../../data/dialects.json";
-import URI from "urijs";
 
 import { fromSerialized } from "./parseReportData";
 
@@ -31,9 +30,10 @@ export default class Dialect {
     this.firstPublicationDate = firstPublicationDate;
   }
 
-  async fetchReport(baseURI: URI) {
-    const url = baseURI.clone().filename(this.path).suffix("json").href();
-    const response = await fetch(url);
+  async fetchReport(baseURL: URL) {
+    const url = new URL(baseURL.href);
+    url.pathname += this.path + ".json";
+    const response = await fetch(url.href);
     return fromSerialized(await response.text());
   }
 
