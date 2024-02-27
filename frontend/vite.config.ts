@@ -9,6 +9,6 @@ export default defineConfig({
     outDir: "build",
   },
   test: {
-    environment: "jsdom"
-  }
+    environment: "jsdom",
+  },
 });
