@@ -8,4 +8,7 @@ export default defineConfig({
     target: ["es2022"],
     outDir: "build",
   },
+  test: {
+    environment: "jsdom",
+  },
 });
