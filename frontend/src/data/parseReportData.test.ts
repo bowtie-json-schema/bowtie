@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
 import { fromSerialized } from "./parseReportData";

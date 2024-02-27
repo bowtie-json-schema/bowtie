@@ -2,12 +2,13 @@ import React from "react";
 import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
+import { complianceBadgeFor } from "../../data/Badge";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
   return (
-    <Card className="mx-auto mb-3">
+    <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
       <Card.Body>
         <Table className="table-hover sm">
@@ -40,9 +41,30 @@ const DialectCompliance: React.FC<{
                     +Dialect.forPath(a[0]).firstPublicationDate,
               )
               .map(([dialectName, result], index) => {
+                const dialect = Dialect.forPath(dialectName);
                 return (
                   <tr key={index}>
-                    <td>{Dialect.forPath(dialectName).uri}</td>
+                    <td>
+                      {dialect.uri}
+                      <a
+                        className="mx-1"
+                        href={dialect.uri}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-block",
+                          width: "fit-content",
+                        }}
+                      >
+                        <img
+                          alt={dialect.prettyName}
+                          src={complianceBadgeFor(
+                            implementation,
+                            dialect,
+                          ).href()}
+                        />
+                      </a>
+                    </td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>

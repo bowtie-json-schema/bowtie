@@ -5,6 +5,8 @@ import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
+import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
+import Dialect from "../../data/Dialect";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -36,7 +38,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3">
+      <Card className="mx-auto mb-3 col-md-9">
         <Card.Header>
           <span className="px-1 text-muted">
             {mapLanguage(implementation.language)}
@@ -110,13 +112,44 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Supported Dialects:</th>
-                <td>
+                <th>
+                  Supported Dialects:
+                  <br />
+                  <img
+                    alt={implementation.name}
+                    className="my-1"
+                    src={versionsBadgeFor(implementation).href()}
+                    style={{ maxWidth: "100%" }}
+                  />
+                </th>
+                <td className="col-7">
                   <ul>
-                    {implementation.dialects.map(
-                      (dialect: string, index: number) => (
-                        <li key={index}>{dialect}</li>
-                      ),
+                    {Object.entries(implementation.results).map(
+                      ([dialectName], index) => {
+                        const dialect = Dialect.forPath(dialectName);
+                        return (
+                          <li key={index}>
+                            <a
+                              className="mx-1"
+                              href={dialect.uri}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: "inline-block",
+                                width: "fit-content",
+                              }}
+                            >
+                              <img
+                                alt={`${dialect.prettyName} compliance`}
+                                src={complianceBadgeFor(
+                                  implementation,
+                                  dialect,
+                                ).href()}
+                              />
+                            </a>
+                          </li>
+                        );
+                      },
                     )}
                   </ul>
                 </td>

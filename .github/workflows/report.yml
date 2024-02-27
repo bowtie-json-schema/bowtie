@@ -1,4 +1,6 @@
-name: Regenerate Test Reports
+# This workflow is the main workflow for regenerating the data needed for Bowtie's UI.
+# It retests all of Bowtie's supported implementations, publishing the reports (and other auxiliary metadata) for use in the frontend.
+name: Collect New Test Results
 
 on:
   release:

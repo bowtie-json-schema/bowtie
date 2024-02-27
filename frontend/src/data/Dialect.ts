@@ -1,6 +1,7 @@
 import data from "../../../data/dialects.json";
 
 import { fromSerialized } from "./parseReportData";
+import siteURI from "./Site";
 
 /**
  * An individual dialect of JSON Schema.
@@ -54,6 +55,16 @@ export default class Dialect {
       throw new DialectError(`A ${path} dialect does not exist.`);
     }
     return dialect;
+  }
+
+  static forURI(uri: string): Dialect {
+    const dialect = Array.from(Dialect.all.entries()).find(
+      ([, dialect]) => dialect.uri === uri,
+    );
+    if (!dialect) {
+      throw new DialectError(`A ${uri} dialect does not exist.`);
+    }
+    return dialect[1];
   }
 }
 
