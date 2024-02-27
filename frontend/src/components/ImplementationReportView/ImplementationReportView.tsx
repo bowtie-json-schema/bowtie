@@ -5,8 +5,7 @@ import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
-import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
-import Dialect from "../../data/Dialect";
+import { versionsBadgeFor } from "../../data/Badge";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -112,46 +111,14 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>
-                  Supported Dialects:
-                  <br />
+                <th>Supported Dialects:</th>
+                <td className="col-7">
                   <img
                     alt={implementation.name}
                     className="my-1"
                     src={versionsBadgeFor(implementation).href()}
                     style={{ maxWidth: "100%" }}
                   />
-                </th>
-                <td className="col-7">
-                  <ul>
-                    {Object.entries(implementation.results).map(
-                      ([dialectName], index) => {
-                        const dialect = Dialect.forPath(dialectName);
-                        return (
-                          <li key={index}>
-                            <a
-                              className="mx-1"
-                              href={dialect.uri}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                display: "inline-block",
-                                width: "fit-content",
-                              }}
-                            >
-                              <img
-                                alt={`${dialect.prettyName} compliance`}
-                                src={complianceBadgeFor(
-                                  implementation,
-                                  dialect,
-                                ).href()}
-                              />
-                            </a>
-                          </li>
-                        );
-                      },
-                    )}
-                  </ul>
                 </td>
               </tr>
               {implementation.links && !!implementation.links.length && (
