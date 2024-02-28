@@ -6,7 +6,6 @@ import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
 import logo from "../assets/landscape-logo.svg";
 import Dialect from "../data/Dialect";
-import { Button } from "react-bootstrap";
 
 const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
