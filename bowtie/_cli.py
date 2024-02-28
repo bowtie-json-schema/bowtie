@@ -176,6 +176,7 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
     Runs the wrapped function with only the successfully started
     implementations.
     """
+
     def build_images_list(implementations: list[str]) -> list[str]:
         return [f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations]
 
@@ -722,13 +723,14 @@ def _check_fail_fast_provided(
             return ctx.params["max_fail"] and ctx.params["max_error"]
     return value
 
+
 def _implementation_option():
     def wrapper(required: bool = True):
         return click.option(
             "--implementation",
             "-i",
             "image_names",
-            type=lambda name: ( # type: ignore[reportUnknownLambdaType]
+            type=lambda name: (  # type: ignore[reportUnknownLambdaType]
                 name if "/" in name else f"{IMAGE_REPOSITORY}/{name}"
             ),
             required=required,
@@ -739,7 +741,9 @@ def _implementation_option():
 
     return wrapper
 
+
 IMPLEMENTATION = _implementation_option()
+
 
 def _dialect_option():
     def wrapper(
@@ -763,7 +767,9 @@ def _dialect_option():
 
     return wrapper
 
+
 DIALECT = _dialect_option()
+
 
 def _get_langs() -> list[str]:
     known_implementations = list(Implementation.known())
@@ -772,6 +778,7 @@ def _get_langs() -> list[str]:
         impl_lang = impl.split("-")[0]
         langs.add(LANG_MAP.get(impl_lang, impl_lang))
     return list(langs)
+
 
 LANGUAGE = click.option(
     "--language",
@@ -963,13 +970,11 @@ async def filter_implementations(
             "dialects" in metadata
             and (
                 not dialects
-                or all(uri in metadata["dialects"]
-                       for uri in dialect_uris)
+                or all(uri in metadata["dialects"] for uri in dialect_uris)
             )
             and (
                 not languages
-                or any(lang == each.info.language
-                       for lang in languages)
+                or any(lang == each.info.language for lang in languages)
             )
         ):
             supporting_implementations.append(implementaion)
