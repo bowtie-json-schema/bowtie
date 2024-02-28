@@ -19,7 +19,7 @@ const EmbedBadges: React.FC<{
   };
 
   const [badgeURI, setBadgeURI] = useState(
-    complianceBadgeFor(implementation, Dialect.withName(activeDialect)).href(),
+    complianceBadgeFor(implementation, Dialect.withName(activeDialect)).href()
   );
 
   const handleSelect = (tabKey: string | null) => {
@@ -36,7 +36,7 @@ const EmbedBadges: React.FC<{
       <Dropdown.Toggle variant="success" size="sm">
         Badges
       </Dropdown.Toggle>
-      <Dropdown.Menu className="mx-auto mb-3 col-12 col-sm-7 col-md-12">
+      <Dropdown.Menu className="mx-auto mb-3 col-12 col-sm-11 col-md-12">
         <Dropdown.Item eventKey="0">
           <div className="container d-flex justify-content-center flex-row flex-wrap">
             {results.map((result) => (
