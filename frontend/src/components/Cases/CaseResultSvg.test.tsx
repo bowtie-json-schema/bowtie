@@ -1,4 +1,4 @@
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, test } from "vitest";
 import { create } from "react-test-renderer";
 import CaseResultSvg from "./CaseResultSvg";
 import { CaseResult } from "../../data/parseReportData";
