@@ -12,6 +12,7 @@ on:
   schedule:
     # Daily at 5:12
     - cron: "12 5 * * *"
+  workflow_dispatch:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
