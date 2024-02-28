@@ -55,8 +55,12 @@ _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
-
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
+LANG_MAP= {
+    "cpp": "c++",
+    "js": "javascript",
+    "ts": "typescript",
+}
 
 FORMAT = click.option(
     "--format",
@@ -717,8 +721,7 @@ IMPLEMENTATION = click.option(
     help="A docker image which implements the bowtie IO protocol.",
 )
 
-
-def create_dialect_option():
+def _create_dialect_option():
     def wrapper(default: Any | None = max(Dialect.known())):
         return click.option(
             "--dialect",
@@ -737,48 +740,24 @@ def create_dialect_option():
 
     return wrapper
 
+DIALECT = _create_dialect_option()
 
-DIALECT = create_dialect_option()
+def _get_langs() -> list[str]:
+    known_implementations = list(Implementation.known())
+    langs: set[str] = set()
+    for impl in known_implementations:
+        impl_lang = impl.split("-")[0]
+        langs.add(LANG_MAP.get(impl_lang, impl_lang))
+    return list(langs)
+
 LANGUAGE = click.option(
     "--language",
     "-l",
     "language",
     help="Filter implementations by programming languages",
-    type=click.Choice(
-        [
-            "clojure",
-            "c++",
-            "dotnet",
-            "go",
-            "java",
-            "javascript",
-            "kotlin",
-            "lua",
-            "php",
-            "python",
-            "ruby",
-            "rust",
-            "scala",
-            "typescript",
-        ],
-    ),
+    type=click.Choice(_get_langs()),
 )
-_L = Literal[
-    "clojure",
-    "c++",
-    "dotnet",
-    "go",
-    "java",
-    "javascript",
-    "kotlin",
-    "lua",
-    "php",
-    "python",
-    "ruby",
-    "rust",
-    "scala",
-    "typescript",
-]
+
 FILTER = click.option(
     "-k",
     "filter",
@@ -941,7 +920,7 @@ def validate(
 async def filter_implementations(
     implementations: Iterable[Implementation],
     dialect: Dialect | None,
-    language: _L | None,
+    language: str | None,
 ):
     supporting_implementations: list[str] = []
     for each in implementations:
