@@ -123,7 +123,7 @@ You can build the documentation locally by running:
 
     $ nox -s "docs(dirhtml)" -- dirhtml
 
-This will generate ``/dirhtml`` directory containing the documentation in html.
+which will generate a directory called ``dirhtml`` containing the built HTML.
 
 
 Improving the Contributor's Guide Itself
