@@ -3,6 +3,7 @@ import { Card, Table } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import Dialect from "../../data/Dialect";
 import { reportUri } from "../../data/ReportHost";
+import { Link } from "react-router-dom";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
@@ -13,7 +14,7 @@ const DialectCompliance: React.FC<{
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(
       `${reportURIpath}badges/${implementation.language}-${
         implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`,
+      }/compliance/${Dialect.forPath(dialectName).path}.json`
     )}`;
   };
 
@@ -48,16 +49,16 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate,
+                    +Dialect.forPath(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
                 return (
                   <tr key={index}>
                     <td>
                       {Dialect.forPath(dialectName).uri}
-                      <a
+                      <Link
                         className="mx-1"
-                        href={`${Dialect.forPath(dialectName).uri}`}
+                        to={Dialect.forPath(dialectName).uri}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -69,7 +70,7 @@ const DialectCompliance: React.FC<{
                           alt={`${Dialect.forPath(dialectName).prettyName}`}
                           src={complianceBadgeURI(dialectName)}
                         />
-                      </a>
+                      </Link>
                     </td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>

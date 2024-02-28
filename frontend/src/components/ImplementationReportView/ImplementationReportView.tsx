@@ -7,6 +7,7 @@ import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 import Dialect from "../../data/Dialect";
 import { reportUri } from "../../data/ReportHost";
+import EmbeddedBadges from "./EmbedBadges";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -42,12 +43,12 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
     return `https://img.shields.io/endpoint?url=${encodeURIComponent(
       `${reportURIpath}badges/${implementation.language}-${
         implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`,
+      }/compliance/${Dialect.forPath(dialectName).path}.json`
     )}`;
   };
 
   const supportedBadgeURI = `https://img.shields.io/endpoint?url=${encodeURIComponent(
-    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`,
+    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`
   )}`;
 
   return (
@@ -141,9 +142,9 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                     {Object.entries(implementation.results).map(
                       ([dialectName], index) => (
                         <li key={index}>
-                          <a
+                          <Link
                             className="mx-1"
-                            href={`${Dialect.forPath(dialectName).uri}`}
+                            to={Dialect.forPath(dialectName).uri}
                             target="_blank"
                             rel="noreferrer"
                             style={{
@@ -155,9 +156,9 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                               alt={`${Dialect.forPath(dialectName).prettyName}`}
                               src={complianceBadgeURI(dialectName)}
                             />
-                          </a>
+                          </Link>
                         </li>
-                      ),
+                      )
                     )}
                   </ul>
                 </td>
@@ -172,7 +173,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
@@ -183,6 +184,11 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
         </Card.Body>
       </Card>
       <DialectCompliance implementation={implementation} />
+      {Object.entries(implementation.results).length !== 0 ? (
+        <EmbeddedBadges implementation={implementation} />
+      ) : (
+        <></>
+      )}
     </Container>
   );
 };
