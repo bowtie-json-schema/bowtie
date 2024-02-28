@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals";
 import { create } from "react-test-renderer";
-import CaseResultSvg from "../CaseResultSvg";
-import { CaseResult } from "../../../data/parseReportData";
+import CaseResultSvg from "./CaseResultSvg";
+import { CaseResult } from "../../data/parseReportData";
 import {
   CheckCircleFill,
   XCircleFill,
