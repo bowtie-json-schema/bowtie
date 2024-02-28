@@ -4,7 +4,7 @@ import CaseItem from "./CaseItem";
 import { Accordion, Row, Col, DropdownButton, Dropdown } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useState<string>('');
   const [filterCriteria, setFilterCriteria] = useState<string | null>(null);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -16,38 +16,34 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   };
 
   const filteredCases = Array.from(reportData.cases.entries())
-    .filter(([seq]) => {
+    .filter(([seq,]) => {
       if (!filterCriteria) return true;
-      const caseResults: (CaseResult | undefined)[] = Array.from(
-        reportData.implementations.values(),
-      )
-        .map((impl) => impl.cases.get(seq))
+      const caseResults: (CaseResult | undefined)[] = Array.from(reportData.implementations.values())
+        .map(impl => impl.cases.get(seq))
         .flat();
       switch (filterCriteria) {
         case "successful":
-          return caseResults.some((result) => result?.state === "successful");
+          return caseResults.some(result => result?.state === "successful");
         case "errors":
-          return caseResults.some((result) => result?.state === "errored");
+          return caseResults.some(result => result?.state === "errored");
         case "skipped":
-          return caseResults.some((result) => result?.state === "skipped");
+          return caseResults.some(result => result?.state === "skipped");
         case "failed":
-          return caseResults.some((result) => result?.state === "failed");
+          return caseResults.some(result => result?.state === "failed");
         default:
           return true;
       }
     })
-    .filter(([, caseData]) =>
-      caseData.description.toLowerCase().includes(searchText),
-    );
+    .filter(([, caseData]) => typeof caseData.description === 'string' && caseData.description.toLowerCase().includes(searchText));
 
   // Function to highlight search text in description
-  const highlightDescription = (description: string): JSX.Element => {
+  const highlightDescription = (description: string | JSX.Element): string | JSX.Element => {
     if (!searchText) {
       return <>{description}</>;
     }
 
     const regex = new RegExp(`(${searchText})`, "gi");
-    const parts = description.split(regex);
+    const parts: string[] = (description as string).split(regex);
     return (
       <>
         {parts.map((part, index) =>
@@ -57,7 +53,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
             </mark>
           ) : (
             <span key={index}>{part}</span>
-          ),
+          )
         )}
       </>
     );
@@ -66,10 +62,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   return (
     <div>
       <Row className="mt-3">
-        <Col
-          md={{ span: 6, offset: 6 }}
-          className="d-flex align-items-center justify-content-end"
-        >
+        <Col md={{ span: 6, offset: 6 }} className="d-flex align-items-center justify-content-end">
           <input
             type="text"
             onChange={handleSearchChange}
@@ -81,33 +74,21 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
             variant="secondary"
             id="dropdown-basic-button"
           >
-            <Dropdown.Item onClick={() => handleFilterChange(null)}>
-              All
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("successful")}>
-              Successful
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("errors")}>
-              Errors
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("skipped")}>
-              Skipped
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("failed")}>
-              Unsuccessful
-            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange(null)}>All</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("successful")}>Successful</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("errors")}>Errors</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("skipped")}>Skipped</Dropdown.Item>
+            <Dropdown.Item onClick={() => handleFilterChange("failed")}>Unsuccessful</Dropdown.Item>
           </DropdownButton>
         </Col>
       </Row>
-      <div
-        className="overflow-auto mt-3 mb-3 border rounded relative"
-        style={{ maxHeight: "70vh", height: "70vh" }}
-      >
+      <div className="overflow-auto mt-3 mb-3 border rounded relative" style={{ maxHeight: "70vh", height: "70vh" }}>
         {filteredCases.length === 0 && (
-          <div className="position-absolute top-50 start-50 translate-middle">
-            No matches found
+          <div className="d-flex justify-content-center align-items-center" style={{ height: "100%" }}>
+            <div>No matches found</div>
           </div>
         )}
+
         {filteredCases.length > 0 && (
           <Accordion id="cases">
             {filteredCases.map(([seq, caseData], index) => (
@@ -116,11 +97,9 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
                 seq={seq}
                 caseData={{
                   ...caseData,
-                  description: highlightDescription(caseData.description),
+                  description: highlightDescription(caseData.description)
                 }}
-                implementations={Array.from(
-                  reportData.implementations.values(),
-                )}
+                implementations={Array.from(reportData.implementations.values())}
               />
             ))}
           </Accordion>
