@@ -1,9 +1,9 @@
-#summary{
-    scroll-margin-top: 5.5rem;
+#summary {
+  scroll-margin-top: 5.5rem;
 }
 
 @media screen and (max-width: 991px) {
-    #summary {
-        scroll-margin-top: 18.5rem; 
-    }
+  #summary {
+    scroll-margin-top: 18.5rem;
+  }
 }
