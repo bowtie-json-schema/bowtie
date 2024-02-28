@@ -9,7 +9,7 @@ siteURL.pathname = import.meta.env.BASE_URL;
 
 export const implementationMetadataURL: string = new URL(
   "implementations.json",
-  siteURL
+  siteURL,
 ).href;
 
 export default siteURL;

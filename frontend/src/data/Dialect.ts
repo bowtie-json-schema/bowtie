@@ -14,7 +14,7 @@ export default class Dialect {
     shortName: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: Date
+    firstPublicationDate: Date,
   ) {
     if (Dialect.all.has(shortName)) {
       throw new DialectError(`A "${shortName}" dialect already exists.`);
@@ -26,7 +26,6 @@ export default class Dialect {
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
   }
-
 
   async fetchReport(baseURI: URI = siteURI) {
     const url = baseURI.clone().filename(this.shortName).suffix("json").href();
@@ -41,7 +40,7 @@ export default class Dialect {
   static newest_to_oldest(): Dialect[] {
     return Array.from(Dialect.known()).sort(
       (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf()
+        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
     );
   }
 
@@ -55,7 +54,7 @@ export default class Dialect {
 
   static forURI(uri: string): Dialect {
     const dialect = Array.from(Dialect.all.entries()).find(
-      ([, dialect]) => dialect.uri === uri
+      ([, dialect]) => dialect.uri === uri,
     );
     if (!dialect) {
       throw new DialectError(`A ${uri} dialect does not exist.`);
@@ -77,6 +76,6 @@ for (const each of data) {
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate)
+    new Date(each.firstPublicationDate),
   );
 }
