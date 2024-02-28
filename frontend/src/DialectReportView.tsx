@@ -62,14 +62,16 @@ export const DialectReportView = ({
 
   return (
     <main className="container-lg">
-      {topPageInfoSection}
-      <RunInfoSection runInfo={filteredReportData.runInfo} />
-      <FilterSection languages={languages} />
-      <SummarySection
-        reportData={filteredReportData}
-        otherImplementationsData={filteredOtherImplementationsData}
-      />
-      <CasesSection reportData={filteredReportData} />
+      <div className="col col-lg-8 mx-auto">
+        {topPageInfoSection}
+        <RunInfoSection runInfo={filteredReportData.runInfo} />
+        <FilterSection languages={languages} />
+        <SummarySection
+          reportData={filteredReportData}
+          otherImplementationsData={filteredOtherImplementationsData}
+        />
+        <CasesSection reportData={filteredReportData} />
+      </div>
     </main>
   );
 };
