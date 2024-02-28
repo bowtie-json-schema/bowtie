@@ -56,7 +56,7 @@ _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-LANG_MAP= {
+LANG_MAP = {
     "cpp": "c++",
     "js": "javascript",
     "ts": "typescript",
@@ -721,6 +721,7 @@ IMPLEMENTATION = click.option(
     help="A docker image which implements the bowtie IO protocol.",
 )
 
+
 def _create_dialect_option():
     def wrapper(default: Any | None = max(Dialect.known())):
         return click.option(
@@ -740,7 +741,9 @@ def _create_dialect_option():
 
     return wrapper
 
+
 DIALECT = _create_dialect_option()
+
 
 def _get_langs() -> list[str]:
     known_implementations = list(Implementation.known())
@@ -749,6 +752,7 @@ def _get_langs() -> list[str]:
         impl_lang = impl.split("-")[0]
         langs.add(LANG_MAP.get(impl_lang, impl_lang))
     return list(langs)
+
 
 LANGUAGE = click.option(
     "--language",
