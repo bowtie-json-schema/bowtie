@@ -115,7 +115,7 @@ Feel free to file issues or pull requests as well if you wish something was bett
 Building the Documentation Locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The code for the documentation is in the ``docs/`` directory of our :org:`github repository <bowtie>`.
+The code for the documentation is in the :gh:`docs directory of the Bowtie repository <tree/main/docs>`.
 
 You can build the documentation locally by running:
 
