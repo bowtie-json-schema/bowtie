@@ -151,7 +151,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     def wrapper(fn: ImplementationSubcommand):
         @subcommand
-        @IMPLEMENTATION
+        @IMPLEMENTATION()
         @TIMEOUT
         @wraps(fn)
         def cmd(image_names: list[str], **kwargs: Any) -> int:
@@ -176,24 +176,35 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
     Runs the wrapped function with only the successfully started
     implementations.
     """
-
+    def build_images_list(implementations: list[str]) -> list[str]:
+        return [f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations]
+    
     def wrapper(fn: ImplementationSubcommand):
         @subcommand
         @TIMEOUT
+        @IMPLEMENTATION(required=False)
         @wraps(fn)
-        def cmd(**kwargs: Any) -> int:
-            if not kwargs.get("dialect") and not kwargs.get("language"):
+        def cmd(image_names: list[str], **kwargs: Any) -> int:
+            if not kwargs.get("dialects") and not kwargs.get("languages"):
                 raise click.UsageError(
-                    "Please provide either --dialect filter "
-                    "or --language filter",
+                    "Please provide either '--supports-dialect' filter "
+                    "or '--language' filter",
                 )
-            implementations = list(Implementation.known())
-            image_names: list[str] = [
-                f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations
-            ]
+            if sys.stdin.isatty():
+                if not image_names:
+                    known_implementations = list(Implementation.known())
+                    images: list[str] = build_images_list(known_implementations)
+                else:
+                    images = image_names
+            else:
+                implementations = [
+                    line.rstrip('/')
+                    for line in sys.stdin.read().strip().split('\n')
+                ]
+                images: list[str] = build_images_list(implementations)
             return asyncio.run(
                 _run_implementations(
-                    image_names=image_names,
+                    image_names=images,
                     fn=fn,
                     reporter=reporter,
                     **kwargs,
@@ -709,28 +720,35 @@ def _check_fail_fast_provided(
             return ctx.params["max_fail"] and ctx.params["max_error"]
     return value
 
-
-IMPLEMENTATION = click.option(
-    "--implementation",
-    "-i",
-    "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
-    required=True,
-    multiple=True,
-    metavar="IMPLEMENTATION",
-    help="A docker image which implements the bowtie IO protocol.",
-)
-
-
-def _create_dialect_option():
-    def wrapper(default: Any | None = max(Dialect.known())):
+def _implementation_option():
+    def wrapper(required: bool = True):
         return click.option(
-            "--dialect",
-            "-D",
-            "dialect",
+            "--implementation",
+            "-i",
+            "image_names",
+            type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+            required=required,
+            multiple=True,
+            metavar="IMPLEMENTATION",
+            help="A docker image which implements the bowtie IO protocol.",
+        )
+        
+    return wrapper
+
+IMPLEMENTATION = _implementation_option()
+
+def _dialect_option():
+    def wrapper(
+        param_decls: list[str] = ["--dialect", "-D", "dialect"],
+        multiple: bool = False,
+        default: Any | None = max(Dialect.known())
+    ):
+        return click.option(
+            *param_decls,
             type=_Dialect(),
             default=default,
             show_default=True,
+            multiple=multiple,
             metavar="URI_OR_NAME",
             help=(
                 "A URI or shortname identifying the dialect of each test. "
@@ -741,9 +759,7 @@ def _create_dialect_option():
 
     return wrapper
 
-
-DIALECT = _create_dialect_option()
-
+DIALECT = _dialect_option()
 
 def _get_langs() -> list[str]:
     known_implementations = list(Implementation.known())
@@ -753,13 +769,13 @@ def _get_langs() -> list[str]:
         langs.add(LANG_MAP.get(impl_lang, impl_lang))
     return list(langs)
 
-
 LANGUAGE = click.option(
     "--language",
     "-l",
-    "language",
+    "languages",
     help="Filter implementations by programming languages",
     type=click.Choice(_get_langs()),
+    multiple=True,
 )
 
 FILTER = click.option(
@@ -852,7 +868,7 @@ EXPECT = click.option(
 
 
 @subcommand
-@IMPLEMENTATION
+@IMPLEMENTATION()
 @DIALECT()
 @FILTER
 @FAIL_FAST
@@ -883,7 +899,7 @@ def run(
 
 
 @subcommand
-@IMPLEMENTATION
+@IMPLEMENTATION()
 @DIALECT()
 @SET_SCHEMA
 @TIMEOUT
@@ -919,25 +935,40 @@ def validate(
 
 
 @all_implementations_subcommand()  # type: ignore[reportArgumentType]
-@DIALECT(default=None)
+@DIALECT(
+    param_decls=["--supports-dialect", "-D", "dialects"], 
+    default=None,
+    multiple=True,
+)
 @LANGUAGE
 async def filter_implementations(
     implementations: Iterable[Implementation],
-    dialect: Dialect | None,
-    language: str | None,
+    dialects: Iterable[Dialect] | None,
+    languages: list[str] | None,
 ):
     supporting_implementations: list[str] = []
+    dialect_uris = []
+    if dialects:
+        dialect_uris = list(str(d.uri) for d in dialects)
+
     for each in implementations:
         metadata = each.info.serializable()
-        impl_id = each.info.id
-        impl_name = impl_id.split("/")[-1]
+        implementaion = each.info.id
 
         if (
             "dialects" in metadata
-            and (not dialect or str(dialect.uri) in metadata["dialects"])
-            and (not language or each.info.language == language)
+            and (
+                not dialects
+                or all(uri in metadata["dialects"] 
+                       for uri in dialect_uris)
+            )
+            and (
+                not languages 
+                or any(lang == each.info.language
+                       for lang in languages)
+            )
         ):
-            supporting_implementations.append(impl_name)
+            supporting_implementations.append(implementaion)
 
     for impl in supporting_implementations:
         click.echo(impl)
@@ -1063,7 +1094,7 @@ async def smoke(
 
 
 @subcommand
-@IMPLEMENTATION
+@IMPLEMENTATION()
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
