@@ -1,4 +1,4 @@
-import { expect, test } from "@jest/globals";
+import { describe, expect, test } from "@jest/globals";
 import { create } from "react-test-renderer";
 import CaseResultSvg from "../CaseResultSvg";
 import { CaseResult } from "../../../data/parseReportData";
@@ -6,46 +6,46 @@ import {
   CheckCircleFill,
   XCircleFill,
   ExclamationOctagon,
+  Icon,
 } from "react-bootstrap-icons";
 
-test("Case Result Icon Successful Expected True", () => {
-  const testCaseData = {
+interface CaseResultIconTestParams {
+  state: CaseResult["state"];
+  valid?: boolean;
+  icon: Icon;
+}
+
+const testCases: CaseResultIconTestParams[] = [
+  {
     state: "successful",
     valid: true,
-  } as CaseResult;
-
-  const testRenderer = create(<CaseResultSvg result={testCaseData} />);
-  const testInstance = testRenderer.root;
-  expect(testInstance.findByType(CheckCircleFill));
-});
-
-test("Case Result Icon Successful Expected False", () => {
-  const testCaseData = {
+    icon: CheckCircleFill,
+  },
+  {
     state: "successful",
     valid: false,
-  } as CaseResult;
-
-  const testRenderer = create(<CaseResultSvg result={testCaseData} />);
-  const testInstance = testRenderer.root;
-  expect(testInstance.findByType(XCircleFill));
-});
-
-test("Case Result Icon Skipped", () => {
-  const testCaseData = {
+    icon: XCircleFill,
+  },
+  {
     state: "skipped",
-  } as CaseResult;
-
-  const testRenderer = create(<CaseResultSvg result={testCaseData} />);
-  const testInstance = testRenderer.root;
-  expect(testInstance.findByType(ExclamationOctagon));
-});
-
-test("Case Result Icon Errored", () => {
-  const testCaseData = {
+    icon: ExclamationOctagon,
+  },
+  {
     state: "errored",
+    icon: ExclamationOctagon,
+  },
+];
+
+describe.each(testCases)("Case Result Icons", ({ state, valid, icon }) => {
+  const testCaseData = {
+    state,
+    valid,
   } as CaseResult;
 
-  const testRenderer = create(<CaseResultSvg result={testCaseData} />);
-  const testInstance = testRenderer.root;
-  expect(testInstance.findByType(ExclamationOctagon));
+  const testName = valid == undefined ? state : `${state} expected ${valid}`;
+  test(testName, () => {
+    const testRenderer = create(<CaseResultSvg result={testCaseData} />);
+    const testInstance = testRenderer.root;
+    expect(testInstance.findByType(icon));
+  });
 });
