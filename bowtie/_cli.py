@@ -178,7 +178,7 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
     """
     def build_images_list(implementations: list[str]) -> list[str]:
         return [f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations]
-    
+
     def wrapper(fn: ImplementationSubcommand):
         @subcommand
         @TIMEOUT
@@ -193,13 +193,15 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
             if sys.stdin.isatty():
                 if not image_names:
                     known_implementations = list(Implementation.known())
-                    images: list[str] = build_images_list(known_implementations)
+                    images: list[str] = build_images_list(
+                        known_implementations,
+                    )
                 else:
                     images = image_names
             else:
                 implementations = [
-                    line.rstrip('/')
-                    for line in sys.stdin.read().strip().split('\n')
+                    line.rstrip("/")
+                    for line in sys.stdin.read().strip().split("\n")
                 ]
                 images: list[str] = build_images_list(implementations)
             return asyncio.run(
@@ -726,13 +728,15 @@ def _implementation_option():
             "--implementation",
             "-i",
             "image_names",
-            type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+            type=lambda name: ( # type: ignore[reportUnknownLambdaType]
+                name if "/" in name else f"{IMAGE_REPOSITORY}/{name}"
+            ),
             required=required,
             multiple=True,
             metavar="IMPLEMENTATION",
             help="A docker image which implements the bowtie IO protocol.",
         )
-        
+
     return wrapper
 
 IMPLEMENTATION = _implementation_option()
@@ -741,7 +745,7 @@ def _dialect_option():
     def wrapper(
         param_decls: list[str] = ["--dialect", "-D", "dialect"],
         multiple: bool = False,
-        default: Any | None = max(Dialect.known())
+        default: Any | None = max(Dialect.known()),
     ):
         return click.option(
             *param_decls,
@@ -936,7 +940,7 @@ def validate(
 
 @all_implementations_subcommand()  # type: ignore[reportArgumentType]
 @DIALECT(
-    param_decls=["--supports-dialect", "-D", "dialects"], 
+    param_decls=["--supports-dialect", "-D", "dialects"],
     default=None,
     multiple=True,
 )
@@ -949,7 +953,7 @@ async def filter_implementations(
     supporting_implementations: list[str] = []
     dialect_uris = []
     if dialects:
-        dialect_uris = list(str(d.uri) for d in dialects)
+        dialect_uris = [(str(d.uri) for d in dialects)]
 
     for each in implementations:
         metadata = each.info.serializable()
@@ -959,11 +963,11 @@ async def filter_implementations(
             "dialects" in metadata
             and (
                 not dialects
-                or all(uri in metadata["dialects"] 
+                or all(uri in metadata["dialects"]
                        for uri in dialect_uris)
             )
             and (
-                not languages 
+                not languages
                 or any(lang == each.info.language
                        for lang in languages)
             )
