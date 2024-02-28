@@ -19,7 +19,7 @@ const EmbedBadges: React.FC<{
   };
 
   const [badgeURI, setBadgeURI] = useState(
-    complianceBadgeFor(implementation, Dialect.withName(activeDialect)).href()
+    complianceBadgeFor(implementation, Dialect.withName(activeDialect)).href(),
   );
 
   const handleSelect = (tabKey: string | null) => {
