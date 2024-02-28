@@ -132,7 +132,7 @@ def build(session):
             )
 
 
-@session(tags=["build"])
+@session(default=False, tags=["build"])
 def app(session):
     """
     Build a PyApp which will run Bowtie.

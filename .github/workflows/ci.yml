@@ -41,6 +41,8 @@ jobs:
       fail-fast: false
       matrix:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
+        include:
+          - noxenv: app
 
     steps:
       - uses: actions/checkout@v4
