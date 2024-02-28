@@ -119,7 +119,7 @@ Feel free to file issues or pull requests as well if you wish something was bett
 
 The code for the documentation is in the :gh:`docs directory of the Bowtie repository <tree/main/docs>`.
 
-You can build the documentation locally by running on the root of the repository:
+You can build the documentation locally by running following the command on the root of the repository:
 
 .. code:: sh
 
