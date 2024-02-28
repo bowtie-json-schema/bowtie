@@ -67,7 +67,7 @@ describe("parseReportData", () => {
       runInfo: {
         started: report.runInfo.started,
         bowtie_version: report.runInfo.bowtie_version,
-        dialect: Dialect.forPath("draft2020-12").uri,
+        dialect: Dialect.withName("draft2020-12").uri,
         implementations: {
           [tag("envsonschema")]: {
             name: "envsonschema",

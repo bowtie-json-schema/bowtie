@@ -1,5 +1,6 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, Params, RouterProvider } from "react-router-dom";
@@ -9,7 +10,7 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import Dialect from "./data/Dialect";
-import { implementationMetadataURL } from "./data/Site";
+import { implementationMetadataURI } from "./data/Site";
 import {
   Implementation,
   parseImplementationData,
@@ -27,7 +28,9 @@ const fetchAllReportData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => (loaderData[dialect.path] = data))
+      dialect
+        .fetchReport()
+        .then((data) => (loaderData[dialect.shortName] = data)),
     );
   }
   await Promise.all(promises);
@@ -35,7 +38,7 @@ const fetchAllReportData = async (langImplementation: string) => {
 };
 
 const fetchImplementationMetadata = async () => {
-  const response = await fetch(implementationMetadataURL);
+  const response = await fetch(implementationMetadataURI);
   const implementations = (await response.json()) as Record<
     string,
     Implementation
@@ -46,7 +49,7 @@ const fetchImplementationMetadata = async () => {
 const reportDataLoader = async ({ params }: { params: Params<string> }) => {
   const draftName = params?.draftName ?? "draft2020-12";
   const [reportData, allImplementationsData] = await Promise.all([
-    fetchReportData(Dialect.forPath(draftName)),
+    fetchReportData(Dialect.withName(draftName)),
     fetchImplementationMetadata(),
   ]);
   return { reportData, allImplementationsData };
@@ -56,6 +59,7 @@ const router = createHashRouter([
   {
     path: "/",
     Component: MainContainer,
+
     children: [
       {
         index: true,
@@ -88,6 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
