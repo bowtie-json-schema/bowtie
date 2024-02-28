@@ -45,7 +45,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                   <Row className="d-grid gap-2">
                     {otherImplementationsDataArray.map(([id, impl]) => {
                       const implementationPath = getImplementationPath(id);
-                      const ltsDialect = getLatestSupportedDialect(impl);
+                      const latest = getLatestSupportedDialect(impl);
                       return (
                         <Col key={id}>
                           <div>
@@ -61,8 +61,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                           </div>
                           <span className="text-body-secondary text-nowrap">
                             (latest supported dialect:{" "}
-                            <NavLink to={`/dialects/${ltsDialect.path}`}>
-                              {ltsDialect.prettyName}
+                            <NavLink to={`/dialects/${latest.shortName}`}>
+                              {latest.prettyName}
                             </NavLink>
                             )
                           </span>

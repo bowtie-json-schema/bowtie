@@ -28,10 +28,14 @@ export const versionsBadgeFor = (implementation: Implementation): URL =>
 
 export const complianceBadgeFor = (
   implementation: Implementation,
-  dialect: Dialect
-): URL => {
-  const complianceURL = new URL(
-    implementationBadges(implementation).href + "/compliance"
+  dialect: Dialect,
+): URI =>
+  badgeFor(
+    implementationBadges(implementation)
+      .clone()
+      .segment("compliance")
+      .segment(dialect.shortName)
+      .suffix("json"),
   );
   complianceURL.pathname += `/${dialect.path}.json`;
   return badgeFor(complianceURL);
