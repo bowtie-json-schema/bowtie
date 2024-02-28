@@ -3,30 +3,24 @@ import { Accordion, Badge, Nav, Tab } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import CopyToClipboard from "../CopyToClipboard";
 import Dialect from "../../data/Dialect";
-import { reportUri } from "../../data/ReportHost";
+import { complianceBadgeFor } from "../../data/Badge";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const reportURIpath: string = reportUri.href();
   const results = Object.entries(implementation.results);
   const [activeTab, setActiveTab] = useState("URL");
   const [activeDialect, setActiveDialect] = useState(results[0][0]);
 
-  const generateBadgeURI = (dialect: string): string => {
-    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
-      `${reportURIpath}badges/${implementation.language}-${
-        implementation.name
-      }/compliance/${Dialect.forPath(dialect).path}.json`
-    )}`;
+  const handleSelectDialect = (dialectName: string): void => {
+    setActiveDialect(dialectName);
+    const dialect = Dialect.withName(dialectName);
+    setBadgeURI(complianceBadgeFor(implementation, dialect).href());
   };
 
-  const handleSelectDialect = (dialect: string): void => {
-    setActiveDialect(dialect);
-    setBadgeURI(generateBadgeURI(dialect));
-  };
-
-  const [badgeURI, setBadgeURI] = useState(generateBadgeURI(activeDialect));
+  const [badgeURI, setBadgeURI] = useState(
+    complianceBadgeFor(implementation, Dialect.withName(activeDialect)).href()
+  );
 
   const handleSelect = (tabKey: string | null) => {
     if (tabKey) {

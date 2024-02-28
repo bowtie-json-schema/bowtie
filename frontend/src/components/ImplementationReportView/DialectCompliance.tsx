@@ -1,23 +1,14 @@
 import React from "react";
-import { Card, Table } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import Dialect from "../../data/Dialect";
-import { reportUri } from "../../data/ReportHost";
 import { Link } from "react-router-dom";
+import { Card, Table } from "react-bootstrap";
+
+import { complianceBadgeFor } from "../../data/Badge";
+import Dialect from "../../data/Dialect";
+import { Implementation } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const reportURIpath: string = reportUri.href();
-
-  const complianceBadgeURI = (dialectName: string): string => {
-    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
-      `${reportURIpath}badges/${implementation.language}-${
-        implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`
-    )}`;
-  };
-
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -30,6 +21,9 @@ const DialectCompliance: React.FC<{
               </th>
               <th colSpan={3} className="text-center">
                 Tests
+              </th>
+              <th rowSpan={2} scope="col" className="text-center align-middle">
+                Badge
               </th>
             </tr>
             <tr className="text-center">
@@ -48,33 +42,36 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate
+                  +Dialect.withName(b[0]).firstPublicationDate -
+                    +Dialect.withName(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
+                const dialect = Dialect.withName(dialectName);
                 return (
                   <tr key={index}>
-                    <td>
-                      {Dialect.forPath(dialectName).uri}
-                      <Link
-                        className="mx-1"
-                        to={Dialect.forPath(dialectName).uri}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: "inline-block",
-                          width: "fit-content",
-                        }}
-                      >
-                        <img
-                          alt={`${Dialect.forPath(dialectName).prettyName}`}
-                          src={complianceBadgeURI(dialectName)}
-                        />
-                      </Link>
-                    </td>
+                    <td>{dialect.prettyName}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
+                    <td>
+                      <Link
+                        className="mx-1"
+                        // FIXME: surely this shouldn't be hardcoded
+                        // Double FIXME: This should go to the
+                        // implementation-specific page, not the global dialect
+                        // one.
+                        to={`/dialects/${dialect.shortName}`}
+                      >
+                        <img
+                          alt={dialect.prettyName}
+                          className="float-end"
+                          src={complianceBadgeFor(
+                            implementation,
+                            dialect
+                          ).href()}
+                        />
+                      </Link>
+                    </td>
                   </tr>
                 );
               })}

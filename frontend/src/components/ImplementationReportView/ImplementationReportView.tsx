@@ -5,9 +5,8 @@ import { Implementation } from "../../data/parseReportData";
 import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
-import Dialect from "../../data/Dialect";
-import { reportUri } from "../../data/ReportHost";
-import EmbeddedBadges from "./EmbedBadges";
+import { versionsBadgeFor } from "../../data/Badge";
+import EmbedBadges from "./EmbedBadges";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -37,20 +36,6 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   implementation,
 }) => {
-  const reportURIpath: string = reportUri.href();
-
-  const complianceBadgeURI = (dialectName: string): string => {
-    return `https://img.shields.io/endpoint?url=${encodeURIComponent(
-      `${reportURIpath}badges/${implementation.language}-${
-        implementation.name
-      }/compliance/${Dialect.forPath(dialectName).path}.json`
-    )}`;
-  };
-
-  const supportedBadgeURI = `https://img.shields.io/endpoint?url=${encodeURIComponent(
-    `${reportURIpath}/badges/${implementation.language}-${implementation.name}/supported_versions.json`
-  )}`;
-
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
@@ -66,7 +51,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
           <Table>
             <tbody>
               <tr>
-                <th>Homepage:</th>
+                <th>Homepage</th>
                 <td>
                   <Link to={implementation.homepage}>
                     {implementation.homepage}
@@ -75,7 +60,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.documentation && (
                 <tr>
-                  <th>Documentation:</th>
+                  <th>Documentation</th>
                   <td>
                     <Link to={implementation.documentation}>
                       {implementation.documentation}
@@ -84,7 +69,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Source:</th>
+                <th>Source</th>
                 <td>
                   <Link to={implementation.source}>
                     {implementation.source}
@@ -92,7 +77,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Issues:</th>
+                <th>Issues</th>
                 <td>
                   <Link to={implementation.issues}>
                     {implementation.issues}
@@ -100,11 +85,11 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Version:</th>
+                <th>Version</th>
                 <td>{implementation.version}</td>
               </tr>
               <tr>
-                <th>Language:</th>
+                <th>Language</th>
                 <td>
                   {mapLanguage(implementation.language)}
                   <span className="text-muted">
@@ -116,7 +101,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.os && (
                 <tr>
-                  <th>OS:</th>
+                  <th>OS</th>
                   <td>
                     {implementation.os}
                     <span className="text-muted">
@@ -127,45 +112,19 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>
-                  Supported Dialects:
-                  <br />
+                <th>Supported Dialects</th>
+                <td className="col-7">
                   <img
-                    alt={`${implementation.language}`}
+                    alt={implementation.name}
                     className="my-1"
-                    src={supportedBadgeURI}
+                    src={versionsBadgeFor(implementation).href()}
                     style={{ maxWidth: "100%" }}
                   />
-                </th>
-                <td className="col-7">
-                  <ul>
-                    {Object.entries(implementation.results).map(
-                      ([dialectName], index) => (
-                        <li key={index}>
-                          <Link
-                            className="mx-1"
-                            to={Dialect.forPath(dialectName).uri}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              display: "inline-block",
-                              width: "fit-content",
-                            }}
-                          >
-                            <img
-                              alt={`${Dialect.forPath(dialectName).prettyName}`}
-                              src={complianceBadgeURI(dialectName)}
-                            />
-                          </Link>
-                        </li>
-                      )
-                    )}
-                  </ul>
                 </td>
               </tr>
               {implementation.links && !!implementation.links.length && (
                 <tr>
-                  <th>Additional Links:</th>
+                  <th>Additional Links</th>
                   <td>
                     <ul>
                       {implementation.links.map(
@@ -185,7 +144,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
       </Card>
       <DialectCompliance implementation={implementation} />
       {Object.entries(implementation.results).length !== 0 ? (
-        <EmbeddedBadges implementation={implementation} />
+        <EmbedBadges implementation={implementation} />
       ) : (
         <></>
       )}

@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
 import { fromSerialized } from "./parseReportData";
@@ -67,7 +67,7 @@ describe("parseReportData", () => {
       runInfo: {
         started: report.runInfo.started,
         bowtie_version: report.runInfo.bowtie_version,
-        dialect: Dialect.forPath("draft2020-12").uri,
+        dialect: Dialect.withName("draft2020-12").uri,
         implementations: {
           [tag("envsonschema")]: {
             name: "envsonschema",
