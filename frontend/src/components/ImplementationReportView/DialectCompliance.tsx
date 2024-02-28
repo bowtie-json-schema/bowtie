@@ -1,8 +1,10 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Card, Table } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import Dialect from "../../data/Dialect";
+
 import { complianceBadgeFor } from "../../data/Badge";
+import Dialect from "../../data/Dialect";
+import { Implementation } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
   implementation: Implementation;
@@ -52,13 +54,13 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
                     <td>
-                      <a
+                      <Link
                         className="mx-1"
                         // FIXME: surely this shouldn't be hardcoded
                         // Double FIXME: This should go to the
                         // implementation-specific page, not the global dialect
                         // one.
-                        href={`/dialects/${dialect.shortName}`}
+                        to={`/dialects/${dialect.shortName}`}
                       >
                         <img
                           alt={dialect.prettyName}
@@ -68,7 +70,7 @@ const DialectCompliance: React.FC<{
                             dialect,
                           ).href()}
                         />
-                      </a>
+                      </Link>
                     </td>
                   </tr>
                 );
