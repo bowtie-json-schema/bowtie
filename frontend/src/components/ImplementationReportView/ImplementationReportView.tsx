@@ -39,12 +39,16 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
-        <Card.Header>
+        <Card.Header className="d-flex">
           <span className="px-1 text-muted">
             {mapLanguage(implementation.language)}
           </span>
-
-          <span>{implementation.name}</span>
+          <span className="me-3">{implementation.name}</span>
+          {Object.entries(implementation.results).length !== 0 ? (
+            <EmbedBadges implementation={implementation} />
+          ) : (
+            <></>
+          )}
         </Card.Header>
 
         <Card.Body>
@@ -143,11 +147,6 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
         </Card.Body>
       </Card>
       <DialectCompliance implementation={implementation} />
-      {Object.entries(implementation.results).length !== 0 ? (
-        <EmbedBadges implementation={implementation} />
-      ) : (
-        <></>
-      )}
     </Container>
   );
 };

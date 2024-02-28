@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Accordion, Badge, Nav, Tab } from "react-bootstrap";
+import { Badge, Dropdown, Nav, Tab } from "react-bootstrap";
 import { Implementation } from "../../data/parseReportData";
 import CopyToClipboard from "../CopyToClipboard";
 import Dialect from "../../data/Dialect";
@@ -29,10 +29,15 @@ const EmbedBadges: React.FC<{
   };
 
   return (
-    <Accordion className="mx-auto mb-3 col-md-9">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Embed Badge</Accordion.Header>
-        <Accordion.Body>
+    <Dropdown
+      className="mx-auto mb-3 col-12 col-sm-12 col-md-12"
+      autoClose="outside"
+    >
+      <Dropdown.Toggle variant="success" size="sm">
+        Badges
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="mx-auto mb-3 col-12 col-sm-7 col-md-12">
+        <Dropdown.Item eventKey="0">
           <div className="container d-flex justify-content-center flex-row flex-wrap">
             {results.map((result) => (
               <Badge
@@ -73,7 +78,7 @@ const EmbedBadges: React.FC<{
                 </Nav.Item>
               </Nav>
 
-              <Tab.Content className="col-md-12 col-sm-11 col-11 mt-2">
+              <Tab.Content className="col-6 col-sm-6 col-md-11 mt-2">
                 <Tab.Pane eventKey="URL">
                   <div className="d-flex align-items-center justify-content-center border rounded ps-3 pt-3 px-3">
                     <div className="overflow-auto">
@@ -183,9 +188,9 @@ const EmbedBadges: React.FC<{
               </Tab.Content>
             </Tab.Container>
           </div>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
   );
 };
 
