@@ -112,6 +112,19 @@ Documentation is written in `Sphinx-flavored reStructuredText <sphinx:index>`, s
 
 Feel free to file issues or pull requests as well if you wish something was better documented, as this too can help prioritize.
 
+Building the Documentation Locally
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The code for the documentation is in the ``docs/`` directory of our :org:`github repository <bowtie>`.
+
+You can build the documentation locally by running:
+
+.. code:: sh
+
+    $ nox -s "docs(dirhtml)" -- dirhtml
+
+This will build the documentation into the ``/dirhtml`` directory.
+
 
 Improving the Contributor's Guide Itself
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
