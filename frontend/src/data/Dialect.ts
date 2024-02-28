@@ -1,7 +1,12 @@
 import data from "../../../data/dialects.json";
-import { fromSerialized } from "./parseReportData";
-import { siteURL } from "./Site";
+import URI from "urijs";
 
+import { fromSerialized } from "./parseReportData";
+import siteURI from "./Site";
+
+/**
+ * An individual dialect of JSON Schema.
+ */
 export default class Dialect {
   readonly shortName: string;
   readonly prettyName: string;
@@ -72,6 +77,7 @@ class DialectError extends Error {
 }
 
 for (const each of data) {
+  // TODO: Replace Dialect.all so we aren't relying on side effects.
   new Dialect(
     each.shortName,
     each.prettyName,
