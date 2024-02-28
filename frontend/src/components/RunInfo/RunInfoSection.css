@@ -1,0 +1,9 @@
+#run-info{
+    scroll-margin-top: 5.5rem;
+}
+
+@media screen and (max-width: 991px) {
+    #run-info {
+        scroll-margin-top: 18.5rem; 
+    }
+}
