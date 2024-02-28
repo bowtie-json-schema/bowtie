@@ -1,5 +1,4 @@
 import CasesSection from "./components/Cases/CasesSection";
-import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
@@ -9,11 +8,12 @@ import { useSearchParams } from "./hooks/useSearchParams.ts";
 
 export const DialectReportView = ({
   reportData,
+  topPageInfoSection,
 }: {
   reportData: ReportData;
+  topPageInfoSection?: React.ReactElement;
 }) => {
   const params = useSearchParams();
-
   const languages = useMemo(() => {
     const langs = Array.from(reportData.implementations.values()).map(
       (impl) => impl.metadata.language,
@@ -37,7 +37,7 @@ export const DialectReportView = ({
   return (
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
-        <BowtieInfoSection />
+        {topPageInfoSection}
         <RunInfoSection runInfo={filteredData.runInfo} />
         <FilterSection languages={languages} />
         <SummarySection reportData={filteredData} />
