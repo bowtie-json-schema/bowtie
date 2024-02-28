@@ -1,11 +1,12 @@
 import { useContext, useEffect } from "react";
-import { Sun, MoonStarsFill } from "react-bootstrap-icons";
+import { Sun, MoonStarsFill, Book } from "react-bootstrap-icons";
 import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
 import logo from "../assets/landscape-logo.svg";
 import Dialect from "../data/Dialect";
+import { Button } from "react-bootstrap";
 
 const NavBar = () => {
   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
@@ -30,23 +31,44 @@ const NavBar = () => {
           isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
         }`}
       >
-        <div className="container-fluid">
+        <div className="container-fluid d-flex justify-content-between align-items-center">
           <Link className="navbar-brand me-4 py-1" to="/">
-            <img src={logo} alt="Bowtie" width="128px" />
+            <img src={logo} alt="Bowtie Logo" width="128px" />
           </Link>
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-            aria-controls="navbarSupportedContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+          <div className="d-flex align-items-center">
+            <div className="d-lg-none">
+              <Button className="btn btn-secondary border-0 me-1">
+                <Link
+                  className="nav-link"
+                  to="https://docs.bowtie.report/"
+                  target="blank"
+                >
+                  <Book size={20} />
+                </Link>
+              </Button>
+              <button
+                className={`btn ${
+                  isDarkMode ? "btn-light" : "btn-secondary"
+                } rounded me-1`}
+                onClick={() => toggleDarkMode!()}
+              >
+                {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
+              </button>
+            </div>
+            <button
+              className="navbar-toggler"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarNav"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
+            >
+              <span className="navbar-toggler-icon"></span>
+            </button>
+          </div>
           <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-baseline">
               {isDialectPage && (
                 <>
                   <li className="nav-item">
@@ -94,32 +116,44 @@ const NavBar = () => {
                   </li>
                 </ul>
               </li>
+              <li className="nav-item d-block d-md-none">
+                <a
+                  href="https://github.com/bowtie-json-schema/bowtie/"
+                  className="link-secondary"
+                >
+                  <span className="navbar-text">
+                    {version && `Bowtie v ${version}`}
+                  </span>
+                </a>
+              </li>
             </ul>
           </div>
-          <button id="docs" className="btn btn-sm btn-secondary border-0 me-1">
-            <Link
-              className="nav-link"
-              to="https://docs.bowtie.report/"
-              target="blank"
+          <div className="large-screen d-none d-lg-block">
+            <button className="btn btn-sm btn-secondary border-0 me-1 d-inline-flex align-items-center">
+              <Book size={20} className="me-1" />
+              <Link
+                className="nav-link"
+                to="https://docs.bowtie.report/"
+                target="blank"
+              >
+                Docs
+              </Link>
+            </button>
+            <button
+              className="btn border-0 me-1"
+              onClick={() => toggleDarkMode!()}
             >
-              Docs
-            </Link>
-          </button>
-          <button
-            id="theme-toggler"
-            className="btn border-0 me-1"
-            onClick={() => toggleDarkMode!()}
-          >
-            {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
-          </button>
-          <a
-            href="https://github.com/bowtie-json-schema/bowtie/"
-            className="link-secondary"
-          >
-            <span className="navbar-text">
-              {version && <small>Bowtie v{version}</small>}
-            </span>
-          </a>
+              {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
+            </button>
+            <a
+              href="https://github.com/bowtie-json-schema/bowtie/"
+              className="link-secondary"
+            >
+              <span className="navbar-text">
+                {version && <small>Bowtie v{version}</small>}
+              </span>
+            </a>
+          </div>
         </div>
       </nav>
     </>
