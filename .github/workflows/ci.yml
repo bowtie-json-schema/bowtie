@@ -35,26 +35,32 @@ jobs:
 
   ci:
     needs: list
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
+        os: [macos-latest, ubuntu-latest]
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
         include:
-          - noxenv: app
+          - os: macos-latest
+            noxenv: app
+          - os: ubuntu-latest
+            noxenv: app
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: >
-          sudo apt-get update &&
-          sudo apt-get install -y libenchant-2-dev
-        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
-      - name: Install dependencies
-        run: brew install enchant podman
+      - name: Set up podman
+        run: |
+          brew install podman
+          podman machine init --now
+          echo "DOCKER_HOST=unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')" >> $GITHUB_ENV
         if: runner.os == 'macOS'
+      - name: Set up podman
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        if: runner.os == 'Linux'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -65,6 +71,14 @@ jobs:
             pypy3.10
           allow-prereleases: true
           cache: pip
+      - name: Install docs dependencies
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y libenchant-2-dev
+        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
+      - name: Install docs dependencies
+        run: brew install enchant
+        if: runner.os == 'macOS' && startsWith(matrix.noxenv, 'docs')
 
       - uses: actions/setup-node@v4
         with:
@@ -75,14 +89,9 @@ jobs:
           package_json_file: frontend/package.json
           run_install: false
         if: startsWith(matrix.noxenv, 'ui')
-      # We temporarily build images in the noxfile, and do so with podman.
-      - name: Set DOCKER_HOST so podman-built images are findable
-        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
-        if: startsWith(matrix.noxenv, 'ui')
 
       - name: Set up nox
         uses: wntrblm/nox@2024.03.02
-
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
 
