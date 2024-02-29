@@ -1,6 +1,6 @@
 import moment from "moment";
 import { RunInfo } from "../../data/parseReportData";
-import "./RunInfoSection.css"
+
 const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
   const ranTime = (startTime: string) => {
     const currentTime = moment();

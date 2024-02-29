@@ -1,7 +1,6 @@
 import SummaryTable from "./SummaryTable";
 import { Implementation, ReportData } from "../../data/parseReportData.ts";
 import { OtherImplementations } from "../OtherImplementations.tsx";
-import "./SummarySection.css";
 
 const SummarySection = ({
   reportData,
