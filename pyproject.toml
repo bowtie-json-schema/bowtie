@@ -53,6 +53,7 @@ dependencies = [
   "diagnostic",
   "github3.py",
   "jsonschema>=4.19.0",
+  "jsonschema_lexer",
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
@@ -60,7 +61,6 @@ dependencies = [
   "structlog",
   "typing-extensions; python_version<'3.11'",
   "url.py",
-  "jsonschema_lexer",
 ]
 
 [project.optional-dependencies]
