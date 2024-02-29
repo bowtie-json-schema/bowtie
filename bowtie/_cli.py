@@ -17,12 +17,14 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
+from jsonschema_lexer.lexer import (
+    JSONSchemaLexer,  # type: ignore[reportMissingTypeStubs]
+)
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
+from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
-from rich.syntax import Syntax
-from jsonschema_lexer.lexer import JSONSchemaLexer  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
@@ -530,7 +532,10 @@ def _validation_results_table(
                     background_color="default",
                     word_wrap=True,
                 ),
-                *(Text(test_result[each.id].description) for each in implementations),
+                *(
+                    Text(test_result[each.id].description)
+                    for each in implementations
+                ),
             )
 
         table.add_row(
