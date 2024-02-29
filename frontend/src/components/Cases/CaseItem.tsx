@@ -7,6 +7,7 @@ import {
   useTransition,
   useRef,
   RefObject,
+  useContext,
 } from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
@@ -15,12 +16,14 @@ import {
   CaseResult,
   ImplementationData,
 } from "../../data/parseReportData";
+import { ThemeContext } from "../../context/ThemeContext";
 
 interface CaseProps {
   seq: number;
   caseData: Case;
   schemaDisplayRef?: RefObject<HTMLDivElement>;
   implementations: ImplementationData[];
+  searchText: string;
 }
 
 const CaseContent = ({
@@ -97,10 +100,38 @@ const CaseContent = ({
   );
 };
 
-const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
+const CaseItem = ({ seq, caseData, implementations, searchText }: CaseProps) => {
   const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
+  const { isDarkMode, } = useContext(ThemeContext);
+
+
+  const highlightDescription = (
+    description: string,
+    searchText: string
+  ): JSX.Element => {
+    if (!searchText) {
+      return <>{description}</>;
+    }
+
+    const regex = new RegExp(`(${searchText})`, "gi");
+    const parts: string[] = description.split(regex);
+    return (
+      <>
+        {parts.map((part, index) =>
+          regex.test(part) ? (
+            <mark key={index} className={`bg-primary p-0 ${isDarkMode ? "text-dark" : "text-light"
+              }`}>
+              {part}
+            </mark>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </>
+    );
+  };
 
   useEffect(() => {
     startTransition(() =>
@@ -110,13 +141,14 @@ const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
           caseData={caseData}
           implementations={implementations}
           schemaDisplayRef={schemaDisplayRef}
+          searchText={searchText}
         />,
       ),
     );
-  }, [seq, caseData, implementations]);
+  }, [seq, caseData, implementations, searchText]);
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
-      <Accordion.Header>{caseData.description}</Accordion.Header>
+      <Accordion.Header>{highlightDescription(caseData.description, searchText)}</Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
   );

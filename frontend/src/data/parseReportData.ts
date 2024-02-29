@@ -247,7 +247,7 @@ export interface Implementation {
 }
 
 export interface Case {
-  description: string | JSX.Element;
+  description: string;
   comment?: string;
   schema: Record<string, unknown> | boolean;
   registry?: Record<string, unknown>;

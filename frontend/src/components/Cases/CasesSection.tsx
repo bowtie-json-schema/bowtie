@@ -42,30 +42,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
         caseData.description.toLowerCase().includes(searchText),
     );
 
-  // Function to highlight search text in description
-  const highlightDescription = (
-    description: string | JSX.Element,
-  ): string | JSX.Element => {
-    if (!searchText) {
-      return <>{description}</>;
-    }
-
-    const regex = new RegExp(`(${searchText})`, "gi");
-    const parts: string[] = (description as string).split(regex);
-    return (
-      <>
-        {parts.map((part, index) =>
-          regex.test(part) ? (
-            <mark key={index} className="bg-primary text-dark">
-              {part}
-            </mark>
-          ) : (
-            <span key={index}>{part}</span>
-          ),
-        )}
-      </>
-    );
-  };
 
   return (
     <div>
@@ -124,11 +100,12 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
                 seq={seq}
                 caseData={{
                   ...caseData,
-                  description: highlightDescription(caseData.description),
+                  description: (caseData.description),
                 }}
                 implementations={Array.from(
                   reportData.implementations.values(),
                 )}
+                searchText={searchText}
               />
             ))}
           </Accordion>
