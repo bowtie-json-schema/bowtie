@@ -1,16 +1,32 @@
+import { useState, useEffect } from "react";
 import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
 import { ReportData, calculateTotals } from "../../data/parseReportData";
 
 const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);
+
+  const [colSpan, setColSpan] = useState(window.innerWidth > 768 ? 2 : 1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setColSpan(window.innerWidth > 768 ? 2 : 1);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
     <div className="table-responsive">
       <table className="table table-hover">
         <thead>
           <tr>
             <th
-              colSpan={2}
+              colSpan={colSpan}
               rowSpan={2}
               scope="col"
               className="text-center align-middle"
@@ -68,7 +84,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                 a.skippedTests -
                 b.failedTests -
                 b.erroredTests -
-                b.skippedTests,
+                b.skippedTests
             )
             .map((implementation, index) => (
               <ImplementationRow
