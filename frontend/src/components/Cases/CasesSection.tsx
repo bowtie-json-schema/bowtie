@@ -42,7 +42,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
         caseData.description.toLowerCase().includes(searchText),
     );
 
-
   return (
     <div>
       <Row className="mt-3">
@@ -100,7 +99,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
                 seq={seq}
                 caseData={{
                   ...caseData,
-                  description: (caseData.description),
+                  description: caseData.description,
                 }}
                 implementations={Array.from(
                   reportData.implementations.values(),

@@ -100,16 +100,20 @@ const CaseContent = ({
   );
 };
 
-const CaseItem = ({ seq, caseData, implementations, searchText }: CaseProps) => {
+const CaseItem = ({
+  seq,
+  caseData,
+  implementations,
+  searchText,
+}: CaseProps) => {
   const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
-  const { isDarkMode, } = useContext(ThemeContext);
-
+  const { isDarkMode } = useContext(ThemeContext);
 
   const highlightDescription = (
     description: string,
-    searchText: string
+    searchText: string,
   ): JSX.Element => {
     if (!searchText) {
       return <>{description}</>;
@@ -121,13 +125,17 @@ const CaseItem = ({ seq, caseData, implementations, searchText }: CaseProps) => 
       <>
         {parts.map((part, index) =>
           regex.test(part) ? (
-            <mark key={index} className={`bg-primary p-0 ${isDarkMode ? "text-dark" : "text-light"
-              }`}>
+            <mark
+              key={index}
+              className={`bg-primary p-0 ${
+                isDarkMode ? "text-dark" : "text-light"
+              }`}
+            >
               {part}
             </mark>
           ) : (
             <span key={index}>{part}</span>
-          )
+          ),
         )}
       </>
     );
@@ -148,7 +156,9 @@ const CaseItem = ({ seq, caseData, implementations, searchText }: CaseProps) => 
   }, [seq, caseData, implementations, searchText]);
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
-      <Accordion.Header>{highlightDescription(caseData.description, searchText)}</Accordion.Header>
+      <Accordion.Header>
+        {highlightDescription(caseData.description, searchText)}
+      </Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
   );
