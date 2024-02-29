@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -334,9 +335,21 @@ def requirements(session):
 def ui(session):
     """
     Run a local development UI.
+
+    You can use `nox -s ui -- --pr 123` to automatically checkout a pull
+    request.
     """
     _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "start", external=True)
+
+    with ExitStack() as stack:
+        if session.posargs[0] == "--pr":
+            _, pr = session.posargs
+            session.run("gh", "pr", "checkout", pr, external=True)
+            stack.callback(
+                lambda: session.run("git", "switch", "-", external=True),
+            )
+
+        session.run("pnpm", "run", "--dir", UI, "start", external=True)
 
 
 @session(python=False, tags=["ui"], name="ui(audit)")
