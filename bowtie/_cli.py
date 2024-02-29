@@ -21,6 +21,8 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.table import Column, Table
 from rich.text import Text
+from rich.syntax import Syntax
+from jsonschema_lexer.lexer import JSONSchemaLexer  # type: ignore[reportMissingTypeStubs]
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
@@ -57,6 +59,8 @@ _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
+
+JSON_SCHEMA_LEXER = JSONSchemaLexer()
 
 FORMAT = click.option(
     "--format",
@@ -520,14 +524,24 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                Text(json.dumps(test.instance)),
-                *(
-                    Text(test_result[each.id].description)
-                    for each in implementations
+                Syntax(
+                    json.dumps(test.instance),
+                    lexer=JSON_SCHEMA_LEXER,
+                    background_color="default",
+                    word_wrap=True,
                 ),
+                *(Text(test_result[each.id].description) for each in implementations),
             )
 
-        table.add_row(json.dumps(case.schema, indent=2), subtable)
+        table.add_row(
+            Syntax(
+                json.dumps(case.schema, indent=2),
+                lexer=JSON_SCHEMA_LEXER,
+                background_color="default",
+                word_wrap=True,
+            ),
+            subtable,
+        )
         table.add_section()
 
     return table
