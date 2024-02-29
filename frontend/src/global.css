@@ -1,11 +1,9 @@
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+html{
+    scroll-padding-top: 6rem;
 }
 
 @media screen and (max-width: 991px) {
-  html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 18.5rem;
-  }
+    html{
+        scroll-padding-top: 19rem; 
+    }
 }
