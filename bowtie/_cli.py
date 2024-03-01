@@ -730,7 +730,7 @@ IMPLEMENTATION = click.option(
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A docker image which implements the bowtie IO protocol.",
+    help="A container image which implements the bowtie IO protocol.",
 )
 DIALECT = click.option(
     "--dialect",
