@@ -42,7 +42,13 @@ from bowtie._core import (
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Mapping, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Mapping,
+        Sequence,
+        Set,
+    )
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
@@ -56,11 +62,6 @@ _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
-LANG_MAP = {
-    "cpp": "c++",
-    "js": "javascript",
-    "ts": "typescript",
-}
 
 FORMAT = click.option(
     "--format",
@@ -745,50 +746,19 @@ def _implementation_option():
 IMPLEMENTATION = _implementation_option()
 
 
-def _dialect_option():
-    def wrapper(
-        param_decls: list[str] = ["--dialect", "-D", "dialect"],
-        multiple: bool = False,
-        default: Any | None = max(Dialect.known()),
-    ):
-        return click.option(
-            *param_decls,
-            type=_Dialect(),
-            default=default,
-            show_default=True,
-            multiple=multiple,
-            metavar="URI_OR_NAME",
-            help=(
-                "A URI or shortname identifying the dialect of each test. "
-                "Possible shortnames include: "
-                f"{', '.join(sorted(Dialect.by_alias()))}."
-            ),
-        )
-
-    return wrapper
-
-
-DIALECT = _dialect_option()
-
-
-def _get_langs() -> list[str]:
-    known_implementations = list(Implementation.known())
-    langs: set[str] = set()
-    for impl in known_implementations:
-        impl_lang = impl.split("-")[0]
-        langs.add(LANG_MAP.get(impl_lang, impl_lang))
-    return list(langs)
-
-
-LANGUAGE = click.option(
-    "--language",
-    "-l",
-    "languages",
-    help="Filter implementations by programming languages",
-    type=click.Choice(_get_langs()),
-    multiple=True,
+DIALECT = click.option(
+    "--dialect",
+    "-D",
+    "dialect",
+    type=_Dialect(),
+    default=max(Dialect.known()),
+    show_default=True,
+    metavar="URI_OR_NAME",
+    help=(
+        "A URI or shortname identifying the dialect of each test. Possible "
+        f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
+    ),
 )
-
 FILTER = click.option(
     "-k",
     "filter",
@@ -880,7 +850,7 @@ EXPECT = click.option(
 
 @subcommand
 @IMPLEMENTATION()
-@DIALECT()
+@DIALECT
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -911,7 +881,7 @@ def run(
 
 @subcommand
 @IMPLEMENTATION()
-@DIALECT()
+@DIALECT
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -945,42 +915,54 @@ def validate(
     return asyncio.run(_run_cases(fail_fast=False, **kwargs, cases=[case]))
 
 
-@all_implementations_subcommand()  # type: ignore[reportArgumentType]
-@DIALECT(
-    param_decls=["--supports-dialect", "-D", "dialects"],
-    default=None,
-    multiple=True,
+LANGUAGE_ALIASES = {
+    ".net": "dotnet",
+    "c++": "cpp",
+    "javascript": "js",
+    "typescript": "ts",
+}
+KNOWN_LANGUAGES = sorted(
+    {
+        *LANGUAGE_ALIASES,
+        *(i.partition("-")[0] for i in Implementation.known()),
+    },
 )
-@LANGUAGE
+
+
+@all_implementations_subcommand()  # type: ignore[reportArgumentType]
+@click.option(
+    "--supports-dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=frozenset(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help=(
+        "Only include implementations supporting the given dialect or dialect "
+        "short name."
+    ),
+)
+@click.option(
+    "--supports-language",
+    "-l",
+    "languages",
+    type=click.Choice(KNOWN_LANGUAGES, case_sensitive=False),
+    default=KNOWN_LANGUAGES,
+    multiple=True,
+    metavar="LANGUAGE",
+    help="Only include implementations in the given programming language",
+)
 async def filter_implementations(
     implementations: Iterable[Implementation],
-    dialects: Iterable[Dialect] | None,
-    languages: list[str] | None,
+    dialects: Iterable[Dialect],
+    languages: Set[str],
 ):
-    supporting_implementations: list[str] = []
-    dialect_uris = []
-    if dialects:
-        dialect_uris = [(str(d.uri) for d in dialects)]
-
+    dialects = frozenset(dialects)
+    languages = frozenset(languages)
     for each in implementations:
-        metadata = each.info.serializable()
-        implementaion = each.info.id
-
-        if (
-            "dialects" in metadata
-            and (
-                not dialects
-                or all(uri in metadata["dialects"] for uri in dialect_uris)
-            )
-            and (
-                not languages
-                or any(lang == each.info.language for lang in languages)
-            )
-        ):
-            supporting_implementations.append(implementaion)
-
-    for impl in supporting_implementations:
-        click.echo(impl)
+        if dialects < each.info.dialects and each.info.language in languages:
+            click.echo(each.name)
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
