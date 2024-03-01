@@ -264,7 +264,7 @@ class ImplementationInfo:
     homepage: URL
     issues: URL
     source: URL
-    dialects: Set[Dialect]
+    dialects: frozenset[Dialect]
 
     version: str | None = None
     language_version: str | None = None
@@ -514,6 +514,12 @@ class Implementation:
     @property
     def name(self):
         return self.info.id
+
+    def supports(self, *dialects: Dialect) -> bool:
+        """
+        Does the implementation support (all of) the given dialect(s)?
+        """
+        return self.info.dialects.issuperset(dialects)
 
     async def validate(
         self,

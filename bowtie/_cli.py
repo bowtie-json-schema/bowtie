@@ -1082,7 +1082,7 @@ async def _run(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            if dialect in implementation.info.dialects:
+            if implementation.supports(dialect):
                 try:
                     runner = await implementation.start_speaking(dialect)
                 except GotStderr as error:
