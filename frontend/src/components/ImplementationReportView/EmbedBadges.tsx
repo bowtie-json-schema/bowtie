@@ -3,7 +3,7 @@ import { Implementation } from "../../data/parseReportData";
 import CopyToClipboard from "../CopyToClipboard";
 import Dialect from "../../data/Dialect";
 import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
-import { badgeFormatOptions, BadgeFormatOption } from "./BadgeFromats";
+import { badgeFormatOptions, BadgeFormatOption } from "./BadgeFormats";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
@@ -35,7 +35,7 @@ const EmbedBadges: React.FC<{
   return (
     <div className="container dropdown mx-auto mb-3 col-12 col-sm-12 col-md-12">
       <button
-        className="btn btn-success dropdown-toggle"
+        className="btn btn-sm btn-success dropdown-toggle"
         type="button"
         data-bs-toggle="dropdown"
         data-bs-auto-close="outside"
@@ -43,12 +43,12 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3 " style={{ width: "50vw" }}>
+      <ul className="dropdown-menu mx-auto mb-3 " style={{ width: "45vw" }}>
         <li>
           <div className="container ">
             <div className="dropdown d-flex justify-content-center align-items-center py-2">
               <button
-                className="btn btn-primary dropdown-toggle"
+                className="btn btn-sm btn-primary dropdown-toggle"
                 type="button"
                 id="dropdownMenuButton"
                 data-bs-toggle="dropdown"
@@ -64,7 +64,7 @@ const EmbedBadges: React.FC<{
               >
                 <li key={"Supported Versions"}>
                   <button
-                    className={`dropdown-item ${
+                    className={`dropdown-item btn-sm ${
                       activeBadge === "Supported Versions" ? "active" : ""
                     }`}
                     onClick={() => handleSelectBadge("Supported Versions")}
@@ -75,7 +75,7 @@ const EmbedBadges: React.FC<{
                 {results.map((result) => (
                   <li key={result[0]}>
                     <button
-                      className={`dropdown-item ${
+                      className={`dropdown-item btn-sm ${
                         result[0] === activeBadge ? "active" : ""
                       }`}
                       onClick={() => handleSelectBadge(result[0])}
@@ -94,7 +94,7 @@ const EmbedBadges: React.FC<{
                   return (
                     <li className="nav-item" key={index}>
                       <button
-                        className={`nav-link ${
+                        className={`nav-link btn-sm ${
                           activeTab === formatItem.type ? "active" : ""
                         }`}
                         onClick={() => handleSelectTab(formatItem.type)}
@@ -125,7 +125,7 @@ const EmbedBadges: React.FC<{
                             whiteSpace: "nowrap",
                             textOverflow: "hidden",
                             overflowX: "auto",
-                            width: "26vw",
+                            width: "25vw",
                           }}
                         >
                           {formatItem.renderDisplay(badgeURI)}
