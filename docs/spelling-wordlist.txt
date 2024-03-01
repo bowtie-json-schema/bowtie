@@ -27,5 +27,12 @@ tui
 validator
 
 # Language names, which can disappear after we have a Language data file
-dotnet
+clojure
 cpp
+dotnet
+javascript
+js
+kotlin
+lua
+php
+scala
