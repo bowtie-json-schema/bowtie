@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -132,7 +133,7 @@ def build(session):
             )
 
 
-@session(tags=["build"])
+@session(default=False, tags=["build"])
 def app(session):
     """
     Build a PyApp which will run Bowtie.
@@ -334,12 +335,24 @@ def requirements(session):
 def ui(session):
     """
     Run a local development UI.
+
+    You can use `nox -s ui -- --pr 123` to automatically checkout a pull
+    request.
     """
     _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "start", external=True)
+
+    with ExitStack() as stack:
+        if session.posargs[0] == "--pr":
+            _, pr = session.posargs
+            session.run("gh", "pr", "checkout", pr, external=True)
+            stack.callback(
+                lambda: session.run("git", "switch", "-", external=True),
+            )
+
+        session.run("pnpm", "run", "--dir", UI, "start", external=True)
 
 
-@session(python=False, name="ui(audit)")
+@session(python=False, tags=["ui"], name="ui(audit)")
 def ui_audit(session):
     """
     Audit the UI dependencies.
@@ -347,7 +360,7 @@ def ui_audit(session):
     session.run("pnpm", "--dir", UI, "audit", external=True)
 
 
-@session(python=False, name="ui(build)")
+@session(python=False, tags=["build", "ui"], name="ui(build)")
 def ui_build(session):
     """
     Check that the UI properly builds.
@@ -356,7 +369,7 @@ def ui_build(session):
     session.run("pnpm", "run", "--dir", UI, "build", external=True)
 
 
-@session(tags=["style"], python=False, name="ui(style)")
+@session(python=False, tags=["style", "ui"], name="ui(style)")
 def ui_style(session):
     """
     Lint for style on Bowtie's frontend.
@@ -365,7 +378,7 @@ def ui_style(session):
     session.run("pnpm", "run", "--dir", UI, "lint", external=True)
 
 
-@session(name="ui(tests)")
+@session(tags=["ui"], name="ui(tests)")
 def ui_tests(session):
     """
     Run the UI tests.

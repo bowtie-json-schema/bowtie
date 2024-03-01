@@ -113,6 +113,20 @@ Documentation is written in `Sphinx-flavored reStructuredText <sphinx:index>`, s
 Feel free to file issues or pull requests as well if you wish something was better documented, as this too can help prioritize.
 
 
+Building the Documentation Locally
+==================================
+
+The code for the documentation is in the :gh:`docs directory of the Bowtie repository <tree/main/docs>`.
+
+You can build the documentation locally by running the following command from the root of the repository
+
+.. code:: sh
+
+    $ nox -s "docs(dirhtml)" -- dirhtml
+
+which will generate a directory called ``dirhtml`` containing the built HTML.
+
+
 Improving the Contributor's Guide Itself
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

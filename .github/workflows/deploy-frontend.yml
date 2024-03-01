@@ -7,13 +7,8 @@ on:
         required: false
         type: boolean
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend.yml"
-      - ".github/workflows/build-frontend.yml"
+  release:
+    types: [published]
 
 jobs:
   build-frontend:

@@ -3,25 +3,24 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import { createRoot } from "react-dom/client";
 import ReportDataHandler from "./ReportDataHandler";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, Params, RouterProvider } from "react-router-dom";
 import ThemeContextProvider from "./context/ThemeContext";
 import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
-import Dialect from "./data/Dialect";
-import { parseImplementationData, ReportData } from "./data/parseReportData";
-import URI from "urijs";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
-
-const reportHost =
-  import.meta.env.MODE === "development"
-    ? "https://bowtie.report"
-    : window.location.href;
-const reportUri = new URI(reportHost).directory(import.meta.env.BASE_URL);
+import Dialect from "./data/Dialect";
+import { implementationMetadataURI } from "./data/Site";
+import {
+  Implementation,
+  parseImplementationData,
+  ReportData,
+} from "./data/parseReportData";
+import "./global.css";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport(reportUri);
+  return dialect.fetchReport();
 };
 
 const fetchAllReportData = async (langImplementation: string) => {
@@ -31,12 +30,30 @@ const fetchAllReportData = async (langImplementation: string) => {
   for (const dialect of Dialect.known()) {
     promises.push(
       dialect
-        .fetchReport(reportUri)
-        .then((data) => (loaderData[dialect.path] = data)),
+        .fetchReport()
+        .then((data) => (loaderData[dialect.shortName] = data)),
     );
   }
   await Promise.all(promises);
   return parseImplementationData(loaderData);
+};
+
+const fetchImplementationMetadata = async () => {
+  const response = await fetch(implementationMetadataURI);
+  const implementations = (await response.json()) as Record<
+    string,
+    Implementation
+  >;
+  return implementations;
+};
+
+const reportDataLoader = async ({ params }: { params: Params<string> }) => {
+  const draftName = params?.draftName ?? "draft2020-12";
+  const [reportData, allImplementationsData] = await Promise.all([
+    fetchReportData(Dialect.withName(draftName)),
+    fetchImplementationMetadata(),
+  ]);
+  return { reportData, allImplementationsData };
 };
 
 const router = createHashRouter([
@@ -48,13 +65,12 @@ const router = createHashRouter([
       {
         index: true,
         Component: ReportDataHandler,
-        loader: async () => fetchReportData(Dialect.forPath("draft2020-12")),
+        loader: reportDataLoader,
       },
       {
         path: "/dialects/:draftName",
         Component: ReportDataHandler,
-        loader: async ({ params }) =>
-          fetchReportData(Dialect.forPath(params.draftName!)),
+        loader: reportDataLoader,
       },
       {
         path: "/local-report",
