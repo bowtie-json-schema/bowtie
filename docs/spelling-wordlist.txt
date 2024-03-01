@@ -25,10 +25,7 @@ subcommands
 # this "word" (tui) appears nowhere but oh god as usual who wants to debug Sphinx
 tui
 validator
-clojure
+
+# Language names, which can disappear after we have a Language data file
 dotnet
-javascript
-kotlin
-lua
-php
-scala
+cpp
