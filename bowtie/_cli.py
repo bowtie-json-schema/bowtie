@@ -925,17 +925,15 @@ def validate(
 
 
 LANGUAGE_ALIASES = {
-    ".net": "dotnet",
-    "c++": "cpp",
-    "javascript": "js",
-    "typescript": "ts",
+    "dotnet": ".net",
+    "cpp": "c++",
+    "js": "javascript",
+    "ts": "typescript",
 }
-KNOWN_LANGUAGES = sorted(
-    {
-        *LANGUAGE_ALIASES,
-        *(i.partition("-")[0] for i in Implementation.known()),
-    },
-)
+KNOWN_LANGUAGES = {
+    *LANGUAGE_ALIASES.values(),
+    *(i.partition("-")[0] for i in Implementation.known()),
+}
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
@@ -956,8 +954,11 @@ KNOWN_LANGUAGES = sorted(
     "--supports-language",
     "-l",
     "languages",
-    type=click.Choice(KNOWN_LANGUAGES, case_sensitive=False),
-    default=frozenset(KNOWN_LANGUAGES),
+    type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
+    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
+        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    ),
     multiple=True,
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
