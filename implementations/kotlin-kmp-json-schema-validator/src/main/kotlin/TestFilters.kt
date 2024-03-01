@@ -19,15 +19,7 @@ fun getFilter(schemaType: SchemaType?): TestFilter =
         SchemaType.DRAFT_2020_12 -> TestFilterDraft202012
     }
 
-object TestFilterDraft7 : TestFilter {
-
-    override fun shouldSkipCase(caseDescription: String): String? {
-        return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            else -> null
-        }
-    }
-}
+object TestFilterDraft7 : TestFilter
 
 object TestFilterDraft201909 : TestFilter {
 
@@ -37,7 +29,6 @@ object TestFilterDraft201909 : TestFilter {
 
     override fun shouldSkipCase(caseDescription: String): String? {
         return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
             caseDescription in IGNORE_CASES_WITH_MIN_CONTAINS_ZERO ->
                 "'minContains' does not affect contains work - at least one element must match 'contains' schema"
             else -> null
@@ -55,12 +46,4 @@ object TestFilterDraft201909 : TestFilter {
     }
 }
 
-object TestFilterDraft202012 : TestFilter {
-
-    override fun shouldSkipCase(caseDescription: String): String? {
-        return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            else -> null
-        }
-    }
-}
+object TestFilterDraft202012 : TestFilter
