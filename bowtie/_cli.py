@@ -964,7 +964,7 @@ KNOWN_LANGUAGES = sorted(
 )
 async def filter_implementations(
     implementations: Iterable[Implementation],
-    dialects: Iterable[Dialect],
+    dialects: Sequence[Dialect],
     languages: Set[str],
 ):
     """
