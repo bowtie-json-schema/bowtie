@@ -39,16 +39,20 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
-        <Card.Header className="d-flex">
-          <span className="px-1 text-muted">
-            {mapLanguage(implementation.language)}
+        <Card.Header className="d-flex justify-content-between">
+          <span>
+            <span className="px-1 text-muted">
+              {mapLanguage(implementation.language)}
+            </span>
+            <span className="me-3">{implementation.name}</span>
           </span>
-          <span className="me-3">{implementation.name}</span>
-          {Object.entries(implementation.results).length !== 0 ? (
-            <EmbedBadges implementation={implementation} />
-          ) : (
-            <></>
-          )}
+          <span>
+            {Object.entries(implementation.results).length !== 0 ? (
+              <EmbedBadges implementation={implementation} />
+            ) : (
+              ""
+            )}
+          </span>
         </Card.Header>
 
         <Card.Body>
@@ -136,7 +140,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
