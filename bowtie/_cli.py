@@ -606,6 +606,24 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
+class _Image(click.ParamType):
+    """
+    Select a supported Bowtie implementation.
+    """
+
+    name = "implementation"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> str:
+        if "/" in value:  # a fully qualified image name
+            return value
+        return f"{IMAGE_REPOSITORY}/{value}"
+
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -708,7 +726,7 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+    type=_Image(),
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
