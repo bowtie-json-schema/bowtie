@@ -199,7 +199,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             "-i",
             "image_names",
             type=_Image(),
-            callback=lambda _, __, value: (
+            callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
                 value
                 if value
                 else (
@@ -971,7 +971,7 @@ async def filter_implementations(
     Output implementations matching a given criteria.
     """
     for each in implementations:
-        if dialects < each.info.dialects and each.info.language in languages:
+        if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name)
 
 
@@ -1174,7 +1174,7 @@ async def _run(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            if dialect in implementation.info.dialects:
+            if implementation.supports(dialect):
                 try:
                     runner = await implementation.start_speaking(dialect)
                 except GotStderr as error:
