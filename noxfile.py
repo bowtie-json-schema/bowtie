@@ -342,7 +342,7 @@ def ui(session):
     _maybe_install_ui(session)
 
     with ExitStack() as stack:
-        if session.posargs[0] == "--pr":
+        if session.posargs and session.posargs[0] == "--pr":
             _, pr = session.posargs
             session.run("gh", "pr", "checkout", pr, external=True)
             stack.callback(
