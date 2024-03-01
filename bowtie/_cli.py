@@ -952,6 +952,9 @@ async def filter_implementations(
     dialects: Iterable[Dialect] | None,
     languages: list[str] | None,
 ):
+    """
+    Output implementations matching a given criteria.
+    """
     supporting_implementations: list[str] = []
     dialect_uris = []
     if dialects:
