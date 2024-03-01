@@ -186,11 +186,6 @@ def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
         @IMPLEMENTATION(required=False)
         @wraps(fn)
         def cmd(image_names: list[str], **kwargs: Any) -> int:
-            if not kwargs.get("dialects") and not kwargs.get("languages"):
-                raise click.UsageError(
-                    "Please provide either '--supports-dialect' filter "
-                    "or '--language' filter",
-                )
             if sys.stdin.isatty():
                 if not image_names:
                     known_implementations = list(Implementation.known())
