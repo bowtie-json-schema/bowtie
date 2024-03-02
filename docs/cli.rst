@@ -70,7 +70,7 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
 Running the Official Suite Across All Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, and generate an HTML report named :file:`bowtie-report.html` in the current directory:
+The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, showing a summary of any test failures.
 
 .. code:: sh
 
