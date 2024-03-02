@@ -36,7 +36,7 @@ REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
 
 
 # aiohttp / aiodocker don't support 3.12
-SUPPORTED = ["pypy3.10", "3.11"]
+SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
 nox.options.sessions = []
