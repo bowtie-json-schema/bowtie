@@ -1273,12 +1273,11 @@ async def test_filter_given_implementations_lang(
         "--supports-language",
         "python",
     )
-    assert sorted(stdout.splitlines()) == sorted(
-        [
-            tag("envsonschema"),
-            tag("lintsonschema"),
-        ],
-    )
+    output = {
+        "bowtie-integration-tests/envsonschema",
+        "bowtie-integration-tests/lintsonschema",
+    }
+    assert sorted(stdout.splitlines()) == sorted(output)
     assert stderr == ""
 
 
@@ -1299,12 +1298,11 @@ async def test_filter_given_implementations_dialect(
         "--supports-dialect",
         "2020-12",
     )
-    assert sorted(stdout.splitlines()) == sorted(
-        [
-            tag("envsonschema"),
-            tag("lintsonschema"),
-        ],
-    )
+    output = {
+        "bowtie-integration-tests/envsonschema",
+        "bowtie-integration-tests/lintsonschema",
+    }
+    assert sorted(stdout.splitlines()) == sorted(output)
     assert stderr == ""
 
 
@@ -1327,9 +1325,11 @@ async def test_filter_given_implementations_lang_and_dialect(
         "-d",
         "7",
     )
-    assert stdout == [
-        tag("fakejsimpl"),
-    ]
+    assert stdout == dedent(
+        """\
+        bowtie-integration-tests/fakejsimpl
+        """,
+    )
     assert stderr == ""
 
 
