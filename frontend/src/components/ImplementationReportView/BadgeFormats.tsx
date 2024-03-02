@@ -7,13 +7,19 @@ export interface BadgeFormatOption {
 export const badgeFormatOptions: BadgeFormatOption[] = [
   {
     type: "URL",
-    renderDisplay: (badgeURI: string): JSX.Element => <span>{badgeURI}</span>,
+    renderDisplay: (badgeURI: string): JSX.Element => (
+      <span>
+        <pre className="pt-2 pb-2">{badgeURI}</pre>
+      </span>
+    ),
     generateCopyText: (badgeURI: string): string => `${badgeURI}`,
   },
   {
     type: "Markdown",
     renderDisplay: (badgeURI: string): JSX.Element => (
-      <span>![Static Badge]({badgeURI})</span>
+      <span>
+        <pre className="pt-2 pb-2">![Static Badge]({badgeURI})</pre>
+      </span>
     ),
     generateCopyText: (badgeURI: string): string =>
       `![Static Badge](${badgeURI})`,
@@ -22,7 +28,7 @@ export const badgeFormatOptions: BadgeFormatOption[] = [
     type: "rSt",
     renderDisplay: (badgeURI: string): JSX.Element => (
       <span>
-        <pre>
+        <pre className="pt-2 pb-2">
           .. image:: {badgeURI}
           {"\n"} :alt: Static Badge
         </pre>
@@ -34,7 +40,9 @@ export const badgeFormatOptions: BadgeFormatOption[] = [
   {
     type: "AsciiDoc",
     renderDisplay: (badgeURI: string): JSX.Element => (
-      <span>image:{badgeURI}[Static Badge]</span>
+      <span>
+        <pre className="pt-2 pb-2">image:{badgeURI}[Static Badge]</pre>
+      </span>
     ),
     generateCopyText: (badgeURI: string): string =>
       `image:${badgeURI}[Static Badge]`,
@@ -43,9 +51,11 @@ export const badgeFormatOptions: BadgeFormatOption[] = [
     type: "HTML",
     renderDisplay: (badgeURI: string): JSX.Element => (
       <span>
-        &lt;img alt=&quot;Static Badge&quot; src=&quot;
-        {badgeURI}
-        &quot;/&gt;
+        <pre className="pt-2 pb-2">
+          &lt;img alt=&quot;Static Badge&quot; src=&quot;
+          {badgeURI}
+          &quot;/&gt;
+        </pre>
       </span>
     ),
     generateCopyText: (badgeURI: string): string =>

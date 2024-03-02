@@ -10,11 +10,11 @@ const EmbedBadges: React.FC<{
 }> = ({ implementation }) => {
   const results = Object.entries(implementation.results);
   const [activeTab, setActiveTab] = useState("URL");
-  const [activeBadge, setActiveBadge] = useState("Supported Versions");
+  const [activeBadge, setActiveBadge] = useState("JSON Schema Versions");
 
   const handleSelectBadge = (dialectName: string): void => {
     setActiveBadge(dialectName);
-    if (dialectName === "Supported Versions") {
+    if (dialectName === "JSON Schema Versions") {
       setBadgeURI(versionsBadgeFor(implementation).href());
     } else {
       const dialect = Dialect.withName(dialectName);
@@ -23,7 +23,7 @@ const EmbedBadges: React.FC<{
   };
 
   const [badgeURI, setBadgeURI] = useState(
-    versionsBadgeFor(implementation).href(),
+    versionsBadgeFor(implementation).href()
   );
 
   const handleSelectTab = (tabKey: string | null) => {
@@ -43,10 +43,10 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3 " style={{ width: "45vw" }}>
+      <ul className="dropdown-menu mx-auto mb-3 " style={{ width: "50vmin" }}>
         <li>
           <div className="container ">
-            <div className="dropdown d-flex justify-content-center align-items-center py-2">
+            <div className="dropdown d-flex justify-content-center align-items-center pt-4">
               <button
                 className="btn btn-sm btn-primary dropdown-toggle"
                 type="button"
@@ -54,28 +54,31 @@ const EmbedBadges: React.FC<{
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                {activeBadge === "Supported Versions"
-                  ? "Supported Versions"
+                {activeBadge === "JSON Schema Versions"
+                  ? "JSON Schema Versions"
                   : Dialect.withName(activeBadge).prettyName}
               </button>
               <ul
                 className="dropdown-menu"
                 aria-labelledby="dropdownMenuButton"
               >
-                <li key={"Supported Versions"}>
+                <h6 className="dropdown-header">Supported Dialects</h6>
+                <li key={"JSON Schema Versions"}>
                   <button
-                    className={`dropdown-item btn-sm ${
-                      activeBadge === "Supported Versions" ? "active" : ""
+                    className={`dropdown-item btn btn-sm ${
+                      activeBadge === "JSON Schema Versions" ? "active" : ""
                     }`}
-                    onClick={() => handleSelectBadge("Supported Versions")}
+                    onClick={() => handleSelectBadge("JSON Schema Versions")}
                   >
-                    {"Supported Versions"}
+                    {"JSON Schema Versions"}
                   </button>
                 </li>
+                <div className="dropdown-divider"></div>
+                <h6 className="dropdown-header">Compliance Badges</h6>
                 {results.map((result) => (
                   <li key={result[0]}>
                     <button
-                      className={`dropdown-item btn-sm ${
+                      className={`dropdown-item btn btn-sm ${
                         result[0] === activeBadge ? "active" : ""
                       }`}
                       onClick={() => handleSelectBadge(result[0])}
@@ -103,7 +106,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                },
+                }
               )}
             </ul>
             <div className="tab-content mt-2 py-2">
@@ -113,32 +116,32 @@ const EmbedBadges: React.FC<{
                     key={index}
                     className={`tab-pane ${
                       activeTab === formatItem.type ? "active" : ""
-                    } border rounded ps-3 pt-3 px-3`}
-                    style={{ width: "100%" }}
+                    } border rounded  pt-3 px-4`}
+                    style={{ width: "38vmin" }}
                   >
                     <div className="d-flex align-items-center justify-content-center">
-                      <div className="pe-2">
-                        <p
-                          className="font-monospace text-body-secondary"
+                      <div>
+                        <span
+                          className="font-monospace text-body-secondary fs-6 ps-2 d-block"
                           style={{
                             wordWrap: "break-word",
                             whiteSpace: "nowrap",
                             textOverflow: "hidden",
                             overflowX: "auto",
-                            width: "25vw",
+                            width: "23vmin",
                           }}
                         >
                           {formatItem.renderDisplay(badgeURI)}
-                        </p>
+                        </span>
                       </div>
-                      <div className="d-flex ms-auto pb-3">
+                      <div className="d-flex ms-auto pb-4 ps-1">
                         <CopyToClipboard
                           textToCopy={formatItem.generateCopyText(badgeURI)}
                         />
                       </div>
                     </div>
                   </div>
-                ),
+                )
               )}
             </div>
           </div>
