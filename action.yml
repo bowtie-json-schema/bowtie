@@ -9,10 +9,14 @@ inputs:
     required: false
     description: "bowtie version to be installed"
     default: ""
-  installation-timeout:
+  installation-attempts:
     required: false
-    default: "0"
-    description: "time in seconds to wait until the specified version is avaialble in PyPi"
+    default: "5"
+    description: "number of attempts to install bowtie with specified version if this version is not yet avaialble"
+  installation-wait-seconds:
+    required: false
+    default: "10"
+    description: "number of seconds to wait before performing the next installation attempt if current one has failed"
 
 runs:
   using: composite
@@ -30,28 +34,23 @@ runs:
 
     - name: "Install Bowtie ${{ inputs.version }}"
       if: inputs.version != ''
-      run: |
-        # because we don't need to fail if command returns non-zero exit code
-        set +e
-        end_time=$(date +%s --date "${{ inputs.installation-timeout }} seconds")
-        # copy output 5 to stdout
-        exec 5>&1
-        # copy command output to stdout to show to the user
-        command="pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }} 2>&1"
-        output=$(bash -c "$command" | tee /dev/fd/5)
-        while [ $? -ne 0 ] && [ $(date +%s) -lt $end_time ]
-        do
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: ${{ inputs.installation-attempts }}
+        retry_wait_seconds: ${{ inputs.installation-wait-seconds }}
+        shell: bash
+        command: |
+          set +e # do not fail script if command returns non-zero exit code
+          set -o pipefail # keep exit code when using pipes
+          output=$(pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }} 2>&1 | tee /dev/tty)
+          if [ $? -ne 0 ]; then
             grep 'No matching distribution found for bowtie-json-schema' <<< $output
             if [ $? -ne 0 ]; then
                 echo "Error during installation"
                 exit 1
             fi
-            sleep 5
-            echo "Retry installation"
-            output=$(bash -c "$command" | tee /dev/fd/5)
-        done
-        if [ $? -ne 0 ]; then
-            echo "Cannot install bowtie"
-            exit 2
-        fi
-      shell: bash
+            exit 42
+          fi
+        retry_on: error
+        retry_on_exit_code: 42

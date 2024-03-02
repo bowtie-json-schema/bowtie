@@ -72,7 +72,8 @@ jobs:
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
-          installation-timeout: "60"
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
 
       - name: Generate a New Report
         run: |
@@ -102,6 +103,10 @@ jobs:
 
       - name: Install Bowtie
         uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
 
       - name: Generate implementations.json file
         run: |
@@ -123,6 +128,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Bowtie
         uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
 
       - name: Create our Site Structure
         run: mkdir site
