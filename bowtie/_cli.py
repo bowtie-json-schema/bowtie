@@ -61,6 +61,7 @@ _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
+
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
 FORMAT = click.option(
@@ -151,69 +152,70 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
     """
 
     def wrapper(fn: ImplementationSubcommand):
-        @subcommand
-        @IMPLEMENTATION()
-        @TIMEOUT
-        @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
-            return asyncio.run(
-                _run_implementations(
-                    image_names=image_names,
-                    fn=fn,
-                    reporter=reporter,
-                    **kwargs,
-                ),
+        async def run(
+            image_names: list[str],
+            read_timeout_sec: float,
+            make_validator: MakeValidator = make_validator,
+            **kw: Any,
+        ) -> int:
+            exit_code = 0
+            start = _start(
+                image_names=image_names,
+                make_validator=make_validator,
+                reporter=reporter,
+                read_timeout_sec=read_timeout_sec,
             )
 
-        return cmd
+            running: list[Implementation] = []
+            async with start as implementations:
+                for each in implementations:  # FIXME: respect --quiet
+                    try:
+                        implementation = await each
+                    except StartupFailed as err:
+                        exit_code |= _EX_CONFIG
+                        show: list[console.RenderableType] = [err.diagnostic()]
+                        if err.stderr:
+                            stderr = panel.Panel(err.stderr, title="stderr")
+                            show.append(stderr)
+                        rich.print(*show, file=sys.stderr)
+                        continue
+                    except NoSuchImplementation as err:
+                        exit_code |= _EX_CONFIG
+                        rich.print(err.diagnostic(), file=sys.stderr)
+                        continue
 
-    return wrapper
+                    running.append(implementation)
 
-
-def all_implementations_subcommand(reporter: _report.Reporter = SILENT):
-    """
-    Define a Bowtie subcommand which starts up all implementations.
-
-    Runs the wrapped function with only the successfully started
-    implementations.
-    """
-
-    def build_images_list(implementations: list[str]) -> list[str]:
-        return [f"{IMAGE_REPOSITORY}/{impl}" for impl in implementations]
-
-    def wrapper(fn: ImplementationSubcommand):
-        @subcommand
-        @TIMEOUT
-        @IMPLEMENTATION(required=False)
-        @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
-            if not kwargs.get("dialects") and not kwargs.get("languages"):
-                raise click.UsageError(
-                    "Please provide either '--supports-dialect' filter "
-                    "or '--language' filter",
-                )
-            if sys.stdin.isatty():
-                if not image_names:
-                    known_implementations = list(Implementation.known())
-                    images: list[str] = build_images_list(
-                        known_implementations,
-                    )
+                if running:
+                    exit_code |= await fn(implementations=running, **kw) or 0
                 else:
-                    images = image_names
-            else:
-                implementations = [
-                    line.rstrip("/")
-                    for line in sys.stdin.read().strip().split("\n")
-                ]
-                images: list[str] = build_images_list(implementations)
-            return asyncio.run(
-                _run_implementations(
-                    image_names=images,
-                    fn=fn,
-                    reporter=reporter,
-                    **kwargs,
-                ),
-            )
+                    exit_code |= _EX_CONFIG
+
+            return exit_code
+
+        @subcommand
+        @click.option(
+            "--implementation",
+            "-i",
+            "image_names",
+            type=_Image(),
+            callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+                value
+                if value
+                else (
+                    Implementation.known()
+                    if sys.stdin.isatty()
+                    else list(sys.stdin)
+                )
+            ),
+            multiple=True,
+            metavar="IMPLEMENTATION",
+            help="A container image which implements the bowtie IO protocol.",
+        )
+        @TIMEOUT
+        @wraps(fn)
+        def cmd(image_names: list[str], **kwargs: Any) -> int:
+            return asyncio.run(run(image_names=image_names, **kwargs))
 
         return cmd
 
@@ -627,6 +629,24 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
+class _Image(click.ParamType):
+    """
+    Select a supported Bowtie implementation.
+    """
+
+    name = "implementation"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> str:
+        if "/" in value:  # a fully qualified image name
+            return value
+        return f"{IMAGE_REPOSITORY}/{value}"
+
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -725,27 +745,16 @@ def _check_fail_fast_provided(
     return value
 
 
-def _implementation_option():
-    def wrapper(required: bool = True):
-        return click.option(
-            "--implementation",
-            "-i",
-            "image_names",
-            type=lambda name: (  # type: ignore[reportUnknownLambdaType]
-                name if "/" in name else f"{IMAGE_REPOSITORY}/{name}"
-            ),
-            required=required,
-            multiple=True,
-            metavar="IMPLEMENTATION",
-            help="A docker image which implements the bowtie IO protocol.",
-        )
-
-    return wrapper
-
-
-IMPLEMENTATION = _implementation_option()
-
-
+IMPLEMENTATION = click.option(
+    "--implementation",
+    "-i",
+    "image_names",
+    type=_Image(),
+    required=True,
+    multiple=True,
+    metavar="IMPLEMENTATION",
+    help="A container image which implements the bowtie IO protocol.",
+)
 DIALECT = click.option(
     "--dialect",
     "-D",
@@ -849,7 +858,7 @@ EXPECT = click.option(
 
 
 @subcommand
-@IMPLEMENTATION()
+@IMPLEMENTATION
 @DIALECT
 @FILTER
 @FAIL_FAST
@@ -876,11 +885,11 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return asyncio.run(_run_cases(**kwargs, cases=cases, dialect=dialect))
+    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
 @subcommand
-@IMPLEMENTATION()
+@IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
@@ -912,24 +921,22 @@ def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    return asyncio.run(_run_cases(fail_fast=False, **kwargs, cases=[case]))
+    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
 LANGUAGE_ALIASES = {
-    ".net": "dotnet",
-    "c++": "cpp",
-    "javascript": "js",
-    "typescript": "ts",
+    "dotnet": ".net",
+    "cpp": "c++",
+    "js": "javascript",
+    "ts": "typescript",
 }
-KNOWN_LANGUAGES = sorted(
-    {
-        *LANGUAGE_ALIASES,
-        *(i.partition("-")[0] for i in Implementation.known()),
-    },
-)
+KNOWN_LANGUAGES = {
+    *LANGUAGE_ALIASES.values(),
+    *(i.partition("-")[0] for i in Implementation.known()),
+}
 
 
-@all_implementations_subcommand()  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "--supports-dialect",
     "-d",
@@ -947,21 +954,25 @@ KNOWN_LANGUAGES = sorted(
     "--supports-language",
     "-l",
     "languages",
-    type=click.Choice(KNOWN_LANGUAGES, case_sensitive=False),
-    default=KNOWN_LANGUAGES,
+    type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
+    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
+        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    ),
     multiple=True,
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
 )
 async def filter_implementations(
     implementations: Iterable[Implementation],
-    dialects: Iterable[Dialect],
+    dialects: Sequence[Dialect],
     languages: Set[str],
 ):
-    dialects = frozenset(dialects)
-    languages = frozenset(languages)
+    """
+    Output implementations matching a given criteria.
+    """
     for each in implementations:
-        if dialects < each.info.dialects and each.info.language in languages:
+        if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name)
 
 
@@ -1085,7 +1096,7 @@ async def smoke(
 
 
 @subcommand
-@IMPLEMENTATION()
+@IMPLEMENTATION
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -1127,57 +1138,11 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    task = _run_cases(
-        **kwargs,
-        dialect=dialect,
-        cases=cases,
-        run_metadata=metadata,
-    )
+    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
     return asyncio.run(task)
 
 
-async def _run_implementations(
-    image_names: list[str],
-    read_timeout_sec: float,
-    fn: ImplementationSubcommand,
-    reporter: _report.Reporter = SILENT,
-    make_validator: MakeValidator = make_validator,
-    **kw: Any,
-) -> int:
-    exit_code = 0
-    start = _start(
-        image_names=image_names,
-        make_validator=make_validator,
-        reporter=reporter,
-        read_timeout_sec=read_timeout_sec,
-    )
-
-    running: list[Implementation] = []
-    async with start as implementations:
-        for each in implementations:  # FIXME: respect --quiet
-            try:
-                implementation = await each
-            except StartupFailed as err:
-                exit_code |= _EX_CONFIG
-                stderr = panel.Panel(err.stderr, title="stderr")
-                rich.print(err.diagnostic(), stderr, file=sys.stderr)
-                continue
-            except NoSuchImplementation as err:
-                exit_code |= _EX_CONFIG
-                rich.print(err.diagnostic(), file=sys.stderr)
-                continue
-
-            running.append(implementation)
-
-        if running:
-            exit_code |= await fn(implementations=running, **kw) or 0
-        else:
-            exit_code |= _EX_CONFIG
-
-    return exit_code
-
-
-async def _run_cases(
+async def _run(
     image_names: list[str],
     cases: Iterable[TestCase],
     dialect: Dialect,
@@ -1210,7 +1175,7 @@ async def _run_cases(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            if dialect in implementation.info.dialects:
+            if implementation.supports(dialect):
                 try:
                     runner = await implementation.start_speaking(dialect)
                 except GotStderr as error:
