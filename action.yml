@@ -7,12 +7,12 @@ branding:
 inputs:
   version:
     required: false
-    description: 'bowtie version to be installed'
-    default: ''
+    description: "bowtie version to be installed"
+    default: ""
   installation-timeout:
     required: false
-    default: '0'
-    description: 'time in seconds to wait until the specified version is avaialble in PyPi'
+    default: "0"
+    description: "time in seconds to wait until the specified version is avaialble in PyPi"
 
 runs:
   using: composite

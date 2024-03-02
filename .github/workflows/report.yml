@@ -10,7 +10,7 @@ on:
       bowtie-version:
         type: string
         required: false
-        default: ''
+        default: ""
   workflow_dispatch:
   schedule:
     # Every 6 hours, at 15 past the hour
@@ -72,7 +72,7 @@ jobs:
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
-          installation-timeout: '60'
+          installation-timeout: "60"
 
       - name: Generate a New Report
         run: |
