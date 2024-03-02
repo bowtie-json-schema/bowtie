@@ -36,7 +36,7 @@ REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
 
 
 # aiohttp / aiodocker don't support 3.12
-SUPPORTED = ["pypy3.10", "3.11"]
+SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
 nox.options.sessions = []
@@ -342,7 +342,7 @@ def ui(session):
     _maybe_install_ui(session)
 
     with ExitStack() as stack:
-        if session.posargs[0] == "--pr":
+        if session.posargs and session.posargs[0] == "--pr":
             _, pr = session.posargs
             session.run("gh", "pr", "checkout", pr, external=True)
             stack.callback(

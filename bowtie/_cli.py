@@ -606,6 +606,24 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
+class _Image(click.ParamType):
+    """
+    Select a supported Bowtie implementation.
+    """
+
+    name = "implementation"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> str:
+        if "/" in value:  # a fully qualified image name
+            return value
+        return f"{IMAGE_REPOSITORY}/{value}"
+
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -708,11 +726,11 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+    type=_Image(),
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A docker image which implements the bowtie IO protocol.",
+    help="A container image which implements the bowtie IO protocol.",
 )
 DIALECT = click.option(
     "--dialect",
@@ -1082,7 +1100,7 @@ async def _run(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            if dialect in implementation.info.dialects:
+            if implementation.supports(dialect):
                 try:
                     runner = await implementation.start_speaking(dialect)
                 except GotStderr as error:
