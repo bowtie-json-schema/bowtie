@@ -302,7 +302,13 @@ only_draft3 = shellplementation(
     printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
-
+fakejsimpl = shellplementation(
+    name="fakejsimpl",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "fakejsimpl", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
+    """,  # noqa: E501
+)
 
 def _failed(message, stderr):
     indented = indent(stderr.decode(), prefix=" " * 2)
@@ -1248,6 +1254,79 @@ async def test_info_unsuccessful_start(succeed_immediately):
     assert stdout == ""
     assert "failed to start" in stderr.lower(), stderr
 
+@pytest.mark.asyncio
+async def test_filter_given_implementations_lang(
+    envsonschema,
+    lintsonschema,
+    fakejsimpl,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fakejsimpl,
+        "--supports-language",
+        "python",
+    )
+    output = {
+        "bowtie-integration-tests/envsonschema",
+        "bowtie-integration-tests/lintsonschema",
+    }
+    assert set(stdout.splitlines()) == output
+    assert stderr == ""
+
+@pytest.mark.asyncio
+async def test_filter_given_implementations_dialect(
+    envsonschema,
+    lintsonschema,
+    fakejsimpl,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fakejsimpl,
+        "--supports-dialect",
+        "2020-12",
+    )
+    output = {
+        "bowtie-integration-tests/envsonschema",
+        "bowtie-integration-tests/lintsonschema",
+    }
+    assert set(stdout.splitlines()) == output
+    assert stderr == ""
+
+@pytest.mark.asyncio
+async def test_filter_given_implementations_lang_and_dialect(
+    envsonschema,
+    lintsonschema,
+    fakejsimpl,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fakejsimpl,
+        "-l",
+        "javascript",
+        "-d",
+        "7",
+    )
+    assert stdout == dedent(
+        """\
+        bowtie-integration-tests/fakejsimpl
+        """,
+    )
+    assert stderr == ""
 
 @pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):

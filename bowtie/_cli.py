@@ -925,7 +925,6 @@ def validate(
 
 
 LANGUAGE_ALIASES = {
-    "dotnet": ".net",
     "cpp": "c++",
     "js": "javascript",
     "ts": "typescript",
