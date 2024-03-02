@@ -1277,7 +1277,7 @@ async def test_filter_given_implementations_lang(
         [
             tag("envsonschema"),
             tag("lintsonschema"),
-        ]
+        ],
     )
     assert stderr == ""
 
@@ -1303,7 +1303,7 @@ async def test_filter_given_implementations_dialect(
         [
             tag("envsonschema"),
             tag("lintsonschema"),
-        ]
+        ],
     )
     assert stderr == ""
 
