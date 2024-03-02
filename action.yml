@@ -27,7 +27,7 @@ runs:
       if: inputs.version == ''
       run: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema
       shell: bash
-    
+
     - name: "Install Bowtie ${{ inputs.version }}"
       if: inputs.version != ''
       run: |
