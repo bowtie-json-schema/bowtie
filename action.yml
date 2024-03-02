@@ -4,6 +4,15 @@ author: "Julian Berman"
 branding:
   icon: package
   color: blue
+inputs:
+  version:
+    required: false
+    description: 'bowtie version to be installed'
+    default: ''
+  installation-timeout:
+    required: false
+    default: '0'
+    description: 'time in seconds to wait until the specified version is avaialble in PyPi'
 
 runs:
   using: composite
@@ -14,6 +23,35 @@ runs:
         python-version: "3.10 - 3.11"
         update-environment: false
 
-    - name: "Install Bowtie"
+    - name: "Install latest Bowtie"
+      if: inputs.version == ''
       run: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema
+      shell: bash
+    
+    - name: "Install Bowtie ${{ inputs.version }}"
+      if: inputs.version != ''
+      run: |
+        # because we don't need to fail if command returns non-zero exit code
+        set +e
+        end_time=$(date +%s --date "${{ inputs.installation-timeout }} seconds")
+        # copy output 5 to stdout
+        exec 5>&1
+        # copy command output to stdout to show to the user
+        command="pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }} 2>&1"
+        output=$(bash -c "$command" | tee /dev/fd/5)
+        while [ $? -ne 0 ] && [ $(date +%s) -lt $end_time ]
+        do
+            grep 'No matching distribution found for bowtie-json-schema' <<< $output
+            if [ $? -ne 0 ]; then
+                echo "Error during installation"
+                exit 1
+            fi
+            sleep 5
+            echo "Retry installation"
+            output=$(bash -c "$command" | tee /dev/fd/5)
+        done
+        if [ $? -ne 0 ]; then
+            echo "Cannot install bowtie"
+            exit 2
+        fi
       shell: bash

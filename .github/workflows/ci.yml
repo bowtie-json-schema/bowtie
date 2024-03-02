@@ -107,6 +107,9 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+
     environment:
       name: PyPI
       url: https://pypi.org/p/bowtie-json-schema
@@ -144,8 +147,14 @@ jobs:
           files: |
             app/bowtie*
           generate_release_notes: true
+      - name: Current version
+        id: version
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
   report:
     needs: packaging
     uses: ./.github/workflows/report.yml
+    with:
+      bowtie-version: ${{ needs.packaging.outputs.version }}
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
