@@ -1324,7 +1324,7 @@ async def test_filter_given_implementations_lang_and_dialect(
         "7",
     )
     assert stdout == {
-        tag("fakejsimpl")
+        tag("fakejsimpl"),
     }
     assert stderr == ""
 
