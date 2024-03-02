@@ -310,6 +310,7 @@ fakejsimpl = shellplementation(
     """,  # noqa: E501
 )
 
+
 def _failed(message, stderr):
     indented = indent(stderr.decode(), prefix=" " * 2)
     pytest.fail(f"{message}. stderr contained:\n\n{indented}")
@@ -1254,6 +1255,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
     assert stdout == ""
     assert "failed to start" in stderr.lower(), stderr
 
+
 @pytest.mark.asyncio
 async def test_filter_given_implementations_lang(
     envsonschema,
@@ -1278,6 +1280,7 @@ async def test_filter_given_implementations_lang(
     assert set(stdout.splitlines()) == output
     assert stderr == ""
 
+
 @pytest.mark.asyncio
 async def test_filter_given_implementations_dialect(
     envsonschema,
@@ -1301,6 +1304,7 @@ async def test_filter_given_implementations_dialect(
     }
     assert set(stdout.splitlines()) == output
     assert stderr == ""
+
 
 @pytest.mark.asyncio
 async def test_filter_given_implementations_lang_and_dialect(
@@ -1327,6 +1331,7 @@ async def test_filter_given_implementations_lang_and_dialect(
         """,
     )
     assert stderr == ""
+
 
 @pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):
