@@ -1273,10 +1273,12 @@ async def test_filter_given_implementations_lang(
         "--supports-language",
         "python",
     )
-    assert sorted(stdout.splitlines()) == sorted([
-        tag("envsonschema"),
-        tag("lintsonschema"),
-    ])
+    assert sorted(stdout.splitlines()) == sorted(
+        [
+            tag("envsonschema"),
+            tag("lintsonschema"),
+        ]
+    )
     assert stderr == ""
 
 
@@ -1297,10 +1299,12 @@ async def test_filter_given_implementations_dialect(
         "--supports-dialect",
         "2020-12",
     )
-    assert sorted(stdout.splitlines()) == sorted([
-        tag("envsonschema"),
-        tag("lintsonschema"),
-    ])
+    assert sorted(stdout.splitlines()) == sorted(
+        [
+            tag("envsonschema"),
+            tag("lintsonschema"),
+        ]
+    )
     assert stderr == ""
 
 
