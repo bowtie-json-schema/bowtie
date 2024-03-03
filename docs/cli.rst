@@ -28,6 +28,21 @@ The `bowtie validate <cli:validate>` subcommand can be used to test arbitrary sc
 
 Given some collection of implementations to check -- here perhaps two Javascript implementations -- it takes a single schema and one or more instances to check against it:
 
+.. testsetup:: *
+
+    import asyncio
+
+    async def run_command(command: str = ""):
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            executable='/bin/bash'
+        )
+        stdout, _ = await process.communicate()
+        return stdout.decode()
+
 .. testcode:: *
 
     bowtie_validate = 'bowtie validate -i js-ajv -i js-hyperjump <(printf \'{"type": "integer"}\') <(printf 37) <(printf \'"foo"\') | bowtie summary --format pretty'

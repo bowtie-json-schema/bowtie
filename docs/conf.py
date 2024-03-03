@@ -38,20 +38,6 @@ extensions = [
     "sphinxcontrib.spelling",
     "sphinxext.opengraph",
 ]
-doctest_global_setup = """
-import asyncio
-
-async def run_command(command: str = ""):
-    process = await asyncio.create_subprocess_shell(
-        command,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        executable='/bin/bash'
-    )
-    stdout, _ = await process.communicate()
-    return stdout.decode()
-"""
 
 pygments_style = "lovelace"
 pygments_dark_style = "one-dark"
