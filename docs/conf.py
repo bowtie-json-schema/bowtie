@@ -38,7 +38,7 @@ extensions = [
     "sphinxcontrib.spelling",
     "sphinxext.opengraph",
 ]
-doctest_global_setup = '''
+doctest_global_setup = """
 import asyncio
 
 async def run_command(command: str = ""):
@@ -51,7 +51,7 @@ async def run_command(command: str = ""):
     )
     stdout, _ = await process.communicate()
     return stdout.decode()
-'''
+"""
 
 pygments_style = "lovelace"
 pygments_dark_style = "one-dark"
