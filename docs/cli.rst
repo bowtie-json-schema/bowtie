@@ -28,6 +28,28 @@ The `bowtie validate <cli:validate>` subcommand can be used to test arbitrary sc
 
 Given some collection of implementations to check -- here perhaps two Javascript implementations -- it takes a single schema and one or more instances to check against it:
 
+.. testcode:: *
+
+    bowtie_validate = 'bowtie validate -i js-ajv -i js-hyperjump <(printf \'{"type": "integer"}\') <(printf 37) <(printf \'"foo"\') | bowtie summary --format pretty'
+    print(asyncio.run(run_command(command=bowtie_validate)))
+
+.. testoutput:: *
+   :options: +NORMALIZE_WHITESPACE
+
+                                         Bowtie
+    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Schema              ┃                                                        ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │                     │                                                        │
+    │                     │                                 hyperjump-json-sche…   │
+    │ {                   │   Instance   ajv (javascript)   (javascript)           │
+    │   "type": "integer" │  ────────────────────────────────────────────────────  │
+    │ }                   │   37         valid              valid                  │
+    │                     │   "foo"      invalid            invalid                │
+    │                     │                                                        │
+    └─────────────────────┴────────────────────────────────────────────────────────┘
+                                      2 tests ran
+
 .. code:: sh
 
     $ bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"')
@@ -41,20 +63,19 @@ For summarizing the results in the terminal however, the above command when summ
 .. code:: sh
 
     $ bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"') | bowtie summary
-    2023-11-02 15:43.10 [debug    ] Will speak                     dialect=https://json-schema.org/draft/2020-12/schema
-    2023-11-02 15:43.10 [info     ] Finished                       count=1
-                                            Bowtie
-    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Schema              ┃                                                              ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │                     │                                                              │
-    │ {                   │   Instance   ajv (javascript)   hyperjump-jsv (javascript)   │
-    │   "type": "integer" │  ──────────────────────────────────────────────────────────  │
-    │ }                   │   37         valid              valid                        │
-    │                     │   "foo"      invalid            invalid                      │
-    │                     │                                                              │
-    └─────────────────────┴──────────────────────────────────────────────────────────────┘
-                                        2 tests ran
+                                         Bowtie
+    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Schema              ┃                                                        ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │                     │                                                        │
+    │                     │                                 hyperjump-json-sche…   │
+    │ {                   │   Instance   ajv (javascript)   (javascript)           │
+    │   "type": "integer" │  ────────────────────────────────────────────────────  │
+    │ }                   │   37         valid              valid                  │
+    │                     │   "foo"      invalid            invalid                │
+    │                     │                                                        │
+    └─────────────────────┴────────────────────────────────────────────────────────┘
+                                      2 tests ran
 
 
 Running a Single Test Suite File
@@ -62,9 +83,32 @@ Running a Single Test Suite File
 
 To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementation, run:
 
+.. testcode:: *
+
+    single_test_suite = 'bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures --format pretty'
+    print(asyncio.run(run_command(command=single_test_suite)))
+
+.. testoutput:: *
+   :options: +NORMALIZE_WHITESPACE
+
+                        Bowtie
+    ┏━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┓
+    ┃ Implementation   ┃ Skips ┃ Errors ┃ Failures ┃
+    ┡━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━━━┩
+    │ jsonschema (lua) │ 0     │ 0      │ 2        │
+    └──────────────────┴───────┴────────┴──────────┘
+                    80 tests ran
+
 .. code:: sh
 
     $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
+                        Bowtie
+    ┏━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┓
+    ┃ Implementation   ┃ Skips ┃ Errors ┃ Failures ┃
+    ┡━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━━━┩
+    │ jsonschema (lua) │ 0     │ 0      │ 2        │
+    └──────────────────┴───────┴────────┴──────────┘
+                    80 tests ran
 
 
 Running the Official Suite Across All Implementations
@@ -72,9 +116,68 @@ Running the Official Suite Across All Implementations
 
 The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, showing a summary of any test failures.
 
+.. testcode:: *
+
+    draft7_tests = "bowtie suite $(ls implementations/ | sed 's/^/\\-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures --format pretty"
+    print(asyncio.run(run_command(command=draft7_tests)))
+
+.. testoutput:: *
+   :options: +NORMALIZE_WHITESPACE
+
+                                        Bowtie
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┓
+    ┃ Implementation                                   ┃ Skips ┃ Errors ┃ Failures ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━━━┩
+    │ boon (rust)                                      │ 0     │ 0      │ 0        │
+    │ io.openapiprocessor.json-schema-validator (java) │ 0     │ 0      │ 0        │
+    │ json-schema-validator (java)                     │ 0     │ 0      │ 0        │
+    │ json_schemer (ruby)                              │ 0     │ 0      │ 0        │
+    │ jsonschema (python)                              │ 0     │ 0      │ 0        │
+    │ jsonschema (go)                                  │ 0     │ 0      │ 0        │
+    │ kmp-json-schema-validator (kotlin)               │ 0     │ 0      │ 0        │
+    │ JsonSchema.Net (dotnet)                          │ 1     │ 0      │ 0        │
+    │ jsonschema (javascript)                          │ 0     │ 10     │ 0        │
+    │ hyperjump-json-schema (javascript)               │ 11    │ 0      │ 0        │
+    │ jsonschema (rust)                                │ 0     │ 12     │ 6        │
+    │ opis-json-schema (php)                           │ 0     │ 20     │ 2        │
+    │ vscode-json-language-service (typescript)        │ 0     │ 0      │ 49       │
+    │ gojsonschema (go)                                │ 0     │ 20     │ 35       │
+    │ jsonschema (lua)                                 │ 0     │ 63     │ 21       │
+    │ jsonschemafriend (java)                          │ 0     │ 78     │ 6        │
+    │ valijson (c++)                                   │ 0     │ 67     │ 17       │
+    │ fastjsonschema (python)                          │ 0     │ 67     │ 31       │
+    │ ajv (javascript)                                 │ 0     │ 131    │ 8        │
+    └──────────────────────────────────────────────────┴───────┴────────┴──────────┘
+                                    906 tests ran
+
 .. code:: sh
 
     $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
+                                        Bowtie
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━━━┓
+    ┃ Implementation                                   ┃ Skips ┃ Errors ┃ Failures ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━━━┩
+    │ boon (rust)                                      │ 0     │ 0      │ 0        │
+    │ io.openapiprocessor.json-schema-validator (java) │ 0     │ 0      │ 0        │
+    │ json-schema-validator (java)                     │ 0     │ 0      │ 0        │
+    │ json_schemer (ruby)                              │ 0     │ 0      │ 0        │
+    │ jsonschema (python)                              │ 0     │ 0      │ 0        │
+    │ jsonschema (go)                                  │ 0     │ 0      │ 0        │
+    │ kmp-json-schema-validator (kotlin)               │ 0     │ 0      │ 0        │
+    │ JsonSchema.Net (dotnet)                          │ 1     │ 0      │ 0        │
+    │ jsonschema (javascript)                          │ 0     │ 10     │ 0        │
+    │ hyperjump-json-schema (javascript)               │ 11    │ 0      │ 0        │
+    │ jsonschema (rust)                                │ 0     │ 12     │ 6        │
+    │ opis-json-schema (php)                           │ 0     │ 20     │ 2        │
+    │ vscode-json-language-service (typescript)        │ 0     │ 0      │ 49       │
+    │ gojsonschema (go)                                │ 0     │ 20     │ 35       │
+    │ jsonschema (lua)                                 │ 0     │ 63     │ 21       │
+    │ jsonschemafriend (java)                          │ 0     │ 78     │ 6        │
+    │ valijson (c++)                                   │ 0     │ 67     │ 17       │
+    │ fastjsonschema (python)                          │ 0     │ 67     │ 31       │
+    │ ajv (javascript)                                 │ 0     │ 131    │ 8        │
+    └──────────────────────────────────────────────────┴───────┴────────┴──────────┘
+                                    906 tests ran
 
 
 Running Test Suite Tests From Local Checkouts
@@ -93,10 +196,22 @@ Checking An Implementation Functions On Basic Input
 If you wish to verify that a particular implementation works on your machine (e.g. if you suspect a problem with the container image, or otherwise aren't seeing results), you can run `bowtie smoke <cli:smoke>`.
 E.g., to verify the Golang ``jsonschema`` implementation is functioning, you can run:
 
+.. testcode:: *
+
+    smoke_go_jsonschema = "bowtie smoke -i go-jsonschema --format pretty"
+    print(asyncio.run(run_command(command=smoke_go_json)))
+
+.. testoutput:: *
+   :options: +NORMALIZE_WHITESPACE
+
+    · allow-everything: ✓✓✓✓✓✓
+    · allow-nothing: ✓✓✓✓✓✓
+
 .. code:: sh
 
    $ bowtie smoke -i go-jsonschema
-
+    · allow-everything: ✓✓✓✓✓✓
+    · allow-nothing: ✓✓✓✓✓✓
 
 Reference
 ---------
