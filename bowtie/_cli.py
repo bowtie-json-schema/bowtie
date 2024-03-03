@@ -203,9 +203,13 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
                 value
                 if value
                 else (
-                    Implementation.known()
+                    _Image.convert_list(
+                        list(Implementation.known()),
+                    )
                     if sys.stdin.isatty()
-                    else list(sys.stdin)
+                    else _Image.convert_list(
+                        list(sys.stdin),
+                    )
                 )
             ),
             multiple=True,
@@ -645,6 +649,17 @@ class _Image(click.ParamType):
         if "/" in value:  # a fully qualified image name
             return value
         return f"{IMAGE_REPOSITORY}/{value}"
+
+    @classmethod
+    def convert_list(
+        cls,
+        implementations: list[str],
+    ) -> list[str]:
+        return [
+            impl if "/" in impl
+            else f"{IMAGE_REPOSITORY}/{impl}"
+            for impl in implementations
+        ]
 
 
 class _Dialect(click.ParamType):
