@@ -65,7 +65,6 @@ _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
-
 FORMAT = click.option(
     "--format",
     "-f",
