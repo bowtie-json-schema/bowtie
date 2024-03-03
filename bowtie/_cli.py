@@ -656,8 +656,7 @@ class _Image(click.ParamType):
         implementations: list[str],
     ) -> list[str]:
         return [
-            impl if "/" in impl
-            else f"{IMAGE_REPOSITORY}/{impl}"
+            impl if "/" in impl else f"{IMAGE_REPOSITORY}/{impl}"
             for impl in implementations
         ]
 
