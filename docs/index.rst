@@ -38,6 +38,7 @@ Installation
    Both :github:`GitHub Codespaces <features/codespaces>` and `GitPod <https://gitpod.io/>`_ can provide you with an immediate, fully-working cloud environment with Bowtie and all of its supported implementations installed into it:
 
    |codespaces|
+
    |gitpod|
 
 
