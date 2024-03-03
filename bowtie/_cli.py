@@ -17,7 +17,7 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
-from jsonschema_lexer.lexer import (  # type: ignore[reportMissingTypeStubs]
+from jsonschema_lexer import (  # type: ignore[reportMissingTypeStubs]
     JSONSchemaLexer,
 )
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
@@ -65,8 +65,6 @@ _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
-JSON_LEXER = JsonLexer()
-JSON_SCHEMA_LEXER = JSONSchemaLexer()
 
 FORMAT = click.option(
     "--format",
@@ -532,7 +530,7 @@ def _validation_results_table(
             subtable.add_row(
                 Syntax(
                     json.dumps(test.instance),
-                    lexer=JSON_LEXER,
+                    lexer=JsonLexer(),
                     background_color="default",
                     word_wrap=True,
                 ),
@@ -545,7 +543,7 @@ def _validation_results_table(
         table.add_row(
             Syntax(
                 json.dumps(case.schema, indent=2),
-                lexer=JSON_SCHEMA_LEXER,
+                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
                 background_color="default",
                 word_wrap=True,
             ),
