@@ -206,18 +206,8 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             "-i",
             "image_names",
             type=_Image(),
-            callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-                value
-                if value
-                else (
-                    _Image.convert_list(
-                        list(Implementation.known()),
-                    )
-                    if sys.stdin.isatty()
-                    else _Image.convert_list(
-                        list(sys.stdin),
-                    )
-                )
+            default=lambda: (
+                Implementation.known() if sys.stdin.isatty() else sys.stdin
             ),
             multiple=True,
             metavar="IMPLEMENTATION",
@@ -669,16 +659,6 @@ class _Image(click.ParamType):
         if "/" in value:  # a fully qualified image name
             return value
         return f"{IMAGE_REPOSITORY}/{value}"
-
-    @classmethod
-    def convert_list(
-        cls,
-        implementations: list[str],
-    ) -> list[str]:
-        return [
-            impl if "/" in impl else f"{IMAGE_REPOSITORY}/{impl}"
-            for impl in implementations
-        ]
 
 
 class _Dialect(click.ParamType):
