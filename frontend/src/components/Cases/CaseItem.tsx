@@ -29,8 +29,10 @@ const CaseContent = ({
   caseData,
   implementations,
 }: CaseProps) => {
-  const [instance, setInstance] = useState<SetStateAction<unknown>>();
-  const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(-1);
+  const [instance, setInstance] = useState<SetStateAction<unknown>>(
+    caseData.tests[0].instance
+  );
+  const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
 
   return (
     <>
