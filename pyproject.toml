@@ -54,6 +54,7 @@ dependencies = [
   "diagnostic",
   "github3.py",
   "jsonschema>=4.19.0",
+  "jsonschema_lexer",
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
