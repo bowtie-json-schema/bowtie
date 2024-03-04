@@ -17,8 +17,15 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
+from jsonschema_lexer import (  # type: ignore[reportMissingTypeStubs]
+    JSONSchemaLexer,
+)
+from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+    JsonLexer,
+)
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
+from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from url import URL, RelativeURLWithoutBase
@@ -547,14 +554,27 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                Text(json.dumps(test.instance)),
+                Syntax(
+                    json.dumps(test.instance),
+                    lexer=JsonLexer(),
+                    background_color="default",
+                    word_wrap=True,
+                ),
                 *(
                     Text(test_result[each.id].description)
                     for each in implementations
                 ),
             )
 
-        table.add_row(json.dumps(case.schema, indent=2), subtable)
+        table.add_row(
+            Syntax(
+                json.dumps(case.schema, indent=2),
+                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
+                background_color="default",
+                word_wrap=True,
+            ),
+            subtable,
+        )
         table.add_section()
 
     return table

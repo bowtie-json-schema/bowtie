@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.03.02
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -81,7 +81,7 @@ jobs:
         if: startsWith(matrix.noxenv, 'ui')
 
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.03.02
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
@@ -107,6 +107,9 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+
     environment:
       name: PyPI
       url: https://pypi.org/p/bowtie-json-schema
@@ -127,7 +130,7 @@ jobs:
       - name: Create packages
         run: python -m build .
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.03.02
       - name: Build a Bowtie PyApp
         run: nox -s app -- .
       - uses: actions/upload-artifact@v4
@@ -144,8 +147,14 @@ jobs:
           files: |
             app/bowtie*
           generate_release_notes: true
+      - name: Current version
+        id: version
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
   report:
     needs: packaging
     uses: ./.github/workflows/report.yml
+    with:
+      bowtie-version: ${{ needs.packaging.outputs.version }}
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
