@@ -986,7 +986,7 @@ async def filter_implementations(
     """
     for each in implementations:
         if each.supports(*dialects) and each.info.language in languages:
-            click.echo(each.name)
+            click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
