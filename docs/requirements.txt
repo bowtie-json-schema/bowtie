@@ -138,6 +138,7 @@ sphinx==7.2.6
     #   sphinx-json-schema-spec
     #   sphinx-prompt
     #   sphinx-substitution-extensions
+    #   sphinxcontrib-shtest
     #   sphinxcontrib-spelling
     #   sphinxext-opengraph
 sphinx-basic-ng==1.0.0b2
@@ -164,6 +165,8 @@ sphinxcontrib-qthelp==1.0.7
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
+sphinxcontrib-shtest==0.5.0
+    # via -r docs/requirements.in
 sphinxcontrib-spelling==8.0.0
     # via -r docs/requirements.in
 sphinxext-opengraph==0.9.1
