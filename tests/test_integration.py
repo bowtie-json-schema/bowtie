@@ -1274,7 +1274,7 @@ async def test_filter_given_implementations_lang(
         lintsonschema,
         "-i",
         fake_js,
-        "--supports-language",
+        "--language",
         "python",
     )
     expected = [tag("envsonschema"), tag("lintsonschema")]

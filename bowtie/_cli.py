@@ -964,7 +964,7 @@ KNOWN_LANGUAGES = {
     ),
 )
 @click.option(
-    "--supports-language",
+    "--language",
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
