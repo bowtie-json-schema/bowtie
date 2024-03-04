@@ -36,6 +36,7 @@ extensions = [
     "sphinx_json_schema_spec",
     "sphinx_substitution_extensions",
     "sphinxcontrib.spelling",
+    "sphinxcontrib.shtest",
     "sphinxext.opengraph",
 ]
 

@@ -38,34 +38,14 @@ Piping this output to `bowtie summary <cli:summary>` is often the intended outco
 For summarizing the results in the terminal however, the above command when summarized produces:
 
 
-.. code:: sh
-
-    $ bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"') | bowtie summary
-    2023-11-02 15:43.10 [debug    ] Will speak                     dialect=https://json-schema.org/draft/2020-12/schema
-    2023-11-02 15:43.10 [info     ] Finished                       count=1
-                                            Bowtie
-    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Schema              ┃                                                              ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │                     │                                                              │
-    │ {                   │   Instance   ajv (javascript)   hyperjump-jsv (javascript)   │
-    │   "type": "integer" │  ──────────────────────────────────────────────────────────  │
-    │ }                   │   37         valid              valid                        │
-    │                     │   "foo"      invalid            invalid                      │
-    │                     │                                                              │
-    └─────────────────────┴──────────────────────────────────────────────────────────────┘
-                                        2 tests ran
-
+.. sh:: bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"') | bowtie summary
 
 Running a Single Test Suite File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementation, run:
 
-.. code:: sh
-
-    $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
-
+.. sh:: bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
 
 Running the Official Suite Across All Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,10 +73,7 @@ Checking An Implementation Functions On Basic Input
 If you wish to verify that a particular implementation works on your machine (e.g. if you suspect a problem with the container image, or otherwise aren't seeing results), you can run `bowtie smoke <cli:smoke>`.
 E.g., to verify the Golang ``jsonschema`` implementation is functioning, you can run:
 
-.. code:: sh
-
-   $ bowtie smoke -i go-jsonschema
-
+.. sh:: bowtie smoke -i go-jsonschema
 
 Reference
 ---------
