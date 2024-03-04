@@ -40,17 +40,6 @@ runs:
         max_attempts: ${{ inputs.installation-attempts }}
         retry_wait_seconds: ${{ inputs.installation-wait-seconds }}
         shell: bash
-        command: |
-          set +e # do not fail script if command returns non-zero exit code
-          set -o pipefail # keep exit code when using pipes
-          output=$(pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }} 2>&1 | tee /dev/tty)
-          if [ $? -ne 0 ]; then
-            grep 'No matching distribution found for bowtie-json-schema' <<< $output
-            if [ $? -ne 0 ]; then
-                echo "Error during installation"
-                exit 1
-            fi
-            exit 42
-          fi
+        command: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }}
         retry_on: error
         retry_on_exit_code: 42
