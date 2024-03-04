@@ -30,7 +30,7 @@ const CaseContent = ({
   implementations,
 }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>(
-    caseData.tests[0].instance
+    caseData.tests[0].instance,
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
 
