@@ -160,7 +160,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     def wrapper(fn: ImplementationSubcommand):
         async def run(
-            image_names: list[str],
+            image_names: Iterable[str],
             read_timeout_sec: float,
             make_validator: MakeValidator = make_validator,
             **kw: Any,
@@ -215,7 +215,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
         )
         @TIMEOUT
         @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
+        def cmd(image_names: Iterable[str], **kwargs: Any) -> int:
             return asyncio.run(run(image_names=image_names, **kwargs))
 
         return cmd
@@ -1156,7 +1156,7 @@ def suite(
 
 
 async def _run(
-    image_names: list[str],
+    image_names: Iterable[str],
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
