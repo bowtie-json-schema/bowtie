@@ -1,0 +1,12 @@
+Examples:
+  $ bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"')
+
+    Given some collection of implementations to check - here perhaps two Javascript implementations - it takes a single schema and one or more instances to check against it.
+
+  $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
+
+    Run a specific file from the draft 7 official test suite against a single implementation.
+
+  $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
+
+    Run the entire draft 2020-12 test suite against all implementations which support it.
