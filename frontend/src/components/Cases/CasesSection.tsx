@@ -1,45 +1,40 @@
 import { ChangeEvent, useState } from "react";
 import { ReportData, CaseResult } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
-import { Accordion, Row, Col, DropdownButton, Dropdown } from "react-bootstrap";
+import { Accordion, Row, Col, Form, Dropdown, ButtonGroup } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
-  const [filterCriteria, setFilterCriteria] = useState<string | null>(null);
+  const [filterCriteria, setFilterCriteria] = useState<string[]>([]);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value.toLowerCase());
   };
 
-  const handleFilterChange = (criteria: string | null) => {
-    setFilterCriteria(criteria);
+  const handleCheckboxChange = (criteria: string) => {
+    if (filterCriteria.includes(criteria)) {
+      setFilterCriteria(filterCriteria.filter(item => item !== criteria));
+    } else {
+      setFilterCriteria([...filterCriteria, criteria]);
+    }
   };
 
   const filteredCases = Array.from(reportData.cases.entries())
     .filter(([seq]) => {
-      if (!filterCriteria) return true;
+      if (filterCriteria.length === 0) return true;
       const caseResults: (CaseResult | undefined)[] = Array.from(
         reportData.implementations.values(),
       )
         .map((impl) => impl.cases.get(seq))
         .flat();
-      switch (filterCriteria) {
-        case "successful":
-          return caseResults.some((result) => result?.state === "successful");
-        case "errors":
-          return caseResults.some((result) => result?.state === "errored");
-        case "skipped":
-          return caseResults.some((result) => result?.state === "skipped");
-        case "failed":
-          return caseResults.some((result) => result?.state === "failed");
-        default:
-          return true;
-      }
+      return caseResults.some((result) => filterCriteria.includes(result?.state ?? ''));
     })
     .filter(
-      ([, caseData]) =>
-        typeof caseData.description === "string" &&
-        caseData.description.toLowerCase().includes(searchText),
+      ([, caseData]) => {
+        if (typeof caseData.description !== "string") return false;
+        const regex = new RegExp(searchText, 'i');
+        return regex.test(caseData.description);
+      }
     );
 
   return (
@@ -55,27 +50,24 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
             placeholder="Search"
             className="form-control me-2"
           />
-          <DropdownButton
-            title={filterCriteria ? `Filter: ${filterCriteria}` : "Filter"}
-            variant="secondary"
-            id="dropdown-basic-button"
-          >
-            <Dropdown.Item onClick={() => handleFilterChange(null)}>
-              All
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("successful")}>
-              Successful
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("errors")}>
-              Errors
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("skipped")}>
-              Skipped
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleFilterChange("failed")}>
-              Unsuccessful
-            </Dropdown.Item>
-          </DropdownButton>
+          <Dropdown as={ButtonGroup}>
+            <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+              {filterCriteria.length > 0 ? `Filter (${filterCriteria.length} selected)` : "Filter by Outcome"}
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              {['successful', 'errored', 'skipped', 'failed'].map((criteria, index) => (
+                <Form.Check
+                  key={index}
+                  type="checkbox"
+                  label={criteria.charAt(0).toUpperCase() + criteria.slice(1)}
+                  checked={filterCriteria.includes(criteria)}
+                  onChange={() => handleCheckboxChange(criteria)}
+                  className="ms-2"
+                />
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
         </Col>
       </Row>
       <div
