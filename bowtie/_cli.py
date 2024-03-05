@@ -860,17 +860,6 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
-EXPECT = click.option(
-    "--expect",
-    show_default=True,
-    show_choices=True,
-    default="any",
-    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
-    help=(
-        "Expect the given input to be considered valid or invalid, "
-        "or else (with 'any') to allow either result."
-    ),
-)
 
 
 @subcommand
@@ -910,7 +899,17 @@ def run(
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@EXPECT
+@click.option(
+    "--expect",
+    show_default=True,
+    show_choices=True,
+    default="any",
+    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    help=(
+        "Expect the given input to be considered valid or invalid, "
+        "or else (with 'any') to allow either result."
+    ),
+)
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
