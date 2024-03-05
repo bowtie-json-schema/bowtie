@@ -992,7 +992,7 @@ async def filter_implementations(
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Sequence[Implementation], format: _F):
+async def info(implementations: Iterable[Implementation], format: _F):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
