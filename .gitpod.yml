@@ -1,5 +1,5 @@
 image:
-  file: .gitpod.Dockerfile
+  file: .devcontainer/gitpod/Containerfile
 
 additionalRepositories:
   - url: https://github.com/json-schema-org/JSON-Schema-Test-Suite
