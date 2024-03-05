@@ -1261,7 +1261,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
 
 @pytest.mark.asyncio
-async def test_filter_given_implementations_lang(
+async def test_filter_implementations_by_language(
     envsonschema,
     lintsonschema,
     fake_js,
@@ -1282,7 +1282,7 @@ async def test_filter_given_implementations_lang(
 
 
 @pytest.mark.asyncio
-async def test_filter_given_implementations_dialect(
+async def test_filter_implementations_by_dialect(
     envsonschema,
     lintsonschema,
     fake_js,
@@ -1303,7 +1303,7 @@ async def test_filter_given_implementations_dialect(
 
 
 @pytest.mark.asyncio
-async def test_filter_given_implementations_lang_and_dialect(
+async def test_filter_implementations_both_language_and_dialect(
     envsonschema,
     lintsonschema,
     fake_js,
@@ -1320,6 +1320,24 @@ async def test_filter_given_implementations_lang_and_dialect(
         "javascript",
         "-d",
         "7",
+    )
+    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_stdin(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdin = "\n".join(
+        tag(each) for each in ["envsonschema", "lintsonschema", "fake_js"]
+    )
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "--language",
+        "javascript",
+        stdin=stdin + "\n",
     )
     assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
 

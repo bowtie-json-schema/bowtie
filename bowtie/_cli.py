@@ -207,7 +207,9 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             "image_names",
             type=_Image(),
             default=lambda: (
-                Implementation.known() if sys.stdin.isatty() else sys.stdin
+                Implementation.known()
+                if sys.stdin.isatty()
+                else [line.strip() for line in sys.stdin]
             ),
             multiple=True,
             metavar="IMPLEMENTATION",
