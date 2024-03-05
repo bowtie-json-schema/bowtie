@@ -174,6 +174,19 @@ class NoSuchImplementation(Exception):
 
 @frozen
 class GotStderr(Exception):
+    """
+    An implementation sent data on standard error.
+
+    We were trying to communicate with it (via Bowtie's protocol), but the
+    implementation has likely encountered some unexpected error.
+
+    It may have crashed.
+
+    Implementations of the `Connection` protocol should raise this exception
+    when they detect this kind of out-of-band error (in whatever concrete
+    connection-specific mechanism indicates this has occurred).
+    """
+
     stderr: bytes
 
 
