@@ -33,7 +33,7 @@ const EmbedBadges: React.FC<{
   };
 
   return (
-    <div className="container dropdown mx-auto mb-3 col-12 col-sm-12 col-md-12">
+    <div className="container dropdown mx-auto col-12 col-sm-12 col-md-12">
       <button
         className="btn btn-sm btn-success dropdown-toggle"
         type="button"
@@ -43,12 +43,18 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3 " style={{ width: "50vmin" }}>
+      <ul className="dropdown-menu mx-auto mb-3">
         <li>
-          <div className="container ">
-            <div className="dropdown d-flex justify-content-center align-items-center pt-4">
+          <div>
+            <p className="text-center pt-2 mb-2 pb-1 px-1 fs-6 fw-semibold">
+              Generate Bowtie Badge
+            </p>
+            <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">
+              <label className="pb-1" htmlFor="dropdownMenuButton">
+                Available Badges:
+              </label>
               <button
-                className="btn btn-sm btn-primary dropdown-toggle"
+                className="btn btn-sm btn-primary dropdown-toggle mx-auto"
                 type="button"
                 id="dropdownMenuButton"
                 data-bs-toggle="dropdown"
@@ -73,7 +79,6 @@ const EmbedBadges: React.FC<{
                     {"JSON Schema Versions"}
                   </button>
                 </li>
-                <div className="dropdown-divider"></div>
                 <h6 className="dropdown-header">Compliance Badges</h6>
                 {results.map((result) => (
                   <li key={result[0]}>
@@ -90,14 +95,14 @@ const EmbedBadges: React.FC<{
               </ul>
             </div>
           </div>
-          <div className="container d-flex justify-content-center align-items-center flex-column py-3">
-            <ul className="nav nav-pills justify-content-center gap-2">
+          <div className="container d-flex justify-content-center align-items-center flex-column pt-3">
+            <ul className="nav nav-pills justify-content-center gap-1">
               {badgeFormatOptions.map(
                 (formatItem: BadgeFormatOption, index) => {
                   return (
                     <li className="nav-item" key={index}>
                       <button
-                        className={`nav-link btn-sm ${
+                        className={`nav-link btn btn-sm ${
                           activeTab === formatItem.type ? "active" : ""
                         }`}
                         onClick={() => handleSelectTab(formatItem.type)}
@@ -109,18 +114,18 @@ const EmbedBadges: React.FC<{
                 }
               )}
             </ul>
-            <div className="tab-content mt-2 py-2">
+            <div className="tab-content mt-2 pt-2 pb-3">
               {badgeFormatOptions.map(
                 (formatItem: BadgeFormatOption, index) => (
                   <div
                     key={index}
                     className={`tab-pane ${
                       activeTab === formatItem.type ? "active" : ""
-                    } border rounded  pt-3 px-4`}
-                    style={{ width: "38vmin" }}
+                    } border rounded  pt-2 px-4 mx-2`}
+                    style={{ width: "35vmin" }}
                   >
-                    <div className="d-flex align-items-center justify-content-center">
-                      <div>
+                    <div className="d-flex align-items-center justify-content-center px-1">
+                      <div style={{ width: "100%" }}>
                         <span
                           className="font-monospace text-body-secondary fs-6 ps-2 d-block"
                           style={{
@@ -128,13 +133,13 @@ const EmbedBadges: React.FC<{
                             whiteSpace: "nowrap",
                             textOverflow: "hidden",
                             overflowX: "auto",
-                            width: "23vmin",
+                            width: "100%",
                           }}
                         >
                           {formatItem.renderDisplay(badgeURI)}
                         </span>
                       </div>
-                      <div className="d-flex ms-auto pb-4 ps-1">
+                      <div className="d-flex ms-auto pb-2 px-1">
                         <CopyToClipboard
                           textToCopy={formatItem.generateCopyText(badgeURI)}
                         />
