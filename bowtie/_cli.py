@@ -852,7 +852,8 @@ VALIDATE = click.option(
 )
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@subcommand
+@IMPLEMENTATION
 @DIALECT
 @FILTER
 @FAIL_FAST
@@ -879,10 +880,11 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return _run(**kwargs, cases=cases, dialect=dialect)
+    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@subcommand
+@IMPLEMENTATION
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
@@ -931,7 +933,7 @@ def validate(
             for instance in instances
         ],
     )
-    return _run(fail_fast=False, **kwargs, cases=[case])
+    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
 LANGUAGE_ALIASES = {
@@ -1178,7 +1180,8 @@ async def smoke(
     return exit_code
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@subcommand
+@IMPLEMENTATION
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -1220,12 +1223,9 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    return _run(
-        **kwargs,
-        dialect=dialect,
-        cases=cases,
-        run_metadata=metadata,
-    )
+    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
+    return asyncio.run(task)
+
 
 async def _run(
     image_names: Iterable[str],
@@ -1316,6 +1316,7 @@ async def _run(
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")
     return exit_code
+
 
 @asynccontextmanager
 async def _start(
