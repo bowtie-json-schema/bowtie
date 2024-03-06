@@ -154,11 +154,10 @@ class Reporter:
         self._log.warning(
             "Stopping -- the maximum number of unsuccessful tests was reached",
         )
-    
+
     def failed_validate_schema_and_dialect(self):
         # here we will raise the exception for the schema invalidation
         pass
-
 
 
 @frozen

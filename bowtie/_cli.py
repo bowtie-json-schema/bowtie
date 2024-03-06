@@ -760,12 +760,14 @@ def _check_fail_fast_provided(
             return ctx.params["max_fail"] and ctx.params["max_error"]
     return value
 
+
 def _validate_schema_and_dialect(
-    schema:Any,
-    dialect:Any
-)->bool:
+    schema: Any,
+    dialect: Any,
+) -> bool:
     # here we will verify the condition and return true or false based on that
     return False
+
 
 IMPLEMENTATION = click.option(
     "--implementation",
@@ -930,8 +932,8 @@ def validate(
     if not instances:
         return _EX_NOINPUT
     schema = json.load(schema)
-    if("dialect" in kwargs):    
-        _validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])
+    if "dialect" in kwargs:
+        _validate_schema_and_dialect(schema=schema, dialect=kwargs["dialect"])
     case = TestCase(
         description="bowtie validate",
         schema=schema,
