@@ -23,3 +23,14 @@ shortnames
 subcommand
 subcommands
 validator
+
+# Language names, which can disappear after we have a Language data file
+clojure
+cpp
+dotnet
+javascript
+js
+kotlin
+lua
+php
+scala

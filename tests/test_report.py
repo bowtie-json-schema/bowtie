@@ -1,4 +1,4 @@
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import sets
 import pytest
 
@@ -355,6 +355,7 @@ def test_empty_is_empty(dialect):
 
 
 @given(dialect=dialects(), implementations=implementations(min_size=0))
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_empty_with_implementations_is_empty(dialect, implementations):
     report = Report.empty(dialect=dialect, implementations=implementations)
     assert report.is_empty

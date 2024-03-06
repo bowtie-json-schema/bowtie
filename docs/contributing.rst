@@ -8,11 +8,11 @@ Thanks for considering contributing to Bowtie, it'd be very much appreciated!
 Installation
 ------------
 
-If you're going to work on Bowtie itself, you likely will want to install it using Python's `editable install functionality <pip:editable-installs>`, e.g. by running:
+If you're going to work on Bowtie itself, you likely will want to install it using Python's `editable install functionality <pip:editable-installs>`, as well as to install Bowtie's testing dependencies e.g. by running:
 
 .. code:: sh
 
-    $ pip install requirements.txt -e .
+    $ pip install -r test-requirements.txt -e .
 
 within a checkout of the Bowtie repository.
 This will allow you to make changes to files within Bowtie and see results without reinstalling it repeatedly.
