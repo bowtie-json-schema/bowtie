@@ -862,8 +862,7 @@ VALIDATE = click.option(
 )
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @DIALECT
 @FILTER
 @FAIL_FAST
@@ -877,7 +876,7 @@ VALIDATE = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(
+async def run(
     input: Iterable[str],
     filter: CaseTransform,
     dialect: Dialect,
@@ -890,11 +889,10 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
+    return await _run(**kwargs, cases=cases, dialect=dialect)
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
@@ -912,7 +910,7 @@ def run(
 )
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
-def validate(
+async def validate(
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
@@ -936,7 +934,7 @@ def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+    return await _run(fail_fast=False, **kwargs, cases=[case])
 
 
 LANGUAGE_ALIASES = {
@@ -1109,8 +1107,7 @@ async def smoke(
     return exit_code
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -1119,7 +1116,7 @@ async def smoke(
 @TIMEOUT
 @VALIDATE
 @click.argument("input", type=_suite.ClickParam())
-def suite(
+async def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
     **kwargs: Any,
@@ -1152,15 +1149,18 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
-    return asyncio.run(task)
+    return await _run(
+        **kwargs,
+        dialect=dialect,
+        cases=cases,
+        run_metadata=metadata,
+    )
 
 
 async def _run(
-    image_names: Iterable[str],
+    implementations: Iterable[Implementation],
     cases: Iterable[TestCase],
     dialect: Dialect,
-    fail_fast: bool,
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     max_fail: int | None = None,
     max_error: int | None = None,
@@ -1171,77 +1171,62 @@ async def _run(
     exit_code = 0
     acknowledged: list[ImplementationInfo] = []
     runners: list[DialectRunner] = []
-    async with _start(
-        image_names=image_names,
-        reporter=reporter,
-        **kwargs,
-    ) as starting:
-        reporter.will_speak(dialect=dialect)
-        for each in starting:
+    reporter.will_speak(dialect=dialect)
+
+    for each in implementations:
+        if each.supports(dialect):
             try:
-                implementation = await each
-            except StartupFailed as error:
+                runner = await each.start_speaking(dialect)
+            except GotStderr as error:
                 exit_code = _EX_CONFIG
-                reporter.startup_failed(name=error.name, stderr=error.stderr)
-                continue
-            except NoSuchImplementation as error:
-                exit_code = _EX_CONFIG
-                reporter.no_such_image(name=error.name)
-                continue
-
-            if implementation.supports(dialect):
-                try:
-                    runner = await implementation.start_speaking(dialect)
-                except GotStderr as error:
-                    exit_code = _EX_CONFIG
-                    reporter.dialect_error(
-                        implementation=implementation,
-                        stderr=error.stderr.decode(),
-                    )
-                else:
-                    acknowledged.append(implementation.info)
-                    runners.append(runner)
-            else:
-                reporter.unsupported_dialect(
-                    implementation=implementation,
-                    dialect=dialect,
+                reporter.dialect_error(
+                    implementation=each,
+                    stderr=error.stderr.decode(),
                 )
-
-        if not runners:
-            exit_code = _EX_CONFIG
-            reporter.no_implementations()
+            else:
+                acknowledged.append(each.info)
+                runners.append(runner)
         else:
-            reporter.ready(
-                _report.RunMetadata(
-                    implementations=acknowledged,
-                    dialect=dialect,
-                    metadata=run_metadata,
-                ),
+            reporter.unsupported_dialect(
+                implementation=each,
+                dialect=dialect,
             )
 
-            count = 0
-            should_stop = False
-            unsucessful = Unsuccessful()
-            for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
-                seq_case = SeqCase(seq=count, case=case)
-                case_reporter = reporter.case_started(seq_case)
+    if not runners:
+        exit_code = _EX_CONFIG
+        reporter.no_implementations()
+    else:
+        reporter.ready(
+            _report.RunMetadata(
+                implementations=acknowledged,
+                dialect=dialect,
+                metadata=run_metadata,
+            ),
+        )
 
-                responses = [seq_case.run(runner=runner) for runner in runners]
-                for each in asyncio.as_completed(responses):
-                    result = await each
-                    case_reporter.got_result(result=result)
-                    unsucessful += result.unsuccessful()
-                    if max_fail and unsucessful.failed == max_fail:
-                        should_stop = True
-                    if max_error and unsucessful.errored == max_error:
-                        should_stop = True
+        count = 0
+        should_stop = False
+        unsucessful = Unsuccessful()
+        for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+            seq_case = SeqCase(seq=count, case=case)
+            case_reporter = reporter.case_started(seq_case)
 
-                if should_stop:
-                    reporter.failed_fast(seq_case=seq_case)
-                    break
-            reporter.finished(count=count, did_fail_fast=should_stop)
-            if not count:
-                exit_code = _EX_NOINPUT
+            responses = [seq_case.run(runner=runner) for runner in runners]
+            for each in asyncio.as_completed(responses):
+                result = await each
+                case_reporter.got_result(result=result)
+                unsucessful += result.unsuccessful()
+                if max_fail and unsucessful.failed == max_fail:
+                    should_stop = True
+                if max_error and unsucessful.errored == max_error:
+                    should_stop = True
+
+            if should_stop:
+                reporter.failed_fast(seq_case=seq_case)
+                break
+        reporter.finished(count=count, did_fail_fast=should_stop)
+        if not count:
+            exit_code = _EX_NOINPUT
     return exit_code
 
 
