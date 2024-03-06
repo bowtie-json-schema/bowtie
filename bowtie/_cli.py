@@ -852,8 +852,7 @@ VALIDATE = click.option(
 )
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @DIALECT
 @FILTER
 @FAIL_FAST
@@ -867,7 +866,7 @@ VALIDATE = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-def run(
+async def run(
     input: Iterable[str],
     filter: CaseTransform,
     dialect: Dialect,
@@ -880,11 +879,10 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
+    return await _run(**kwargs, cases=cases, dialect=dialect)
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
@@ -908,7 +906,7 @@ def run(
 )
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
-def validate(
+async def validate(
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
@@ -933,7 +931,7 @@ def validate(
             for instance in instances
         ],
     )
-    return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+    return await _run(fail_fast=False, **kwargs, cases=[case])
 
 
 LANGUAGE_ALIASES = {
@@ -1180,8 +1178,7 @@ async def smoke(
     return exit_code
 
 
-@subcommand
-@IMPLEMENTATION
+@implementation_subcommand() # type: ignore[reportArgumentType]
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
@@ -1190,7 +1187,7 @@ async def smoke(
 @TIMEOUT
 @VALIDATE
 @click.argument("input", type=_suite.ClickParam())
-def suite(
+async def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
     **kwargs: Any,
@@ -1223,9 +1220,12 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    task = _run(**kwargs, dialect=dialect, cases=cases, run_metadata=metadata)
-    return asyncio.run(task)
-
+    return await _run(
+        **kwargs,
+        dialect=dialect,
+        cases=cases,
+        run_metadata=metadata,
+    )
 
 async def _run(
     image_names: Iterable[str],
@@ -1316,7 +1316,6 @@ async def _run(
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")
     return exit_code
-
 
 @asynccontextmanager
 async def _start(
