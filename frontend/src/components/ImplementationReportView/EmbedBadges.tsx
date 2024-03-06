@@ -23,7 +23,7 @@ const EmbedBadges: React.FC<{
   };
 
   const [badgeURI, setBadgeURI] = useState(
-    versionsBadgeFor(implementation).href()
+    versionsBadgeFor(implementation).href(),
   );
 
   const handleSelectTab = (tabKey: string | null) => {
@@ -111,7 +111,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                }
+                },
               )}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
@@ -146,7 +146,7 @@ const EmbedBadges: React.FC<{
                       </div>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
