@@ -852,7 +852,7 @@ VALIDATE = click.option(
 )
 
 
-@implementation_subcommand() # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @DIALECT
 @FILTER
 @FAIL_FAST
@@ -882,7 +882,7 @@ async def run(
     return await _run(**kwargs, cases=cases, dialect=dialect)
 
 
-@implementation_subcommand() # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @DIALECT
 @SET_SCHEMA
 @TIMEOUT
@@ -1178,7 +1178,7 @@ async def smoke(
     return exit_code
 
 
-@implementation_subcommand() # type: ignore[reportArgumentType]
+@implementation_subcommand()  # type: ignore[reportArgumentType]
 @FILTER
 @FAIL_FAST
 @MAX_FAIL
