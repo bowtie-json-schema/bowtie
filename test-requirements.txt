@@ -63,7 +63,7 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.98.15
+hypothesis==6.98.17
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -78,6 +78,10 @@ jsonschema==4.21.1
     # via
     #   -r requirements.txt
     #   -r test-requirements.in
+    #   bowtie-json-schema
+jsonschema-lexer==0.2.0
+    # via
+    #   -r requirements.txt
     #   bowtie-json-schema
 jsonschema-specifications==2023.12.1
     # via
@@ -110,6 +114,7 @@ pycparser==2.21
 pygments==2.17.2
     # via
     #   -r requirements.txt
+    #   jsonschema-lexer
     #   rich
 pyjwt==2.8.0
     # via

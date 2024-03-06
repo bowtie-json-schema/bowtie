@@ -54,6 +54,7 @@ dependencies = [
   "diagnostic",
   "github3.py",
   "jsonschema>=4.19.0",
+  "jsonschema_lexer",
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
@@ -82,6 +83,7 @@ skip_covered = false
 
 [tool.coverage.run]
 branch = true
+parallel = true  # to support subprocess collection
 source = ["bowtie"]
 dynamic_context = "test_function"
 

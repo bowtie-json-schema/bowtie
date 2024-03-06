@@ -17,8 +17,15 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
+from jsonschema_lexer import (  # type: ignore[reportMissingTypeStubs]
+    JSONSchemaLexer,
+)
+from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+    JsonLexer,
+)
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
+from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from url import URL, RelativeURLWithoutBase
@@ -42,7 +49,13 @@ from bowtie._core import (
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Mapping, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Mapping,
+        Sequence,
+        Set,
+    )
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
@@ -147,7 +160,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     def wrapper(fn: ImplementationSubcommand):
         async def run(
-            image_names: list[str],
+            image_names: Iterable[str],
             read_timeout_sec: float,
             make_validator: MakeValidator = make_validator,
             **kw: Any,
@@ -188,10 +201,23 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             return exit_code
 
         @subcommand
-        @IMPLEMENTATION
+        @click.option(
+            "--implementation",
+            "-i",
+            "image_names",
+            type=_Image(),
+            default=lambda: (
+                Implementation.known()
+                if sys.stdin.isatty()
+                else [line.strip() for line in sys.stdin]
+            ),
+            multiple=True,
+            metavar="IMPLEMENTATION",
+            help="A container image which implements the bowtie IO protocol.",
+        )
         @TIMEOUT
         @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
+        def cmd(image_names: Iterable[str], **kwargs: Any) -> int:
             return asyncio.run(run(image_names=image_names, **kwargs))
 
         return cmd
@@ -520,14 +546,27 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                Text(json.dumps(test.instance)),
+                Syntax(
+                    json.dumps(test.instance),
+                    lexer=JsonLexer(),
+                    background_color="default",
+                    word_wrap=True,
+                ),
                 *(
                     Text(test_result[each.id].description)
                     for each in implementations
                 ),
             )
 
-        table.add_row(json.dumps(case.schema, indent=2), subtable)
+        table.add_row(
+            Syntax(
+                json.dumps(case.schema, indent=2),
+                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
+                background_color="default",
+                word_wrap=True,
+            ),
+            subtable,
+        )
         table.add_section()
 
     return table
@@ -821,17 +860,6 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
-EXPECT = click.option(
-    "--expect",
-    show_default=True,
-    show_choices=True,
-    default="any",
-    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
-    help=(
-        "Expect the given input to be considered valid or invalid, "
-        "or else (with 'any') to allow either result."
-    ),
-)
 
 
 @subcommand
@@ -871,7 +899,17 @@ def run(
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@EXPECT
+@click.option(
+    "--expect",
+    show_default=True,
+    show_choices=True,
+    default="any",
+    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    help=(
+        "Expect the given input to be considered valid or invalid, "
+        "or else (with 'any') to allow either result."
+    ),
+)
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
@@ -901,9 +939,60 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
+LANGUAGE_ALIASES = {
+    "cpp": "c++",
+    "js": "javascript",
+    "ts": "typescript",
+}
+KNOWN_LANGUAGES = {
+    *LANGUAGE_ALIASES.values(),
+    *(i.partition("-")[0] for i in Implementation.known()),
+}
+
+
+@implementation_subcommand()  # type: ignore[reportArgumentType]
+@click.option(
+    "--supports-dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=frozenset(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help=(
+        "Only include implementations supporting the given dialect or dialect "
+        "short name."
+    ),
+)
+@click.option(
+    "--language",
+    "-l",
+    "languages",
+    type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
+    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
+        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    ),
+    multiple=True,
+    metavar="LANGUAGE",
+    help="Only include implementations in the given programming language",
+)
+async def filter_implementations(
+    implementations: Iterable[Implementation],
+    dialects: Sequence[Dialect],
+    languages: Set[str],
+):
+    """
+    Output implementations matching a given criteria.
+    """
+    for each in implementations:
+        if each.supports(*dialects) and each.info.language in languages:
+            click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
+
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Sequence[Implementation], format: _F):
+async def info(implementations: Iterable[Implementation], format: _F):
     """
     Retrieve a particular implementation (harness)'s metadata.
     """
@@ -1068,7 +1157,7 @@ def suite(
 
 
 async def _run(
-    image_names: list[str],
+    image_names: Iterable[str],
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,

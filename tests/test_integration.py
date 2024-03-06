@@ -302,6 +302,17 @@ only_draft3 = shellplementation(
     printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
+# we have this rather than making use of any of the above essentially
+# because sh isn't one of our "real" programming languages, so we doubly
+# lie here by claiming to be a Javascript implementation so that the test which
+# uses this doesn't blow up for unrelated reasons to what we're testing
+fake_js = shellplementation(
+    name="fake_js",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
+    """,  # noqa: E501
+)
 
 
 def _failed(message, stderr):
@@ -1247,6 +1258,88 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
     assert stdout == ""
     assert "failed to start" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_by_language(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "--language",
+        "python",
+    )
+    expected = [tag("envsonschema"), tag("lintsonschema")]
+    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_by_dialect(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "--supports-dialect",
+        "2020-12",
+    )
+    expected = [tag("envsonschema"), tag("lintsonschema")]
+    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_both_language_and_dialect(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "-l",
+        "javascript",
+        "-d",
+        "7",
+    )
+    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_stdin(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdin = "\n".join(
+        tag(each) for each in ["envsonschema", "lintsonschema", "fake_js"]
+    )
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "--language",
+        "javascript",
+        stdin=stdin + "\n",
+    )
+    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
 
 
 @pytest.mark.asyncio
