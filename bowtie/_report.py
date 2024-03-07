@@ -158,8 +158,7 @@ class Reporter:
         )
     
     def failed_validate_schema_and_dialect(self,schema:Any, dialect:Any):
-        # here we will raise the exception for the schema invalidation
-        
+        # here we will raise the exception for the schema and dialect conflict
             
         if("$schema" in schema):
             schema = schema["$schema"]
@@ -174,7 +173,6 @@ class Reporter:
                     f"The $schema poperty refers to '{schema_dialect.pretty_name}' while the dialect argument is '{dialect.pretty_name}'"
                 )
                 return
-
 
 
 @frozen

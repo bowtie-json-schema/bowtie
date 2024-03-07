@@ -760,6 +760,7 @@ def _check_fail_fast_provided(
             return ctx.params["max_fail"] and ctx.params["max_error"]
     return value
 
+
 def _validate_schema_and_dialect(
     schema:Any,
     dialect:Any
@@ -773,6 +774,7 @@ def _validate_schema_and_dialect(
         if dialect.pretty_name!= schema_dialect:
             return True
     return False
+
 
 IMPLEMENTATION = click.option(
     "--implementation",
