@@ -8,6 +8,8 @@ import {
   useRef,
   RefObject,
   useContext,
+  ReactNode,
+  useMemo,
 } from "react";
 import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
@@ -111,35 +113,40 @@ const CaseItem = ({
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useContext(ThemeContext);
 
-  const highlightDescription = (
-    description: string,
-    searchText: string,
-  ): JSX.Element => {
-    if (!searchText) {
-      return <>{description}</>;
-    }
-
-    const regex = new RegExp(`(${searchText})`, "gi");
-    const parts: string[] = description.split(regex);
-    return (
-      <>
-        {parts.map((part, index) =>
-          regex.test(part) ? (
-            <mark
-              key={index}
-              className={`bg-primary p-0 ${
-                isDarkMode ? "text-dark" : "text-light"
-              }`}
-            >
-              {part}
-            </mark>
-          ) : (
-            <span key={index}>{part}</span>
-          ),
-        )}
-      </>
-    );
-  };
+  const highlightDescription = useMemo(() => {
+    const HighlightedDescription = (description: string, searchText: string): ReactNode => {
+      if (!searchText) {
+        return description;
+      }
+  
+      const regex = new RegExp(`(${searchText})`, "gi");
+      const parts: string[] = description.split(regex);
+      return (
+        <>
+          {parts.map((part, index) =>
+            regex.test(part) ? (
+              <mark
+                key={index}
+                className={`bg-primary p-0 ${
+                  isDarkMode ? "text-dark" : "text-light"
+                }`}
+              >
+                {part}
+              </mark>
+            ) : (
+              <span key={index}>{part}</span>
+            ),
+          )}
+        </>
+      );
+    };
+  
+    HighlightedDescription.displayName = 'HighlightedDescription';
+  
+    return HighlightedDescription;
+  }, [isDarkMode]);
+  
+  
 
   useEffect(() => {
     startTransition(() =>

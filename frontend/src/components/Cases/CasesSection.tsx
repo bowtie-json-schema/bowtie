@@ -1,7 +1,8 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { ReportData, CaseResult } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
 import { Accordion, Row, Col, Form, Dropdown, ButtonGroup } from "react-bootstrap";
+import { FaSearch } from "react-icons/fa"; 
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
@@ -19,37 +20,44 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
     }
   };
 
-  const filteredCases = Array.from(reportData.cases.entries())
-    .filter(([seq]) => {
-      if (filterCriteria.length === 0) return true;
-      const caseResults: (CaseResult | undefined)[] = Array.from(
-        reportData.implementations.values(),
-      )
-        .map((impl) => impl.cases.get(seq))
-        .flat();
-      return caseResults.some((result) => filterCriteria.includes(result?.state ?? ''));
-    })
-    .filter(
-      ([, caseData]) => {
-        if (typeof caseData.description !== "string") return false;
-        const regex = new RegExp(searchText, 'i');
-        return regex.test(caseData.description);
-      }
-    );
+  const filteredCases = useMemo(() => {
+    const trimmedSearchText = searchText.trim();
+
+    return Array.from(reportData.cases.entries())
+      .filter(([seq]) => {
+        if (filterCriteria.length === 0) return true;
+        const caseResults: (CaseResult | undefined)[] = Array.from(
+          reportData.implementations.values(),
+        )
+          .map((impl) => impl.cases.get(seq))
+          .flat();
+  
+        return caseResults.some((result) => filterCriteria.includes(result?.state ?? ''));
+      })
+      .filter(([, caseData]) => {
+        return caseData.description.toLowerCase().includes(trimmedSearchText);
+      });
+  }, [reportData, filterCriteria, searchText]);
+  
 
   return (
     <div>
       <Row className="mt-3">
-        <Col
-          md={{ span: 6, offset: 6 }}
-          className="d-flex align-items-center justify-content-end"
-        >
-          <input
-            type="text"
-            onChange={handleSearchChange}
-            placeholder="Search"
-            className="form-control me-2"
-          />
+        <Col md={6}>
+          <div className="input-group">
+            <span className="input-group-text"><FaSearch /></span> 
+            <input
+              type="text"
+              onChange={handleSearchChange}
+              placeholder="Search"
+              className="form-control me-2"
+            />
+          </div>
+        </Col>
+        <Col md={3}  className="d-flex align-items-center justify-content-end">
+        {filteredCases.length} result(s)
+        </Col>
+        <Col md={3} className="d-flex align-items-center justify-content-end">
           <Dropdown as={ButtonGroup}>
             <Dropdown.Toggle variant="secondary" id="dropdown-basic">
               {filterCriteria.length > 0 ? `Filter (${filterCriteria.length} selected)` : "Filter by Outcome"}
@@ -89,10 +97,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
               <CaseItem
                 key={index}
                 seq={seq}
-                caseData={{
-                  ...caseData,
-                  description: caseData.description,
-                }}
+                caseData={caseData}
                 implementations={Array.from(
                   reportData.implementations.values(),
                 )}
