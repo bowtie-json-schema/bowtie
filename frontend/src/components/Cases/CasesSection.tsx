@@ -14,7 +14,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
 
   const handleCheckboxChange = (criteria: string) => {
     if (filterCriteria.includes(criteria)) {
-      setFilterCriteria(filterCriteria.filter(item => item !== criteria));
+      setFilterCriteria(filterCriteria.filter((item) => item !== criteria));
     } else {
       setFilterCriteria([...filterCriteria, criteria]);
     }
@@ -60,20 +60,24 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
         <Col md={3} className="d-flex align-items-center justify-content-end">
           <Dropdown as={ButtonGroup}>
             <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-              {filterCriteria.length > 0 ? `Filter (${filterCriteria.length} selected)` : "Filter by Outcome"}
+              {filterCriteria.length > 0
+                ? `Filter (${filterCriteria.length} selected)`
+                : "Filter by Outcome"}
             </Dropdown.Toggle>
 
             <Dropdown.Menu>
-              {['successful', 'errored', 'skipped', 'failed'].map((criteria, index) => (
-                <Form.Check
-                  key={index}
-                  type="checkbox"
-                  label={criteria.charAt(0).toUpperCase() + criteria.slice(1)}
-                  checked={filterCriteria.includes(criteria)}
-                  onChange={() => handleCheckboxChange(criteria)}
-                  className="ms-2"
-                />
-              ))}
+              {["successful", "errored", "skipped", "failed"].map(
+                (criteria, index) => (
+                  <Form.Check
+                    key={index}
+                    type="checkbox"
+                    label={criteria.charAt(0).toUpperCase() + criteria.slice(1)}
+                    checked={filterCriteria.includes(criteria)}
+                    onChange={() => handleCheckboxChange(criteria)}
+                    className="ms-2"
+                  />
+                ),
+              )}
             </Dropdown.Menu>
           </Dropdown>
         </Col>
