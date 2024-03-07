@@ -764,7 +764,14 @@ def _validate_schema_and_dialect(
     schema:Any,
     dialect:Any
 )->bool:
-    # here we will verify the condition and return true or false based on that
+    
+    if("$schema" in schema):
+        schema = schema["$schema"]
+        schema_dialect = Dialect.by_uri().get(URL.parse(schema))
+        if schema_dialect is None:
+            return True
+        if dialect.pretty_name!= schema_dialect:
+            return True
     return False
 
 IMPLEMENTATION = click.option(
@@ -929,9 +936,14 @@ def validate(
     """
     if not instances:
         return _EX_NOINPUT
+    
     schema = json.load(schema)
+
     if("dialect" in kwargs):    
-        _validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])
+        if(_validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])):
+            report = _report.Reporter()
+            report.failed_validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])
+
     case = TestCase(
         description="bowtie validate",
         schema=schema,
