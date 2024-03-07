@@ -3,7 +3,8 @@ export interface BadgeFormatOption {
   renderDisplay: (badgeURI: string) => JSX.Element;
   generateCopyText: (badgeURI: string) => string;
 }
-// updating available badge formats
+
+// Supported format list
 export const badgeFormatOptions: BadgeFormatOption[] = [
   {
     type: "URL",

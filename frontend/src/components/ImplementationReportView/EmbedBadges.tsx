@@ -8,23 +8,16 @@ import { badgeFormatOptions, BadgeFormatOption } from "./BadgeFormats";
 const EmbedBadges: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const results = Object.entries(implementation.results);
   const [activeTab, setActiveTab] = useState("URL");
   const [activeBadge, setActiveBadge] = useState("JSON Schema Versions");
-
-  const handleSelectBadge = (dialectName: string): void => {
-    setActiveBadge(dialectName);
-    if (dialectName === "JSON Schema Versions") {
-      setBadgeURI(versionsBadgeFor(implementation).href());
-    } else {
-      const dialect = Dialect.withName(dialectName);
-      setBadgeURI(complianceBadgeFor(implementation, dialect).href());
-    }
-  };
-
   const [badgeURI, setBadgeURI] = useState(
-    versionsBadgeFor(implementation).href(),
+    versionsBadgeFor(implementation).href()
   );
+
+  const handleSelectBadge = (badgeName: string, URI: string): void => {
+    setActiveBadge(badgeName);
+    setBadgeURI(URI);
+  };
 
   const handleSelectTab = (tabKey: string | null) => {
     if (tabKey) {
@@ -32,26 +25,33 @@ const EmbedBadges: React.FC<{
     }
   };
 
+  const results = Object.entries(implementation.results).sort((a, b) => {
+    return (
+      Dialect.withName(b[0]).firstPublicationDate.getTime() -
+      Dialect.withName(a[0]).firstPublicationDate.getTime()
+    );
+  });
+
   return (
-    <div className="container dropdown mx-auto col-12 col-sm-12 col-md-12">
+    <div className="container dropdown px-0 col-12">
       <button
         className="btn btn-sm btn-success dropdown-toggle"
         type="button"
         data-bs-toggle="dropdown"
         data-bs-auto-close="outside"
-        style={{ width: "100px" }}
+        style={{ width: "80px" }}
       >
         Badges
       </button>
       <ul className="dropdown-menu mx-auto mb-3">
         <li>
           <div>
-            <p className="text-center pt-2 mb-2 pb-1 px-1 fs-6 fw-semibold">
+            <p className="text-center fw-semibold pt-2 pb-1 px-1 fs-6 mb-2 ">
               Generate Bowtie Badge
             </p>
             <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">
               <label className="pb-1" htmlFor="dropdownMenuButton">
-                Available Badges:
+                Available Badges
               </label>
               <button
                 className="btn btn-sm btn-primary dropdown-toggle mx-auto"
@@ -74,19 +74,33 @@ const EmbedBadges: React.FC<{
                     className={`dropdown-item btn btn-sm ${
                       activeBadge === "JSON Schema Versions" ? "active" : ""
                     }`}
-                    onClick={() => handleSelectBadge("JSON Schema Versions")}
+                    onClick={() =>
+                      handleSelectBadge(
+                        "JSON Schema Versions",
+                        versionsBadgeFor(implementation).href()
+                      )
+                    }
                   >
                     {"JSON Schema Versions"}
                   </button>
                 </li>
                 <h6 className="dropdown-header">Compliance Badges</h6>
+                {/* sorting */}
                 {results.map((result) => (
                   <li key={result[0]}>
                     <button
                       className={`dropdown-item btn btn-sm ${
                         result[0] === activeBadge ? "active" : ""
                       }`}
-                      onClick={() => handleSelectBadge(result[0])}
+                      onClick={() =>
+                        handleSelectBadge(
+                          result[0],
+                          complianceBadgeFor(
+                            implementation,
+                            Dialect.withName(result[0])
+                          ).href()
+                        )
+                      }
                     >
                       {Dialect.withName(result[0]).prettyName}
                     </button>
@@ -111,7 +125,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                },
+                }
               )}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
@@ -139,14 +153,14 @@ const EmbedBadges: React.FC<{
                           {formatItem.renderDisplay(badgeURI)}
                         </span>
                       </div>
-                      <div className="d-flex ms-auto pb-2 px-1">
+                      <div className="ms-auto pb-2 px-1">
                         <CopyToClipboard
                           textToCopy={formatItem.generateCopyText(badgeURI)}
                         />
                       </div>
                     </div>
                   </div>
-                ),
+                )
               )}
             </div>
           </div>
