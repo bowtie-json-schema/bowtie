@@ -59,7 +59,7 @@ describe("parseReportData", () => {
 
     const report = fromSerialized(lines);
 
-    const metadata = report.implementations.get(tag("envsonschema"))?.metadata;
+    const metadata = report.runInfo.implementations[tag("envsonschema")];
     const testCase = report.cases.get(1);
 
     // FIXME: Remove Seqs + duplication all over from the UI's representation
