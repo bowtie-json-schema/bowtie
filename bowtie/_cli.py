@@ -941,8 +941,7 @@ def validate(
     
     schema = json.load(schema)
 
-    if("dialect" in kwargs):    
-        if(_validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])):
+    if("dialect" in kwargs and _validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])):
             report = _report.Reporter()
             report.failed_validate_schema_and_dialect(schema=schema ,dialect=kwargs["dialect"])
 
