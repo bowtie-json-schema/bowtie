@@ -169,7 +169,7 @@ class Reporter:
                 return
             if dialect.pretty_name != schema_dialect:
                 self._log.warning(
-                f"The $schema poperty refers to '{schema_dialect.pretty_name}' 
+                f"The $schema poperty refers to '{schema_dialect.pretty_name}'
                 while the dialect argument is '{dialect.pretty_name}'"
                 )
                 return
