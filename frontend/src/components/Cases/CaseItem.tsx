@@ -33,7 +33,7 @@ const CaseContent = ({
   implementationsResults,
 }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>(
-    caseData.tests[0].instance
+    caseData.tests[0].instance,
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
 
@@ -118,8 +118,8 @@ const CaseItem = ({
           implementations={implementations}
           implementationsResults={implementationsResults}
           schemaDisplayRef={schemaDisplayRef}
-        />
-      )
+        />,
+      ),
     );
   }, [seq, caseData, implementations, implementationsResults]);
   return (

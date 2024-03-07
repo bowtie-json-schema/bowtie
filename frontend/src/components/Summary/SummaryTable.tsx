@@ -68,7 +68,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                 a.skippedTests -
                 b.failedTests -
                 b.erroredTests -
-                b.skippedTests
+                b.skippedTests,
             )
             .map((implResults, index) => (
               <ImplementationRow

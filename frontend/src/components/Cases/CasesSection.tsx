@@ -4,10 +4,10 @@ import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const implementationsResults = Array.from(
-    reportData.implementationsResults.values()
+    reportData.implementationsResults.values(),
   );
   const implementations = implementationsResults.map(
-    (implResult) => reportData.runInfo.implementations[implResult.id]
+    (implResult) => reportData.runInfo.implementations[implResult.id],
   );
 
   return (
