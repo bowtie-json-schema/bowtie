@@ -1,8 +1,15 @@
 import { ChangeEvent, useMemo, useState } from "react";
 import { ReportData, CaseResult } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
-import { Accordion, Row, Col, Form, Dropdown, ButtonGroup } from "react-bootstrap";
-import { FaSearch } from "react-icons/fa"; 
+import {
+  Accordion,
+  Row,
+  Col,
+  Form,
+  Dropdown,
+  ButtonGroup,
+} from "react-bootstrap";
+import { FaSearch } from "react-icons/fa";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
@@ -31,21 +38,24 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
         )
           .map((impl) => impl.cases.get(seq))
           .flat();
-  
-        return caseResults.some((result) => filterCriteria.includes(result?.state ?? ''));
+
+        return caseResults.some((result) =>
+          filterCriteria.includes(result?.state ?? ""),
+        );
       })
       .filter(([, caseData]) => {
         return caseData.description.toLowerCase().includes(trimmedSearchText);
       });
   }, [reportData, filterCriteria, searchText]);
-  
 
   return (
     <div>
       <Row className="mt-3">
         <Col md={6}>
           <div className="input-group">
-            <span className="input-group-text"><FaSearch /></span> 
+            <span className="input-group-text">
+              <FaSearch />
+            </span>
             <input
               type="text"
               onChange={handleSearchChange}
@@ -54,8 +64,8 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
             />
           </div>
         </Col>
-        <Col md={3}  className="d-flex align-items-center justify-content-end">
-        {filteredCases.length} result(s)
+        <Col md={3} className="d-flex align-items-center justify-content-end">
+          {filteredCases.length} result(s)
         </Col>
         <Col md={3} className="d-flex align-items-center justify-content-end">
           <Dropdown as={ButtonGroup}>
