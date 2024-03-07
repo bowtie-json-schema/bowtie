@@ -60,7 +60,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           </tr>
         </thead>
         <tbody className="table-group-divider">
-          {Array.from(reportData.implementations.values())
+          {Array.from(reportData.implementationsResults.values())
             .sort(
               (a, b) =>
                 a.failedTests +
@@ -68,12 +68,15 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                 a.skippedTests -
                 b.failedTests -
                 b.erroredTests -
-                b.skippedTests,
+                b.skippedTests
             )
-            .map((implementation, index) => (
+            .map((implResults, index) => (
               <ImplementationRow
                 cases={reportData.cases}
-                implementation={implementation}
+                implementationResults={implResults}
+                implementation={
+                  reportData.runInfo.implementations[implResults.id]
+                }
                 key={index}
                 index={index}
               />

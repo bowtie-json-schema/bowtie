@@ -4,7 +4,7 @@ import SummarySection from "./components/Summary/SummarySection";
 import { useMemo } from "react";
 import {
   Implementation,
-  ImplementationData,
+  ImplementationResults,
   ReportData,
 } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
@@ -21,8 +21,8 @@ export const DialectReportView = ({
 }) => {
   const params = useSearchParams();
   const languages = useMemo(() => {
-    const langs = Array.from(reportData.implementations.values()).map(
-      (impl) => impl.metadata.language,
+    const langs = Object.values(reportData.runInfo.implementations).map(
+      (impl) => impl.language
     );
     return Array.from(new Set(langs).values());
   }, [reportData]);
@@ -33,11 +33,13 @@ export const DialectReportView = ({
 
     if (selectedLanguages.length > 0) {
       const filteredReportArray = Array.from(
-        reportData.implementations.entries(),
-      ).filter(([, data]) =>
-        selectedLanguages.includes(data.metadata.language),
+        reportData.implementationsResults.entries()
+      ).filter(([id]) =>
+        selectedLanguages.includes(
+          reportData.runInfo.implementations[id].language
+        )
       );
-      filteredData.implementations = new Map(filteredReportArray);
+      filteredData.implementationsResults = new Map(filteredReportArray);
     }
 
     return filteredData;
@@ -51,13 +53,13 @@ export const DialectReportView = ({
     return filterOtherImplementations(
       allImplementationsData,
       availableLanguages,
-      filteredReportData.implementations,
+      filteredReportData.implementationsResults
     );
   }, [
     params,
     allImplementationsData,
     languages,
-    filteredReportData.implementations,
+    filteredReportData.implementationsResults,
   ]);
 
   return (
@@ -79,10 +81,10 @@ export const DialectReportView = ({
 const filterOtherImplementations = (
   allImplementationsData: Record<string, Implementation>,
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationData>,
+  filteredReportImplementationsMap: Map<string, ImplementationResults>
 ): Record<string, Implementation> => {
   const filteredOtherImplementationsArray = Object.entries(
-    allImplementationsData,
+    allImplementationsData
   )
     .filter(([, impl]) => langs.includes(impl.language))
     .filter(([key]) => !filteredReportImplementationsMap.has(key));

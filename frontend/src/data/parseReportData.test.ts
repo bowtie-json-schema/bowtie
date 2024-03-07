@@ -91,15 +91,6 @@ describe("parseReportData", () => {
             failedTests: 1,
 
             id: tag("envsonschema"),
-            metadata: {
-              name: "envsonschema",
-              language: "python",
-              dialects: metadata?.dialects,
-              homepage: metadata?.homepage,
-              issues: metadata?.issues,
-              source: metadata?.source,
-              links: metadata?.links,
-            },
             cases: new Map([[1, [{ state: "failed", valid: false }]]]),
           },
         ],
