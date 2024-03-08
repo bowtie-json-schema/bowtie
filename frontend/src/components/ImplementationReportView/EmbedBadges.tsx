@@ -11,7 +11,7 @@ const EmbedBadges: React.FC<{
   const [activeTab, setActiveTab] = useState("URL");
   const [activeBadge, setActiveBadge] = useState("JSON Schema Versions");
   const [badgeURI, setBadgeURI] = useState(
-    versionsBadgeFor(implementation).href()
+    versionsBadgeFor(implementation).href(),
   );
 
   const handleSelectBadge = (badgeName: string, URI: string): void => {
@@ -77,7 +77,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation).href()
+                        versionsBadgeFor(implementation).href(),
                       )
                     }
                   >
@@ -97,8 +97,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0])
-                          ).href()
+                            Dialect.withName(result[0]),
+                          ).href(),
                         )
                       }
                     >
@@ -125,7 +125,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                }
+                },
               )}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
@@ -160,7 +160,7 @@ const EmbedBadges: React.FC<{
                       </div>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>

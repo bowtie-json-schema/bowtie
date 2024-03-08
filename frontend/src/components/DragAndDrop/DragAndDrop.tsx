@@ -118,12 +118,19 @@ export const DragAndDrop = () => {
                 via e.g.:
               </p>
               <p>
-                <kbd>{`bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7/refRemote.json > output`}</kbd>
+                <pre>
+                  <kbd>
+                    bowtie suite -i lua-jsonschema
+                    https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7/refRemote.json
+                    &gt;output
+                  </kbd>
+                </pre>
               </p>
               <p>
-                which will run the &apos;refRemote.json&apos; test file from the
-                official suite against the specified implementation, emitting a
-                file called &apos;output&apos; which you can then upload here!
+                which will run the <code>refRemote.json</code> test file from
+                the official suite against the specified implementation,
+                emitting a file called &apos;output&apos; which you can then
+                upload here!
               </p>
             </div>
             <div className="flex-div text-center">
