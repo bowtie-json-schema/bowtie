@@ -185,7 +185,7 @@ describe("parseReportData", () => {
         ],
       };
       const jsonData = `${JSON.stringify(case1)}\n${JSON.stringify(
-        case2
+        case2,
       )}\n${JSON.stringify(case3)}`;
       await writeFile(schema, jsonData);
 
