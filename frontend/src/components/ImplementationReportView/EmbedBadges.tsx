@@ -46,7 +46,7 @@ const EmbedBadges: React.FC<{
       <ul className="dropdown-menu mx-auto mb-3">
         <li>
           <div>
-            <p className="text-center fw-semibold pt-2 pb-1 px-1 fs-6 mb-2 ">
+            <p className="text-center fw-semibold pt-2 pb-1 px-1 fs-6 mb-2">
               Generate Bowtie Badge
             </p>
             <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">

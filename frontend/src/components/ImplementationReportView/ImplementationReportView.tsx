@@ -38,10 +38,10 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
 }) => {
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3 col-md-9 ">
-        <Card.Header className="d-flex justify-content-between ">
+      <Card className="mx-auto mb-3 col-md-9">
+        <Card.Header className="d-flex justify-content-between">
           <span className="d-flex align-items-center">
-            <span className="px-1 text-muted ">
+            <span className="px-1 text-muted">
               {mapLanguage(implementation.language)}
             </span>
             <span>{implementation.name}</span>
