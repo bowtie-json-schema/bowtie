@@ -40,7 +40,7 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
 }
 
 describe("parseReportData", () => {
-  test("it parses reports", async () => {
+  test("parses reports", async () => {
     let lines: string;
 
     const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
@@ -62,7 +62,6 @@ describe("parseReportData", () => {
     const metadata = report.runInfo.implementations[tag("envsonschema")];
     const testCase = report.cases.get(1);
 
-    // FIXME: Remove Seqs + duplication all over from the UI's representation
     expect(report).toStrictEqual({
       runInfo: {
         started: report.runInfo.started,
@@ -115,91 +114,80 @@ describe("parseReportData", () => {
     });
   });
 
-  test("multiple test cases", async () => {
-    let lines: string;
-    const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
+  test("parses reports with multiple test cases", () => {
+    const case1 = {
+      description: "case1",
+      schema: {
+        additionalProperties: { type: "boolean" },
+        properties: { bar: {}, foo: {} },
+      },
+      tests: [
+        {
+          description: "one",
+          instance: { foo: 1 },
+          valid: true,
+        },
+        {
+          description: "two",
+          instance: { foo: 1, bar: 2, quux: true },
+          valid: true,
+        },
+        {
+          description: "three",
+          instance: { foo: 1, bar: 2, quux: 12 },
+          valid: false,
+        },
+      ],
+    };
+    const case2 = {
+      description: "case2",
+      schema: {
+        additionalProperties: { type: "boolean" },
+      },
+      tests: [
+        {
+          description: "one",
+          instance: { foo: true },
+          valid: true,
+        },
+        {
+          description: "two",
+          instance: { foo: 1 },
+          valid: false,
+        },
+      ],
+    };
+    const case3 = {
+      description: "case3",
+      schema: {
+        allOf: [
+          { $ref: "https://example.com/schema-with-anchor#foo" },
+          { then: { $id: "http://example.com/ref/then", type: "integer" } },
+        ],
+      },
+      tests: [
+        {
+          description: "one",
+          instance: "foo",
+          valid: false,
+        },
+        {
+          description: "two",
+          instance: 12,
+          valid: true,
+        },
+      ],
+    };
+    const cases = [case1, case2, case3].map((each) => JSON.stringify(each));
 
-    try {
-      const schema = join(tempdir, "cases.json");
-      const case1 = {
-        description: "case1",
-        schema: {
-          additionalProperties: { type: "boolean" },
-          properties: { bar: {}, foo: {} },
-        },
-        tests: [
-          {
-            description: "one",
-            instance: { foo: 1 },
-            valid: true,
-          },
-          {
-            description: "two",
-            instance: { foo: 1, bar: 2, quux: true },
-            valid: true,
-          },
-          {
-            description: "three",
-            instance: { foo: 1, bar: 2, quux: 12 },
-            valid: false,
-          },
-        ],
-      };
-      const case2 = {
-        description: "case2",
-        schema: {
-          additionalProperties: { type: "boolean" },
-        },
-        tests: [
-          {
-            description: "one",
-            instance: { foo: true },
-            valid: true,
-          },
-          {
-            description: "two",
-            instance: { foo: 1 },
-            valid: false,
-          },
-        ],
-      };
-      const case3 = {
-        description: "case3",
-        schema: {
-          allOf: [
-            { $ref: "https://example.com/schema-with-anchor#foo" },
-            { then: { $id: "http://example.com/ref/then", type: "integer" } },
-          ],
-        },
-        tests: [
-          {
-            description: "one",
-            instance: "foo",
-            valid: false,
-          },
-          {
-            description: "two",
-            instance: 12,
-            valid: true,
-          },
-        ],
-      };
-      const jsonData = `${JSON.stringify(case1)}\n${JSON.stringify(
-        case2,
-      )}\n${JSON.stringify(case3)}`;
-      await writeFile(schema, jsonData);
-
-      lines = bowtie(["run", "-i", tag("envsonschema"), "-D", "7", schema]);
-    } finally {
-      await rm(tempdir, { recursive: true });
-    }
+    const lines = bowtie(
+      ["run", "-i", tag("envsonschema"), "-D", "7"],
+      cases.join("\n") + "\n",
+    );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runInfo.implementations[tag("envsonschema")];
-    const testCase1 = report.cases.get(1);
-    const testCase2 = report.cases.get(2);
-    const testCase3 = report.cases.get(3);
 
     expect(report).toStrictEqual({
       runInfo: {
@@ -260,25 +248,25 @@ describe("parseReportData", () => {
         [
           1,
           {
-            description: testCase1?.description,
-            schema: testCase1?.schema,
-            tests: testCase1?.tests,
+            description: case1.description,
+            schema: case1.schema,
+            tests: case1.tests,
           },
         ],
         [
           2,
           {
-            description: testCase2?.description,
-            schema: testCase2?.schema,
-            tests: testCase2?.tests,
+            description: case2.description,
+            schema: case2.schema,
+            tests: case2.tests,
           },
         ],
         [
           3,
           {
-            description: testCase3?.description,
-            schema: testCase3?.schema,
-            tests: testCase3?.tests,
+            description: case3.description,
+            schema: case3.schema,
+            tests: case3.tests,
           },
         ],
       ]),
