@@ -1347,7 +1347,9 @@ async def test_filter_dialects():
     stdout, stderr = await bowtie(
         "filter-dialects",
     )
-    dialects_supported = "\n".join([str(dialect.uri) for dialect in sorted(Dialect.known(), reverse=True)])
+    dialects_supported = "\n".join(
+        [str(dialect.uri) for dialect in sorted(Dialect.known(), reverse=True)]
+    )
     assert (stdout.strip(), stderr) == (f"{dialects_supported}", "")
 
 
@@ -1363,7 +1365,7 @@ async def test_filter_dialects_latest_dialect():
 
 @pytest.mark.asyncio
 async def test_filter_dialects_supporting_implementation(
-    only_draft3
+    only_draft3,
 ):
     stdout, stderr = await bowtie(
         "filter-dialects",
@@ -1371,7 +1373,10 @@ async def test_filter_dialects_supporting_implementation(
         only_draft3,
     )
     print(stdout)
-    assert (stdout.strip(), stderr) == ("http://json-schema.org/draft-03/schema#", "")
+    assert (stdout.strip(), stderr) == (
+        "http://json-schema.org/draft-03/schema#",
+        "",
+    )
 
 
 @pytest.mark.asyncio
@@ -1380,7 +1385,13 @@ async def test_filter_dialects_boolean_schemas():
         "filter-dialects",
         "-b",
     )
-    boolean_schemas = "\n".join([str(dialect.uri) for dialect in sorted(Dialect.known(), reverse=True) if dialect.has_boolean_schemas])
+    boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if dialect.has_boolean_schemas
+        ]
+    )
     assert (stdout.strip(), stderr) == (f"{boolean_schemas}", "")
 
 
@@ -1390,7 +1401,13 @@ async def test_filter_dialects_non_boolean_schemas():
         "filter-dialects",
         "-nb",
     )
-    non_boolean_schemas = "\n".join([str(dialect.uri) for dialect in sorted(Dialect.known(), reverse=True) if not dialect.has_boolean_schemas])
+    non_boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if not dialect.has_boolean_schemas
+        ]
+    )
     assert (stdout.strip(), stderr) == (f"{non_boolean_schemas}", "")
 
 

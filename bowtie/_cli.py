@@ -150,7 +150,10 @@ class ImplementationSubcommand(Protocol):
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
 
-def implementation_subcommand(reporter: _report.Reporter = SILENT, default_implementations: Set[str] = Implementation.known()):
+def implementation_subcommand(
+    reporter: _report.Reporter = SILENT,
+    default_implementations: Set[str] = Implementation.known(),
+):
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -193,7 +196,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT, default_imple
 
                     running.append(implementation)
 
-                if running or len(default_implementations)==0:
+                if running or len(default_implementations) == 0:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
@@ -990,7 +993,7 @@ async def filter_implementations(
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
 
 
-@implementation_subcommand(default_implementations=frozenset()) # type: ignore[reportArgumentType]
+@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
 @click.option(
     "--dialect",
     "-d",
@@ -999,9 +1002,7 @@ async def filter_implementations(
     default=Dialect.known(),
     metavar="URI_OR_NAME",
     multiple=True,
-    help=(
-        "Filter from the given list of dialects only."
-    ),
+    help=("Filter from the given list of dialects only."),
 )
 @click.option(
     "--latest",
@@ -1039,15 +1040,15 @@ async def filter_dialects(
     """
     for dialect in sorted(dialects, reverse=True):
         if dialect.supported_by_all(*implementations) and (
-            (boolean_schemas and dialect.has_boolean_schemas) or
-            (no_boolean_schemas and not dialect.has_boolean_schemas) or
-            not (boolean_schemas or no_boolean_schemas)
+            (boolean_schemas and dialect.has_boolean_schemas)
+            or (no_boolean_schemas and not dialect.has_boolean_schemas)
+            or not (boolean_schemas or no_boolean_schemas)
         ):
             click.echo(dialect.uri)
-            if(latest):
+            if latest:
                 break
 
-            
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
 async def info(implementations: Iterable[Implementation], format: _F):

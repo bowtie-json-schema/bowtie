@@ -148,9 +148,11 @@ class Dialect:
                 "$ref": str(self.uri),
             },
         )
-    
+
     def supported_by_all(self, *implementations: Implementation):
-        return all(implementation.supports(self) for implementation in implementations)
+        return all(
+            implementation.supports(self) for implementation in implementations
+        )
 
 
 @frozen
