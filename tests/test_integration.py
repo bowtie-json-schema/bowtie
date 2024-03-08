@@ -1348,7 +1348,11 @@ async def test_filter_dialects():
         "filter-dialects",
     )
     dialects_supported = "\n".join(
-        [str(dialect.uri) for dialect in sorted(Dialect.known(), reverse=True)]
+        [
+            str(dialect.uri) 
+            for dialect in 
+            sorted(Dialect.known(), reverse=True)
+        ]
     )
     assert (stdout.strip(), stderr) == (f"{dialects_supported}", "")
 
@@ -1359,7 +1363,6 @@ async def test_filter_dialects_latest_dialect():
         "filter-dialects",
         "-l",
     )
-    print(stdout)
     assert (stdout.strip(), stderr) == (f"{max(Dialect.known()).uri}", "")
 
 
@@ -1372,7 +1375,6 @@ async def test_filter_dialects_supporting_implementation(
         "-i",
         only_draft3,
     )
-    print(stdout)
     assert (stdout.strip(), stderr) == (
         "http://json-schema.org/draft-03/schema#",
         "",
