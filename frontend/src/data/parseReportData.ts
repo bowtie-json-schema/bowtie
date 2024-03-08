@@ -19,11 +19,13 @@ export const parseReportData = (
 
   implementationEntries.sort(([id1], [id2]) => id1.localeCompare(id2));
   const caseMap = new Map() as Map<number, Case>;
-  const implementationMap = new Map() as Map<string, ImplementationData>;
-  implementationEntries.forEach(([id, metadata]) =>
-    implementationMap.set(id, {
+  const implementationsResultsMap = new Map() as Map<
+    string,
+    ImplementationResults
+  >;
+  implementationEntries.forEach(([id]) =>
+    implementationsResultsMap.set(id, {
       id,
-      metadata,
       cases: new Map(),
       erroredCases: 0,
       skippedTests: 0,
@@ -38,16 +40,16 @@ export const parseReportData = (
       caseMap.set(line.seq as number, line.case as Case);
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
-      const implementationData = implementationMap.get(
+      const implementationResults = implementationsResultsMap.get(
         line.implementation as string,
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
         const errorMessage: string = (context?.message ??
           context?.stderr) as string;
-        implementationData.erroredCases++;
-        implementationData.erroredTests += caseData.tests.length;
-        implementationData.cases.set(
+        implementationResults.erroredCases++;
+        implementationResults.erroredTests += caseData.tests.length;
+        implementationResults.cases.set(
           line.seq as number,
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
@@ -55,8 +57,8 @@ export const parseReportData = (
           }),
         );
       } else if (line.skipped) {
-        implementationData.skippedTests += caseData.tests.length;
-        implementationData.cases.set(
+        implementationResults.skippedTests += caseData.tests.length;
+        implementationResults.cases.set(
           line.seq as number,
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
@@ -70,13 +72,13 @@ export const parseReportData = (
           if (res.errored) {
             const context = res.context as Record<string, unknown>;
             const errorMessage = context?.message ?? context?.stderr;
-            implementationData.erroredTests++;
+            implementationResults.erroredTests++;
             return {
               state: "errored",
               message: errorMessage as string | undefined,
             };
           } else if (res.skipped) {
-            implementationData.skippedTests++;
+            implementationResults.skippedTests++;
             return {
               state: "skipped",
               message: res.message as string | undefined,
@@ -89,7 +91,7 @@ export const parseReportData = (
                 valid: res.valid as boolean | undefined,
               };
             } else {
-              implementationData.failedTests++;
+              implementationResults.failedTests++;
               return {
                 state: "failed",
                 valid: res.valid as boolean | undefined,
@@ -97,7 +99,7 @@ export const parseReportData = (
             }
           }
         });
-        implementationData.cases.set(line.seq as number, caseResults);
+        implementationResults.cases.set(line.seq as number, caseResults);
       } else if (line.did_fail_fast !== undefined) {
         didFailFast = line.did_fail_fast as boolean;
       }
@@ -107,7 +109,7 @@ export const parseReportData = (
   return {
     runInfo: runInfoData,
     cases: caseMap,
-    implementations: implementationMap,
+    implementationsResults: implementationsResultsMap,
     didFailFast: didFailFast,
   };
 };
@@ -120,7 +122,7 @@ export const parseImplementationData = (
 
   for (const [key, value] of Object.entries(loaderData)) {
     dialectCompliance[key] = calculateImplementationTotal(
-      value.implementations,
+      value.implementationsResults,
     );
     allImplementations = {
       ...allImplementations,
@@ -147,11 +149,11 @@ export const parseImplementationData = (
 };
 
 const calculateImplementationTotal = (
-  implementations: Map<string, ImplementationData>,
+  implementationsResults: Map<string, ImplementationResults>,
 ) => {
   const implementationResult: Record<string, Partial<Totals>> = {};
 
-  Array.from(implementations.entries()).forEach(([key, value]) => {
+  Array.from(implementationsResults.entries()).forEach(([key, value]) => {
     implementationResult[key] = {
       erroredTests: value.erroredTests,
       skippedTests: value.skippedTests,
@@ -167,7 +169,7 @@ export const calculateTotals = (data: ReportData): Totals => {
     (prev, curr) => prev + curr.tests.length,
     0,
   );
-  return Array.from(data.implementations.values()).reduce(
+  return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
       totalTests,
       erroredCases: prev.erroredCases + curr.erroredCases,
@@ -196,7 +198,7 @@ export interface Totals {
 export interface ReportData {
   runInfo: RunInfo;
   cases: Map<number, Case>;
-  implementations: Map<string, ImplementationData>;
+  implementationsResults: Map<string, ImplementationResults>;
   didFailFast: boolean;
 }
 
@@ -208,9 +210,8 @@ export interface RunInfo {
   metadata: Record<string, unknown>;
 }
 
-export interface ImplementationData {
+export interface ImplementationResults {
   id: string;
-  metadata: Implementation;
   cases: Map<number, CaseResult[]>;
   erroredCases: number;
   skippedTests: number;
