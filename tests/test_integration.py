@@ -1349,10 +1349,9 @@ async def test_filter_dialects():
     )
     dialects_supported = "\n".join(
         [
-            str(dialect.uri) 
-            for dialect in 
-            sorted(Dialect.known(), reverse=True)
-        ]
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+        ],
     )
     assert (stdout.strip(), stderr) == (f"{dialects_supported}", "")
 
@@ -1392,7 +1391,7 @@ async def test_filter_dialects_boolean_schemas():
             str(dialect.uri)
             for dialect in sorted(Dialect.known(), reverse=True)
             if dialect.has_boolean_schemas
-        ]
+        ],
     )
     assert (stdout.strip(), stderr) == (f"{boolean_schemas}", "")
 
@@ -1408,7 +1407,7 @@ async def test_filter_dialects_non_boolean_schemas():
             str(dialect.uri)
             for dialect in sorted(Dialect.known(), reverse=True)
             if not dialect.has_boolean_schemas
-        ]
+        ],
     )
     assert (stdout.strip(), stderr) == (f"{non_boolean_schemas}", "")
 
