@@ -150,7 +150,10 @@ class ImplementationSubcommand(Protocol):
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
 
-def implementation_subcommand(reporter: _report.Reporter = SILENT):
+def implementation_subcommand(
+    reporter: _report.Reporter = SILENT,
+    default_implementations: Set[str] = Implementation.known(),
+):
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -193,7 +196,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
                     running.append(implementation)
 
-                if running:
+                if running or len(default_implementations) == 0:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
@@ -207,7 +210,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             "image_names",
             type=_Image(),
             default=lambda: (
-                Implementation.known()
+                default_implementations
                 if sys.stdin.isatty()
                 else [line.strip() for line in sys.stdin]
             ),
@@ -1015,6 +1018,63 @@ async def filter_implementations(
     for each in implementations:
         if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
+
+
+@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
+@click.option(
+    "--dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=Dialect.known(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help="Filter from the given list of dialects only.",
+)
+@click.option(
+    "--latest",
+    "-l",
+    "latest",
+    is_flag=True,
+    default=False,
+    help="Show only the latest dialect.",
+)
+@click.option(
+    "--boolean-schemas/--no-boolean-schemas",
+    "-b/-B",
+    "booleans",
+    default=None,
+    help=(
+        "If provided, show only dialects which do (or do not)"
+        "support boolean schemas. Otherwise show either kind."
+    ),
+)
+async def filter_dialects(
+    implementations: Iterable[Implementation],
+    dialects: Iterable[Dialect],
+    latest: bool,
+    booleans: bool | None,
+):
+    """
+    Output dialect URIs matching a given criteria.
+
+    If any implementations are provided, filter dialects supported by all the
+    given implementations.
+    """
+    matching = sorted(
+        dialect
+        for dialect in dialects
+        if dialect.supported_by_all(*implementations)
+        and (booleans is None or dialect.has_boolean_schemas == booleans)
+    )
+    if not matching:
+        click.echo("No dialects match.", file=sys.stderr)
+        return _EX_DATAERR
+
+    for dialect in reversed(matching):
+        click.echo(dialect.uri)
+        if latest:
+            break
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
