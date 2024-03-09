@@ -83,7 +83,17 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
+@click.group(
+    context_settings=dict(help_option_names=["--help", "-h"]),
+    epilog="""
+    If you don't know where to begin, `bowtie validate` (for checking
+    what any given implementations think of your schema) or `bowtie suite`
+    (for running the official test suite against implementations) are likely
+    good places to start.
+
+    Full documentation can also be found at https://docs.bowtie.report
+    """,
+)
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
@@ -110,13 +120,6 @@ def main(log_level: str):
 
     It lets you compare implementations to each other, or to known correct
     results from the JSON Schema test suite.
-
-    If you don't know where to begin, ``bowtie validate`` (for checking what
-    any given implementations think of your schema) or ``bowtie suite`` (for
-    running the official test suite against implementations) are likely good
-    places to start.
-
-    Full documentation can also be found at https://docs.bowtie.report
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
