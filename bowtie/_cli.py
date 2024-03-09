@@ -1030,6 +1030,9 @@ async def filter_dialects(
 ):
     """
     Output dialect URIs matching a given criteria.
+
+    If any implementations are provided, filter dialects supported by all the
+    given implementations.
     """
     matching = (
         dialect
