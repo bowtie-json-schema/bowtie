@@ -887,7 +887,7 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run a sequence of cases provided on standard input.
+    Run test cases written in Bowtie's test format.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -922,7 +922,7 @@ def validate(
     **kwargs: Any,
 ):
     """
-    Validate one or more instances under a given schema across implementations.
+    Validate instances across any implementation.
     """
     if not instances:
         return _EX_NOINPUT
@@ -1054,7 +1054,7 @@ async def filter_dialects(
 @FORMAT
 async def info(implementations: Iterable[Implementation], format: _F):
     """
-    Retrieve a particular implementation (harness)'s metadata.
+    Show information about a supported implementation.
     """
     serializable: dict[ImplementationId, dict[str, Any]] = {}
 
@@ -1115,7 +1115,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test one or more implementations for basic correctness.
+    Smoke test implementations for basic correctness.
     """
     exit_code = 0
 
@@ -1185,7 +1185,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run test cases from the official JSON Schema test suite.
+    Run tests from the official JSON Schema suite.
 
     Supports a number of possible inputs:
 
