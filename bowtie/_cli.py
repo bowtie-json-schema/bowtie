@@ -1002,7 +1002,7 @@ async def filter_implementations(
     default=Dialect.known(),
     metavar="URI_OR_NAME",
     multiple=True,
-    help=("Filter from the given list of dialects only."),
+    help="Filter from the given list of dialects only.",
 )
 @click.option(
     "--latest",
@@ -1030,7 +1030,7 @@ async def filter_implementations(
 )
 async def filter_dialects(
     implementations: Iterable[Implementation],
-    dialects: Sequence[Dialect],
+    dialects: Iterable[Dialect],
     latest: bool,
     boolean_schemas: bool,
     no_boolean_schemas: bool,
