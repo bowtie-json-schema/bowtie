@@ -1343,6 +1343,76 @@ async def test_filter_implementations_stdin(
 
 
 @pytest.mark.asyncio
+async def test_filter_dialects():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+    )
+    dialects_supported = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{dialects_supported}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_latest_dialect():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-l",
+    )
+    assert (stdout.strip(), stderr) == (f"{max(Dialect.known()).uri}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_supporting_implementation(
+    only_draft3,
+):
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-i",
+        only_draft3,
+    )
+    assert (stdout.strip(), stderr) == (
+        "http://json-schema.org/draft-03/schema#",
+        "",
+    )
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_boolean_schemas():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-b",
+    )
+    boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if dialect.has_boolean_schemas
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{boolean_schemas}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_non_boolean_schemas():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-nb",
+    )
+    non_boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if not dialect.has_boolean_schemas
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{non_boolean_schemas}", "")
+
+
+@pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")
