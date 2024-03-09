@@ -1399,6 +1399,18 @@ async def test_filter_dialects_non_boolean_schemas():
 
 
 @pytest.mark.asyncio
+async def test_filter_dialects_no_results(only_draft3):
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-i",
+        only_draft3,
+        "--boolean-schemas",
+        exit_code=-1,
+    )
+    assert (stdout.strip(), stderr) == ("", "No dialects match.\n")
+
+
+@pytest.mark.asyncio
 async def test_validate(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")

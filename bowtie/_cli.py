@@ -1034,18 +1034,20 @@ async def filter_dialects(
     If any implementations are provided, filter dialects supported by all the
     given implementations.
     """
-    matching = (
+    matching = sorted(
         dialect
         for dialect in dialects
         if dialect.supported_by_all(*implementations)
-        and booleans is None
-        or dialect.has_boolean_schemas == booleans
+        and (booleans is None or dialect.has_boolean_schemas == booleans)
     )
-    if latest:
-        click.echo(max(matching).uri)
-    else:
-        for dialect in sorted(matching, reverse=True):
-            click.echo(dialect.uri)
+    if not matching:
+        click.echo("No dialects match.", file=sys.stderr)
+        return _EX_DATAERR
+
+    for dialect in reversed(matching):
+        click.echo(dialect.uri)
+        if latest:
+            break
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
