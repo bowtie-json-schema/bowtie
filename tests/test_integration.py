@@ -1344,9 +1344,7 @@ async def test_filter_implementations_stdin(
 
 @pytest.mark.asyncio
 async def test_filter_dialects():
-    stdout, stderr = await bowtie(
-        "filter-dialects",
-    )
+    stdout, stderr = await bowtie("filter-dialects")
     dialects_supported = "\n".join(
         [
             str(dialect.uri)
@@ -1362,30 +1360,21 @@ async def test_filter_dialects_latest_dialect():
         "filter-dialects",
         "-l",
     )
-    assert (stdout.strip(), stderr) == (f"{max(Dialect.known()).uri}", "")
+    assert (stdout, stderr) == (f"{max(Dialect.known()).uri}\n", "")
 
 
 @pytest.mark.asyncio
-async def test_filter_dialects_supporting_implementation(
-    only_draft3,
-):
-    stdout, stderr = await bowtie(
-        "filter-dialects",
-        "-i",
-        only_draft3,
-    )
-    assert (stdout.strip(), stderr) == (
-        "http://json-schema.org/draft-03/schema#",
+async def test_filter_dialects_supporting_implementation(only_draft3):
+    stdout, stderr = await bowtie("filter-dialects", "-i", only_draft3)
+    assert (stdout, stderr) == (
+        "http://json-schema.org/draft-03/schema#\n",
         "",
     )
 
 
 @pytest.mark.asyncio
 async def test_filter_dialects_boolean_schemas():
-    stdout, stderr = await bowtie(
-        "filter-dialects",
-        "-b",
-    )
+    stdout, stderr = await bowtie("filter-dialects", "-b")
     boolean_schemas = "\n".join(
         [
             str(dialect.uri)
@@ -1398,10 +1387,7 @@ async def test_filter_dialects_boolean_schemas():
 
 @pytest.mark.asyncio
 async def test_filter_dialects_non_boolean_schemas():
-    stdout, stderr = await bowtie(
-        "filter-dialects",
-        "-nb",
-    )
+    stdout, stderr = await bowtie("filter-dialects", "-B")
     non_boolean_schemas = "\n".join(
         [
             str(dialect.uri)

@@ -1013,40 +1013,36 @@ async def filter_implementations(
     help="Show only the latest dialect.",
 )
 @click.option(
-    "--boolean-schemas",
-    "-b",
-    "boolean_schemas",
-    is_flag=True,
-    default=False,
-    help="Show only dialects which do support boolean schemas.",
-)
-@click.option(
-    "--no-boolean-schemas",
-    "-nb",
-    "no_boolean_schemas",
-    is_flag=True,
-    default=False,
-    help="Show only dialects which do not support boolean schemas.",
+    "--boolean-schemas/--no-boolean-schemas",
+    "-b/-B",
+    "booleans",
+    default=None,
+    help=(
+        "If provided, show only dialects which do (or do not)"
+        "support boolean schemas. Otherwise show either kind."
+    ),
 )
 async def filter_dialects(
     implementations: Iterable[Implementation],
     dialects: Iterable[Dialect],
     latest: bool,
-    boolean_schemas: bool,
-    no_boolean_schemas: bool,
+    booleans: bool | None,
 ):
     """
-    Output dialects matching a given criteria.
+    Output dialect URIs matching a given criteria.
     """
-    for dialect in sorted(dialects, reverse=True):
-        if dialect.supported_by_all(*implementations) and (
-            (boolean_schemas and dialect.has_boolean_schemas)
-            or (no_boolean_schemas and not dialect.has_boolean_schemas)
-            or not (boolean_schemas or no_boolean_schemas)
-        ):
+    matching = (
+        dialect
+        for dialect in dialects
+        if dialect.supported_by_all(*implementations)
+        and booleans is None
+        or dialect.has_boolean_schemas == booleans
+    )
+    if latest:
+        click.echo(max(matching).uri)
+    else:
+        for dialect in sorted(matching, reverse=True):
             click.echo(dialect.uri)
-            if latest:
-                break
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
