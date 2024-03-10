@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from bowtie._commands import AnyTestResult, Command, ImplementationId
     from bowtie._core import Implementation, ImplementationInfo, Test
 
+import click
 
 class InvalidReport(Exception):
     """

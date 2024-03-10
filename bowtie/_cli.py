@@ -942,21 +942,9 @@ def validate(
     if not instances:
         return _EX_NOINPUT
 
-    schema = json.load(schema)
-
-    if "dialect" in kwargs and _validate_schema_and_dialect(
-        schema=schema,
-        dialect=kwargs["dialect"],
-    ):
-        report = _report.Reporter()
-        report.failed_validate_schema_and_dialect(
-            schema=schema,
-            dialect=kwargs["dialect"],
-        )
-
     case = TestCase(
         description="bowtie validate",
-        schema=schema,
+        schema=json.load(schema),
         tests=[
             Test(
                 description=str(i),
@@ -1313,7 +1301,14 @@ async def _run(
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
 
+                if("$schema" in seq_case.case.schema and 
+                   _validate_schema_and_dialect(seq_case.case.schema,dialect)
+                ):
+                    reporter.failed_validate_schema_and_dialect(
+                        seq_case.case.schema, dialect
+                        )
                 responses = [seq_case.run(runner=runner) for runner in runners]
+                
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
