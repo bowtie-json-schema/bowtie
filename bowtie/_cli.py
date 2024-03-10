@@ -83,7 +83,17 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
+@click.group(
+    context_settings=dict(help_option_names=["--help", "-h"]),
+    epilog="""
+    If you don't know where to begin, `bowtie validate` (for checking
+    what any given implementations think of your schema) or `bowtie suite`
+    (for running the official test suite against implementations) are likely
+    good places to start.
+
+    Full documentation can also be found at https://docs.bowtie.report
+    """,
+)
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
@@ -110,13 +120,6 @@ def main(log_level: str):
 
     It lets you compare implementations to each other, or to known correct
     results from the JSON Schema test suite.
-
-    If you don't know where to begin, ``bowtie validate`` (for checking what
-    any given implementations think of your schema) or ``bowtie suite`` (for
-    running the official test suite against implementations) are likely good
-    places to start.
-
-    Full documentation can also be found at https://docs.bowtie.report
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
@@ -902,7 +905,7 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run a sequence of cases provided on standard input.
+    Run test cases written in Bowtie's test format.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -937,7 +940,7 @@ def validate(
     **kwargs: Any,
 ):
     """
-    Validate one or more instances under a given schema across implementations.
+    Validate instances across any implementation.
     """
     if not instances:
         return _EX_NOINPUT
@@ -1069,7 +1072,7 @@ async def filter_dialects(
 @FORMAT
 async def info(implementations: Iterable[Implementation], format: _F):
     """
-    Retrieve a particular implementation (harness)'s metadata.
+    Show information about a supported implementation.
     """
     serializable: dict[ImplementationId, dict[str, Any]] = {}
 
@@ -1130,7 +1133,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test one or more implementations for basic correctness.
+    Smoke test implementations for basic correctness.
     """
     exit_code = 0
 
@@ -1200,7 +1203,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run test cases from the official JSON Schema test suite.
+    Run tests from the official JSON Schema suite.
 
     Supports a number of possible inputs:
 
