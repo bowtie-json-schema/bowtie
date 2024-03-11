@@ -33,7 +33,7 @@ export default class Dialect {
 
   async fetchReport(baseURI: URL = siteURI): Promise<ReportData> {
     const url = new URL(`${baseURI.href}${this.shortName}.json`);
-    const response = await fetch(url.toString());
+    const response = await fetch(url);
     return fromSerialized(await response.text());
   }
 
