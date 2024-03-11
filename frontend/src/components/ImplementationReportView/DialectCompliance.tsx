@@ -43,7 +43,7 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.withName(b[0]).firstPublicationDate -
-                    +Dialect.withName(a[0]).firstPublicationDate,
+                    +Dialect.withName(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
                 const dialect = Dialect.withName(dialectName);
@@ -67,8 +67,8 @@ const DialectCompliance: React.FC<{
                           className="float-end"
                           src={complianceBadgeFor(
                             implementation,
-                            dialect,
-                          ).href()}
+                            dialect
+                          ).toString()}
                         />
                       </Link>
                     </td>

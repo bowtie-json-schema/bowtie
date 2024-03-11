@@ -1,36 +1,39 @@
-import URI from "urijs";
-
 import { Implementation } from "../data/parseReportData";
 import Dialect from "./Dialect";
 import siteURI from "./Site";
 
-const SHIELDS = new URI("https://img.shields.io/endpoint");
+const SHIELDS = new URL("https://img.shields.io/endpoint");
 
-const BADGES = siteURI.clone().segment("badges");
+const BADGES = new URL(siteURI.toString());
+BADGES.pathname += "/badges";
 
-const badgeFor = (uri: URI): URI => SHIELDS.clone().addQuery("url", uri);
+const badgeFor = (url: URL): URL =>
+  new URL(SHIELDS.toString() + "?url=" + encodeURIComponent(url.toString()));
 
-// FIXME: probably all the below belongs in Implementation
-const implementationBadges = (implementation: Implementation): URI => {
+const implementationBadges = (implementation: Implementation): URL => {
   const implementationId = `${implementation.language}-${implementation.name}`;
-  return BADGES.clone().segment(implementationId);
+  const url = new URL(BADGES.toString());
+  url.pathname += "/" + implementationId;
+  return url;
 };
 
-export const versionsBadgeFor = (implementation: Implementation): URI =>
+export const versionsBadgeFor = (implementation: Implementation): URL =>
   badgeFor(
-    implementationBadges(implementation)
-      .clone()
-      .segment("supported_versions.json"),
+    new URL(
+      implementationBadges(implementation).toString() +
+        "/supported_versions.json"
+    )
   );
 
 export const complianceBadgeFor = (
   implementation: Implementation,
-  dialect: Dialect,
-): URI =>
+  dialect: Dialect
+): URL =>
   badgeFor(
-    implementationBadges(implementation)
-      .clone()
-      .segment("compliance")
-      .segment(dialect.shortName)
-      .suffix("json"),
+    new URL(
+      implementationBadges(implementation).toString() +
+        "/compliance/" +
+        dialect.shortName +
+        ".json"
+    )
   );
