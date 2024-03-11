@@ -1840,6 +1840,6 @@ async def test_dialect_warning_run(envsonschema, tmp_path):
         tmp_path / "a.json",
     )
     assert re.search(
-          r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n", # noqa: E501
-        stderr
+        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
+        stderr,
     )

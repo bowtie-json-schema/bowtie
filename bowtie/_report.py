@@ -156,7 +156,9 @@ class Reporter:
             "Stopping -- the maximum number of unsuccessful tests was reached",
         )
 
-    def failed_validate_schema_and_dialect(self, schema: Any, dialect: Dialect):
+    def failed_validate_schema_and_dialect(
+        self, schema: Any, dialect: Dialect
+    ):
         schema = schema["$schema"]
         schema_dialect = Dialect.by_uri().get(URL.parse(schema))
         if(schema_dialect is not None):
