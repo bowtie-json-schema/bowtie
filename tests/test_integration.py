@@ -1827,7 +1827,7 @@ async def test_dialect_warning_validate(envsonschema, tmp_path):
 @pytest.mark.asyncio
 async def test_dialect_warning_run(envsonschema, tmp_path):
     tmp_path.joinpath("a.json").write_text(
-        '{ "description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"},"tests": [{"description": "i", "instance": 37}] }' # noqa: E501
+        '{ "description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"},"tests": [{"description": "i", "instance": 37}] }',  # noqa: E501
     )
 
     _, stderr = await bowtie(
@@ -1840,6 +1840,6 @@ async def test_dialect_warning_run(envsonschema, tmp_path):
         tmp_path / "a.json",
     )
     assert re.search(
-          r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n", # noqa: E501
-        stderr
+        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
+        stderr,
     )
