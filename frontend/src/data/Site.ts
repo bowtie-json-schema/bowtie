@@ -11,7 +11,7 @@ siteURI.pathname = new URL(import.meta.env.BASE_URL, base).pathname;
 //        as `Dialect` handles it for dialect reports.
 export const implementationMetadataURI = new URL(
   "implementations.json",
-  siteURI,
+  siteURI.href
 ).href;
 
 export default siteURI;
