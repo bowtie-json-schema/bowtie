@@ -173,7 +173,7 @@ class Reporter:
                     "The $schema poperty refers to "
                     f"'{schema_dialect.pretty_name}'"
                     " while the dialect argument is"
-                    f"'{dialect.pretty_name}'",
+                    f" '{dialect.pretty_name}'",
                 )
                 return
 
