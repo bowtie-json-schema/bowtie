@@ -17,9 +17,7 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
-from jsonschema_lexer import (  # type: ignore[reportMissingTypeStubs]
-    JSONSchemaLexer,
-)
+from jsonschema_lexer import JSONSchemaLexer
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
     JsonLexer,
 )
@@ -83,7 +81,17 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
+@click.group(
+    context_settings=dict(help_option_names=["--help", "-h"]),
+    epilog="""
+    If you don't know where to begin, `bowtie validate` (for checking
+    what any given implementations think of your schema) or `bowtie suite`
+    (for running the official test suite against implementations) are likely
+    good places to start.
+
+    Full documentation can also be found at https://docs.bowtie.report
+    """,
+)
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
@@ -110,13 +118,6 @@ def main(log_level: str):
 
     It lets you compare implementations to each other, or to known correct
     results from the JSON Schema test suite.
-
-    If you don't know where to begin, ``bowtie validate`` (for checking what
-    any given implementations think of your schema) or ``bowtie suite`` (for
-    running the official test suite against implementations) are likely good
-    places to start.
-
-    Full documentation can also be found at https://docs.bowtie.report
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
@@ -150,7 +151,10 @@ class ImplementationSubcommand(Protocol):
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
 
-def implementation_subcommand(reporter: _report.Reporter = SILENT):
+def implementation_subcommand(
+    reporter: _report.Reporter = SILENT,
+    default_implementations: Set[str] = Implementation.known(),
+):
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -193,7 +197,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
                     running.append(implementation)
 
-                if running:
+                if running or len(default_implementations) == 0:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
@@ -207,7 +211,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             "image_names",
             type=_Image(),
             default=lambda: (
-                Implementation.known()
+                default_implementations
                 if sys.stdin.isatty()
                 else [line.strip() for line in sys.stdin]
             ),
@@ -785,8 +789,8 @@ DIALECT = click.option(
     ),
 )
 FILTER = click.option(
+    "--filter",
     "-k",
-    "filter",
     default="",
     type=_Filter(),
     metavar="GLOB",
@@ -884,7 +888,7 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run a sequence of cases provided on standard input.
+    Run test cases written in Bowtie's test format.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -919,7 +923,7 @@ def validate(
     **kwargs: Any,
 ):
     """
-    Validate one or more instances under a given schema across implementations.
+    Validate instances across any implementation.
     """
     if not instances:
         return _EX_NOINPUT
@@ -990,11 +994,68 @@ async def filter_implementations(
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
 
 
+@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
+@click.option(
+    "--dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=Dialect.known(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help="Filter from the given list of dialects only.",
+)
+@click.option(
+    "--latest",
+    "-l",
+    "latest",
+    is_flag=True,
+    default=False,
+    help="Show only the latest dialect.",
+)
+@click.option(
+    "--boolean-schemas/--no-boolean-schemas",
+    "-b/-B",
+    "booleans",
+    default=None,
+    help=(
+        "If provided, show only dialects which do (or do not)"
+        "support boolean schemas. Otherwise show either kind."
+    ),
+)
+async def filter_dialects(
+    implementations: Iterable[Implementation],
+    dialects: Iterable[Dialect],
+    latest: bool,
+    booleans: bool | None,
+):
+    """
+    Output dialect URIs matching a given criteria.
+
+    If any implementations are provided, filter dialects supported by all the
+    given implementations.
+    """
+    matching = sorted(
+        dialect
+        for dialect in dialects
+        if dialect.supported_by_all(*implementations)
+        and (booleans is None or dialect.has_boolean_schemas == booleans)
+    )
+    if not matching:
+        click.echo("No dialects match.", file=sys.stderr)
+        return _EX_DATAERR
+
+    for dialect in reversed(matching):
+        click.echo(dialect.uri)
+        if latest:
+            break
+
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
 async def info(implementations: Iterable[Implementation], format: _F):
     """
-    Retrieve a particular implementation (harness)'s metadata.
+    Show information about a supported implementation.
     """
     serializable: dict[ImplementationId, dict[str, Any]] = {}
 
@@ -1055,7 +1116,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test one or more implementations for basic correctness.
+    Smoke test implementations for basic correctness.
     """
     exit_code = 0
 
@@ -1125,7 +1186,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run test cases from the official JSON Schema test suite.
+    Run tests from the official JSON Schema suite.
 
     Supports a number of possible inputs:
 
