@@ -47,11 +47,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
             <span>{implementation.name}</span>
           </span>
           <span>
-            {Object.entries(implementation.results).length !== 0 ? (
-              <EmbedBadges implementation={implementation} />
-            ) : (
-              ""
-            )}
+            <EmbedBadges implementation={implementation} />
           </span>
         </Card.Header>
 
@@ -140,7 +136,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>

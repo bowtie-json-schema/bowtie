@@ -4,17 +4,16 @@ import CopyToClipboard from "../CopyToClipboard";
 import Dialect from "../../data/Dialect";
 import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
 import { badgeFormatOptions, BadgeFormatOption } from "./BadgeFormats";
+import URI from "urijs";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const [activeTab, setActiveTab] = useState("URL");
+  const [activeTab, setActiveTab] = useState("Markdown");
   const [activeBadge, setActiveBadge] = useState("JSON Schema Versions");
-  const [badgeURI, setBadgeURI] = useState(
-    versionsBadgeFor(implementation).href(),
-  );
+  const [badgeURI, setBadgeURI] = useState(versionsBadgeFor(implementation));
 
-  const handleSelectBadge = (badgeName: string, URI: string): void => {
+  const handleSelectBadge = (badgeName: string, URI: URI) => {
     setActiveBadge(badgeName);
     setBadgeURI(URI);
   };
@@ -23,6 +22,12 @@ const EmbedBadges: React.FC<{
     if (tabKey) {
       setActiveTab(tabKey);
     }
+  };
+
+  const badgePrettyName = (badgeName: string): string => {
+    return badgeName === "JSON Schema Versions"
+      ? "JSON Schema Versions"
+      : Dialect.withName(activeBadge).prettyName;
   };
 
   const results = Object.entries(implementation.results).sort((a, b) => {
@@ -39,7 +44,6 @@ const EmbedBadges: React.FC<{
         type="button"
         data-bs-toggle="dropdown"
         data-bs-auto-close="outside"
-        style={{ width: "80px" }}
       >
         Badges
       </button>
@@ -60,9 +64,7 @@ const EmbedBadges: React.FC<{
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                {activeBadge === "JSON Schema Versions"
-                  ? "JSON Schema Versions"
-                  : Dialect.withName(activeBadge).prettyName}
+                {badgePrettyName(activeBadge)}
               </button>
               <ul
                 className="dropdown-menu"
@@ -77,7 +79,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation).href(),
+                        versionsBadgeFor(implementation)
                       )
                     }
                   >
@@ -85,7 +87,6 @@ const EmbedBadges: React.FC<{
                   </button>
                 </li>
                 <h6 className="dropdown-header">Compliance Badges</h6>
-                {/* sorting */}
                 {results.map((result) => (
                   <li key={result[0]}>
                     <button
@@ -97,8 +98,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0]),
-                          ).href(),
+                            Dialect.withName(result[0])
+                          )
                         )
                       }
                     >
@@ -125,7 +126,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                },
+                }
               )}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
@@ -150,17 +151,25 @@ const EmbedBadges: React.FC<{
                             width: "100%",
                           }}
                         >
-                          {formatItem.renderDisplay(badgeURI)}
+                          <pre className="pt-2 pb-2">
+                            {formatItem.generateCopyText(
+                              badgeURI.href(),
+                              badgePrettyName(activeBadge)
+                            )}
+                          </pre>
                         </span>
                       </div>
                       <div className="ms-auto pb-2 px-1">
                         <CopyToClipboard
-                          textToCopy={formatItem.generateCopyText(badgeURI)}
+                          textToCopy={formatItem.generateCopyText(
+                            badgeURI.href(),
+                            badgePrettyName(activeBadge)
+                          )}
                         />
                       </div>
                     </div>
                   </div>
-                ),
+                )
               )}
             </div>
           </div>
