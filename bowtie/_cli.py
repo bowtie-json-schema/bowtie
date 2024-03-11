@@ -1307,7 +1307,8 @@ async def _run(
                 if (
                     "$schema" in seq_case.case.schema
                     and _validate_schema_and_dialect(
-                        seq_case.case.schema, dialect
+                        seq_case.case.schema,
+                        dialect,
                     )
                 ):
                     reporter.failed_validate_schema_and_dialect(
