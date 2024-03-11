@@ -1822,17 +1822,21 @@ async def test_dialect_warning_validate(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "a.json",
     )
-
+    
     assert re.search(
-        r"\[Warning\s*\]\s*The \$Schema Poperty Refers To 'Draft \d{4}-\d{2}' While The Dialect Argument Is 'Draft \d+'\n",
-        stderr.title(),
-    )
-
+        str.join(r"",[r"\[Warning\s*\]\s*The \$Schema Poperty Refers To ",
+                r"'Draft \d{4}-\d{2}' ",
+                r"While The Dialect Argument Is 'Draft \d+'\n"]
+            )
+        ,stderr.title())
 
 @pytest.mark.asyncio
-async def test_dialect_warning_run(envsonschema, tmp_path):
+async def test_dialect_warning_run(envsonschema,tmp_path): 
     tmp_path.joinpath("a.json").write_text(
-        '{"description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}, "tests": [{"description": "i", "instance": 37}] }'
+        str.join("",['{ "description": "wrong dialect",',
+        '"schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"},',
+        '"tests": [{"description": "i", "instance": 37}] }']
+    )
     )
 
     _, stderr = await bowtie(
@@ -1846,6 +1850,8 @@ async def test_dialect_warning_run(envsonschema, tmp_path):
     )
 
     assert re.search(
-        r"\[Warning\s*\]\s*The \$Schema Poperty Refers To 'Draft \d{4}-\d{2}' While The Dialect Argument Is 'Draft \d+'\n",
-        stderr.title(),
-    )
+        str.join(r"",[r"\[Warning\s*\]\s*The \$Schema Poperty Refers To ",
+                r"'Draft \d{4}-\d{2}' ",
+                r"While The Dialect Argument Is 'Draft \d+'\n"]
+            )
+        ,stderr.title())
