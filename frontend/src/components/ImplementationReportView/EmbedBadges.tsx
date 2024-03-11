@@ -79,7 +79,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation)
+                        versionsBadgeFor(implementation),
                       )
                     }
                   >
@@ -98,8 +98,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0])
-                          )
+                            Dialect.withName(result[0]),
+                          ),
                         )
                       }
                     >
@@ -126,7 +126,7 @@ const EmbedBadges: React.FC<{
                       </button>
                     </li>
                   );
-                }
+                },
               )}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
@@ -154,7 +154,7 @@ const EmbedBadges: React.FC<{
                           <pre className="pt-2 pb-2">
                             {formatItem.generateCopyText(
                               badgeURI.href(),
-                              badgePrettyName(activeBadge)
+                              badgePrettyName(activeBadge),
                             )}
                           </pre>
                         </span>
@@ -163,13 +163,13 @@ const EmbedBadges: React.FC<{
                         <CopyToClipboard
                           textToCopy={formatItem.generateCopyText(
                             badgeURI.href(),
-                            badgePrettyName(activeBadge)
+                            badgePrettyName(activeBadge),
                           )}
                         />
                       </div>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
