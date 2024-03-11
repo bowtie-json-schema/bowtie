@@ -39,7 +39,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
       });
   }, [reportData, filterCriteria, searchText]);
 
-
   return (
     <div>
       <Row className="mt-3">

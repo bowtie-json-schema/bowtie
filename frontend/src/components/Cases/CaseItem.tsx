@@ -114,11 +114,14 @@ const CaseItem = ({
   const { isDarkMode } = useContext(ThemeContext);
 
   const highlightDescription = useMemo(() => {
-    const HighlightedDescription = (description: string, searchText: string): ReactNode => {
+    const HighlightedDescription = (
+      description: string,
+      searchText: string,
+    ): ReactNode => {
       if (!searchText) {
         return description;
       }
-  
+
       const regex = new RegExp(`(${searchText})`, "gi");
       const parts: string[] = description.split(regex);
       return (
@@ -140,13 +143,11 @@ const CaseItem = ({
         </>
       );
     };
-  
-    HighlightedDescription.displayName = 'HighlightedDescription';
-  
+
+    HighlightedDescription.displayName = "HighlightedDescription";
+
     return HighlightedDescription;
   }, [isDarkMode]);
-  
-  
 
   useEffect(() => {
     startTransition(() =>
