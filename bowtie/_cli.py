@@ -791,8 +791,8 @@ DIALECT = click.option(
     ),
 )
 FILTER = click.option(
+    "--filter",
     "-k",
-    "filter",
     default="",
     type=_Filter(),
     metavar="GLOB",
