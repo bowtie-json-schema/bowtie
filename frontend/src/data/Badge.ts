@@ -21,19 +21,19 @@ export const versionsBadgeFor = (implementation: Implementation): URL =>
   badgeFor(
     new URL(
       implementationBadges(implementation).toString() +
-        "/supported_versions.json"
-    )
+        "/supported_versions.json",
+    ),
   );
 
 export const complianceBadgeFor = (
   implementation: Implementation,
-  dialect: Dialect
+  dialect: Dialect,
 ): URL =>
   badgeFor(
     new URL(
       implementationBadges(implementation).toString() +
         "/compliance/" +
         dialect.shortName +
-        ".json"
-    )
+        ".json",
+    ),
   );
