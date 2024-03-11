@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from bowtie._core import Implementation, ImplementationInfo, Test
 
 
-
 class InvalidReport(Exception):
     """
     The report is invalid.
