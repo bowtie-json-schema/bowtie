@@ -157,11 +157,13 @@ class Reporter:
         )
 
     def failed_validate_schema_and_dialect(
-        self, schema: Any, dialect: Dialect
+        self,
+        schema: Any,
+        dialect: Dialect,
     ):
         schema = schema["$schema"]
         schema_dialect = Dialect.by_uri().get(URL.parse(schema))
-        if(schema_dialect is not None):
+        if schema_dialect is not None:
             self._log.warn(
                 "The $schema property refers to "
                 f"{schema_dialect.pretty_name!r}"
