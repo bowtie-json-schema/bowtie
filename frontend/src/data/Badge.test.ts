@@ -19,7 +19,7 @@ describe("Badge", () => {
       "https://img.shields.io/endpoint?url=https://bowtie.report/badges/javascript-node/supported_versions.json"
     );
     const badgeUrl = versionsBadgeFor(mockImplementation);
-    expect(badgeUrl.href).toEqual(expectedUrl.href);
+    expect(badgeUrl.href).toBe(expectedUrl.href);
   });
 
   test("complianceBadgeFor should return the correct URL", () => {
@@ -30,6 +30,6 @@ describe("Badge", () => {
       mockImplementation,
       Dialect.withName("draft7")
     );
-    expect(badgeURL.href).toEqual(expectedUrl.href);
+    expect(badgeURL.href).toBe(expectedUrl.href);
   });
 });
