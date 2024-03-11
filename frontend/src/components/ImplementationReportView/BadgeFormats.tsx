@@ -7,8 +7,7 @@ export interface BadgeFormatOption {
 export const badgeFormatOptions: BadgeFormatOption[] = [
   {
     type: "URL",
-    // eslint-disable-next-line
-    generateCopyText: (badgeURI, prettyName) => `${badgeURI}`,
+    generateCopyText: (badgeURI) => `${badgeURI}`,
   },
   {
     type: "Markdown",
