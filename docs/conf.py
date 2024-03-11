@@ -75,6 +75,23 @@ rst_prolog = f"""
 """  # noqa: E501, RUF100
 
 
+def _resolve_broken_refs(app, env, node, contnode):
+    # Make `bowtie foo` try `bowtie-foo`, i.e. assume it's a CLI command
+    if node["reftarget"].startswith("bowtie "):
+        return app.env.get_domain("std").resolve_any_xref(
+            env,
+            node["refdoc"],
+            app.builder,
+            node["reftarget"].replace(" ", "-"),
+            node,
+            contnode,
+        )
+
+
+def setup(app):
+    app.connect("missing-reference", _resolve_broken_refs)
+
+
 def entire_domain(host):
     return r"http.?://" + re.escape(host) + r"($|/.*)"
 

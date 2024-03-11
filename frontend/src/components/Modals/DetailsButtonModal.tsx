@@ -1,59 +1,67 @@
 import { Button, Modal } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
-import { Case, ImplementationData } from "../../data/parseReportData";
+import {
+  Case,
+  Implementation,
+  ImplementationResults,
+} from "../../data/parseReportData";
 import SchemaDisplay from "../Cases/SchemaDisplay";
 
 export const DetailsButtonModal = ({
   show,
   handleClose,
   cases,
+  implementationResults,
   implementation,
 }: {
   show: boolean;
   handleClose: () => void;
   cases: Map<number, Case>;
-  implementation: ImplementationData;
+  implementationResults: ImplementationResults;
+  implementation: Implementation;
 }) => {
   const failedResults: JSX.Element[] = [];
-  Array.from(implementation.cases.entries()).forEach(([seq, results]) => {
-    const caseData = cases.get(seq)!;
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      if (result.state === "successful") {
-        continue;
-      }
+  Array.from(implementationResults.cases.entries()).forEach(
+    ([seq, results]) => {
+      const caseData = cases.get(seq)!;
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        if (result.state === "successful") {
+          continue;
+        }
 
-      let message;
-      if (result.state === "skipped" || result.state === "errored") {
-        message = implementation.cases.get(seq)![i].message!;
-      } else if (result.valid) {
-        message = "Unexpectedly valid";
-      } else {
-        message = "Unexpectedly invalid";
+        let message;
+        if (result.state === "skipped" || result.state === "errored") {
+          message = implementationResults.cases.get(seq)![i].message!;
+        } else if (result.valid) {
+          message = "Unexpectedly valid";
+        } else {
+          message = "Unexpectedly invalid";
+        }
+        const borderClass =
+          result.state === "skipped" ? "border-warning" : "border-danger";
+        failedResults.push(
+          <DetailItem
+            key={`${seq}-${i}`}
+            title={caseData.description}
+            description={caseData.tests[i].description}
+            schema={caseData.schema}
+            instance={caseData.tests[i].instance}
+            message={message}
+            borderClass={borderClass}
+          />,
+        );
       }
-      const borderClass =
-        result.state === "skipped" ? "border-warning" : "border-danger";
-      failedResults.push(
-        <DetailItem
-          key={`${seq}-${i}`}
-          title={caseData.description}
-          description={caseData.tests[i].description}
-          schema={caseData.schema}
-          instance={caseData.tests[i].instance}
-          message={message}
-          borderClass={borderClass}
-        />,
-      );
-    }
-  });
+    },
+  );
   return (
     <Modal show={show} onHide={handleClose} fullscreen={true}>
       <Modal.Header closeButton>
         <Modal.Title>
           <label className="me-1">Unsuccessful Tests:</label>
-          <b>{implementation.metadata.name}</b>
+          <b>{implementation.name}</b>
           <small className="text-muted ps-2">
-            {mapLanguage(implementation.metadata.language)}
+            {mapLanguage(implementation.language)}
           </small>
         </Modal.Title>
       </Modal.Header>

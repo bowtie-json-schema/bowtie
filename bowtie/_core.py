@@ -149,6 +149,11 @@ class Dialect:
             },
         )
 
+    def supported_by_all(self, *implementations: Implementation):
+        return all(
+            implementation.supports(self) for implementation in implementations
+        )
+
 
 @frozen
 class NoSuchImplementation(Exception):

@@ -3,20 +3,26 @@ import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Case, ImplementationData } from "../../data/parseReportData";
+import {
+  Case,
+  Implementation,
+  ImplementationResults,
+} from "../../data/parseReportData";
 
 const ImplementationRow = ({
   cases,
+  implementationResults,
   implementation,
 }: {
   cases: Map<number, Case>;
-  implementation: ImplementationData;
+  implementationResults: ImplementationResults;
+  implementation: Implementation;
   key: number;
   index: number;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
-  const implementationPath = getImplementationPath(implementation);
+  const implementationPath = getImplementationPath(implementationResults);
 
   return (
     <tr>
@@ -26,40 +32,40 @@ const ImplementationRow = ({
         scope="row"
       >
         <NavLink to={`/implementations/${implementationPath}`}>
-          {implementation.metadata.name}
+          {implementation.name}
         </NavLink>
         <small className="text-muted ps-1">
-          {mapLanguage(implementation.metadata.language)}
+          {mapLanguage(implementation.language)}
         </small>
       </th>
       <td className="align-middle d-none d-sm-table-cell">
         <small className="font-monospace text-muted">
-          {implementation.metadata.version ?? ""}
+          {implementation.version ?? ""}
         </small>
       </td>
 
       <td className="text-center align-middle">
-        {implementation.erroredCases}
+        {implementationResults.erroredCases}
       </td>
       <td className="text-center align-middle">
-        {implementation.skippedTests}
+        {implementationResults.skippedTests}
       </td>
       <td className="text-center align-middle details-required">
-        {implementation.failedTests + implementation.erroredTests}
+        {implementationResults.failedTests + implementationResults.erroredTests}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>: &nbsp;{implementation.failedTests}
+            <b>failed</b>: &nbsp;{implementationResults.failedTests}
           </p>
           <p>
-            <b>errored</b>: &nbsp;{implementation.erroredTests}
+            <b>errored</b>: &nbsp;{implementationResults.erroredTests}
           </p>
         </div>
       </td>
 
       <td className="align-middle p-0">
-        {implementation.failedTests +
-          implementation.erroredTests +
-          implementation.skippedTests >
+        {implementationResults.failedTests +
+          implementationResults.erroredTests +
+          implementationResults.skippedTests >
           0 && (
           <button
             type="button"
@@ -74,14 +80,15 @@ const ImplementationRow = ({
         show={showDetails}
         handleClose={() => setShowDetails(false)}
         cases={cases}
+        implementationResults={implementationResults}
         implementation={implementation}
       />
     </tr>
   );
 };
 
-const getImplementationPath = (implementation: ImplementationData) => {
-  const pathSegment = implementation.id.split("/");
+const getImplementationPath = (implResult: ImplementationResults) => {
+  const pathSegment = implResult.id.split("/");
   return pathSegment[pathSegment.length - 1];
 };
 

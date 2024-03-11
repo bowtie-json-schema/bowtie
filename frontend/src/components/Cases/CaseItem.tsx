@@ -13,14 +13,16 @@ import { mapLanguage } from "../../data/mapLanguage";
 import {
   Case,
   CaseResult,
-  ImplementationData,
+  Implementation,
+  ImplementationResults,
 } from "../../data/parseReportData";
 
 interface CaseProps {
   seq: number;
   caseData: Case;
   schemaDisplayRef?: RefObject<HTMLDivElement>;
-  implementations: ImplementationData[];
+  implementations: Implementation[];
+  implementationsResults: ImplementationResults[];
 }
 
 const CaseContent = ({
@@ -28,6 +30,7 @@ const CaseContent = ({
   schemaDisplayRef,
   caseData,
   implementations,
+  implementationsResults,
 }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>(
     caseData.tests[0].instance,
@@ -48,15 +51,12 @@ const CaseContent = ({
                 <td
                   className="text-center"
                   scope="col"
-                  key={
-                    implementation.metadata.name +
-                    implementation.metadata.language
-                  }
+                  key={implementation.name + implementation.language}
                 >
                   <div className="flex-column d-flex">
-                    <b>{implementation.metadata.name}</b>
+                    <b>{implementation.name}</b>
                     <small className="text-muted">
-                      {mapLanguage(implementation.metadata.language)}
+                      {mapLanguage(implementation.language)}
                     </small>
                   </div>
                 </td>
@@ -82,8 +82,8 @@ const CaseContent = ({
                 <td>
                   <p className="m-0">{test.description}</p>
                 </td>
-                {implementations.map((impl, i) => {
-                  const caseResults = impl.cases.get(seq);
+                {implementationsResults.map((implResult, i) => {
+                  const caseResults = implResult.cases.get(seq);
                   const result: CaseResult =
                     caseResults !== undefined
                       ? caseResults[index]
@@ -99,7 +99,12 @@ const CaseContent = ({
   );
 };
 
-const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
+const CaseItem = ({
+  seq,
+  caseData,
+  implementations,
+  implementationsResults,
+}: CaseProps) => {
   const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
@@ -111,11 +116,12 @@ const CaseItem = ({ seq, caseData, implementations }: CaseProps) => {
           seq={seq}
           caseData={caseData}
           implementations={implementations}
+          implementationsResults={implementationsResults}
           schemaDisplayRef={schemaDisplayRef}
         />,
       ),
     );
-  }, [seq, caseData, implementations]);
+  }, [seq, caseData, implementations, implementationsResults]);
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
       <Accordion.Header>{caseData.description}</Accordion.Header>
