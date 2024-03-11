@@ -17,9 +17,7 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
-from jsonschema_lexer import (  # type: ignore[reportMissingTypeStubs]
-    JSONSchemaLexer,
-)
+from jsonschema_lexer import JSONSchemaLexer
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
     JsonLexer,
 )
