@@ -880,7 +880,7 @@ VALIDATE = click.option(
     default="-",
     type=click.File(mode="rb"),
 )
-async def run(
+def run(
     input: Iterable[str],
     filter: CaseTransform,
     dialect: Dialect,
@@ -893,7 +893,7 @@ async def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return await _run(**kwargs, cases=cases, dialect=dialect)
+    return _run(**kwargs, cases=cases, dialect=dialect)
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
@@ -914,7 +914,7 @@ async def run(
 )
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
-async def validate(
+def validate(
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
@@ -938,7 +938,7 @@ async def validate(
             for i, instance in enumerate(instances, 1)
         ],
     )
-    return await _run(fail_fast=False, **kwargs, cases=[case])
+    return _run(fail_fast=False, **kwargs, cases=[case])
 
 
 LANGUAGE_ALIASES = {
@@ -1177,7 +1177,7 @@ async def smoke(
 @TIMEOUT
 @VALIDATE
 @click.argument("input", type=_suite.ClickParam())
-async def suite(
+def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
     **kwargs: Any,
@@ -1210,7 +1210,7 @@ async def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = filter(_cases)
-    return await _run(
+    return _run(
         **kwargs,
         dialect=dialect,
         cases=cases,
