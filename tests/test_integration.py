@@ -480,7 +480,7 @@ async def test_unknown_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower()
+    assert "not a known dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -496,7 +496,7 @@ async def test_nonurl_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower()
+    assert "not a known dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -511,7 +511,7 @@ async def test_unsupported_known_dialect(only_draft3):
         results, stderr = await send("")
 
     assert results == []
-    assert "unsupported dialect" in stderr.lower()
+    assert "unsupported dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -883,25 +883,20 @@ async def test_max_fail(envsonschema):
 
 @pytest.mark.asyncio
 async def test_max_fail_with_fail_fast(envsonschema):
-    async with run(
+    stdout, stderr = await bowtie(
+        "run",
         "-i",
         envsonschema,
         "--max-fail",
         "2",
         "--fail-fast",
-    ) as send:
-        with pytest.raises(AssertionError) as exec_info:
-            results, stderr = await send(
-                """
-                    {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-                    {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
-                    {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-                    """,  # noqa: E501
-            )
-        assert (
-            "Error: Cannot use --fail-fast with --max-fail / --max-error"
-            in exec_info.value.args[0]
-        )
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert (
+        "cannot use --fail-fast with --max-fail / --max-error"
+        in stderr.lower()
+    ), stderr
 
 
 @pytest.mark.asyncio
@@ -1803,7 +1798,7 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         tmp_path,
         exit_code=-1,
     )
-    assert re.search(r"does not contain .* cases", stderr)
+    assert re.search(r"does not contain .* cases", stderr), stderr
 
 
 @pytest.mark.asyncio
