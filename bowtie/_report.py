@@ -156,25 +156,16 @@ class Reporter:
             "Stopping -- the maximum number of unsuccessful tests was reached",
         )
 
-    def failed_validate_schema_and_dialect(self, schema: Any, dialect: Any):
-        # here we will raise the exception for the schema and dialect conflict
-
-        if "$schema" in schema:
-            schema = schema["$schema"]
-            schema_dialect = Dialect.by_uri().get(URL.parse(schema))
-            if schema_dialect is None:
-                self._log.exception(
-                    "Unable to parse $schema proprty in the schema",
-                )
-                return
-            if dialect.pretty_name != schema_dialect:
-                self._log.warn(
-                    "The $schema poperty refers to "
-                    f"'{schema_dialect.pretty_name}'"
-                    " while the dialect argument is"
-                    f" '{dialect.pretty_name}'",
-                )
-                return
+    def failed_validate_schema_and_dialect(self, schema: Any, dialect: Dialect):
+        schema = schema["$schema"]
+        schema_dialect = Dialect.by_uri().get(URL.parse(schema))
+        if(schema_dialect != None):
+            self._log.warn(
+                "The $schema property refers to "
+                f"{schema_dialect.pretty_name!r}"
+                " while the dialect argument is"
+                f" {dialect.pretty_name!r}",
+            )
 
 
 @frozen

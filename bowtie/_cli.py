@@ -767,16 +767,11 @@ def _check_fail_fast_provided(
 
 def _validate_schema_and_dialect(
     schema: Any,
-    dialect: Any,
+    dialect: Dialect,
 ) -> bool:
-
-    if "$schema" in schema:
-        schema = schema["$schema"]
-        schema_dialect = Dialect.by_uri().get(URL.parse(schema))
-        if schema_dialect is None:
-            return True
-        if dialect.pretty_name != schema_dialect:
-            return True
+    schema = schema["$schema"]
+    if str(dialect.uri) != schema:
+        return True
     return False
 
 
