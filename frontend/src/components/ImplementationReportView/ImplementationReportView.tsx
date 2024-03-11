@@ -116,7 +116,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                   <img
                     alt={implementation.name}
                     className="my-1"
-                    src={versionsBadgeFor(implementation).toString()}
+                    src={versionsBadgeFor(implementation).href}
                     style={{ maxWidth: "100%" }}
                   />
                 </td>
@@ -131,7 +131,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>

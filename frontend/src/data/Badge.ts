@@ -4,36 +4,34 @@ import siteURI from "./Site";
 
 const SHIELDS = new URL("https://img.shields.io/endpoint");
 
-const BADGES = new URL(siteURI.toString());
-BADGES.pathname += "/badges";
+const BADGES = new URL(`${siteURI.href}/badges`);
 
-const badgeFor = (url: URL): URL =>
-  new URL(SHIELDS.toString() + "?url=" + encodeURIComponent(url.toString()));
+const badgeFor = (url: URL): URL => {
+  const shieldsURL = new URL(SHIELDS);
+  shieldsURL.searchParams.set("url", url.href);
+  return shieldsURL;
+};
 
 const implementationBadges = (implementation: Implementation): URL => {
   const implementationId = `${implementation.language}-${implementation.name}`;
-  const url = new URL(BADGES.toString());
-  url.pathname += "/" + implementationId;
-  return url;
+  return new URL(`${BADGES.href}/${implementationId}`);
 };
 
 export const versionsBadgeFor = (implementation: Implementation): URL =>
   badgeFor(
     new URL(
-      implementationBadges(implementation).toString() +
-        "/supported_versions.json",
-    ),
+      `${implementationBadges(implementation).href}/supported_versions.json`
+    )
   );
 
 export const complianceBadgeFor = (
   implementation: Implementation,
-  dialect: Dialect,
+  dialect: Dialect
 ): URL =>
   badgeFor(
     new URL(
-      implementationBadges(implementation).toString() +
-        "/compliance/" +
-        dialect.shortName +
-        ".json",
-    ),
+      `${implementationBadges(implementation).href}/compliance/${
+        dialect.shortName
+      }.json`
+    )
   );
