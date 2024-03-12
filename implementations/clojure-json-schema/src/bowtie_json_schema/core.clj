@@ -2,7 +2,7 @@
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
             [json-schema.core :as json-schema]
-            [clojure.core.clojure-version])
+            [clojure.core/clojure-version])
   (:gen-class))
 
 (defn -main []
@@ -30,8 +30,7 @@
                                                  "."
                                                  (-> (clojure-version) :minor)
                                                  "."
-                                                 (-> (clojure-version) :incremental))
-                         }})
+                                                 (-> (clojure-version) :incremental))}})
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")
