@@ -22,7 +22,15 @@
 
                           :dialects ["http://json-schema.org/draft-07/schema#",
                                      "http://json-schema.org/draft-06/schema#",
-                                     "http://json-schema.org/draft-04/schema#"]}})
+                                     "http://json-schema.org/draft-04/schema#"]
+                          :os-name (System/getProperty "os.name")
+                          :os-version (System/getProperty "os.version")
+                          :language-version (str (-> (clojure-version) :major)
+                                                 "."
+                                                 (-> (clojure-version) :minor)
+                                                 "."
+                                                 (-> (clojure-version) :incremental))
+                         }})
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")

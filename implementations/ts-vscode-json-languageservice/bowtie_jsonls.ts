@@ -1,5 +1,6 @@
 import * as readline from "readline/promises";
 import * as process from "process";
+import * as os from "os";
 import * as packageJson from "./node_modules/vscode-json-languageservice/package.json";
 
 const jsonls_version = packageJson.version;
@@ -56,6 +57,9 @@ const cmds = {
           "http://json-schema.org/draft-04/schema#",
           "http://json-schema.org/draft-03/schema#",
         ],
+        os: os.platform(),
+        os_version: os.release(),
+        language_version: process.version,
       },
     };
   },
@@ -82,20 +86,20 @@ const cmds = {
             "example://bowtie-test.json",
             "json",
             0,
-            JSON.stringify(test.instance),
+            JSON.stringify(test.instance)
           );
           const jsonDoc = ls.parseJSONDocument(textDoc);
           const semanticErrors = await ls.doValidation(
             textDoc,
             jsonDoc,
             { schemaDraft: dialect },
-            testCase.schema,
+            testCase.schema
           );
           return { valid: semanticErrors.length === 0 ? true : false };
         } catch (error) {
           return { errored: true, context: { message: error.message } };
         }
-      }),
+      })
     );
     return { seq: args.seq, results: results };
   },
