@@ -1799,3 +1799,47 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         exit_code=-1,
     )
     assert re.search(r"does not contain .* cases", stderr), stderr
+
+
+@pytest.mark.asyncio
+async def test_dialect_warning_validate(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
+    )
+    tmp_path.joinpath("a.json").write_text("12")
+
+    _, stderr = await bowtie(
+        "validate",
+        "-D",
+        "7",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "a.json",
+    )
+
+    assert re.search(
+        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
+        stderr,
+    )
+
+
+@pytest.mark.asyncio
+async def test_dialect_warning_run(envsonschema, tmp_path):
+    tmp_path.joinpath("a.json").write_text(
+        '{ "description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"},"tests": [{"description": "i", "instance": 37}] }',  # noqa: E501
+    )
+
+    _, stderr = await bowtie(
+        "run",
+        "-D",
+        "7",
+        "-i",
+        envsonschema,
+        "-V",
+        tmp_path / "a.json",
+    )
+    assert re.search(
+        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
+        stderr,
+    )

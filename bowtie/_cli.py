@@ -765,6 +765,16 @@ def _check_fail_fast_provided(
     return value
 
 
+def _validate_schema_and_dialect(
+    schema: Any,
+    dialect: Dialect,
+) -> bool:
+    schema = schema["$schema"]
+    if str(dialect.uri) != schema:
+        return True
+    return False
+
+
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
@@ -1287,7 +1297,19 @@ async def _run(
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
 
+                if (
+                    "$schema" in seq_case.case.schema
+                    and _validate_schema_and_dialect(
+                        seq_case.case.schema,
+                        dialect,
+                    )
+                ):
+                    reporter.failed_validate_schema_and_dialect(
+                        seq_case.case.schema,
+                        dialect,
+                    )
                 responses = [seq_case.run(runner=runner) for runner in runners]
+
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)
