@@ -1,7 +1,8 @@
 (ns bowtie-json-schema.core
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
-            [json-schema.core :as json-schema])
+            [json-schema.core :as json-schema]
+            [clojure.core/clojure-version])
   (:gen-class))
 
 (defn -main []
@@ -24,8 +25,8 @@
                                      "http://json-schema.org/draft-06/schema#",
                                      "http://json-schema.org/draft-04/schema#"]
                           :os (System/getProperty "os.name")
-                          :os-version (System/getProperty "os.version")
-                          :language-version (str (-> (clojure-version) :major)
+                          :os_version (System/getProperty "os.version")
+                          :language_version (str (-> (clojure-version) :major)
                                                  "."
                                                  (-> (clojure-version) :minor)
                                                  "."
