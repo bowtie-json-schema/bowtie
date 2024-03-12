@@ -44,7 +44,7 @@ describe("implementationMetadataURI", () => {
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "https://bowtie.report/implementations.json"
+      "https://bowtie.report/implementations.json",
     );
   });
 
@@ -59,7 +59,7 @@ describe("implementationMetadataURI", () => {
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "http://localhost:8000/implementations.json"
+      "http://localhost:8000/implementations.json",
     );
   });
 });
