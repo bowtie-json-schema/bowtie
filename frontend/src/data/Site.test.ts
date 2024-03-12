@@ -1,77 +1,65 @@
-import { describe, expect, vi, test, afterEach } from "vitest";
+import { describe, expect, vi, test, beforeEach } from "vitest";
 
 describe("siteURI", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    vi.resetModules();
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   test("should be correct for development mode", async () => {
-    const originalEnv = { ...import.meta.env };
     vi.stubEnv("MODE", "development");
     vi.stubEnv("BASE_URL", "/");
 
     const { siteURI } = await import("./Site");
 
-    expect(siteURI.href).toEqual("https://bowtie.report/");
-
-    Object.assign(import.meta.env, originalEnv);
+    expect(siteURI.href()).toEqual("https://bowtie.report/");
   });
 
-  test("should be correct for production mode", async () => {
-    const originalEnv = { ...import.meta.env };
-    vi.stubEnv("MODE", "production");
+  test("should be correct for other modes", async () => {
     vi.stubEnv("BASE_URL", "/");
-
-    const { siteURI } = await import("./Site");
-
-    const productionURL = "http://localhost:3000/";
     vi.stubGlobal("window", {
       location: {
-        href: new URL(productionURL),
+        href: "http://localhost:8000",
       },
     });
 
-    expect(siteURI.href).toEqual(`${productionURL}`);
+    const { siteURI } = await import("./Site");
 
-    vi.unstubAllGlobals();
-    Object.assign(import.meta.env, originalEnv);
+    expect(siteURI.href()).toEqual("http://localhost:8000/");
   });
 });
 
 describe("implementationMetadataURI", () => {
-  test("should be correct in development", async () => {
-    const originalEnv = { ...import.meta.env };
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  test("should be correct in development mode", async () => {
     vi.stubEnv("MODE", "development");
     vi.stubEnv("BASE_URL", "/");
 
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "https://bowtie.report/implementations.json",
+      "https://bowtie.report/implementations.json"
     );
-
-    Object.assign(import.meta.env, originalEnv);
   });
 
-  test("should be correct in production", async () => {
-    const originalEnv = { ...import.meta.env };
-    vi.stubEnv("MODE", "production");
+  test("should be correct in other modes", async () => {
     vi.stubEnv("BASE_URL", "/");
-
-    const productionURL = "http://localhost:3000/";
     vi.stubGlobal("window", {
       location: {
-        href: new URL(productionURL),
+        href: "http://localhost:8000",
       },
     });
 
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "http://localhost:3000/implementations.json",
+      "http://localhost:8000/implementations.json"
     );
-
-    vi.unstubAllGlobals();
-    Object.assign(import.meta.env, originalEnv);
   });
 });
