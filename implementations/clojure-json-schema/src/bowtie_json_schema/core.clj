@@ -1,8 +1,7 @@
 (ns bowtie-json-schema.core
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
-            [json-schema.core :as json-schema]
-            [clojure.core.clojure_version])
+            [json-schema.core :as json-schema])
   (:gen-class))
 
 (defn -main []
@@ -26,11 +25,11 @@
                                      "http://json-schema.org/draft-04/schema#"]
                           :os (System/getProperty "os.name")
                           :os_version (System/getProperty "os.version")
-                          :language_version (str (-> (clojure-version) :major)
+                          :language_version (str (:major (clojure-version)
                                                  "."
-                                                 (-> (clojure-version) :minor)
+                                                 (:minor (clojure-version))
                                                  "."
-                                                 (-> (clojure-version) :incremental))}})
+                                                 (:incremental (clojure-version))))}})
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")
