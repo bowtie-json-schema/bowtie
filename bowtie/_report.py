@@ -9,7 +9,6 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
-from url import URL
 import structlog.stdlib
 
 from bowtie._commands import (
@@ -156,26 +155,17 @@ class Reporter:
             "Stopping -- the maximum number of unsuccessful tests was reached",
         )
 
-    def failed_validate_schema_and_dialect(
-        self,
-        schema: Any,
-        dialect: Dialect,
-    ):
-        schema = schema["$schema"]
-        schema_dialect = Dialect.by_uri().get(URL.parse(schema))
-        if schema_dialect is not None:
-            self._log.warn(
-                "The $schema property refers to "
-                f"{schema_dialect.pretty_name!r}"
-                " while the dialect argument is"
-                f" {dialect.pretty_name!r}",
-            )
-
 
 @frozen
 class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
+
+    def mismatched_dialect(self, expected: Dialect):
+        self._log.warn(
+            "$schema keyword does not appear to match "
+            f"a {expected.pretty_name} schema.",
+        )
 
     def got_result(self, result: SeqResult):
         log = self._log.bind(logger_name=result.implementation)

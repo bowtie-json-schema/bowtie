@@ -13,6 +13,7 @@ except ImportError:
     from typing_extensions import dataclass_transform
 
 from attrs import asdict, field, frozen
+from url import URL
 
 from bowtie import HOMEPAGE, exceptions
 
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
     from structlog.stdlib import BoundLogger
 
-    from bowtie._core import DialectRunner, TestCase
+    from bowtie._core import Dialect as _Dialect, DialectRunner, TestCase
 
 
 #: A unique identifier for a test case within a run or report.
@@ -75,6 +76,13 @@ class SeqCase:
 
     def serializable(self):
         return dict(seq=self.seq, case=self.case.serializable())
+
+    def matches_dialect(self, dialect: _Dialect):
+        try:
+            schema = self.case.schema["$schema"]
+        except (TypeError, LookupError):
+            return True
+        return URL.parse(schema) == dialect.uri
 
 
 @frozen

@@ -1802,11 +1802,11 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_dialect_warning_validate(envsonschema, tmp_path):
+async def test_validate_mismatched_dialect(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
     )
-    tmp_path.joinpath("a.json").write_text("12")
+    tmp_path.joinpath("instance.json").write_text("12")
 
     _, stderr = await bowtie(
         "validate",
@@ -1815,31 +1815,49 @@ async def test_dialect_warning_validate(envsonschema, tmp_path):
         "-i",
         envsonschema,
         tmp_path / "schema.json",
-        tmp_path / "a.json",
+        tmp_path / "instance.json",
     )
 
-    assert re.search(
-        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
-        stderr,
-    )
+    assert "$schema keyword does not" in stderr, stderr
 
 
 @pytest.mark.asyncio
-async def test_dialect_warning_run(envsonschema, tmp_path):
-    tmp_path.joinpath("a.json").write_text(
-        '{ "description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"},"tests": [{"description": "i", "instance": 37}] }',  # noqa: E501
-    )
+async def test_run_mismatched_dialect(envsonschema, tmp_path):
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert "$schema keyword does not" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_boolean_schema(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("false")
+    tmp_path.joinpath("instance.json").write_text("12")
 
     _, stderr = await bowtie(
-        "run",
-        "-D",
-        "7",
+        "validate",
         "-i",
         envsonschema,
-        "-V",
-        tmp_path / "a.json",
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
     )
-    assert re.search(
-        r"\[warning\s*\]\s*The \$schema property refers to 'Draft 2020-12' while the dialect argument is 'Draft \d+'\n",  # noqa: E501
-        stderr,
-    )
+
+    assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_run_boolean_schema(envsonschema, tmp_path):
+    async with run("-i", envsonschema) as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": false, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert stderr == "", stderr
