@@ -47,7 +47,7 @@ describe("implementationMetadataURI", () => {
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "https://bowtie.report/implementations.json"
+      "https://bowtie.report/implementations.json",
     );
 
     Object.assign(import.meta.env, originalEnv);
@@ -68,7 +68,7 @@ describe("implementationMetadataURI", () => {
     const { implementationMetadataURI } = await import("./Site");
 
     expect(implementationMetadataURI).toEqual(
-      "http://localhost:3000/implementations.json"
+      "http://localhost:3000/implementations.json",
     );
 
     vi.unstubAllGlobals();
