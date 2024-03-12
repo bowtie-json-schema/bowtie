@@ -131,7 +131,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>

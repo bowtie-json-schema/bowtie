@@ -20,17 +20,17 @@ export const versionsBadgeFor = (implementation: Implementation): URI =>
   badgeFor(
     implementationBadges(implementation)
       .clone()
-      .segment("supported_versions.json")
+      .segment("supported_versions.json"),
   );
 
 export const complianceBadgeFor = (
   implementation: Implementation,
-  dialect: Dialect
+  dialect: Dialect,
 ): URI =>
   badgeFor(
     implementationBadges(implementation)
       .clone()
       .segment("compliance")
       .segment(dialect.shortName)
-      .suffix("json")
+      .suffix("json"),
   );
