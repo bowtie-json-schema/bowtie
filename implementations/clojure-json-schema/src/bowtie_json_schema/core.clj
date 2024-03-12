@@ -23,7 +23,7 @@
                           :dialects ["http://json-schema.org/draft-07/schema#",
                                      "http://json-schema.org/draft-06/schema#",
                                      "http://json-schema.org/draft-04/schema#"]
-                          :os-name (System/getProperty "os.name")
+                          :os (System/getProperty "os.name")
                           :os-version (System/getProperty "os.version")
                           :language-version (str (-> (clojure-version) :major)
                                                  "."
