@@ -2,7 +2,7 @@
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
             [json-schema.core :as json-schema]
-            [clojure.core.clojure-version])
+            [clojure.core.clojure_version])
   (:gen-class))
 
 (defn -main []
