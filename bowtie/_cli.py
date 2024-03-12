@@ -197,7 +197,7 @@ def implementation_subcommand(
 
                     running.append(implementation)
 
-                if running or len(default_implementations) == 0:
+                if running or not default_implementations:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
