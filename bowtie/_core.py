@@ -149,6 +149,11 @@ class Dialect:
             },
         )
 
+    def supported_by_all(self, *implementations: Implementation):
+        return all(
+            implementation.supports(self) for implementation in implementations
+        )
+
 
 @frozen
 class NoSuchImplementation(Exception):
@@ -174,6 +179,19 @@ class NoSuchImplementation(Exception):
 
 @frozen
 class GotStderr(Exception):
+    """
+    An implementation sent data on standard error.
+
+    We were trying to communicate with it (via Bowtie's protocol), but the
+    implementation has likely encountered some unexpected error.
+
+    It may have crashed.
+
+    Implementations of the `Connection` protocol should raise this exception
+    when they detect this kind of out-of-band error (in whatever concrete
+    connection-specific mechanism indicates this has occurred).
+    """
+
     stderr: bytes
 
 
@@ -264,7 +282,7 @@ class ImplementationInfo:
     homepage: URL
     issues: URL
     source: URL
-    dialects: Set[Dialect]
+    dialects: frozenset[Dialect]
 
     version: str | None = None
     language_version: str | None = None
@@ -514,6 +532,12 @@ class Implementation:
     @property
     def name(self):
         return self.info.id
+
+    def supports(self, *dialects: Dialect) -> bool:
+        """
+        Does the implementation support (all of) the given dialect(s)?
+        """
+        return self.info.dialects.issuperset(dialects)
 
     async def validate(
         self,

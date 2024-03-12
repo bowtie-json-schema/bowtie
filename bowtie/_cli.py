@@ -17,8 +17,13 @@ import sys
 from aiodocker import Docker
 from attrs import asdict
 from diagnostic import DiagnosticError
+from jsonschema_lexer import JSONSchemaLexer
+from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+    JsonLexer,
+)
 from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
+from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from url import URL, RelativeURLWithoutBase
@@ -42,7 +47,13 @@ from bowtie._core import (
 from bowtie.exceptions import ProtocolError
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Mapping, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Mapping,
+        Sequence,
+        Set,
+    )
     from typing import Any, TextIO
 
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
@@ -70,7 +81,17 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-@click.group(context_settings=dict(help_option_names=["--help", "-h"]))
+@click.group(
+    context_settings=dict(help_option_names=["--help", "-h"]),
+    epilog="""
+    If you don't know where to begin, `bowtie validate` (for checking
+    what any given implementations think of your schema) or `bowtie suite`
+    (for running the official test suite against implementations) are likely
+    good places to start.
+
+    Full documentation can also be found at https://docs.bowtie.report
+    """,
+)
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
     "--log-level",
@@ -97,13 +118,6 @@ def main(log_level: str):
 
     It lets you compare implementations to each other, or to known correct
     results from the JSON Schema test suite.
-
-    If you don't know where to begin, ``bowtie validate`` (for checking what
-    any given implementations think of your schema) or ``bowtie suite`` (for
-    running the official test suite against implementations) are likely good
-    places to start.
-
-    Full documentation can also be found at https://docs.bowtie.report
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
@@ -137,7 +151,10 @@ class ImplementationSubcommand(Protocol):
 SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
 
 
-def implementation_subcommand(reporter: _report.Reporter = SILENT):
+def implementation_subcommand(
+    reporter: _report.Reporter = SILENT,
+    default_implementations: Set[str] = Implementation.known(),
+):
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -147,7 +164,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
     def wrapper(fn: ImplementationSubcommand):
         async def run(
-            image_names: list[str],
+            image_names: Iterable[str],
             read_timeout_sec: float,
             make_validator: MakeValidator = make_validator,
             **kw: Any,
@@ -180,7 +197,7 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
 
                     running.append(implementation)
 
-                if running:
+                if running or len(default_implementations) == 0:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
@@ -188,10 +205,23 @@ def implementation_subcommand(reporter: _report.Reporter = SILENT):
             return exit_code
 
         @subcommand
-        @IMPLEMENTATION
+        @click.option(
+            "--implementation",
+            "-i",
+            "image_names",
+            type=_Image(),
+            default=lambda: (
+                default_implementations
+                if sys.stdin.isatty()
+                else [line.strip() for line in sys.stdin]
+            ),
+            multiple=True,
+            metavar="IMPLEMENTATION",
+            help="A container image which implements the bowtie IO protocol.",
+        )
         @TIMEOUT
         @wraps(fn)
-        def cmd(image_names: list[str], **kwargs: Any) -> int:
+        def cmd(image_names: Iterable[str], **kwargs: Any) -> int:
             return asyncio.run(run(image_names=image_names, **kwargs))
 
         return cmd
@@ -520,14 +550,27 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                Text(json.dumps(test.instance)),
+                Syntax(
+                    json.dumps(test.instance),
+                    lexer=JsonLexer(),
+                    background_color="default",
+                    word_wrap=True,
+                ),
                 *(
                     Text(test_result[each.id].description)
                     for each in implementations
                 ),
             )
 
-        table.add_row(json.dumps(case.schema, indent=2), subtable)
+        table.add_row(
+            Syntax(
+                json.dumps(case.schema, indent=2),
+                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
+                background_color="default",
+                word_wrap=True,
+            ),
+            subtable,
+        )
         table.add_section()
 
     return table
@@ -604,6 +647,24 @@ def make_validator(*more_schemas: SchemaResource):
 
 def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
+
+
+class _Image(click.ParamType):
+    """
+    Select a supported Bowtie implementation.
+    """
+
+    name = "implementation"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> str:
+        if "/" in value:  # a fully qualified image name
+            return value
+        return f"{IMAGE_REPOSITORY}/{value}"
 
 
 class _Dialect(click.ParamType):
@@ -708,11 +769,11 @@ IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
     "image_names",
-    type=lambda name: name if "/" in name else f"{IMAGE_REPOSITORY}/{name}",  # type: ignore[reportUnknownLambdaType]
+    type=_Image(),
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A docker image which implements the bowtie IO protocol.",
+    help="A container image which implements the bowtie IO protocol.",
 )
 DIALECT = click.option(
     "--dialect",
@@ -728,8 +789,8 @@ DIALECT = click.option(
     ),
 )
 FILTER = click.option(
+    "--filter",
     "-k",
-    "filter",
     default="",
     type=_Filter(),
     metavar="GLOB",
@@ -803,17 +864,6 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
-EXPECT = click.option(
-    "--expect",
-    show_default=True,
-    show_choices=True,
-    default="any",
-    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
-    help=(
-        "Expect the given input to be considered valid or invalid, "
-        "or else (with 'any') to allow either result."
-    ),
-)
 
 
 @subcommand
@@ -838,7 +888,7 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run a sequence of cases provided on standard input.
+    Run test cases written in Bowtie's test format.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -853,7 +903,17 @@ def run(
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@EXPECT
+@click.option(
+    "--expect",
+    show_default=True,
+    show_choices=True,
+    default="any",
+    type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    help=(
+        "Expect the given input to be considered valid or invalid, "
+        "or else (with 'any') to allow either result."
+    ),
+)
 @click.argument("schema", type=click.File(mode="rb"))
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
@@ -863,7 +923,7 @@ def validate(
     **kwargs: Any,
 ):
     """
-    Validate one or more instances under a given schema across implementations.
+    Validate instances across any implementation.
     """
     if not instances:
         return _EX_NOINPUT
@@ -883,11 +943,119 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
+LANGUAGE_ALIASES = {
+    "cpp": "c++",
+    "js": "javascript",
+    "ts": "typescript",
+}
+KNOWN_LANGUAGES = {
+    *LANGUAGE_ALIASES.values(),
+    *(i.partition("-")[0] for i in Implementation.known()),
+}
+
+
+@implementation_subcommand()  # type: ignore[reportArgumentType]
+@click.option(
+    "--supports-dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=frozenset(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help=(
+        "Only include implementations supporting the given dialect or dialect "
+        "short name."
+    ),
+)
+@click.option(
+    "--language",
+    "-l",
+    "languages",
+    type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
+    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
+        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    ),
+    multiple=True,
+    metavar="LANGUAGE",
+    help="Only include implementations in the given programming language",
+)
+async def filter_implementations(
+    implementations: Iterable[Implementation],
+    dialects: Sequence[Dialect],
+    languages: Set[str],
+):
+    """
+    Output implementations matching a given criteria.
+    """
+    for each in implementations:
+        if each.supports(*dialects) and each.info.language in languages:
+            click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
+
+
+@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
+@click.option(
+    "--dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=Dialect.known(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help="Filter from the given list of dialects only.",
+)
+@click.option(
+    "--latest",
+    "-l",
+    "latest",
+    is_flag=True,
+    default=False,
+    help="Show only the latest dialect.",
+)
+@click.option(
+    "--boolean-schemas/--no-boolean-schemas",
+    "-b/-B",
+    "booleans",
+    default=None,
+    help=(
+        "If provided, show only dialects which do (or do not)"
+        "support boolean schemas. Otherwise show either kind."
+    ),
+)
+async def filter_dialects(
+    implementations: Iterable[Implementation],
+    dialects: Iterable[Dialect],
+    latest: bool,
+    booleans: bool | None,
+):
+    """
+    Output dialect URIs matching a given criteria.
+
+    If any implementations are provided, filter dialects supported by all the
+    given implementations.
+    """
+    matching = sorted(
+        dialect
+        for dialect in dialects
+        if dialect.supported_by_all(*implementations)
+        and (booleans is None or dialect.has_boolean_schemas == booleans)
+    )
+    if not matching:
+        click.echo("No dialects match.", file=sys.stderr)
+        return _EX_DATAERR
+
+    for dialect in reversed(matching):
+        click.echo(dialect.uri)
+        if latest:
+            break
+
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Sequence[Implementation], format: _F):
+async def info(implementations: Iterable[Implementation], format: _F):
     """
-    Retrieve a particular implementation (harness)'s metadata.
+    Show information about a supported implementation.
     """
     serializable: dict[ImplementationId, dict[str, Any]] = {}
 
@@ -948,7 +1116,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test one or more implementations for basic correctness.
+    Smoke test implementations for basic correctness.
     """
     exit_code = 0
 
@@ -1018,7 +1186,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run test cases from the official JSON Schema test suite.
+    Run tests from the official JSON Schema suite.
 
     Supports a number of possible inputs:
 
@@ -1050,7 +1218,7 @@ def suite(
 
 
 async def _run(
-    image_names: list[str],
+    image_names: Iterable[str],
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
@@ -1082,7 +1250,7 @@ async def _run(
                 reporter.no_such_image(name=error.name)
                 continue
 
-            if dialect in implementation.info.dialects:
+            if implementation.supports(dialect):
                 try:
                     runner = await implementation.start_speaking(dialect)
                 except GotStderr as error:

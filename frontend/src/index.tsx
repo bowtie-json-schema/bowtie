@@ -16,6 +16,7 @@ import {
   parseImplementationData,
   ReportData,
 } from "./data/parseReportData";
+import "./global.css";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;

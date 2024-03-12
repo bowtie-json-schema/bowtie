@@ -302,6 +302,17 @@ only_draft3 = shellplementation(
     printf '{"seq": 1, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
+# we have this rather than making use of any of the above essentially
+# because sh isn't one of our "real" programming languages, so we doubly
+# lie here by claiming to be a Javascript implementation so that the test which
+# uses this doesn't blow up for unrelated reasons to what we're testing
+fake_js = shellplementation(
+    name="fake_js",
+    contents=r"""
+    read
+    printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
+    """,  # noqa: E501
+)
 
 
 def _failed(message, stderr):
@@ -469,7 +480,7 @@ async def test_unknown_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower()
+    assert "not a known dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -485,7 +496,7 @@ async def test_nonurl_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower()
+    assert "not a known dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -500,7 +511,7 @@ async def test_unsupported_known_dialect(only_draft3):
         results, stderr = await send("")
 
     assert results == []
-    assert "unsupported dialect" in stderr.lower()
+    assert "unsupported dialect" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -872,25 +883,20 @@ async def test_max_fail(envsonschema):
 
 @pytest.mark.asyncio
 async def test_max_fail_with_fail_fast(envsonschema):
-    async with run(
+    stdout, stderr = await bowtie(
+        "run",
         "-i",
         envsonschema,
         "--max-fail",
         "2",
         "--fail-fast",
-    ) as send:
-        with pytest.raises(AssertionError) as exec_info:
-            results, stderr = await send(
-                """
-                    {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-                    {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
-                    {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-                    """,  # noqa: E501
-            )
-        assert (
-            "Error: Cannot use --fail-fast with --max-fail / --max-error"
-            in exec_info.value.args[0]
-        )
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert (
+        "cannot use --fail-fast with --max-fail / --max-error"
+        in stderr.lower()
+    ), stderr
 
 
 @pytest.mark.asyncio
@@ -1247,6 +1253,156 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
     assert stdout == ""
     assert "failed to start" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_by_language(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "--language",
+        "python",
+    )
+    expected = [tag("envsonschema"), tag("lintsonschema")]
+    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_by_dialect(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "--supports-dialect",
+        "2020-12",
+    )
+    expected = [tag("envsonschema"), tag("lintsonschema")]
+    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_both_language_and_dialect(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "-l",
+        "javascript",
+        "-d",
+        "7",
+    )
+    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_stdin(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    stdin = "\n".join(
+        tag(each) for each in ["envsonschema", "lintsonschema", "fake_js"]
+    )
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "--language",
+        "javascript",
+        stdin=stdin + "\n",
+    )
+    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects():
+    stdout, stderr = await bowtie("filter-dialects")
+    dialects_supported = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{dialects_supported}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_latest_dialect():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-l",
+    )
+    assert (stdout, stderr) == (f"{max(Dialect.known()).uri}\n", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_supporting_implementation(only_draft3):
+    stdout, stderr = await bowtie("filter-dialects", "-i", only_draft3)
+    assert (stdout, stderr) == (
+        "http://json-schema.org/draft-03/schema#\n",
+        "",
+    )
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_boolean_schemas():
+    stdout, stderr = await bowtie("filter-dialects", "-b")
+    boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if dialect.has_boolean_schemas
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{boolean_schemas}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_non_boolean_schemas():
+    stdout, stderr = await bowtie("filter-dialects", "-B")
+    non_boolean_schemas = "\n".join(
+        [
+            str(dialect.uri)
+            for dialect in sorted(Dialect.known(), reverse=True)
+            if not dialect.has_boolean_schemas
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{non_boolean_schemas}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_no_results(only_draft3):
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "-i",
+        only_draft3,
+        "--boolean-schemas",
+        exit_code=-1,
+    )
+    assert (stdout.strip(), stderr) == ("", "No dialects match.\n")
 
 
 @pytest.mark.asyncio
@@ -1642,4 +1798,4 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         tmp_path,
         exit_code=-1,
     )
-    assert re.search(r"does not contain .* cases", stderr)
+    assert re.search(r"does not contain .* cases", stderr), stderr

@@ -26,10 +26,11 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
     return Array.from(reportData.cases.entries())
       .filter(([seq]) => {
         if (filterCriteria.length === 0) return true;
+
         const caseResults: (CaseResult | undefined)[] = Array.from(
-          reportData.implementations.values(),
+          reportData.implementationsResults.values(),
         )
-          .map((impl) => impl.cases.get(seq))
+          .map((implResult) => implResult.cases.get(seq))
           .flat();
 
         return caseResults.some((result) => filterCriteria.includes(result?.state ?? ''));
@@ -38,6 +39,14 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
         return caseData.description.toLowerCase().includes(trimmedSearchText);
       });
   }, [reportData, filterCriteria, searchText]);
+
+
+  const implementationsResults = Array.from(
+    reportData.implementationsResults.values(),
+  );
+  const implementations = implementationsResults.map(
+    (implResult) => reportData.runInfo.implementations[implResult.id],
+  );
 
   return (
     <div>
@@ -103,9 +112,8 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
                 key={index}
                 seq={seq}
                 caseData={caseData}
-                implementations={Array.from(
-                  reportData.implementations.values(),
-                )}
+                implementations={implementations}
+                implementationsResults={implementationsResults}
                 searchText={searchText}
               />
             ))}
