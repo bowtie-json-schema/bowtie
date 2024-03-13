@@ -170,7 +170,7 @@ def implementation_subcommand(
             **kw: Any,
         ) -> int:
             exit_code = 0
-            start = _start(
+            will_start = _start(
                 image_names=image_names,
                 make_validator=make_validator,
                 reporter=reporter,
@@ -178,21 +178,13 @@ def implementation_subcommand(
             )
 
             running: list[Implementation] = []
-            async with start as implementations:
+            async with will_start as implementations:
                 for each in implementations:  # FIXME: respect --quiet
                     try:
                         implementation = await each
-                    except StartupFailed as err:
+                    except (NoSuchImplementation, StartupFailed) as err:
                         exit_code |= _EX_CONFIG
-                        show: list[console.RenderableType] = [err.diagnostic()]
-                        if err.stderr:
-                            stderr = panel.Panel(err.stderr, title="stderr")
-                            show.append(stderr)
-                        rich.print(*show, file=sys.stderr)
-                        continue
-                    except NoSuchImplementation as err:
-                        exit_code |= _EX_CONFIG
-                        rich.print(err.diagnostic(), file=sys.stderr)
+                        rich.print(err, file=sys.stderr)
                         continue
 
                     running.append(implementation)
