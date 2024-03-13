@@ -17,6 +17,9 @@ class Implementation(
     val homepage: String,
     val issues: String,
     val source: String,
+    val os: String,
+    val os_version: String,
+    val language_version: String,
 )
 
 @Serializable

@@ -1,8 +1,15 @@
 (ns bowtie-json-schema.core
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
-            [json-schema.core :as json-schema])
+            [json-schema.core :as json-schema]
+            [clojure.tools.namespace.find :as find])
   (:gen-class))
+
+(defn json-schema-version []
+  (let [deps (find/scan-dependencies)]
+    (some #(when (= (-> % :artifact :artifact-id) 'luposlip/json-schema)
+             (-> % :version))
+          deps)))
 
 (defn -main []
   (let [started (atom false)]
@@ -16,6 +23,7 @@
                          :implementation
                          {:language :clojure
                           :name :json-schema
+                          :version (json-schema-version)
                           :homepage "https://github.com/luposlip/json-schema"
                           :issues "https://github.com/luposlip/json-schema/issues"
                           :source "https://github.com/luposlip/json-schema"
@@ -25,7 +33,7 @@
                                      "http://json-schema.org/draft-04/schema#"]
                           :os (System/getProperty "os.name")
                           :os_version (System/getProperty "os.version")
-                          :language_version (str (:version clojure-version))}})
+                          :language_version (clojure-version)}})
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")
