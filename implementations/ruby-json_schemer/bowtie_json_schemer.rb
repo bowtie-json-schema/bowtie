@@ -51,7 +51,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
         ],
         os: Etc.uname[:sysname],
         os_version: Etc.uname[:release],
-        language_version: RUBY_VERSION
+        language_version: RUBY_VERSION,
       },
     }
   when 'dialect'
