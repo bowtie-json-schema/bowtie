@@ -1251,7 +1251,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
         exit_code=-1,
     )
 
-    assert stdout == ""
+    assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
     assert "failed to start" in stderr.lower(), stderr
 
 

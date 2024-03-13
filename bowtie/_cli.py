@@ -143,7 +143,7 @@ def subcommand(fn: Callable[P, int | None]):
 class ImplementationSubcommand(Protocol):
     def __call__(
         self,
-        implementations: Iterable[Implementation],
+        start: Callable[[], AsyncIterator[Implementation]],
         **kwargs: Any,
     ) -> Awaitable[int | None]: ...
 
@@ -170,31 +170,34 @@ def implementation_subcommand(
             **kw: Any,
         ) -> int:
             exit_code = 0
-            will_start = _start(
-                image_names=image_names,
-                make_validator=make_validator,
-                reporter=reporter,
-                read_timeout_sec=read_timeout_sec,
-            )
 
-            running: list[Implementation] = []
-            async with will_start as implementations:
-                for each in implementations:  # FIXME: respect --quiet
-                    try:
-                        implementation = await each
-                    except (NoSuchImplementation, StartupFailed) as err:
+            async def start():
+                nonlocal exit_code
+
+                running: list[Implementation] = []
+                async with _start(
+                    image_names=image_names,
+                    make_validator=make_validator,
+                    reporter=reporter,
+                    read_timeout_sec=read_timeout_sec,
+                ) as implementations:
+                    for each in implementations:  # FIXME: respect --quiet
+                        try:
+                            implementation = await each
+                        except (NoSuchImplementation, StartupFailed) as err:
+                            exit_code |= _EX_CONFIG
+                            rich.print(err, file=sys.stderr)
+                            continue
+
+                        running.append(implementation)
+                        yield implementation
+
+                    if not running and default_implementations:
                         exit_code |= _EX_CONFIG
-                        rich.print(err, file=sys.stderr)
-                        continue
+                        return
 
-                    running.append(implementation)
-
-                if running or not default_implementations:
-                    exit_code |= await fn(implementations=running, **kw) or 0
-                else:
-                    exit_code |= _EX_CONFIG
-
-            return exit_code
+            fn_exit_code = await fn(start=start, **kw)
+            return exit_code | (fn_exit_code or 0)
 
         @subcommand
         @click.option(
@@ -320,12 +323,14 @@ def badges(site: Path):
 @click.option(
     "--show",
     "-s",
-    help="""Configure whether to display validation results
-    (whether instances are valid or not) or test failure results
-    (whether the validation results match expected validation results)""",
     default="validation",
     show_default=True,
     type=click.Choice(["failures", "validation"]),
+    help=(
+        "Configure whether to display validation results "
+        "(whether instances are valid or not) or test failure results "
+        "(whether the validation results match expected validation results)"
+    ),
 )
 @click.argument(
     "input",
@@ -974,14 +979,14 @@ KNOWN_LANGUAGES = {
     help="Only include implementations in the given programming language",
 )
 async def filter_implementations(
-    implementations: Iterable[Implementation],
+    start: Callable[[], AsyncIterator[Implementation]],
     dialects: Sequence[Dialect],
     languages: Set[str],
 ):
     """
     Output implementations matching a given criteria.
     """
-    for each in implementations:
+    async for each in start():
         if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
 
@@ -1016,7 +1021,7 @@ async def filter_implementations(
     ),
 )
 async def filter_dialects(
-    implementations: Iterable[Implementation],
+    start: Callable[[], AsyncIterator[Implementation]],
     dialects: Iterable[Dialect],
     latest: bool,
     booleans: bool | None,
@@ -1027,17 +1032,20 @@ async def filter_dialects(
     If any implementations are provided, filter dialects supported by all the
     given implementations.
     """
-    matching = sorted(
+    matching = {
         dialect
         for dialect in dialects
-        if dialect.supported_by_all(*implementations)
-        and (booleans is None or dialect.has_boolean_schemas == booleans)
-    )
+        if booleans is None or dialect.has_boolean_schemas == booleans
+    }
+
+    async for implementation in start():
+        matching &= implementation.info.dialects
+
     if not matching:
         click.echo("No dialects match.", file=sys.stderr)
         return _EX_DATAERR
 
-    for dialect in reversed(matching):
+    for dialect in sorted(matching, reverse=True):
         click.echo(dialect.uri)
         if latest:
             break
@@ -1045,13 +1053,16 @@ async def filter_dialects(
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @FORMAT
-async def info(implementations: Iterable[Implementation], format: _F):
+async def info(
+    start: Callable[[], AsyncIterator[Implementation]],
+    format: _F,
+):
     """
     Show information about a supported implementation.
     """
     serializable: dict[ImplementationId, dict[str, Any]] = {}
 
-    for each in implementations:
+    async for each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         metadata.sort(
             key=lambda kv: (
@@ -1103,7 +1114,7 @@ async def info(implementations: Iterable[Implementation], format: _F):
 )
 @FORMAT
 async def smoke(
-    implementations: Iterable[Implementation],
+    start: Callable[[], AsyncIterator[Implementation]],
     format: _F,
     echo: Callable[..., None],
 ) -> int:
@@ -1112,7 +1123,7 @@ async def smoke(
     """
     exit_code = 0
 
-    for implementation in implementations:
+    async for implementation in start():
         echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
         serializable: list[dict[str, Any]] = []
         implementation_exit_code = 0
