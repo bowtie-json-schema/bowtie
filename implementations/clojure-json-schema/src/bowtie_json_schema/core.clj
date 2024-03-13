@@ -10,7 +10,7 @@
         artifact-id "json-schema"
         deps (aether/resolve-dependencies :coordinates [[group-id artifact-id]])]
     (when-let [dep (first deps)]
-      (:version dep))))
+      (-> dep :version))))
 
 (defn -main []
   (let [started (atom false)]
