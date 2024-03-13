@@ -190,7 +190,7 @@ const supportedFormats: BadgeFormat[] = [
     generateEmbed: (badgeURI, altText) => `![${altText}](${badgeURI})`,
   },
   {
-    name: "rSt",
+    name: "reST",
     generateEmbed: (badgeURI, altText) =>
       `.. image:: ${badgeURI}\n :alt: ${altText}`,
   },
