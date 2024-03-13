@@ -15,6 +15,14 @@ local function resolve_in_registry(registry)
   end
 end
 
+local function getLuaVersion()
+  local temp = {}
+  for str in _VERSION:gmatch("%S+") do
+      table.insert(temp, str)
+  end
+  return temp[2]
+end
+
 local cmds = {
   start = function(request)
     assert(request.version == 1, 'Wrong version!')
@@ -34,6 +42,7 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
+        language_version = getLuaVersion()
       },
     }
   end,

@@ -6,9 +6,10 @@
   (:gen-class))
 
 (defn json-schema-version []
-  (let [deps (specs/deps)
-        json-schema-dep (get-in deps [::specs/lib 'luposlip/json-schema])]
-    (:mvn/version json-schema-dep)))
+  (let [[_ dependencies] (read-string (slurp "project.clj"))
+        json-schema (get-in dependencies [:dependencies '[luposlip/json-schema]])]
+    (when json-schema
+      (last json-schema))))
 
 (defn -main []
   (let [started (atom false)]
