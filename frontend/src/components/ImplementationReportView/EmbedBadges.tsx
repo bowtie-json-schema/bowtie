@@ -128,45 +128,34 @@ const EmbedBadges: React.FC<{
               })}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
-              {supportedFormats.map((formatItem, index) => (
-                <div
-                  key={index}
-                  className={`tab-pane ${
-                    activeTab === formatItem.name ? "active" : ""
-                  } border rounded  pt-2 px-4 mx-2`}
-                  style={{ width: "35vmin" }}
-                >
-                  <div className="d-flex align-items-center justify-content-center px-1">
-                    <div style={{ width: "100%" }}>
-                      <span
-                        className="font-monospace text-body-secondary fs-6 ps-2 d-block"
-                        style={{
-                          wordWrap: "break-word",
-                          whiteSpace: "nowrap",
-                          textOverflow: "hidden",
-                          overflowX: "auto",
-                          width: "100%",
-                        }}
-                      >
-                        <pre className="pt-2 pb-2">
-                          {formatItem.generateEmbed(
-                            badgeURI.href(),
-                            altTextFor(activeBadge),
-                          )}
-                        </pre>
-                      </span>
-                    </div>
-                    <div className="ms-auto pb-2 px-1">
-                      <CopyToClipboard
-                        textToCopy={formatItem.generateEmbed(
-                          badgeURI.href(),
-                          altTextFor(activeBadge),
-                        )}
-                      />
+              {supportedFormats.map((formatItem, index) => {
+                const badgeEmbed = formatItem.generateEmbed(
+                  badgeURI.href(),
+                  altTextFor(activeBadge),
+                );
+                return (
+                  <div
+                    key={index}
+                    className={`tab-pane ${
+                      activeTab === formatItem.name ? "active" : ""
+                    } border rounded  pt-2 px-4 mx-2`}
+                    style={{ width: "35vmin" }}
+                  >
+                    <div className="d-flex align-items-center justify-content-center px-1">
+                      <div style={{ width: "100%" }}>
+                        <span className="font-monospace text-body-secondary fs-6 ps-2 d-block">
+                          <pre className="pt-2 pb-2">
+                            <code>{badgeEmbed}</code>
+                          </pre>
+                        </span>
+                      </div>
+                      <div className="ms-auto pb-2 px-1">
+                        <CopyToClipboard textToCopy={badgeEmbed} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </li>
@@ -192,7 +181,7 @@ const supportedFormats: BadgeFormat[] = [
   {
     name: "reST",
     generateEmbed: (badgeURI, altText) =>
-      `.. image:: ${badgeURI}\n :alt: ${altText}`,
+      `.. image:: ${badgeURI}\n    :alt: ${altText}`,
   },
   {
     name: "AsciiDoc",
@@ -201,7 +190,7 @@ const supportedFormats: BadgeFormat[] = [
   {
     name: "HTML",
     generateEmbed: (badgeURI, altText) =>
-      `<img alt='${altText}' src='${badgeURI}'/>`,
+      `<img alt="${altText}" src="${badgeURI}"/>`,
   },
 ];
 
