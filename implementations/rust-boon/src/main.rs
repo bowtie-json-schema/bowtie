@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "http://json-schema.org/draft-04/schema#",
                         ],
                         "os": os_info::get().os_type(),
-                        "os_version": os_info::get().version(),
+                        "os_version": os_info::get().version().to_string(),
                         "language_version": rustc_version_runtime::version().to_string(),
                     }
                 });
