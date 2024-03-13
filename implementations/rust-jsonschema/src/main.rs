@@ -77,7 +77,7 @@ fn main() -> Result<()> {
                         ],
                         "os": os_info::get().os_type(),
                         "os_version": os_info::get().version(),
-                        "language_version": rustc_version::version().unwrap().to_string(),
+                        "language_version": rustc_version_runtime::version().to_string(),
                     },
                 });
                 println!("{}", response);
