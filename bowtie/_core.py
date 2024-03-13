@@ -16,6 +16,7 @@ from referencing.jsonschema import (
     SchemaRegistry,
     specification_with,
 )
+from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
 
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
 
     from referencing import Specification
     from referencing.jsonschema import SchemaResource
+    from rich.console import Console, ConsoleOptions, RenderResult
 
     from bowtie._commands import (
         AnyCaseResult,
@@ -163,7 +165,7 @@ class NoSuchImplementation(Exception):
 
     name: str
 
-    def diagnostic(self):
+    def __rich__(self):
         return DiagnosticError(
             code="no-such-implementation",
             message=f"{self.name!r} is not a known Bowtie implementation.",
@@ -221,7 +223,11 @@ class StartupFailed(Exception):
             return f"{self.name}'s stderr contained: {self.stderr}"
         return self.name
 
-    def diagnostic(self):
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
         causes: list[str] = []
         if self.__cause__ is None:
             hint = (
@@ -240,12 +246,14 @@ class StartupFailed(Exception):
             )
             causes.extend(str(error) for error in self.__cause__.errors)  # type: ignore[reportUnknownArgumentType]
 
-        return DiagnosticError(
+        yield DiagnosticError(
             code="startup-failed",
             message=f"{self.name!r} failed to start.",
             causes=causes,
             hint_stmt=hint,
         )
+        if self.stderr:
+            yield Panel(self.stderr, title="stderr")
 
 
 R = TypeVar("R")

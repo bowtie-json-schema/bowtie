@@ -170,7 +170,7 @@ def implementation_subcommand(
             **kw: Any,
         ) -> int:
             exit_code = 0
-            start = _start(
+            will_start = _start(
                 image_names=image_names,
                 make_validator=make_validator,
                 reporter=reporter,
@@ -178,26 +178,18 @@ def implementation_subcommand(
             )
 
             running: list[Implementation] = []
-            async with start as implementations:
+            async with will_start as implementations:
                 for each in implementations:  # FIXME: respect --quiet
                     try:
                         implementation = await each
-                    except StartupFailed as err:
+                    except (NoSuchImplementation, StartupFailed) as err:
                         exit_code |= _EX_CONFIG
-                        show: list[console.RenderableType] = [err.diagnostic()]
-                        if err.stderr:
-                            stderr = panel.Panel(err.stderr, title="stderr")
-                            show.append(stderr)
-                        rich.print(*show, file=sys.stderr)
-                        continue
-                    except NoSuchImplementation as err:
-                        exit_code |= _EX_CONFIG
-                        rich.print(err.diagnostic(), file=sys.stderr)
+                        rich.print(err, file=sys.stderr)
                         continue
 
                     running.append(implementation)
 
-                if running or len(default_implementations) == 0:
+                if running or not default_implementations:
                     exit_code |= await fn(implementations=running, **kw) or 0
                 else:
                     exit_code |= _EX_CONFIG
@@ -1287,7 +1279,11 @@ async def _run(
                 seq_case = SeqCase(seq=count, case=case)
                 case_reporter = reporter.case_started(seq_case)
 
+                if not seq_case.matches_dialect(dialect):
+                    case_reporter.mismatched_dialect(expected=dialect)
+
                 responses = [seq_case.run(runner=runner) for runner in runners]
+
                 for each in asyncio.as_completed(responses):
                     result = await each
                     case_reporter.got_result(result=result)

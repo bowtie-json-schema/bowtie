@@ -161,6 +161,12 @@ class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
 
+    def mismatched_dialect(self, expected: Dialect):
+        self._log.warn(
+            "$schema keyword does not appear to match "
+            f"a {expected.pretty_name} schema.",
+        )
+
     def got_result(self, result: SeqResult):
         log = self._log.bind(logger_name=result.implementation)
         serialized = result.log_and_be_serialized(log=log)
