@@ -3,8 +3,6 @@ use std::{collections::HashMap, io, process, sync::Arc};
 use backtrace::Backtrace;
 use serde_json::{json, Result};
 use url::Url;
-use os_info;
-use rustc_version::version;
 
 use jsonschema::{Draft, JSONSchema, SchemaResolver, SchemaResolverError};
 
@@ -50,7 +48,6 @@ fn main() -> Result<()> {
     let mut started = false;
     let mut options = JSONSchema::options();
     let mut compiler = options.with_draft(Draft::Draft202012);
-    let os = os_info::get()
 
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
@@ -78,9 +75,9 @@ fn main() -> Result<()> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
-                        "os": os.os_type(),
-                        "os_version": os.version(),
-                        "language_version": version().unwrap()
+                        "os": os_info::get().os_type(),
+                        "os_version": os_info::get().version(),
+                        "language_version": rustc_version::version().unwrap(),
                     },
                 });
                 println!("{}", response);

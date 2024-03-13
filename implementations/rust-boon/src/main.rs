@@ -1,6 +1,4 @@
 use std::{error::Error, io, process};
-use os_info;
-use rustc_version::version;
 
 use boon::{Compiler, Draft, Schemas, UrlLoader};
 use serde_json::{json, Map, Value};
@@ -8,7 +6,6 @@ use serde_json::{json, Map, Value};
 fn main() -> Result<(), Box<dyn Error>> {
     let mut started = false;
     let mut draft = None;
-    let os = os_info::get()
     for line in io::stdin().lines() {
         let request: Value = serde_json::from_str(&line?)?;
         let cmd = request["cmd"].as_str().ok_or("no command")?;
@@ -35,9 +32,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
-                        "os": os.os_type(),
-                        "os_version": os.version(),
-                        "language_version": version().unwrap()
+                        "os": os_info::get().os_type(),
+                        "os_version": os_info::get().version(),
+                        "language_version": rustc_version::version().unwrap(),
                     }
                 });
                 println!("{response}");
