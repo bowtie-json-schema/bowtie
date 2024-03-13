@@ -1,8 +1,7 @@
 (ns bowtie-json-schema.core
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
-            [json-schema.core :as json-schema]
-            [clojure.tools.deps.specs :as specs])
+            [json-schema.core :as json-schema])
   (:gen-class))
 
 (defn json-schema-version []
