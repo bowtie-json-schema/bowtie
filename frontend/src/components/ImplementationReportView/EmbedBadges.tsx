@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Implementation } from "../../data/parseReportData";
+import URI from "urijs";
+
 import CopyToClipboard from "../CopyToClipboard";
 import Dialect from "../../data/Dialect";
+import { Implementation } from "../../data/parseReportData";
 import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
-import { badgeFormatOptions, BadgeFormatOption } from "./BadgeFormats";
-import URI from "urijs";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
@@ -112,65 +112,61 @@ const EmbedBadges: React.FC<{
           </div>
           <div className="container d-flex justify-content-center align-items-center flex-column pt-3">
             <ul className="nav nav-pills justify-content-center gap-1">
-              {badgeFormatOptions.map(
-                (formatItem: BadgeFormatOption, index) => {
-                  return (
-                    <li className="nav-item" key={index}>
-                      <button
-                        className={`nav-link btn btn-sm ${
-                          activeTab === formatItem.type ? "active" : ""
-                        }`}
-                        onClick={() => handleSelectTab(formatItem.type)}
-                      >
-                        {formatItem.type}
-                      </button>
-                    </li>
-                  );
-                },
-              )}
+              {supportedFormats.map((formatItem, index) => {
+                return (
+                  <li className="nav-item" key={index}>
+                    <button
+                      className={`nav-link btn btn-sm ${
+                        activeTab === formatItem.name ? "active" : ""
+                      }`}
+                      onClick={() => handleSelectTab(formatItem.name)}
+                    >
+                      {formatItem.name}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
             <div className="tab-content mt-2 pt-2 pb-3">
-              {badgeFormatOptions.map(
-                (formatItem: BadgeFormatOption, index) => (
-                  <div
-                    key={index}
-                    className={`tab-pane ${
-                      activeTab === formatItem.type ? "active" : ""
-                    } border rounded  pt-2 px-4 mx-2`}
-                    style={{ width: "35vmin" }}
-                  >
-                    <div className="d-flex align-items-center justify-content-center px-1">
-                      <div style={{ width: "100%" }}>
-                        <span
-                          className="font-monospace text-body-secondary fs-6 ps-2 d-block"
-                          style={{
-                            wordWrap: "break-word",
-                            whiteSpace: "nowrap",
-                            textOverflow: "hidden",
-                            overflowX: "auto",
-                            width: "100%",
-                          }}
-                        >
-                          <pre className="pt-2 pb-2">
-                            {formatItem.generateCopyText(
-                              badgeURI.href(),
-                              badgePrettyName(activeBadge),
-                            )}
-                          </pre>
-                        </span>
-                      </div>
-                      <div className="ms-auto pb-2 px-1">
-                        <CopyToClipboard
-                          textToCopy={formatItem.generateCopyText(
+              {supportedFormats.map((formatItem, index) => (
+                <div
+                  key={index}
+                  className={`tab-pane ${
+                    activeTab === formatItem.name ? "active" : ""
+                  } border rounded  pt-2 px-4 mx-2`}
+                  style={{ width: "35vmin" }}
+                >
+                  <div className="d-flex align-items-center justify-content-center px-1">
+                    <div style={{ width: "100%" }}>
+                      <span
+                        className="font-monospace text-body-secondary fs-6 ps-2 d-block"
+                        style={{
+                          wordWrap: "break-word",
+                          whiteSpace: "nowrap",
+                          textOverflow: "hidden",
+                          overflowX: "auto",
+                          width: "100%",
+                        }}
+                      >
+                        <pre className="pt-2 pb-2">
+                          {formatItem.generateEmbed(
                             badgeURI.href(),
                             badgePrettyName(activeBadge),
                           )}
-                        />
-                      </div>
+                        </pre>
+                      </span>
+                    </div>
+                    <div className="ms-auto pb-2 px-1">
+                      <CopyToClipboard
+                        textToCopy={formatItem.generateEmbed(
+                          badgeURI.href(),
+                          badgePrettyName(activeBadge),
+                        )}
+                      />
                     </div>
                   </div>
-                ),
-              )}
+                </div>
+              ))}
             </div>
           </div>
         </li>
@@ -178,5 +174,35 @@ const EmbedBadges: React.FC<{
     </div>
   );
 };
+
+interface BadgeFormat {
+  name: string;
+  generateEmbed: (badgeURI: string, altText: string) => string;
+}
+
+const supportedFormats: BadgeFormat[] = [
+  {
+    name: "URL",
+    generateEmbed: (badgeURI) => `${badgeURI}`,
+  },
+  {
+    name: "Markdown",
+    generateEmbed: (badgeURI, altText) => `![${altText}](${badgeURI})`,
+  },
+  {
+    name: "rSt",
+    generateEmbed: (badgeURI, altText) =>
+      `.. image:: ${badgeURI}\n :alt: ${altText}`,
+  },
+  {
+    name: "AsciiDoc",
+    generateEmbed: (badgeURI, altText) => `image:${badgeURI}[${altText}]`,
+  },
+  {
+    name: "HTML",
+    generateEmbed: (badgeURI, altText) =>
+      `<img alt='${altText}' src='${badgeURI}'/>`,
+  },
+];
 
 export default EmbedBadges;
