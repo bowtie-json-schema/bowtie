@@ -15,23 +15,6 @@ local function resolve_in_registry(registry)
   end
 end
 
-local function getOS()
-  -- ask LuaJIT first
-  if jit then
-      return jit.os
-  end
-
-  local fh, err = assert(io.popen("uname -o 2>/dev/null; uname -r", "r"))
-  if fh then
-      os_platform = fh:read("*l")
-      osversion = fh:read("*l")
-      fh:close()
-      return os_platform, osversion
-  end
-end
-
-local os_platform, osversion = getOS()
-
 local function getLuaVersion()
   local temp = {}
   for str in _VERSION:gmatch("%S+") do
@@ -59,8 +42,6 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
-        os: os_platform,
-        os_version: osversion,
         language_version = getLuaVersion()
       },
     }

@@ -7,7 +7,7 @@ class StartResponse(
     val implementation: Implementation,
 )
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "ConstructorParameterNaming")
 @Serializable
 class Implementation(
     val language: String = "kotlin",
