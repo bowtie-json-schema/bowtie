@@ -80,7 +80,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation)
+                        versionsBadgeFor(implementation),
                       )
                     }
                   >
@@ -99,8 +99,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0])
-                          )
+                            Dialect.withName(result[0]),
+                          ),
                         )
                       }
                     >
@@ -132,7 +132,7 @@ const EmbedBadges: React.FC<{
               {supportedFormats.map((formatItem, index) => {
                 const badgeEmbed = formatItem.generateEmbed(
                   badgeURI.href(),
-                  altTextFor(activeBadge)
+                  altTextFor(activeBadge),
                 );
                 return (
                   <div
