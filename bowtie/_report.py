@@ -285,10 +285,14 @@ class Report:
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**header)
 
+        results: HashTrieMap[
+            ImplementationId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]
+            (each.id for each in metadata.implementations),
+            HashTrieMap(),
+        )
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
-        empty: HashTrieMap[Seq, SeqResult] = HashTrieMap()
-        ids = (each.id for each in metadata.implementations)
-        results = HashTrieMap.fromkeys(ids, empty)
 
         for data in iterator:
             match data:
