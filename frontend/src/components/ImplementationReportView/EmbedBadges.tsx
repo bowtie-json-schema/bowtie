@@ -38,7 +38,7 @@ const EmbedBadges: React.FC<{
   });
 
   return (
-    <div className="container dropdown px-0 col-12">
+    <div className="container d-flex justify-content-end dropdown px-0">
       <button
         className="btn btn-sm btn-success dropdown-toggle"
         type="button"
@@ -47,12 +47,15 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3">
+      <ul className="dropdown-menu mx-auto mb-3 col-12 col-md-8">
         <li>
-          <div>
-            <h2 className="dropdown-header">Embed a Badge</h2>
+          <div className="text-center pt-1">
+            <h4 className="text-body-secondary">Embed a Badge</h4>
             <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">
-              <label className="pb-1" htmlFor="dropdownMenuButton">
+              <label
+                className="pb-1 text-body-secondary"
+                htmlFor="dropdownMenuButton"
+              >
                 Available Badges
               </label>
               <button
@@ -77,7 +80,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation),
+                        versionsBadgeFor(implementation)
                       )
                     }
                   >
@@ -96,8 +99,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0]),
-                          ),
+                            Dialect.withName(result[0])
+                          )
                         )
                       }
                     >
@@ -125,11 +128,11 @@ const EmbedBadges: React.FC<{
                 );
               })}
             </ul>
-            <div className="tab-content mt-2 pt-2 pb-3">
+            <div className="tab-content mt-2 pt-2 pb-3 w-100">
               {supportedFormats.map((formatItem, index) => {
                 const badgeEmbed = formatItem.generateEmbed(
                   badgeURI.href(),
-                  altTextFor(activeBadge),
+                  altTextFor(activeBadge)
                 );
                 return (
                   <div
