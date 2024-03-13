@@ -61,6 +61,13 @@ Once you've installed the prerequisites, your first step is to ensure you're fam
 If you're its author, you're certainly well qualified :) -- if not, you'll see a few things below which you'll need to find in its API documentation, such as what function(s) or object(s) you use to validate instances under schemas.
 If you're not, there shouldn't be a need to be an expert neither in the language nor implementation, as we'll be writing only a small wrapper program, but you definitely will need to know how to compile or run programs in the host language, how to read and write JSON from it, and how to package programs into container images.
 
+.. sidebar:: JSON Schema Implementation "Architectures"
+
+    Most implementations of JSON Schema use a "runtime-compile-and-validate" architecture where at runtime a schema is turned into a callable which can be used to validate other language-level objects.
+    In particular, they do *not* involve a separate out-of-band compilation process where a schema is turned into a compiled artifact that no longer references general JSON Schema behavior.
+
+    Bowtie certainly aims to support all implementations and architectures, so if you're writing a harness for a drastically different architecture, you'll need to adjust what is below to suit.
+
 For the purposes of this tutorial, we'll write support for a :github:`Lua implementation of JSON Schema <api7/jsonschema>` (one which calls itself simply ``jsonschema`` within the Lua ecosystem, as many implementations tend to).
 Bowtie of course already supports this implementation officially, so if you want to see the final result either now or at the end of this tutorial, it's :gh:`here <tree/main/implementations/lua-jsonschema>`.
 If you're not already familiar with Lua as a programming language, the below won't serve as a full tutorial of course, but you still should be able to follow along; it's a fairly simple one.
