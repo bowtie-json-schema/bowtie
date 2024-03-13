@@ -50,9 +50,7 @@ const EmbedBadges: React.FC<{
       <ul className="dropdown-menu mx-auto mb-3">
         <li>
           <div>
-            <p className="text-center fw-semibold pt-2 pb-1 px-1 fs-6 mb-2">
-              Generate Bowtie Badge
-            </p>
+            <h2 className="dropdown-header">Embed a Badge</h2>
             <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">
               <label className="pb-1" htmlFor="dropdownMenuButton">
                 Available Badges
@@ -110,7 +108,7 @@ const EmbedBadges: React.FC<{
               </ul>
             </div>
           </div>
-          <div className="container d-flex justify-content-center align-items-center flex-column pt-3">
+          <div className="container vw-50 d-flex justify-content-center align-items-center flex-column pt-3">
             <ul className="nav nav-pills justify-content-center gap-1">
               {supportedFormats.map((formatItem, index) => {
                 return (
@@ -138,11 +136,10 @@ const EmbedBadges: React.FC<{
                     key={index}
                     className={`tab-pane ${
                       activeTab === formatItem.name ? "active" : ""
-                    } border rounded  pt-2 px-4 mx-2`}
-                    style={{ width: "35vmin" }}
+                    } border rounded pt-2 px-4 mx-2`}
                   >
                     <div className="d-flex align-items-center justify-content-center px-1">
-                      <div style={{ width: "100%" }}>
+                      <div className="w-100">
                         <span className="font-monospace text-body-secondary fs-6 ps-2 d-block">
                           <pre className="pt-2 pb-2">
                             <code>{badgeEmbed}</code>
