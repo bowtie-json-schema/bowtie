@@ -24,7 +24,7 @@ const EmbedBadges: React.FC<{
     }
   };
 
-  const badgePrettyName = (badgeName: string): string => {
+  const altTextFor = (badgeName: string): string => {
     return badgeName === "JSON Schema Versions"
       ? "JSON Schema Versions"
       : Dialect.withName(activeBadge).prettyName;
@@ -64,7 +64,7 @@ const EmbedBadges: React.FC<{
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                {badgePrettyName(activeBadge)}
+                {altTextFor(activeBadge)}
               </button>
               <ul
                 className="dropdown-menu"
@@ -151,7 +151,7 @@ const EmbedBadges: React.FC<{
                         <pre className="pt-2 pb-2">
                           {formatItem.generateEmbed(
                             badgeURI.href(),
-                            badgePrettyName(activeBadge),
+                            altTextFor(activeBadge),
                           )}
                         </pre>
                       </span>
@@ -160,7 +160,7 @@ const EmbedBadges: React.FC<{
                       <CopyToClipboard
                         textToCopy={formatItem.generateEmbed(
                           badgeURI.href(),
-                          badgePrettyName(activeBadge),
+                          altTextFor(activeBadge),
                         )}
                       />
                     </div>
