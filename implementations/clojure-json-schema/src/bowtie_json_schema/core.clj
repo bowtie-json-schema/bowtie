@@ -2,14 +2,13 @@
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
             [json-schema.core :as json-schema]
-            [clojure.tools.namespace.find :as find])
+            [clojure.tools.deps.specs :as specs])
   (:gen-class))
 
 (defn json-schema-version []
-  (let [deps (find/scan-dependencies)]
-    (some #(when (= (-> % :artifact :artifact-id) 'luposlip/json-schema)
-             (-> % :version))
-          deps)))
+  (let [deps (specs/deps)
+        json-schema-dep (get-in deps [::specs/lib 'luposlip/json-schema])]
+    (:mvn/version json-schema-dep)))
 
 (defn -main []
   (let [started (atom false)]
