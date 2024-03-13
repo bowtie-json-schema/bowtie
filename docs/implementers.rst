@@ -69,22 +69,14 @@ Let's get a Hello World container running which we'll turn into our test harness
 
 Create a directory somewhere, and within it create a ``Dockerfile`` with these contents:
 
-.. code:: dockerfile
+.. literalinclude:: ../implementations/lua-jsonschema/Dockerfile
+    :language: Dockerfile
+    :emphasize-lines: 1,8,10-12
 
-    FROM alpine:3.19
-    RUN apk add --no-cache luajit luajit-dev pcre-dev gcc libc-dev curl make cmake && \
-        wget 'https://luarocks.org/releases/luarocks-3.9.1.tar.gz' && \
-        tar -xf luarocks-3.9.1.tar.gz && cd luarocks-3.9.1 && \
-        ./configure && make && make install
-    RUN sed -i '/WGET/d' /usr/local/share/lua/5.1/luarocks/fs/tools.lua
-    RUN luarocks install jsonschema
-    ADD https://raw.githubusercontent.com/rxi/json.lua/master/json.lua .
-    COPY bowtie_jsonschema.lua .
-    CMD ["luajit", "bowtie_jsonschema.lua"]
+Most of the above is slightly *more* complicated than you're likely to need for your own language, and has to do with some Lua-specific issues that are uninteresting to discuss in detail (which essentially relate to installing Lua's package manager and a library for JSON serialization).
 
-Most of the above is slightly *more* complicated than one you'll need to write for your own language, and has to do with some Lua packaging issues that are uninteresting to discuss in detail.
-The notable bit is we'll create a ``bowtie_jsonschema.lua`` file, our test harness, and then this container image will invoke it.
-Bowtie will then speak to the running harness container.
+The notable bit is we'll install our implementation and create a ``bowtie_jsonschema.lua`` file which is our test harness.
+Our container image will invoke the harness, and Bowtie will later speak to the running container.
 
 Let's check everything works.
 Create a file named ``bowtie_jsonschema.lua`` with these contents:
@@ -556,6 +548,8 @@ If you do so there are a few additional things to do beyond the above:
 * Commit your harness to the ``implementations`` directory in the root of Bowtie's repository, alongside the existing ones.
   Name your harness directory :file:`<{host-language}>-<{implementation-name}>/`.
   Use ASCII-compatible names, so if your implementation is written in C++ and is called ``flooblekins`` within the C++ ecosystem, call the directory ``cpp-flooblekins/``.
+* Ensure your harness is small and easily maintained, as it may need to be touched by others as Bowtie's protocol changes.
+* Install as little as possible from arbitrary URLs, preferring both the OS's package manager and your language's package manager whenever possible over manual download and compilation.
 * Please ensure you've used an ``alpine``-based image, or at least a slim one, to keep sizes as small as possible.
   Reference the existing ``Dockerfile``\ s if you need inspiration.
 * Please also add some sort of linter or autoformatter for the source code you've written.
