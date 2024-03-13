@@ -323,12 +323,14 @@ def badges(site: Path):
 @click.option(
     "--show",
     "-s",
-    help="""Configure whether to display validation results
-    (whether instances are valid or not) or test failure results
-    (whether the validation results match expected validation results)""",
     default="validation",
     show_default=True,
     type=click.Choice(["failures", "validation"]),
+    help=(
+        "Configure whether to display validation results "
+        "(whether instances are valid or not) or test failure results "
+        "(whether the validation results match expected validation results)"
+    ),
 )
 @click.argument(
     "input",
