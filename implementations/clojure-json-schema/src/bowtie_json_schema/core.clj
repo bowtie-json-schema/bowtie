@@ -1,16 +1,8 @@
 (ns bowtie-json-schema.core
   (:require [clojure.stacktrace]
             [clojure.data.json :as json]
-            [json-schema.core :as json-schema]
-            [cemerick.pomegranate.aether :as aether])
+            [json-schema.core :as json-schema])
   (:gen-class))
-
-(defn json-schema-version []
-  (let [group-id "luposlip"
-        artifact-id "json-schema"
-        deps (aether/resolve-dependencies :coordinates [[group-id artifact-id]])]
-    (when-let [dep (first deps)]
-      (-> dep :version))))
 
 (defn -main []
   (let [started (atom false)]
@@ -24,7 +16,6 @@
                          :implementation
                          {:language :clojure
                           :name :json-schema
-                          :version (json-schema-version)
                           :homepage "https://github.com/luposlip/json-schema"
                           :issues "https://github.com/luposlip/json-schema/issues"
                           :source "https://github.com/luposlip/json-schema"
