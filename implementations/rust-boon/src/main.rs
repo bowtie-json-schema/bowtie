@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ],
                         "os": os_info::get().os_type(),
                         "os_version": os_info::get().version(),
-                        "language_version": rustc_version::version().unwrap(),
+                        "language_version": rustc_version::version().unwrap().to_string(),
                     }
                 });
                 println!("{response}");
