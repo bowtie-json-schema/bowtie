@@ -45,7 +45,11 @@ pygments_dark_style = "one-dark"
 html_theme = "furo"
 html_logo = str(STATIC / "logo.svg")
 html_static_path = [str(STATIC)]
-html_theme_options = {"sidebar_hide_name": True}
+html_theme_options = dict(
+    sidebar_hide_name=True,
+    # Evade pradyunsg/furo#668
+    source_edit_link=str(REPO / "edit/main/docs/") + "{filename}",
+)
 
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
