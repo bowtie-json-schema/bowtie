@@ -105,16 +105,6 @@ class Reporter:
             self._log.info("Finished", count=count)
         self._write(did_fail_fast=did_fail_fast)
 
-    def no_such_image(self, name: str):
-        self._log.error("Not a known Bowtie implementation.", logger_name=name)
-
-    def startup_failed(self, name: str, stderr: str):
-        self._log.exception(
-            "Startup failed!",
-            logger_name=name,
-            **{"stderr": stderr} if stderr else {},
-        )
-
     def dialect_error(self, implementation: Implementation, stderr: str):
         self._log.error(
             "Tried to start sending test cases, but got an error.",

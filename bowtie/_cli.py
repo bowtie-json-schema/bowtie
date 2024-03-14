@@ -1243,13 +1243,9 @@ async def _run(
         for each in starting:
             try:
                 implementation = await each
-            except StartupFailed as error:
-                exit_code = _EX_CONFIG
-                reporter.startup_failed(name=error.name, stderr=error.stderr)
-                continue
-            except NoSuchImplementation as error:
-                exit_code = _EX_CONFIG
-                reporter.no_such_image(name=error.name)
+            except (NoSuchImplementation, StartupFailed) as err:
+                exit_code |= _EX_CONFIG
+                rich.print(err, file=sys.stderr)
                 continue
 
             if implementation.supports(dialect):
