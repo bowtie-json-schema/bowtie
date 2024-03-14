@@ -1240,7 +1240,6 @@ async def _run(
         reporter=reporter,
         **kwargs,
     ) as starting:
-        reporter.will_speak(dialect=dialect)
         for each in starting:
             try:
                 implementation = await each

@@ -95,10 +95,8 @@ class Reporter:
         )
 
     def ready(self, run_metadata: RunMetadata):
+        self._log.debug("Will speak", dialect=run_metadata.dialect)
         self._write(**run_metadata.serializable())
-
-    def will_speak(self, dialect: Dialect):
-        self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
         if not count:
