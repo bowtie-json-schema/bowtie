@@ -15,6 +15,10 @@ on:
     tags:
       - "v*"
 
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   list:
     runs-on: ubuntu-latest
