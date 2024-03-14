@@ -161,6 +161,12 @@ class CaseReporter:
     _write: Callable[..., Any] = field(alias="write")
     _log: structlog.stdlib.BoundLogger = field(alias="log")
 
+    def mismatched_dialect(self, expected: Dialect):
+        self._log.warn(
+            "$schema keyword does not appear to match "
+            f"a {expected.pretty_name} schema.",
+        )
+
     def got_result(self, result: SeqResult):
         log = self._log.bind(logger_name=result.implementation)
         serialized = result.log_and_be_serialized(log=log)
@@ -279,10 +285,14 @@ class Report:
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**header)
 
+        results: HashTrieMap[
+            ImplementationId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]
+            (each.id for each in metadata.implementations),
+            HashTrieMap(),
+        )
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
-        empty: HashTrieMap[Seq, SeqResult] = HashTrieMap()
-        ids = (each.id for each in metadata.implementations)
-        results = HashTrieMap.fromkeys(ids, empty)
 
         for data in iterator:
             match data:

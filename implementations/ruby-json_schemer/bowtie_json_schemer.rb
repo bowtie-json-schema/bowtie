@@ -48,8 +48,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         ],
-        os: RbConfig::CONFIG["host_os"],
-        language_version: RUBY_VERSION
+        language_version: RUBY_VERSION,
       },
     }
   when 'dialect'

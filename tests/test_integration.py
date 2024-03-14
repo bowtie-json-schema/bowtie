@@ -1251,7 +1251,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
         exit_code=-1,
     )
 
-    assert stdout == ""
+    assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
     assert "failed to start" in stderr.lower(), stderr
 
 
@@ -1799,3 +1799,65 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         exit_code=-1,
     )
     assert re.search(r"does not contain .* cases", stderr), stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_mismatched_dialect(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
+    )
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    _, stderr = await bowtie(
+        "validate",
+        "-D",
+        "7",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+
+    assert "$schema keyword does not" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_run_mismatched_dialect(envsonschema, tmp_path):
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert "$schema keyword does not" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_boolean_schema(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("false")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    _, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+
+    assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_run_boolean_schema(envsonschema, tmp_path):
+    async with run("-i", envsonschema) as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": false, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert stderr == "", stderr
