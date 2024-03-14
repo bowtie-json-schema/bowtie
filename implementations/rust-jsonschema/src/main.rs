@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     let mut started = false;
     let mut options = JSONSchema::options();
     let mut compiler = options.with_draft(Draft::Draft202012);
-    
+
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
         match request["cmd"].as_str().expect("Bad command!") {
