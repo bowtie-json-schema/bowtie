@@ -25,7 +25,7 @@
                                      "http://json-schema.org/draft-04/schema#"]
                           :os (System/getProperty "os.name")
                           :os_version (System/getProperty "os.version")
-                          :language_version (str (:version clojure-version))}})
+                          :language_version (clojure-version)}})
             "dialect" (do (assert @started "Not started!")
                           {:ok false})
             "run" (do (assert @started "Not started!")
