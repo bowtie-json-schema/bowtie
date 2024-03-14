@@ -22,11 +22,11 @@ local cmds = {
     local os_platform_handle = io.popen 'uname'
     local os_platform = os_platform_handle:read '*l'
     os_platform_handle:close()
-    
+
     local os_version_handle = io.popen 'uname -r'
     local os_version = os_version_handle:read '*l'
     os_version_handle:close()
-    
+
     local lua_version = (function()
       local temp = {}
       for str in _VERSION:gmatch '%S+' do
