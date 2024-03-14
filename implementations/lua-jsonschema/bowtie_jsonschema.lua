@@ -5,8 +5,8 @@ STARTED = false
 
 io.stdout:setvbuf 'no'
 
-local os_platform = io.popen('uname'):read('*l')
-local os_version = io.popen('uname -r'):read('*l')
+local os_platform = io.popen('uname'):read '*l'
+local os_version = io.popen('uname -r'):read '*l'
 local lua_version = (function()
   local temp = {}
   for str in _VERSION:gmatch '%S+' do
