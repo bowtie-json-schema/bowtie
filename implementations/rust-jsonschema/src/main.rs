@@ -48,12 +48,12 @@ fn main() -> Result<()> {
     let mut started = false;
     let mut options = JSONSchema::options();
     let mut compiler = options.with_draft(Draft::Draft202012);
-    let osinfo = os_info::get();
-
+    
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
         match request["cmd"].as_str().expect("Bad command!") {
             "start" => {
+                let osinfo = os_info::get();
                 started = true;
                 if request["version"] != 1 {
                     panic!("Not version 1!")

@@ -6,12 +6,12 @@ use serde_json::{json, Map, Value};
 fn main() -> Result<(), Box<dyn Error>> {
     let mut started = false;
     let mut draft = None;
-    let osinfo = os_info::get();
     for line in io::stdin().lines() {
         let request: Value = serde_json::from_str(&line?)?;
         let cmd = request["cmd"].as_str().ok_or("no command")?;
         match cmd {
             "start" => {
+                let osinfo = os_info::get();
                 started = true;
                 if request["version"] != 1 {
                     Err("not version 1")?;
