@@ -6,6 +6,7 @@ use serde_json::{json, Map, Value};
 fn main() -> Result<(), Box<dyn Error>> {
     let mut started = false;
     let mut draft = None;
+    let osinfo = os_info::get();
     for line in io::stdin().lines() {
         let request: Value = serde_json::from_str(&line?)?;
         let cmd = request["cmd"].as_str().ok_or("no command")?;
@@ -32,8 +33,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
-                        "os": os_info::get().os_type(),
-                        "os_version": os_info::get().version().to_string(),
+                        "os": osinfo.os_type(),
+                        "os_version": osinfo.version().to_string(),
                         "language_version": rustc_version_runtime::version().to_string(),
                     }
                 });

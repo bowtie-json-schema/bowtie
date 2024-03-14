@@ -48,6 +48,7 @@ fn main() -> Result<()> {
     let mut started = false;
     let mut options = JSONSchema::options();
     let mut compiler = options.with_draft(Draft::Draft202012);
+    let osinfo = os_info::get();
 
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
@@ -75,8 +76,8 @@ fn main() -> Result<()> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
-                        "os": os_info::get().os_type(),
-                        "os_version": os_info::get().version().to_string(),
+                        "os": osinfo.os_type(),
+                        "os_version": osinfo.version().to_string(),
                         "language_version": rustc_version_runtime::version().to_string(),
                     },
                 });
