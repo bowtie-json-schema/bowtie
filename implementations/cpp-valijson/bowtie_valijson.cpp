@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
-#include <string>
 #include <map>
+#include <string>
 #include <sys/utsname.h>
 
 #include "rapidjson/document.h"
@@ -26,15 +26,13 @@ const unordered_map<string, SchemaParser::Version> DIALECTS{
     {"http://json-schema.org/draft-03/schema#", SchemaParser::kDraft3},
 };
 
-class Registry
-{
+class Registry {
   const Value *contents;
 
 public:
   Registry(const Value *registryContents) { contents = registryContents; }
 
-  const Document *fetchDocument(const string &uri)
-  {
+  const Document *fetchDocument(const string &uri) {
     Document *fetchedRoot = new Document();
     auto registry = contents->GetObject();
     fetchedRoot->CopyFrom(registry[uri.c_str()], fetchedRoot->GetAllocator());
@@ -44,10 +42,8 @@ public:
 
 void freeDocument(const Document *adapter) { delete adapter; }
 
-string getLangVersion()
-{
-  switch (__cplusplus)
-  {
+string getLangVersion() {
+  switch (__cplusplus) {
   case 202002L:
     return "C++20";
   case 201703L:
@@ -61,26 +57,22 @@ string getLangVersion()
   }
 }
 
-map<string, string> getOSInfo()
-{
+map<string, string> getOSInfo() {
   map<string, string> sysInfo;
   struct utsname uts;
-  if (uname(&uts) != -1)
-  {
+  if (uname(&uts) != -1) {
     sysInfo["sysname"] = uts.sysname;
     sysInfo["release"] = uts.release;
   }
   return sysInfo;
 }
 
-int main()
-{
+int main() {
 
   string dialect;
   bool started = false;
 
-  for (string line; getline(cin, line);)
-  {
+  for (string line; getline(cin, line);) {
     Document request;
 
     Value response(kObjectType);
@@ -92,8 +84,7 @@ int main()
     map<string, string> os_info = getOSInfo();
     string lang_version = getLangVersion();
 
-    if (cmd == "start")
-    {
+    if (cmd == "start") {
       int version = request["version"].GetInt();
       assert(version == 1);
 
@@ -128,21 +119,15 @@ int main()
       implementation.AddMember("language_version", language_version, allocator);
 
       response.AddMember("implementation", implementation, allocator);
-    }
-    else if (cmd == "dialect")
-    {
-      if (!started)
-      {
+    } else if (cmd == "dialect") {
+      if (!started) {
         throw runtime_error("Bowtie hasn't started!");
       }
 
       dialect = request["dialect"].GetString();
       response.AddMember("ok", true, allocator);
-    }
-    else if (cmd == "run")
-    {
-      if (!started)
-      {
+    } else if (cmd == "run") {
+      if (!started) {
         throw runtime_error("Bowtie hasn't started!");
       }
 
@@ -157,20 +142,16 @@ int main()
       SchemaParser parser(DIALECTS.at(dialect));
       RapidJsonAdapter schemaAdapter(testCase["schema"]);
 
-      if (testCase.HasMember("registry"))
-      {
+      if (testCase.HasMember("registry")) {
         auto registry = Registry{&testCase["registry"]};
         parser.populateSchema(schemaAdapter, schema,
                               bind(&Registry::fetchDocument, registry, _1),
                               freeDocument);
-      }
-      else
-      {
+      } else {
         parser.populateSchema(schemaAdapter, schema);
       }
 
-      for (auto &each : testCase["tests"].GetArray())
-      {
+      for (auto &each : testCase["tests"].GetArray()) {
         RapidJsonAdapter instance(each["instance"]);
 
         Value result(kObjectType);
@@ -181,17 +162,12 @@ int main()
       }
 
       response.AddMember("results", results, allocator);
-    }
-    else if (cmd == "stop")
-    {
-      if (!started)
-      {
+    } else if (cmd == "stop") {
+      if (!started) {
         throw runtime_error("Bowtie hasn't started!");
       }
       return 0;
-    }
-    else
-    {
+    } else {
       string message = "Unknown command: ";
       message += cmd;
       throw runtime_error(message);
