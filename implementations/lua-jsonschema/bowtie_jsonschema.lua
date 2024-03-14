@@ -5,8 +5,14 @@ STARTED = false
 
 io.stdout:setvbuf 'no'
 
-local os_platform = io.popen('uname'):read('*l')
-local os_version = io.popen('uname -r'):read('*l')
+local os_platform_handle = io.popen 'uname'
+local os_platform = os_handle:read '*l'
+os_platform_handle:close()
+
+local os_version_handle = io.popen 'uname -r'
+local os_version = os_version_handle:read '*l'
+os_version_handle:close()
+
 local lua_version = (function()
   local temp = {}
   for str in _VERSION:gmatch '%S+' do
@@ -14,6 +20,7 @@ local lua_version = (function()
   end
   return temp[2]
 end)()
+
 local handle = io.popen 'luarocks show jsonschema --mversion'
 local jsonschema_version = handle:read '*a'
 handle:close()
