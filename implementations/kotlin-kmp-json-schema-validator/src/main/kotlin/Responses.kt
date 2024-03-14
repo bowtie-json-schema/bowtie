@@ -1,4 +1,5 @@
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
@@ -7,7 +8,7 @@ class StartResponse(
     val implementation: Implementation,
 )
 
-@Suppress("LongParameterList", "ConstructorParameterNaming")
+@Suppress("LongParameterList")
 @Serializable
 class Implementation(
     val language: String = "kotlin",
@@ -18,8 +19,8 @@ class Implementation(
     val issues: String,
     val source: String,
     val os: String,
-    val os_version: String,
-    val language_version: String,
+    @SerialName("os_version") val osVersion: String,
+    @SerialName("language_version") val languageVersion: String,
 )
 
 @Serializable

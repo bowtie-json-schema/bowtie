@@ -5,6 +5,15 @@ STARTED = false
 
 io.stdout:setvbuf 'no'
 
+local os_platform = io.popen('uname'):read('*l')
+local os_version = io.popen('uname -r'):read('*l')
+local lua_version = (function()
+  local temp = {}
+  for str in _VERSION:gmatch '%S+' do
+    table.insert(temp, str)
+  end
+  return temp[2]
+end)()
 local handle = io.popen 'luarocks show jsonschema --mversion'
 local jsonschema_version = handle:read '*a'
 handle:close()
@@ -13,14 +22,6 @@ local function resolve_in_registry(registry)
   return function(url)
     return registry[url]
   end
-end
-
-local function getLuaVersion()
-  local temp = {}
-  for str in _VERSION:gmatch '%S+' do
-    table.insert(temp, str)
-  end
-  return temp[2]
 end
 
 local cmds = {
@@ -42,7 +43,9 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
-        language_version = getLuaVersion(),
+        os = os_platform,
+        os_version = os_version,
+        language_version = lua_version,
       },
     }
   end,
