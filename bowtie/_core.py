@@ -213,11 +213,6 @@ class StartupFailed(Exception):
     stderr: str = ""
     data: Any = None
 
-    def __str__(self) -> str:
-        if self.stderr:
-            return f"{self.name}'s stderr contained: {self.stderr}"
-        return self.name
-
     def __rich_console__(
         self,
         console: Console,
