@@ -6,7 +6,7 @@ STARTED = false
 io.stdout:setvbuf 'no'
 
 local os_platform_handle = io.popen 'uname'
-local os_platform = os_handle:read '*l'
+local os_platform = os_platform_handle:read '*l'
 os_platform_handle:close()
 
 local os_version_handle = io.popen 'uname -r'
