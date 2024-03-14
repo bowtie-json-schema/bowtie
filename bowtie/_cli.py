@@ -174,7 +174,7 @@ def implementation_subcommand(
             async def start():
                 nonlocal exit_code
 
-                running: list[Implementation] = []
+                successful = 0
                 async with _start(
                     image_names=image_names,
                     make_validator=make_validator,
@@ -189,10 +189,10 @@ def implementation_subcommand(
                             rich.print(err, file=sys.stderr)
                             continue
 
-                        running.append(implementation)
+                        successful += 1
                         yield implementation
 
-                    if not running and default_implementations:
+                    if not successful and default_implementations:
                         exit_code |= _EX_CONFIG
                         return
 
