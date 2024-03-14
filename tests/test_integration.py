@@ -557,7 +557,7 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         {tag("envsonschema"): TestResult.INVALID},
         {tag("envsonschema"): TestResult.INVALID},
     ], stderr
-    assert "startup failed" in stderr.lower(), stderr
+    assert "failed to start" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -575,7 +575,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
         )
 
     assert results == []
-    assert "startup failed" in stderr.lower(), stderr
+    assert "failed to start" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -597,7 +597,7 @@ async def test_it_handles_immediately_broken_implementations(
             """,  # noqa: E501
         )
 
-    assert "startup failed" in stderr.lower(), stderr
+    assert "failed to start" in stderr.lower(), stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
         {tag("envsonschema"): TestResult.INVALID},
@@ -624,7 +624,7 @@ async def test_it_handles_broken_start_implementations(
             """,  # noqa: E501
         )
 
-    assert "startup failed" in stderr.lower(), stderr
+    assert "failed to start" in stderr.lower(), stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
         {tag("envsonschema"): TestResult.INVALID},
@@ -748,7 +748,7 @@ async def test_it_handles_invalid_start_responses(missing_homepage):
             """,  # noqa: E501
         )
 
-    assert "startup failed" in stderr.lower(), stderr
+    assert "failed to start" in stderr.lower(), stderr
     assert "'homepage' is a required" in stderr, stderr
     assert results == [], stderr
 
@@ -1758,8 +1758,7 @@ async def test_no_such_image(tmp_path):
     )
     assert stdout == ""
     assert (
-        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image]\n"  # noqa: E501
-        in stderr
+        "'ghcr.io/bowtie-json-schema/no-such-image' is not a known " in stderr
     ), stderr
 
     stdout, stderr = await bowtie(
@@ -1784,8 +1783,7 @@ async def test_no_such_image(tmp_path):
     )
     assert stdout == ""
     assert (
-        "[error    ] Not a known Bowtie implementation. [ghcr.io/bowtie-json-schema/no-such-image]\n"  # noqa: E501
-        in stderr
+        "'ghcr.io/bowtie-json-schema/no-such-image' is not a known " in stderr
     ), stderr
 
 
