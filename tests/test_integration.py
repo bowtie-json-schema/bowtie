@@ -1254,14 +1254,17 @@ async def test_info_unsuccessful_start(succeed_immediately):
     assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
     assert "failed to start" in stderr.lower(), stderr
 
+
 @pytest.mark.asyncio
 async def test_filter_implementations_no_arguments():
     stdout, stderr = await bowtie(
         "filter-implementations",
     )
     assert (
-        sorted(stdout.splitlines()), stderr,
+        sorted(stdout.splitlines()),
+        stderr,
     ) == (Implementation.known(), "")
+
 
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language(

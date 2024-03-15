@@ -950,6 +950,7 @@ KNOWN_LANGUAGES = {
     *(i.partition("-")[0] for i in Implementation.known()),
 }
 
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "--supports-dialect",
@@ -969,14 +970,14 @@ KNOWN_LANGUAGES = {
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
-    callback=lambda ctx, _, value: ( # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, _, value: (  # type: ignore[reportUnknownLambdaType]
         KNOWN_LANGUAGES
         if not value
-        and not ctx.params["dialects"] # type: ignore[reportUnknownMemberType]
-        and len(ctx.params["image_names"]) == len(Implementation.known()) # type: ignore[reportUnknownMemberType]
+        and not ctx.params["dialects"]  # type: ignore[reportUnknownMemberType]
+        and len(ctx.params["image_names"]) == len(Implementation.known())  # type: ignore[reportUnknownMemberType]
         else frozenset(
-            LANGUAGE_ALIASES.get(each, each) # type: ignore[reportUnknownArgumentType]
-            for each in value or KNOWN_LANGUAGES # type: ignore[reportUnknownArgumentType]
+            LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+            for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
         )
     ),
     multiple=True,
