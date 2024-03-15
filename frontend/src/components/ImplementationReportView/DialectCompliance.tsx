@@ -56,11 +56,7 @@ const DialectCompliance: React.FC<{
                     <td>
                       <Link
                         className="mx-1"
-                        // FIXME: surely this shouldn't be hardcoded
-                        // Double FIXME: This should go to the
-                        // implementation-specific page, not the global dialect
-                        // one.
-                        to={`/dialects/${dialect.shortName}`}
+                        to={dialect.routePath}
                       >
                         <img
                           alt={dialect.prettyName}
