@@ -26,7 +26,7 @@ data class Test(
     val valid: Boolean?,
 )
 
-data class RunRequest(val seq: Int, val case: Case) : Request
+data class RunRequest(val seq: Any, val case: Case) : Request
 
 class RunCmd(private val cfg: Configuration) : Request {
 
