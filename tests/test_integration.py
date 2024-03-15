@@ -15,7 +15,7 @@ import pytest
 import pytest_asyncio
 
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import Dialect, Test, TestCase, Implementation
+from bowtie._core import Dialect, Implementation, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -1257,9 +1257,12 @@ async def test_info_unsuccessful_start(succeed_immediately):
 @pytest.mark.asyncio
 async def test_filter_implementations_no_arguments():
     stdout, stderr = await bowtie(
-        "filter-implementations"
+        "filter-implementations",
     )
-    assert (sorted(stdout.splitlines()), stderr) == (Implementation.known(), "")
+    print(stderr)
+    assert (
+        sorted(stdout.splitlines()), stderr,
+    ) == (Implementation.known(), "")
 
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language(
