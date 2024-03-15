@@ -15,7 +15,7 @@ import pytest
 import pytest_asyncio
 
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import Dialect, Test, TestCase
+from bowtie._core import Dialect, Test, TestCase, Implementation
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -1254,6 +1254,12 @@ async def test_info_unsuccessful_start(succeed_immediately):
     assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
     assert "failed to start" in stderr.lower(), stderr
 
+@pytest.mark.asyncio
+async def test_filter_implementations_no_arguments():
+    stdout, stderr = await bowtie(
+        "filter-implementations"
+    )
+    assert (sorted(stdout.splitlines()), stderr) == (Implementation.known(), "")
 
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language(
