@@ -54,10 +54,7 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
                     <td>
-                      <Link
-                        className="mx-1"
-                        to={dialect.routePath}
-                      >
+                      <Link className="mx-1" to={dialect.routePath}>
                         <img
                           alt={dialect.prettyName}
                           className="float-end"
