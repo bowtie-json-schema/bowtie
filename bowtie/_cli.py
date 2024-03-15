@@ -950,7 +950,6 @@ KNOWN_LANGUAGES = {
     *(i.partition("-")[0] for i in Implementation.known()),
 }
 
-
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "--supports-dialect",
@@ -970,9 +969,15 @@ KNOWN_LANGUAGES = {
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
-    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
-        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
-        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    callback=lambda ctx, _, value: ( # type: ignore[reportUnknownLambdaType]
+        KNOWN_LANGUAGES
+        if not value
+        and not ctx.params["dialects"] # type: ignore[reportUnknownMemberType]
+        and len(ctx.params["image_names"]) == len(Implementation.known()) # type: ignore[reportUnknownMemberType]
+        else frozenset(
+            LANGUAGE_ALIASES.get(each, each) # type: ignore[reportUnknownArgumentType]
+            for each in value # type: ignore[reportUnknownArgumentType]
+        )
     ),
     multiple=True,
     metavar="LANGUAGE",
@@ -986,6 +991,11 @@ async def filter_implementations(
     """
     Output implementations matching a given criteria.
     """
+    if languages == KNOWN_LANGUAGES:
+        for implementation in Implementation.known():
+            click.echo(implementation)
+        return
+
     async for each in start():
         if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
