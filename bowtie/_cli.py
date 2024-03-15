@@ -901,6 +901,12 @@ def run(
 @TIMEOUT
 @VALIDATE
 @click.option(
+    "-d",
+    "--description",
+    default="bowtie validate",
+    help="A (human-readable) description for this test case.",
+)
+@click.option(
     "--expect",
     show_default=True,
     show_choices=True,
@@ -917,6 +923,7 @@ def validate(
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
+    description: str,
     **kwargs: Any,
 ):
     """
@@ -926,15 +933,15 @@ def validate(
         return _EX_NOINPUT
 
     case = TestCase(
-        description="bowtie validate",
+        description=description,
         schema=json.load(schema),
         tests=[
             Test(
-                description=str(i),
+                description="",
                 instance=json.load(instance),
                 valid=dict(valid=True, invalid=False, any=None)[expect],
             )
-            for i, instance in enumerate(instances, 1)
+            for instance in instances
         ],
     )
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
