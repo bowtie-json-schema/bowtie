@@ -52,6 +52,7 @@ async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
     if exit_code == -1:
         assert process.returncode != 0, decoded
     else:
+        print(stderr)
         assert process.returncode == exit_code, stderr
 
     if json:
@@ -1259,7 +1260,6 @@ async def test_filter_implementations_no_arguments():
     stdout, stderr = await bowtie(
         "filter-implementations",
     )
-    print(stderr)
     assert (
         sorted(stdout.splitlines()), stderr,
     ) == (Implementation.known(), "")

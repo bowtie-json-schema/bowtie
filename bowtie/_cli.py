@@ -991,7 +991,7 @@ async def filter_implementations(
     """
     Output implementations matching a given criteria.
     """
-    if not dialects and languages == KNOWN_LANGUAGES:
+    if languages == KNOWN_LANGUAGES:
         for implementation in Implementation.known():
             click.echo(implementation)
         return
