@@ -26,6 +26,7 @@ from hypothesis.strategies import (
     sampled_from,
     text,
     tuples,
+    uuids,
 )
 from url import URL
 
@@ -45,7 +46,7 @@ schemas = booleans() | dictionaries(
     max_size=5,
 )
 
-seqs = integers(min_value=1)
+seqs = uuids().map(lambda uuid: uuid.hex)
 implementation_names = text(  # FIXME: see the start command schema
     ascii_lowercase + digits + "-+_",
     min_size=1,

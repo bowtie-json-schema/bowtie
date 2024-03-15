@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 #: A unique identifier for a test case within a run or report.
-Seq = int
+Seq = int | str
 
 #: A unique identifier for an implementation within a run or report.
 ImplementationId = str

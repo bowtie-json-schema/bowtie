@@ -6,6 +6,7 @@ from functools import cache
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeVar
+from uuid import uuid4
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
@@ -548,8 +549,9 @@ class Implementation:
         """
         runner = await self.start_speaking(dialect)
 
-        for i, case in enumerate(cases, 1):
-            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
+        for case in cases:
+            seq_case = SeqCase(seq=uuid4().hex, case=case)
+            yield case, await seq_case.run(runner=runner)
 
     def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(

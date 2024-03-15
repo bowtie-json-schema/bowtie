@@ -284,7 +284,7 @@ class Report:
 
         for data in iterator:
             match data:
-                case {"seq": Seq(seq), "case": case}:
+                case {"seq": seq, "case": case}:
                     if seq in cases:
                         raise DuplicateCase(seq)
                     case = TestCase.from_dict(dialect=metadata.dialect, **case)
