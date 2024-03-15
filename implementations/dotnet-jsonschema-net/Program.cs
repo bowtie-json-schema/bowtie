@@ -85,6 +85,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             }
 
             var testCase = root["case"];
+            var seq = root["seq"].DeepClone();
             var testCaseDescription = testCase["description"].GetValue<string>();
             string? testDescription = null;
             var schemaText = testCase["schema"];
@@ -109,7 +110,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                 }
 
                 var runResult = new JsonObject {
-                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["seq"] = seq,
                     ["results"] = results,
                 };
                 Console.WriteLine(runResult.ToJsonString());
@@ -117,14 +118,13 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out var message))
             {
-                var skipResult =
-                    new JsonObject { ["seq"] = root["seq"].GetValue<int>(), ["skipped"] = true, ["message"] = message };
+                var skipResult = new JsonObject { ["seq"] = seq, ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
                 var errorResult = new JsonObject {
-                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["seq"] = seq,
                     ["errored"] = true,
                     ["context"] =
                         new JsonObject {
