@@ -52,7 +52,6 @@ async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
     if exit_code == -1:
         assert process.returncode != 0, decoded
     else:
-        print(stderr)
         assert process.returncode == exit_code, stderr
 
     if json:
