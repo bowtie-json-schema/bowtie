@@ -976,7 +976,7 @@ KNOWN_LANGUAGES = {
         and len(ctx.params["image_names"]) == len(Implementation.known()) # type: ignore[reportUnknownMemberType]
         else frozenset(
             LANGUAGE_ALIASES.get(each, each) # type: ignore[reportUnknownArgumentType]
-            for each in value # type: ignore[reportUnknownArgumentType]
+            for each in value or KNOWN_LANGUAGES # type: ignore[reportUnknownArgumentType]
         )
     ),
     multiple=True,
@@ -991,7 +991,7 @@ async def filter_implementations(
     """
     Output implementations matching a given criteria.
     """
-    if languages == KNOWN_LANGUAGES:
+    if not dialects and languages == KNOWN_LANGUAGES:
         for implementation in Implementation.known():
             click.echo(implementation)
         return
