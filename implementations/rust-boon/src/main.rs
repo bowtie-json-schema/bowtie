@@ -11,6 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let cmd = request["cmd"].as_str().ok_or("no command")?;
         match cmd {
             "start" => {
+                let osinfo = os_info::get();
                 started = true;
                 if request["version"] != 1 {
                     Err("not version 1")?;
@@ -32,6 +33,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
+                        "os": osinfo.os_type(),
+                        "os_version": osinfo.version().to_string(),
+                        "language_version": rustc_version_runtime::version().to_string(),
                     }
                 });
                 println!("{response}");

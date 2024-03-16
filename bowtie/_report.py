@@ -95,10 +95,8 @@ class Reporter:
         )
 
     def ready(self, run_metadata: RunMetadata):
+        self._log.debug("Will speak", dialect=run_metadata.dialect)
         self._write(**run_metadata.serializable())
-
-    def will_speak(self, dialect: Dialect):
-        self._log.debug("Will speak", dialect=dialect)
 
     def finished(self, count: int, did_fail_fast: bool):
         if not count:
@@ -106,16 +104,6 @@ class Reporter:
         else:
             self._log.info("Finished", count=count)
         self._write(did_fail_fast=did_fail_fast)
-
-    def no_such_image(self, name: str):
-        self._log.error("Not a known Bowtie implementation.", logger_name=name)
-
-    def startup_failed(self, name: str, stderr: str):
-        self._log.exception(
-            "Startup failed!",
-            logger_name=name,
-            **{"stderr": stderr} if stderr else {},
-        )
 
     def dialect_error(self, implementation: Implementation, stderr: str):
         self._log.error(
@@ -296,7 +284,7 @@ class Report:
 
         for data in iterator:
             match data:
-                case {"seq": Seq(seq), "case": case}:
+                case {"seq": seq, "case": case}:
                     if seq in cases:
                         raise DuplicateCase(seq)
                     case = TestCase.from_dict(dialect=metadata.dialect, **case)

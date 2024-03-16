@@ -12,6 +12,7 @@ export default class Dialect {
   readonly prettyName: string;
   readonly uri: string;
   readonly firstPublicationDate: Date;
+  readonly routePath: string;
 
   private static all: Map<string, Dialect> = new Map<string, Dialect>();
 
@@ -30,6 +31,7 @@ export default class Dialect {
     this.prettyName = prettyName;
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
+    this.routePath = `/dialects/${shortName}`;
   }
 
   async fetchReport(baseURI: URI = siteURI) {

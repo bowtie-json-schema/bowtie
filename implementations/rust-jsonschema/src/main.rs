@@ -53,6 +53,7 @@ fn main() -> Result<()> {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
         match request["cmd"].as_str().expect("Bad command!") {
             "start" => {
+                let osinfo = os_info::get();
                 started = true;
                 if request["version"] != 1 {
                     panic!("Not version 1!")
@@ -75,6 +76,9 @@ fn main() -> Result<()> {
                             "http://json-schema.org/draft-06/schema#",
                             "http://json-schema.org/draft-04/schema#",
                         ],
+                        "os": osinfo.os_type(),
+                        "os_version": osinfo.version().to_string(),
+                        "language_version": rustc_version_runtime::version().to_string(),
                     },
                 });
                 println!("{}", response);
