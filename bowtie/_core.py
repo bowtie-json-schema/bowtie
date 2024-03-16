@@ -6,6 +6,7 @@ from functools import cache
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeVar
+from uuid import uuid4
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
@@ -213,11 +214,6 @@ class StartupFailed(Exception):
     stderr: str = ""
     data: Any = None
 
-    def __str__(self) -> str:
-        if self.stderr:
-            return f"{self.name}'s stderr contained: {self.stderr}"
-        return self.name
-
     def __rich_console__(
         self,
         console: Console,
@@ -232,6 +228,7 @@ class StartupFailed(Exception):
                 "local container setup (podman, docker, etc.)."
             )
         else:
+            errors = getattr(self.__cause__, "errors", [])
             hint = (
                 "The harness sent an invalid response for Bowtie's protocol. "
                 "Details for what was wrong are above. If you are developing "
@@ -239,7 +236,7 @@ class StartupFailed(Exception):
                 "if you are not, this is a bug in Bowtie's harness for this "
                 "implementation! File an issue on Bowtie's issue tracker."
             )
-            causes.extend(str(error) for error in self.__cause__.errors)  # type: ignore[reportUnknownArgumentType]
+            causes.extend(str(error) for error in errors)
 
         yield DiagnosticError(
             code="startup-failed",
@@ -552,8 +549,9 @@ class Implementation:
         """
         runner = await self.start_speaking(dialect)
 
-        for i, case in enumerate(cases, 1):
-            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
+        for case in cases:
+            seq_case = SeqCase(seq=uuid4().hex, case=case)
+            yield case, await seq_case.run(runner=runner)
 
     def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
         return DialectRunner.for_dialect(

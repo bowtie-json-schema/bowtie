@@ -174,7 +174,7 @@ def implementation_subcommand(
             async def start():
                 nonlocal exit_code
 
-                running: list[Implementation] = []
+                successful = 0
                 async with _start(
                     image_names=image_names,
                     make_validator=make_validator,
@@ -189,10 +189,10 @@ def implementation_subcommand(
                             rich.print(err, file=sys.stderr)
                             continue
 
-                        running.append(implementation)
+                        successful += 1
                         yield implementation
 
-                    if not running and default_implementations:
+                    if not successful and default_implementations:
                         exit_code |= _EX_CONFIG
                         return
 
@@ -901,6 +901,12 @@ def run(
 @TIMEOUT
 @VALIDATE
 @click.option(
+    "-d",
+    "--description",
+    default="bowtie validate",
+    help="A (human-readable) description for this test case.",
+)
+@click.option(
     "--expect",
     show_default=True,
     show_choices=True,
@@ -917,6 +923,7 @@ def validate(
     schema: TextIO,
     instances: Iterable[TextIO],
     expect: str,
+    description: str,
     **kwargs: Any,
 ):
     """
@@ -926,15 +933,15 @@ def validate(
         return _EX_NOINPUT
 
     case = TestCase(
-        description="bowtie validate",
+        description=description,
         schema=json.load(schema),
         tests=[
             Test(
-                description=str(i),
+                description="",
                 instance=json.load(instance),
                 valid=dict(valid=True, invalid=False, any=None)[expect],
             )
-            for i, instance in enumerate(instances, 1)
+            for instance in instances
         ],
     )
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
@@ -1240,17 +1247,12 @@ async def _run(
         reporter=reporter,
         **kwargs,
     ) as starting:
-        reporter.will_speak(dialect=dialect)
         for each in starting:
             try:
                 implementation = await each
-            except StartupFailed as error:
-                exit_code = _EX_CONFIG
-                reporter.startup_failed(name=error.name, stderr=error.stderr)
-                continue
-            except NoSuchImplementation as error:
-                exit_code = _EX_CONFIG
-                reporter.no_such_image(name=error.name)
+            except (NoSuchImplementation, StartupFailed) as err:
+                exit_code |= _EX_CONFIG
+                rich.print(err, file=sys.stderr)
                 continue
 
             if implementation.supports(dialect):

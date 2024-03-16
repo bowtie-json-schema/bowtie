@@ -61,7 +61,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                           </div>
                           <span className="text-body-secondary text-nowrap">
                             (latest supported dialect:{" "}
-                            <NavLink to={`/dialects/${latest.shortName}`}>
+                            <NavLink to={latest.routePath}>
                               {latest.prettyName}
                             </NavLink>
                             )
