@@ -66,17 +66,6 @@ class Reporter:
         factory=structlog.stdlib.get_logger,
     )
 
-    def unsupported_dialect(
-        self,
-        implementation: Implementation,
-        dialect: Dialect,
-    ):
-        self._log.warn(
-            "Unsupported dialect, skipping implementation.",
-            logger_name=implementation.name,
-            dialect=dialect.pretty_name,
-        )
-
     def unacknowledged_dialect(
         self,
         implementation: str,
@@ -111,9 +100,6 @@ class Reporter:
             logger_name=implementation.name,
             stderr=stderr,
         )
-
-    def no_implementations(self):
-        self._log.error("No implementations started successfully!")
 
     def invalid_response(
         self,
