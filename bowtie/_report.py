@@ -101,9 +101,6 @@ class Reporter:
             stderr=stderr,
         )
 
-    def no_implementations(self):
-        self._log.error("No implementations started successfully!")
-
     def invalid_response(
         self,
         cmd: Command[Any],

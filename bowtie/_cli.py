@@ -193,6 +193,7 @@ def implementation_subcommand(
                         yield implementation
 
                     if not successful and default_implementations:
+                        # TODO: show a diagnostic that collects crash causes
                         exit_code |= _EX_CONFIG
                         return
 
@@ -1270,44 +1271,47 @@ async def _run(
                 runners.append(runner)
 
         if not runners:
-            exit_code = _EX_CONFIG
-            reporter.no_implementations()
-        else:
-            reporter.ready(
-                _report.RunMetadata(
-                    implementations=acknowledged,
-                    dialect=dialect,
-                    metadata=run_metadata,
-                ),
+            rich.print(
+                "[bold red]No implementations started successfully![/]",
+                file=sys.stderr,
             )
+            return exit_code | _EX_CONFIG
 
-            count = 0
-            should_stop = False
-            unsucessful = Unsuccessful()
-            for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
-                seq_case = SeqCase(seq=count, case=case)
-                case_reporter = reporter.case_started(seq_case)
+        reporter.ready(
+            _report.RunMetadata(
+                implementations=acknowledged,
+                dialect=dialect,
+                metadata=run_metadata,
+            ),
+        )
 
-                if not seq_case.matches_dialect(dialect):
-                    case_reporter.mismatched_dialect(expected=dialect)
+        count = 0
+        should_stop = False
+        unsucessful = Unsuccessful()
+        for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+            seq_case = SeqCase(seq=count, case=case)
+            case_reporter = reporter.case_started(seq_case)
 
-                responses = [seq_case.run(runner=runner) for runner in runners]
+            if not seq_case.matches_dialect(dialect):
+                case_reporter.mismatched_dialect(expected=dialect)
 
-                for each in asyncio.as_completed(responses):
-                    result = await each
-                    case_reporter.got_result(result=result)
-                    unsucessful += result.unsuccessful()
-                    if max_fail and unsucessful.failed == max_fail:
-                        should_stop = True
-                    if max_error and unsucessful.errored == max_error:
-                        should_stop = True
+            responses = [seq_case.run(runner=runner) for runner in runners]
 
-                if should_stop:
-                    reporter.failed_fast(seq_case=seq_case)
-                    break
-            reporter.finished(count=count, did_fail_fast=should_stop)
-            if not count:
-                exit_code = _EX_NOINPUT
+            for each in asyncio.as_completed(responses):
+                result = await each
+                case_reporter.got_result(result=result)
+                unsucessful += result.unsuccessful()
+                if max_fail and unsucessful.failed == max_fail:
+                    should_stop = True
+                if max_error and unsucessful.errored == max_error:
+                    should_stop = True
+
+            if should_stop:
+                reporter.failed_fast(seq_case=seq_case)
+                break
+        reporter.finished(count=count, did_fail_fast=should_stop)
+        if not count:
+            exit_code = _EX_NOINPUT
     return exit_code
 
 
