@@ -38,7 +38,7 @@ const EmbedBadges: React.FC<{
   });
 
   return (
-    <div className="container d-flex justify-content-end dropdown px-0">
+    <div className="container d-flex justify-content-end dropdown px-0 col-12">
       <button
         className="btn btn-sm btn-success dropdown-toggle"
         type="button"
@@ -47,19 +47,21 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3 col-12 col-md-8">
+      <ul className="dropdown-menu mx-auto mb-3 col-12 col-md-8 col-lg-8 col-xxl-7">
         <li>
-          <div className="text-center pt-1">
-            <h4 className="text-body-secondary">Embed a Badge</h4>
-            <div className="dropdown d-flex flex-column justify-content-center align-items-center px-2">
+          <div className="px-4 pt-1">
+            <h4 className="ps-sm-1 text-nowrap text-center d-flex justify-content-center justify-content-lg-start">
+              Embed a Badge
+            </h4>
+            <div className="dropdown d-lg-flex justify-content-center justify-content-sm-start pt-2 text-center">
               <label
-                className="pb-1 text-body-secondary"
+                className="pb-1 pe-3 ps-1  text-nowrap "
                 htmlFor="dropdownMenuButton"
               >
-                Available Badges
+                <small>Available Badges:</small>
               </label>
               <button
-                className="btn btn-sm btn-primary dropdown-toggle mx-auto"
+                className="btn btn-sm btn-primary dropdown-toggle mw-100 overflow-hidden"
                 type="button"
                 id="dropdownMenuButton"
                 data-bs-toggle="dropdown"
@@ -80,7 +82,7 @@ const EmbedBadges: React.FC<{
                     onClick={() =>
                       handleSelectBadge(
                         "JSON Schema Versions",
-                        versionsBadgeFor(implementation),
+                        versionsBadgeFor(implementation)
                       )
                     }
                   >
@@ -99,8 +101,8 @@ const EmbedBadges: React.FC<{
                           result[0],
                           complianceBadgeFor(
                             implementation,
-                            Dialect.withName(result[0]),
-                          ),
+                            Dialect.withName(result[0])
+                          )
                         )
                       }
                     >
@@ -112,7 +114,7 @@ const EmbedBadges: React.FC<{
             </div>
           </div>
           <div className="container vw-50 d-flex justify-content-center align-items-center flex-column pt-3">
-            <ul className="nav nav-pills justify-content-center gap-1">
+            <ul className="nav nav-pills justify-content-center">
               {supportedFormats.map((formatItem, index) => {
                 return (
                   <li className="nav-item" key={index}>
@@ -128,18 +130,18 @@ const EmbedBadges: React.FC<{
                 );
               })}
             </ul>
-            <div className="tab-content mt-2 pt-2 pb-3 w-100">
+            <div className="tab-content mt-2 pt-2 pb-2 w-100">
               {supportedFormats.map((formatItem, index) => {
                 const badgeEmbed = formatItem.generateEmbed(
                   badgeURI.href(),
-                  altTextFor(activeBadge),
+                  altTextFor(activeBadge)
                 );
                 return (
                   <div
                     key={index}
                     className={`tab-pane ${
                       activeTab === formatItem.name ? "active" : ""
-                    } border rounded pt-2 px-4 mx-2`}
+                    } border rounded pt-1 px-4 mx-2`}
                   >
                     <div className="d-flex align-items-center justify-content-center px-1">
                       <div className="w-100">
