@@ -511,7 +511,7 @@ async def test_unsupported_known_dialect(only_draft3):
         results, stderr = await send("")
 
     assert results == []
-    assert "unsupported dialect" in stderr.lower(), stderr
+    assert "does not support" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio

@@ -30,7 +30,7 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie.exceptions import ProtocolError
+from bowtie.exceptions import ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -554,6 +554,8 @@ class Implementation:
             yield case, await seq_case.run(runner=runner)
 
     def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
+        if not self.supports(dialect):
+            raise UnsupportedDialect(implementation=self, dialect=dialect)
         return DialectRunner.for_dialect(
             implementation=self.name,
             dialect=dialect,

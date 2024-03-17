@@ -44,7 +44,7 @@ from bowtie._core import (
     Test,
     TestCase,
 )
-from bowtie.exceptions import ProtocolError
+from bowtie.exceptions import ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -1250,28 +1250,24 @@ async def _run(
         for each in starting:
             try:
                 implementation = await each
-            except (NoSuchImplementation, StartupFailed) as err:
+            except (NoSuchImplementation, StartupFailed) as error:
                 exit_code |= _EX_CONFIG
-                rich.print(err, file=sys.stderr)
+                rich.print(error, file=sys.stderr)
                 continue
 
-            if implementation.supports(dialect):
-                try:
-                    runner = await implementation.start_speaking(dialect)
-                except GotStderr as error:
-                    exit_code = _EX_CONFIG
-                    reporter.dialect_error(
-                        implementation=implementation,
-                        stderr=error.stderr.decode(),
-                    )
-                else:
-                    acknowledged.append(implementation.info)
-                    runners.append(runner)
-            else:
-                reporter.unsupported_dialect(
+            try:
+                runner = await implementation.start_speaking(dialect)
+            except GotStderr as error:
+                exit_code = _EX_CONFIG
+                reporter.dialect_error(
                     implementation=implementation,
-                    dialect=dialect,
+                    stderr=error.stderr.decode(),
                 )
+            except UnsupportedDialect as error:
+                rich.print(error, file=sys.stderr)
+            else:
+                acknowledged.append(implementation.info)
+                runners.append(runner)
 
         if not runners:
             exit_code = _EX_CONFIG

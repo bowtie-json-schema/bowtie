@@ -66,17 +66,6 @@ class Reporter:
         factory=structlog.stdlib.get_logger,
     )
 
-    def unsupported_dialect(
-        self,
-        implementation: Implementation,
-        dialect: Dialect,
-    ):
-        self._log.warn(
-            "Unsupported dialect, skipping implementation.",
-            logger_name=implementation.name,
-            dialect=dialect.pretty_name,
-        )
-
     def unacknowledged_dialect(
         self,
         implementation: str,
