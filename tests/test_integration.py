@@ -972,7 +972,6 @@ async def test_smoke_valid_markdown(envsonschema):
     )
     parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
-    print(tokens)
     assert (
         tokens
         == """
