@@ -970,7 +970,7 @@ async def test_smoke_valid_markdown(envsonschema):
         envsonschema,
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
-    parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
     assert (
         tokens
@@ -1178,7 +1178,7 @@ async def test_info_valid_markdown(envsonschema):
         "-i",
         envsonschema,
     )
-    parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
     assert (
         tokens
@@ -1648,7 +1648,7 @@ async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
         "failures",
         stdin=validate_stdout,
     )
-    parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
     assert stderr == ""
     assert (
