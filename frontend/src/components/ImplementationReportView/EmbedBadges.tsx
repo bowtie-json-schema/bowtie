@@ -47,7 +47,7 @@ const EmbedBadges: React.FC<{
       >
         Badges
       </button>
-      <ul className="dropdown-menu mx-auto mb-3 col-12 col-md-8 col-lg-8 col-xxl-7">
+      <ul className="dropdown-menu mx-auto mb-3 col-12 col-md-11 col-lg-8 col-xxl-7">
         <li>
           <div className="px-4 pt-1">
             <h4 className="ps-sm-1 text-nowrap text-center d-flex justify-content-center justify-content-lg-start">
