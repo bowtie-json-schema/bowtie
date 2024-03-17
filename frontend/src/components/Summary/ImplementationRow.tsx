@@ -31,7 +31,10 @@ const ImplementationRow = ({
         onClick={() => navigate(`/implementations/${implementationPath}`)}
         scope="row"
       >
-        <NavLink to={`/implementations/${implementationPath}`}>
+        <NavLink
+          to={`/implementations/${implementationPath}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           {implementation.name}
         </NavLink>
         <small className="text-muted ps-1">
