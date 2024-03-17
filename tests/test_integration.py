@@ -1201,23 +1201,9 @@ async def test_info_valid_markdown(envsonschema):
       <strong>
         <text>
       <text>
-      <link href='https://github.com/bowtie-json-schema/bowtie'>
-        <text>
-      <text>
       <softbreak>
       <text>
       <strong>
-        <text>
-      <text>
-      <link href='https://github.com/bowtie-json-schema/bowtie/issues'>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <link href='https://github.com/bowtie-json-schema/bowtie'>
         <text>
       <text>
       <softbreak>
@@ -1227,33 +1213,20 @@ async def test_info_valid_markdown(envsonschema):
       <text>
       <softbreak>
       <text>
-      <link href='https://json-schema.org/draft/2020-12/schema'>
+      <strong>
         <text>
       <text>
       <softbreak>
       <text>
-      <link href='https://json-schema.org/draft/2019-09/schema'>
-        <text>
+      <softbreak>
       <text>
       <softbreak>
       <text>
-      <link href='http://json-schema.org/draft-07/schema#'>
-        <text>
+      <softbreak>
       <text>
       <softbreak>
       <text>
-      <link href='http://json-schema.org/draft-06/schema#'>
-        <text>
-      <text>
       <softbreak>
-      <text>
-      <link href='http://json-schema.org/draft-04/schema#'>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <link href='http://json-schema.org/draft-03/schema#'>
-        <text>
       <text>
       <softbreak>
       <text>
