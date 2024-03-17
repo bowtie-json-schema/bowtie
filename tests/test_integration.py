@@ -1,7 +1,5 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
-from markdown_it import MarkdownIt
-from markdown_it.tree import SyntaxTreeNode
 from pathlib import Path
 from pprint import pformat
 from textwrap import dedent, indent
@@ -13,6 +11,8 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from markdown_it import MarkdownIt
+from markdown_it.tree import SyntaxTreeNode
 import pytest
 import pytest_asyncio
 
@@ -1181,8 +1181,10 @@ async def test_info_valid_markdown(envsonschema):
     )
     parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
-    assert tokens == (
-        """
+    assert (
+        tokens
+        == (
+            """
         <root>
   <paragraph>
     <inline>
@@ -1257,7 +1259,8 @@ async def test_info_valid_markdown(envsonschema):
       <softbreak>
       <text>
         """
-    ).strip()
+        ).strip()
+    )
     assert stderr == ""
 
 
@@ -1649,8 +1652,10 @@ async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
     parsed_markdown = MarkdownIt("gfm-like").parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
     assert stderr == ""
-    assert tokens == (
-        """
+    assert (
+        tokens
+        == (
+            """
         <root>
   <heading>
     <inline>
@@ -1691,7 +1696,8 @@ async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
         <text>
       <text>
         """
-    ).strip()
+        ).strip()
+    )
 
 
 @pytest.mark.asyncio
