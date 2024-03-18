@@ -38,7 +38,7 @@ const EmbedBadges: React.FC<{
   });
 
   return (
-    <div className="container d-flex justify-content-end dropdown px-0 col-12">
+    <div className="container d-flex align-items-center justify-content-end dropdown px-0 col-12">
       <button
         className="btn btn-sm btn-success dropdown-toggle"
         type="button"
