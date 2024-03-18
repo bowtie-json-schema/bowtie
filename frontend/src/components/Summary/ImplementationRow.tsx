@@ -1,5 +1,5 @@
 import "./ImplementationRow.css";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import {
   Implementation,
   ImplementationResults,
 } from "../../data/parseReportData";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const ImplementationRow = ({
   cases,
@@ -20,6 +21,7 @@ const ImplementationRow = ({
   key: number;
   index: number;
 }) => {
+  const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementationResults);
@@ -31,7 +33,11 @@ const ImplementationRow = ({
         onClick={() => navigate(`/implementations/${implementationPath}`)}
         scope="row"
       >
-        <span className="text-decoration-underline text-primary">
+        <span
+          className={`text-decoration-underline ${
+            isDarkMode ? "text-primary-emphasis" : "text-primary"
+          }`}
+        >
           {implementation.name}
         </span>
         <small className="text-muted ps-1">
