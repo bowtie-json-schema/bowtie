@@ -63,7 +63,7 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.98.17
+hypothesis==6.99.8
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -79,7 +79,7 @@ jsonschema==4.21.1
     #   -r requirements.txt
     #   -r test-requirements.in
     #   bowtie-json-schema
-jsonschema-lexer==0.2.0
+jsonschema-lexer==0.2.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -102,7 +102,7 @@ multidict==6.0.5
     #   -r requirements.txt
     #   aiohttp
     #   yarl
-packaging==23.2
+packaging==24.0
     # via pytest
 pluggy==1.4.0
     # via pytest
@@ -121,7 +121,7 @@ pyjwt==2.8.0
     # via
     #   -r requirements.txt
     #   github3-py
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
@@ -134,14 +134,14 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements.txt
     #   github3-py
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
     #   jsonschema
     #   jsonschema-specifications
     #   referencing-loaders
-referencing-loaders==0.4.2
+referencing-loaders==2024.5.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
