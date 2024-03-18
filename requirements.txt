@@ -42,7 +42,7 @@ idna==3.6
     #   yarl
 jsonschema==4.21.1
     # via bowtie-json-schema (pyproject.toml)
-jsonschema-lexer==0.2.0
+jsonschema-lexer==0.2.1
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2023.12.1
     # via jsonschema
