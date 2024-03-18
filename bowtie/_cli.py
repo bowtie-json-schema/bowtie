@@ -970,7 +970,7 @@ KNOWN_LANGUAGES = {
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
-    callback=lambda ctx, _, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
         KNOWN_LANGUAGES
         if not value
         else frozenset(
