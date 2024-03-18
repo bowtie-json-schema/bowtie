@@ -650,7 +650,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         )
 
     assert results == []
-    assert "got an error" in stderr.lower(), stderr
+    assert "failed as we were beginning" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio

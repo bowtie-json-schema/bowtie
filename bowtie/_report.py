@@ -94,13 +94,6 @@ class Reporter:
             self._log.info("Finished", count=count)
         self._write(did_fail_fast=did_fail_fast)
 
-    def dialect_error(self, implementation: Implementation, stderr: str):
-        self._log.error(
-            "Tried to start sending test cases, but got an error.",
-            logger_name=implementation.name,
-            stderr=stderr,
-        )
-
     def invalid_response(
         self,
         cmd: Command[Any],

@@ -37,14 +37,13 @@ from bowtie import _containers, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
-    GotStderr,
     Implementation,
     NoSuchImplementation,
     StartupFailed,
     Test,
     TestCase,
 )
-from bowtie.exceptions import ProtocolError, UnsupportedDialect
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -1260,12 +1259,9 @@ async def _run(
 
             try:
                 runner = await implementation.start_speaking(dialect)
-            except GotStderr as error:
+            except DialectError as error:
                 exit_code |= _EX_CONFIG
-                reporter.dialect_error(
-                    implementation=implementation,
-                    stderr=error.stderr.decode(),
-                )
+                STDERR.print(error)
             except UnsupportedDialect as error:
                 STDERR.print(error)
             else:
