@@ -46,7 +46,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
             </span>
             <span>{implementation.name}</span>
           </span>
-          <span className="w-100">
+          <span>
             <EmbedBadges implementation={implementation} />
           </span>
         </Card.Header>
