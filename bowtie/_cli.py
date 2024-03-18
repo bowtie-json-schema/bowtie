@@ -975,7 +975,7 @@ KNOWN_LANGUAGES = {
         if not value
         else frozenset(
             LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
-            for each in value # type: ignore[reportUnknownArgumentType]
+            for each in value  # type: ignore[reportUnknownArgumentType]
         )
     ),
     multiple=True,
