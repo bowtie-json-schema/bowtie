@@ -2,7 +2,7 @@ import "./ImplementationRow.css";
 import { useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Case,
   Implementation,
@@ -31,9 +31,9 @@ const ImplementationRow = ({
         onClick={() => navigate(`/implementations/${implementationPath}`)}
         scope="row"
       >
-        <NavLink to={`/implementations/${implementationPath}`}>
+        <span className="text-decoration-underline text-primary">
           {implementation.name}
-        </NavLink>
+        </span>
         <small className="text-muted ps-1">
           {mapLanguage(implementation.language)}
         </small>
