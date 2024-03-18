@@ -90,6 +90,7 @@ jsonschema-specifications==2023.12.1
 markdown-it-py==3.0.0
     # via
     #   -r requirements.txt
+    #   -r test-requirements.in
     #   diagnostic
     #   rich
 mdurl==0.1.2
