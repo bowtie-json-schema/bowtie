@@ -66,6 +66,8 @@ _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
 
+STDERR = console.Console(stderr=True)
+
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
@@ -184,9 +186,9 @@ def implementation_subcommand(
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as err:
+                        except (NoSuchImplementation, StartupFailed) as error:
                             exit_code |= _EX_CONFIG
-                            rich.print(err, file=sys.stderr)
+                            STDERR.print(error)
                             continue
 
                         successful += 1
@@ -355,7 +357,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "otherwise it may be emitting no report data."
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_NOINPUT
     except json.JSONDecodeError as err:
         error = DiagnosticError(
@@ -369,7 +371,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "Bowtie."
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_DATAERR
     except _report.MissingFooter:
         error = DiagnosticError(
@@ -384,7 +386,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "without piping it. If it crashes, file a bug report!"
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_DATAERR
 
     if show == "failures":
@@ -1253,27 +1255,26 @@ async def _run(
                 implementation = await each
             except (NoSuchImplementation, StartupFailed) as error:
                 exit_code |= _EX_CONFIG
-                rich.print(error, file=sys.stderr)
+                STDERR.print(error)
                 continue
 
             try:
                 runner = await implementation.start_speaking(dialect)
             except GotStderr as error:
-                exit_code = _EX_CONFIG
+                exit_code |= _EX_CONFIG
                 reporter.dialect_error(
                     implementation=implementation,
                     stderr=error.stderr.decode(),
                 )
             except UnsupportedDialect as error:
-                rich.print(error, file=sys.stderr)
+                STDERR.print(error)
             else:
                 acknowledged.append(implementation.info)
                 runners.append(runner)
 
         if not runners:
-            rich.print(
+            STDERR.print(
                 "[bold red]No implementations started successfully![/]",
-                file=sys.stderr,
             )
             return exit_code | _EX_CONFIG
 
