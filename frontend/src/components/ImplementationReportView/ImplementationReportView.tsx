@@ -6,6 +6,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import DialectCompliance from "./DialectCompliance";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
+import EmbedBadges from "./EmbedBadges";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.
@@ -38,12 +39,16 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
-        <Card.Header>
-          <span className="px-1 text-muted">
-            {mapLanguage(implementation.language)}
+        <Card.Header className="d-flex justify-content-between">
+          <span className="d-flex align-items-center">
+            <span className="px-1 text-muted">
+              {mapLanguage(implementation.language)}
+            </span>
+            <span>{implementation.name}</span>
           </span>
-
-          <span>{implementation.name}</span>
+          <span className="w-100">
+            <EmbedBadges implementation={implementation} />
+          </span>
         </Card.Header>
 
         <Card.Body>
