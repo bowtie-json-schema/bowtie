@@ -973,18 +973,18 @@ KNOWN_LANGUAGES = {
     callback=lambda ctx, _, value: (  # type: ignore[reportUnknownLambdaType]
         KNOWN_LANGUAGES
         if not value
-        and not ctx.params["dialects"]  # type: ignore[reportUnknownMemberType]
-        and len(ctx.params["image_names"]) == len(Implementation.known())  # type: ignore[reportUnknownMemberType]
         else frozenset(
             LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
-            for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+            for each in value # type: ignore[reportUnknownArgumentType]
         )
     ),
     multiple=True,
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
 )
+@click.pass_context
 async def filter_implementations(
+    ctx: click.Context,
     start: Callable[[], AsyncIterator[Implementation]],
     dialects: Sequence[Dialect],
     languages: Set[str],
@@ -992,9 +992,9 @@ async def filter_implementations(
     """
     Output implementations matching a given criteria.
     """
-    if languages == KNOWN_LANGUAGES:
-        for implementation in Implementation.known():
-            click.echo(implementation)
+    if not dialects and languages == KNOWN_LANGUAGES:
+        for implementation in ctx.params["image_names"]:
+            click.echo(implementation.split("/")[-1])
         return
 
     async for each in start():
