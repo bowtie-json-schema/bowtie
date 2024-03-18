@@ -190,7 +190,7 @@ def style(session):
     Lint for style on Bowtie's Python codebase.
     """
     session.install("ruff")
-    session.run("ruff", "check", BOWTIE, TESTS, __file__)
+    session.run("ruff", "check", BOWTIE, TESTS, *ROOT.glob("*.py"))
 
 
 @session()
