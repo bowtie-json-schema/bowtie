@@ -6,6 +6,8 @@ from textwrap import dedent, indent
 import asyncio
 import json as _json
 import os
+import pty
+import select
 import re
 import sys
 import tarfile
@@ -1257,13 +1259,34 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
 @pytest.mark.asyncio
 async def test_filter_implementations_no_arguments():
-    stdout, stderr = await bowtie(
-        "filter-implementations",
-    )
-    assert (
-        sorted(stdout.splitlines()),
-        stderr,
-    ) == (Implementation.known(), "")
+    output_buffer = BytesIO()
+    stdout, stderr = [], ""
+
+    def read(fd):
+        while True:
+            readable, _, _ = select.select([fd], [], [], 0.1)
+            if readable:
+                try:
+                    data = os.read(fd, 1024)
+                    if not data:
+                        break
+                    output_buffer.write(data)
+                except OSError:
+                    break
+        return b""
+
+    pty.spawn(["bowtie", "filter-implementations"], read)
+
+    try:
+        stdout = [
+            byte.decode()
+            for byte in output_buffer.getvalue().splitlines()
+        ]
+    except UnicodeDecodeError as err:
+        stderr = str(err)
+
+    expected = sorted(Implementation.known())
+    assert (sorted(stdout), stderr) == (expected, "")
 
 
 @pytest.mark.asyncio
