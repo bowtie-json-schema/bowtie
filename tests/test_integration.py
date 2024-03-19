@@ -7,8 +7,8 @@ import asyncio
 import json as _json
 import os
 import pty
-import select
 import re
+import select
 import sys
 import tarfile
 
