@@ -29,7 +29,6 @@ from rich.text import Text
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
-import rich
 import structlog
 import structlog.typing
 
@@ -262,7 +261,7 @@ def badges(site: Path):
                 "delete the directory first."
             ),
         )
-        rich.print(error)
+        STDERR.print(error)
         return _EX_CONFIG
 
     supported_versions: dict[Path, Iterable[Dialect]] = {}
@@ -281,7 +280,7 @@ def badges(site: Path):
                     causes=[f"The {name} report contains no results."],
                     hint_stmt="Check that site generation has not failed.",
                 )
-                rich.print(error)
+                STDERR.print(error)
                 return _EX_DATAERR
 
             badge_name = f"{dialect.short_name}.json"
@@ -312,7 +311,7 @@ def badges(site: Path):
                             "consistent output and that a run has not failed."
                         ),
                     )
-                    rich.print(error)
+                    STDERR.print(error)
                     return _EX_CONFIG
 
     for dir, dialects in supported_versions.items():
