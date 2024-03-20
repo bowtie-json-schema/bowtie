@@ -87,11 +87,7 @@ class Reporter:
         self._log.debug("Will speak", dialect=run_metadata.dialect)
         self._write(**run_metadata.serializable())
 
-    def finished(self, count: int, did_fail_fast: bool):
-        if not count:
-            self._log.error("No test cases ran.")
-        else:
-            self._log.info("Finished", count=count)
+    def finished(self, did_fail_fast: bool):
         self._write(did_fail_fast=did_fail_fast)
 
     def case_started(self, seq_case: SeqCase):

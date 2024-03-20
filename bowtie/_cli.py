@@ -1295,9 +1295,12 @@ async def _run(
             if should_stop:
                 reporter.failed_fast(seq_case=seq_case)
                 break
-        reporter.finished(count=count, did_fail_fast=should_stop)
-        if not count:
+        reporter.finished(did_fail_fast=should_stop)
+        if count == 0:
             exit_code = _EX_NOINPUT
+            STDERR.print("[bold red]No test cases ran.[/]")
+        elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
+            STDERR.print(f"Ran [green]{count}[/] test cases.")
     return exit_code
 
 
