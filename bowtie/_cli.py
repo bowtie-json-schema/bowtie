@@ -730,37 +730,26 @@ def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
 
 
-def _set_max_fail_and_max_error(
-    ctx: click.Context,
-    _,
-    value: bool,
-) -> None:
-    if value:
-        if ctx.params.get("max_fail") or ctx.params.get("max_error"):
-            ctx.ensure_object(dict)
-            ctx.obj["max_fail_or_error_provided"] = True
-            return
-        ctx.params["max_fail"] = 1
-        ctx.params["max_error"] = 1
-        ctx.ensure_object(dict)
-        ctx.obj["fail_fast_provided"] = True
-    return
-
-
-def _check_fail_fast_provided(
+# Both are these are needed because parsing is order dependent :/
+def _disallow_fail_fast(
     ctx: click.Context,
     _,
     value: int | None,
 ) -> int | None:
-    if ctx.obj:
-        if (
-            "fail_fast_provided" in ctx.obj and value is not None
-        ) or "max_fail_or_error_provided" in ctx.obj:
-            raise click.UsageError(
-                "Cannot use --fail-fast with --max-fail / --max-error",
-            )
-        else:
-            return ctx.params["max_fail"] and ctx.params["max_error"]
+    if ctx.params.get("fail_fast"):
+        if value is None:
+            return 1
+        raise click.UsageError(
+            "don't provide both --fail-fast and --max-fail / --max-error",
+        )
+    return value
+
+
+def _disallow_max_fail(ctx: click.Context, _, value: int | None) -> int | None:
+    if value and ctx.params.get("max_fail", 1) != 1:
+        raise click.UsageError(
+            "don't provide both --fail-fast and --max-fail / --max-error",
+        )
     return value
 
 
@@ -798,21 +787,21 @@ FILTER = click.option(
 FAIL_FAST = click.option(
     "-x",
     "--fail-fast",
+    callback=_disallow_max_fail,
     is_flag=True,
     default=False,
-    callback=_set_max_fail_and_max_error,
     help="Fail immediately after the first error or disagreement.",
 )
 MAX_FAIL = click.option(
     "--max-fail",
     type=click.IntRange(min=1),
-    callback=_check_fail_fast_provided,
+    callback=_disallow_fail_fast,
     help="Fail immediately if N tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
     "--max-error",
     type=click.IntRange(min=1),
-    callback=_check_fail_fast_provided,
+    callback=_disallow_fail_fast,
     help="Fail immediately if N errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(

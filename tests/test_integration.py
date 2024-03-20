@@ -895,10 +895,19 @@ async def test_max_fail_with_fail_fast(envsonschema):
         exit_code=-1,
     )
     assert stdout == ""
-    assert (
-        "cannot use --fail-fast with --max-fail / --max-error"
-        in stderr.lower()
-    ), stderr
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
+
+    stdout, stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "--fail-fast",
+        "--max-fail",
+        "2",
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
