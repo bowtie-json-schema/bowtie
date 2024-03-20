@@ -344,12 +344,12 @@ class Report:
             passed = self.total_tests - unsuccessful.total
             percentage = 100 * (passed / self.total_tests)
             r, g, b = 100 - int(percentage), int(percentage), 0
-            yield implementation, {
-                "schemaVersion": 1,
-                "label": self.metadata.dialect.pretty_name,
-                "message": "%d%% Passing" % int(percentage),
-                "color": f"{r:02x}{g:02x}{b:02x}",
-            }
+            yield implementation, Badge(
+                schemaVersion=1,
+                label=self.metadata.dialect.pretty_name,
+                message="%d%% Passing" % int(percentage),
+                color=f"{r:02x}{g:02x}{b:02x}",
+            )
 
 
 class Badge(TypedDict):
