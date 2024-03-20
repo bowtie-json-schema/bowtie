@@ -436,10 +436,7 @@ def summary(input: TextIO, format: _F, show: str):
             console.Console().print(table)
 
 
-def _convert_table_to_markdown(
-    columns: list[Any],
-    rows: list[list[Any]],
-):
+def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
     widths = [
         max(len(line[i]) for line in columns) for i in range(len(columns))
     ]
@@ -463,7 +460,7 @@ def _convert_table_to_markdown(
         body[idx] = "| " + " | ".join(line) + " |"
     body = "\n".join(body)
 
-    return "\n\n" + header + "\n" + separator + "\n" + body + "\n\n"
+    return f"\n\n{header}\n{separator}\n{body}\n\n"
 
 
 def _failure_table(
