@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Any, Literal, Self, TextIO
 
-    from bowtie._commands import AnyTestResult, Command, ImplementationId
-    from bowtie._core import Implementation, ImplementationInfo, Test
+    from bowtie._commands import AnyTestResult, ImplementationId
+    from bowtie._core import ImplementationInfo, Test
 
 
 class InvalidReport(Exception):
@@ -93,21 +93,6 @@ class Reporter:
         else:
             self._log.info("Finished", count=count)
         self._write(did_fail_fast=did_fail_fast)
-
-    def invalid_response(
-        self,
-        cmd: Command[Any],
-        response: bytes,
-        implementation: Implementation,
-        error: Exception,
-    ):
-        self._log.exception(
-            "Invalid response",
-            logger_name=implementation.name,
-            exc_info=error,
-            request=cmd,
-            response=response,
-        )
 
     def case_started(self, seq_case: SeqCase):
         self._write(**seq_case.serializable())

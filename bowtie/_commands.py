@@ -53,10 +53,6 @@ class Unsuccessful:
         return bool(self.failed or self.errored or self.skipped)
 
     @property
-    def causes_stop(self) -> bool:  # sigh, typing nonsense
-        return bool(self.failed or self.errored)
-
-    @property
     def total(self):
         """
         Any test which was not a successful result, including skips.
