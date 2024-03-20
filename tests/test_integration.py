@@ -1279,8 +1279,7 @@ async def test_filter_implementations_no_arguments():
 
     try:
         stdout = [
-            byte.decode()
-            for byte in output_buffer.getvalue().splitlines()
+            byte.decode() for byte in output_buffer.getvalue().splitlines()
         ]
     except UnicodeDecodeError as err:
         stderr = str(err)
