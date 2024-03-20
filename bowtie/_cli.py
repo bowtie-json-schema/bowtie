@@ -1283,9 +1283,11 @@ async def _run(
                 result = await each
                 case_reporter.got_result(result=result)
                 unsucessful += result.unsuccessful()
-                if max_fail and unsucessful.failed == max_fail:
-                    should_stop = True
-                if max_error and unsucessful.errored == max_error:
+                if (
+                    max_fail
+                    and unsucessful.failed == max_fail
+                    or (max_error and unsucessful.errored == max_error)
+                ):
                     should_stop = True
 
             if should_stop:
