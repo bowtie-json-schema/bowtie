@@ -30,12 +30,9 @@ const EmbedBadges: React.FC<{
       : Dialect.withName(activeBadge).prettyName;
   };
 
-  const results = Object.entries(implementation.results).sort((a, b) => {
-    return (
-      Dialect.withName(b[0]).firstPublicationDate.getTime() -
-      Dialect.withName(a[0]).firstPublicationDate.getTime()
-    );
-  });
+  const results = Object.entries(implementation.results).sort(([a], [b]) =>
+    Dialect.withName(a).compare(Dialect.withName(b)),
+  );
 
   return (
     <div className="container d-flex align-items-center justify-content-end dropdown px-0 col-12">
@@ -53,12 +50,6 @@ const EmbedBadges: React.FC<{
             Embed a Badge
           </h4>
           <div className="dropdown d-lg-flex justify-content-center justify-content-sm-start pt-2 text-center">
-            <label
-              className="pb-1 pe-3 ps-1  text-nowrap "
-              htmlFor="dropdownMenuButton"
-            >
-              Available Badges
-            </label>
             <button
               className="btn btn-sm btn-primary dropdown-toggle mw-100 overflow-hidden"
               type="button"
@@ -86,23 +77,23 @@ const EmbedBadges: React.FC<{
                 </button>
               </li>
               <h6 className="dropdown-header">Specification Compliance</h6>
-              {results.map((result) => (
-                <li key={result[0]}>
+              {results.map(([result]) => (
+                <li key={result}>
                   <button
                     className={`dropdown-item btn btn-sm ${
-                      result[0] === activeBadge ? "active" : ""
+                      result === activeBadge ? "active" : ""
                     }`}
                     onClick={() =>
                       handleSelectBadge(
-                        result[0],
+                        result,
                         complianceBadgeFor(
                           implementation,
-                          Dialect.withName(result[0]),
+                          Dialect.withName(result),
                         ),
                       )
                     }
                   >
-                    {Dialect.withName(result[0]).prettyName}
+                    {Dialect.withName(result).prettyName}
                   </button>
                 </li>
               ))}

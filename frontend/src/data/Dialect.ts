@@ -34,6 +34,13 @@ export default class Dialect {
     this.routePath = `/dialects/${shortName}`;
   }
 
+  /** Sorting a dialect sorts by its publication date. */
+  compare(other: Dialect): number {
+    return (
+      other.firstPublicationDate.getTime() - this.firstPublicationDate.getTime()
+    );
+  }
+
   async fetchReport(baseURI: URI = siteURI) {
     const url = baseURI.clone().filename(this.shortName).suffix("json").href();
     const response = await fetch(url);
