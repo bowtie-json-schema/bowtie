@@ -12,9 +12,10 @@ import { ImplementationReportView } from "./components/ImplementationReportView/
 import { MainContainer } from "./MainContainer";
 import { implementationMetadataURI } from "./data/Site";
 import {
-  Implementation,
-  parseImplementationData,
+  ImplementationData,
   ReportData,
+  implementationFromData,
+  parseImplementationData,
 } from "./data/parseReportData";
 
 const fetchReportData = async (dialect: Dialect) => {
@@ -41,9 +42,14 @@ const fetchImplementationMetadata = async () => {
   const response = await fetch(implementationMetadataURI);
   const implementations = (await response.json()) as Record<
     string,
-    Implementation
+    ImplementationData
   >;
-  return implementations;
+  return Object.fromEntries(
+    Object.entries(implementations).map(([id, data]) => [
+      id,
+      implementationFromData(data),
+    ]),
+  );
 };
 
 const reportDataLoader = async ({ params }: { params: Params<string> }) => {

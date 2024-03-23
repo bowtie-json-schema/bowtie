@@ -38,11 +38,7 @@ export class RunMetadata {
     const implementations = new Map<string, Implementation>(
       Object.entries(record.implementations).map(([id, info]) => [
         id,
-        {
-          ...info,
-          results: {},
-          dialects: info.dialects.map((uri) => Dialect.forURI(uri)),
-        },
+        implementationFromData(info),
       ]),
     );
     return new RunMetadata(
@@ -156,6 +152,19 @@ export const parseReportData = (
   };
 };
 
+/**
+ * Turn raw implementation data into an Implementation.
+ *
+ * If/when Implementation is a class, this will be its fromRecord.
+ */
+export const implementationFromData = (
+  data: ImplementationData,
+): Implementation => ({
+  ...data,
+  results: {},
+  dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
+});
+
 export const parseImplementationData = (
   loaderData: Record<string, ReportData>,
 ) => {
@@ -221,31 +230,30 @@ export const calculateTotals = (data: ReportData): Totals => {
   );
 };
 
+export interface ImplementationData {
+  language: string;
+  name: string;
+  version?: string;
+  dialects: string[];
+  homepage: string;
+  documentation?: string;
+  issues: string;
+  source: string;
+  links?: {
+    description?: string;
+    url?: string;
+    [k: string]: unknown;
+  }[];
+  os?: string;
+  os_version?: string;
+  language_version?: string;
+}
+
 interface Header {
   dialect: string;
   bowtie_version: string;
   metadata: Record<string, unknown>;
-  implementations: Record<
-    string,
-    {
-      language: string;
-      name: string;
-      version?: string;
-      dialects: string[];
-      homepage: string;
-      documentation?: string;
-      issues: string;
-      source: string;
-      links?: {
-        description?: string;
-        url?: string;
-        [k: string]: unknown;
-      }[];
-      os?: string;
-      os_version?: string;
-      language_version?: string;
-    }
-  >;
+  implementations: Record<string, ImplementationData>;
   started: number;
 }
 
