@@ -1,13 +1,6 @@
-import moment from "moment";
 import { RunMetadata } from "../../data/parseReportData";
 
 const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
-  const ranTime = (startTime: Date) => {
-    const currentTime = moment();
-    const duration = moment.duration(currentTime.diff(startTime));
-    return duration.humanize();
-  };
-
   return (
     <div className="card mx-auto mb-3" id="run-info">
       <div className="card-header">Run Info</div>
@@ -21,7 +14,7 @@ const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
             </tr>
             <tr>
               <td className="align-top col-md-2">Ran</td>
-              <td>{ranTime(runMetadata.started)} ago</td>
+              <td>{runMetadata.ago()}</td>
             </tr>
           </thead>
         </table>

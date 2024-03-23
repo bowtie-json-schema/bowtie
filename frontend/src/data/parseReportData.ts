@@ -1,5 +1,10 @@
 import Dialect from "./Dialect";
 
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
+
 /**
  * Parse a report from some JSONL data.
  */
@@ -32,6 +37,10 @@ export class RunMetadata {
     this.bowtieVersion = bowtieVersion;
     this.started = started;
     this.metadata = metadata;
+  }
+
+  ago(): string {
+    return dayjs(this.started).fromNow();
   }
 
   static fromRecord(record: Header): RunMetadata {
