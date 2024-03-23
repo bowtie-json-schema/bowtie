@@ -1,4 +1,9 @@
 import React, { useState } from "react";
+import Container from "react-bootstrap/Container";
+import DropdownButton from "react-bootstrap/DropdownButton";
+import Image from "react-bootstrap/Image";
+import ListGroup from "react-bootstrap/ListGroup";
+import Stack from "react-bootstrap/Stack";
 
 import CopyToClipboard from "../CopyToClipboard";
 import { Implementation } from "../../data/parseReportData";
@@ -12,98 +17,89 @@ const EmbedBadges: React.FC<{
   const [activeFormat, setActiveFormat] = useState(supportedFormats[1]);
   const [activeBadge, setActiveBadge] = useState(allBadges.Metadata[0]);
 
+  const badgeEmbed = activeFormat.generateEmbed(activeBadge);
+
   return (
-    <div className="dropdown container d-flex align-items-center justify-content-end">
-      <button
-        className="btn btn-sm btn-info dropdown-toggle"
-        type="button"
-        data-bs-toggle="dropdown"
-        data-bs-auto-close="outside"
-      >
-        Badges
-      </button>
-      <div className="dropdown-menu vw-75">
-        <div className="container">
-          <h4>Embed a Badge</h4>
-          <div className="dropdown">
-            <button
-              className="btn btn-sm btn-info dropdown-toggle mw-100 overflow-hidden"
-              type="button"
-              id="dropdownMenuButton"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              {activeBadge.name}
-            </button>
-            <ul
-              className="dropdown-menu dropdown-menu-end"
-              aria-labelledby="dropdownMenuButton"
-            >
+    <DropdownButton title="Badges" size="sm" align="end" variant="info">
+      <Container className="p-5">
+        <h5 className="pb-1">Badges</h5>
+
+        <Stack className="pb-3" direction="horizontal" gap={5}>
+          <div>
+            <ListGroup variant="flush">
               {Object.entries(allBadges).map(([category, badges]) => (
-                <span key={category}>
-                  <h6 className="dropdown-header">{category}</h6>
-                  {badges.map((badge) => (
-                    <li key={badge.name}>
-                      <button
+                <ListGroup.Item key={category}>
+                  <h6>{category}</h6>
+                  <ListGroup variant="flush">
+                    {badges.map((badge) => (
+                      <ListGroup.Item
+                        key={badge.name}
+                        action
                         // FIXME: wut? badge === activeBadge is false, at
                         //        least because badge.uri !== activeBadge.uri
                         //        URI.js has a .equal method
-                        className={`dropdown-item btn btn-sm ${
-                          badge.name === activeBadge.name ? "active" : ""
-                        }`}
+                        active={badge.name === activeBadge.name}
                         onClick={() => setActiveBadge(badge)}
                       >
                         {badge.name}
-                      </button>
-                    </li>
-                  ))}
-                </span>
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                </ListGroup.Item>
               ))}
-            </ul>
+            </ListGroup>
           </div>
-        </div>
-        <div className="container">
-          <ul className="nav nav-pills justify-content-center">
-            {supportedFormats.map((format, index) => {
-              return (
-                <li className="nav-item" key={index}>
-                  <button
-                    className={`nav-link btn btn-sm ${
-                      format === activeFormat ? "active" : ""
-                    }`}
-                    onClick={() => setActiveFormat(format)}
-                  >
-                    {format.name}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="tab-content">
-            {supportedFormats.map((format, index) => {
-              const badgeEmbed = format.generateEmbed(activeBadge);
-              return (
-                <div
-                  key={index}
-                  className={`tab-pane ${
-                    format === activeFormat ? "active" : ""
-                  } border rounded`}
+
+          <div className="overflow-scroll">
+            <div className="pb-3">
+              <p>
+                Bowtie regularly rebuilds a number of badges for{" "}
+                {implementation.name}.
+              </p>
+              <p>
+                If you are a maintainer, you may be interested in embedding one
+                or more of them in your documentation to show off! Here are
+                embeddable snippets for whatever documentation language you are
+                likely to be using. The badge will automatically update as
+                Bowtie re-runs its report, so no manual updating should be
+                necessary.
+              </p>
+            </div>
+
+            <hr className="mx-5 py-3" />
+
+            <div className="font-monospace text-bg-dark mx-5 p-5">
+              <pre>{badgeEmbed}</pre>
+              <CopyToClipboard textToCopy={badgeEmbed} />
+            </div>
+
+            <Image
+              alt={activeBadge.name}
+              src={activeBadge.uri.href()}
+              className="d-block mx-auto my-5"
+            />
+          </div>
+
+          <div className="vr"></div>
+
+          <div>
+            <h5 className="ps-1">Format</h5>
+            <ListGroup variant="flush">
+              {supportedFormats.map((format) => (
+                <ListGroup.Item
+                  action
+                  active={activeFormat === format}
+                  onClick={() => setActiveFormat(format)}
+                  key={format.name}
                 >
-                  <div className="d-flex align-items-center justify-content-center">
-                    <span className="font-monospace text-body-secondary fs-6 ps-2 d-block">
-                      <pre className="py-2">
-                        <code>{badgeEmbed}</code>
-                      </pre>
-                    </span>
-                    <CopyToClipboard textToCopy={badgeEmbed} />
-                  </div>
-                </div>
-              );
-            })}
+                  {format.name}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
           </div>
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Container>
+    </DropdownButton>
   );
 };
 
