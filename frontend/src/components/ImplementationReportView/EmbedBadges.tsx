@@ -68,9 +68,11 @@ const EmbedBadges: React.FC<{
 
             <hr className="mx-5 py-3" />
 
-            <div className="font-monospace text-bg-dark mx-5 p-5">
-              <pre>{badgeEmbed}</pre>
-              <CopyToClipboard textToCopy={badgeEmbed} />
+            <div className="font-monospace text-bg-dark mx-5 p-5 d-flex">
+              <pre className="py-5">{badgeEmbed}</pre>
+              <span>
+                <CopyToClipboard textToCopy={badgeEmbed} />
+              </span>
             </div>
 
             <Image
