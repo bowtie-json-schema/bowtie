@@ -1,115 +1,77 @@
 import React, { useState } from "react";
-import URI from "urijs";
 
 import CopyToClipboard from "../CopyToClipboard";
-import Dialect from "../../data/Dialect";
 import { Implementation } from "../../data/parseReportData";
-import { complianceBadgeFor, versionsBadgeFor } from "../../data/Badge";
+import { Badge, badgesFor } from "../../data/Badge";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
 }> = ({ implementation }) => {
-  const [activeTab, setActiveTab] = useState("Markdown");
-  const [activeBadge, setActiveBadge] = useState("JSON Schema Versions");
-  const [badgeURI, setBadgeURI] = useState(versionsBadgeFor(implementation));
+  const allBadges = badgesFor(implementation);
 
-  const handleSelectBadge = (badgeName: string, URI: URI) => {
-    setActiveBadge(badgeName);
-    setBadgeURI(URI);
-  };
-
-  const handleSelectTab = (tabKey: string | null) => {
-    if (tabKey) {
-      setActiveTab(tabKey);
-    }
-  };
-
-  const altTextFor = (badgeName: string): string => {
-    return badgeName === "JSON Schema Versions"
-      ? "JSON Schema Versions"
-      : Dialect.withName(activeBadge).prettyName;
-  };
-
-  const results = Object.entries(implementation.results).sort(([a], [b]) =>
-    Dialect.withName(a).compare(Dialect.withName(b)),
-  );
+  const [activeTab, setActiveTab] = useState(supportedFormats[1]);
+  const [activeBadge, setActiveBadge] = useState(allBadges.Metadata[0]);
 
   return (
-    <div className="container d-flex align-items-center justify-content-end dropdown px-0 col-12">
+    <div className="dropdown container d-flex align-items-center justify-content-end">
       <button
-        className="btn btn-sm btn-success dropdown-toggle"
+        className="btn btn-sm btn-info dropdown-toggle"
         type="button"
         data-bs-toggle="dropdown"
         data-bs-auto-close="outside"
       >
         Badges
       </button>
-      <div className="dropdown-menu mx-auto">
-        <div className="px-4 pt-1">
-          <h4 className="ps-sm-1 text-nowrap text-center d-flex justify-content-center justify-content-lg-start">
-            Embed a Badge
-          </h4>
-          <div className="dropdown d-lg-flex justify-content-center justify-content-sm-start pt-2 text-center">
+      <div className="dropdown-menu vw-75">
+        <div className="container">
+          <h4>Embed a Badge</h4>
+          <div className="dropdown">
             <button
-              className="btn btn-sm btn-primary dropdown-toggle mw-100 overflow-hidden"
+              className="btn btn-sm btn-info dropdown-toggle mw-100 overflow-hidden"
               type="button"
               id="dropdownMenuButton"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              {altTextFor(activeBadge)}
+              {activeBadge.name}
             </button>
-            <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <h6 className="dropdown-header">Implementation Metadata</h6>
-              <li key={"JSON Schema Versions"}>
-                <button
-                  className={`dropdown-item btn btn-sm ${
-                    activeBadge === "JSON Schema Versions" ? "active" : ""
-                  }`}
-                  onClick={() =>
-                    handleSelectBadge(
-                      "JSON Schema Versions",
-                      versionsBadgeFor(implementation),
-                    )
-                  }
-                >
-                  {"JSON Schema Versions"}
-                </button>
-              </li>
-              <h6 className="dropdown-header">Specification Compliance</h6>
-              {results.map(([result]) => (
-                <li key={result}>
-                  <button
-                    className={`dropdown-item btn btn-sm ${
-                      result === activeBadge ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      handleSelectBadge(
-                        result,
-                        complianceBadgeFor(
-                          implementation,
-                          Dialect.withName(result),
-                        ),
-                      )
-                    }
-                  >
-                    {Dialect.withName(result).prettyName}
-                  </button>
-                </li>
+            <ul
+              className="dropdown-menu dropdown-menu-end"
+              aria-labelledby="dropdownMenuButton"
+            >
+              {Object.entries(allBadges).map(([category, badges]) => (
+                <span key={category}>
+                  <h6 className="dropdown-header">{category}</h6>
+                  {badges.map((badge) => (
+                    <li key={badge.name}>
+                      <button
+                        // FIXME: wut? badge === activeBadge is false, at
+                        //        least because badge.uri !== activeBadge.uri
+                        //        URI.js has a .equal method
+                        className={`dropdown-item btn btn-sm ${
+                          badge.name === activeBadge.name ? "active" : ""
+                        }`}
+                        onClick={() => setActiveBadge(badge)}
+                      >
+                        {badge.name}
+                      </button>
+                    </li>
+                  ))}
+                </span>
               ))}
             </ul>
           </div>
         </div>
-        <div className="container vw-50 d-flex justify-content-center align-items-center flex-column pt-3">
+        <div className="container">
           <ul className="nav nav-pills justify-content-center">
             {supportedFormats.map((formatItem, index) => {
               return (
                 <li className="nav-item" key={index}>
                   <button
                     className={`nav-link btn btn-sm ${
-                      activeTab === formatItem.name ? "active" : ""
+                      activeTab === formatItem ? "active" : ""
                     }`}
-                    onClick={() => handleSelectTab(formatItem.name)}
+                    onClick={() => setActiveTab(formatItem)}
                   >
                     {formatItem.name}
                   </button>
@@ -117,30 +79,23 @@ const EmbedBadges: React.FC<{
               );
             })}
           </ul>
-          <div className="tab-content mt-2 pt-2 pb-2 w-100">
+          <div className="tab-content">
             {supportedFormats.map((formatItem, index) => {
-              const badgeEmbed = formatItem.generateEmbed(
-                badgeURI.href(),
-                altTextFor(activeBadge),
-              );
+              const badgeEmbed = formatItem.generateEmbed(activeBadge);
               return (
                 <div
                   key={index}
                   className={`tab-pane ${
-                    activeTab === formatItem.name ? "active" : ""
-                  } border rounded pt-1 px-4 mx-2`}
+                    activeTab === formatItem ? "active" : ""
+                  } border rounded`}
                 >
-                  <div className="d-flex align-items-center justify-content-center px-1">
-                    <div className="w-100">
-                      <span className="font-monospace text-body-secondary fs-6 ps-2 d-block">
-                        <pre className="pt-2 pb-2">
-                          <code>{badgeEmbed}</code>
-                        </pre>
-                      </span>
-                    </div>
-                    <div className="ms-auto pb-2 px-1">
-                      <CopyToClipboard textToCopy={badgeEmbed} />
-                    </div>
+                  <div className="d-flex align-items-center justify-content-center">
+                    <span className="font-monospace text-body-secondary fs-6 ps-2 d-block">
+                      <pre className="py-2">
+                        <code>{badgeEmbed}</code>
+                      </pre>
+                    </span>
+                    <CopyToClipboard textToCopy={badgeEmbed} />
                   </div>
                 </div>
               );
@@ -154,31 +109,31 @@ const EmbedBadges: React.FC<{
 
 interface BadgeFormat {
   name: string;
-  generateEmbed: (badgeURI: string, altText: string) => string;
+  generateEmbed: (badge: Badge) => string;
 }
 
 const supportedFormats: BadgeFormat[] = [
   {
     name: "URL",
-    generateEmbed: (badgeURI) => `${badgeURI}`,
+    generateEmbed: (badge) => `${badge.uri.href()}`,
   },
   {
     name: "Markdown",
-    generateEmbed: (badgeURI, altText) => `![${altText}](${badgeURI})`,
+    generateEmbed: (badge) => `![${badge.altText}](${badge.uri.href()})`,
   },
   {
     name: "reST",
-    generateEmbed: (badgeURI, altText) =>
-      `.. image:: ${badgeURI}\n    :alt: ${altText}`,
+    generateEmbed: (badge) =>
+      `.. image:: ${badge.uri.href()}\n    :alt: ${badge.altText}`,
   },
   {
     name: "AsciiDoc",
-    generateEmbed: (badgeURI, altText) => `image:${badgeURI}[${altText}]`,
+    generateEmbed: (badge) => `image:${badge.uri.href()}[${badge.altText}]`,
   },
   {
     name: "HTML",
-    generateEmbed: (badgeURI, altText) =>
-      `<img alt="${altText}" src="${badgeURI}"/>`,
+    generateEmbed: (badge) =>
+      `<img alt="${badge.altText}" src="${badge.uri.href()}"/>`,
   },
 ];
 
