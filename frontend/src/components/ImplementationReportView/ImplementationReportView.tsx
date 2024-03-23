@@ -1,12 +1,14 @@
-import { Card } from "react-bootstrap";
+import Container from "react-bootstrap/Container";
+import Card from "react-bootstrap/Card";
+import Table from "react-bootstrap/Table";
 import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
-import { Table, Container } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import LoadingAnimation from "../LoadingAnimation";
+
 import DialectCompliance from "./DialectCompliance";
+import EmbedBadges from "./EmbedBadges";
+import LoadingAnimation from "../LoadingAnimation";
+import { Implementation } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
-import EmbedBadges from "./EmbedBadges";
 
 export const ImplementationReportView = () => {
   // Fetch all supported implementation's metadata.

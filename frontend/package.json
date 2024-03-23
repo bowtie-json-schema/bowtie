@@ -72,7 +72,14 @@
       }
     },
     "rules": {
-      "react/prop-types": 0
+      "react/prop-types": 0,
+      "no-restricted-imports": [
+        "error",
+        {
+          "name": "react-bootstrap",
+          "message": "Import react-bootstrap/<your-component> instead. See https://react-bootstrap.netlify.app/docs/getting-started/introduction/#importing-components."
+        }
+      ]
     }
   }
 }

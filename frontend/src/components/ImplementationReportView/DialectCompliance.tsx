@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Card, Table } from "react-bootstrap";
+import Card from "react-bootstrap/Card";
 import Image from "react-bootstrap/Image";
+import Table from "react-bootstrap/Table";
 
 import { complianceBadgeFor } from "../../data/Badge";
 import Dialect from "../../data/Dialect";
