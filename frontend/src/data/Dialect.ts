@@ -77,6 +77,9 @@ export default class Dialect {
   }
 }
 
+/**
+ * Someone referred to a non-existent (unknown to Bowtie) dialect.
+ */
 class DialectError extends Error {
   constructor(message: string) {
     super(message);

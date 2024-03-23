@@ -10,6 +10,9 @@ export const fromSerialized = (jsonl: string): ReportData => {
   );
 };
 
+/**
+ * Metadata about a report which has been run.
+ */
 export class RunMetadata {
   readonly dialect: Dialect;
   readonly implementations: Map<string, Implementation>;
