@@ -9,7 +9,7 @@ const EmbedBadges: React.FC<{
 }> = ({ implementation }) => {
   const allBadges = badgesFor(implementation);
 
-  const [activeTab, setActiveTab] = useState(supportedFormats[1]);
+  const [activeFormat, setActiveFormat] = useState(supportedFormats[1]);
   const [activeBadge, setActiveBadge] = useState(allBadges.Metadata[0]);
 
   return (
@@ -64,29 +64,29 @@ const EmbedBadges: React.FC<{
         </div>
         <div className="container">
           <ul className="nav nav-pills justify-content-center">
-            {supportedFormats.map((formatItem, index) => {
+            {supportedFormats.map((format, index) => {
               return (
                 <li className="nav-item" key={index}>
                   <button
                     className={`nav-link btn btn-sm ${
-                      activeTab === formatItem ? "active" : ""
+                      format === activeFormat ? "active" : ""
                     }`}
-                    onClick={() => setActiveTab(formatItem)}
+                    onClick={() => setActiveFormat(format)}
                   >
-                    {formatItem.name}
+                    {format.name}
                   </button>
                 </li>
               );
             })}
           </ul>
           <div className="tab-content">
-            {supportedFormats.map((formatItem, index) => {
-              const badgeEmbed = formatItem.generateEmbed(activeBadge);
+            {supportedFormats.map((format, index) => {
+              const badgeEmbed = format.generateEmbed(activeBadge);
               return (
                 <div
                   key={index}
                   className={`tab-pane ${
-                    activeTab === formatItem ? "active" : ""
+                    format === activeFormat ? "active" : ""
                   } border rounded`}
                 >
                   <div className="d-flex align-items-center justify-content-center">
