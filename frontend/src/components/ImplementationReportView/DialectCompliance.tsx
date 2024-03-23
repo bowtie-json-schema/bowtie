@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, Table } from "react-bootstrap";
+import Image from "react-bootstrap/Image";
 
 import { complianceBadgeFor } from "../../data/Badge";
 import Dialect from "../../data/Dialect";
@@ -55,13 +56,13 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.erroredTests}</td>
                     <td>
                       <Link className="mx-1" to={dialect.routePath}>
-                        <img
-                          alt={dialect.prettyName}
-                          className="float-end"
+                        <Image
                           src={complianceBadgeFor(
                             implementation,
                             dialect,
                           ).href()}
+                          alt={dialect.prettyName}
+                          className="float-end"
                         />
                       </Link>
                     </td>
