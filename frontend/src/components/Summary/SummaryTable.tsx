@@ -75,7 +75,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                 cases={reportData.cases}
                 implementationResults={implResults}
                 implementation={
-                  reportData.runInfo.implementations[implResults.id]
+                  reportData.runMetadata.implementations.get(implResults.id)!
                 }
                 key={index}
                 index={index}

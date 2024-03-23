@@ -7,7 +7,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
     reportData.implementationsResults.values(),
   );
   const implementations = implementationsResults.map(
-    (implResult) => reportData.runInfo.implementations[implResult.id],
+    (implResult) => reportData.runMetadata.implementations.get(implResult.id)!,
   );
 
   return (

@@ -1,8 +1,8 @@
 import moment from "moment";
-import { RunInfo } from "../../data/parseReportData";
+import { RunMetadata } from "../../data/parseReportData";
 
-const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
-  const ranTime = (startTime: string) => {
+const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
+  const ranTime = (startTime: Date) => {
     const currentTime = moment();
     const duration = moment.duration(currentTime.diff(startTime));
     return duration.humanize();
@@ -17,21 +17,21 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
           <thead>
             <tr>
               <td className="align-top col-md-2">Dialect</td>
-              <td>{runInfo.dialect}</td>
+              <td>{runMetadata.dialect.uri}</td>
             </tr>
             <tr>
               <td className="align-top col-md-2">Ran</td>
-              <td>{ranTime(runInfo.started)} ago</td>
+              <td>{ranTime(runMetadata.started)} ago</td>
             </tr>
           </thead>
         </table>
 
-        {runInfo.metadata && (
+        {runMetadata.metadata && (
           <>
             <hr />
             <table id="run-metadata" className="table table-sm table-hover">
               <thead>
-                {Object.entries(runInfo.metadata).map(([label, value]) => {
+                {Object.entries(runMetadata.metadata).map(([label, value]) => {
                   if (typeof value === "string") {
                     return (
                       <tr key={label}>

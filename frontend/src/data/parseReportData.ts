@@ -1,3 +1,5 @@
+import Dialect from "./Dialect";
+
 /**
  * Parse a report from some JSONL data.
  */
@@ -8,22 +10,58 @@ export const fromSerialized = (jsonl: string): ReportData => {
   );
 };
 
+export class RunMetadata {
+  readonly dialect: Dialect;
+  readonly implementations: Map<string, Implementation>;
+  readonly bowtieVersion: string;
+  readonly started: Date;
+  readonly metadata: Record<string, unknown>;
+
+  constructor(
+    dialect: Dialect,
+    implementations: Map<string, Implementation>,
+    bowtieVersion: string,
+    started: Date,
+    metadata: Record<string, unknown>,
+  ) {
+    this.dialect = dialect;
+    this.implementations = implementations;
+    this.bowtieVersion = bowtieVersion;
+    this.started = started;
+    this.metadata = metadata;
+  }
+
+  static fromRecord(record: Header): RunMetadata {
+    const implementations = new Map<string, Implementation>(
+      Object.entries(record.implementations).map(([id, info]) => [
+        id,
+        {
+          ...info,
+          results: {},
+          dialects: info.dialects.map((uri) => Dialect.forURI(uri)),
+        },
+      ]),
+    );
+    return new RunMetadata(
+      Dialect.forURI(record.dialect),
+      implementations,
+      record.bowtie_version,
+      new Date(record.started),
+      record.metadata,
+    );
+  }
+}
+
 /**
  * Parse a report from some deserialized JSON objects.
  */
 export const parseReportData = (
   lines: Record<string, unknown>[],
 ): ReportData => {
-  const runInfoData = lines[0] as unknown as RunInfo;
-  const implementationEntries = Object.entries(runInfoData.implementations);
+  const runMetadata = RunMetadata.fromRecord(lines[0] as unknown as Header);
 
-  implementationEntries.sort(([id1], [id2]) => id1.localeCompare(id2));
-  const caseMap = new Map() as Map<number, Case>;
-  const implementationsResultsMap = new Map() as Map<
-    string,
-    ImplementationResults
-  >;
-  implementationEntries.forEach(([id]) =>
+  const implementationsResultsMap = new Map<string, ImplementationResults>();
+  for (const id of runMetadata.implementations.keys()) {
     implementationsResultsMap.set(id, {
       id,
       cases: new Map(),
@@ -31,9 +69,10 @@ export const parseReportData = (
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    }),
-  );
+    });
+  }
 
+  const caseMap = new Map<number, Case>();
   let didFailFast = false;
   for (const line of lines) {
     if (line.case) {
@@ -107,7 +146,7 @@ export const parseReportData = (
   }
 
   return {
-    runInfo: runInfoData,
+    runMetadata: runMetadata,
     cases: caseMap,
     implementationsResults: implementationsResultsMap,
     didFailFast: didFailFast,
@@ -126,21 +165,13 @@ export const parseImplementationData = (
     );
     allImplementations = {
       ...allImplementations,
-      ...value.runInfo.implementations,
+      ...Object.fromEntries(value.runMetadata.implementations.entries()),
     };
   }
 
   Object.keys(allImplementations).map((implementation) => {
     Object.entries(dialectCompliance).map(([key, value]) => {
       if (value[implementation]) {
-        if (
-          !Object.prototype.hasOwnProperty.call(
-            allImplementations[implementation],
-            "results",
-          )
-        ) {
-          allImplementations[implementation].results = {};
-        }
         allImplementations[implementation].results[key] = value[implementation];
       }
     });
@@ -187,6 +218,34 @@ export const calculateTotals = (data: ReportData): Totals => {
   );
 };
 
+interface Header {
+  dialect: string;
+  bowtie_version: string;
+  metadata: Record<string, unknown>;
+  implementations: Record<
+    string,
+    {
+      language: string;
+      name: string;
+      version?: string;
+      dialects: string[];
+      homepage: string;
+      documentation?: string;
+      issues: string;
+      source: string;
+      links?: {
+        description?: string;
+        url?: string;
+        [k: string]: unknown;
+      }[];
+      os?: string;
+      os_version?: string;
+      language_version?: string;
+    }
+  >;
+  started: number;
+}
+
 export interface Totals {
   totalTests: number;
   erroredCases: number;
@@ -196,18 +255,10 @@ export interface Totals {
 }
 
 export interface ReportData {
-  runInfo: RunInfo;
+  runMetadata: RunMetadata;
   cases: Map<number, Case>;
   implementationsResults: Map<string, ImplementationResults>;
   didFailFast: boolean;
-}
-
-export interface RunInfo {
-  started: string;
-  bowtie_version: string;
-  dialect: string;
-  implementations: Record<string, Implementation>;
-  metadata: Record<string, unknown>;
 }
 
 export interface ImplementationResults {
@@ -229,7 +280,7 @@ export interface Implementation {
   language: string;
   name: string;
   version?: string;
-  dialects: string[];
+  dialects: Dialect[];
   homepage: string;
   documentation?: string;
   issues: string;
@@ -242,6 +293,8 @@ export interface Implementation {
   os?: string;
   os_version?: string;
   language_version?: string;
+
+  // FIXME: Move this outside of here to some external map!?
   results: Record<string, Partial<Totals>>;
 
   [k: string]: unknown;

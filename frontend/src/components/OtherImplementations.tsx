@@ -93,9 +93,7 @@ const getImplementationPath = (id: string): string => {
 };
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
-  return impl.dialects
-    .map((dialectUri) => Dialect.forURI(dialectUri))
-    .reduce((acc, curr) =>
-      curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
-    );
+  return impl.dialects.reduce((acc, curr) =>
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
+  );
 };

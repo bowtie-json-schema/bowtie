@@ -51,8 +51,7 @@ export function badgesFor(implementation: Implementation) {
         uri: versionsBadgeFor(implementation),
       },
     ],
-    "Specification Compliance": implementation.dialects.map((uri) => {
-      const dialect = Dialect.forURI(uri); // FIXME
+    "Specification Compliance": implementation.dialects.map((dialect) => {
       return {
         name: dialect.prettyName,
         altText: dialect.prettyName,
