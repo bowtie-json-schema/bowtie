@@ -82,7 +82,7 @@ const EmbedBadges: React.FC<{
             />
           </div>
 
-          <div className="vr"></div>
+          <div className="vr my-5"></div>
 
           <div>
             <h5 className="ps-1">Format</h5>
