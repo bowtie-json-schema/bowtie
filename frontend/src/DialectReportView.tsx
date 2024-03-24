@@ -19,7 +19,6 @@ export const DialectReportView = ({
   topPageInfoSection?: React.ReactElement;
   allImplementationsData: Record<string, Implementation>;
 }) => {
-  console.log(reportData);
   const params = useSearchParams();
   const languages = useMemo(() => {
     const langs = new Set<string>();
