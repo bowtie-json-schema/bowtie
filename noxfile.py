@@ -391,7 +391,7 @@ def ui(session):
                 lambda: session.run("git", "switch", "-", external=True),
             )
 
-        session.run("pnpm", "run", "--dir", UI, "start", external=True)
+        pnpm(session.run, "run", "start")
 
 
 @session(python=False, tags=["ui"], name="ui(audit)")
