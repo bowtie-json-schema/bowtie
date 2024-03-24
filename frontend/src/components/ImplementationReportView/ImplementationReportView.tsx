@@ -1,9 +1,12 @@
-import { Card } from "react-bootstrap";
+import Container from "react-bootstrap/Container";
+import Card from "react-bootstrap/Card";
+import Table from "react-bootstrap/Table";
 import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
-import { Table, Container } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import LoadingAnimation from "../LoadingAnimation";
+
 import DialectCompliance from "./DialectCompliance";
+import EmbedBadges from "./EmbedBadges";
+import LoadingAnimation from "../LoadingAnimation";
+import { Implementation } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
 
@@ -38,12 +41,14 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
   return (
     <Container className="p-4">
       <Card className="mx-auto mb-3 col-md-9">
-        <Card.Header>
-          <span className="px-1 text-muted">
-            {mapLanguage(implementation.language)}
+        <Card.Header className="d-flex align-items-center justify-content-between">
+          <span className="d-flex">
+            <span className="pe-2 text-muted">
+              {mapLanguage(implementation.language)}
+            </span>
+            <span>{implementation.name}</span>
           </span>
-
-          <span>{implementation.name}</span>
+          <EmbedBadges implementation={implementation} />
         </Card.Header>
 
         <Card.Body>

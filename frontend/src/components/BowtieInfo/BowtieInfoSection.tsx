@@ -1,9 +1,11 @@
+import Card from "react-bootstrap/Card";
+
 const BowtieInfoSection = () => {
   // prettier-ignore
   return (
-    <div className="card mx-auto mb-3" id="bowtie-info">
-      <div className="card-header">About Bowtie</div>
-      <div className="card-body">
+    <Card className="mx-auto mb-3" id="bowtie-info">
+      <Card.Header>About Bowtie</Card.Header>
+      <Card.Body>
         <p>
           Bowtie is tool for understanding and comparing implementations of the <a href={"https://json-schema.org/"}>{"JSON Schema specification"}</a> across all programming languages.
         </p>
@@ -14,8 +16,8 @@ const BowtieInfoSection = () => {
           You can also use Bowtie to get this information about your own schemas.
           Find out how in <a href={"https://docs.bowtie.report/"}>{"Bowtie's documentation"}</a>.
         </p>
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   );
 };
 

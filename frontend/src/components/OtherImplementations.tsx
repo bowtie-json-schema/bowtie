@@ -1,7 +1,12 @@
 import { useRef, useState } from "react";
-import { Col, Container, Overlay, Popover, Row } from "react-bootstrap";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import Overlay from "react-bootstrap/Overlay";
+import Popover from "react-bootstrap/Popover";
+import Row from "react-bootstrap/Row";
 import { InfoCircle } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
+
 import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
 import Dialect from "../data/Dialect";
@@ -93,9 +98,7 @@ const getImplementationPath = (id: string): string => {
 };
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
-  return impl.dialects
-    .map((dialectUri) => Dialect.forURI(dialectUri))
-    .reduce((acc, curr) =>
-      curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
-    );
+  return impl.dialects.reduce((acc, curr) =>
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
+  );
 };

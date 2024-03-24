@@ -34,3 +34,29 @@ export const complianceBadgeFor = (
       .segment(dialect.shortName)
       .suffix("json"),
   );
+
+export interface Badge {
+  name: string;
+  uri: URI;
+  altText: string;
+}
+
+export function badgesFor(implementation: Implementation) {
+  return {
+    // FIXME: Include the result in alt text, not just the label
+    Metadata: [
+      {
+        name: "Supported Dialects",
+        altText: "Supported Dialects",
+        uri: versionsBadgeFor(implementation),
+      },
+    ],
+    "Specification Compliance": implementation.dialects.map((dialect) => {
+      return {
+        name: dialect.prettyName,
+        altText: dialect.prettyName,
+        uri: complianceBadgeFor(implementation, dialect),
+      };
+    }),
+  };
+}

@@ -1,13 +1,14 @@
 import "./ImplementationRow.css";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Case,
   Implementation,
   ImplementationResults,
 } from "../../data/parseReportData";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const ImplementationRow = ({
   cases,
@@ -20,6 +21,7 @@ const ImplementationRow = ({
   key: number;
   index: number;
 }) => {
+  const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const implementationPath = getImplementationPath(implementationResults);
@@ -31,9 +33,13 @@ const ImplementationRow = ({
         onClick={() => navigate(`/implementations/${implementationPath}`)}
         scope="row"
       >
-        <NavLink to={`/implementations/${implementationPath}`}>
+        <span
+          className={`text-decoration-underline ${
+            isDarkMode ? "text-primary-emphasis" : "text-primary"
+          }`}
+        >
           {implementation.name}
-        </NavLink>
+        </span>
         <small className="text-muted ps-1">
           {mapLanguage(implementation.language)}
         </small>

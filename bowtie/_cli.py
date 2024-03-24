@@ -29,7 +29,6 @@ from rich.text import Text
 from url import URL, RelativeURLWithoutBase
 import click
 import referencing_loaders
-import rich
 import structlog
 import structlog.typing
 
@@ -37,14 +36,13 @@ from bowtie import _containers, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
-    GotStderr,
     Implementation,
     NoSuchImplementation,
     StartupFailed,
     Test,
     TestCase,
 )
-from bowtie.exceptions import ProtocolError, UnsupportedDialect
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -65,6 +63,8 @@ if TYPE_CHECKING:
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
 _EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
+
+STDERR = console.Console(stderr=True)
 
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
@@ -184,9 +184,9 @@ def implementation_subcommand(
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as err:
+                        except (NoSuchImplementation, StartupFailed) as error:
                             exit_code |= _EX_CONFIG
-                            rich.print(err, file=sys.stderr)
+                            STDERR.print(error)
                             continue
 
                         successful += 1
@@ -261,7 +261,7 @@ def badges(site: Path):
                 "delete the directory first."
             ),
         )
-        rich.print(error)
+        STDERR.print(error)
         return _EX_CONFIG
 
     supported_versions: dict[Path, Iterable[Dialect]] = {}
@@ -280,7 +280,7 @@ def badges(site: Path):
                     causes=[f"The {name} report contains no results."],
                     hint_stmt="Check that site generation has not failed.",
                 )
-                rich.print(error)
+                STDERR.print(error)
                 return _EX_DATAERR
 
             badge_name = f"{dialect.short_name}.json"
@@ -311,7 +311,7 @@ def badges(site: Path):
                             "consistent output and that a run has not failed."
                         ),
                     )
-                    rich.print(error)
+                    STDERR.print(error)
                     return _EX_CONFIG
 
     for dir, dialects in supported_versions.items():
@@ -355,7 +355,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "otherwise it may be emitting no report data."
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_NOINPUT
     except json.JSONDecodeError as err:
         error = DiagnosticError(
@@ -369,7 +369,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "Bowtie."
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_DATAERR
     except _report.MissingFooter:
         error = DiagnosticError(
@@ -384,7 +384,7 @@ def summary(input: TextIO, format: _F, show: str):
                 "without piping it. If it crashes, file a bug report!"
             ),
         )
-        rich.print(error, file=sys.stderr)
+        STDERR.print(error)
         return _EX_DATAERR
 
     if show == "failures":
@@ -435,10 +435,7 @@ def summary(input: TextIO, format: _F, show: str):
             console.Console().print(table)
 
 
-def _convert_table_to_markdown(
-    columns: list[Any],
-    rows: list[list[Any]],
-):
+def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
     widths = [
         max(len(line[i]) for line in columns) for i in range(len(columns))
     ]
@@ -462,7 +459,7 @@ def _convert_table_to_markdown(
         body[idx] = "| " + " | ".join(line) + " |"
     body = "\n".join(body)
 
-    return "\n\n" + header + "\n" + separator + "\n" + body + "\n\n"
+    return f"\n\n{header}\n{separator}\n{body}\n\n"
 
 
 def _failure_table(
@@ -729,37 +726,26 @@ def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
 
 
-def _set_max_fail_and_max_error(
-    ctx: click.Context,
-    _,
-    value: bool,
-) -> None:
-    if value:
-        if ctx.params.get("max_fail") or ctx.params.get("max_error"):
-            ctx.ensure_object(dict)
-            ctx.obj["max_fail_or_error_provided"] = True
-            return
-        ctx.params["max_fail"] = 1
-        ctx.params["max_error"] = 1
-        ctx.ensure_object(dict)
-        ctx.obj["fail_fast_provided"] = True
-    return
-
-
-def _check_fail_fast_provided(
+# Both are these are needed because parsing is order dependent :/
+def _disallow_fail_fast(
     ctx: click.Context,
     _,
     value: int | None,
 ) -> int | None:
-    if ctx.obj:
-        if (
-            "fail_fast_provided" in ctx.obj and value is not None
-        ) or "max_fail_or_error_provided" in ctx.obj:
-            raise click.UsageError(
-                "Cannot use --fail-fast with --max-fail / --max-error",
-            )
-        else:
-            return ctx.params["max_fail"] and ctx.params["max_error"]
+    if ctx.params.get("fail_fast"):
+        if value is None:
+            return 1
+        raise click.UsageError(
+            "don't provide both --fail-fast and --max-fail / --max-error",
+        )
+    return value
+
+
+def _disallow_max_fail(ctx: click.Context, _, value: int | None) -> int | None:
+    if value and ctx.params.get("max_fail", 1) != 1:
+        raise click.UsageError(
+            "don't provide both --fail-fast and --max-fail / --max-error",
+        )
     return value
 
 
@@ -797,21 +783,21 @@ FILTER = click.option(
 FAIL_FAST = click.option(
     "-x",
     "--fail-fast",
+    callback=_disallow_max_fail,
     is_flag=True,
     default=False,
-    callback=_set_max_fail_and_max_error,
     help="Fail immediately after the first error or disagreement.",
 )
 MAX_FAIL = click.option(
     "--max-fail",
     type=click.IntRange(min=1),
-    callback=_check_fail_fast_provided,
+    callback=_disallow_fail_fast,
     help="Fail immediately if N tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
     "--max-error",
     type=click.IntRange(min=1),
-    callback=_check_fail_fast_provided,
+    callback=_disallow_fail_fast,
     help="Fail immediately if N errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
@@ -1253,27 +1239,23 @@ async def _run(
                 implementation = await each
             except (NoSuchImplementation, StartupFailed) as error:
                 exit_code |= _EX_CONFIG
-                rich.print(error, file=sys.stderr)
+                STDERR.print(error)
                 continue
 
             try:
                 runner = await implementation.start_speaking(dialect)
-            except GotStderr as error:
-                exit_code = _EX_CONFIG
-                reporter.dialect_error(
-                    implementation=implementation,
-                    stderr=error.stderr.decode(),
-                )
+            except DialectError as error:
+                exit_code |= _EX_CONFIG
+                STDERR.print(error)
             except UnsupportedDialect as error:
-                rich.print(error, file=sys.stderr)
+                STDERR.print(error)
             else:
                 acknowledged.append(implementation.info)
                 runners.append(runner)
 
         if not runners:
-            rich.print(
+            STDERR.print(
                 "[bold red]No implementations started successfully![/]",
-                file=sys.stderr,
             )
             return exit_code | _EX_CONFIG
 
@@ -1301,17 +1283,22 @@ async def _run(
                 result = await each
                 case_reporter.got_result(result=result)
                 unsucessful += result.unsuccessful()
-                if max_fail and unsucessful.failed == max_fail:
-                    should_stop = True
-                if max_error and unsucessful.errored == max_error:
+                if (
+                    max_fail
+                    and unsucessful.failed == max_fail
+                    or (max_error and unsucessful.errored == max_error)
+                ):
                     should_stop = True
 
             if should_stop:
                 reporter.failed_fast(seq_case=seq_case)
                 break
-        reporter.finished(count=count, did_fail_fast=should_stop)
-        if not count:
+        reporter.finished(did_fail_fast=should_stop)
+        if count == 0:
             exit_code = _EX_NOINPUT
+            STDERR.print("[bold red]No test cases ran.[/]")
+        elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
+            STDERR.print(f"Ran [green]{count}[/] test cases.")
     return exit_code
 
 

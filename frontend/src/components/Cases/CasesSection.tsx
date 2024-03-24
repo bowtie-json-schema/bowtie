@@ -1,13 +1,14 @@
+import Accordion from "react-bootstrap/Accordion";
+
 import { ReportData } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
-import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const implementationsResults = Array.from(
     reportData.implementationsResults.values(),
   );
   const implementations = implementationsResults.map(
-    (implResult) => reportData.runInfo.implementations[implResult.id],
+    (implResult) => reportData.runMetadata.implementations.get(implResult.id)!,
   );
 
   return (

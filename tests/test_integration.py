@@ -11,6 +11,8 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from markdown_it import MarkdownIt
+from markdown_it.tree import SyntaxTreeNode
 import pytest
 import pytest_asyncio
 
@@ -648,7 +650,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         )
 
     assert results == []
-    assert "got an error" in stderr.lower(), stderr
+    assert "failed as we were beginning" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -893,10 +895,19 @@ async def test_max_fail_with_fail_fast(envsonschema):
         exit_code=-1,
     )
     assert stdout == ""
-    assert (
-        "cannot use --fail-fast with --max-fail / --max-error"
-        in stderr.lower()
-    ), stderr
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
+
+    stdout, stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "--fail-fast",
+        "--max-fail",
+        "2",
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -955,6 +966,35 @@ async def test_smoke_markdown(envsonschema):
             * allow-nothing: ✓✓✓✓✓✓
         """,
         ).lstrip("\n")
+    ), stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke_valid_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert (
+        tokens
+        == """
+        <root>
+  <bullet_list>
+    <list_item>
+      <paragraph>
+        <inline>
+          <text>
+    <list_item>
+      <paragraph>
+        <inline>
+          <text>
+        """.strip()
     ), stderr
 
 
@@ -1134,6 +1174,73 @@ async def test_info_markdown(envsonschema):
           "http://json-schema.org/draft-03/schema#"
         ]
         """,
+    )
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_valid_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "info",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert (
+        tokens
+        == (
+            """
+        <root>
+  <paragraph>
+    <inline>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+        """
+        ).strip()
     )
     assert stderr == ""
 
@@ -1495,6 +1602,82 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
         **2 tests ran**
 
         """,
+    )
+
+
+@pytest.mark.asyncio
+async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    validate_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    stdout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "markdown",
+        "--show",
+        "failures",
+        stdin=validate_stdout,
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert stderr == ""
+    assert (
+        tokens
+        == (
+            """
+        <root>
+  <heading>
+    <inline>
+      <text>
+  <table>
+    <thead>
+      <tr>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+    <tbody>
+      <tr>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+  <paragraph>
+    <inline>
+      <text>
+      <strong>
+        <text>
+      <text>
+        """
+        ).strip()
     )
 
 

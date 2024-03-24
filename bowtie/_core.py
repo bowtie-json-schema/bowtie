@@ -30,12 +30,11 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie.exceptions import ProtocolError, UnsupportedDialect
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
-        Awaitable,
         Callable,
         Iterable,
         Mapping,
@@ -553,15 +552,24 @@ class Implementation:
             seq_case = SeqCase(seq=uuid4().hex, case=case)
             yield case, await seq_case.run(runner=runner)
 
-    def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
+    async def start_speaking(self, dialect: Dialect) -> DialectRunner:
         if not self.supports(dialect):
             raise UnsupportedDialect(implementation=self, dialect=dialect)
-        return DialectRunner.for_dialect(
-            implementation=self.name,
-            dialect=dialect,
-            harness=self._harness,
-            reporter=self._reporter,
-        )
+        try:
+            return await DialectRunner.for_dialect(
+                implementation=self.name,
+                dialect=dialect,
+                harness=self._harness,
+                reporter=self._reporter,
+            )
+        except GotStderr as error:
+            # the implementation failed on the dialect request.
+            # there's likely no reason to continue, so we throw an exception
+            raise DialectError(
+                implementation=self,
+                dialect=dialect,
+                stderr=error.stderr,
+            ) from error
 
     async def smoke(
         self,
