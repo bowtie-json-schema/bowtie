@@ -52,10 +52,7 @@ export default class Dialect {
   }
 
   static newest_to_oldest(): Dialect[] {
-    return Array.from(Dialect.known()).sort(
-      (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
-    );
+    return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
   }
 
   static withName(shortName: string): Dialect {

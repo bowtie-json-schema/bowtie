@@ -25,30 +25,28 @@ const EmbedBadges: React.FC<{
         <h5 className="pb-1">Badges</h5>
 
         <Stack className="pb-3" direction="horizontal" gap={5}>
-          <div>
-            <ListGroup variant="flush">
-              {Object.entries(allBadges).map(([category, badges]) => (
-                <ListGroup.Item key={category}>
-                  <h6>{category}</h6>
-                  <ListGroup variant="flush">
-                    {badges.map((badge) => (
-                      <ListGroup.Item
-                        key={badge.name}
-                        action
-                        // FIXME: wut? badge === activeBadge is false, at
-                        //        least because badge.uri !== activeBadge.uri
-                        //        URI.js has a .equal method
-                        active={badge.name === activeBadge.name}
-                        onClick={() => setActiveBadge(badge)}
-                      >
-                        {badge.name}
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </div>
+          <ListGroup variant="flush">
+            {Object.entries(allBadges).map(([category, badges]) => (
+              <ListGroup.Item key={category}>
+                <h6>{category}</h6>
+                <ListGroup variant="flush">
+                  {badges.map((badge) => (
+                    <ListGroup.Item
+                      key={badge.name}
+                      action
+                      // FIXME: wut? badge === activeBadge is false, at
+                      //        least because badge.uri !== activeBadge.uri
+                      //        URI.js has a .equal method
+                      active={badge.name === activeBadge.name}
+                      onClick={() => setActiveBadge(badge)}
+                    >
+                      {badge.name}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
 
           <div className="overflow-scroll">
             <div className="pb-3">
