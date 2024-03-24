@@ -206,7 +206,6 @@ export const parseImplementationData = (
     });
   });
 
-  console.log(allImplementations);
   return allImplementations;
 };
 
