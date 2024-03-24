@@ -188,23 +188,14 @@ export const parseImplementationData = (
     );
 
     for (const [id, val] of value.runMetadata.implementations.entries()) {
-      if (!Object.prototype.hasOwnProperty.call(allImplementations, id)) {
-        allImplementations[id] = {
-          implementation: val,
-          dialectCompliance: {},
-        };
-      }
+      allImplementations[id] = allImplementations[id] || {
+        implementation: val,
+        dialectCompliance: {},
+      };
+      allImplementations[id].dialectCompliance[key] =
+        dialectCompliance[key][id];
     }
   }
-
-  Object.keys(allImplementations).map((implementation) => {
-    Object.entries(dialectCompliance).map(([key, value]) => {
-      if (value[implementation]) {
-        allImplementations[implementation].dialectCompliance[key] =
-          value[implementation];
-      }
-    });
-  });
 
   return allImplementations;
 };
