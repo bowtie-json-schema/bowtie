@@ -381,7 +381,7 @@ def ui(session):
     You can use `nox -s ui -- --pr 123` to automatically checkout a pull
     request.
     """
-    _maybe_install_ui(session)
+    pnpm(session.run_install, "install", "--frozen-lockfile")
 
     with ExitStack() as stack:
         if session.posargs and session.posargs[0] == "--pr":
@@ -399,7 +399,7 @@ def ui_audit(session):
     """
     Audit the UI dependencies.
     """
-    session.run("pnpm", "--dir", UI, "audit", external=True)
+    pnpm(session.run, "audit")
 
 
 @session(python=False, tags=["build", "ui"], name="ui(build)")
@@ -407,8 +407,8 @@ def ui_build(session):
     """
     Check that the UI properly builds.
     """
-    _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "build", external=True)
+    pnpm(session.run_install, "install", "--frozen-lockfile")
+    pnpm(session.run, "run", "build")
 
 
 @session(python=False, tags=["style", "ui"], name="ui(style)")
@@ -416,8 +416,8 @@ def ui_style(session):
     """
     Lint for style on Bowtie's frontend.
     """
-    _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "lint", external=True)
+    pnpm(session.run_install, "install", "--frozen-lockfile")
+    pnpm(session.run, "run", "lint")
 
 
 @session(tags=["ui"], name="ui(tests)")
@@ -439,14 +439,7 @@ def ui_tests(session):
         silent=True,
     )
     try:
-        session.run(
-            "pnpm",
-            "install-test",
-            "--frozen-lockfile",
-            "--dir",
-            UI,
-            external=True,
-        )
+        pnpm(session.run, "install-test", "--frozen-lockfile")
     finally:
         if image_id is not None:
             session.run_always(
@@ -458,14 +451,8 @@ def ui_tests(session):
             )
 
 
-def _maybe_install_ui(session):
-    if UI.joinpath("node_modules").is_dir():
-        return
-    session.run(
-        "pnpm",
-        "install",
-        "--frozen-lockfile",
-        "--dir",
-        UI,
-        external=True,
-    )
+def pnpm(run, *args):
+    """
+    Run pnpm on the UI.
+    """
+    run("pnpm", "--dir", UI, *args, external=True)
