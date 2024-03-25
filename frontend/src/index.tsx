@@ -14,7 +14,7 @@ import { implementationMetadataURI } from "./data/Site";
 import {
   ReportData,
   Implementation,
-  parseImplementationDialectURIs,
+  implementationFromData,
   parseImplementationData,
 } from "./data/parseReportData";
 
@@ -31,7 +31,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport()
-        .then((data) => (loaderData[dialect.shortName] = data)),
+        .then((data) => (loaderData[dialect.shortName] = data))
     );
   }
   await Promise.all(promises);
@@ -47,8 +47,8 @@ const fetchImplementationMetadata = async () => {
   return Object.fromEntries(
     Object.entries(implementations).map(([id, data]) => [
       id,
-      parseImplementationDialectURIs(data),
-    ]),
+      implementationFromData(data),
+    ])
   );
 };
 
@@ -98,6 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
