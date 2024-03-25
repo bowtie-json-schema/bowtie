@@ -10,7 +10,6 @@ const mockImplementation: Implementation = {
   issues: "",
   source: "",
   dialects: [],
-  results: {},
 };
 
 describe("Badge", () => {

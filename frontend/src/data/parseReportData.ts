@@ -168,35 +168,41 @@ export const parseReportData = (
  */
 export const implementationFromData = (
   data: ImplementationData,
-): Implementation => ({
-  ...data,
-  results: {},
-  dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
-});
+): Implementation =>
+  ({
+    ...data,
+    dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
+  }) as Implementation;
 
 export const parseImplementationData = (
   loaderData: Record<string, ReportData>,
 ) => {
-  let allImplementations: Record<string, Implementation> = {};
+  const allImplementations: Record<string, ImplementationDialectCompliance> =
+    {};
   const dialectCompliance: Record<string, Record<string, Partial<Totals>>> = {};
 
-  for (const [key, value] of Object.entries(loaderData)) {
-    dialectCompliance[key] = calculateImplementationTotal(
-      value.implementationsResults,
+  for (const [
+    dialect,
+    { implementationsResults, runMetadata },
+  ] of Object.entries(loaderData)) {
+    dialectCompliance[dialect] = calculateImplementationTotal(
+      implementationsResults,
     );
-    allImplementations = {
-      ...allImplementations,
-      ...Object.fromEntries(value.runMetadata.implementations.entries()),
-    };
+
+    for (const [id, implementation] of runMetadata.implementations.entries()) {
+      if (!allImplementations[id]) {
+        allImplementations[id] = {
+          implementation,
+          dialectCompliance: {},
+        };
+      }
+      if (dialectCompliance[dialect][id]) {
+        allImplementations[id].dialectCompliance[dialect] =
+          dialectCompliance[dialect][id];
+      }
+    }
   }
 
-  Object.keys(allImplementations).map((implementation) => {
-    Object.entries(dialectCompliance).map(([key, value]) => {
-      if (value[implementation]) {
-        allImplementations[implementation].results[key] = value[implementation];
-      }
-    });
-  });
   return allImplementations;
 };
 
@@ -239,23 +245,8 @@ export const calculateTotals = (data: ReportData): Totals => {
   );
 };
 
-export interface ImplementationData {
-  language: string;
-  name: string;
-  version?: string;
+export interface ImplementationData extends Omit<Implementation, "dialects"> {
   dialects: string[];
-  homepage: string;
-  documentation?: string;
-  issues: string;
-  source: string;
-  links?: {
-    description?: string;
-    url?: string;
-    [k: string]: unknown;
-  }[];
-  os?: string;
-  os_version?: string;
-  language_version?: string;
 }
 
 interface Header {
@@ -314,10 +305,12 @@ export interface Implementation {
   os_version?: string;
   language_version?: string;
 
-  // FIXME: Move this outside of here to some external map!?
-  results: Record<string, Partial<Totals>>;
-
   [k: string]: unknown;
+}
+
+export interface ImplementationDialectCompliance {
+  implementation: Implementation;
+  dialectCompliance: Record<string, Partial<Totals>>;
 }
 
 export interface Case {
