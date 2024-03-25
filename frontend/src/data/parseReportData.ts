@@ -190,15 +190,13 @@ export const parseImplementationData = (
     );
 
     for (const [id, implementation] of runMetadata.implementations.entries()) {
-      if (!Object.prototype.hasOwnProperty.call(allImplementations, id)) {
+      if (!allImplementations[id]) {
         allImplementations[id] = {
           implementation,
           dialectCompliance: {},
         };
       }
-      if (
-        Object.prototype.hasOwnProperty.call(dialectCompliance[dialect], id)
-      ) {
+      if (dialectCompliance[dialect][id]) {
         allImplementations[id].dialectCompliance[dialect] =
           dialectCompliance[dialect][id];
       }
