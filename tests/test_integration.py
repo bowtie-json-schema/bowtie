@@ -6,13 +6,12 @@ from textwrap import dedent, indent
 import asyncio
 import json as _json
 import os
-import pty
 import re
-import select
 import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+import pexpect
 import pytest
 import pytest_asyncio
 
@@ -1259,29 +1258,15 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
 @pytest.mark.asyncio
 async def test_filter_implementations_no_arguments():
-    output_buffer = BytesIO()
     stdout, stderr = [], ""
 
-    def read(fd):
-        while True:
-            readable, _, _ = select.select([fd], [], [], 0.1)
-            if readable:
-                try:
-                    data = os.read(fd, 1024)
-                    if not data:
-                        break
-                    output_buffer.write(data)
-                except OSError:
-                    break
-        return b""
-
-    pty.spawn(["bowtie", "filter-implementations"], read)
-
     try:
-        stdout = [
-            byte.decode() for byte in output_buffer.getvalue().splitlines()
-        ]
-    except UnicodeDecodeError as err:
+        child = pexpect.spawn("bowtie filter-implementations")
+        child.expect(pexpect.EOF)
+        stdout = child.before.decode().splitlines()
+    except pexpect.exceptions.ExceptionPexpect as err:
+        stderr = str(err)
+    except Exception as err:
         stderr = str(err)
 
     expected = sorted(Implementation.known())

@@ -42,6 +42,10 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
+colorama==0.4.6
+    # via
+    #   click
+    #   pytest
 cryptography==42.0.5
     # via
     #   -r requirements.txt
@@ -103,10 +107,14 @@ multidict==6.0.5
     #   yarl
 packaging==23.2
     # via pytest
+pexpect==4.9.0
+    # via -r test-requirements.in
 pluggy==1.4.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+ptyprocess==0.7.0
+    # via pexpect
 pycparser==2.21
     # via
     #   -r requirements.txt
