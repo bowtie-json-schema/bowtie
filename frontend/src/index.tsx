@@ -31,7 +31,7 @@ const fetchAllReportData = async (langImplementation: string) => {
     promises.push(
       dialect
         .fetchReport()
-        .then((data) => (loaderData[dialect.shortName] = data))
+        .then((data) => (loaderData[dialect.shortName] = data)),
     );
   }
   await Promise.all(promises);
@@ -48,7 +48,7 @@ const fetchImplementationMetadata = async () => {
     Object.entries(implementations).map(([id, data]) => [
       id,
       implementationFromData(data),
-    ])
+    ]),
   );
 };
 
@@ -98,6 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
