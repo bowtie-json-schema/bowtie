@@ -7,8 +7,8 @@ import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
 import {
-  ReportData,
   RunMetadata,
+  ReportData,
   fromSerialized,
   parseImplementationData,
 } from "./parseReportData";
