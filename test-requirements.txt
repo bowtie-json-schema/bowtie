@@ -63,7 +63,7 @@ github3-py==4.0.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.99.8
+hypothesis==6.99.13
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
