@@ -131,7 +131,7 @@ describe("parseReportData", () => {
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema")
+      tag("envsonschema"),
     )!;
     const testCase = report.cases.get(1);
 
@@ -154,7 +154,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -195,13 +195,13 @@ describe("parseReportData", () => {
 
     const lines = bowtie(
       ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n"
+      cases.join("\n") + "\n",
     );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema")
+      tag("envsonschema"),
     )!;
 
     expect(report).toStrictEqual({
@@ -223,7 +223,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -299,7 +299,7 @@ describe("parseReportData", () => {
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
         ["run", "-i", tag("envsonschema"), "-D", dialect.shortName],
-        cases.join("\n") + "\n"
+        cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
       combinedData[dialect.shortName] = report;
