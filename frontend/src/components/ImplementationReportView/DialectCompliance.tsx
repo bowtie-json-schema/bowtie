@@ -1,14 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Card, Table } from "react-bootstrap";
+import Card from "react-bootstrap/Card";
+import Image from "react-bootstrap/Image";
+import Table from "react-bootstrap/Table";
 
 import { complianceBadgeFor } from "../../data/Badge";
 import Dialect from "../../data/Dialect";
-import { Implementation } from "../../data/parseReportData";
+import { ImplementationDialectCompliance } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
-  implementation: Implementation;
-}> = ({ implementation }) => {
+  implementationDialectCompliance: ImplementationDialectCompliance;
+}> = ({ implementationDialectCompliance }) => {
+  const { implementation, dialectCompliance } = implementationDialectCompliance;
+
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -33,7 +37,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(implementation.results)
+            {Object.entries(dialectCompliance)
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
@@ -54,21 +58,14 @@ const DialectCompliance: React.FC<{
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
                     <td>
-                      <Link
-                        className="mx-1"
-                        // FIXME: surely this shouldn't be hardcoded
-                        // Double FIXME: This should go to the
-                        // implementation-specific page, not the global dialect
-                        // one.
-                        to={`/dialects/${dialect.shortName}`}
-                      >
-                        <img
-                          alt={dialect.prettyName}
-                          className="float-end"
+                      <Link className="mx-1" to={dialect.routePath}>
+                        <Image
                           src={complianceBadgeFor(
                             implementation,
                             dialect,
                           ).href()}
+                          alt={dialect.prettyName}
+                          className="float-end"
                         />
                       </Link>
                     </td>

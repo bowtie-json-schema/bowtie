@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Any, Literal, Self, TextIO
 
-    from bowtie._commands import AnyTestResult, Command, ImplementationId
-    from bowtie._core import Implementation, ImplementationInfo, Test
+    from bowtie._commands import AnyTestResult, ImplementationId
+    from bowtie._core import ImplementationInfo, Test
 
 
 class InvalidReport(Exception):
@@ -66,17 +66,6 @@ class Reporter:
         factory=structlog.stdlib.get_logger,
     )
 
-    def unsupported_dialect(
-        self,
-        implementation: Implementation,
-        dialect: Dialect,
-    ):
-        self._log.warn(
-            "Unsupported dialect, skipping implementation.",
-            logger_name=implementation.name,
-            dialect=dialect.pretty_name,
-        )
-
     def unacknowledged_dialect(
         self,
         implementation: str,
@@ -98,37 +87,8 @@ class Reporter:
         self._log.debug("Will speak", dialect=run_metadata.dialect)
         self._write(**run_metadata.serializable())
 
-    def finished(self, count: int, did_fail_fast: bool):
-        if not count:
-            self._log.error("No test cases ran.")
-        else:
-            self._log.info("Finished", count=count)
+    def finished(self, did_fail_fast: bool):
         self._write(did_fail_fast=did_fail_fast)
-
-    def dialect_error(self, implementation: Implementation, stderr: str):
-        self._log.error(
-            "Tried to start sending test cases, but got an error.",
-            logger_name=implementation.name,
-            stderr=stderr,
-        )
-
-    def no_implementations(self):
-        self._log.error("No implementations started successfully!")
-
-    def invalid_response(
-        self,
-        cmd: Command[Any],
-        response: bytes,
-        implementation: Implementation,
-        error: Exception,
-    ):
-        self._log.exception(
-            "Invalid response",
-            logger_name=implementation.name,
-            exc_info=error,
-            request=cmd,
-            response=response,
-        )
 
     def case_started(self, seq_case: SeqCase):
         self._write(**seq_case.serializable())
@@ -284,7 +244,7 @@ class Report:
 
         for data in iterator:
             match data:
-                case {"seq": Seq(seq), "case": case}:
+                case {"seq": seq, "case": case}:
                     if seq in cases:
                         raise DuplicateCase(seq)
                     case = TestCase.from_dict(dialect=metadata.dialect, **case)
@@ -384,12 +344,12 @@ class Report:
             passed = self.total_tests - unsuccessful.total
             percentage = 100 * (passed / self.total_tests)
             r, g, b = 100 - int(percentage), int(percentage), 0
-            yield implementation, {
-                "schemaVersion": 1,
-                "label": self.metadata.dialect.pretty_name,
-                "message": "%d%% Passing" % int(percentage),
-                "color": f"{r:02x}{g:02x}{b:02x}",
-            }
+            yield implementation, Badge(
+                schemaVersion=1,
+                label=self.metadata.dialect.pretty_name,
+                message="%d%% Passing" % int(percentage),
+                color=f"{r:02x}{g:02x}{b:02x}",
+            )
 
 
 class Badge(TypedDict):

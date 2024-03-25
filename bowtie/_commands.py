@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 #: A unique identifier for a test case within a run or report.
-Seq = int
+Seq = int | str
 
 #: A unique identifier for an implementation within a run or report.
 ImplementationId = str
@@ -51,10 +51,6 @@ class Unsuccessful:
 
     def __bool__(self) -> bool:  # sigh, typing nonsense
         return bool(self.failed or self.errored or self.skipped)
-
-    @property
-    def causes_stop(self) -> bool:  # sigh, typing nonsense
-        return bool(self.failed or self.errored)
 
     @property
     def total(self):

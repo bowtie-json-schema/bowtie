@@ -1,6 +1,7 @@
 import { useContext, useEffect } from "react";
 import { Sun, MoonStarsFill, Book } from "react-bootstrap-icons";
-import { Link, NavLink, useLocation, useMatch } from "react-router-dom";
+import { Link, useLocation, useMatch } from "react-router-dom";
+import NavDropdown from "react-bootstrap/NavDropdown";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
@@ -85,34 +86,21 @@ const NavBar = () => {
                   </li>
                 </>
               )}
-              <li className="nav-item dropdown">
-                <a
-                  className="nav-link dropdown-toggle"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Dialects{" "}
-                </a>
-                <ul className="dropdown-menu">
-                  {Dialect.newest_to_oldest().map((dialect) => (
-                    <li key={dialect.shortName}>
-                      <NavLink
-                        className="dropdown-item"
-                        // FIXME: surely this shouldn't be hardcoded
-                        to={`/dialects/${dialect.shortName}`}
-                      >
-                        {dialect.prettyName}
-                      </NavLink>
-                    </li>
-                  ))}
-                  <li>
-                    <NavLink className="dropdown-item" to="/local-report/">
-                      Local report
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
+              <NavDropdown id="dialect-dropdown" title="Dialects">
+                {Dialect.newest_to_oldest().map((dialect) => (
+                  <NavDropdown.Item
+                    as={Link}
+                    to={dialect.routePath}
+                    key={dialect.shortName}
+                  >
+                    {dialect.prettyName}
+                  </NavDropdown.Item>
+                ))}
+                <NavDropdown.Divider />
+                <NavDropdown.Item as={Link} to="/local-report/">
+                  Upload a report
+                </NavDropdown.Item>
+              </NavDropdown>
               <li className="nav-item d-block d-lg-none">
                 <a
                   href="https://github.com/bowtie-json-schema/bowtie/"
