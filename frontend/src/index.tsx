@@ -12,10 +12,10 @@ import { ImplementationReportView } from "./components/ImplementationReportView/
 import { MainContainer } from "./MainContainer";
 import { implementationMetadataURI } from "./data/Site";
 import {
+  ImplementationData,
   ReportData,
   implementationFromData,
   parseImplementationData,
-  ImplementationData,
 } from "./data/parseReportData";
 
 const fetchReportData = async (dialect: Dialect) => {
