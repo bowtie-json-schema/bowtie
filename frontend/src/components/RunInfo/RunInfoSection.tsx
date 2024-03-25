@@ -1,3 +1,5 @@
+import Table from "react-bootstrap/Table";
+
 import { RunMetadata } from "../../data/parseReportData";
 
 const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
@@ -6,7 +8,7 @@ const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
       <div className="card-header">Run Info</div>
 
       <div className="card-body table-responsive-sm">
-        <table className="table table-sm table-hover">
+        <Table size="sm" hover>
           <thead>
             <tr>
               <td className="align-top col-md-2">Dialect</td>
@@ -17,12 +19,12 @@ const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
               <td>{runMetadata.ago()}</td>
             </tr>
           </thead>
-        </table>
+        </Table>
 
         {runMetadata.metadata && (
           <>
             <hr />
-            <table id="run-metadata" className="table table-sm table-hover">
+            <Table size="sm" id="run-metadata" hover>
               <thead>
                 {Object.entries(runMetadata.metadata).map(([label, value]) => {
                   if (typeof value === "string") {
@@ -52,7 +54,7 @@ const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
                   return null;
                 })}
               </thead>
-            </table>
+            </Table>
           </>
         )}
       </div>
