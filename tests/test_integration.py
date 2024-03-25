@@ -1266,8 +1266,6 @@ async def test_filter_implementations_no_arguments():
         stdout = child.before.decode().splitlines()
     except pexpect.exceptions.ExceptionPexpect as err:
         stderr = str(err)
-    except Exception as err:
-        stderr = str(err)
 
     expected = sorted(Implementation.known())
     assert (sorted(stdout), stderr) == (expected, "")
