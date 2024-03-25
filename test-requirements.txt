@@ -42,10 +42,6 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-colorama==0.4.6
-    # via
-    #   click
-    #   pytest
 cryptography==42.0.5
     # via
     #   -r requirements.txt
