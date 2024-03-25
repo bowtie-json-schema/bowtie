@@ -6,11 +6,13 @@ import Table from "react-bootstrap/Table";
 
 import { complianceBadgeFor } from "../../data/Badge";
 import Dialect from "../../data/Dialect";
-import { Implementation } from "../../data/parseReportData";
+import { ImplementationDialectCompliance } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
-  implementation: Implementation;
-}> = ({ implementation }) => {
+  implementationDialectCompliance: ImplementationDialectCompliance;
+}> = ({ implementationDialectCompliance }) => {
+  const { implementation, dialectCompliance } = implementationDialectCompliance;
+
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -35,7 +37,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(implementation.results)
+            {Object.entries(dialectCompliance)
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
