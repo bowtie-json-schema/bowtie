@@ -994,7 +994,7 @@ async def filter_implementations(
     """
     if not dialects and languages == KNOWN_LANGUAGES:
         for implementation in ctx.params["image_names"]:
-            click.echo(implementation.split("/")[-1])
+            click.echo(implementation.removeprefix(f"{IMAGE_REPOSITORY}/"))
         return
 
     async for each in start():
