@@ -1,3 +1,5 @@
+import Accordion from "react-bootstrap/Accordion";
+
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import {
@@ -8,7 +10,6 @@ import {
   useRef,
   RefObject,
 } from "react";
-import { Accordion } from "react-bootstrap";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
   Case,

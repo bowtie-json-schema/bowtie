@@ -12,6 +12,7 @@ export default class Dialect {
   readonly prettyName: string;
   readonly uri: string;
   readonly firstPublicationDate: Date;
+  readonly routePath: string;
 
   private static all: Map<string, Dialect> = new Map<string, Dialect>();
 
@@ -30,6 +31,14 @@ export default class Dialect {
     this.prettyName = prettyName;
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
+    this.routePath = `/dialects/${shortName}`;
+  }
+
+  /** Sorting a dialect sorts by its publication date. */
+  compare(other: Dialect): number {
+    return (
+      other.firstPublicationDate.getTime() - this.firstPublicationDate.getTime()
+    );
   }
 
   async fetchReport(baseURI: URI = siteURI) {
@@ -43,10 +52,7 @@ export default class Dialect {
   }
 
   static newest_to_oldest(): Dialect[] {
-    return Array.from(Dialect.known()).sort(
-      (d1: Dialect, d2: Dialect) =>
-        d2.firstPublicationDate.valueOf() - d1.firstPublicationDate.valueOf(),
-    );
+    return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
   }
 
   static withName(shortName: string): Dialect {
@@ -68,6 +74,9 @@ export default class Dialect {
   }
 }
 
+/**
+ * Someone referred to a non-existent (unknown to Bowtie) dialect.
+ */
 class DialectError extends Error {
   constructor(message: string) {
     super(message);

@@ -11,6 +11,8 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from markdown_it import MarkdownIt
+from markdown_it.tree import SyntaxTreeNode
 import pexpect
 import pytest
 import pytest_asyncio
@@ -144,9 +146,9 @@ envsonschema = fauxmplementation("envsonschema")
 always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
     while IFS= read -r input; do
       [[ "$input" == '{"cmd": "stop"}' ]] && exit
@@ -171,14 +173,14 @@ always_valid = shellplementation(  # I'm sorry future me.
 passes_smoke = shellplementation(
     name="passes_smoke",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
-    read
-    printf '{"seq": 1, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n'
-    read
-    printf '{"seq": 2, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 succeed_immediately = strimplementation(
@@ -194,56 +196,56 @@ fail_immediately = shellplementation(
 fail_on_start = shellplementation(
     name="fail_on_start",
     contents=r"""
-    read
+    read -r request
     printf 'BOOM!\n' >&2
     """,
 )
 fail_on_dialect = shellplementation(
     name="fail_on_dialect",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
-    read
+    read -r request
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": "true"}\n'
-    read
+    read -r request
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
 )
 nonjson_on_run = shellplementation(
     name="nonjson_on_run",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": "true"}\n'
-    read
+    read -r request
     printf 'BOOM!\n'
     """,  # noqa: E501
 )
 wrong_seq = shellplementation(
     name="wrong_seq",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": "true"}\n'
-    read
+    read -r request
     printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
 wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
     read >&2
     """,  # noqa: E501
@@ -251,56 +253,56 @@ wrong_version = shellplementation(
 hit_the_network_once = shellplementation(
     name="hit_the_network_once",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
-    read
+    read -r request
     wget --timeout=1 -O - http://example.com >&2
-    read
-    printf '{"seq": 2, "results": [{"valid": true}]}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 missing_homepage = shellplementation(
     name="missing_homepage",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
     """,  # noqa: E501
 )
 with_versions = shellplementation(
     name="with_versions",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
-    read
-    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 links = shellplementation(
     name="links",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
-    read
-    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 only_draft3 = shellplementation(
     name="only_draft3",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "only-draft3", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-03/schema#"]}, "version": 1}\n'
-    read
+    read -r request
     printf '{"ok": true}\n'
-    read
-    printf '{"seq": 1, "results": [{"valid": true}]}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 # we have this rather than making use of any of the above essentially
@@ -310,7 +312,7 @@ only_draft3 = shellplementation(
 fake_js = shellplementation(
     name="fake_js",
     contents=r"""
-    read
+    read -r request
     printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
     """,  # noqa: E501
 )
@@ -512,7 +514,7 @@ async def test_unsupported_known_dialect(only_draft3):
         results, stderr = await send("")
 
     assert results == []
-    assert "unsupported dialect" in stderr.lower(), stderr
+    assert "does not support" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -649,7 +651,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         )
 
     assert results == []
-    assert "got an error" in stderr.lower(), stderr
+    assert "failed as we were beginning" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -894,10 +896,19 @@ async def test_max_fail_with_fail_fast(envsonschema):
         exit_code=-1,
     )
     assert stdout == ""
-    assert (
-        "cannot use --fail-fast with --max-fail / --max-error"
-        in stderr.lower()
-    ), stderr
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
+
+    stdout, stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "--fail-fast",
+        "--max-fail",
+        "2",
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio
@@ -956,6 +967,35 @@ async def test_smoke_markdown(envsonschema):
             * allow-nothing: ✓✓✓✓✓✓
         """,
         ).lstrip("\n")
+    ), stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke_valid_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "smoke",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert (
+        tokens
+        == """
+        <root>
+  <bullet_list>
+    <list_item>
+      <paragraph>
+        <inline>
+          <text>
+    <list_item>
+      <paragraph>
+        <inline>
+          <text>
+        """.strip()
     ), stderr
 
 
@@ -1135,6 +1175,73 @@ async def test_info_markdown(envsonschema):
           "http://json-schema.org/draft-03/schema#"
         ]
         """,
+    )
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_info_valid_markdown(envsonschema):
+    stdout, stderr = await bowtie(
+        "info",
+        "--format",
+        "markdown",
+        "-i",
+        envsonschema,
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert (
+        tokens
+        == (
+            """
+        <root>
+  <paragraph>
+    <inline>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <strong>
+        <text>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+      <softbreak>
+      <text>
+        """
+        ).strip()
     )
     assert stderr == ""
 
@@ -1511,6 +1618,82 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
         **2 tests ran**
 
         """,
+    )
+
+
+@pytest.mark.asyncio
+async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    validate_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    stdout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "markdown",
+        "--show",
+        "failures",
+        stdin=validate_stdout,
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+    assert stderr == ""
+    assert (
+        tokens
+        == (
+            """
+        <root>
+  <heading>
+    <inline>
+      <text>
+  <table>
+    <thead>
+      <tr>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+    <tbody>
+      <tr>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+  <paragraph>
+    <inline>
+      <text>
+      <strong>
+        <text>
+      <text>
+        """
+        ).strip()
     )
 
 

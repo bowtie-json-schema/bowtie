@@ -1,37 +1,32 @@
-import moment from "moment";
-import { RunInfo } from "../../data/parseReportData";
+import Table from "react-bootstrap/Table";
 
-const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
-  const ranTime = (startTime: string) => {
-    const currentTime = moment();
-    const duration = moment.duration(currentTime.diff(startTime));
-    return duration.humanize();
-  };
+import { RunMetadata } from "../../data/parseReportData";
 
+const RunInfoSection = ({ runMetadata }: { runMetadata: RunMetadata }) => {
   return (
     <div className="card mx-auto mb-3" id="run-info">
       <div className="card-header">Run Info</div>
 
       <div className="card-body table-responsive-sm">
-        <table className="table table-sm table-hover">
+        <Table size="sm" hover>
           <thead>
             <tr>
               <td className="align-top col-md-2">Dialect</td>
-              <td>{runInfo.dialect}</td>
+              <td>{runMetadata.dialect.uri}</td>
             </tr>
             <tr>
               <td className="align-top col-md-2">Ran</td>
-              <td>{ranTime(runInfo.started)} ago</td>
+              <td>{runMetadata.ago()}</td>
             </tr>
           </thead>
-        </table>
+        </Table>
 
-        {runInfo.metadata && (
+        {runMetadata.metadata && (
           <>
             <hr />
-            <table id="run-metadata" className="table table-sm table-hover">
+            <Table size="sm" id="run-metadata" hover>
               <thead>
-                {Object.entries(runInfo.metadata).map(([label, value]) => {
+                {Object.entries(runMetadata.metadata).map(([label, value]) => {
                   if (typeof value === "string") {
                     return (
                       <tr key={label}>
@@ -59,7 +54,7 @@ const RunInfoSection = ({ runInfo }: { runInfo: RunInfo }) => {
                   return null;
                 })}
               </thead>
-            </table>
+            </Table>
           </>
         )}
       </div>

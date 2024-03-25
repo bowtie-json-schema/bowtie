@@ -21,10 +21,11 @@ export const DialectReportView = ({
 }) => {
   const params = useSearchParams();
   const languages = useMemo(() => {
-    const langs = Object.values(reportData.runInfo.implementations).map(
-      (impl) => impl.language,
-    );
-    return Array.from(new Set(langs).values());
+    const langs = new Set<string>();
+    for (const each of reportData.runMetadata.implementations.values()) {
+      langs.add(each.language);
+    }
+    return Array.from(langs);
   }, [reportData]);
 
   const filteredReportData = useMemo(() => {
@@ -36,7 +37,7 @@ export const DialectReportView = ({
         reportData.implementationsResults.entries(),
       ).filter(([id]) =>
         selectedLanguages.includes(
-          reportData.runInfo.implementations[id].language,
+          reportData.runMetadata.implementations.get(id)!.language,
         ),
       );
       filteredData.implementationsResults = new Map(filteredReportArray);
@@ -66,7 +67,7 @@ export const DialectReportView = ({
     <main className="container-lg">
       <div className="col col-lg-8 mx-auto">
         {topPageInfoSection}
-        <RunInfoSection runInfo={filteredReportData.runInfo} />
+        <RunInfoSection runMetadata={filteredReportData.runMetadata} />
         <FilterSection languages={languages} />
         <SummarySection
           reportData={filteredReportData}

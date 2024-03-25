@@ -6,6 +6,7 @@ from functools import cache
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeVar
+from uuid import uuid4
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
@@ -29,12 +30,11 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie.exceptions import ProtocolError
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
-        Awaitable,
         Callable,
         Iterable,
         Mapping,
@@ -548,16 +548,28 @@ class Implementation:
         """
         runner = await self.start_speaking(dialect)
 
-        for i, case in enumerate(cases, 1):
-            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
+        for case in cases:
+            seq_case = SeqCase(seq=uuid4().hex, case=case)
+            yield case, await seq_case.run(runner=runner)
 
-    def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
-        return DialectRunner.for_dialect(
-            implementation=self.name,
-            dialect=dialect,
-            harness=self._harness,
-            reporter=self._reporter,
-        )
+    async def start_speaking(self, dialect: Dialect) -> DialectRunner:
+        if not self.supports(dialect):
+            raise UnsupportedDialect(implementation=self, dialect=dialect)
+        try:
+            return await DialectRunner.for_dialect(
+                implementation=self.name,
+                dialect=dialect,
+                harness=self._harness,
+                reporter=self._reporter,
+            )
+        except GotStderr as error:
+            # the implementation failed on the dialect request.
+            # there's likely no reason to continue, so we throw an exception
+            raise DialectError(
+                implementation=self,
+                dialect=dialect,
+                stderr=error.stderr,
+            ) from error
 
     async def smoke(
         self,

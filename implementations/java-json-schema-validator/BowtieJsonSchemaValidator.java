@@ -149,7 +149,7 @@ public class BowtieJsonSchemaValidator {
           schemaMappers
             .mapPrefix("https://json-schema.org", "classpath:")
             .mapPrefix("http://json-schema.org", "classpath:"))
-        .defaultMetaSchemaURI(metaSchema.getUri())
+        .defaultMetaSchemaIri(metaSchema.getIri())
         .addMetaSchema(metaSchema);
 
       if (runRequest.testCase().registry() != null) {

@@ -8,6 +8,7 @@ describe("Dialect", () => {
       shortName: "draft7",
       prettyName: "Draft 7",
       firstPublicationDate: new Date("2017-11-19"),
+      routePath: "/dialects/draft7",
     });
   });
 });
