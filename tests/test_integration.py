@@ -13,11 +13,12 @@ import tarfile
 from aiodocker.exceptions import DockerError
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
+import pexpect
 import pytest
 import pytest_asyncio
 
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import Dialect, Test, TestCase
+from bowtie._core import Dialect, Implementation, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -1360,6 +1361,21 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
     assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
     assert "failed to start" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_no_arguments():
+    stdout, stderr = [], ""
+
+    try:
+        child = pexpect.spawn("bowtie filter-implementations")
+        child.expect(pexpect.EOF)
+        stdout = child.before.decode().splitlines()
+    except pexpect.exceptions.ExceptionPexpect as err:
+        stderr = str(err)
+
+    expected = sorted(Implementation.known())
+    assert (sorted(stdout), stderr) == (expected, "")
 
 
 @pytest.mark.asyncio

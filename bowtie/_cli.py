@@ -964,15 +964,21 @@ KNOWN_LANGUAGES = {
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
-    callback=lambda _, __, value: frozenset(  # type: ignore[reportUnknownLambdaType]
-        LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
-        for each in value or KNOWN_LANGUAGES  # type: ignore[reportUnknownArgumentType]
+    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+        KNOWN_LANGUAGES
+        if not value
+        else frozenset(
+            LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
+            for each in value  # type: ignore[reportUnknownArgumentType]
+        )
     ),
     multiple=True,
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
 )
+@click.pass_context
 async def filter_implementations(
+    ctx: click.Context,
     start: Callable[[], AsyncIterator[Implementation]],
     dialects: Sequence[Dialect],
     languages: Set[str],
@@ -980,6 +986,11 @@ async def filter_implementations(
     """
     Output implementations matching a given criteria.
     """
+    if not dialects and languages == KNOWN_LANGUAGES:
+        for implementation in ctx.params["image_names"]:
+            click.echo(implementation.split("/")[-1])
+        return
+
     async for each in start():
         if each.supports(*dialects) and each.info.language in languages:
             click.echo(each.name.removeprefix(f"{IMAGE_REPOSITORY}/"))
