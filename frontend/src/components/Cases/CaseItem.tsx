@@ -34,7 +34,7 @@ const CaseContent = ({
   implementationsResults,
 }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>(
-    caseData.tests[0].instance,
+    caseData.tests[0].instance
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
 
@@ -84,7 +84,7 @@ const CaseContent = ({
                   <p className="m-0">{test.description}</p>
                 </td>
                 {implementationsResults.map((implResult, i) => {
-                  const caseResults = implResult.cases.get(seq);
+                  const caseResults = implResult.caseResults.get(seq);
                   const result: CaseResult =
                     caseResults !== undefined
                       ? caseResults[index]
@@ -119,8 +119,8 @@ const CaseItem = ({
           implementations={implementations}
           implementationsResults={implementationsResults}
           schemaDisplayRef={schemaDisplayRef}
-        />,
-      ),
+        />
+      )
     );
   }, [seq, caseData, implementations, implementationsResults]);
   return (

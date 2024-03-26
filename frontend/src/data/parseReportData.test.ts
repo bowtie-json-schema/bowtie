@@ -60,7 +60,7 @@ describe("parseReportData", () => {
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
     const testCase = report.cases.get(1);
 
@@ -83,19 +83,19 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
           tag("envsonschema"),
           {
-            erroredCases: 0,
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 1,
-
-            id: tag("envsonschema"),
-            cases: new Map([[1, [{ state: "failed", valid: false }]]]),
+            totals: {
+              erroredCases: 0,
+              erroredTests: 0,
+              skippedTests: 0,
+              failedTests: 1,
+            },
+            caseResults: new Map([[1, [{ state: "failed", valid: false }]]]),
           },
         ],
       ]),
@@ -187,13 +187,13 @@ describe("parseReportData", () => {
 
     const lines = bowtie(
       ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
 
     expect(report).toStrictEqual({
@@ -215,19 +215,19 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
           tag("envsonschema"),
           {
-            erroredCases: 0,
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-
-            id: tag("envsonschema"),
-            cases: new Map([
+            totals: {
+              erroredCases: 0,
+              erroredTests: 0,
+              skippedTests: 0,
+              failedTests: 4,
+            },
+            caseResults: new Map([
               [
                 1,
                 [
