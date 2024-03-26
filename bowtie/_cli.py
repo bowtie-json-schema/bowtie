@@ -715,6 +715,18 @@ class _Filter(click.ParamType):
         )
 
 
+def _set_dialect(ctx: click.Context, _, value: _Dialect):
+    """
+    Sets the dialect as follows:
+        1. if -D is not passed then use $schema
+        2. if both -D, $schema not present use latest dialect
+        2. else use passed value
+    """
+    if value:
+        return value
+    dialect_from_schema = ctx.params.get('schema', {}).get('$schema')
+    return Dialect.from_str(dialect_from_schema) if dialect_from_schema else max(Dialect.known())
+
 def _set_schema(dialect: Dialect) -> CaseTransform:
     """
     Explicitly set a dialect on schemas passing through by setting ``$schema``.
@@ -764,7 +776,7 @@ DIALECT = click.option(
     "-D",
     "dialect",
     type=_Dialect(),
-    default=max(Dialect.known()),
+    callback=_set_dialect,
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
@@ -904,10 +916,14 @@ def run(
         "or else (with 'any') to allow either result."
     ),
 )
-@click.argument("schema", type=click.File(mode="rb"))
+@click.argument(
+    "schema",
+    type=click.File(mode="rb"),
+    callback=lambda _, __, value: json.load(value),
+)
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    schema: TextIO,
+    schema: dict[str, Any],
     instances: Iterable[TextIO],
     expect: str,
     description: str,
@@ -921,7 +937,7 @@ def validate(
 
     case = TestCase(
         description=description,
-        schema=json.load(schema),
+        schema=schema,
         tests=[
             Test(
                 description="",
