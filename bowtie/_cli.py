@@ -921,7 +921,7 @@ def run(
 @click.argument(
     "schema",
     type=click.File(mode="rb"),
-    callback=lambda _, __, value: json.load(value), # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, value: json.load(value),  # type: ignore[reportUnknownLambdaType]
 )
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
