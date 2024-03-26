@@ -1296,8 +1296,8 @@ async def _run(
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail
-                    and unsucessful.failed == max_fail
-                    or (max_error and unsucessful.errored == max_error)
+                    and unsucessful.failed >= max_fail
+                    or (max_error and unsucessful.errored >= max_error)
                 ):
                     should_stop = True
 
