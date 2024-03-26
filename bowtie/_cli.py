@@ -1302,7 +1302,10 @@ async def _run(
                     should_stop = True
 
             if should_stop:
-                reporter.failed_fast(seq_case=seq_case)
+                STDERR.print(
+                    "[bold yellow]Stopping -- the maximum number of "
+                    "unsuccessful tests was reached![/]",
+                )
                 break
         reporter.finished(did_fail_fast=should_stop)
         if count == 0:
