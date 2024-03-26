@@ -1,50 +1,32 @@
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import Table from "react-bootstrap/Table";
-import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
+import { useLoaderData, Link, Navigate } from "react-router-dom";
 
 import DialectCompliance from "./DialectCompliance";
 import EmbedBadges from "./EmbedBadges";
 import LoadingAnimation from "../LoadingAnimation";
-import { ImplementationDialectCompliance } from "../../data/parseReportData";
+import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
 
 export const ImplementationReportView = () => {
-  // Fetch all supported implementation's metadata.
-  const allImplementationsDialectCompliance = useLoaderData() as Record<
-    string,
-    ImplementationDialectCompliance
-  >;
+  const implementationReport = useLoaderData() as ImplementationReport | null;
 
-  // Get the selected implementation's name from the URL parameters.
-  const { langImplementation } = useParams();
-  // FIXME: This magic prefix is duplicated from the backend side,
-  //        and probably needs some tweaking for when using a local image.
-  const image = langImplementation
-    ? `ghcr.io/bowtie-json-schema/${langImplementation}`
-    : "";
-  const currImplementationDialectCompliance =
-    allImplementationsDialectCompliance[image];
-
-  // FIXME: Probably redirect to /implementations if/when that's a thing.
-  return allImplementationsDialectCompliance ? (
-    currImplementationDialectCompliance ? (
-      <ReportComponent
-        implementationDialectCompliance={currImplementationDialectCompliance}
-      />
-    ) : (
-      <Navigate to="/" />
-    )
-  ) : (
+  return implementationReport === null ? (
+    // FIXME: Probably redirect to /implementations if/when that's a thing.
+    <Navigate to="/" />
+  ) : !implementationReport ? (
     <LoadingAnimation />
+  ) : (
+    <ReportComponent implementationReport={implementationReport} />
   );
 };
 
 const ReportComponent: React.FC<{
-  implementationDialectCompliance: ImplementationDialectCompliance;
-}> = ({ implementationDialectCompliance }) => {
-  const { implementation } = implementationDialectCompliance;
+  implementationReport: ImplementationReport;
+}> = ({ implementationReport }) => {
+  const { implementation } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -144,7 +126,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
@@ -154,9 +136,7 @@ const ReportComponent: React.FC<{
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance
-        implementationDialectCompliance={implementationDialectCompliance}
-      />
+      <DialectCompliance implementationReport={implementationReport} />
     </Container>
   );
 };

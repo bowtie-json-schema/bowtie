@@ -11,7 +11,7 @@ dayjs.extend(relativeTime);
 export const fromSerialized = (jsonl: string): ReportData => {
   const lines = jsonl.trim().split(/\r?\n/);
   return parseReportData(
-    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
+    lines.map((line) => JSON.parse(line) as Record<string, unknown>)
   );
 };
 
@@ -30,7 +30,7 @@ export class RunMetadata {
     implementations: Map<string, Implementation>,
     bowtieVersion: string,
     started: Date,
-    metadata: Record<string, unknown>,
+    metadata: Record<string, unknown>
   ) {
     this.dialect = dialect;
     this.implementations = implementations;
@@ -48,14 +48,14 @@ export class RunMetadata {
       Object.entries(record.implementations).map(([id, info]) => [
         id,
         implementationFromData(info),
-      ]),
+      ])
     );
     return new RunMetadata(
       Dialect.forURI(record.dialect),
       implementations,
       record.bowtie_version,
       new Date(record.started),
-      record.metadata,
+      record.metadata
     );
   }
 }
@@ -64,7 +64,7 @@ export class RunMetadata {
  * Parse a report from some deserialized JSON objects.
  */
 export const parseReportData = (
-  lines: Record<string, unknown>[],
+  lines: Record<string, unknown>[]
 ): ReportData => {
   const runMetadata = RunMetadata.fromRecord(lines[0] as unknown as Header);
 
@@ -89,7 +89,7 @@ export const parseReportData = (
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
       const implementationResults = implementationsResultsMap.get(
-        line.implementation as string,
+        line.implementation as string
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
@@ -102,7 +102,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          }),
+          })
         );
       } else if (line.skipped) {
         implementationResults.totals.skippedTests! += caseData.tests.length;
@@ -111,7 +111,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
             message: line.message as string,
-          }),
+          })
         );
       } else if (line.implementation) {
         const caseResults: CaseResult[] = (
@@ -168,65 +168,73 @@ export const parseReportData = (
  * If/when Implementation is a class, this will be its fromRecord.
  */
 export const implementationFromData = (
-  data: ImplementationData,
+  data: ImplementationData
 ): Implementation =>
   ({
     ...data,
     dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
-  }) as Implementation;
+  } as Implementation);
 
-export const parseImplementationData = (
-  loaderData: Record<string, ReportData>,
+/**
+ * Prepare a summarized implementation report for the
+ * passed implementation using all the dialect reports data
+ * that was fetched.
+ */
+export const prepareImplementationReport = (
+  allReportsData: Map<Dialect, ReportData>,
+  langImplementation: string
 ) => {
-  const allImplementations: Record<string, ImplementationDialectCompliance> =
-    {};
-  const dialectCompliance: Record<string, Record<string, Partial<Totals>>> = {};
+  let implementationReport: ImplementationReport | null = null;
+  const dialectCompliance = new Map<Dialect, Partial<Totals>>();
+
+  // FIXME: This magic prefix is duplicated from the backend side,
+  //        and probably we can separate handling this in Implementation
+  //        class (when we have it).
+  const image = `ghcr.io/bowtie-json-schema/${langImplementation}`;
 
   for (const [
     dialect,
     { implementationsResults, runMetadata },
-  ] of Object.entries(loaderData)) {
-    dialectCompliance[dialect] = calculateImplementationTotal(
-      implementationsResults,
-    );
+  ] of allReportsData.entries()) {
+    const implementationResults = implementationsResults.get(image);
 
-    for (const [id, implementation] of runMetadata.implementations.entries()) {
-      if (!allImplementations[id]) {
-        allImplementations[id] = {
+    if (implementationResults) {
+      dialectCompliance.set(dialect, {
+        erroredTests: implementationResults.totals.erroredTests,
+        skippedTests: implementationResults.totals.skippedTests,
+        failedTests: implementationResults.totals.failedTests,
+      });
+
+      const implementation = runMetadata.implementations.get(image)!;
+
+      if (!implementationReport) {
+        implementationReport = {
           implementation,
-          dialectCompliance: {},
+          dialectCompliance,
         };
-      }
-      if (dialectCompliance[dialect][id]) {
-        allImplementations[id].dialectCompliance[dialect] =
-          dialectCompliance[dialect][id];
+      } else {
+        implementationReport = {
+          implementation: Object.assign(
+            {},
+            implementationReport.implementation,
+            implementation
+          ),
+          dialectCompliance: new Map([
+            ...implementationReport.dialectCompliance,
+            ...dialectCompliance,
+          ]),
+        };
       }
     }
   }
 
-  return allImplementations;
-};
-
-const calculateImplementationTotal = (
-  implementationsResults: Map<string, ImplementationResults>,
-) => {
-  const implementationResult: Record<string, Partial<Totals>> = {};
-
-  Array.from(implementationsResults.entries()).forEach(([key, value]) => {
-    implementationResult[key] = {
-      erroredTests: value.totals.erroredTests,
-      skippedTests: value.totals.skippedTests,
-      failedTests: value.totals.failedTests,
-    };
-  });
-
-  return implementationResult;
+  return implementationReport;
 };
 
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0,
+    0
   );
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
@@ -242,7 +250,7 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    },
+    }
   );
 };
 
@@ -305,9 +313,9 @@ export interface Implementation {
   [k: string]: unknown;
 }
 
-export interface ImplementationDialectCompliance {
+export interface ImplementationReport {
   implementation: Implementation;
-  dialectCompliance: Record<string, Partial<Totals>>;
+  dialectCompliance: Map<Dialect, Partial<Totals>>;
 }
 
 export interface Case {

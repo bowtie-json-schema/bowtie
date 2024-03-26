@@ -6,12 +6,12 @@ import Table from "react-bootstrap/Table";
 
 import { complianceBadgeFor } from "../../data/Badge";
 import Dialect from "../../data/Dialect";
-import { ImplementationDialectCompliance } from "../../data/parseReportData";
+import { ImplementationReport } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
-  implementationDialectCompliance: ImplementationDialectCompliance;
-}> = ({ implementationDialectCompliance }) => {
-  const { implementation, dialectCompliance } = implementationDialectCompliance;
+  implementationReport: ImplementationReport;
+}> = ({ implementationReport }) => {
+  const { implementation, dialectCompliance } = implementationReport;
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -47,7 +47,7 @@ const DialectCompliance: React.FC<{
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
                   +Dialect.withName(b[0]).firstPublicationDate -
-                    +Dialect.withName(a[0]).firstPublicationDate,
+                    +Dialect.withName(a[0]).firstPublicationDate
               )
               .map(([dialectName, result], index) => {
                 const dialect = Dialect.withName(dialectName);
@@ -62,7 +62,7 @@ const DialectCompliance: React.FC<{
                         <Image
                           src={complianceBadgeFor(
                             implementation,
-                            dialect,
+                            dialect
                           ).href()}
                           alt={dialect.prettyName}
                           className="float-end"
