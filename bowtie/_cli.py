@@ -768,8 +768,13 @@ def _set_dialect(ctx: click.Context, _, value: _Dialect):
     """
     if value:
         return value
-    dialect_from_schema = ctx.params.get('schema', {}).get('$schema')
-    return Dialect.from_str(dialect_from_schema) if dialect_from_schema else max(Dialect.known())
+    dialect_from_schema = ctx.params.get("schema", {}).get("$schema")
+    return (
+        Dialect.from_str(dialect_from_schema)
+        if dialect_from_schema
+        else max(Dialect.known())
+    )
+
 
 def _set_schema(dialect: Dialect) -> CaseTransform:
     """
