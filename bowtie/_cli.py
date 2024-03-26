@@ -717,10 +717,7 @@ class _Filter(click.ParamType):
 
 def _set_dialect(ctx: click.Context, _, value: _Dialect):
     """
-    Sets the dialect as follows:
-        1. if -D is not passed then use $schema
-        2. if both -D, $schema not present use latest dialect
-        2. else use passed value
+    Sets the dialect according to $schema if specified.
     """
     if value:
         return value
@@ -924,7 +921,7 @@ def run(
 @click.argument(
     "schema",
     type=click.File(mode="rb"),
-    callback=lambda _, __, value: json.load(value),
+    callback=lambda _, __, value: json.load(value), # type: ignore[reportUnknownLambdaType]
 )
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
