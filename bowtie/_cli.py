@@ -790,15 +790,17 @@ FAIL_FAST = click.option(
 )
 MAX_FAIL = click.option(
     "--max-fail",
+    metavar="COUNT",
     type=click.IntRange(min=1),
     callback=_disallow_fail_fast,
-    help="Fail immediately if N tests fail in total across implementations",
+    help="Fail immediately if x tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
     "--max-error",
+    metavar="COUNT",
     type=click.IntRange(min=1),
     callback=_disallow_fail_fast,
-    help="Fail immediately if N errors occur in total across implementations",
+    help="Fail immediately if x errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
