@@ -10,7 +10,7 @@ import {
   RunMetadata,
   ReportData,
   fromSerialized,
-  parseImplementationData,
+  prepareImplementationReport,
 } from "./parseReportData";
 
 function tag(image: string) {
@@ -131,7 +131,7 @@ describe("parseReportData", () => {
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
     const testCase = report.cases.get(1);
 
@@ -154,7 +154,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -195,13 +195,13 @@ describe("parseReportData", () => {
 
     const lines = bowtie(
       ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
 
     expect(report).toStrictEqual({
@@ -223,7 +223,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -292,67 +292,61 @@ describe("parseReportData", () => {
     });
   });
 
-  test("parses report with dialect compliances", () => {
+  test("prepares summarized implementation report using all dialect reports", () => {
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
-    const combinedData: Record<string, ReportData> = {};
+    const combinedData = new Map<Dialect, ReportData>();
 
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
         ["run", "-i", tag("envsonschema"), "-D", dialect.shortName],
-        cases.join("\n") + "\n",
+        cases.join("\n") + "\n"
       );
       const report = fromSerialized(lines);
-      combinedData[dialect.shortName] = report;
+      combinedData.set(dialect, report);
     }
 
-    const parsedImplementationData = parseImplementationData(combinedData);
-    const metadata =
-      parsedImplementationData[tag("envsonschema")].implementation;
+    const implementationReport = prepareImplementationReport(
+      combinedData,
+      tag("envsonschema")
+    );
+    const metadata = implementationReport!.implementation;
 
-    expect(parsedImplementationData).toStrictEqual({
-      [tag("envsonschema")]: {
-        implementation: {
-          name: "envsonschema",
-          language: "python",
-          homepage: metadata.homepage,
-          issues: metadata.issues,
-          source: metadata.source,
-          dialects: metadata.dialects,
-          links: metadata.links,
-        },
-        dialectCompliance: {
-          [Dialect.withName("draft2020-12").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-          [Dialect.withName("draft2019-09").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-          [Dialect.withName("draft7").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-          [Dialect.withName("draft6").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-          [Dialect.withName("draft4").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-          [Dialect.withName("draft3").shortName]: {
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-          },
-        },
+    expect(implementationReport).toStrictEqual({
+      implementation: {
+        name: "envsonschema",
+        language: "python",
+        homepage: metadata.homepage,
+        issues: metadata.issues,
+        source: metadata.source,
+        dialects: metadata.dialects,
+        links: metadata.links,
       },
+      dialectCompliance: new Map([
+        [
+          Dialect.withName("draft2020-12"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft2019-09"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft7"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft6"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft4"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft3"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+      ]),
     });
   });
 });
