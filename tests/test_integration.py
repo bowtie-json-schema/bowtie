@@ -2005,7 +2005,7 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
     )
     tmp_path.joinpath("instance.json").write_text("12")
 
-    _, stderr = await bowtie(
+    stdout, stderr = await bowtie(
         "validate",
         "-D",
         "7",
@@ -2014,7 +2014,9 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
+    dialect = _json.loads(stdout.split('\n')[0])['dialect']
 
+    assert dialect=="http://json-schema.org/draft-07/schema#"
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -2058,3 +2060,41 @@ async def test_run_boolean_schema(envsonschema, tmp_path):
 
     assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
     assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        '{"$schema": "https://json-schema.org/draft/2019-09/schema"}',
+    )
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+    dialect = _json.loads(stdout.split('\n')[0])['dialect']
+    assert dialect=="https://json-schema.org/draft/2019-09/schema", stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_specify_dialect(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        '{}',
+    )
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        "-D",
+        "2019",
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+    dialect = _json.loads(stdout.split('\n')[0])['dialect']
+    assert dialect=="https://json-schema.org/draft/2019-09/schema"
