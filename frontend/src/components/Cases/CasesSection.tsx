@@ -8,7 +8,6 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Dropdown from "react-bootstrap/Dropdown";
 import Form from "react-bootstrap/Form";
 
-
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
   const [filterCriteria, setFilterCriteria] = useState<string[]>([]);
