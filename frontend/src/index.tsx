@@ -1,22 +1,22 @@
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
-import { createRoot } from "react-dom/client";
-import ReportDataHandler from "./ReportDataHandler";
 import { createHashRouter, Params, RouterProvider } from "react-router-dom";
+import { createRoot } from "react-dom/client";
+
+import "./global.css";
+import Dialect from "./data/Dialect";
+import ReportDataHandler from "./ReportDataHandler";
 import ThemeContextProvider from "./context/ThemeContext";
-import { MainContainer } from "./MainContainer";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
-import Dialect from "./data/Dialect";
+import { MainContainer } from "./MainContainer";
 import { implementationMetadataURI } from "./data/Site";
 import {
-  Implementation,
-  parseImplementationData,
+  ImplementationData,
   ReportData,
+  implementationFromData,
+  parseImplementationData,
 } from "./data/parseReportData";
-import "./global.css";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
@@ -42,9 +42,14 @@ const fetchImplementationMetadata = async () => {
   const response = await fetch(implementationMetadataURI);
   const implementations = (await response.json()) as Record<
     string,
-    Implementation
+    ImplementationData
   >;
-  return implementations;
+  return Object.fromEntries(
+    Object.entries(implementations).map(([id, data]) => [
+      id,
+      implementationFromData(data),
+    ]),
+  );
 };
 
 const reportDataLoader = async ({ params }: { params: Params<string> }) => {

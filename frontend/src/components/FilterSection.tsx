@@ -1,5 +1,6 @@
 import "./FilterSection.css";
-import { Badge, Card } from "react-bootstrap";
+import Badge from "react-bootstrap/Badge";
+import Card from "react-bootstrap/Card";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";

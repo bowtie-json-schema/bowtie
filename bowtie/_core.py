@@ -6,6 +6,7 @@ from functools import cache
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeVar
+from uuid import uuid4
 import json
 
 from attrs import asdict, evolve, field, frozen, mutable
@@ -16,6 +17,7 @@ from referencing.jsonschema import (
     SchemaRegistry,
     specification_with,
 )
+from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
 
@@ -28,12 +30,11 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie.exceptions import ProtocolError
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
-        Awaitable,
         Callable,
         Iterable,
         Mapping,
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
 
     from referencing import Specification
     from referencing.jsonschema import SchemaResource
+    from rich.console import Console, ConsoleOptions, RenderResult
 
     from bowtie._commands import (
         AnyCaseResult,
@@ -149,11 +151,6 @@ class Dialect:
             },
         )
 
-    def supported_by_all(self, *implementations: Implementation):
-        return all(
-            implementation.supports(self) for implementation in implementations
-        )
-
 
 @frozen
 class NoSuchImplementation(Exception):
@@ -163,7 +160,7 @@ class NoSuchImplementation(Exception):
 
     name: str
 
-    def diagnostic(self):
+    def __rich__(self):
         return DiagnosticError(
             code="no-such-implementation",
             message=f"{self.name!r} is not a known Bowtie implementation.",
@@ -216,12 +213,11 @@ class StartupFailed(Exception):
     stderr: str = ""
     data: Any = None
 
-    def __str__(self) -> str:
-        if self.stderr:
-            return f"{self.name}'s stderr contained: {self.stderr}"
-        return self.name
-
-    def diagnostic(self):
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
         causes: list[str] = []
         if self.__cause__ is None:
             hint = (
@@ -231,6 +227,7 @@ class StartupFailed(Exception):
                 "local container setup (podman, docker, etc.)."
             )
         else:
+            errors = getattr(self.__cause__, "errors", [])
             hint = (
                 "The harness sent an invalid response for Bowtie's protocol. "
                 "Details for what was wrong are above. If you are developing "
@@ -238,14 +235,16 @@ class StartupFailed(Exception):
                 "if you are not, this is a bug in Bowtie's harness for this "
                 "implementation! File an issue on Bowtie's issue tracker."
             )
-            causes.extend(str(error) for error in self.__cause__.errors)  # type: ignore[reportUnknownArgumentType]
+            causes.extend(str(error) for error in errors)
 
-        return DiagnosticError(
+        yield DiagnosticError(
             code="startup-failed",
             message=f"{self.name!r} failed to start.",
             causes=causes,
             hint_stmt=hint,
         )
+        if self.stderr:
+            yield Panel(self.stderr, title="stderr")
 
 
 R = TypeVar("R")
@@ -549,16 +548,28 @@ class Implementation:
         """
         runner = await self.start_speaking(dialect)
 
-        for i, case in enumerate(cases, 1):
-            yield case, await SeqCase(seq=i, case=case).run(runner=runner)
+        for case in cases:
+            seq_case = SeqCase(seq=uuid4().hex, case=case)
+            yield case, await seq_case.run(runner=runner)
 
-    def start_speaking(self, dialect: Dialect) -> Awaitable[DialectRunner]:
-        return DialectRunner.for_dialect(
-            implementation=self.name,
-            dialect=dialect,
-            harness=self._harness,
-            reporter=self._reporter,
-        )
+    async def start_speaking(self, dialect: Dialect) -> DialectRunner:
+        if not self.supports(dialect):
+            raise UnsupportedDialect(implementation=self, dialect=dialect)
+        try:
+            return await DialectRunner.for_dialect(
+                implementation=self.name,
+                dialect=dialect,
+                harness=self._harness,
+                reporter=self._reporter,
+            )
+        except GotStderr as error:
+            # the implementation failed on the dialect request.
+            # there's likely no reason to continue, so we throw an exception
+            raise DialectError(
+                implementation=self,
+                dialect=dialect,
+                stderr=error.stderr,
+            ) from error
 
     async def smoke(
         self,

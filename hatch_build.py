@@ -1,5 +1,5 @@
 """
-Responsible for defining the custom build hook plugin class.
+Bowtie's Hatchling plugin, used for pregenerating implementation data.
 """
 
 from __future__ import annotations
@@ -28,7 +28,11 @@ class BowtieDataIncluder(BuildHookInterface):
         build_data: dict[str, Any],
     ) -> None:
         """
-        Grab our implementations by looking at the sibling directory.
+        Tell Hatchling to store data we'll need at runtime within the package.
+
+        Known implementations are calculated by listing the ``implementations``
+        sibling directory (present at build time, but won't be present at
+        install time).
         """
         path = Path(__file__).parent.joinpath("implementations")
         known = [d.name for d in path.iterdir() if not d.name.startswith(".")]
@@ -46,6 +50,6 @@ class BowtieDataIncluder(BuildHookInterface):
         artifact_path: str,
     ) -> None:
         """
-        Clean up our generated temporary file.
+        Clean up any generated temporary files.
         """
         self.known_implementations().unlink()

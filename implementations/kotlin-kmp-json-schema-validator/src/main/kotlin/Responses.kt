@@ -1,3 +1,4 @@
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -17,6 +18,9 @@ class Implementation(
     val homepage: String,
     val issues: String,
     val source: String,
+    val os: String,
+    @SerialName("os_version") val osVersion: String,
+    @SerialName("language_version") val languageVersion: String,
 )
 
 @Serializable

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'etc'
 require 'json'
 require 'json_schemer'
 
@@ -48,6 +49,9 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         ],
+        os: Etc.uname[:sysname],
+        os_version: Etc.uname[:release],
+        language_version: RUBY_VERSION,
       },
     }
   when 'dialect'

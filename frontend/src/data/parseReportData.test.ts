@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
-import { fromSerialized } from "./parseReportData";
+import { RunMetadata, fromSerialized } from "./parseReportData";
 
 function tag(image: string) {
   // Should match what's used in our `noxfile`, certainly until we handle image
@@ -59,27 +59,32 @@ describe("parseReportData", () => {
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runInfo.implementations[tag("envsonschema")];
+    const metadata = report.runMetadata.implementations.get(
+      tag("envsonschema"),
+    )!;
     const testCase = report.cases.get(1);
 
     expect(report).toStrictEqual({
-      runInfo: {
-        started: report.runInfo.started,
-        bowtie_version: report.runInfo.bowtie_version,
-        dialect: Dialect.withName("draft2020-12").uri,
-        implementations: {
-          [tag("envsonschema")]: {
-            name: "envsonschema",
-            language: "python",
-            dialects: metadata?.dialects,
-            homepage: metadata?.homepage,
-            issues: metadata?.issues,
-            source: metadata?.source,
-            links: metadata?.links,
-          },
-        },
-        metadata: {},
-      },
+      runMetadata: new RunMetadata(
+        Dialect.withName("draft2020-12"),
+        new Map([
+          [
+            tag("envsonschema"),
+            {
+              name: "envsonschema",
+              language: "python",
+              dialects: metadata.dialects,
+              homepage: metadata.homepage,
+              issues: metadata.issues,
+              source: metadata.source,
+              links: metadata.links,
+            },
+          ],
+        ]),
+        report.runMetadata.bowtieVersion,
+        report.runMetadata.started,
+        {},
+      ),
       implementationsResults: new Map([
         [
           tag("envsonschema"),
@@ -187,26 +192,31 @@ describe("parseReportData", () => {
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runInfo.implementations[tag("envsonschema")];
+    const metadata = report.runMetadata.implementations.get(
+      tag("envsonschema"),
+    )!;
 
     expect(report).toStrictEqual({
-      runInfo: {
-        started: report.runInfo.started,
-        bowtie_version: report.runInfo.bowtie_version,
-        dialect: Dialect.withName("draft7").uri,
-        implementations: {
-          [tag("envsonschema")]: {
-            name: "envsonschema",
-            language: "python",
-            dialects: metadata?.dialects,
-            homepage: metadata?.homepage,
-            issues: metadata?.issues,
-            source: metadata?.source,
-            links: metadata?.links,
-          },
-        },
-        metadata: {},
-      },
+      runMetadata: new RunMetadata(
+        Dialect.withName("draft7"),
+        new Map([
+          [
+            tag("envsonschema"),
+            {
+              name: "envsonschema",
+              language: "python",
+              dialects: metadata.dialects,
+              homepage: metadata.homepage,
+              issues: metadata.issues,
+              source: metadata.source,
+              links: metadata.links,
+            },
+          ],
+        ]),
+        report.runMetadata.bowtieVersion,
+        report.runMetadata.started,
+        {},
+      ),
       implementationsResults: new Map([
         [
           tag("envsonschema"),

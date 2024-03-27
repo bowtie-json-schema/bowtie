@@ -9,6 +9,8 @@ jsonschema = { version = "0.17", features = [ "draft201909", "draft202012" ] }
 serde = "1.0"
 serde_json = "1.0"
 url = "2.5.0"
+os_info = "3.8.2"
+rustc_version_runtime = "0.3.0"
 
 [build-dependencies]
 cargo-lock = "9.0"
