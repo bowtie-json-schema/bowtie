@@ -34,7 +34,7 @@ function CopyToClipboard({ textToCopy, style }: CopyProps) {
           </Tooltip>
         }
       >
-        <Button variant="dark" className={style} onClick={handleCopy}>
+        <Button variant="secondary" className={style} onClick={handleCopy}>
           {copied ? <Check /> : <Copy />}
         </Button>
       </OverlayTrigger>

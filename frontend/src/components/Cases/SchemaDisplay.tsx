@@ -1,6 +1,9 @@
+import { useContext } from "react";
 import CopyToClipboard from "../CopyToClipboard";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { prism } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const SchemaDisplay = ({
   schema,
@@ -9,6 +12,7 @@ const SchemaDisplay = ({
   instance: unknown;
   schema: Record<string, unknown> | boolean;
 }) => {
+  const { isDarkMode } = useContext(ThemeContext);
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
@@ -26,7 +30,10 @@ const SchemaDisplay = ({
               textToCopy={schemaFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter language="javascript" style={atomDark}>
+            <SyntaxHighlighter
+              language="javascript"
+              style={isDarkMode ? atomDark : prism}
+            >
               {schemaFormatted}
             </SyntaxHighlighter>
           </div>
@@ -43,7 +50,10 @@ const SchemaDisplay = ({
               textToCopy={instanceFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter language="javascript" style={atomDark}>
+            <SyntaxHighlighter
+              language="javascript"
+              style={isDarkMode ? atomDark : prism}
+            >
               {instanceFormatted}
             </SyntaxHighlighter>
           </div>
