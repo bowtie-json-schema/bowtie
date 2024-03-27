@@ -6,7 +6,12 @@ import { tmpdir } from "node:os";
 import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
-import { RunMetadata, fromSerialized } from "./parseReportData";
+import {
+  RunMetadata,
+  ReportData,
+  fromSerialized,
+  prepareImplementationReport,
+} from "./parseReportData";
 
 function tag(image: string) {
   // Should match what's used in our `noxfile`, certainly until we handle image
@@ -39,6 +44,72 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
   return result.stdout.toString();
 }
 
+const testCases = {
+  case1: {
+    description: "case1",
+    schema: {
+      additionalProperties: { type: "boolean" },
+      properties: { bar: {}, foo: {} },
+    },
+    tests: [
+      {
+        description: "one",
+        instance: { foo: 1 },
+        valid: true,
+      },
+      {
+        description: "two",
+        instance: { foo: 1, bar: 2, quux: true },
+        valid: true,
+      },
+      {
+        description: "three",
+        instance: { foo: 1, bar: 2, quux: 12 },
+        valid: false,
+      },
+    ],
+  },
+  case2: {
+    description: "case2",
+    schema: {
+      additionalProperties: { type: "boolean" },
+    },
+    tests: [
+      {
+        description: "one",
+        instance: { foo: true },
+        valid: true,
+      },
+      {
+        description: "two",
+        instance: { foo: 1 },
+        valid: false,
+      },
+    ],
+  },
+  case3: {
+    description: "case3",
+    schema: {
+      allOf: [
+        { $ref: "https://example.com/schema-with-anchor#foo" },
+        { then: { $id: "http://example.com/ref/then", type: "integer" } },
+      ],
+    },
+    tests: [
+      {
+        description: "one",
+        instance: "foo",
+        valid: false,
+      },
+      {
+        description: "two",
+        instance: 12,
+        valid: true,
+      },
+    ],
+  },
+};
+
 describe("parseReportData", () => {
   test("parses reports", async () => {
     let lines: string;
@@ -60,7 +131,7 @@ describe("parseReportData", () => {
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
     const testCase = report.cases.get(1);
 
@@ -78,12 +149,13 @@ describe("parseReportData", () => {
               issues: metadata.issues,
               source: metadata.source,
               links: metadata.links,
+              results: metadata.results,
             },
           ],
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -120,80 +192,17 @@ describe("parseReportData", () => {
   });
 
   test("parses reports with multiple test cases", () => {
-    const case1 = {
-      description: "case1",
-      schema: {
-        additionalProperties: { type: "boolean" },
-        properties: { bar: {}, foo: {} },
-      },
-      tests: [
-        {
-          description: "one",
-          instance: { foo: 1 },
-          valid: true,
-        },
-        {
-          description: "two",
-          instance: { foo: 1, bar: 2, quux: true },
-          valid: true,
-        },
-        {
-          description: "three",
-          instance: { foo: 1, bar: 2, quux: 12 },
-          valid: false,
-        },
-      ],
-    };
-    const case2 = {
-      description: "case2",
-      schema: {
-        additionalProperties: { type: "boolean" },
-      },
-      tests: [
-        {
-          description: "one",
-          instance: { foo: true },
-          valid: true,
-        },
-        {
-          description: "two",
-          instance: { foo: 1 },
-          valid: false,
-        },
-      ],
-    };
-    const case3 = {
-      description: "case3",
-      schema: {
-        allOf: [
-          { $ref: "https://example.com/schema-with-anchor#foo" },
-          { then: { $id: "http://example.com/ref/then", type: "integer" } },
-        ],
-      },
-      tests: [
-        {
-          description: "one",
-          instance: "foo",
-          valid: false,
-        },
-        {
-          description: "two",
-          instance: 12,
-          valid: true,
-        },
-      ],
-    };
-    const cases = [case1, case2, case3].map((each) => JSON.stringify(each));
+    const cases = Object.values(testCases).map((each) => JSON.stringify(each));
 
     const lines = bowtie(
       ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
 
     expect(report).toStrictEqual({
@@ -210,12 +219,13 @@ describe("parseReportData", () => {
               issues: metadata.issues,
               source: metadata.source,
               links: metadata.links,
+              results: metadata.results,
             },
           ],
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -258,29 +268,88 @@ describe("parseReportData", () => {
         [
           1,
           {
-            description: case1.description,
-            schema: case1.schema,
-            tests: case1.tests,
+            description: testCases.case1.description,
+            schema: testCases.case1.schema,
+            tests: testCases.case1.tests,
           },
         ],
         [
           2,
           {
-            description: case2.description,
-            schema: case2.schema,
-            tests: case2.tests,
+            description: testCases.case2.description,
+            schema: testCases.case2.schema,
+            tests: testCases.case2.tests,
           },
         ],
         [
           3,
           {
-            description: case3.description,
-            schema: case3.schema,
-            tests: case3.tests,
+            description: testCases.case3.description,
+            schema: testCases.case3.schema,
+            tests: testCases.case3.tests,
           },
         ],
       ]),
       didFailFast: false,
+    });
+  });
+
+  test("prepares a summarized implementation report using all the dialect reports", () => {
+    const cases = Object.values(testCases).map((each) => JSON.stringify(each));
+    const allReportsData = new Map<Dialect, ReportData>();
+
+    for (const dialect of Dialect.known()) {
+      const lines = bowtie(
+        ["run", "-i", tag("envsonschema"), "-D", dialect.shortName],
+        cases.join("\n") + "\n"
+      );
+      const report = fromSerialized(lines);
+      allReportsData.set(dialect, report);
+    }
+
+    const implementationReport = prepareImplementationReport(
+      allReportsData,
+      tag("envsonschema")
+    );
+
+    const metadata = implementationReport!.implementation;
+
+    expect(implementationReport).toStrictEqual({
+      implementation: {
+        name: "envsonschema",
+        language: "python",
+        homepage: metadata.homepage,
+        issues: metadata.issues,
+        source: metadata.source,
+        dialects: metadata.dialects,
+        links: metadata.links,
+      },
+      dialectCompliance: new Map([
+        [
+          Dialect.withName("draft2020-12"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft2019-09"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft7"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft6"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft4"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+        [
+          Dialect.withName("draft3"),
+          { erroredTests: 0, skippedTests: 0, failedTests: 4 },
+        ],
+      ]),
     });
   });
 });
