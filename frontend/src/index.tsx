@@ -15,7 +15,7 @@ import {
   ImplementationData,
   ReportData,
   implementationFromData,
-  parseImplementationData,
+  prepareImplementationReport,
 } from "./data/parseReportData";
 
 const fetchReportData = async (dialect: Dialect) => {
@@ -23,19 +23,17 @@ const fetchReportData = async (dialect: Dialect) => {
   return dialect.fetchReport();
 };
 
-const fetchAllReportData = async (langImplementation: string) => {
+const fetchAllReportsData = async (langImplementation: string) => {
   document.title = `Bowtie - ${langImplementation}`;
-  const loaderData: Record<string, ReportData> = {};
+  const allReportsData = new Map<Dialect, ReportData>();
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect
-        .fetchReport()
-        .then((data) => (loaderData[dialect.shortName] = data)),
+      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
     );
   }
   await Promise.all(promises);
-  return parseImplementationData(loaderData);
+  return prepareImplementationReport(allReportsData, langImplementation);
 };
 
 const fetchImplementationMetadata = async () => {
@@ -85,7 +83,7 @@ const router = createHashRouter([
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
         loader: async ({ params }) =>
-          fetchAllReportData(params.langImplementation!),
+          fetchAllReportsData(params.langImplementation!),
       },
     ],
   },

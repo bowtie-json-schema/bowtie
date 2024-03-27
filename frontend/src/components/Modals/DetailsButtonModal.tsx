@@ -22,7 +22,7 @@ export const DetailsButtonModal = ({
   implementation: Implementation;
 }) => {
   const failedResults: JSX.Element[] = [];
-  Array.from(implementationResults.cases.entries()).forEach(
+  Array.from(implementationResults.caseResults.entries()).forEach(
     ([seq, results]) => {
       const caseData = cases.get(seq)!;
       for (let i = 0; i < results.length; i++) {
@@ -33,7 +33,7 @@ export const DetailsButtonModal = ({
 
         let message;
         if (result.state === "skipped" || result.state === "errored") {
-          message = implementationResults.cases.get(seq)![i].message!;
+          message = implementationResults.caseResults.get(seq)![i].message!;
         } else if (result.valid) {
           message = "Unexpectedly valid";
         } else {

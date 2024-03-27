@@ -12,19 +12,21 @@ import { ThemeContext } from "../../context/ThemeContext";
 
 const ImplementationRow = ({
   cases,
-  implementationResults,
+  id,
   implementation,
+  implementationResults,
 }: {
   cases: Map<number, Case>;
-  implementationResults: ImplementationResults;
+  id: string;
   implementation: Implementation;
+  implementationResults: ImplementationResults;
   key: number;
   index: number;
 }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
-  const implementationPath = getImplementationPath(implementationResults);
+  const implementationPath = getImplementationPath(id);
 
   return (
     <tr>
@@ -51,27 +53,28 @@ const ImplementationRow = ({
       </td>
 
       <td className="text-center align-middle">
-        {implementationResults.erroredCases}
+        {implementationResults.totals.erroredCases}
       </td>
       <td className="text-center align-middle">
-        {implementationResults.skippedTests}
+        {implementationResults.totals.skippedTests}
       </td>
       <td className="text-center align-middle details-required">
-        {implementationResults.failedTests + implementationResults.erroredTests}
+        {implementationResults.totals.failedTests! +
+          implementationResults.totals.erroredTests!}
         <div className="hover-details text-center">
           <p>
-            <b>failed</b>: &nbsp;{implementationResults.failedTests}
+            <b>failed</b>: &nbsp;{implementationResults.totals.failedTests}
           </p>
           <p>
-            <b>errored</b>: &nbsp;{implementationResults.erroredTests}
+            <b>errored</b>: &nbsp;{implementationResults.totals.erroredTests}
           </p>
         </div>
       </td>
 
       <td className="align-middle p-0">
-        {implementationResults.failedTests +
-          implementationResults.erroredTests +
-          implementationResults.skippedTests >
+        {implementationResults.totals.failedTests! +
+          implementationResults.totals.erroredTests! +
+          implementationResults.totals.skippedTests! >
           0 && (
           <button
             type="button"
@@ -93,8 +96,8 @@ const ImplementationRow = ({
   );
 };
 
-const getImplementationPath = (implResult: ImplementationResults) => {
-  const pathSegment = implResult.id.split("/");
+const getImplementationPath = (id: string) => {
+  const pathSegment = id.split("/");
   return pathSegment[pathSegment.length - 1];
 };
 
