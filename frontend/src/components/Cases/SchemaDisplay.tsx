@@ -26,7 +26,7 @@ const SchemaDisplay = ({
               textToCopy={schemaFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter language="javascript" style={atomDark}>
+            <SyntaxHighlighter language="json" style={atomDark}>
               {schemaFormatted}
             </SyntaxHighlighter>
           </div>
@@ -43,7 +43,7 @@ const SchemaDisplay = ({
               textToCopy={instanceFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter language="javascript" style={atomDark}>
+            <SyntaxHighlighter language="json" style={atomDark}>
               {instanceFormatted}
             </SyntaxHighlighter>
           </div>
