@@ -1,14 +1,13 @@
 import { ChangeEvent, useMemo, useState } from "react";
 import { ReportData, CaseResult } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
-import {
-  Accordion,
-  Row,
-  Col,
-  Form,
-  Dropdown,
-  ButtonGroup,
-} from "react-bootstrap";
+import Accordion from "react-bootstrap/Accordion";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Dropdown from "react-bootstrap/Dropdown";
+import Form from "react-bootstrap/Form";
+
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
@@ -52,7 +51,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
     reportData.implementationsResults.values(),
   );
   const implementations = implementationsResults.map(
-    (implResult) => reportData.runInfo.implementations[implResult.id],
+    (implResult) => reportData.runMetadata.implementations.get(implResult.id)!,
   );
 
   return (
