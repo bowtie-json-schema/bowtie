@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Container from "react-bootstrap/Container";
-import DropdownButton from "react-bootstrap/DropdownButton";
 import Image from "react-bootstrap/Image";
 import ListGroup from "react-bootstrap/ListGroup";
 import Stack from "react-bootstrap/Stack";
@@ -8,6 +7,7 @@ import Stack from "react-bootstrap/Stack";
 import CopyToClipboard from "../CopyToClipboard";
 import { Implementation } from "../../data/parseReportData";
 import { Badge, badgesFor } from "../../data/Badge";
+import { Button, Modal } from "react-bootstrap";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
@@ -16,90 +16,106 @@ const EmbedBadges: React.FC<{
 
   const [activeFormat, setActiveFormat] = useState(supportedFormats[1]);
   const [activeBadge, setActiveBadge] = useState(allBadges.Metadata[0]);
-
+  const [show, setShow] = useState(false);
   const badgeEmbed = activeFormat.generateEmbed(activeBadge);
 
   return (
-    <DropdownButton title="Badges" size="sm" align="end" variant="info">
-      <Container className="p-5">
-        <h5 className="pb-1">Badges</h5>
+    <>
+      <Button variant="info" size="sm" onClick={() => setShow(true)}>
+        Badges
+      </Button>
+      <Modal
+        size="xl"
+        fullscreen="lg-down"
+        show={show}
+        onHide={() => setShow(false)}
+      >
+        <Modal.Header closeButton className="border-0 p-0 px-4 px-md-5 pt-5">
+          <Modal.Title className="fs-5">Badges</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Container className="p-0 pb-1 p-lg-5 pt-lg-0 content-center">
+            <Stack
+              className="pb-3 gap-0 gap-sm-2 gap-lg-5"
+              direction="horizontal"
+            >
+              <ListGroup variant="flush">
+                {Object.entries(allBadges).map(([category, badges]) => (
+                  <ListGroup.Item key={category}>
+                    <h6>{category}</h6>
+                    <ListGroup variant="flush">
+                      {badges.map((badge) => (
+                        <ListGroup.Item
+                          key={badge.name}
+                          action
+                          // FIXME: wut? badge === activeBadge is false, at
+                          //        least because badge.uri !== activeBadge.uri
+                          //        URI.js has a .equal method
+                          active={badge.name === activeBadge.name}
+                          onClick={() => setActiveBadge(badge)}
+                        >
+                          {badge.name}
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
 
-        <Stack className="pb-3" direction="horizontal" gap={5}>
-          <ListGroup variant="flush">
-            {Object.entries(allBadges).map(([category, badges]) => (
-              <ListGroup.Item key={category}>
-                <h6>{category}</h6>
+              <div className="overflow-scroll min-vw-50">
+                <div className="pb-3">
+                  <p>
+                    Bowtie regularly rebuilds a number of badges for{" "}
+                    {implementation.name}.
+                  </p>
+                  <p className="d-none d-md-block">
+                    If you are a maintainer, you may be interested in embedding
+                    one or more of them in your documentation to show off! Here
+                    are embeddable snippets for whatever documentation language
+                    you are likely to be using. The badge will automatically
+                    update as Bowtie re-runs its report, so no manual updating
+                    should be necessary.
+                  </p>
+                </div>
+
+                <hr className="mx-3 mx-sm-5 py-3" />
+
+                <div className="font-monospace text-bg-dark mx-xl-5 p-xl-5 d-flex">
+                  <pre className="py-5">{badgeEmbed}</pre>
+                  <span>
+                    <CopyToClipboard textToCopy={badgeEmbed} />
+                  </span>
+                </div>
+
+                <Image
+                  alt={activeBadge.name}
+                  src={activeBadge.uri.href()}
+                  className="d-block mx-auto my-5"
+                />
+              </div>
+
+              <div className="vr my-5"></div>
+
+              <div>
+                <h5 className="ps-1">Format</h5>
                 <ListGroup variant="flush">
-                  {badges.map((badge) => (
+                  {supportedFormats.map((format) => (
                     <ListGroup.Item
-                      key={badge.name}
                       action
-                      // FIXME: wut? badge === activeBadge is false, at
-                      //        least because badge.uri !== activeBadge.uri
-                      //        URI.js has a .equal method
-                      active={badge.name === activeBadge.name}
-                      onClick={() => setActiveBadge(badge)}
+                      active={activeFormat === format}
+                      onClick={() => setActiveFormat(format)}
+                      key={format.name}
                     >
-                      {badge.name}
+                      {format.name}
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-
-          <div className="overflow-scroll">
-            <div className="pb-3">
-              <p>
-                Bowtie regularly rebuilds a number of badges for{" "}
-                {implementation.name}.
-              </p>
-              <p>
-                If you are a maintainer, you may be interested in embedding one
-                or more of them in your documentation to show off! Here are
-                embeddable snippets for whatever documentation language you are
-                likely to be using. The badge will automatically update as
-                Bowtie re-runs its report, so no manual updating should be
-                necessary.
-              </p>
-            </div>
-
-            <hr className="mx-5 py-3" />
-
-            <div className="font-monospace text-bg-dark mx-5 p-5 d-flex">
-              <pre className="py-5">{badgeEmbed}</pre>
-              <span>
-                <CopyToClipboard textToCopy={badgeEmbed} />
-              </span>
-            </div>
-
-            <Image
-              alt={activeBadge.name}
-              src={activeBadge.uri.href()}
-              className="d-block mx-auto my-5"
-            />
-          </div>
-
-          <div className="vr my-5"></div>
-
-          <div>
-            <h5 className="ps-1">Format</h5>
-            <ListGroup variant="flush">
-              {supportedFormats.map((format) => (
-                <ListGroup.Item
-                  action
-                  active={activeFormat === format}
-                  onClick={() => setActiveFormat(format)}
-                  key={format.name}
-                >
-                  {format.name}
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </div>
-        </Stack>
-      </Container>
-    </DropdownButton>
+              </div>
+            </Stack>
+          </Container>
+        </Modal.Body>
+      </Modal>
+    </>
   );
 };
 
