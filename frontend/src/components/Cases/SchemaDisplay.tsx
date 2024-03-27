@@ -1,8 +1,6 @@
 import CopyToClipboard from "../CopyToClipboard";
-
-const schemaStyle = {
-  maxHeight: "30em",
-};
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const SchemaDisplay = ({
   schema,
@@ -21,14 +19,16 @@ const SchemaDisplay = ({
             <small className="font-monospace text-body-secondary text-uppercase">
               Schema
             </small>
-            <div className="d-flex ms-auto">
-              <CopyToClipboard textToCopy={schemaFormatted} />
-            </div>
+            <div className="d-flex ms-auto"></div>
           </div>
-          <div className="card-body">
-            <pre id="schema-code" style={schemaStyle}>
+          <div className="card-body position-relative">
+            <CopyToClipboard
+              textToCopy={schemaFormatted}
+              style="position-absolute top-0 end-0 mt-4 me-3"
+            />
+            <SyntaxHighlighter language="javascript" style={atomDark}>
               {schemaFormatted}
-            </pre>
+            </SyntaxHighlighter>
           </div>
         </div>
         <div className="col-md-4 col-6 border-start px-0">
@@ -36,14 +36,16 @@ const SchemaDisplay = ({
             <small className="font-monospace text-body-secondary text-uppercase pe-4">
               Instance
             </small>
-            <div className="d-flex ms-auto">
-              <CopyToClipboard textToCopy={instanceFormatted} />
-            </div>
+            <div className="d-flex ms-auto"></div>
           </div>
-          <div id="instance-info" className="card-body">
-            <pre id="schema-code" style={schemaStyle}>
+          <div id="instance-info" className="card-body position-relative">
+            <CopyToClipboard
+              textToCopy={instanceFormatted}
+              style="position-absolute top-0 end-0 mt-4 me-3"
+            />
+            <SyntaxHighlighter language="javascript" style={atomDark}>
               {instanceFormatted}
-            </pre>
+            </SyntaxHighlighter>
           </div>
         </div>
       </div>
