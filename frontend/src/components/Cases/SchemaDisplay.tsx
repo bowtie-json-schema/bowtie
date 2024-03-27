@@ -31,7 +31,7 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
             <SyntaxHighlighter
-              language="javascript"
+              language="json"
               style={isDarkMode ? atomDark : prism}
             >
               {schemaFormatted}
@@ -51,7 +51,7 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
             <SyntaxHighlighter
-              language="javascript"
+              language="json"
               style={isDarkMode ? atomDark : prism}
             >
               {instanceFormatted}
