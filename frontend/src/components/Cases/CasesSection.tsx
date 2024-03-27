@@ -7,9 +7,9 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const implementationsResults = Array.from(
     reportData.implementationsResults.values(),
   );
-  const implementations = implementationsResults.map(
-    (implResult) => reportData.runMetadata.implementations.get(implResult.id)!,
-  );
+  const implementations = Array.from(
+    reportData.implementationsResults.keys(),
+  ).map((id) => reportData.runMetadata.implementations.get(id)!);
 
   return (
     <Accordion id="cases">

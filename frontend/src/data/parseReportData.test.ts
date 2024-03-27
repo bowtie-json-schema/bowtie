@@ -89,13 +89,13 @@ describe("parseReportData", () => {
         [
           tag("envsonschema"),
           {
-            erroredCases: 0,
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 1,
-
-            id: tag("envsonschema"),
-            cases: new Map([[1, [{ state: "failed", valid: false }]]]),
+            totals: {
+              erroredCases: 0,
+              erroredTests: 0,
+              skippedTests: 0,
+              failedTests: 1,
+            },
+            caseResults: new Map([[1, [{ state: "failed", valid: false }]]]),
           },
         ],
       ]),
@@ -221,13 +221,13 @@ describe("parseReportData", () => {
         [
           tag("envsonschema"),
           {
-            erroredCases: 0,
-            erroredTests: 0,
-            skippedTests: 0,
-            failedTests: 4,
-
-            id: tag("envsonschema"),
-            cases: new Map([
+            totals: {
+              erroredCases: 0,
+              erroredTests: 0,
+              skippedTests: 0,
+              failedTests: 4,
+            },
+            caseResults: new Map([
               [
                 1,
                 [

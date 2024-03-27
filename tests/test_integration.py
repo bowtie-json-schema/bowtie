@@ -865,6 +865,25 @@ async def test_fail_fast(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_fail_fast_many_tests_at_once(envsonschema):
+    async with run("-i", envsonschema, "-x") as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": false}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.VALID},
+        {tag("envsonschema"): TestResult.VALID},
+    ], stderr
+    assert stderr != ""
+
+
+@pytest.mark.asyncio
 async def test_max_fail(envsonschema):
     async with run("-i", envsonschema, "--max-fail", "2") as send:
         results, stderr = await send(

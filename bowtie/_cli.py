@@ -790,15 +790,17 @@ FAIL_FAST = click.option(
 )
 MAX_FAIL = click.option(
     "--max-fail",
+    metavar="COUNT",
     type=click.IntRange(min=1),
     callback=_disallow_fail_fast,
-    help="Fail immediately if N tests fail in total across implementations",
+    help="Fail immediately if x tests fail in total across implementations",
 )
 MAX_ERROR = click.option(
     "--max-error",
+    metavar="COUNT",
     type=click.IntRange(min=1),
     callback=_disallow_fail_fast,
-    help="Fail immediately if N errors occur in total across implementations",
+    help="Fail immediately if x errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
@@ -1296,13 +1298,16 @@ async def _run(
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail
-                    and unsucessful.failed == max_fail
-                    or (max_error and unsucessful.errored == max_error)
+                    and unsucessful.failed >= max_fail
+                    or (max_error and unsucessful.errored >= max_error)
                 ):
                     should_stop = True
 
             if should_stop:
-                reporter.failed_fast(seq_case=seq_case)
+                STDERR.print(
+                    "[bold yellow]Stopping -- the maximum number of "
+                    "unsuccessful tests was reached![/]",
+                )
                 break
         reporter.finished(did_fail_fast=should_stop)
         if count == 0:

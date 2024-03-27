@@ -71,12 +71,13 @@ export const parseReportData = (
   const implementationsResultsMap = new Map<string, ImplementationResults>();
   for (const id of runMetadata.implementations.keys()) {
     implementationsResultsMap.set(id, {
-      id,
-      cases: new Map(),
-      erroredCases: 0,
-      skippedTests: 0,
-      failedTests: 0,
-      erroredTests: 0,
+      caseResults: new Map(),
+      totals: {
+        erroredCases: 0,
+        skippedTests: 0,
+        failedTests: 0,
+        erroredTests: 0,
+      },
     });
   }
 
@@ -94,9 +95,9 @@ export const parseReportData = (
         const context = line.context as Record<string, unknown>;
         const errorMessage: string = (context?.message ??
           context?.stderr) as string;
-        implementationResults.erroredCases++;
-        implementationResults.erroredTests += caseData.tests.length;
-        implementationResults.cases.set(
+        implementationResults.totals.erroredCases!++;
+        implementationResults.totals.erroredTests! += caseData.tests.length;
+        implementationResults.caseResults.set(
           line.seq as number,
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
@@ -104,8 +105,8 @@ export const parseReportData = (
           }),
         );
       } else if (line.skipped) {
-        implementationResults.skippedTests += caseData.tests.length;
-        implementationResults.cases.set(
+        implementationResults.totals.skippedTests! += caseData.tests.length;
+        implementationResults.caseResults.set(
           line.seq as number,
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
@@ -119,13 +120,13 @@ export const parseReportData = (
           if (res.errored) {
             const context = res.context as Record<string, unknown>;
             const errorMessage = context?.message ?? context?.stderr;
-            implementationResults.erroredTests++;
+            implementationResults.totals.erroredTests!++;
             return {
               state: "errored",
               message: errorMessage as string | undefined,
             };
           } else if (res.skipped) {
-            implementationResults.skippedTests++;
+            implementationResults.totals.skippedTests!++;
             return {
               state: "skipped",
               message: res.message as string | undefined,
@@ -138,7 +139,7 @@ export const parseReportData = (
                 valid: res.valid as boolean | undefined,
               };
             } else {
-              implementationResults.failedTests++;
+              implementationResults.totals.failedTests!++;
               return {
                 state: "failed",
                 valid: res.valid as boolean | undefined,
@@ -146,7 +147,7 @@ export const parseReportData = (
             }
           }
         });
-        implementationResults.cases.set(line.seq as number, caseResults);
+        implementationResults.caseResults.set(line.seq as number, caseResults);
       } else if (line.did_fail_fast !== undefined) {
         didFailFast = line.did_fail_fast as boolean;
       }
@@ -213,9 +214,9 @@ const calculateImplementationTotal = (
 
   Array.from(implementationsResults.entries()).forEach(([key, value]) => {
     implementationResult[key] = {
-      erroredTests: value.erroredTests,
-      skippedTests: value.skippedTests,
-      failedTests: value.failedTests,
+      erroredTests: value.totals.erroredTests,
+      skippedTests: value.totals.skippedTests,
+      failedTests: value.totals.failedTests,
     };
   });
 
@@ -230,10 +231,10 @@ export const calculateTotals = (data: ReportData): Totals => {
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
       totalTests,
-      erroredCases: prev.erroredCases + curr.erroredCases,
-      skippedTests: prev.skippedTests + curr.skippedTests,
-      failedTests: prev.failedTests + curr.failedTests,
-      erroredTests: prev.erroredTests + curr.erroredTests,
+      erroredCases: prev.erroredCases + curr.totals.erroredCases!,
+      skippedTests: prev.skippedTests + curr.totals.skippedTests!,
+      failedTests: prev.failedTests + curr.totals.failedTests!,
+      erroredTests: prev.erroredTests + curr.totals.erroredTests!,
     }),
     {
       totalTests: totalTests,
@@ -273,12 +274,8 @@ export interface ReportData {
 }
 
 export interface ImplementationResults {
-  id: string;
-  cases: Map<number, CaseResult[]>;
-  erroredCases: number;
-  skippedTests: number;
-  failedTests: number;
-  erroredTests: number;
+  caseResults: Map<number, CaseResult[]>;
+  totals: Partial<Totals>;
 }
 
 export interface CaseResult {

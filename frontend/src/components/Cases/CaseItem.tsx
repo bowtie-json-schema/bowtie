@@ -84,7 +84,7 @@ const CaseContent = ({
                   <p className="m-0">{test.description}</p>
                 </td>
                 {implementationsResults.map((implResult, i) => {
-                  const caseResults = implResult.cases.get(seq);
+                  const caseResults = implResult.caseResults.get(seq);
                   const result: CaseResult =
                     caseResults !== undefined
                       ? caseResults[index]
