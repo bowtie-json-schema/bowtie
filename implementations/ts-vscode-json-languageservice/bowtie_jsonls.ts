@@ -86,20 +86,20 @@ const cmds = {
             "example://bowtie-test.json",
             "json",
             0,
-            JSON.stringify(test.instance)
+            JSON.stringify(test.instance),
           );
           const jsonDoc = ls.parseJSONDocument(textDoc);
           const semanticErrors = await ls.doValidation(
             textDoc,
             jsonDoc,
             { schemaDraft: dialect },
-            testCase.schema
+            testCase.schema,
           );
           return { valid: semanticErrors.length === 0 ? true : false };
         } catch (error) {
           return { errored: true, context: { message: error.message } };
         }
-      })
+      }),
     );
     return { seq: args.seq, results: results };
   },
