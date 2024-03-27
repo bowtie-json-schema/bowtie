@@ -175,52 +175,60 @@ export const implementationFromData = (
     dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
   }) as Implementation;
 
-export const parseImplementationData = (
-  loaderData: Record<string, ReportData>,
+/**
+ * Prepare a summarized implementation report for the
+ * passed implementation using all the dialect reports data
+ * that was fetched.
+ */
+export const prepareImplementationReport = (
+  allReportsData: Map<Dialect, ReportData>,
+  langImplementation: string,
 ) => {
-  const allImplementations: Record<string, ImplementationDialectCompliance> =
-    {};
-  const dialectCompliance: Record<string, Record<string, Partial<Totals>>> = {};
+  let implementationReport: ImplementationReport | null = null;
+  const dialectCompliance = new Map<Dialect, Partial<Totals>>();
+
+  // FIXME: This magic prefix is duplicated from the backend side,
+  //        and probably we can separate handling this in Implementation
+  //        class (when we have it).
+  const image = `ghcr.io/bowtie-json-schema/${langImplementation}`;
 
   for (const [
     dialect,
     { implementationsResults, runMetadata },
-  ] of Object.entries(loaderData)) {
-    dialectCompliance[dialect] = calculateImplementationTotal(
-      implementationsResults,
-    );
+  ] of allReportsData.entries()) {
+    const implementationResults = implementationsResults.get(image);
 
-    for (const [id, implementation] of runMetadata.implementations.entries()) {
-      if (!allImplementations[id]) {
-        allImplementations[id] = {
+    if (implementationResults) {
+      dialectCompliance.set(dialect, {
+        erroredTests: implementationResults.totals.erroredTests,
+        skippedTests: implementationResults.totals.skippedTests,
+        failedTests: implementationResults.totals.failedTests,
+      });
+
+      const implementation = runMetadata.implementations.get(image)!;
+
+      if (!implementationReport) {
+        implementationReport = {
           implementation,
-          dialectCompliance: {},
+          dialectCompliance,
         };
-      }
-      if (dialectCompliance[dialect][id]) {
-        allImplementations[id].dialectCompliance[dialect] =
-          dialectCompliance[dialect][id];
+      } else {
+        implementationReport = {
+          implementation: Object.assign(
+            {},
+            implementationReport.implementation,
+            implementation,
+          ),
+          dialectCompliance: new Map([
+            ...implementationReport.dialectCompliance,
+            ...dialectCompliance,
+          ]),
+        };
       }
     }
   }
 
-  return allImplementations;
-};
-
-const calculateImplementationTotal = (
-  implementationsResults: Map<string, ImplementationResults>,
-) => {
-  const implementationResult: Record<string, Partial<Totals>> = {};
-
-  Array.from(implementationsResults.entries()).forEach(([key, value]) => {
-    implementationResult[key] = {
-      erroredTests: value.totals.erroredTests,
-      skippedTests: value.totals.skippedTests,
-      failedTests: value.totals.failedTests,
-    };
-  });
-
-  return implementationResult;
+  return implementationReport;
 };
 
 export const calculateTotals = (data: ReportData): Totals => {
@@ -305,9 +313,9 @@ export interface Implementation {
   [k: string]: unknown;
 }
 
-export interface ImplementationDialectCompliance {
+export interface ImplementationReport {
   implementation: Implementation;
-  dialectCompliance: Record<string, Partial<Totals>>;
+  dialectCompliance: Map<Dialect, Partial<Totals>>;
 }
 
 export interface Case {
