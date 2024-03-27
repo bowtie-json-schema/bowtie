@@ -1,5 +1,4 @@
 import Accordion from "react-bootstrap/Accordion";
-
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import {
@@ -22,6 +21,7 @@ import {
 } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
+
 interface CaseProps {
   seq: number;
   caseData: Case;
@@ -30,6 +30,7 @@ interface CaseProps {
   implementations: Implementation[];
   implementationsResults: ImplementationResults[];
 }
+
 
 const CaseContent = ({
   seq,
@@ -42,6 +43,7 @@ const CaseContent = ({
     caseData.tests[0].instance,
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
+
 
   return (
     <>
@@ -89,7 +91,7 @@ const CaseContent = ({
                   <p className="m-0">{test.description}</p>
                 </td>
                 {implementationsResults.map((implResult, i) => {
-                  const caseResults = implResult.cases.get(seq);
+                  const caseResults = implResult.caseResults.get(seq);
                   const result: CaseResult =
                     caseResults !== undefined
                       ? caseResults[index]
@@ -105,6 +107,7 @@ const CaseContent = ({
   );
 };
 
+
 const CaseItem = ({
   seq,
   caseData,
@@ -117,6 +120,7 @@ const CaseItem = ({
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useContext(ThemeContext);
 
+
   const highlightDescription = useMemo(() => {
     const HighlightedDescription = (
       description: string,
@@ -126,17 +130,35 @@ const CaseItem = ({
         return description;
       }
 
-      const regex = new RegExp(`(${searchText})`, "gi");
-      const parts: string[] = description.split(regex);
+
+        const lowerCaseDescription = description.toLowerCase();
+        const lowerCaseSearchText = searchText.toLowerCase();
+       
+        const parts = [];
+        let index = 0;
+        while (index < description.length) {
+          const nextIndex = lowerCaseDescription.indexOf(
+            lowerCaseSearchText,
+            index,
+          );
+          if (nextIndex === -1) {
+            parts.push(description.substr(index));
+            break;
+          }
+          parts.push(description.substr(index, nextIndex - index));
+          parts.push(description.substr(nextIndex, searchText.length));
+          index = nextIndex + searchText.length;
+        }
+
+
       return (
         <>
           {parts.map((part, index) =>
-            regex.test(part) ? (
+            part.toLowerCase() === lowerCaseSearchText ? (
               <mark
                 key={index}
-                className={`bg-primary p-0 ${
-                  isDarkMode ? "text-dark" : "text-light"
-                }`}
+                className={`bg-primary p-0 ${isDarkMode ? "text-dark" : "text-light"
+                  }`}
               >
                 {part}
               </mark>
@@ -148,10 +170,13 @@ const CaseItem = ({
       );
     };
 
+
     HighlightedDescription.displayName = "HighlightedDescription";
+
 
     return HighlightedDescription;
   }, [isDarkMode]);
+
 
   useEffect(() => {
     startTransition(() =>
@@ -177,4 +202,6 @@ const CaseItem = ({
   );
 };
 
+
 export default CaseItem;
+
