@@ -21,7 +21,6 @@ import {
 } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
-
 interface CaseProps {
   seq: number;
   caseData: Case;
@@ -30,7 +29,6 @@ interface CaseProps {
   implementations: Implementation[];
   implementationsResults: ImplementationResults[];
 }
-
 
 const CaseContent = ({
   seq,
@@ -43,7 +41,6 @@ const CaseContent = ({
     caseData.tests[0].instance,
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
-
 
   return (
     <>
@@ -107,7 +104,6 @@ const CaseContent = ({
   );
 };
 
-
 const CaseItem = ({
   seq,
   caseData,
@@ -120,7 +116,6 @@ const CaseItem = ({
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useContext(ThemeContext);
 
-
   const highlightDescription = useMemo(() => {
     const HighlightedDescription = (
       description: string,
@@ -130,26 +125,24 @@ const CaseItem = ({
         return description;
       }
 
+      const lowerCaseDescription = description.toLowerCase();
+      const lowerCaseSearchText = searchText.toLowerCase();
 
-        const lowerCaseDescription = description.toLowerCase();
-        const lowerCaseSearchText = searchText.toLowerCase();
-       
-        const parts = [];
-        let index = 0;
-        while (index < description.length) {
-          const nextIndex = lowerCaseDescription.indexOf(
-            lowerCaseSearchText,
-            index,
-          );
-          if (nextIndex === -1) {
-            parts.push(description.substr(index));
-            break;
-          }
-          parts.push(description.substr(index, nextIndex - index));
-          parts.push(description.substr(nextIndex, searchText.length));
-          index = nextIndex + searchText.length;
+      const parts = [];
+      let index = 0;
+      while (index < description.length) {
+        const nextIndex = lowerCaseDescription.indexOf(
+          lowerCaseSearchText,
+          index,
+        );
+        if (nextIndex === -1) {
+          parts.push(description.substr(index));
+          break;
         }
-
+        parts.push(description.substr(index, nextIndex - index));
+        parts.push(description.substr(nextIndex, searchText.length));
+        index = nextIndex + searchText.length;
+      }
 
       return (
         <>
@@ -157,8 +150,9 @@ const CaseItem = ({
             part.toLowerCase() === lowerCaseSearchText ? (
               <mark
                 key={index}
-                className={`bg-primary p-0 ${isDarkMode ? "text-dark" : "text-light"
-                  }`}
+                className={`bg-primary p-0 ${
+                  isDarkMode ? "text-dark" : "text-light"
+                }`}
               >
                 {part}
               </mark>
@@ -170,13 +164,10 @@ const CaseItem = ({
       );
     };
 
-
     HighlightedDescription.displayName = "HighlightedDescription";
-
 
     return HighlightedDescription;
   }, [isDarkMode]);
-
 
   useEffect(() => {
     startTransition(() =>
@@ -202,6 +193,4 @@ const CaseItem = ({
   );
 };
 
-
 export default CaseItem;
-

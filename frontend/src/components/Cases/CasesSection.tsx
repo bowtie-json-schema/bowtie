@@ -12,11 +12,9 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const [searchText, setSearchText] = useState<string>("");
   const [filterCriteria, setFilterCriteria] = useState<string[]>([]);
 
-
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value.toLowerCase());
   };
-
 
   const handleCheckboxChange = (criteria: string) => {
     if (filterCriteria.includes(criteria)) {
@@ -26,15 +24,12 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
     }
   };
 
-
   const filteredCases = useMemo(() => {
     const trimmedSearchText = searchText.trim();
-
 
     return Array.from(reportData.cases.entries())
       .filter(([seq]) => {
         if (filterCriteria.length === 0) return true;
-
 
         const caseResults: CaseResult[] = Array.from(
           reportData.implementationsResults.values(),
@@ -42,7 +37,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
           .map((implResult) => implResult.caseResults.get(seq))
           .filter((result) => result !== undefined)
           .map((result) => result![0]);
-          
 
         return caseResults.some((result) =>
           filterCriteria.includes(result?.state ?? ""),
@@ -53,12 +47,12 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
       });
   }, [reportData, filterCriteria, searchText]);
 
-
   const implementationsResults = Array.from(
     reportData.implementationsResults.values(),
   );
-  const implementations =  Array.from(reportData.runMetadata.implementations.values());
-
+  const implementations = Array.from(
+    reportData.runMetadata.implementations.values(),
+  );
 
   return (
     <div>
@@ -96,7 +90,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
                 : "Filter by Outcome"}
             </Dropdown.Toggle>
 
-
             <Dropdown.Menu>
               {["successful", "errored", "skipped", "failed"].map(
                 (criteria, index) => (
@@ -127,7 +120,6 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
           </div>
         )}
 
-
         {filteredCases.length > 0 && (
           <Accordion id="cases">
             {filteredCases.map(([seq, caseData], index) => (
@@ -147,6 +139,4 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   );
 };
 
-
 export default CasesSection;
-
