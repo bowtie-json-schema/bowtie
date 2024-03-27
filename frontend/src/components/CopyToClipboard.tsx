@@ -6,7 +6,7 @@ import Tooltip from "react-bootstrap/Tooltip";
 
 interface CopyProps {
   textToCopy: string;
-  style: string;
+  style?: string;
 }
 
 function CopyToClipboard({ textToCopy, style }: CopyProps) {
