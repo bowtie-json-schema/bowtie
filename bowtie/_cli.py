@@ -721,7 +721,8 @@ def _set_dialect(ctx: click.Context, _, value: _Dialect):
     """
     if value:
         return value
-    dialect_from_schema = ctx.params.get("schema", {}).get("$schema")
+    schema = ctx.params.get("schema")
+    dialect_from_schema = schema.get("$schema") if schema else None
     return (
         Dialect.from_str(dialect_from_schema)
         if dialect_from_schema
@@ -925,7 +926,7 @@ def run(
 )
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    schema: dict[str, Any],
+    schema: Any,
     instances: Iterable[TextIO],
     expect: str,
     description: str,
