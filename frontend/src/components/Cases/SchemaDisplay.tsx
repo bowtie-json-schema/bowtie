@@ -1,11 +1,6 @@
 import CopyToClipboard from "../CopyToClipboard";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-type CustomStyle = Record<string, string | number>;
-
-const schemaStyle = {
-  maxHeight: "30em",
-};
 
 const SchemaDisplay = ({
   schema,
@@ -31,10 +26,7 @@ const SchemaDisplay = ({
               textToCopy={schemaFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter
-              language="javascript"
-              style={{ ...atomDark, ...schemaStyle } as CustomStyle}
-            >
+            <SyntaxHighlighter language="javascript" style={atomDark}>
               {schemaFormatted}
             </SyntaxHighlighter>
           </div>
@@ -51,10 +43,7 @@ const SchemaDisplay = ({
               textToCopy={instanceFormatted}
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
-            <SyntaxHighlighter
-              language="javascript"
-              style={{ ...atomDark, ...schemaStyle } as CustomStyle}
-            >
+            <SyntaxHighlighter language="javascript" style={atomDark}>
               {instanceFormatted}
             </SyntaxHighlighter>
           </div>
