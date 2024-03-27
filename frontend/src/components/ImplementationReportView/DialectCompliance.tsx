@@ -5,7 +5,6 @@ import Image from "react-bootstrap/Image";
 import Table from "react-bootstrap/Table";
 
 import { complianceBadgeFor } from "../../data/Badge";
-import Dialect from "../../data/Dialect";
 import { ImplementationReport } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
@@ -37,7 +36,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(dialectCompliance)
+            {Array.from(dialectCompliance.entries())
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
@@ -46,11 +45,9 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +Dialect.withName(b[0]).firstPublicationDate -
-                    +Dialect.withName(a[0]).firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
-              .map(([dialectName, result], index) => {
-                const dialect = Dialect.withName(dialectName);
+              .map(([dialect, result], index) => {
                 return (
                   <tr key={index}>
                     <td>{dialect.prettyName}</td>
@@ -62,7 +59,7 @@ const DialectCompliance: React.FC<{
                         <Image
                           src={complianceBadgeFor(
                             implementation,
-                            dialect,
+                            dialect
                           ).href()}
                           alt={dialect.prettyName}
                           className="float-end"
