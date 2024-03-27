@@ -3,11 +3,12 @@ import Container from "react-bootstrap/Container";
 import Image from "react-bootstrap/Image";
 import ListGroup from "react-bootstrap/ListGroup";
 import Stack from "react-bootstrap/Stack";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 
 import CopyToClipboard from "../CopyToClipboard";
 import { Implementation } from "../../data/parseReportData";
 import { Badge, badgesFor } from "../../data/Badge";
-import { Button, Modal } from "react-bootstrap";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
