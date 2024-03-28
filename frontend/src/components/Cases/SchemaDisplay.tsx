@@ -33,7 +33,7 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-4"
             />
             <SyntaxHighlighter
-              language="javascript"
+              language="json"
               style={isDarkMode ? oneDark : oneLight}
             >
               {schemaFormatted}
@@ -53,7 +53,7 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-4"
             />
             <SyntaxHighlighter
-              language="javascript"
+              language="json"
               style={isDarkMode ? oneDark : oneLight}
             >
               {instanceFormatted}
