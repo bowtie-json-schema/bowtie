@@ -1,5 +1,4 @@
 import Accordion from "react-bootstrap/Accordion";
-
 import CaseResultSvg from "./CaseResultSvg";
 import SchemaDisplay from "./SchemaDisplay";
 import {
@@ -9,6 +8,9 @@ import {
   useTransition,
   useRef,
   RefObject,
+  useContext,
+  ReactNode,
+  useMemo,
 } from "react";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
@@ -17,11 +19,13 @@ import {
   Implementation,
   ImplementationResults,
 } from "../../data/parseReportData";
+import { ThemeContext } from "../../context/ThemeContext";
 
 interface CaseProps {
   seq: number;
   caseData: Case;
   schemaDisplayRef?: RefObject<HTMLDivElement>;
+  searchText: string;
   implementations: Implementation[];
   implementationsResults: ImplementationResults[];
 }
@@ -104,11 +108,60 @@ const CaseItem = ({
   seq,
   caseData,
   implementations,
+  searchText,
   implementationsResults,
 }: CaseProps) => {
   const [content, setContent] = useState(<></>);
   const [, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
+  const { isDarkMode } = useContext(ThemeContext);
+
+  const highlightDescription = useMemo(() => {
+    const highlight = (description: string, searchText: string): ReactNode => {
+      if (!searchText) {
+        return description;
+      }
+      const lowerCaseDescription = description.toLowerCase();
+      const lowerCaseSearchText = searchText.toLowerCase();
+
+      const parts = [];
+      let index = 0;
+      while (index < description.length) {
+        const nextIndex = lowerCaseDescription.indexOf(
+          lowerCaseSearchText,
+          index,
+        );
+        if (nextIndex === -1) {
+          parts.push(description.substr(index));
+          break;
+        }
+        parts.push(description.substr(index, nextIndex - index));
+        parts.push(description.substr(nextIndex, searchText.length));
+        index = nextIndex + searchText.length;
+      }
+
+      return (
+        <>
+          {parts.map((part, index) =>
+            part.toLowerCase() === lowerCaseSearchText ? (
+              <mark
+                key={index}
+                className={`bg-primary p-0 ${
+                  isDarkMode ? "text-dark" : "text-light"
+                }`}
+              >
+                {part}
+              </mark>
+            ) : (
+              <span key={index}>{part}</span>
+            ),
+          )}
+        </>
+      );
+    };
+
+    return highlight;
+  }, [isDarkMode]);
 
   useEffect(() => {
     startTransition(() =>
@@ -119,13 +172,16 @@ const CaseItem = ({
           implementations={implementations}
           implementationsResults={implementationsResults}
           schemaDisplayRef={schemaDisplayRef}
+          searchText={searchText}
         />,
       ),
     );
-  }, [seq, caseData, implementations, implementationsResults]);
+  }, [seq, caseData, implementations, implementationsResults, searchText]);
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
-      <Accordion.Header>{caseData.description}</Accordion.Header>
+      <Accordion.Header>
+        {highlightDescription(caseData.description, searchText)}
+      </Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
   );
