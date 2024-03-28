@@ -35,11 +35,8 @@ const EmbedBadges: React.FC<{
           <Modal.Title className="fs-5">Badges</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Container className="p-0 pb-1 p-lg-5 pt-lg-0 content-center">
-            <Stack
-              className="pb-3 gap-0 gap-sm-2 gap-lg-5"
-              direction="horizontal"
-            >
+          <Container className="d-none d-sm-block p-2 pb-1 p-lg-5 pt-lg-0">
+            <Stack className="pb-3 gap-2 gap-lg-5" direction="horizontal">
               <ListGroup variant="flush">
                 {Object.entries(allBadges).map(([category, badges]) => (
                   <ListGroup.Item key={category}>
@@ -63,13 +60,13 @@ const EmbedBadges: React.FC<{
                 ))}
               </ListGroup>
 
-              <div className="overflow-scroll min-vw-50">
+              <div className="overflow-hidden">
                 <div className="pb-3">
                   <p>
                     Bowtie regularly rebuilds a number of badges for{" "}
                     {implementation.name}.
                   </p>
-                  <p className="d-none d-md-block">
+                  <p>
                     If you are a maintainer, you may be interested in embedding
                     one or more of them in your documentation to show off! Here
                     are embeddable snippets for whatever documentation language
@@ -79,10 +76,10 @@ const EmbedBadges: React.FC<{
                   </p>
                 </div>
 
-                <hr className="mx-3 mx-sm-5 py-3" />
+                <hr className="mx-3 py-3" />
 
                 <div className="font-monospace text-bg-dark mx-xl-5 p-xl-5 d-flex">
-                  <pre className="py-5">{badgeEmbed}</pre>
+                  <pre className="py-5 px-4">{badgeEmbed}</pre>
                   <span>
                     <CopyToClipboard textToCopy={badgeEmbed} />
                   </span>
@@ -113,6 +110,83 @@ const EmbedBadges: React.FC<{
                 </ListGroup>
               </div>
             </Stack>
+          </Container>
+
+          <Container className="d-block d-sm-none p-0 pb-1">
+            <div>
+              <div className="pb-3 mx-2">
+                <p>
+                  Bowtie regularly rebuilds a number of badges for{" "}
+                  {implementation.name}.
+                </p>
+                <p>
+                  If you are a maintainer, you may be interested in embedding
+                  one or more of them in your documentation to show off! Here
+                  are embeddable snippets for whatever documentation language
+                  you are likely to be using. The badge will automatically
+                  update as Bowtie re-runs its report, so no manual updating
+                  should be necessary.
+                </p>
+              </div>
+              <hr className="mx-3 py-3" />
+            </div>
+
+            <Stack
+              className="pb-3 gap-3 d-flex align-items-start"
+              direction="horizontal"
+            >
+              <ListGroup variant="flush">
+                {Object.entries(allBadges).map(([category, badges]) => (
+                  <ListGroup.Item key={category}>
+                    <h6>{category}</h6>
+                    <ListGroup variant="flush">
+                      {badges.map((badge) => (
+                        <ListGroup.Item
+                          key={badge.name}
+                          action
+                          active={badge.name === activeBadge.name}
+                          onClick={() => setActiveBadge(badge)}
+                        >
+                          {badge.name}
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+
+              <div className="vr"></div>
+
+              <div className="p-2">
+                <h6>Format</h6>
+                <ListGroup variant="flush">
+                  {supportedFormats.map((format) => (
+                    <ListGroup.Item
+                      action
+                      active={activeFormat === format}
+                      onClick={() => setActiveFormat(format)}
+                      key={format.name}
+                    >
+                      {format.name}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </div>
+            </Stack>
+            <div className="mx-3 mt-5">
+              <div className="font-monospace text-bg-dark d-flex">
+                <pre className="py-5 px-3">{badgeEmbed}</pre>
+                <span>
+                  <CopyToClipboard textToCopy={badgeEmbed} />
+                </span>
+              </div>
+
+              <Image
+                alt={activeBadge.name}
+                src={activeBadge.uri.href()}
+                className="d-block mx-auto my-5"
+              />
+            </div>
           </Container>
         </Modal.Body>
       </Modal>
