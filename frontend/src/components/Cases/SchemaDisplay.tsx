@@ -1,6 +1,11 @@
+import { useContext } from "react";
 import CopyToClipboard from "../CopyToClipboard";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import {
+  oneLight,
+  oneDark,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const SchemaDisplay = ({
   schema,
@@ -9,6 +14,7 @@ const SchemaDisplay = ({
   instance: unknown;
   schema: Record<string, unknown> | boolean;
 }) => {
+  const { isDarkMode } = useContext(ThemeContext);
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);
   return (
@@ -24,9 +30,12 @@ const SchemaDisplay = ({
           <div className="card-body position-relative">
             <CopyToClipboard
               textToCopy={schemaFormatted}
-              style="position-absolute top-0 end-0 mt-4 me-3"
+              style="position-absolute top-0 end-0 mt-4 me-4"
             />
-            <SyntaxHighlighter language="json" style={atomDark}>
+            <SyntaxHighlighter
+              language="json"
+              style={isDarkMode ? oneDark : oneLight}
+            >
               {schemaFormatted}
             </SyntaxHighlighter>
           </div>
@@ -41,9 +50,12 @@ const SchemaDisplay = ({
           <div id="instance-info" className="card-body position-relative">
             <CopyToClipboard
               textToCopy={instanceFormatted}
-              style="position-absolute top-0 end-0 mt-4 me-3"
+              style="position-absolute top-0 end-0 mt-4 me-4"
             />
-            <SyntaxHighlighter language="json" style={atomDark}>
+            <SyntaxHighlighter
+              language="json"
+              style={isDarkMode ? oneDark : oneLight}
+            >
               {instanceFormatted}
             </SyntaxHighlighter>
           </div>
