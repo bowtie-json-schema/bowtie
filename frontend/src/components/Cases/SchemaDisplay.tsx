@@ -30,7 +30,7 @@ const SchemaDisplay = ({
           <div className="card-body position-relative">
             <CopyToClipboard
               textToCopy={schemaFormatted}
-              style="position-absolute top-0 end-0 mt-4 me-3"
+              style="position-absolute top-0 end-0 mt-4 me-4"
             />
             <SyntaxHighlighter
               language="javascript"
@@ -50,7 +50,7 @@ const SchemaDisplay = ({
           <div id="instance-info" className="card-body position-relative">
             <CopyToClipboard
               textToCopy={instanceFormatted}
-              style="position-absolute top-0 end-0 mt-4 me-3"
+              style="position-absolute top-0 end-0 mt-4 me-4"
             />
             <SyntaxHighlighter
               language="javascript"

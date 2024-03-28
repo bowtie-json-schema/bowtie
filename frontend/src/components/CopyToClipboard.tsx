@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Check, Copy } from "react-bootstrap-icons";
-import Button from "react-bootstrap/Button";
+import { CheckLg, Copy } from "react-bootstrap-icons";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 
@@ -34,9 +33,13 @@ function CopyToClipboard({ textToCopy, style }: CopyProps) {
           </Tooltip>
         }
       >
-        <Button variant="secondary" className={style} onClick={handleCopy}>
-          {copied ? <Check /> : <Copy />}
-        </Button>
+        <div
+          className={style}
+          onClick={handleCopy}
+          style={{ cursor: "pointer" }}
+        >
+          {copied ? <CheckLg className="text-success" /> : <Copy />}
+        </div>
       </OverlayTrigger>
     </>
   );
