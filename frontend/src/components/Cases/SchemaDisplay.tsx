@@ -1,8 +1,10 @@
 import { useContext } from "react";
 import CopyToClipboard from "../CopyToClipboard";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { prism } from "react-syntax-highlighter/dist/esm/styles/prism";
+import {
+  oneLight,
+  oneDark,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
 import { ThemeContext } from "../../context/ThemeContext";
 
 const SchemaDisplay = ({
@@ -31,8 +33,8 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
             <SyntaxHighlighter
-              language="json"
-              style={isDarkMode ? atomDark : prism}
+              language="javascript"
+              style={isDarkMode ? oneDark : oneLight}
             >
               {schemaFormatted}
             </SyntaxHighlighter>
@@ -51,8 +53,8 @@ const SchemaDisplay = ({
               style="position-absolute top-0 end-0 mt-4 me-3"
             />
             <SyntaxHighlighter
-              language="json"
-              style={isDarkMode ? atomDark : prism}
+              language="javascript"
+              style={isDarkMode ? oneDark : oneLight}
             >
               {instanceFormatted}
             </SyntaxHighlighter>
