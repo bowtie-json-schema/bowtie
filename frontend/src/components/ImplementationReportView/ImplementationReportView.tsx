@@ -41,7 +41,7 @@ const ReportComponent: React.FC<{
           <EmbedBadges implementation={implementation} />
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body className="overflow-x-scroll">
           <Table>
             <tbody>
               <tr>
@@ -126,7 +126,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
