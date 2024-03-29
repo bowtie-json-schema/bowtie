@@ -1,7 +1,8 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Sun, MoonStarsFill, Book } from "react-bootstrap-icons";
 import { Link, useLocation, useMatch } from "react-router-dom";
 import NavDropdown from "react-bootstrap/NavDropdown";
+import Collapse from "react-bootstrap/Collapse";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
@@ -16,6 +17,8 @@ const NavBar = () => {
   const rootMatch = useMatch("/");
   const dialectsMatch = useMatch("/dialects/*");
   const isDialectPage = rootMatch ?? dialectsMatch;
+
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
 
   useEffect(() => {
     if (hash) {
@@ -56,6 +59,7 @@ const NavBar = () => {
             <button
               className="navbar-toggler"
               type="button"
+              onClick={() => setIsNavbarOpen(!isNavbarOpen)}
               data-bs-toggle="collapse"
               data-bs-target="#navbarNav"
               aria-controls="navbarSupportedContent"
@@ -65,56 +69,58 @@ const NavBar = () => {
               <span className="navbar-toggler-icon"></span>
             </button>
           </div>
-          <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-baseline">
-              {isDialectPage && (
-                <>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "run-info" }}>
-                      Run Info
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "summary" }}>
-                      Summary
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "cases" }}>
-                      Details
-                    </Link>
-                  </li>
-                </>
-              )}
-              <NavDropdown id="dialect-dropdown" title="Dialects">
-                {Dialect.newest_to_oldest().map((dialect) => (
-                  <NavDropdown.Item
-                    as={Link}
-                    to={dialect.routePath}
-                    key={dialect.shortName}
-                  >
-                    {dialect.prettyName}
+          <Collapse in={isNavbarOpen}>
+            <div className="collapse navbar-collapse" id="navbarNav">
+              <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-baseline">
+                {isDialectPage && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" to={{ hash: "run-info" }}>
+                        Run Info
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to={{ hash: "summary" }}>
+                        Summary
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to={{ hash: "cases" }}>
+                        Details
+                      </Link>
+                    </li>
+                  </>
+                )}
+                <NavDropdown id="dialect-dropdown" title="Dialects">
+                  {Dialect.newest_to_oldest().map((dialect) => (
+                    <NavDropdown.Item
+                      as={Link}
+                      to={dialect.routePath}
+                      key={dialect.shortName}
+                    >
+                      {dialect.prettyName}
+                    </NavDropdown.Item>
+                  ))}
+                  <NavDropdown.Divider />
+                  <NavDropdown.Item as={Link} to="/local-report/">
+                    Upload a report
                   </NavDropdown.Item>
-                ))}
-                <NavDropdown.Divider />
-                <NavDropdown.Item as={Link} to="/local-report/">
-                  Upload a report
-                </NavDropdown.Item>
-              </NavDropdown>
-              <li className="nav-item d-block d-lg-none">
-                <a
-                  href="https://github.com/bowtie-json-schema/bowtie/"
-                  className="link-secondary"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <span className="navbar-text">
-                    {version && `Bowtie v ${version}`}
-                  </span>
-                </a>
-              </li>
-            </ul>
-          </div>
+                </NavDropdown>
+                <li className="nav-item d-block d-lg-none">
+                  <a
+                    href="https://github.com/bowtie-json-schema/bowtie/"
+                    className="link-secondary"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <span className="navbar-text">
+                      {version && `Bowtie v ${version}`}
+                    </span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </Collapse>
           <div className="large-screen d-none d-lg-block">
             <Link
               className="nav-link border border-primary rounded-3 me-1 d-inline-block text-center py-2 px-3"
