@@ -132,7 +132,7 @@ const EmbedBadges: React.FC<{
             </div>
 
             <Stack
-              className="pb-3 gap-3 d-flex align-items-start"
+              className="pb-3 gap-2 d-flex align-items-start"
               direction="horizontal"
             >
               <ListGroup variant="flush">
@@ -155,7 +155,7 @@ const EmbedBadges: React.FC<{
                 ))}
               </ListGroup>
 
-              <div className="vr"></div>
+              <div className="vr mx-1"></div>
 
               <div className="p-2">
                 <h6>Format</h6>
