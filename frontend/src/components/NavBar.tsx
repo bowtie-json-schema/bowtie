@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Sun, MoonStarsFill, Book } from "react-bootstrap-icons";
 import { Link, useLocation, useMatch } from "react-router-dom";
 import NavDropdown from "react-bootstrap/NavDropdown";
-import Collapes from "react-bootstrap/Collapse";
+import Collapse from "react-bootstrap/Collapse";
 
 import { ThemeContext } from "../context/ThemeContext";
 import { BowtieVersionContext } from "../context/BowtieVersionContext";
@@ -68,7 +68,7 @@ const NavBar = () => {
               <span className="navbar-toggler-icon"></span>
             </button>
           </div>
-          <Collapes in={isNavbarOpen}>
+          <Collapse in={isNavbarOpen}>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-baseline">
                 {isDialectPage && (
@@ -119,7 +119,7 @@ const NavBar = () => {
                 </li>
               </ul>
             </div>
-          </Collapes>
+          </Collapse>
           <div className="large-screen d-none d-lg-block">
             <Link
               className="nav-link border border-primary rounded-3 me-1 d-inline-block text-center py-2 px-3"
