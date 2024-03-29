@@ -21,6 +21,7 @@ import {
 } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
+
 interface CaseProps {
   seq: number;
   caseData: Case;
@@ -29,6 +30,7 @@ interface CaseProps {
   implementations: Implementation[];
   implementationsResults: ImplementationResults[];
 }
+
 
 const CaseContent = ({
   seq,
@@ -41,6 +43,7 @@ const CaseContent = ({
     caseData.tests[0].instance,
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
+
 
   return (
     <>
@@ -104,6 +107,7 @@ const CaseContent = ({
   );
 };
 
+
 const CaseItem = ({
   seq,
   caseData,
@@ -115,9 +119,13 @@ const CaseItem = ({
   const [, startTransition] = useTransition();
   const schemaDisplayRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useContext(ThemeContext);
+  const { description } = caseData;
 
   const highlightDescription = useMemo(() => {
-    const highlight = (description: string, searchText: string): ReactNode => {
+    const highlight = (
+      description: string,
+      searchText: string,
+    ): ReactNode => {
       if (!searchText) {
         return description;
       }
@@ -146,9 +154,8 @@ const CaseItem = ({
             part.toLowerCase() === lowerCaseSearchText ? (
               <mark
                 key={index}
-                className={`bg-primary p-0 ${
-                  isDarkMode ? "text-dark" : "text-light"
-                }`}
+                className={`bg-primary p-0 ${isDarkMode ? "text-dark" : "text-light"
+                  }`}
               >
                 {part}
               </mark>
@@ -160,8 +167,9 @@ const CaseItem = ({
       );
     };
 
-    return highlight;
-  }, [isDarkMode]);
+    return highlight(description, searchText);
+  }, [description, searchText, isDarkMode]);
+  
 
   useEffect(() => {
     startTransition(() =>
@@ -180,11 +188,13 @@ const CaseItem = ({
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
       <Accordion.Header>
-        {highlightDescription(caseData.description, searchText)}
+        {highlightDescription}
       </Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>
   );
 };
 
+
 export default CaseItem;
+
