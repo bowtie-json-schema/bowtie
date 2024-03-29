@@ -176,27 +176,22 @@ export const implementationFromData = (
   }) as Implementation;
 
 /**
- * Prepare a summarized implementation report for the
- * passed implementation using all the dialect reports data
+ * Prepare a summarized implementation report using the
+ * passed implementation id and all the dialect reports data
  * that was fetched.
  */
 export const prepareImplementationReport = (
   allReportsData: Map<Dialect, ReportData>,
-  langImplementation: string,
+  implementationId: string,
 ) => {
   let implementationReport: ImplementationReport | null = null;
   const dialectCompliance = new Map<Dialect, Partial<Totals>>();
-
-  // FIXME: This magic prefix is duplicated from the backend side,
-  //        and probably we can separate handling this in Implementation
-  //        class (when we have it).
-  const image = `ghcr.io/bowtie-json-schema/${langImplementation}`;
 
   for (const [
     dialect,
     { implementationsResults, runMetadata },
   ] of allReportsData.entries()) {
-    const implementationResults = implementationsResults.get(image);
+    const implementationResults = implementationsResults.get(implementationId);
 
     if (implementationResults) {
       dialectCompliance.set(dialect, {
@@ -205,7 +200,7 @@ export const prepareImplementationReport = (
         failedTests: implementationResults.totals.failedTests,
       });
 
-      const implementation = runMetadata.implementations.get(image)!;
+      const implementation = runMetadata.implementations.get(implementationId)!;
 
       if (!implementationReport) {
         implementationReport = {

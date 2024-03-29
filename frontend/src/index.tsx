@@ -33,7 +33,12 @@ const fetchAllReportsData = async (langImplementation: string) => {
     );
   }
   await Promise.all(promises);
-  return prepareImplementationReport(allReportsData, langImplementation);
+
+  // FIXME: This magic prefix is duplicated from the backend side,
+  //        and probably we can separate handling this in Implementation
+  //        class (when we have it).
+  const implementationId = `ghcr.io/bowtie-json-schema/${langImplementation}`;
+  return prepareImplementationReport(allReportsData, implementationId);
 };
 
 const fetchImplementationMetadata = async () => {
