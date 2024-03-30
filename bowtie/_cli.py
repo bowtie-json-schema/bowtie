@@ -722,7 +722,9 @@ def _set_dialect(ctx: click.Context, _, value: _Dialect):
     if value:
         return value
     schema = ctx.params.get("schema")
-    dialect_from_schema = schema.get("$schema") if schema else None
+    dialect_from_schema = (
+        schema.get("$schema") if isinstance(schema, dict) else None
+    )
     return (
         Dialect.from_str(dialect_from_schema)
         if dialect_from_schema
