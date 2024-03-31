@@ -89,6 +89,7 @@ const EmbedBadges: React.FC<{
                   <SyntaxHighlighter
                     language={activeFormat.name.toLowerCase()}
                     style={isDarkMode ? oneDark : oneLight}
+                    className="py-5"
                   >
                     {badgeEmbed}
                   </SyntaxHighlighter>
