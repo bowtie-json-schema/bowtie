@@ -41,8 +41,8 @@ const EmbedBadges: React.FC<{
         show={show}
         onHide={() => setShow(false)}
       >
-        <Modal.Header closeButton className="border-0 ps-4">
-          <Modal.Title className="fs-5">Badges</Modal.Title>
+        <Modal.Header closeButton className="border-0 px-3">
+          <Modal.Title className="fs-5 ps-2">Badges</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Container>
@@ -85,17 +85,19 @@ const EmbedBadges: React.FC<{
               <hr className="d-sm-none my-5" />
 
               <div className="overflow-hidden">
-                <div className="font-monospace mx-xl-3 p-xl-5 d-flex">
-                  <SyntaxHighlighter
-                    language={activeFormat.name.toLowerCase()}
-                    style={isDarkMode ? oneDark : oneLight}
-                    className="py-5"
-                  >
-                    {badgeEmbed}
-                  </SyntaxHighlighter>
-                  <span>
-                    <CopyToClipboard textToCopy={badgeEmbed} />
-                  </span>
+                <div className="mx-xl-3 p-xl-5">
+                  <div className="font-monospace d-flex position-relative">
+                    <SyntaxHighlighter
+                      language={activeFormat.name.toLowerCase()}
+                      style={isDarkMode ? oneDark : oneLight}
+                      className="py-5"
+                    >
+                      {badgeEmbed}
+                    </SyntaxHighlighter>
+                    <span className="p-2 position-absolute top-0 end-0">
+                      <CopyToClipboard textToCopy={badgeEmbed} />
+                    </span>
+                  </div>
                 </div>
 
                 <Image
