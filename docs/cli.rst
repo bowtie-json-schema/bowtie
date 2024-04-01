@@ -25,6 +25,7 @@ Add tab completion for implementations (and otherwise)
 
 .. tabs::
     .. tab:: Bash
+
         Add this to ``~/.bashrc``:
 
         .. code:: sh
@@ -32,6 +33,7 @@ Add tab completion for implementations (and otherwise)
             $ eval "$(_BOWTIE_COMPLETE=bash_source bowtie)"
 
     .. tab:: Zsh
+
         Add this to ``~/.zshrc``:
 
         .. code:: sh
@@ -39,9 +41,11 @@ Add tab completion for implementations (and otherwise)
             $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
 
     .. tab:: Fish
+
         Add this to ``~/.config/fish/completions/bowtie.fish``:
 
         .. code:: sh
+
             $ _BOWTIE_COMPLETE=fish_source bowtie | source
         
         This is the same file used for the activation script method below. For Fish it's probably always easier to use that method.
