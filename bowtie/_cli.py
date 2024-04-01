@@ -670,7 +670,8 @@ class _Image(click.ParamType):
     ) -> list[CompletionItem]:
         return [
             CompletionItem(name)
-            for name in Implementation.known() if name.startswith(incomplete)
+            for name in Implementation.known()
+            if name.startswith(incomplete)
         ]
 
 
