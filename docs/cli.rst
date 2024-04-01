@@ -18,6 +18,36 @@ Below are a few sample command lines you might be interested in.
     If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
 
+Add tab completion for implementations (and otherwise)
+--------
+
+`Click Shell Completion Reference`_
+
+.. tabs::
+    .. tab:: Bash
+        Add this to ``~/.bashrc``:
+
+        .. code:: sh
+
+            $ eval "$(_BOWTIE_COMPLETE=bash_source bowtie)"
+
+    .. tab:: Zsh
+        Add this to ``~/.zshrc``:
+
+        .. code:: sh
+
+            $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
+
+    .. tab:: Fish
+        Add this to ``~/.config/fish/completions/bowtie.fish``:
+
+        .. code:: sh
+            $ _BOWTIE_COMPLETE=fish_source bowtie | source
+        
+        This is the same file used for the activation script method below. For Fish it's probably always easier to use that method.
+
+For Homebrew users, the shell completion is **automatically enabled** after running the Homebrew tap installation command.   
+
 Examples
 --------
 

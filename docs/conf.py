@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_click",
     "sphinx_copybutton",
+    "sphinx_tabs.tabs",
     "sphinx_json_schema_spec",
     "sphinx_substitution_extensions",
     "sphinxcontrib.spelling",
@@ -76,6 +77,8 @@ rst_prolog = f"""
 
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
+
+.. _Click Shell Completion Reference: https://click.palletsprojects.com/en/8.1.x/shell-completion/#shell-completion
 """  # noqa: E501, RUF100
 
 
