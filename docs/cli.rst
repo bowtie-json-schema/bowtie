@@ -19,7 +19,7 @@ Below are a few sample command lines you might be interested in.
     See `below <cli:running the official suite across all implementations>` for a full example.
 
 Add tab completion for implementations (and otherwise)
---------
+------------------------------------------------------
 
 `Click Shell Completion Reference`_
 

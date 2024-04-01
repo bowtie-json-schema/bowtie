@@ -667,7 +667,7 @@ class _Image(click.ParamType):
         ctx: click.Context,
         param: click.Parameter,
         incomplete: str,
-    ) -> box.List[CompletionItem]:
+    ) -> list[CompletionItem]:
         return [
             CompletionItem(name)
             for name in Implementation.known() if name.startswith(incomplete)
