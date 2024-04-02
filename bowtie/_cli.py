@@ -674,6 +674,7 @@ class _Image(click.ParamType):
             if name.startswith(incomplete.lower())
         ]
 
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
