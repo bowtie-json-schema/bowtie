@@ -674,6 +674,7 @@ class _Image(click.ParamType):
             if name.startswith(incomplete)
         ]
 
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -958,6 +959,7 @@ KNOWN_LANGUAGES = {
     *(i.partition("-")[0] for i in Implementation.known()),
 }
 
+
 class _LanguageChoice(click.ParamType):
     """
     Programming language choice for implementation.
@@ -982,9 +984,9 @@ class _LanguageChoice(click.ParamType):
             raise click.UsageError(
                 "Invalid value for '--language' / '-l': "
                 f"'{value}' is not one of "
-                f"{', '.join(map(repr, self.choices))}."
+                f"{', '.join(map(repr, self.choices))}.",
             )
-    
+
     def shell_complete(
         self,
         ctx: click.Context,
@@ -996,6 +998,7 @@ class _LanguageChoice(click.ParamType):
             for name in self.choices
             if name.startswith(incomplete)
         ]
+
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(

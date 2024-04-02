@@ -48,10 +48,10 @@ Below are short instructions for your shell.
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=fish_source bowtie | source
-        
+
         This is the same file used for the activation script method below. For Fish it's probably always easier to use that method.
 
-Using ``eval`` means that the command is invoked and evaluated every time a shell is started, which can delay shell responsiveness. 
+Using ``eval`` means that the command is invoked and evaluated every time a shell is started, which can delay shell responsiveness.
 To speed it up, write the generated script to a file, then source that.
 
 .. tabs::
