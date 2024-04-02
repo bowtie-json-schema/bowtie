@@ -130,7 +130,7 @@ intersphinx_mapping = {
     "pip": ("https://pip.pypa.io/en/stable/", None),
     "python": ("https://docs.python.org/", None),
     "sphinx": ("https://www.sphinx-doc.org", None),
-    "click": ("https://click.palletsprojects.com", None)
+    "click": ("https://click.palletsprojects.com", None),
 }
 
 # -- extlinks --
