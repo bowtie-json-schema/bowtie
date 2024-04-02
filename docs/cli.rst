@@ -85,11 +85,13 @@ To speed it up, write the generated script to a file, then source that.
 
     .. group-tab:: Fish
 
-        Save the script to ~/.config/fish/completions/bowtie.fish:
+        Save the script to ``~/.config/fish/completions/bowtie.fish``:
 
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=fish_source bowtie > ~/.config/fish/completions/bowtie.fish
+
+After modifying the shell config, you need to start a new shell in order for the changes to be loaded.
 
 Examples
 --------
