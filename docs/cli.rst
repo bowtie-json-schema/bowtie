@@ -18,10 +18,11 @@ Below are a few sample command lines you might be interested in.
     If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
 
-Add tab completion for implementations (and otherwise)
-------------------------------------------------------
+Enabling Shell Tab Completion
+-----------------------------
 
-`Click Shell Completion Reference`_
+The Bowtie CLI supports tab completion using the `click module's built-in support <click:shell-completion>`.
+Below are short instructions for your shell.
 
 .. tabs::
     .. tab:: Bash
@@ -32,6 +33,20 @@ Add tab completion for implementations (and otherwise)
 
             $ eval "$(_BOWTIE_COMPLETE=bash_source bowtie)"
 
+        **OR**
+
+        Save the script somewhere.
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=bash_source bowtie > ~/.bowtie-complete.bash
+        
+        Source the file in ``~/.bashrc``.
+
+        .. code:: sh
+
+            $ . ~/.bowtie-complete.bash
+
     .. tab:: Zsh
 
         Add this to ``~/.zshrc``:
@@ -39,6 +54,20 @@ Add tab completion for implementations (and otherwise)
         .. code:: sh
 
             $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
+        
+        **OR**
+
+        Save the script somewhere.
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=zsh_source bowtie > ~/.bowtie-complete.zsh
+        
+        Source the file in ``~/.zshrc``.
+
+        .. code:: sh
+
+            $ . ~/.bowtie-complete.zsh
 
     .. tab:: Fish
 
@@ -47,8 +76,14 @@ Add tab completion for implementations (and otherwise)
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=fish_source bowtie | source
+        
+        **OR**
 
-For Homebrew users, the shell completion is **automatically enabled** after running the Homebrew tap installation command.
+        Save the script to ~/.config/fish/completions/bowtie.fish:
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=fish_source bowtie > ~/.config/fish/completions/bowtie.fish
 
 Examples
 --------

@@ -77,8 +77,6 @@ rst_prolog = f"""
 
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
-
-.. _Click Shell Completion Reference: https://click.palletsprojects.com/en/8.1.x/shell-completion/#shell-completion
 """  # noqa: E501, RUF100
 
 
