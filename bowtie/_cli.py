@@ -998,6 +998,7 @@ class _LanguageChoice(click.ParamType):
             if name.startswith(incomplete.lower())
         ]
 
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "--supports-dialect",
