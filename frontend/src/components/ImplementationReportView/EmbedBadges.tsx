@@ -7,7 +7,7 @@ import Modal from "react-bootstrap/Modal";
 import CopyToClipboard from "../CopyToClipboard";
 import { Implementation } from "../../data/parseReportData";
 import { Badge, badgesFor } from "../../data/Badge";
-import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { ThemeContext } from "../../context/ThemeContext";
 import {
   oneDark,
@@ -87,6 +87,9 @@ const EmbedBadges: React.FC<{
               <div className="overflow-hidden">
                 <div className="mx-xl-3 p-xl-5">
                   <div className="font-monospace d-flex position-relative">
+                    <span className="m-2 position-absolute top-0 end-0">
+                      <CopyToClipboard textToCopy={badgeEmbed} />
+                    </span>
                     <SyntaxHighlighter
                       language={activeFormat.name.toLowerCase()}
                       style={isDarkMode ? oneDark : oneLight}
@@ -94,9 +97,6 @@ const EmbedBadges: React.FC<{
                     >
                       {badgeEmbed}
                     </SyntaxHighlighter>
-                    <span className="p-2 position-absolute top-0 end-0">
-                      <CopyToClipboard textToCopy={badgeEmbed} />
-                    </span>
                   </div>
                 </div>
 
