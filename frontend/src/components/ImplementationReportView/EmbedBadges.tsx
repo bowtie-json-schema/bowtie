@@ -37,12 +37,12 @@ const EmbedBadges: React.FC<{
       <Modal
         size="xl"
         fullscreen="lg-down"
-        contentClassName="p-0 p-md-3 p-lg-5"
+        contentClassName="px-3 px-lg-4"
         show={show}
         onHide={() => setShow(false)}
       >
         <Modal.Header closeButton className="border-0 px-3">
-          <Modal.Title className="fs-5 ps-2">Badges</Modal.Title>
+          <Modal.Title className="fs-5 px-2">Badges</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Container>
