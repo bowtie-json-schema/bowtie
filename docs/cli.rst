@@ -25,7 +25,7 @@ The Bowtie CLI supports tab completion using the `click module's built-in suppor
 Below are short instructions for your shell.
 
 .. tabs::
-    .. tab:: Bash
+    .. group-tab:: Bash
 
         Add this to ``~/.bashrc``:
 
@@ -33,7 +33,29 @@ Below are short instructions for your shell.
 
             $ eval "$(_BOWTIE_COMPLETE=bash_source bowtie)"
 
-        **OR**
+    .. group-tab:: Zsh
+
+        Add this to ``~/.zshrc``:
+
+        .. code:: sh
+
+            $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
+
+    .. group-tab:: Fish
+
+        Add this to ``~/.config/fish/completions/bowtie.fish``:
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=fish_source bowtie | source
+        
+        This is the same file used for the activation script method below. For Fish it's probably always easier to use that method.
+
+Using ``eval`` means that the command is invoked and evaluated every time a shell is started, which can delay shell responsiveness. 
+To speed it up, write the generated script to a file, then source that.
+
+.. tabs::
+    .. group-tab:: Bash
 
         Save the script somewhere.
 
@@ -47,15 +69,7 @@ Below are short instructions for your shell.
 
             $ . ~/.bowtie-complete.bash
 
-    .. tab:: Zsh
-
-        Add this to ``~/.zshrc``:
-
-        .. code:: sh
-
-            $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
-
-        **OR**
+    .. group-tab:: Zsh
 
         Save the script somewhere.
 
@@ -69,15 +83,7 @@ Below are short instructions for your shell.
 
             $ . ~/.bowtie-complete.zsh
 
-    .. tab:: Fish
-
-        Add this to ``~/.config/fish/completions/bowtie.fish``:
-
-        .. code:: sh
-
-            $ _BOWTIE_COMPLETE=fish_source bowtie | source
-
-        **OR**
+    .. group-tab:: Fish
 
         Save the script to ~/.config/fish/completions/bowtie.fish:
 
