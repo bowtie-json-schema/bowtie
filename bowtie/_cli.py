@@ -671,7 +671,7 @@ class _Image(click.ParamType):
         return [
             CompletionItem(name)
             for name in Implementation.known()
-            if name.startswith(incomplete)
+            if name.startswith(incomplete.lower())
         ]
 
 
@@ -996,7 +996,7 @@ class _LanguageChoice(click.ParamType):
         return [
             CompletionItem(name)
             for name in self.choices
-            if name.startswith(incomplete)
+            if name.startswith(incomplete.lower())
         ]
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
