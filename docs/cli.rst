@@ -40,7 +40,7 @@ Below are short instructions for your shell.
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=bash_source bowtie > ~/.bowtie-complete.bash
-        
+
         Source the file in ``~/.bashrc``.
 
         .. code:: sh
@@ -54,7 +54,7 @@ Below are short instructions for your shell.
         .. code:: sh
 
             $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
-        
+
         **OR**
 
         Save the script somewhere.
@@ -62,7 +62,7 @@ Below are short instructions for your shell.
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=zsh_source bowtie > ~/.bowtie-complete.zsh
-        
+
         Source the file in ``~/.zshrc``.
 
         .. code:: sh
@@ -76,7 +76,7 @@ Below are short instructions for your shell.
         .. code:: sh
 
             $ _BOWTIE_COMPLETE=fish_source bowtie | source
-        
+
         **OR**
 
         Save the script to ~/.config/fish/completions/bowtie.fish:
