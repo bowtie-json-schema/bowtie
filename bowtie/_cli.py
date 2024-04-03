@@ -674,7 +674,6 @@ class _Image(click.ParamType):
             if name.startswith(incomplete.lower())
         ]
 
-
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -959,47 +958,6 @@ KNOWN_LANGUAGES = {
     *(i.partition("-")[0] for i in Implementation.known()),
 }
 
-
-class _LanguageChoice(click.ParamType):
-    """
-    Programming language choice for implementation.
-    """
-
-    name = "language"
-
-    def __init__(self, choices: list[str]):
-        self.choices = choices
-
-    def convert(
-        self,
-        value: str | None,
-        param: click.Parameter | None,
-        ctx: click.Context | None,
-    ):
-        if value is None:
-            return None
-        elif value.lower() in self.choices:
-            return value.lower()
-        else:
-            raise click.UsageError(
-                "Invalid value for '--language' / '-l': "
-                f"'{value}' is not one of "
-                f"{', '.join(map(repr, self.choices))}.",
-            )
-
-    def shell_complete(
-        self,
-        ctx: click.Context,
-        param: click.Parameter,
-        incomplete: str,
-    ) -> list[CompletionItem]:
-        return [
-            CompletionItem(name)
-            for name in self.choices
-            if name.startswith(incomplete.lower())
-        ]
-
-
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
     "--supports-dialect",
@@ -1018,7 +976,7 @@ class _LanguageChoice(click.ParamType):
     "--language",
     "-l",
     "languages",
-    type=_LanguageChoice(choices=sorted(KNOWN_LANGUAGES)),
+    type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
         KNOWN_LANGUAGES
         if not value
