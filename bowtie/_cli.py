@@ -674,6 +674,7 @@ class _Image(click.ParamType):
             if name.startswith(incomplete.lower())
         ]
 
+
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -957,6 +958,7 @@ KNOWN_LANGUAGES = {
     *LANGUAGE_ALIASES.values(),
     *(i.partition("-")[0] for i in Implementation.known()),
 }
+
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @click.option(
