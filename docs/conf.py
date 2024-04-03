@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_click",
     "sphinx_copybutton",
+    "sphinx_tabs.tabs",
     "sphinx_json_schema_spec",
     "sphinx_substitution_extensions",
     "sphinxcontrib.spelling",
@@ -129,6 +130,7 @@ intersphinx_mapping = {
     "pip": ("https://pip.pypa.io/en/stable/", None),
     "python": ("https://docs.python.org/", None),
     "sphinx": ("https://www.sphinx-doc.org", None),
+    "click": ("https://click.palletsprojects.com", None),
 }
 
 # -- extlinks --

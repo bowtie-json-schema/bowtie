@@ -23,6 +23,7 @@ shortnames
 subcommand
 subcommands
 validator
+config
 
 # Language names, which can disappear after we have a Language data file
 clojure
