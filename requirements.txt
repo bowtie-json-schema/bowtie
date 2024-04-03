@@ -56,7 +56,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pygments==2.17.2
     # via

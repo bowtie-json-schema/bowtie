@@ -16,6 +16,7 @@ import sys
 
 from aiodocker import Docker
 from attrs import asdict
+from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
 from jsonschema_lexer import JSONSchemaLexer
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
@@ -661,6 +662,18 @@ class _Image(click.ParamType):
             return value
         return f"{IMAGE_REPOSITORY}/{value}"
 
+    def shell_complete(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        incomplete: str,
+    ) -> list[CompletionItem]:
+        return [
+            CompletionItem(name)
+            for name in Implementation.known()
+            if name.startswith(incomplete.lower())
+        ]
+
 
 class _Dialect(click.ParamType):
     """
@@ -989,7 +1002,7 @@ async def filter_implementations(
     Output implementations matching a given criteria.
     """
     if not dialects and languages == KNOWN_LANGUAGES:
-        for implementation in ctx.params["image_names"]:
+        for implementation in ctx.params.get("image_names", ()):
             click.echo(implementation.removeprefix(f"{IMAGE_REPOSITORY}/"))
         return
 
