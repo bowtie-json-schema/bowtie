@@ -1328,10 +1328,7 @@ async def _run(
         unsucessful = Unsuccessful()
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
-            case_reporter = reporter.case_started(seq_case)
-
-            if not seq_case.matches_dialect(dialect):
-                case_reporter.mismatched_dialect(expected=dialect)
+            case_reporter = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
 
