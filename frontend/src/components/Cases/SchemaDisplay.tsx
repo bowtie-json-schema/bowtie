@@ -43,7 +43,7 @@ const SchemaDisplay = ({
       }
     };
 
-    const modal = document.getElementById(modalBodyId as string);
+    const modal = document.getElementById(modalBodyId!);
 
     if (modal) {
       modal.addEventListener("scroll", handleScroll);
@@ -60,7 +60,7 @@ const SchemaDisplay = ({
         window.removeEventListener("scroll", handleScroll);
       }
     };
-  }, [modalBodyId]);
+  }, [modalBodyId, isHighlighted]);
 
   const MemoizedSchemaHighlighter = useMemo(() => {
     return (
