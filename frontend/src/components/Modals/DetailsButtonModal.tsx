@@ -55,10 +55,10 @@ export const DetailsButtonModal = ({
             message={message}
             borderClass={borderClass}
             modalBodyId={modalBodyId}
-          />
+          />,
         );
       }
-    }
+    },
   );
   return (
     <Modal show={show} onHide={handleClose} fullscreen={true}>
