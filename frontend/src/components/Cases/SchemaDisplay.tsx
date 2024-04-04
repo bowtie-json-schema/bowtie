@@ -32,7 +32,7 @@ const SchemaDisplay = ({
         const rect = cardRef.current.getBoundingClientRect();
 
         const toHighlight =
-          rect.top - 1500 <=
+          rect.top <=
             (window.innerHeight || document.documentElement.clientHeight) &&
           rect.right <=
             (window.innerWidth || document.documentElement.clientWidth);
