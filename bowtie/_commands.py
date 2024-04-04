@@ -75,10 +75,10 @@ class SeqCase:
 
     def matches_dialect(self, dialect: _Dialect):
         try:
-            schema = self.case.schema["$schema"]
+            uri = URL.parse(self.case.schema["$schema"])
         except (TypeError, LookupError):
             return True
-        return URL.parse(schema) == dialect.uri
+        return uri == dialect.uri
 
 
 @frozen

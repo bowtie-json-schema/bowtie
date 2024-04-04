@@ -2051,6 +2051,24 @@ async def test_run_mismatched_dialect(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_run_mismatched_dialect_total_junk(envsonschema, tmp_path):
+    """
+    A $schema keyword that isn't even a string just gets ignored.
+
+    At this point we're likely testing completely broken schemas.
+    """
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "BOOM", "schema": {"$schema": 37}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
 async def test_validate_boolean_schema(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("false")
     tmp_path.joinpath("instance.json").write_text("12")
