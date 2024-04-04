@@ -706,6 +706,36 @@ class _Dialect(click.ParamType):
 
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
+    def shell_complete(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        incomplete: str,
+    ) -> list[CompletionItem]:
+        if incomplete:  # the user typed something, so filter over everything
+            suggestions = [
+                (field, dialect)
+                for dialect in Dialect.known()
+                for field in [
+                    str(dialect.uri),
+                    dialect.short_name,
+                    *dialect.aliases,
+                ]
+            ]
+            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
+        else:  # the user didn't type anything, only suggest short names
+            suggestions = Dialect.by_short_name().items()
+
+        return [
+            # FIXME: pallets/click#2703
+            CompletionItem(
+                value=value.replace(":", "\\:"),
+                help=f"the {dialect.pretty_name} dialect",
+            )
+            for value, dialect in suggestions
+            if value.startswith(incomplete.lower())
+        ]
+
 
 CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
