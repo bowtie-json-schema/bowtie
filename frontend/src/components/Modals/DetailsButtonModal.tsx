@@ -1,5 +1,7 @@
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
+import Col from "react-bootstrap/Col";
+import Card from "react-bootstrap/Card";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
   Case,
@@ -7,6 +9,7 @@ import {
   ImplementationResults,
 } from "../../data/parseReportData";
 import SchemaDisplay from "../Cases/SchemaDisplay";
+import { useId } from "react";
 
 export const DetailsButtonModal = ({
   show,
@@ -21,6 +24,7 @@ export const DetailsButtonModal = ({
   implementationResults: ImplementationResults;
   implementation: Implementation;
 }) => {
+  const modalBodyId = useId();
   const failedResults: JSX.Element[] = [];
   Array.from(implementationResults.caseResults.entries()).forEach(
     ([seq, results]) => {
@@ -50,10 +54,11 @@ export const DetailsButtonModal = ({
             instance={caseData.tests[i].instance}
             message={message}
             borderClass={borderClass}
-          />,
+            modalBodyId={modalBodyId}
+          />
         );
       }
-    },
+    }
   );
   return (
     <Modal show={show} onHide={handleClose} fullscreen={true}>
@@ -66,7 +71,7 @@ export const DetailsButtonModal = ({
           </small>
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body id={modalBodyId}>
         <div className="row row-cols-1 row-cols-md-2 g-4">{failedResults}</div>
       </Modal.Body>
       <Modal.Footer>
@@ -85,6 +90,7 @@ const DetailItem = ({
   schema,
   instance,
   borderClass,
+  modalBodyId,
 }: {
   title: string;
   description: string;
@@ -92,26 +98,28 @@ const DetailItem = ({
   schema: Record<string, unknown> | boolean;
   instance: unknown;
   borderClass: string;
+  modalBodyId: string;
 }) => {
   return (
-    <div className="col">
-      <div className={`card mb-3 ${borderClass}`}>
-        <div className="card-body">
-          <h5 className="card-title">
-            <label className="me-1">Case:</label>
-            {title}
-          </h5>
-          <p className="card-text">
-            <label className="me-1">Test:</label>
-            {description}
-          </p>
-          <SchemaDisplay schema={schema} instance={instance} />
-        </div>
-        <div className="card-footer text-muted text-center">
-          <label className="me-1">Result:</label>
-          {message}
-        </div>
-      </div>
-    </div>
+    <Col>
+      <Card className={`mb-3 ${borderClass}`}>
+        <Card.Body>
+          <Card.Title>
+            <span>Case: {title}</span>
+          </Card.Title>
+          <Card.Text>
+            <span>Test: {description}</span>
+          </Card.Text>
+          <SchemaDisplay
+            schema={schema}
+            instance={instance}
+            modalBodyId={modalBodyId}
+          />
+        </Card.Body>
+        <Card.Footer className="text-muted text-center">
+          <span>Result: {message}</span>
+        </Card.Footer>
+      </Card>
+    </Col>
   );
 };
