@@ -1328,13 +1328,13 @@ async def _run(
         unsucessful = Unsuccessful()
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
-            case_reporter = reporter.case_started(seq_case, dialect)
+            got_result = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
 
             for each in asyncio.as_completed(responses):
                 result = await each
-                case_reporter.got_result(result=result)
+                got_result(result=result)
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail

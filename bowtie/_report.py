@@ -103,18 +103,12 @@ class Reporter:
                 expected=dialect,
             )
 
-        return CaseReporter(write=self._write, log=log)
+        def got_result(result: SeqResult):
+            bound = log.bind(logger_name=result.implementation)
+            serialized = result.log_and_be_serialized(log=bound)
+            self._write(**serialized)
 
-
-@frozen
-class CaseReporter:
-    _write: Callable[..., Any] = field(alias="write")
-    _log: structlog.stdlib.BoundLogger = field(alias="log")
-
-    def got_result(self, result: SeqResult):
-        log = self._log.bind(logger_name=result.implementation)
-        serialized = result.log_and_be_serialized(log=log)
-        self._write(**serialized)
+        return got_result
 
 
 @frozen
