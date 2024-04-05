@@ -766,13 +766,13 @@ def _set_dialect(ctx: click.Context, _, value: _Dialect):
     if value:
         return value
     schema = ctx.params.get("schema")
-    dialect_from_schema: str | None = ( # type: ignore[reportUnknownVariableType]
+    dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
         schema.get("$schema")  # type: ignore[reportUnknownMemberType]
         if isinstance(schema, dict)
         else None
     )
     return (
-        Dialect.from_str(dialect_from_schema) # type: ignore[reportUnknownArgumentType]
+        Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
         if dialect_from_schema
         else max(Dialect.known())
     )
