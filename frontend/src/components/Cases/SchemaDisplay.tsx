@@ -38,7 +38,7 @@ const SchemaDisplay = ({
             (window.innerWidth || document.documentElement.clientWidth);
 
         if (!isHighlighted && toHighlight) {
-          setIsHighlighted(toHighlight);
+          setIsHighlighted(true);
         }
       }
     };
@@ -85,7 +85,7 @@ const SchemaDisplay = ({
   }, [isDarkMode, instanceFormatted]);
 
   return (
-    <Card className="mb-3 mw-100">
+    <Card ref={cardRef} className="mb-3 mw-100">
       <Row className="d-flex">
         <Col md={8} className="pe-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
@@ -94,7 +94,7 @@ const SchemaDisplay = ({
             </small>
             <div className="d-flex ms-auto"></div>
           </div>
-          <Card.Body ref={cardRef} className="position-relative">
+          <Card.Body className="position-relative">
             <CopyToClipboard
               textToCopy={schemaFormatted}
               style="position-absolute top-0 end-0 mt-4 me-4"
@@ -102,7 +102,9 @@ const SchemaDisplay = ({
             {isHighlighted ? (
               <>{MemoizedSchemaHighlighter}</>
             ) : (
-              <pre>{schemaFormatted}</pre>
+              <pre>
+                <code>{schemaFormatted}</code>
+              </pre>
             )}
           </Card.Body>
         </Col>
@@ -121,7 +123,9 @@ const SchemaDisplay = ({
             {isHighlighted ? (
               <>{MemoizedInstanceHighlighter}</>
             ) : (
-              <pre>{schemaFormatted}</pre>
+              <pre>
+                <code>{instanceFormatted}</code>
+              </pre>
             )}
           </Card.Body>
         </Col>
