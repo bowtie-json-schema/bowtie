@@ -16,7 +16,6 @@ const SchemaDisplay = ({
 }: {
   instance: unknown;
   schema: Record<string, unknown> | boolean;
-  modalBodyId?: string;
 }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const schemaFormatted = JSON.stringify(schema, null, 2);
