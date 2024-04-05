@@ -33,7 +33,7 @@ const SchemaDisplay = ({
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0 },
+      { threshold: 0 }
     );
 
     if (cardRef.current) {
@@ -70,7 +70,7 @@ const SchemaDisplay = ({
   return (
     <Card ref={cardRef} className="mb-3 mw-100">
       <Row className="d-flex">
-        <Col md={8} className="pe-0">
+        <Col xs={6} md={8} className="pe-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
             <small className="font-monospace text-body-secondary text-uppercase">
               Schema
@@ -91,7 +91,7 @@ const SchemaDisplay = ({
             )}
           </Card.Body>
         </Col>
-        <Col md={4} className="border-start px-0">
+        <Col xs={6} md={4} className="border-start ps-0">
           <div className="d-flex align-items-center highlight-toolbar ps-3 pe-2 py-1 border-0 border-top border-bottom">
             <small className="font-monospace text-body-secondary text-uppercase pe-4">
               Instance
