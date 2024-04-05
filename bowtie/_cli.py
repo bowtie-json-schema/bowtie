@@ -761,7 +761,7 @@ class _Filter(click.ParamType):
 
 def _set_dialect(ctx: click.Context, _, value: _Dialect):
     """
-    Sets the dialect according to $schema if specified.
+    Set the dialect according to a possibly present :kw:`$schema` keyword.
     """
     if value:
         return value

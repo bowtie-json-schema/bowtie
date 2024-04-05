@@ -2113,8 +2113,8 @@ async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
-    dialect = _json.loads(stdout.split("\n")[0])["dialect"]
-    assert dialect == "https://json-schema.org/draft/2019-09/schema", stderr
+    report = Report.from_serialized(stdout.splitlines())
+    assert report.metadata.dialect == Dialect.by_short_name()["draft2019-09"]
 
 
 @pytest.mark.asyncio
@@ -2124,7 +2124,7 @@ async def test_validate_specify_dialect(envsonschema, tmp_path):
     )
     tmp_path.joinpath("instance.json").write_text("12")
 
-    stdout, _ = await bowtie(
+    stdout, stderr = await bowtie(
         "validate",
         "-i",
         envsonschema,
@@ -2133,5 +2133,5 @@ async def test_validate_specify_dialect(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
-    dialect = _json.loads(stdout.split("\n")[0])["dialect"]
-    assert dialect == "https://json-schema.org/draft/2019-09/schema"
+    report = Report.from_serialized(stdout.splitlines())
+    assert report.metadata.dialect == Dialect.by_short_name()["draft2019-09"]
