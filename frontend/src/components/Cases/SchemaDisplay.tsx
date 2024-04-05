@@ -13,7 +13,6 @@ import Col from "react-bootstrap/Col";
 const SchemaDisplay = ({
   schema,
   instance,
-  modalBodyId,
 }: {
   instance: unknown;
   schema: Record<string, unknown> | boolean;
@@ -23,44 +22,29 @@ const SchemaDisplay = ({
   const schemaFormatted = JSON.stringify(schema, null, 2);
   const instanceFormatted = JSON.stringify(instance, null, 2);
 
-  const cardRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef(null);
   const [isHighlighted, setIsHighlighted] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (cardRef.current) {
-        const rect = cardRef.current.getBoundingClientRect();
-
-        const toHighlight =
-          rect.top <=
-            (window.innerHeight || document.documentElement.clientHeight) &&
-          rect.right <=
-            (window.innerWidth || document.documentElement.clientWidth);
-
-        if (!isHighlighted && toHighlight) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting) {
           setIsHighlighted(true);
+          observer.unobserve(entry.target);
         }
-      }
-    };
+      },
+      { threshold: 0 }
+    );
 
-    const modal = document.getElementById(modalBodyId!);
-
-    if (modal) {
-      modal.addEventListener("scroll", handleScroll);
-    } else {
-      window.addEventListener("scroll", handleScroll);
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
     }
 
-    handleScroll();
-
     return () => {
-      if (modal) {
-        modal.removeEventListener("scroll", handleScroll);
-      } else {
-        window.removeEventListener("scroll", handleScroll);
-      }
+      observer.disconnect();
     };
-  }, [modalBodyId, isHighlighted]);
+  }, [cardRef, setIsHighlighted]);
 
   const MemoizedSchemaHighlighter = useMemo(() => {
     return (
@@ -115,7 +99,7 @@ const SchemaDisplay = ({
             </small>
             <div className="d-flex ms-auto"></div>
           </div>
-          <Card.Body id="instance-info" className="position-relative">
+          <Card.Body className="position-relative">
             <CopyToClipboard
               textToCopy={instanceFormatted}
               style="position-absolute top-0 end-0 mt-4 me-4"

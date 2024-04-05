@@ -9,7 +9,6 @@ import {
   ImplementationResults,
 } from "../../data/parseReportData";
 import SchemaDisplay from "../Cases/SchemaDisplay";
-import { useId } from "react";
 
 export const DetailsButtonModal = ({
   show,
@@ -24,7 +23,6 @@ export const DetailsButtonModal = ({
   implementationResults: ImplementationResults;
   implementation: Implementation;
 }) => {
-  const modalBodyId = useId();
   const failedResults: JSX.Element[] = [];
   Array.from(implementationResults.caseResults.entries()).forEach(
     ([seq, results]) => {
@@ -54,11 +52,10 @@ export const DetailsButtonModal = ({
             instance={caseData.tests[i].instance}
             message={message}
             borderClass={borderClass}
-            modalBodyId={modalBodyId}
-          />,
+          />
         );
       }
-    },
+    }
   );
   return (
     <Modal show={show} onHide={handleClose} fullscreen={true}>
@@ -71,7 +68,7 @@ export const DetailsButtonModal = ({
           </small>
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body id={modalBodyId}>
+      <Modal.Body>
         <div className="row row-cols-1 row-cols-md-2 g-4">{failedResults}</div>
       </Modal.Body>
       <Modal.Footer>
@@ -90,7 +87,6 @@ const DetailItem = ({
   schema,
   instance,
   borderClass,
-  modalBodyId,
 }: {
   title: string;
   description: string;
@@ -98,7 +94,6 @@ const DetailItem = ({
   schema: Record<string, unknown> | boolean;
   instance: unknown;
   borderClass: string;
-  modalBodyId: string;
 }) => {
   return (
     <Col>
@@ -110,11 +105,7 @@ const DetailItem = ({
           <Card.Text>
             <span>Test: {description}</span>
           </Card.Text>
-          <SchemaDisplay
-            schema={schema}
-            instance={instance}
-            modalBodyId={modalBodyId}
-          />
+          <SchemaDisplay schema={schema} instance={instance} />
         </Card.Body>
         <Card.Footer className="text-muted text-center">
           <span>Result: {message}</span>
