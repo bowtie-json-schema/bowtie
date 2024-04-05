@@ -706,6 +706,36 @@ class _Dialect(click.ParamType):
 
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
+    def shell_complete(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        incomplete: str,
+    ) -> list[CompletionItem]:
+        if incomplete:  # the user typed something, so filter over everything
+            suggestions = [
+                (field, dialect)
+                for dialect in Dialect.known()
+                for field in [
+                    str(dialect.uri),
+                    dialect.short_name,
+                    *dialect.aliases,
+                ]
+            ]
+            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
+        else:  # the user didn't type anything, only suggest short names
+            suggestions = Dialect.by_short_name().items()
+
+        return [
+            # FIXME: pallets/click#2703
+            CompletionItem(
+                value=value.replace(":", "\\:"),
+                help=f"the {dialect.pretty_name} dialect",
+            )
+            for value, dialect in suggestions
+            if value.startswith(incomplete.lower())
+        ]
+
 
 CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
@@ -1298,16 +1328,13 @@ async def _run(
         unsucessful = Unsuccessful()
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
-            case_reporter = reporter.case_started(seq_case)
-
-            if not seq_case.matches_dialect(dialect):
-                case_reporter.mismatched_dialect(expected=dialect)
+            got_result = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
 
             for each in asyncio.as_completed(responses):
                 result = await each
-                case_reporter.got_result(result=result)
+                got_result(result=result)
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail
