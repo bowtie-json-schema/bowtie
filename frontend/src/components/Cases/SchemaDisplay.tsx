@@ -34,7 +34,7 @@ const SchemaDisplay = ({
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
 
     if (cardRef.current) {
