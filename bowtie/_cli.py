@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     )
     from typing import Any, TextIO
 
+    from click.decorators import FC
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
     from bowtie._commands import AnyTestResult, ImplementationId
@@ -758,6 +759,25 @@ class _Filter(click.ParamType):
         )
 
 
+def _set_dialect(ctx: click.Context, _, value: _Dialect):
+    """
+    Set the dialect according to a possibly present :kw:`$schema` keyword.
+    """
+    if value:
+        return value
+    schema = ctx.params.get("schema")
+    dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
+        schema.get("$schema")  # type: ignore[reportUnknownMemberType]
+        if isinstance(schema, dict)
+        else None
+    )
+    return (
+        Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
+        if dialect_from_schema
+        else max(Dialect.known())
+    )
+
+
 def _set_schema(dialect: Dialect) -> CaseTransform:
     """
     Explicitly set a dialect on schemas passing through by setting ``$schema``.
@@ -767,29 +787,6 @@ def _set_schema(dialect: Dialect) -> CaseTransform:
 
 def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
-
-
-# Both are these are needed because parsing is order dependent :/
-def _disallow_fail_fast(
-    ctx: click.Context,
-    _,
-    value: int | None,
-) -> int | None:
-    if ctx.params.get("fail_fast"):
-        if value is None:
-            return 1
-        raise click.UsageError(
-            "don't provide both --fail-fast and --max-fail / --max-error",
-        )
-    return value
-
-
-def _disallow_max_fail(ctx: click.Context, _, value: int | None) -> int | None:
-    if value and ctx.params.get("max_fail", 1) != 1:
-        raise click.UsageError(
-            "don't provide both --fail-fast and --max-fail / --max-error",
-        )
-    return value
 
 
 IMPLEMENTATION = click.option(
@@ -807,7 +804,7 @@ DIALECT = click.option(
     "-D",
     "dialect",
     type=_Dialect(),
-    default=max(Dialect.known()),
+    callback=_set_dialect,
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
@@ -822,28 +819,6 @@ FILTER = click.option(
     type=_Filter(),
     metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
-)
-FAIL_FAST = click.option(
-    "-x",
-    "--fail-fast",
-    callback=_disallow_max_fail,
-    is_flag=True,
-    default=False,
-    help="Fail immediately after the first error or disagreement.",
-)
-MAX_FAIL = click.option(
-    "--max-fail",
-    metavar="COUNT",
-    type=click.IntRange(min=1),
-    callback=_disallow_fail_fast,
-    help="Fail immediately if x tests fail in total across implementations",
-)
-MAX_ERROR = click.option(
-    "--max-error",
-    metavar="COUNT",
-    type=click.IntRange(min=1),
-    callback=_disallow_fail_fast,
-    help="Fail immediately if x errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
@@ -895,13 +870,63 @@ VALIDATE = click.option(
 )
 
 
+def fail_fast(fn: FC) -> FC:
+    conflict = "don't provide both --fail-fast and --max-fail / --max-error"
+
+    # Both are these are needed because parsing is order dependent :/
+    def disallow_fail_fast(
+        ctx: click.Context,
+        _,
+        value: int | None,
+    ) -> int | None:
+        if ctx.params.get("fail_fast"):
+            if value is None:
+                return 1
+            raise click.UsageError(conflict)
+        return value
+
+    def disallow_max_fail(
+        ctx: click.Context,
+        _,
+        value: int | None,
+    ) -> int | None:
+        if value and ctx.params.get("max_fail", 1) != 1:
+            raise click.UsageError(conflict)
+        return value
+
+    N = "COUNT"
+    msg = f"Stop running once {N} tests {{}} in total across implementations."
+    return click.option(
+        "-x",
+        "--fail-fast",
+        callback=disallow_max_fail,
+        is_flag=True,
+        default=False,
+        help="Stop running immediately after the first failure or error.",
+    )(
+        click.option(
+            "--max-fail",
+            metavar=N,
+            type=click.IntRange(min=1),
+            callback=disallow_fail_fast,
+            help=msg.format("fail"),
+        )(
+            click.option(
+                "--max-error",
+                metavar=N,
+                type=click.IntRange(min=1),
+                callback=disallow_fail_fast,
+                help=msg.format("error"),
+            )(fn),
+        ),
+    )
+
+
 @subcommand
 @IMPLEMENTATION
 @DIALECT
 @FILTER
-@FAIL_FAST
-@MAX_FAIL
-@MAX_ERROR
+@fail_fast
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -949,10 +974,14 @@ def run(
         "or else (with 'any') to allow either result."
     ),
 )
-@click.argument("schema", type=click.File(mode="rb"))
+@click.argument(
+    "schema",
+    type=click.File(mode="rb"),
+    callback=lambda _, __, value: json.load(value),  # type: ignore[reportUnknownLambdaType]
+)
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    schema: TextIO,
+    schema: Any,
     instances: Iterable[TextIO],
     expect: str,
     description: str,
@@ -966,7 +995,7 @@ def validate(
 
     case = TestCase(
         description=description,
-        schema=json.load(schema),
+        schema=schema,
         tests=[
             Test(
                 description="",
@@ -1226,9 +1255,7 @@ async def smoke(
 @subcommand
 @IMPLEMENTATION
 @FILTER
-@FAIL_FAST
-@MAX_FAIL
-@MAX_ERROR
+@fail_fast
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
