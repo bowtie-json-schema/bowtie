@@ -8,7 +8,17 @@ If you've written or used an implementation of JSON Schema which isn't already s
 
 Bowtie orchestrates running a number of containers, passing JSON Schema test cases to each one of them, and then collecting and comparing results across implementations.
 Any JSON Schema implementation will have some way of getting schemas and instances "into" it for processing.
-We'll wrap this implementation-specific API inside a small harness which accepts input from Bowtie over standard input and writes results to standard output in the format Bowtie expects.
+We'll wrap this implementation-specific API inside a small harness which accepts input from Bowtie over standard input and writes results to standard output in the format Bowtie expects, as shown below:
+
+.. image:: _static/bowtie_diagram_light.svg
+    :class: only-light
+    :width: 80 %
+    :align: center
+
+.. image:: _static/bowtie_diagram_dark.svg
+    :class: only-dark
+    :width: 80 %
+    :align: center
 
 As a last step before we get into details, let's summarize some terminology (which you can also skip and refer back to if needed):
 
