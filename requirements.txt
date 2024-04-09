@@ -89,7 +89,7 @@ six==1.16.0
     # via python-dateutil
 structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via aiodocker
 uritemplate==4.1.1
     # via github3-py
