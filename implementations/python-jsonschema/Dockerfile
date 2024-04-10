@@ -1,4 +1,4 @@
-FROM python:3.12.2-alpine
+FROM python:3.13.0a6-alpine
 WORKDIR /usr/src/myapp
 RUN python -m pip install jsonschema
 COPY bowtie_jsonschema.py .
