@@ -7,6 +7,7 @@ from functools import cache, wraps
 from importlib.resources import files
 from pathlib import Path
 from pprint import pformat
+from textwrap import dedent
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -28,8 +29,8 @@ from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from url import URL, RelativeURLWithoutBase
-import click
 import referencing_loaders
+import rich_click as click
 import structlog
 import structlog.typing
 
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
     from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
+
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
 _EX_DATAERR = getattr(os, "EX_DATAERR", 1)
@@ -83,16 +85,45 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
+@click.rich_config(
+    help_config=click.RichHelpConfiguration(
+        command_groups=dict(
+            bowtie=[
+                dict(
+                    name="Basic Commands",
+                    commands=["validate", "suite", "summary", "info"],
+                ),
+                dict(
+                    name="Advanced Usage",
+                    commands=[
+                        "filter-dialects",
+                        "filter-implementations",
+                        "run",
+                    ],
+                ),
+                dict(
+                    name="Plumbing Commands",
+                    commands=["badges", "smoke"],
+                ),
+            ],
+        ),
+        style_commands_table_column_width_ratio=(1, 3),
+        # Otherwise there's an uncomfortable amount of internal whitespace.
+        max_width=120,
+    ),
+)
 @click.group(
     context_settings=dict(help_option_names=["--help", "-h"]),
-    epilog="""
-    If you don't know where to begin, `bowtie validate` (for checking
-    what any given implementations think of your schema) or `bowtie suite`
-    (for running the official test suite against implementations) are likely
-    good places to start.
+    # needing to explicitly dedent here, as well as the extra newline
+    # before "Full documentation" both seem like rich-click bugs.
+    epilog=dedent(
+        """
+        If you don't know where to begin, `bowtie validate --help` or
+        `bowtie suite --help` are likely good places to start.
 
-    Full documentation can also be found at https://docs.bowtie.report
-    """,
+        Full documentation can also be found at https://docs.bowtie.report
+        """,
+    ),
 )
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
@@ -245,7 +276,7 @@ def implementation_subcommand(
 )
 def badges(site: Path):
     """
-    Generate Bowtie badges from previous runs.
+    Generate Bowtie badges for implementations using a previous Bowtie run.
 
     Will generate badges for any existing dialects, and ignore any for which a
     report was not generated.
@@ -942,7 +973,11 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run test cases written in Bowtie's test format.
+    Run test cases written directly in Bowtie's testing format.
+
+    This is generally useful if you wish to hand-author which schemas to
+    include in the schema registry, or otherwise exactly control the contents
+    of a test case.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -988,7 +1023,7 @@ def validate(
     **kwargs: Any,
 ):
     """
-    Validate instances across any implementation.
+    Validate instances under a schema across any supported implementation.
     """
     if not instances:
         return _EX_NOINPUT
@@ -1058,7 +1093,10 @@ async def filter_implementations(
     languages: Set[str],
 ):
     """
-    Output implementations matching a given criteria.
+    Output implementations which match the given criteria.
+
+    Useful for piping or otherwise using the resulting output for further
+    Bowtie commands.
     """
     if not dialects and languages == KNOWN_LANGUAGES:
         for implementation in ctx.params.get("image_names", ()):
@@ -1198,7 +1236,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test implementations for basic correctness.
+    Smoke test implementations for basic correctness against Bowtie's protocol.
     """
     exit_code = 0
 
@@ -1266,7 +1304,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run tests from the official JSON Schema suite.
+    Run the official JSON Schema test suite against any implementation.
 
     Supports a number of possible inputs:
 

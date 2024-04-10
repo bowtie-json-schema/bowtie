@@ -41,7 +41,7 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via
     #   -r requirements.txt
-    #   bowtie-json-schema
+    #   rich-click
 cryptography==42.0.5
     # via
     #   -r requirements.txt
@@ -158,6 +158,11 @@ rich==13.7.1
     #   -r requirements.txt
     #   bowtie-json-schema
     #   diagnostic
+    #   rich-click
+rich-click==1.8.0.dev6
+    # via
+    #   -r requirements.txt
+    #   bowtie-json-schema
 rpds-py==0.18.0
     # via
     #   -r requirements.txt
@@ -178,6 +183,7 @@ typing-extensions==4.11.0
     # via
     #   -r requirements.txt
     #   aiodocker
+    #   rich-click
 uritemplate==4.1.1
     # via
     #   -r requirements.txt

@@ -32,7 +32,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
-    #   bowtie-json-schema
+    #   rich-click
     #   sphinx-click
 cryptography==42.0.5
     # via pyjwt
@@ -119,6 +119,9 @@ rich==13.7.1
     # via
     #   bowtie-json-schema
     #   diagnostic
+    #   rich-click
+rich-click==1.8.0.dev6
+    # via bowtie-json-schema
 rpds-py==0.18.0
     # via
     #   bowtie-json-schema
@@ -176,7 +179,9 @@ sphinxext-opengraph==0.9.1
 structlog==24.1.0
     # via bowtie-json-schema
 typing-extensions==4.11.0
-    # via aiodocker
+    # via
+    #   aiodocker
+    #   rich-click
 uritemplate==4.1.1
     # via github3-py
 url-py==0.10.0
