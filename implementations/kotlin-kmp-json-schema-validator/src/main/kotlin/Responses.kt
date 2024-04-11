@@ -81,5 +81,4 @@ sealed class TestResult {
 class ErrorContext(
     val message: String? = null,
     val traceback: String? = null,
-    val stderr: String? = null,
 )

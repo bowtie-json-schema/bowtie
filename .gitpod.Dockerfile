@@ -1,7 +1,5 @@
-FROM gitpod/workspace-full:2023-11-24-15-04-57
+FROM gitpod/workspace-python-3.12:latest
 
 USER gitpod
 
-ENV SHELL=/usr/bin/zsh
-RUN pyenv install 3.11 && pyenv global 3.11
-RUN python3.11 -m pip install -r https://raw.githubusercontent.com/bowtie-json-schema/bowtie/main/requirements.txt && pyenv rehash
+RUN python3.12 -m pip install -r https://raw.githubusercontent.com/bowtie-json-schema/bowtie/main/requirements.txt && pyenv rehash

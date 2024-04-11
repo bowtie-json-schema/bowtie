@@ -26,7 +26,7 @@ click==8.1.7
     # via bowtie-json-schema (pyproject.toml)
 cryptography==42.0.5
     # via pyjwt
-diagnostic==2.0.0
+diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
 docutils==0.20.1
     # via diagnostic
@@ -56,7 +56,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pygments==2.17.2
     # via
@@ -89,7 +89,7 @@ six==1.16.0
     # via python-dateutil
 structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via aiodocker
 uritemplate==4.1.1
     # via github3-py
