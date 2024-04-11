@@ -115,11 +115,11 @@ def main(log_level: str):
     """
     A meta-validator for the JSON Schema specifications.
 
-    Bowtie gives you access to JSON Schema across every programming
-    language and implementation.
+    Bowtie gives you access to the JSON Schema ecosystem across every
+    programming language and implementation.
 
-    It lets you compare implementations to each other, or to known correct
-    results from the JSON Schema test suite.
+    It lets you compare implementations either to each other or to known
+    correct results from the official JSON Schema test suite.
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
