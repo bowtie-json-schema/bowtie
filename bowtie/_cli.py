@@ -28,6 +28,7 @@ from rich import box, console, panel
 from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
+from rich_click.utils import CommandGroupDict
 from url import URL, RelativeURLWithoutBase
 import referencing_loaders
 import rich_click as click
@@ -85,28 +86,29 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
+# rich-click's CommandGroupDict seems to be missing some covariance, as using a
+# regular dict here makes pyright complain.
+_GROUPS = dict(
+    bowtie=[
+        CommandGroupDict(
+            name="Basic Commands",
+            commands=["validate", "suite", "summary", "info"],
+        ),
+        CommandGroupDict(
+            name="Advanced Usage",
+            commands=["filter-dialects", "filter-implementations", "run"],
+        ),
+        CommandGroupDict(
+            name="Plumbing Commands",
+            commands=["badges", "smoke"],
+        ),
+    ],
+)
+
+
 @click.rich_config(
     help_config=click.RichHelpConfiguration(
-        command_groups=dict(
-            bowtie=[
-                dict(
-                    name="Basic Commands",
-                    commands=["validate", "suite", "summary", "info"],
-                ),
-                dict(
-                    name="Advanced Usage",
-                    commands=[
-                        "filter-dialects",
-                        "filter-implementations",
-                        "run",
-                    ],
-                ),
-                dict(
-                    name="Plumbing Commands",
-                    commands=["badges", "smoke"],
-                ),
-            ],
-        ),
+        command_groups=_GROUPS,
         style_commands_table_column_width_ratio=(1, 3),
         # Otherwise there's an uncomfortable amount of internal whitespace.
         max_width=120,
