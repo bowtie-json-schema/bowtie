@@ -15,8 +15,8 @@ dependencies:
     specifier: ^18.2.0
     version: 18.2.0
   react-bootstrap:
-    specifier: ^2.10.1
-    version: 2.10.1(@types/react@18.2.74)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^2.10.2
+    version: 2.10.2(@types/react@18.2.74)(react-dom@18.2.0)(react@18.2.0)
   react-bootstrap-icons:
     specifier: ^1.11.3
     version: 1.11.3(react@18.2.0)
@@ -701,8 +701,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /@restart/ui@1.6.6(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-eC3puKuWE1SRYbojWHXnvCNHGgf3uzHCb6JOhnF4OXPibOIPEkR1sqDSkL643ydigxwh+ruCa1CmYHlzk7ikKA==}
+  /@restart/ui@1.6.8(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-6ndCv3oZ7r9vuP1Ok9KH55TM1/UkdBnP/fSraW0DFDMbPMzWKhVKeFAIEUCRCSdzayjZDcFYK6xbMlipN9dmMA==}
     peerDependencies:
       react: '>=16.14.0'
       react-dom: '>=16.14.0'
@@ -3273,8 +3273,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-bootstrap@2.10.1(@types/react@18.2.74)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-J3OpRZIvCTQK+Tg/jOkRUvpYLHMdGeU9KqFUBQrV0d/Qr/3nsINpiOJyZMWnM5SJ3ctZdhPA6eCIKpEJR3Ellg==}
+  /react-bootstrap@2.10.2(@types/react@18.2.74)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-UvB7mRqQjivdZNxJNEA2yOQRB7L9N43nBnKc33K47+cH90/ujmnMwatTCwQLu83gLhrzAl8fsa6Lqig/KLghaA==}
     peerDependencies:
       '@types/react': '>=16.14.8'
       react: '>=16.14.0'
@@ -3285,7 +3285,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.23.8
       '@restart/hooks': 0.4.15(react@18.2.0)
-      '@restart/ui': 1.6.6(react-dom@18.2.0)(react@18.2.0)
+      '@restart/ui': 1.6.8(react-dom@18.2.0)(react@18.2.0)
       '@types/react': 18.2.74
       '@types/react-transition-group': 4.4.10
       classnames: 2.5.1
