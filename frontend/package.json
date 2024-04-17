@@ -20,7 +20,7 @@
     "bootstrap": "^5.3.2",
     "dayjs": "^1.11.10",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.10.1",
+    "react-bootstrap": "^2.10.2",
     "react-bootstrap-icons": "^1.11.3",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
@@ -29,14 +29,14 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.74",
-    "@types/react-dom": "^18.2.24",
+    "@types/react-dom": "^18.2.25",
     "@types/react-syntax-highlighter": "^15.5.11",
     "@types/react-test-renderer": "^18.0.7",
     "@types/urijs": "^1.19.25",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "8.56.0",
+    "eslint": "8.57.0",
     "eslint-plugin-react": "7.33.2",
     "eslint-plugin-react-hooks": "4.6.0",
     "jsdom": "^24.0.0",
@@ -44,9 +44,9 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.4",
-    "vite": "^5.1.7",
+    "vite": "^5.2.8",
     "vite-bundle-visualizer": "^1.1.0",
-    "vitest": "^1.4.0"
+    "vitest": "^1.5.0"
   },
   "eslintConfig": {
     "env": {

@@ -6,7 +6,7 @@
 #
 aiodocker==0.21.0
     # via bowtie-json-schema (pyproject.toml)
-aiohttp==3.9.3
+aiohttp==3.9.4
     # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
@@ -28,7 +28,7 @@ cryptography==42.0.5
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.20.1
+docutils==0.21.1
     # via diagnostic
 frozenlist==1.4.1
     # via
@@ -36,7 +36,7 @@ frozenlist==1.4.1
     #   aiosignal
 github3-py==4.0.1
     # via bowtie-json-schema (pyproject.toml)
-idna==3.6
+idna==3.7
     # via
     #   requests
     #   yarl
