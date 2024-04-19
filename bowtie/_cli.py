@@ -1135,7 +1135,7 @@ async def filter_implementations(
     "booleans",
     default=None,
     help=(
-        "If provided, show only dialects which do (or do not)"
+        "If provided, show only dialects which do (or do not) "
         "support boolean schemas. Otherwise show either kind."
     ),
 )
