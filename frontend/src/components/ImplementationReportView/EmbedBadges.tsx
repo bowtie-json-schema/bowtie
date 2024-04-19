@@ -36,32 +36,18 @@ const EmbedBadges: React.FC<{
       </Button>
       <Modal
         size="xl"
-        fullscreen="lg-down"
+        fullscreen="xl-down"
         contentClassName="px-3 px-lg-4"
         show={show}
+        scrollable
         onHide={() => setShow(false)}
       >
-        <Modal.Header closeButton className="border-0 px-3">
-          <Modal.Title className="fs-5 px-2">Badges</Modal.Title>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fs-5 ms-3 mt-4">Badges</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Container>
-            <div>
-              <p>
-                Bowtie regularly rebuilds a number of badges for{" "}
-                {implementation.name}.
-              </p>
-              <p>
-                If you are a maintainer, you may be interested in embedding one
-                or more of them in your documentation to show off! Here are
-                embeddable snippets for whatever documentation language you are
-                likely to be using. The badge will automatically update as
-                Bowtie re-runs its report, so no manual updating should be
-                necessary.
-              </p>
-              <hr className="mx-0 mx-sm-3 my-5" />
-            </div>
-            <div className="d-sm-flex pb-3 gap-4 gap-lg-5 align-items-center">
+          <Container className="p-5">
+            <div className="pb-3 d-flex flex-row gap-5 align-items-center">
               <ListGroup variant="flush">
                 {Object.entries(allBadges).map(([category, badges]) => (
                   <ListGroup.Item key={category}>
@@ -71,7 +57,7 @@ const EmbedBadges: React.FC<{
                         <ListGroup.Item
                           key={badge.name}
                           action
-                          active={compareBadges(badge, activeBadge)}
+                          active={compareBadges(activeBadge, badge)}
                           onClick={() => setActiveBadge(badge)}
                         >
                           {badge.name}
@@ -82,34 +68,49 @@ const EmbedBadges: React.FC<{
                 ))}
               </ListGroup>
 
-              <hr className="d-sm-none my-5" />
+              <div className="overflow-auto">
+                <div className="pb-3">
+                  <p>
+                    Bowtie regularly rebuilds a number of badges for
+                    {implementation.name}.
+                  </p>
+                  <p>
+                    If you are a maintainer, you may be interested in embedding
+                    one or more of them in your documentation to show off! Here
+                    are embeddable snippets for whatever documentation language
+                    you are likely to be using. The badge will automatically
+                    update as Bowtie re-runs its report, so no manual updating
+                    should be necessary.
+                  </p>
+                </div>
 
-              <div className="overflow-hidden">
-                <div className="mx-xl-3 p-xl-5">
-                  <div className="font-monospace d-flex position-relative">
-                    <span className="m-2 position-absolute top-0 end-0">
-                      <CopyToClipboard textToCopy={badgeEmbed} />
-                    </span>
-                    <SyntaxHighlighter
-                      language={activeFormat.name.toLowerCase()}
-                      style={isDarkMode ? oneDark : oneLight}
-                      className="py-5"
-                    >
-                      {badgeEmbed}
-                    </SyntaxHighlighter>
-                  </div>
+                <hr className="mx-5 py-3" />
+                <div
+                  className={`font-monospace d-flex position-relative p-5 mx-5`}
+                  style={{
+                    backgroundColor: isDarkMode ? "#282c34" : "#fafafa",
+                  }}
+                >
+                  <span className="m-2 position-absolute top-0 end-0">
+                    <CopyToClipboard textToCopy={badgeEmbed} />
+                  </span>
+                  <SyntaxHighlighter
+                    language={activeFormat.name.toLowerCase()}
+                    style={isDarkMode ? oneDark : oneLight}
+                    className="py-5"
+                  >
+                    {badgeEmbed}
+                  </SyntaxHighlighter>
                 </div>
 
                 <Image
                   alt={activeBadge.name}
                   src={activeBadge.uri.href()}
-                  className="d-block mx-auto mt-5 m-b-3"
+                  className="d-block mx-auto my-5"
                 />
               </div>
 
-              <div className="d-none d-sm-block vr my-5"></div>
-
-              <hr className="d-sm-none my-5" />
+              <div className="vr my-5"></div>
 
               <div>
                 <h5 className="ps-1">Format</h5>
