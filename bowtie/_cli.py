@@ -28,7 +28,7 @@ from rich import box, console, panel
 from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
-from rich_click.utils import CommandGroupDict
+from rich_click.utils import CommandGroupDict, OptionGroupDict
 from url import URL, RelativeURLWithoutBase
 import referencing_loaders
 import rich_click as click
@@ -86,9 +86,17 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
+def option_group(name: str, *options: str, **kwargs: Any):
+    return OptionGroupDict(
+        name=name,
+        options=[f"--{option}" for option in options],
+        **kwargs,
+    )
+
+
 # rich-click's CommandGroupDict seems to be missing some covariance, as using a
 # regular dict here makes pyright complain.
-_GROUPS = dict(
+_COMMAND_GROUPS = dict(
     bowtie=[
         CommandGroupDict(
             name="Basic Commands",
@@ -104,11 +112,141 @@ _GROUPS = dict(
         ),
     ],
 )
+_OPTION_GROUPS = {
+    "bowtie validate": [
+        option_group(
+            "Required",
+            "implementation",
+        ),
+        option_group(
+            "Schema Behavior Options",
+            "dialect",
+            "set-schema",
+        ),
+        option_group(
+            "Validation Metadata Options",
+            "description",
+            "expect",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+            "validate-implementations",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie suite": [
+        option_group(
+            "Required",
+            "implementation",
+        ),
+        option_group(
+            "Test Run Options",
+            "fail-fast",
+            "filter",
+            "max-error",
+            "max-fail",
+        ),
+        option_group(
+            "Test Modification Options",
+            "set-schema",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+            "validate-implementations",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie info": [
+        option_group(
+            "Basic Options",
+            "implementation",
+            "format",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie smoke": [
+        option_group(
+            "Basic Options",
+            "implementation",
+            "quiet",
+            "format",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie filter-dialects": [
+        option_group(
+            "Required",
+            "implementation",
+        ),
+        option_group(
+            "Filters",
+            "dialect",
+            "latest",
+            "boolean-schemas",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie filter-implementations": [
+        option_group(
+            "Required",
+            "implementation",
+        ),
+        option_group(
+            "Filters",
+            "supports-dialect",
+            "language",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+        ),
+        option_group("Help", "help"),
+    ],
+    "bowtie run": [
+        option_group(
+            "Required",
+            "implementation",
+        ),
+        option_group(
+            "Schema Behavior Options",
+            "dialect",
+            "set-schema",
+        ),
+        option_group(
+            "Test Run Options",
+            "fail-fast",
+            "filter",
+            "max-error",
+            "max-fail",
+        ),
+        option_group(
+            "Connection & Communication Options",
+            "read-timeout",
+            "validate-implementations",
+        ),
+        option_group("Help", "help"),
+    ],
+}
 
 
 @click.rich_config(
     help_config=click.RichHelpConfiguration(
-        command_groups=_GROUPS,
+        command_groups=_COMMAND_GROUPS,
+        option_groups=_OPTION_GROUPS,
         style_commands_table_column_width_ratio=(1, 3),
         # Otherwise there's an uncomfortable amount of internal whitespace.
         max_width=120,
