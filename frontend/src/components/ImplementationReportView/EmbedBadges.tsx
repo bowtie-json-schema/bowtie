@@ -4,6 +4,8 @@ import Image from "react-bootstrap/Image";
 import ListGroup from "react-bootstrap/ListGroup";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 import CopyToClipboard from "../CopyToClipboard";
 import { Implementation } from "../../data/parseReportData";
 import { Badge, badgesFor } from "../../data/Badge";
@@ -37,38 +39,44 @@ const EmbedBadges: React.FC<{
       <Modal
         size="xl"
         fullscreen="xl-down"
-        contentClassName="px-3 px-lg-4"
+        contentClassName="px-4"
         show={show}
-        scrollable
         onHide={() => setShow(false)}
       >
-        <Modal.Header closeButton className="border-0">
-          <Modal.Title className="fs-5 ms-3 mt-4">Badges</Modal.Title>
+        <Modal.Header closeButton className="border-0 mt-4">
+          <Modal.Title className="fs-5 ms-3">Badges</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Container className="p-5">
-            <div className="pb-3 d-flex flex-row gap-5 align-items-center">
-              <ListGroup variant="flush">
-                {Object.entries(allBadges).map(([category, badges]) => (
-                  <ListGroup.Item key={category}>
-                    <h6>{category}</h6>
-                    <ListGroup variant="flush">
-                      {badges.map((badge) => (
-                        <ListGroup.Item
-                          key={badge.name}
-                          action
-                          active={compareBadges(activeBadge, badge)}
-                          onClick={() => setActiveBadge(badge)}
-                        >
-                          {badge.name}
-                        </ListGroup.Item>
-                      ))}
-                    </ListGroup>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
+          <Container className="px-5">
+            <Row className="pb-3 gap-5 align-items-center">
+              <Col sm={5} md={3} lg={2} className="order-2 order-md-1">
+                <div>
+                  {Object.entries(allBadges).map(([category, badges]) => (
+                    <div key={category}>
+                      <h6>{category}</h6>
+                      <ListGroup variant="flush" className="pb-2">
+                        {badges.map((badge) => (
+                          <ListGroup.Item
+                            key={badge.name}
+                            action
+                            active={compareBadges(activeBadge, badge)}
+                            onClick={() => setActiveBadge(badge)}
+                          >
+                            {badge.name}
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    </div>
+                  ))}
+                </div>
+              </Col>
 
-              <div className="overflow-auto">
+              <Col
+                sm={12}
+                md={8}
+                lg={6}
+                className="overflow-auto order-1 order-md-2"
+              >
                 <div className="pb-3">
                   <p>
                     Bowtie regularly rebuilds a number of badges for
@@ -86,7 +94,7 @@ const EmbedBadges: React.FC<{
 
                 <hr className="mx-5 py-3" />
                 <div
-                  className={`font-monospace d-flex position-relative p-5 mx-5`}
+                  className={`font-monospace d-flex position-relative rounded p-5 mx-2`}
                   style={{
                     backgroundColor: isDarkMode ? "#282c34" : "#fafafa",
                   }}
@@ -108,11 +116,12 @@ const EmbedBadges: React.FC<{
                   src={activeBadge.uri.href()}
                   className="d-block mx-auto my-5"
                 />
-              </div>
+                <hr className="mx-5 d-lg-none" />
+              </Col>
 
-              <div className="vr my-5"></div>
-
-              <div>
+              <div className="vr my-lg-5 px-0 order-3 d-none d-sm-block d-md-none d-lg-block"></div>
+              <Col sm={4} md={5} lg className="order-4 px-lg-0 pb-1">
+                <hr className="hr d-block d-sm-none order-3 m-5 mt-0"></hr>
                 <h5 className="ps-1">Format</h5>
                 <ListGroup variant="flush">
                   {supportedFormats.map((format) => (
@@ -126,8 +135,8 @@ const EmbedBadges: React.FC<{
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
-              </div>
-            </div>
+              </Col>
+            </Row>
           </Container>
         </Modal.Body>
       </Modal>
