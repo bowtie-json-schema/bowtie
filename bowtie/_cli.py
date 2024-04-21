@@ -7,6 +7,7 @@ from functools import cache, wraps
 from importlib.resources import files
 from pathlib import Path
 from pprint import pformat
+from textwrap import dedent
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -16,6 +17,7 @@ import sys
 
 from aiodocker import Docker
 from attrs import asdict
+from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
 from jsonschema_lexer import JSONSchemaLexer
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
@@ -26,9 +28,10 @@ from rich import box, console, panel
 from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
+from rich_click.utils import CommandGroupDict, OptionGroupDict
 from url import URL, RelativeURLWithoutBase
-import click
 import referencing_loaders
+import rich_click as click
 import structlog
 import structlog.typing
 
@@ -54,10 +57,12 @@ if TYPE_CHECKING:
     )
     from typing import Any, TextIO
 
+    from click.decorators import FC
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
 
     from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
+
 
 # Windows fallbacks...
 _EX_CONFIG = getattr(os, "EX_CONFIG", 1)
@@ -81,16 +86,108 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
+# rich-click's CommandGroupDict seems to be missing some covariance, as using a
+# regular dict here makes pyright complain.
+_COMMAND_GROUPS = dict(
+    bowtie=[
+        CommandGroupDict(
+            name="Basic Commands",
+            commands=["validate", "suite", "summary", "info"],
+        ),
+        CommandGroupDict(
+            name="Advanced Usage",
+            commands=["filter-dialects", "filter-implementations", "run"],
+        ),
+        CommandGroupDict(
+            name="Plumbing Commands",
+            commands=["badges", "smoke"],
+        ),
+    ],
+)
+_OPTION_GROUPS = {
+    f"bowtie {command}": [
+        *[
+            OptionGroupDict(name=group, options=[f"--{o}" for o in options])
+            for group, options in groups
+        ],
+        OptionGroupDict(
+            name="Connection & Communication Options",
+            options=["--read-timeout", "--validate-implementations"],
+        ),
+        OptionGroupDict(name="Help", options=["--help"]),
+    ]
+    for command, groups in [
+        (
+            "validate",
+            [
+                ("Required", ["implementation"]),
+                ("Schema Behavior Options", ["dialect", "set-schema"]),
+                ("Validation Metadata Options", ["description", "expect"]),
+            ],
+        ),
+        (
+            "suite",
+            [
+                ("Required", ["implementation"]),
+                (
+                    "Test Run Options",
+                    ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+                ("Test Modification Options", ["set-schema"]),
+            ],
+        ),
+        ("info", [("Basic Options", ["implementation", "format"])]),
+        ("smoke", [("Basic Options", ["implementation", "quiet", "format"])]),
+        (
+            "filter-dialects",
+            [
+                ("Required", ["implementation"]),
+                ("Filters", ["dialect", "latest", "boolean-schemas"]),
+            ],
+        ),
+        (
+            "filter-implementations",
+            [
+                ("Required", ["implementation"]),
+                ("Filters", ["supports-dialect", "language"]),
+            ],
+        ),
+        (
+            "run",
+            [
+                ("Required", ["implementation"]),
+                ("Schema Behavior Options", ["dialect", "set-schema"]),
+                (
+                    "Test Run Options",
+                    ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+            ],
+        ),
+    ]
+}
+
+
+@click.rich_config(
+    help_config=click.RichHelpConfiguration(
+        command_groups=_COMMAND_GROUPS,
+        option_groups=_OPTION_GROUPS,
+        style_commands_table_column_width_ratio=(1, 3),
+        # Otherwise there's an uncomfortable amount of internal whitespace.
+        max_width=120,
+    ),
+)
 @click.group(
     context_settings=dict(help_option_names=["--help", "-h"]),
-    epilog="""
-    If you don't know where to begin, `bowtie validate` (for checking
-    what any given implementations think of your schema) or `bowtie suite`
-    (for running the official test suite against implementations) are likely
-    good places to start.
+    # needing to explicitly dedent here, as well as the extra newline
+    # before "Full documentation" both seem like rich-click bugs.
+    epilog=dedent(
+        """
+        If you don't know where to begin, `bowtie validate --help` or
+        `bowtie suite --help` are likely good places to start.
 
-    Full documentation can also be found at https://docs.bowtie.report
-    """,
+        Full documentation can also be found at https://docs.bowtie.report
+        """,
+    ),
 )
 @click.version_option(prog_name="bowtie", package_name="bowtie-json-schema")
 @click.option(
@@ -113,11 +210,11 @@ def main(log_level: str):
     """
     A meta-validator for the JSON Schema specifications.
 
-    Bowtie gives you access to JSON Schema across every programming
-    language and implementation.
+    Bowtie gives you access to the JSON Schema ecosystem across every
+    programming language and implementation.
 
-    It lets you compare implementations to each other, or to known correct
-    results from the JSON Schema test suite.
+    It lets you compare implementations either to each other or to known
+    correct results from the official JSON Schema test suite.
     """
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
@@ -243,7 +340,7 @@ def implementation_subcommand(
 )
 def badges(site: Path):
     """
-    Generate Bowtie badges from previous runs.
+    Generate Bowtie badges for implementations using a previous Bowtie run.
 
     Will generate badges for any existing dialects, and ignore any for which a
     report was not generated.
@@ -661,6 +758,18 @@ class _Image(click.ParamType):
             return value
         return f"{IMAGE_REPOSITORY}/{value}"
 
+    def shell_complete(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        incomplete: str,
+    ) -> list[CompletionItem]:
+        return [
+            CompletionItem(name)
+            for name in Implementation.known()
+            if name.startswith(incomplete.lower())
+        ]
+
 
 class _Dialect(click.ParamType):
     """
@@ -693,6 +802,36 @@ class _Dialect(click.ParamType):
 
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
+    def shell_complete(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        incomplete: str,
+    ) -> list[CompletionItem]:
+        if incomplete:  # the user typed something, so filter over everything
+            suggestions = [
+                (field, dialect)
+                for dialect in Dialect.known()
+                for field in [
+                    str(dialect.uri),
+                    dialect.short_name,
+                    *dialect.aliases,
+                ]
+            ]
+            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
+        else:  # the user didn't type anything, only suggest short names
+            suggestions = Dialect.by_short_name().items()
+
+        return [
+            # FIXME: pallets/click#2703
+            CompletionItem(
+                value=value.replace(":", "\\:"),
+                help=f"the {dialect.pretty_name} dialect",
+            )
+            for value, dialect in suggestions
+            if value.startswith(incomplete.lower())
+        ]
+
 
 CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
@@ -715,6 +854,25 @@ class _Filter(click.ParamType):
         )
 
 
+def _set_dialect(ctx: click.Context, _, value: _Dialect):
+    """
+    Set the dialect according to a possibly present :kw:`$schema` keyword.
+    """
+    if value:
+        return value
+    schema = ctx.params.get("schema")
+    dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
+        schema.get("$schema")  # type: ignore[reportUnknownMemberType]
+        if isinstance(schema, dict)
+        else None
+    )
+    return (
+        Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
+        if dialect_from_schema
+        else max(Dialect.known())
+    )
+
+
 def _set_schema(dialect: Dialect) -> CaseTransform:
     """
     Explicitly set a dialect on schemas passing through by setting ``$schema``.
@@ -724,29 +882,6 @@ def _set_schema(dialect: Dialect) -> CaseTransform:
 
 def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
     return lambda cases: cases
-
-
-# Both are these are needed because parsing is order dependent :/
-def _disallow_fail_fast(
-    ctx: click.Context,
-    _,
-    value: int | None,
-) -> int | None:
-    if ctx.params.get("fail_fast"):
-        if value is None:
-            return 1
-        raise click.UsageError(
-            "don't provide both --fail-fast and --max-fail / --max-error",
-        )
-    return value
-
-
-def _disallow_max_fail(ctx: click.Context, _, value: int | None) -> int | None:
-    if value and ctx.params.get("max_fail", 1) != 1:
-        raise click.UsageError(
-            "don't provide both --fail-fast and --max-fail / --max-error",
-        )
-    return value
 
 
 IMPLEMENTATION = click.option(
@@ -764,7 +899,7 @@ DIALECT = click.option(
     "-D",
     "dialect",
     type=_Dialect(),
-    default=max(Dialect.known()),
+    callback=_set_dialect,
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
@@ -779,28 +914,6 @@ FILTER = click.option(
     type=_Filter(),
     metavar="GLOB",
     help="Only run cases whose description match the given glob pattern.",
-)
-FAIL_FAST = click.option(
-    "-x",
-    "--fail-fast",
-    callback=_disallow_max_fail,
-    is_flag=True,
-    default=False,
-    help="Fail immediately after the first error or disagreement.",
-)
-MAX_FAIL = click.option(
-    "--max-fail",
-    metavar="COUNT",
-    type=click.IntRange(min=1),
-    callback=_disallow_fail_fast,
-    help="Fail immediately if x tests fail in total across implementations",
-)
-MAX_ERROR = click.option(
-    "--max-error",
-    metavar="COUNT",
-    type=click.IntRange(min=1),
-    callback=_disallow_fail_fast,
-    help="Fail immediately if x errors occur in total across implementations",
 )
 SET_SCHEMA = click.option(
     "--set-schema",
@@ -852,13 +965,63 @@ VALIDATE = click.option(
 )
 
 
+def fail_fast(fn: FC) -> FC:
+    conflict = "don't provide both --fail-fast and --max-fail / --max-error"
+
+    # Both are these are needed because parsing is order dependent :/
+    def disallow_fail_fast(
+        ctx: click.Context,
+        _,
+        value: int | None,
+    ) -> int | None:
+        if ctx.params.get("fail_fast"):
+            if value is None:
+                return 1
+            raise click.UsageError(conflict)
+        return value
+
+    def disallow_max_fail(
+        ctx: click.Context,
+        _,
+        value: int | None,
+    ) -> int | None:
+        if value and ctx.params.get("max_fail", 1) != 1:
+            raise click.UsageError(conflict)
+        return value
+
+    N = "COUNT"
+    msg = f"Stop running once {N} tests {{}} in total across implementations."
+    return click.option(
+        "-x",
+        "--fail-fast",
+        callback=disallow_max_fail,
+        is_flag=True,
+        default=False,
+        help="Stop running immediately after the first failure or error.",
+    )(
+        click.option(
+            "--max-fail",
+            metavar=N,
+            type=click.IntRange(min=1),
+            callback=disallow_fail_fast,
+            help=msg.format("fail"),
+        )(
+            click.option(
+                "--max-error",
+                metavar=N,
+                type=click.IntRange(min=1),
+                callback=disallow_fail_fast,
+                help=msg.format("error"),
+            )(fn),
+        ),
+    )
+
+
 @subcommand
 @IMPLEMENTATION
 @DIALECT
 @FILTER
-@FAIL_FAST
-@MAX_FAIL
-@MAX_ERROR
+@fail_fast
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -874,7 +1037,11 @@ def run(
     **kwargs: Any,
 ):
     """
-    Run test cases written in Bowtie's test format.
+    Run test cases written directly in Bowtie's testing format.
+
+    This is generally useful if you wish to hand-author which schemas to
+    include in the schema registry, or otherwise exactly control the contents
+    of a test case.
     """
     cases = filter(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
@@ -906,24 +1073,28 @@ def run(
         "or else (with 'any') to allow either result."
     ),
 )
-@click.argument("schema", type=click.File(mode="rb"))
+@click.argument(
+    "schema",
+    type=click.File(mode="rb"),
+    callback=lambda _, __, value: json.load(value),  # type: ignore[reportUnknownLambdaType]
+)
 @click.argument("instances", nargs=-1, type=click.File(mode="rb"))
 def validate(
-    schema: TextIO,
+    schema: Any,
     instances: Iterable[TextIO],
     expect: str,
     description: str,
     **kwargs: Any,
 ):
     """
-    Validate instances across any implementation.
+    Validate instances under a schema across any supported implementation.
     """
     if not instances:
         return _EX_NOINPUT
 
     case = TestCase(
         description=description,
-        schema=json.load(schema),
+        schema=schema,
         tests=[
             Test(
                 description="",
@@ -986,10 +1157,13 @@ async def filter_implementations(
     languages: Set[str],
 ):
     """
-    Output implementations matching a given criteria.
+    Output implementations which match the given criteria.
+
+    Useful for piping or otherwise using the resulting output for further
+    Bowtie commands.
     """
     if not dialects and languages == KNOWN_LANGUAGES:
-        for implementation in ctx.params["image_names"]:
+        for implementation in ctx.params.get("image_names", ()):
             click.echo(implementation.removeprefix(f"{IMAGE_REPOSITORY}/"))
         return
 
@@ -1023,7 +1197,7 @@ async def filter_implementations(
     "booleans",
     default=None,
     help=(
-        "If provided, show only dialects which do (or do not)"
+        "If provided, show only dialects which do (or do not) "
         "support boolean schemas. Otherwise show either kind."
     ),
 )
@@ -1126,7 +1300,7 @@ async def smoke(
     echo: Callable[..., None],
 ) -> int:
     """
-    Smoke test implementations for basic correctness.
+    Smoke test implementations for basic correctness against Bowtie's protocol.
     """
     exit_code = 0
 
@@ -1183,9 +1357,7 @@ async def smoke(
 @subcommand
 @IMPLEMENTATION
 @FILTER
-@FAIL_FAST
-@MAX_FAIL
-@MAX_ERROR
+@fail_fast
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -1196,7 +1368,7 @@ def suite(
     **kwargs: Any,
 ):
     """
-    Run tests from the official JSON Schema suite.
+    Run the official JSON Schema test suite against any implementation.
 
     Supports a number of possible inputs:
 
@@ -1285,16 +1457,13 @@ async def _run(
         unsucessful = Unsuccessful()
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
-            case_reporter = reporter.case_started(seq_case)
-
-            if not seq_case.matches_dialect(dialect):
-                case_reporter.mismatched_dialect(expected=dialect)
+            got_result = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
 
             for each in asyncio.as_completed(responses):
                 result = await each
-                case_reporter.got_result(result=result)
+                got_result(result=result)
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail

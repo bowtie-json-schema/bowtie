@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up nox
-        uses: wntrblm/nox@2024.03.02
+        uses: wntrblm/nox@2024.04.15
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -80,8 +80,10 @@ jobs:
         run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
         if: startsWith(matrix.noxenv, 'ui')
 
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
       - name: Set up nox
-        uses: wntrblm/nox@2024.03.02
+        uses: wntrblm/nox@2024.04.15
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
@@ -129,8 +131,10 @@ jobs:
         run: python -m pip install build
       - name: Create packages
         run: python -m build .
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
       - name: Set up nox
-        uses: wntrblm/nox@2024.03.02
+        uses: wntrblm/nox@2024.04.15
       - name: Build a Bowtie PyApp
         run: nox -s app -- .
       - uses: actions/upload-artifact@v4

@@ -5,7 +5,7 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, TypeVar
+from typing import TYPE_CHECKING, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
 
@@ -68,7 +68,10 @@ class Dialect:
     uri: URL = field(repr=False)
     short_name: str = field(repr=False)
     first_publication_date: date = field(repr=False)
-    aliases: Set[str] = field(default=frozenset(), repr=False)
+    aliases: Set[str] = field(
+        default=cast(frozenset[str], frozenset()),
+        repr=False,
+    )
     has_boolean_schemas: bool = field(default=True, repr=False)
 
     def __lt__(self, other: Any):

@@ -6,7 +6,6 @@ from textwrap import dedent, indent
 import asyncio
 import json as _json
 import os
-import re
 import sys
 import tarfile
 
@@ -29,6 +28,9 @@ Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
 HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
+# Make believe we're wide for tests to avoid line breaks in rich-click.
+WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
+
 
 def tag(name: str):
     return f"bowtie-integration-tests/{name}"
@@ -48,6 +50,7 @@ async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=WIDE_TERMINAL_ENV,
     )
     raw_stdout, raw_stderr = await process.communicate(stdin.encode())
     decoded = stdout, stderr = raw_stdout.decode(), raw_stderr.decode()
@@ -483,7 +486,7 @@ async def test_unknown_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower(), stderr
+    assert "not a known dialect" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -499,7 +502,7 @@ async def test_nonurl_dialect(envsonschema):
         results, stderr = await send("")
 
     assert results == []
-    assert "not a known dialect" in stderr.lower(), stderr
+    assert "not a known dialect" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -514,7 +517,7 @@ async def test_unsupported_known_dialect(only_draft3):
         results, stderr = await send("")
 
     assert results == []
-    assert "does not support" in stderr.lower(), stderr
+    assert "does not support" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -560,7 +563,7 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         {tag("envsonschema"): TestResult.INVALID},
         {tag("envsonschema"): TestResult.INVALID},
     ], stderr
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -578,7 +581,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
         )
 
     assert results == []
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -600,7 +603,7 @@ async def test_it_handles_immediately_broken_implementations(
             """,  # noqa: E501
         )
 
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
         {tag("envsonschema"): TestResult.INVALID},
@@ -627,7 +630,7 @@ async def test_it_handles_broken_start_implementations(
             """,  # noqa: E501
         )
 
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
         {tag("envsonschema"): TestResult.INVALID},
@@ -751,7 +754,7 @@ async def test_it_handles_invalid_start_responses(missing_homepage):
             """,  # noqa: E501
         )
 
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
     assert "'homepage' is a required" in stderr, stderr
     assert results == [], stderr
 
@@ -915,7 +918,7 @@ async def test_max_fail_with_fail_fast(envsonschema):
         exit_code=-1,
     )
     assert stdout == ""
-    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
+    assert "don't provide both" in stderr, stderr
 
     stdout, stderr = await bowtie(
         "run",
@@ -927,7 +930,7 @@ async def test_max_fail_with_fail_fast(envsonschema):
         exit_code=-1,
     )
     assert stdout == ""
-    assert "--fail-fast and --max-fail / --max-error" in stderr.lower(), stderr
+    assert "don't provide both" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -1379,7 +1382,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
     )
 
     assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
-    assert "failed to start" in stderr.lower(), stderr
+    assert "failed to start" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -2014,7 +2017,7 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         tmp_path,
         exit_code=-1,
     )
-    assert re.search(r"does not contain .* cases", stderr), stderr
+    assert "does not contain" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -2024,7 +2027,7 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
     )
     tmp_path.joinpath("instance.json").write_text("12")
 
-    _, stderr = await bowtie(
+    stdout, stderr = await bowtie(
         "validate",
         "-D",
         "7",
@@ -2033,7 +2036,9 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
+    dialect = _json.loads(stdout.split("\n")[0])["dialect"]
 
+    assert dialect == "http://json-schema.org/draft-07/schema#"
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -2048,6 +2053,24 @@ async def test_run_mismatched_dialect(envsonschema, tmp_path):
 
     assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_run_mismatched_dialect_total_junk(envsonschema, tmp_path):
+    """
+    A $schema keyword that isn't even a string just gets ignored.
+
+    At this point we're likely testing completely broken schemas.
+    """
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "BOOM", "schema": {"$schema": 37}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -2077,3 +2100,41 @@ async def test_run_boolean_schema(envsonschema, tmp_path):
 
     assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
     assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        '{"$schema": "https://json-schema.org/draft/2019-09/schema"}',
+    )
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+    report = Report.from_serialized(stdout.splitlines())
+    assert report.metadata.dialect == Dialect.by_short_name()["draft2019-09"]
+
+
+@pytest.mark.asyncio
+async def test_validate_specify_dialect(envsonschema, tmp_path):
+    tmp_path.joinpath("schema.json").write_text(
+        "{}",
+    )
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        "-D",
+        "2019",
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+    )
+    report = Report.from_serialized(stdout.splitlines())
+    assert report.metadata.dialect == Dialect.by_short_name()["draft2019-09"]

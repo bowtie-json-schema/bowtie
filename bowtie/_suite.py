@@ -178,6 +178,7 @@ def cases_from(
         for case in json.loads(path.read_text()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
+            case.pop("specification", None)  # we do nothing with this now
             yield _core.TestCase.from_dict(
                 dialect=dialect,
                 registry=registry,

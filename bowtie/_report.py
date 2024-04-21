@@ -90,30 +90,25 @@ class Reporter:
     def finished(self, did_fail_fast: bool):
         self._write(did_fail_fast=did_fail_fast)
 
-    def case_started(self, seq_case: SeqCase):
+    def case_started(self, seq_case: SeqCase, dialect: Dialect):
         self._write(**seq_case.serializable())
         log = self._log.bind(
             case=seq_case.case.description,
             schema=seq_case.case.schema,
         )
-        return CaseReporter(write=self._write, log=log)
 
+        if not seq_case.matches_dialect(dialect):
+            log.warning(
+                "$schema keyword does not seem to match the expected dialect",
+                expected=dialect,
+            )
 
-@frozen
-class CaseReporter:
-    _write: Callable[..., Any] = field(alias="write")
-    _log: structlog.stdlib.BoundLogger = field(alias="log")
+        def got_result(result: SeqResult):
+            bound = log.bind(logger_name=result.implementation)
+            serialized = result.log_and_be_serialized(log=bound)
+            self._write(**serialized)
 
-    def mismatched_dialect(self, expected: Dialect):
-        self._log.warn(
-            "$schema keyword does not appear to match "
-            f"a {expected.pretty_name} schema.",
-        )
-
-    def got_result(self, result: SeqResult):
-        log = self._log.bind(logger_name=result.implementation)
-        serialized = result.log_and_be_serialized(log=log)
-        self._write(**serialized)
+        return got_result
 
 
 @frozen

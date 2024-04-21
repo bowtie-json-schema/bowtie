@@ -75,10 +75,10 @@ class SeqCase:
 
     def matches_dialect(self, dialect: _Dialect):
         try:
-            schema = self.case.schema["$schema"]
+            uri = URL.parse(self.case.schema["$schema"])
         except (TypeError, LookupError):
             return True
-        return URL.parse(schema) == dialect.uri
+        return uri == dialect.uri
 
 
 @frozen
@@ -214,14 +214,6 @@ class SkippedTest:
 
     description = "skipped"
 
-    @property
-    def reason(self) -> str:
-        if self.message is not None:
-            return self.message
-        if self.issue_url is not None:
-            return self.issue_url
-        return "skipped"
-
     @classmethod
     def in_skipped_case(cls):
         """
@@ -238,13 +230,6 @@ class ErroredTest:
     skipped: bool = False
 
     description = "error"
-
-    @property
-    def reason(self) -> str:
-        message = self.context.get("message")
-        if message:
-            return message
-        return "Encountered an error."
 
     @classmethod
     def in_errored_case(cls):
