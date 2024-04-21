@@ -6,7 +6,7 @@
 #
 aiodocker==0.21.0
     # via bowtie-json-schema (pyproject.toml)
-aiohttp==3.9.4
+aiohttp==3.9.5
     # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
@@ -23,7 +23,7 @@ cffi==1.16.0
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
-    # via bowtie-json-schema (pyproject.toml)
+    # via rich-click
 cryptography==42.0.5
     # via pyjwt
 diagnostic==2.1.0
@@ -80,6 +80,9 @@ rich==13.7.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
+    #   rich-click
+rich-click==1.8.0.dev6
+    # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.18.0
     # via
     #   bowtie-json-schema (pyproject.toml)
@@ -90,7 +93,9 @@ six==1.16.0
 structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
 typing-extensions==4.11.0
-    # via aiodocker
+    # via
+    #   aiodocker
+    #   rich-click
 uritemplate==4.1.1
     # via github3-py
 url-py==0.10.0

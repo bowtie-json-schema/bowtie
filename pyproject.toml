@@ -50,7 +50,6 @@ dynamic = ["version"]
 dependencies = [
   "aiodocker",
   "attrs>=22.2.0",
-  "click",
   "diagnostic",
   "github3.py",
   "jsonschema>=4.19.0",
@@ -58,6 +57,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=0.4.2",
   "rich",
+  "rich-click>=1.8.0dev6",
   "rpds.py>=0.18.0",
   "structlog",
   "typing-extensions; python_version<'3.11'",

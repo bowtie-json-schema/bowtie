@@ -40,6 +40,7 @@ REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
 SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
+nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.sessions = []
 
 
@@ -361,16 +362,14 @@ def requirements(session):
     """
     Update bowtie's requirements.txt files.
     """
-    session.install("pip-tools")
+    if session.venv_backend == "uv":
+        cmd = ["uv", "pip", "compile"]
+    else:
+        session.install("pip-tools")
+        cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
+
     for each in REQUIREMENTS_IN:
-        session.run(
-            "pip-compile",
-            "--resolver",
-            "backtracking",
-            "--strip-extras",
-            "-U",
-            each.relative_to(ROOT),
-        )
+        session.run(*cmd, "-U", each.relative_to(ROOT))
 
 
 @session(default=False, python=False)
