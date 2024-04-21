@@ -86,14 +86,6 @@ FORMAT = click.option(
 _F = Literal["json", "pretty", "markdown"]
 
 
-def option_group(name: str, *options: str, **kwargs: Any):
-    return OptionGroupDict(
-        name=name,
-        options=[f"--{option}" for option in options],
-        **kwargs,
-    )
-
-
 # rich-click's CommandGroupDict seems to be missing some covariance, as using a
 # regular dict here makes pyright complain.
 _COMMAND_GROUPS = dict(
@@ -113,133 +105,65 @@ _COMMAND_GROUPS = dict(
     ],
 )
 _OPTION_GROUPS = {
-    "bowtie validate": [
-        option_group(
-            "Required",
-            "implementation",
+    f"bowtie {command}": [
+        *[
+            OptionGroupDict(name=group, options=[f"--{o}" for o in options])
+            for group, options in groups
+        ],
+        OptionGroupDict(
+            name="Connection & Communication Options",
+            options=["--read-timeout", "--validate-implementations"],
         ),
-        option_group(
-            "Schema Behavior Options",
-            "dialect",
-            "set-schema",
+        OptionGroupDict(name="Help", options=["--help"]),
+    ]
+    for command, groups in [
+        (
+            "validate",
+            [
+                ("Required", ["implementation"]),
+                ("Schema Behavior Options", ["dialect", "set-schema"]),
+                ("Validation Metadata Options", ["description", "expect"]),
+            ],
         ),
-        option_group(
-            "Validation Metadata Options",
-            "description",
-            "expect",
+        (
+            "suite",
+            [
+                ("Required", ["implementation"]),
+                (
+                    "Test Run Options",
+                    ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+                ("Test Modification Options", ["set-schema"]),
+            ],
         ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-            "validate-implementations",
+        ("info", [("Basic Options", ["implementation", "format"])]),
+        ("smoke", [("Basic Options", ["implementation", "quiet", "format"])]),
+        (
+            "filter-dialects",
+            [
+                ("Required", ["implementation"]),
+                ("Filters", ["dialect", "latest", "boolean-schemas"]),
+            ],
         ),
-        option_group("Help", "help"),
-    ],
-    "bowtie suite": [
-        option_group(
-            "Required",
-            "implementation",
+        (
+            "filter-implementations",
+            [
+                ("Required", ["implementation"]),
+                ("Filters", ["supports-dialect", "language"]),
+            ],
         ),
-        option_group(
-            "Test Run Options",
-            "fail-fast",
-            "filter",
-            "max-error",
-            "max-fail",
+        (
+            "run",
+            [
+                ("Required", ["implementation"]),
+                ("Schema Behavior Options", ["dialect", "set-schema"]),
+                (
+                    "Test Run Options",
+                    ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+            ],
         ),
-        option_group(
-            "Test Modification Options",
-            "set-schema",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-            "validate-implementations",
-        ),
-        option_group("Help", "help"),
-    ],
-    "bowtie info": [
-        option_group(
-            "Basic Options",
-            "implementation",
-            "format",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-        ),
-        option_group("Help", "help"),
-    ],
-    "bowtie smoke": [
-        option_group(
-            "Basic Options",
-            "implementation",
-            "quiet",
-            "format",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-        ),
-        option_group("Help", "help"),
-    ],
-    "bowtie filter-dialects": [
-        option_group(
-            "Required",
-            "implementation",
-        ),
-        option_group(
-            "Filters",
-            "dialect",
-            "latest",
-            "boolean-schemas",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-        ),
-        option_group("Help", "help"),
-    ],
-    "bowtie filter-implementations": [
-        option_group(
-            "Required",
-            "implementation",
-        ),
-        option_group(
-            "Filters",
-            "supports-dialect",
-            "language",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-        ),
-        option_group("Help", "help"),
-    ],
-    "bowtie run": [
-        option_group(
-            "Required",
-            "implementation",
-        ),
-        option_group(
-            "Schema Behavior Options",
-            "dialect",
-            "set-schema",
-        ),
-        option_group(
-            "Test Run Options",
-            "fail-fast",
-            "filter",
-            "max-error",
-            "max-fail",
-        ),
-        option_group(
-            "Connection & Communication Options",
-            "read-timeout",
-            "validate-implementations",
-        ),
-        option_group("Help", "help"),
-    ],
+    ]
 }
 
 
