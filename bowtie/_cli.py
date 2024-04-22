@@ -55,7 +55,8 @@ if TYPE_CHECKING:
         Sequence,
         Set,
     )
-    from typing import Any, TextIO
+    from os import PathLike
+    from typing import IO, Any, TextIO
 
     from click.decorators import FC
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
@@ -1017,6 +1018,19 @@ def fail_fast(fn: FC) -> FC:
     )
 
 
+class JSON(click.File):
+
+    name = "JSON"
+
+    def convert(
+        self,
+        value: str | PathLike[str] | IO[Any],
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> Any:
+        return json.load(super().convert(value, param, ctx))
+
+
 @subcommand
 @IMPLEMENTATION
 @DIALECT
@@ -1073,15 +1087,11 @@ def run(
         "or else (with 'any') to allow either result."
     ),
 )
-@click.argument(
-    "schema",
-    type=click.File(mode="rb"),
-    callback=lambda _, __, value: json.load(value),  # type: ignore[reportUnknownLambdaType]
-)
-@click.argument("instances", nargs=-1, type=click.File(mode="rb"))
+@click.argument("schema", type=JSON())
+@click.argument("instances", nargs=-1, type=JSON())
 def validate(
     schema: Any,
-    instances: Iterable[TextIO],
+    instances: Iterable[Any],
     expect: str,
     description: str,
     **kwargs: Any,
@@ -1098,7 +1108,7 @@ def validate(
         tests=[
             Test(
                 description="",
-                instance=json.load(instance),
+                instance=instance,
                 valid=dict(valid=True, invalid=False, any=None)[expect],
             )
             for instance in instances
