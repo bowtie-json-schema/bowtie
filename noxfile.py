@@ -28,15 +28,17 @@ REQUIREMENTS = dict(
 )
 REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
     (
-        ROOT / "pyproject.toml"
-        if path.absolute() == REQUIREMENTS["main"].absolute()
-        else path.parent / f"{path.stem}.in"
+        (
+            ROOT / "pyproject.toml"
+            if path.absolute() == REQUIREMENTS["main"].absolute()
+            else path.parent / f"{path.stem}.in"
+        ),
+        path,
     )
     for path in REQUIREMENTS.values()
 ]
 
 
-# aiohttp / aiodocker don't support 3.12
 SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
@@ -368,8 +370,10 @@ def requirements(session):
         session.install("pip-tools")
         cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
 
-    for each in REQUIREMENTS_IN:
-        session.run(*cmd, "-U", each.relative_to(ROOT))
+    for each, out in REQUIREMENTS_IN:
+        # otherwise output files end up with silly absolute path comments...
+        relative = each.relative_to(ROOT)
+        session.run(*cmd, "--upgrade", "--output-file", out, relative)
 
 
 @session(default=False, python=False)
