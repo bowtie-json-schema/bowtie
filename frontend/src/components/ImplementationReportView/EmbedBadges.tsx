@@ -15,6 +15,7 @@ import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
+import "./EmbedBadges.css";
 
 const EmbedBadges: React.FC<{
   implementation: Implementation;
@@ -94,10 +95,11 @@ const EmbedBadges: React.FC<{
 
                 <hr className="mx-5 py-3" />
                 <div
-                  className={`font-monospace d-flex position-relative rounded p-5 mx-2`}
-                  style={{
-                    backgroundColor: isDarkMode ? "#282c34" : "#fafafa",
-                  }}
+                  className={`font-monospace d-flex position-relative rounded p-5 mx-2 ${
+                    isDarkMode
+                      ? "code-block-dark-theme"
+                      : "code-block-light-theme"
+                  }`}
                 >
                   <span className="m-2 position-absolute top-0 end-0">
                     <CopyToClipboard textToCopy={badgeEmbed} />
