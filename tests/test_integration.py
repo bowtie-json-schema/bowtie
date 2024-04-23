@@ -10,12 +10,14 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from jsonschema import validate
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
 import pytest
 import pytest_asyncio
 
+from bowtie._cli import bowtie_schemas_registry
 from bowtie._commands import ErroredTest, TestResult
 from bowtie._core import Dialect, Implementation, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
@@ -30,6 +32,8 @@ FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 # Make believe we're wide for tests to avoid line breaks in rich-click.
 WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
+
+REGISTRY = bowtie_schemas_registry()
 
 
 def tag(name: str):
@@ -1279,7 +1283,12 @@ async def test_info_json(envsonschema):
         "-i",
         envsonschema,
     )
-    assert _json.loads(stdout) == {
+    jsonout = _json.loads(stdout)
+
+    schema, _ = await bowtie("info", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
+    assert jsonout == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
@@ -1309,7 +1318,12 @@ async def test_info_json_multiple_implementations(envsonschema, links):
         "-i",
         links,
     )
-    assert _json.loads(stdout) == {
+    jsonout = _json.loads(stdout)
+
+    schema, _ = await bowtie("info", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
+    assert jsonout == {
         tag("envsonschema"): {
             "name": "envsonschema",
             "language": "python",
