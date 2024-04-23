@@ -5,7 +5,13 @@ build:
   apt_packages:
     - inkscape
   tools:
-    python: "3.11"
+    python: "3.12"
+
+  jobs:
+    post_create_environment:
+      - pip install uv
+    post_install:
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH uv pip install -r docs/requirements.txt
 
 sphinx:
   builder: dirhtml
@@ -13,7 +19,3 @@ sphinx:
   fail_on_warning: true
 
 formats: all
-
-python:
-  install:
-    - requirements: docs/requirements.txt
