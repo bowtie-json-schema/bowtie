@@ -1037,6 +1037,10 @@ async def test_smoke_json(envsonschema):
         json=True,
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
+
+    schema, _ = await bowtie("smoke", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
     assert jsonout == [
         {
             "case": {
@@ -1612,13 +1616,17 @@ async def test_summary_show_failures_json(envsonschema, tmp_path):
         stdin=validate_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    schema, _ = await bowtie("summary", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
     assert jsonout == [
         [
             tag("envsonschema"),
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -1757,7 +1765,7 @@ async def test_validate_no_tests(envsonschema, tmp_path):
 
 @pytest.mark.asyncio
 @pytest.mark.json
-async def test_summary_show_validation(envsonschema, always_valid):
+async def test_summary_show_validation_json(envsonschema, always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -1786,7 +1794,10 @@ async def test_summary_show_validation(envsonschema, always_valid):
         stdin=run_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    schema, _ = await bowtie("summary", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
     assert jsonout == [
         [
             {"type": "integer"},
@@ -1894,6 +1905,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
             ],
         ],
     ], run_stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -1977,7 +1989,10 @@ async def test_run_with_registry(always_valid):
         stdin=run_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    schema, _ = await bowtie("summary", "--schema")
+    validate(instance=jsonout, schema=_json.loads(schema), registry=REGISTRY)
+
     assert jsonout == [
         [
             {"type": "integer"},
@@ -1987,6 +2002,7 @@ async def test_run_with_registry(always_valid):
             ],
         ],
     ], run_stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
