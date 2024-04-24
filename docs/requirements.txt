@@ -33,7 +33,7 @@ cryptography==42.0.5
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema
-docutils==0.21.1
+docutils==0.21.2
     # via
     #   diagnostic
     #   sphinx
@@ -96,7 +96,7 @@ pyjwt==2.8.0
     # via github3-py
 python-dateutil==2.9.0.post0
     # via github3-py
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   bowtie-json-schema
     #   jsonschema
@@ -113,7 +113,7 @@ rich==13.7.1
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.0.dev6
+rich-click==1.8.0.dev7
     # via bowtie-json-schema
 rpds-py==0.18.0
     # via

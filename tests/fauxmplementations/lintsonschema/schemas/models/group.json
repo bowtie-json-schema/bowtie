@@ -2,7 +2,7 @@
   "description": "A collection of related, runnable tests, either individually or themselves in subgroups. Groups are used only for organizing test input and reporting -- they are not sent to harnesses when actually running tests, as there's no need for the harness to have to deal with any grouping structure.",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2023:ihop:group",
+  "$id": "tag:bowtie.report,2023:models:group",
 
   "type": "object",
   "required": ["description", "children"],
@@ -22,7 +22,7 @@
     },
     "registry": {
       "description": "A schema registry to be made available for all tests in this group.",
-      "$ref": "tag:bowtie.report,2023:ihop:registry"
+      "$ref": "tag:bowtie.report,2023:models:registry"
     },
     "children": {
       "description": "A set of related children of this test group",
@@ -34,7 +34,9 @@
     {
       "description": "a leaf test group (whose children are tests, and which therefore declares a schema for its children)",
       "properties": {
-        "children": { "items": { "$ref": "tag:bowtie.report,2023:ihop:test" } }
+        "children": {
+          "items": { "$ref": "tag:bowtie.report,2023:models:test" }
+        }
       },
       "required": ["schema"]
     },

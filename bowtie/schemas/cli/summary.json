@@ -1,0 +1,108 @@
+{
+  "title": "bowtie summary",
+  "description": "Summarized output from a Bowtie test run.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:cli:summary",
+
+  "$todo": [
+    "Add surrounding metadata for the run, which probably turns this into an object.",
+    "Can we make `bowtie summary --show foo --schema` show only the relevant subschema?"
+  ],
+
+  "type": "array",
+
+  "unevaluatedItems": false,
+  "oneOf": [
+    {
+      "title": "Validation Results",
+      "description": "A summary of the validation results collected for each test.",
+
+      "items": {
+        "type": "array",
+
+        "unevaluatedItems": false,
+        "prefixItems": [
+          {
+            "title": "JSON Schema",
+            "description": "The schema which validated this test case."
+          },
+          {
+            "description": "Results across all instances which were tested.",
+
+            "type": "array",
+
+            "unevaluatedItems": false,
+            "items": {
+              "title": "Instance Result",
+              "description": "The result of validation for a specific instance across implementations.",
+
+              "type": "array",
+
+              "unevaluatedItems": false,
+              "prefixItems": [
+                {
+                  "title": "Instance",
+                  "description": "The instance which was validated in this test."
+                },
+                {
+                  "title": "Per-implementation Validation Results",
+                  "description": "The results of validation for each implementation which was run.",
+
+                  "type": "object",
+                  "minProperties": 1,
+
+                  "propertyNames": {
+                    "$ref": "tag:bowtie.report,2024:models:implementation:id"
+                  },
+                  "additionalProperties": {
+                    "$todo": "Include more of the actual result details.",
+                    "enum": ["valid", "invalid", "skipped", "error"]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "title": "Test Failures",
+      "description": "A summary of which validation results did not succeed against what was expected by the test case.",
+
+      "items": {
+        "type": "array",
+
+        "unevaluatedItems": false,
+        "prefixItems": [
+          { "$ref": "tag:bowtie.report,2024:models:implementation:id" },
+          {
+            "description": "Unsuccessful tests for a specific implementation.",
+
+            "type": "object",
+
+            "additionalProperties": false,
+            "required": ["failed", "errored", "skipped"],
+            "properties": {
+              "failed": { "$ref": "#count" },
+              "errored": { "$ref": "#count" },
+              "skipped": { "$ref": "#count" }
+            },
+
+            "$defs": {
+              "count": {
+                "description": "The total number of tests with a specific outcome.",
+
+                "$anchor": "count",
+
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

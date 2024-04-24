@@ -1,0 +1,27 @@
+{
+  "title": "bowtie info",
+  "description": "Information about supported implementations, emitted by `bowtie info --format json`.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:cli:info",
+
+  "type": "object",
+
+  "oneOf": [
+    {
+      "description": "A single implementation",
+      "$ref": "tag:bowtie.report,2024:models:implementation"
+    },
+    {
+      "description": "Multiple implementations, nested by their ID.",
+      "minProperties": 2,
+      "propertyNames": {
+        "$ref": "tag:bowtie.report,2024:models:implementation:id"
+      },
+      "additionalProperties": {
+        "$ref": "tag:bowtie.report,2024:models:implementation"
+      }
+    }
+  ]
+}

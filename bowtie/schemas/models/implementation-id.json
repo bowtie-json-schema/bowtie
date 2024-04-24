@@ -1,0 +1,9 @@
+{
+  "title": "Implementation ID",
+  "description": "A string identifier used to globally refer to a specific supported implementation.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:models:implementation:id",
+
+  "type": "string"
+}

@@ -3,7 +3,7 @@
   "description": "A collection of schemas, identified by URIs, which tests may reference (via $ref) and expect to be retrievable. They should be registered in whatever mechanism is expected by the implementation.",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2023:ihop:registry",
+  "$id": "tag:bowtie.report,2023:models:registry",
 
   "type": "object",
   "propertyNames": { "format": "uri" }
