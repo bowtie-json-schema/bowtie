@@ -101,6 +101,13 @@ ignore = [
     "D001",  # one sentence per line, so max length doesn't make sense
 ]
 
+[tool.pytest.ini_options]
+addopts = ["--strict-markers"]
+xfail_strict = true
+markers = [
+    "json: Tests of Bowtie's JSON output",
+]
+
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true
 strict = ["**/*.py"]

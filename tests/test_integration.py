@@ -1022,6 +1022,7 @@ async def test_smoke_valid_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_smoke_json(envsonschema):
     jsonout, stderr = await bowtie(
         "smoke",
@@ -1269,6 +1270,7 @@ async def test_info_valid_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_info_json(envsonschema):
     stdout, stderr = await bowtie(
         "info",
@@ -1296,6 +1298,7 @@ async def test_info_json(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_info_json_multiple_implementations(envsonschema, links):
     stdout, stderr = await bowtie(
         "info",
@@ -1569,7 +1572,8 @@ async def test_validate(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_failures(envsonschema, tmp_path):
+@pytest.mark.json
+async def test_summary_show_failures_json(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
@@ -1738,6 +1742,7 @@ async def test_validate_no_tests(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_summary_show_validation(envsonschema, always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
@@ -1935,6 +1940,7 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_run_with_registry(always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
