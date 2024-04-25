@@ -115,7 +115,9 @@ class Reporter:
 class RunMetadata:
     dialect: Dialect
     implementations: Sequence[ImplementationInfo] = field(
-        repr=lambda value: f"({len(value)} implementations)",
+        repr=lambda value: (
+            f"({len(value)} implementation{'s' if len(value) != 1 else ''})"
+        ),
         alias="implementations",
     )
     bowtie_version: str = field(
