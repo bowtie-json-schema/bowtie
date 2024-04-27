@@ -1,7 +1,25 @@
-.code-block-dark-theme {
-    background-color: #282c34;
-}
+    .code-block {
+        padding:6rem 3rem !important;
+    }
 
-.code-block-light-theme {
-    background-color: #fafafa;
-}
+    .modal-width {
+        min-width: 90%;
+    }
+    
+    @media screen and (min-width: 1920px) {
+        .modal-width {
+            min-width: 65%;
+        }
+    }
+
+    @media screen and (min-width: 2560px) {
+        .modal-width {
+            min-width: 50%;
+        }
+    }
+
+    @media screen and (min-width: 3840px) {
+        .modal-width {
+            min-width: 35%;
+        }
+    }

@@ -28,19 +28,15 @@ const EmbedBadges: React.FC<{
   const [show, setShow] = useState(false);
   const badgeEmbed = activeFormat.generateEmbed(activeBadge);
 
-  const compareBadges = (a: Badge, b: Badge) => {
-    return a.name === b.name && a.uri.equals(b.uri);
-  };
-
   return (
     <>
       <Button variant="info" size="sm" onClick={() => setShow(true)}>
         Badges
       </Button>
       <Modal
-        size="xl"
         fullscreen="xl-down"
         contentClassName="px-4"
+        dialogClassName="modal-width"
         show={show}
         onHide={() => setShow(false)}
       >
@@ -60,7 +56,7 @@ const EmbedBadges: React.FC<{
                           <ListGroup.Item
                             key={badge.name}
                             action
-                            active={compareBadges(activeBadge, badge)}
+                            active={badge.name === activeBadge.name}
                             onClick={() => setActiveBadge(badge)}
                           >
                             {badge.name}
@@ -76,6 +72,7 @@ const EmbedBadges: React.FC<{
                 sm={12}
                 md={8}
                 lg={6}
+                xl
                 className="overflow-auto order-1 order-md-2"
               >
                 <div className="pb-3">
@@ -94,20 +91,14 @@ const EmbedBadges: React.FC<{
                 </div>
 
                 <hr className="mx-5 py-3" />
-                <div
-                  className={`font-monospace d-flex position-relative rounded p-5 mx-2 ${
-                    isDarkMode
-                      ? "code-block-dark-theme"
-                      : "code-block-light-theme"
-                  }`}
-                >
+                <div className="font-monospace d-flex position-relative rounded mx-2">
                   <span className="m-2 position-absolute top-0 end-0">
                     <CopyToClipboard textToCopy={badgeEmbed} />
                   </span>
                   <SyntaxHighlighter
                     language={activeFormat.name.toLowerCase()}
                     style={isDarkMode ? oneDark : oneLight}
-                    className="py-5"
+                    className="code-block"
                   >
                     {badgeEmbed}
                   </SyntaxHighlighter>
@@ -122,7 +113,7 @@ const EmbedBadges: React.FC<{
               </Col>
 
               <div className="vr my-lg-5 px-0 order-3 d-none d-sm-block d-md-none d-lg-block"></div>
-              <Col sm={4} md={5} lg className="order-4 px-lg-0 pb-1">
+              <Col sm={4} md={5} lg xl={2} className="order-4 px-lg-0 pb-1">
                 <hr className="hr d-block d-sm-none order-3 m-5 mt-0"></hr>
                 <h5 className="ps-1">Format</h5>
                 <ListGroup variant="flush">
