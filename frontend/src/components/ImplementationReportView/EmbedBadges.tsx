@@ -91,7 +91,7 @@ const EmbedBadges: React.FC<{
                 </div>
 
                 <hr className="mx-5 py-3" />
-                <div className="font-monospace d-flex position-relative rounded mx-2">
+                <div className="font-monospace d-flex position-relative rounded mx-5">
                   <span className="m-2 position-absolute top-0 end-0">
                     <CopyToClipboard textToCopy={badgeEmbed} />
                   </span>
@@ -99,6 +99,7 @@ const EmbedBadges: React.FC<{
                     language={activeFormat.name.toLowerCase()}
                     style={isDarkMode ? oneDark : oneLight}
                     className="code-block"
+                    wrapLongLines
                   >
                     {badgeEmbed}
                   </SyntaxHighlighter>
