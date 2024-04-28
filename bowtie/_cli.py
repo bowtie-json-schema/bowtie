@@ -75,17 +75,6 @@ STDERR = console.Console(stderr=True)
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
-FORMAT = click.option(
-    "--format",
-    "-f",
-    "format",
-    help="What format to use for the output",
-    default=lambda: "pretty" if sys.stdout.isatty() else "json",
-    show_default="pretty if stdout is a tty, otherwise JSON",
-    type=click.Choice(["json", "pretty", "markdown"]),
-)
-_F = Literal["json", "pretty", "markdown"]
-
 
 # rich-click's CommandGroupDict seems to be missing some covariance, as using a
 # regular dict here makes pyright complain.
@@ -417,8 +406,48 @@ def badges(site: Path):
         dir.joinpath("supported_versions.json").write_text(json.dumps(badge))
 
 
+_F = Literal["json", "pretty", "markdown"]
+
+
+def format_option(fn: FC) -> FC:
+    def show_schema(
+        ctx: click.Context,
+        param: click.Parameter | None,
+        value: bool,
+    ) -> None:
+        if not value or ctx.resilient_parsing:
+            return
+        uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
+        schema = bowtie_schemas_registry().contents(uri)
+        # FIXME: Syntax highlight? But rich appears to be doing some bizarre
+        #        line wrapping, even if I disable a bunch of random options
+        #        (crop, no_wrap, word_wrap in Syntax, ...) which fails the
+        #        integration tests.
+        click.echo(json.dumps(schema, indent=2))
+        ctx.exit()
+
+    return click.option(
+        "--format",
+        "-f",
+        "format",
+        help="What format to use for the output",
+        default=lambda: "pretty" if sys.stdout.isatty() else "json",
+        show_default="pretty if stdout is a tty, otherwise JSON",
+        type=click.Choice(["json", "pretty", "markdown"]),
+    )(
+        click.option(
+            "--schema",
+            callback=show_schema,
+            expose_value=False,
+            is_eager=True,
+            is_flag=True,
+            help="Show the JSON Schema for this command's JSON output.",
+        )(fn),
+    )
+
+
 @subcommand
-@FORMAT
+@format_option
 @click.option(
     "--show",
     "-s",
@@ -1243,7 +1272,7 @@ async def filter_dialects(
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
-@FORMAT
+@format_option
 async def info(
     start: Callable[[], AsyncIterator[Implementation]],
     format: _F,
@@ -1303,7 +1332,7 @@ async def info(
     is_flag=True,
     help="Don't print any output, just exit with nonzero status on failure.",
 )
-@FORMAT
+@format_option
 async def smoke(
     start: Callable[[], AsyncIterator[Implementation]],
     format: _F,
