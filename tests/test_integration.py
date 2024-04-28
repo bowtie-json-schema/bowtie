@@ -10,12 +10,14 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from jsonschema.validators import validator_for
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
 import pytest
 import pytest_asyncio
 
+from bowtie._cli import bowtie_schemas_registry
 from bowtie._commands import ErroredTest, TestResult
 from bowtie._core import Dialect, Implementation, Test, TestCase
 from bowtie._report import EmptyReport, InvalidReport, Report
@@ -34,6 +36,17 @@ WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
 
 def tag(name: str):
     return f"bowtie-integration-tests/{name}"
+
+
+async def validate_command_output(command, output):
+    stdout, stderr = await bowtie(command, "--schema")
+    assert stderr == ""
+
+    schema = _json.loads(stdout)
+    Validator = validator_for(schema)
+    Validator.check_schema(schema)
+
+    Validator(schema, registry=bowtie_schemas_registry()).validate(output)
 
 
 async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
@@ -1022,6 +1035,7 @@ async def test_smoke_valid_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_smoke_json(envsonschema):
     jsonout, stderr = await bowtie(
         "smoke",
@@ -1032,6 +1046,8 @@ async def test_smoke_json(envsonschema):
         json=True,
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
+
+    await validate_command_output(command="smoke", output=jsonout)
     assert jsonout == [
         {
             "case": {
@@ -1269,6 +1285,7 @@ async def test_info_valid_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_info_json(envsonschema):
     stdout, stderr = await bowtie(
         "info",
@@ -1277,7 +1294,10 @@ async def test_info_json(envsonschema):
         "-i",
         envsonschema,
     )
-    assert _json.loads(stdout) == {
+    jsonout = _json.loads(stdout)
+
+    await validate_command_output(command="info", output=jsonout)
+    assert jsonout == {
         "name": "envsonschema",
         "language": "python",
         "homepage": "https://github.com/bowtie-json-schema/bowtie",
@@ -1296,6 +1316,7 @@ async def test_info_json(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_info_json_multiple_implementations(envsonschema, links):
     stdout, stderr = await bowtie(
         "info",
@@ -1306,7 +1327,10 @@ async def test_info_json_multiple_implementations(envsonschema, links):
         "-i",
         links,
     )
-    assert _json.loads(stdout) == {
+    jsonout = _json.loads(stdout)
+
+    await validate_command_output(command="info", output=jsonout)
+    assert jsonout == {
         tag("envsonschema"): {
             "name": "envsonschema",
             "language": "python",
@@ -1569,7 +1593,8 @@ async def test_validate(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_failures(envsonschema, tmp_path):
+@pytest.mark.json
+async def test_summary_show_failures_json(envsonschema, tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
@@ -1594,13 +1619,15 @@ async def test_summary_show_failures(envsonschema, tmp_path):
         stdin=validate_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    await validate_command_output(command="summary", output=jsonout)
     assert jsonout == [
         [
             tag("envsonschema"),
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -1738,7 +1765,8 @@ async def test_validate_no_tests(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_validation(envsonschema, always_valid):
+@pytest.mark.json
+async def test_summary_show_validation_json(envsonschema, always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -1767,7 +1795,8 @@ async def test_summary_show_validation(envsonschema, always_valid):
         stdin=run_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    await validate_command_output(command="summary", output=jsonout)
     assert jsonout == [
         [
             {"type": "integer"},
@@ -1875,6 +1904,7 @@ async def test_summary_show_validation(envsonschema, always_valid):
             ],
         ],
     ], run_stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -1935,6 +1965,7 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_run_with_registry(always_valid):
     raw = """
         {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
@@ -1957,7 +1988,8 @@ async def test_run_with_registry(always_valid):
         stdin=run_stdout,
         json=True,
     )
-    assert stderr == ""
+
+    await validate_command_output(command="summary", output=jsonout)
     assert jsonout == [
         [
             {"type": "integer"},
@@ -1967,6 +1999,7 @@ async def test_run_with_registry(always_valid):
             ],
         ],
     ], run_stderr
+    assert stderr == ""
 
 
 @pytest.mark.asyncio

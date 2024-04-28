@@ -152,7 +152,7 @@ def errors(uri, instance):
     ],
 )
 def test_group(valid, instance):
-    got = errors("tag:bowtie.report,2023:ihop:group", instance)
+    got = errors("tag:bowtie.report,2023:models:group", instance)
     assert valid == (not got), got
 
 

@@ -21,7 +21,7 @@ click==8.1.7
 cryptography==42.0.5
     # via pyjwt
 diagnostic==2.1.0
-docutils==0.21.1
+docutils==0.21.2
     # via diagnostic
 frozenlist==1.4.1
     # via
@@ -56,7 +56,7 @@ pyjwt==2.8.0
     # via github3-py
 python-dateutil==2.9.0.post0
     # via github3-py
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -68,7 +68,7 @@ rich==13.7.1
     # via
     #   diagnostic
     #   rich-click
-rich-click==1.8.0.dev6
+rich-click==1.8.0.dev7
 rpds-py==0.18.0
     # via
     #   jsonschema

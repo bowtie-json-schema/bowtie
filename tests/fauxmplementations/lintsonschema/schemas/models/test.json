@@ -2,7 +2,7 @@
   "description": "A single test case",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2023:ihop:test",
+  "$id": "tag:bowtie.report,2023:models:test",
 
   "type": "object",
   "required": ["description", "instance"],
