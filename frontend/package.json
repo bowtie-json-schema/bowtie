@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=21.0.0"
   },
-  "packageManager": "pnpm@9.0.4",
+  "packageManager": "pnpm@9.0.6",
   "scripts": {
     "start": "vite --no-clearScreen",
     "build": "tsc && vite build",
@@ -18,35 +18,35 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
-    "dayjs": "^1.11.10",
-    "react": "^18.2.0",
+    "dayjs": "^1.11.11",
+    "react": "^18.3.1",
     "react-bootstrap": "^2.10.2",
     "react-bootstrap-icons": "^1.11.4",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.0",
     "react-syntax-highlighter": "^15.5.0",
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
     "@types/react-syntax-highlighter": "^15.5.11",
-    "@types/react-test-renderer": "^18.0.7",
+    "@types/react-test-renderer": "^18.3.0",
     "@types/urijs": "^1.19.25",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "8.57.0",
     "eslint-plugin-react": "7.34.1",
     "eslint-plugin-react-hooks": "4.6.2",
     "jsdom": "^24.0.0",
-    "react-test-renderer": "^18.2.0",
+    "react-test-renderer": "^18.3.1",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.10",
     "vite-bundle-visualizer": "^1.1.0",
-    "vitest": "^1.5.0"
+    "vitest": "^1.5.2"
   },
   "eslintConfig": {
     "env": {
