@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from typing import Any, Literal, Self, TextIO
 
     from bowtie._commands import AnyTestResult, ImplementationId
-    from bowtie._core import ImplementationInfo, Test
+    from bowtie._core import Example, ImplementationInfo, Test
 
 
 class InvalidReport(Exception):
@@ -317,11 +317,13 @@ class Report:
     ) -> Iterable[
         tuple[
             TestCase,
-            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+            Iterable[tuple[Example | Test, Mapping[str, AnyTestResult]]],
         ]
     ]:
         for seq, case in sorted(self._cases.items()):
-            test_results: list[tuple[Test, Mapping[str, AnyTestResult]]] = []
+            test_results: list[
+                tuple[Example | Test, Mapping[str, AnyTestResult]]
+            ] = []
             for i, test in enumerate(case.tests):
                 test_result = {
                     each.id: self._results[each.id][seq].result_for(i)

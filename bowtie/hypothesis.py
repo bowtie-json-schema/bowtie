@@ -33,7 +33,7 @@ from url import URL
 
 from bowtie import _commands
 from bowtie._cli import bowtie_schemas_registry
-from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
+from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
 
 
@@ -128,10 +128,26 @@ def implementations(
     )
 
 
+def examples(
+    description=text(),
+    instance=integers(),  # FIXME: probably via hypothesis-jsonschema
+    comment=text() | none(),
+):
+    r"""
+    Generate `Example`\ s.
+    """
+    return builds(
+        Example,
+        description=description,
+        instance=instance,
+        comment=comment,
+    )
+
+
 def tests(
     description=text(),
     instance=integers(),  # FIXME: probably via hypothesis-jsonschema
-    valid=booleans() | none(),
+    valid=booleans(),
     comment=text() | none(),
 ):
     r"""
@@ -149,7 +165,7 @@ def tests(
 def test_cases(
     description=text(),
     schema=schemas,
-    tests=lists(tests(), min_size=1, max_size=8),
+    tests=lists(examples() | tests(), min_size=1, max_size=8),
 ):
     r"""
     Generate `TestCase`\ s.
@@ -364,6 +380,7 @@ register_type_strategy(Dialect, dialects())
 register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.CaseErrored, errored_cases())
 register_type_strategy(_commands.CaseSkipped, skipped_cases())
+register_type_strategy(Example, examples())
 register_type_strategy(Test, tests())
 register_type_strategy(TestCase, test_cases())
 register_type_strategy(_commands.TestResult, successful_tests)

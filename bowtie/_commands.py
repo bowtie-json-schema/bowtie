@@ -67,8 +67,7 @@ class SeqCase:
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
         run = Run(seq=self.seq, case=self.case.without_expected_results())
-        expected = [t.valid for t in self.case.tests]
-        return runner.validate(run, expected=expected)
+        return runner.validate(run, expected=self.case.expected_results())
 
     def serializable(self):
         return dict(seq=self.seq, case=self.case.serializable())

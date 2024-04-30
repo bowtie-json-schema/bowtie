@@ -39,6 +39,7 @@ from bowtie import _containers, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
+    Example,
     Implementation,
     NoSuchImplementation,
     StartupFailed,
@@ -1131,15 +1132,16 @@ def validate(
     if not instances:
         return _EX_NOINPUT
 
+    if expect == "any":
+        to_test, valid = Example, {}
+    else:
+        to_test = Test
+        valid = dict(valid=dict(valid=True), invalid=dict(valid=False))[expect]
     case = TestCase(
         description=description,
         schema=schema,
-        tests=[
-            Test(
-                description="",
-                instance=instance,
-                valid=dict(valid=True, invalid=False, any=None)[expect],
-            )
+        tests=[  # some bizarre pyright bug that is somehow expected behavior
+            to_test(description="", instance=instance, **valid)  # type: ignore[reportArgumentType]  see pyright#7802
             for instance in instances
         ],
     )
