@@ -14,7 +14,7 @@
       "$id": "tag:bowtie.report,2024:models:implementation:language",
 
       "type": "string",
-      "pattern": "^[a-z0-9-+_]*$"
+      "pattern": "^[a-z][a-z0-9-+_]*$"
     },
     "name": {
       "description": "The name of the implementation itself",
