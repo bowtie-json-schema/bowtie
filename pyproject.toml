@@ -154,6 +154,7 @@ ignore = [
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
   "PYI025",  # No, importing it as Set is fine.
+  "RET501",  # Returning None explicitly is *definitely* fine
   "RET502",  # Returning None implicitly is fine
   "RET503",
   "RET505",  # These push you to use `if` instead of `elif`, but for no reason
