@@ -1,0 +1,15 @@
+{
+  "title": "Bowtie Test Result Report",
+  "description": "Bowtie's (private API) report format",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:report",
+
+  "$defs": {
+    "seq": {
+      "$id": "tag:bowtie.report,2024:report:seq",
+      "description": "A sequence identifier for the test case. Its exact structure is private, though unique to each test case in a run."
+    }
+  }
+}
