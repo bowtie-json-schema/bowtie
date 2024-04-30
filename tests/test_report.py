@@ -3,7 +3,7 @@ from hypothesis.strategies import sets
 import pytest
 
 from bowtie import HOMEPAGE, REPO
-from bowtie._commands import CaseResult, SeqCase, SeqResult
+from bowtie._commands import CaseResult, SeqCase, SeqResult, TestResult
 from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
 from bowtie.hypothesis import dialects, implementations, known_dialects
@@ -49,7 +49,7 @@ def test_eq():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -79,7 +79,7 @@ def test_eq_different_seqs():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -105,7 +105,7 @@ def test_eq_different_seqs():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=200,
@@ -135,7 +135,7 @@ def test_eq_different_order():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -169,7 +169,7 @@ def test_eq_different_order():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -192,7 +192,7 @@ def test_eq_different_seqs_different_order():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -226,7 +226,7 @@ def test_eq_different_seqs_different_order():
             seq=100,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -248,7 +248,7 @@ def test_ne_different_results():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -274,7 +274,7 @@ def test_ne_different_results():
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": False}]),
+            result=CaseResult(results=[TestResult.INVALID]),
         ).serializable(),
         SeqCase(
             seq=2,
@@ -313,7 +313,7 @@ def test_ne_different_implementations(dialect):
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
