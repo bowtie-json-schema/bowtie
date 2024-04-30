@@ -5,7 +5,7 @@ Hypothesis strategies and support for Bowtie.
 Note that this module depends on you having installed Hypothesis.
 """
 
-from string import ascii_lowercase, digits, printable
+from string import printable
 
 from hypothesis.provisional import urls
 from hypothesis.strategies import (
@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     dictionaries,
     fixed_dictionaries,
     floats,
+    from_regex,
     frozensets,
     integers,
     just,
@@ -31,8 +32,17 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
+from bowtie._cli import bowtie_schemas_registry
 from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
+
+
+def pattern_from(id):
+    """
+    Return a strategy which matches the pattern in the given schema.
+    """
+    return from_regex(bowtie_schemas_registry().contents(id)["pattern"])
+
 
 # FIXME: probably via hypothesis-jsonschema
 schemas = booleans() | dictionaries(
@@ -47,12 +57,12 @@ schemas = booleans() | dictionaries(
 )
 
 seqs = uuids().map(lambda uuid: uuid.hex)
-implementation_names = text(  # FIXME: see the start command schema
-    ascii_lowercase + digits + "-+_",
-    min_size=1,
-    max_size=50,
+implementation_names = pattern_from(
+    "tag:bowtie.report,2024:models:implementation:name",
 )
-languages = text(printable, min_size=1, max_size=20)
+languages = pattern_from(
+    "tag:bowtie.report,2024:models:implementation:language",
+)
 
 
 def dialects(
@@ -172,7 +182,7 @@ errored_tests = builds(
 skipped_tests = builds(
     _commands.SkippedTest,
     message=text(min_size=1, max_size=50) | none(),
-    issue_url=text(min_size=1, max_size=50) | none(),
+    issue_url=urls() | none(),
 )
 test_results = successful_tests | errored_tests | skipped_tests
 
@@ -199,7 +209,7 @@ def errored_cases(
 
 def skipped_cases(
     message=text(min_size=1, max_size=50) | none(),
-    issue_url=text(min_size=1, max_size=50) | none(),
+    issue_url=urls() | none(),
 ):
     """
     A test case which was skipped by an implementation.
