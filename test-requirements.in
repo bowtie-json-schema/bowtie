@@ -4,6 +4,6 @@ hypothesis
 jsonschema
 markdown-it-py==3.0.0
 pytest
-pytest-asyncio==0.21.1
+pytest-asyncio==0.21.2
 pytest-icdiff
 pexpect
