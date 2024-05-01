@@ -1112,6 +1112,9 @@ def run(
     show_choices=True,
     default="any",
     type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+        None if value == "any" else value == "valid"
+    ),
     help=(
         "Expect the given input to be considered valid or invalid, "
         "or else (with 'any') to allow either result."
@@ -1122,7 +1125,7 @@ def run(
 def validate(
     schema: Any,
     instances: Iterable[Any],
-    expect: str,
+    expect: bool | None,
     description: str,
     **kwargs: Any,
 ):
@@ -1132,19 +1135,10 @@ def validate(
     if not instances:
         return _EX_NOINPUT
 
-    if expect == "any":
-        to_test, valid = Example, {}
-    else:
-        to_test = Test
-        valid = dict(valid=dict(valid=True), invalid=dict(valid=False))[expect]
-    case = TestCase(
-        description=description,
-        schema=schema,
-        tests=[  # some bizarre pyright bug that is somehow expected behavior
-            to_test(description="", instance=instance, **valid)  # type: ignore[reportArgumentType]  see pyright#7802
-            for instance in instances
-        ],
-    )
+    tests = [Example(description="", instance=each) for each in instances]
+    if expect is not None:
+        tests = [test.expect(expect) for test in tests]
+    case = TestCase(description=description, schema=schema, tests=tests)
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 

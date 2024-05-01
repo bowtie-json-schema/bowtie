@@ -628,6 +628,10 @@ class Implementation:
 
 @frozen
 class Example:
+    """
+    A validation example where we don't have any particularly expected result.
+    """
+
     description: str
     instance: Any
     comment: str | None = None
@@ -637,6 +641,12 @@ class Example:
         We have no expected result.
         """
         return None
+
+    def expect(self, valid: bool) -> Test:
+        """
+        Decide we really do expect some specific result.
+        """
+        return Test(**asdict(self), valid=valid)
 
     @classmethod
     def from_dict(
@@ -688,7 +698,7 @@ class LeafGroup:
 class TestCase:
     description: str
     schema: Any
-    tests: list[Example | Test]
+    tests: Sequence[Example | Test]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
