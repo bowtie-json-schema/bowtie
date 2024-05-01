@@ -57,7 +57,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=2024.5.2",
   "rich",
-  "rich-click>=1.8.0dev6",
+  "rich-click>=1.8.0",
   "rpds.py>=0.18.0",
   "structlog",
   "typing-extensions; python_version<'3.11'",
