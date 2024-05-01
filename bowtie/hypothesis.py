@@ -45,7 +45,7 @@ def pattern_from(id):
 
 
 # FIXME: probably via hypothesis-jsonschema
-schemas = booleans() | dictionaries(
+object_schemas = dictionaries(
     keys=text(),
     values=recursive(
         none() | booleans() | floats() | text(printable),
@@ -55,6 +55,7 @@ schemas = booleans() | dictionaries(
     ),
     max_size=5,
 )
+schemas = booleans() | object_schemas
 
 seqs = uuids().map(lambda uuid: uuid.hex)
 implementation_names = pattern_from(
@@ -93,7 +94,7 @@ known_dialects = sampled_from(sorted(Dialect.known()))
 def implementation_infos(
     draw,
     names=implementation_names,
-    dialects=dialects(),
+    dialects=frozensets(known_dialects, min_size=1, max_size=4),
     languages=languages,
 ):
     """
@@ -108,7 +109,7 @@ def implementation_infos(
         homepage=draw(urls().map(URL.parse)),
         issues=draw(urls().map(URL.parse)),
         source=draw(urls().map(URL.parse)),
-        dialects=draw(frozensets(dialects, min_size=1, max_size=4)),
+        dialects=draw(dialects),
     )
 
 
@@ -308,19 +309,20 @@ _implementations = implementations
 _cases_and_results = cases_and_results
 
 
-def run_metadata(dialects=dialects(), implementations=None):
+@composite
+def run_metadata(draw, dialects=known_dialects, implementations=None):
     """
     Generate just a report's metadata.
     """
+    dialect = draw(dialects)
     if implementations is None:
-        implementations = _implementations(
-            infos=implementation_infos(dialects=dialects),
-        )
-    return builds(
-        RunMetadata,
-        dialect=dialects,
-        implementations=implementations,
-    )
+        with_dialect = frozensets(
+            dialects,
+            max_size=4,
+        ).map(lambda v: v | {dialect})
+        infos = implementation_infos(dialects=with_dialect)
+        implementations = _implementations(infos=infos)
+    return RunMetadata(dialect=dialect, implementations=draw(implementations))
 
 
 _run_metadata = run_metadata
@@ -329,37 +331,22 @@ _run_metadata = run_metadata
 @composite
 def report_data(
     draw,
-    dialects=known_dialects,
-    implementations=None,
-    run_metadata=None,
+    run_metadata=run_metadata(),
     cases_and_results=None,
     fail_fast=booleans(),
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
-    if implementations is None:
-        if cases_and_results is not None:
-            raise ValueError(
-                "Providing cases+results without implementations can lead to "
-                "inconsistent reports.",
-            )
-        infos = implementation_infos(dialects=dialects)
-        implementations = _implementations(infos=infos)
-    impls = draw(implementations)
+    metadata = draw(run_metadata)
 
     if cases_and_results is None:
-        cases_and_results = _cases_and_results(implementations=just(impls))
+        implementations = just(metadata.implementations)
+        cases_and_results = _cases_and_results(implementations=implementations)
 
     seq_cases, results = draw(cases_and_results)
-
-    if run_metadata is None:
-        run_metadata = _run_metadata(
-            dialects=dialects,
-            implementations=just(impls),
-        )
     return [  # FIXME: Combine with the logic in CaseReporter
-        draw(run_metadata).serializable(),
+        metadata.serializable(),
         *[seq_case.serializable() for seq_case in seq_cases],
         *[result.serializable() for result in results],
         {"did_fail_fast": draw(fail_fast)},
