@@ -302,6 +302,8 @@ def cases_and_results(
             seq_results(
                 seqs=just(seq_case.seq),
                 implementations=just(implementation.id),
+                min_tests=len(seq_case.case.tests),
+                max_tests=len(seq_case.case.tests),
             ),
         )
         for seq_case in seq_cases

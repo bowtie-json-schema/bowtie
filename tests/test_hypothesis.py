@@ -37,6 +37,26 @@ def test_cases_and_results_with_given_implementations(data):
     assert len(results) == n * len(seq_cases)
 
 
+@given(strategies.cases_and_results())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_cases_and_results_generates_correct_test_results(cases_results):
+    """
+    The number of test results for each test case matches the number of tests.
+    """
+    seq_cases, seq_results = cases_results
+    for seq_case in seq_cases:
+        results = [
+            seq_result.result
+            for seq_result in seq_results
+            if seq_result.seq == seq_case.seq
+        ]
+        assert all(
+            len([each.result_for(i) for i in range(len(seq_case.case.tests))])
+            == len(seq_case.case.tests)
+            for each in results
+        )
+
+
 @given(strategies.cases_and_results(min_cases=2))  # no point for 1
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_cases_are_unique_by_default(cases_results):
