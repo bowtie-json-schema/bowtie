@@ -180,7 +180,6 @@ describe("parseReportData", () => {
               {
                 description: testCase?.tests[0].description,
                 instance: 37,
-                valid: null,
               },
             ],
           },
