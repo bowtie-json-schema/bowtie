@@ -1,11 +1,11 @@
-FROM node:21-alpine AS builder
+FROM node:22-alpine AS builder
 
 COPY . /usr/src/myapp
 WORKDIR /usr/src/myapp
 RUN npm install
 RUN npm run build
 
-FROM node:21-alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/myapp
 COPY package*.json .

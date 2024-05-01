@@ -11,11 +11,15 @@
     "language": {
       "description": "The implementation language (e.g. C++, Python, etc.)",
 
+      "$id": "tag:bowtie.report,2024:models:implementation:language",
+
       "type": "string",
-      "pattern": "^[a-z0-9-+_]*$"
+      "pattern": "^[a-z][a-z0-9-+_]*$"
     },
     "name": {
       "description": "The name of the implementation itself",
+
+      "$id": "tag:bowtie.report,2024:models:implementation:name",
 
       "type": "string",
       "pattern": "^[A-Za-z][\\w\\-.]*[A-Za-z0-9]$"

@@ -1,4 +1,4 @@
-FROM node:21-alpine
+FROM node:22-alpine
 COPY . /usr/app
 WORKDIR /usr/app
 ENV NODE_ENV=production

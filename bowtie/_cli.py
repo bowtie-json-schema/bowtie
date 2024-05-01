@@ -39,6 +39,7 @@ from bowtie import _containers, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
+    Example,
     Implementation,
     NoSuchImplementation,
     StartupFailed,
@@ -1111,6 +1112,9 @@ def run(
     show_choices=True,
     default="any",
     type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
+    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+        None if value == "any" else value == "valid"
+    ),
     help=(
         "Expect the given input to be considered valid or invalid, "
         "or else (with 'any') to allow either result."
@@ -1121,7 +1125,7 @@ def run(
 def validate(
     schema: Any,
     instances: Iterable[Any],
-    expect: str,
+    expect: bool | None,
     description: str,
     **kwargs: Any,
 ):
@@ -1131,18 +1135,10 @@ def validate(
     if not instances:
         return _EX_NOINPUT
 
-    case = TestCase(
-        description=description,
-        schema=schema,
-        tests=[
-            Test(
-                description="",
-                instance=instance,
-                valid=dict(valid=True, invalid=False, any=None)[expect],
-            )
-            for instance in instances
-        ],
-    )
+    tests = [Example(description="", instance=each) for each in instances]
+    if expect is not None:
+        tests = [test.expect(expect) for test in tests]
+    case = TestCase(description=description, schema=schema, tests=tests)
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 

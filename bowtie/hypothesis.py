@@ -5,7 +5,7 @@ Hypothesis strategies and support for Bowtie.
 Note that this module depends on you having installed Hypothesis.
 """
 
-from string import ascii_lowercase, digits, printable
+from string import printable
 
 from hypothesis.provisional import urls
 from hypothesis.strategies import (
@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     dictionaries,
     fixed_dictionaries,
     floats,
+    from_regex,
     frozensets,
     integers,
     just,
@@ -31,11 +32,20 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
-from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
+from bowtie._cli import bowtie_schemas_registry
+from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
 from bowtie._report import Report, RunMetadata
 
+
+def pattern_from(id):
+    """
+    Return a strategy which matches the pattern in the given schema.
+    """
+    return from_regex(bowtie_schemas_registry().contents(id)["pattern"])
+
+
 # FIXME: probably via hypothesis-jsonschema
-schemas = booleans() | dictionaries(
+object_schemas = dictionaries(
     keys=text(),
     values=recursive(
         none() | booleans() | floats() | text(printable),
@@ -45,14 +55,15 @@ schemas = booleans() | dictionaries(
     ),
     max_size=5,
 )
+schemas = booleans() | object_schemas
 
 seqs = uuids().map(lambda uuid: uuid.hex)
-implementation_names = text(  # FIXME: see the start command schema
-    ascii_lowercase + digits + "-+_",
-    min_size=1,
-    max_size=50,
+implementation_names = pattern_from(
+    "tag:bowtie.report,2024:models:implementation:name",
 )
-languages = text(printable, min_size=1, max_size=20)
+languages = pattern_from(
+    "tag:bowtie.report,2024:models:implementation:language",
+)
 
 
 def dialects(
@@ -83,7 +94,7 @@ known_dialects = sampled_from(sorted(Dialect.known()))
 def implementation_infos(
     draw,
     names=implementation_names,
-    dialects=dialects(),
+    dialects=frozensets(known_dialects, min_size=1, max_size=4),
     languages=languages,
 ):
     """
@@ -98,7 +109,7 @@ def implementation_infos(
         homepage=draw(urls().map(URL.parse)),
         issues=draw(urls().map(URL.parse)),
         source=draw(urls().map(URL.parse)),
-        dialects=draw(frozensets(dialects, min_size=1, max_size=4)),
+        dialects=draw(dialects),
     )
 
 
@@ -118,10 +129,26 @@ def implementations(
     )
 
 
+def examples(
+    description=text(),
+    instance=integers(),  # FIXME: probably via hypothesis-jsonschema
+    comment=text() | none(),
+):
+    r"""
+    Generate `Example`\ s.
+    """
+    return builds(
+        Example,
+        description=description,
+        instance=instance,
+        comment=comment,
+    )
+
+
 def tests(
     description=text(),
     instance=integers(),  # FIXME: probably via hypothesis-jsonschema
-    valid=booleans() | none(),
+    valid=booleans(),
     comment=text() | none(),
 ):
     r"""
@@ -139,7 +166,7 @@ def tests(
 def test_cases(
     description=text(),
     schema=schemas,
-    tests=lists(tests(), min_size=1, max_size=8),
+    tests=lists(examples() | tests(), min_size=1, max_size=8),
 ):
     r"""
     Generate `TestCase`\ s.
@@ -172,7 +199,7 @@ errored_tests = builds(
 skipped_tests = builds(
     _commands.SkippedTest,
     message=text(min_size=1, max_size=50) | none(),
-    issue_url=text(min_size=1, max_size=50) | none(),
+    issue_url=urls() | none(),
 )
 test_results = successful_tests | errored_tests | skipped_tests
 
@@ -199,7 +226,7 @@ def errored_cases(
 
 def skipped_cases(
     message=text(min_size=1, max_size=50) | none(),
-    issue_url=text(min_size=1, max_size=50) | none(),
+    issue_url=urls() | none(),
 ):
     """
     A test case which was skipped by an implementation.
@@ -282,19 +309,20 @@ _implementations = implementations
 _cases_and_results = cases_and_results
 
 
-def run_metadata(dialects=dialects(), implementations=None):
+@composite
+def run_metadata(draw, dialects=known_dialects, implementations=None):
     """
     Generate just a report's metadata.
     """
+    dialect = draw(dialects)
     if implementations is None:
-        implementations = _implementations(
-            infos=implementation_infos(dialects=dialects),
-        )
-    return builds(
-        RunMetadata,
-        dialect=dialects,
-        implementations=implementations,
-    )
+        with_dialect = frozensets(
+            dialects,
+            max_size=4,
+        ).map(lambda v: v | {dialect})
+        infos = implementation_infos(dialects=with_dialect)
+        implementations = _implementations(infos=infos)
+    return RunMetadata(dialect=dialect, implementations=draw(implementations))
 
 
 _run_metadata = run_metadata
@@ -303,37 +331,22 @@ _run_metadata = run_metadata
 @composite
 def report_data(
     draw,
-    dialects=known_dialects,
-    implementations=None,
-    run_metadata=None,
+    run_metadata=run_metadata(),
     cases_and_results=None,
     fail_fast=booleans(),
 ):
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
-    if implementations is None:
-        if cases_and_results is not None:
-            raise ValueError(
-                "Providing cases+results without implementations can lead to "
-                "inconsistent reports.",
-            )
-        infos = implementation_infos(dialects=dialects)
-        implementations = _implementations(infos=infos)
-    impls = draw(implementations)
+    metadata = draw(run_metadata)
 
     if cases_and_results is None:
-        cases_and_results = _cases_and_results(implementations=just(impls))
+        implementations = just(metadata.implementations)
+        cases_and_results = _cases_and_results(implementations=implementations)
 
     seq_cases, results = draw(cases_and_results)
-
-    if run_metadata is None:
-        run_metadata = _run_metadata(
-            dialects=dialects,
-            implementations=just(impls),
-        )
     return [  # FIXME: Combine with the logic in CaseReporter
-        draw(run_metadata).serializable(),
+        metadata.serializable(),
         *[seq_case.serializable() for seq_case in seq_cases],
         *[result.serializable() for result in results],
         {"did_fail_fast": draw(fail_fast)},
@@ -354,6 +367,7 @@ register_type_strategy(Dialect, dialects())
 register_type_strategy(_commands.CaseResult, case_results())
 register_type_strategy(_commands.CaseErrored, errored_cases())
 register_type_strategy(_commands.CaseSkipped, skipped_cases())
+register_type_strategy(Example, examples())
 register_type_strategy(Test, tests())
 register_type_strategy(TestCase, test_cases())
 register_type_strategy(_commands.TestResult, successful_tests)

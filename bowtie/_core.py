@@ -627,11 +627,54 @@ class Implementation:
 
 
 @frozen
-class Test:
+class Example:
+    """
+    A validation example where we don't have any particularly expected result.
+    """
+
     description: str
     instance: Any
     comment: str | None = None
-    valid: bool | None = None
+
+    def expected(self) -> None:
+        """
+        We have no expected result.
+        """
+        return None
+
+    def expect(self, valid: bool) -> Test:
+        """
+        Decide we really do expect some specific result.
+        """
+        return Test(**asdict(self), valid=valid)
+
+    @classmethod
+    def from_dict(
+        cls,
+        valid: bool | None = None,
+        **data: Any,
+    ) -> Example | Test:
+        if valid is None:
+            return cls(**data)
+        return Test(**data, valid=valid)
+
+
+@frozen
+class Test:
+    """
+    An `Example` with a specific expected result.
+    """
+
+    description: str
+    instance: Any
+    valid: bool
+    comment: str | None = None
+
+    def expected(self) -> bool:
+        """
+        Expect our expected validity result.
+        """
+        return self.valid
 
 
 @frozen
@@ -646,7 +689,7 @@ class Group:
 class LeafGroup:
     description: str
     schema: Schema
-    children: Sequence[Test]
+    children: Sequence[Example | Test]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
@@ -655,7 +698,7 @@ class LeafGroup:
 class TestCase:
     description: str
     schema: Any
-    tests: list[Test]
+    tests: Sequence[Example | Test]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
@@ -672,7 +715,7 @@ class TestCase:
             default_specification=dialect.specification(),
         )
         return cls(
-            tests=[Test(**test) for test in tests],
+            tests=[Example.from_dict(**test) for test in tests],
             registry=populated,
             **kwargs,
         )
@@ -708,6 +751,9 @@ class TestCase:
         But that can change.
         """
         return json.dumps(self.serializable(), sort_keys=True)
+
+    def expected_results(self) -> Sequence[bool | None]:
+        return [each.expected() for each in self.tests]
 
     def without_expected_results(self) -> Message:
         serializable = self.serializable()

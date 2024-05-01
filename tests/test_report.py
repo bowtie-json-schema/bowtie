@@ -3,12 +3,12 @@ from hypothesis.strategies import sets
 import pytest
 
 from bowtie import HOMEPAGE, REPO
-from bowtie._commands import CaseResult, SeqCase, SeqResult
-from bowtie._core import Dialect, ImplementationInfo, Test, TestCase
+from bowtie._commands import CaseResult, SeqCase, SeqResult, TestResult
+from bowtie._core import Dialect, Example, ImplementationInfo, TestCase
 from bowtie._report import Report, RunMetadata
 from bowtie.hypothesis import dialects, implementations, known_dialects
 
-Test.__test__ = TestCase.__test__ = False  # frigging py.test
+TestCase.__test__ = False  # frigging py.test
 
 
 DIALECT = Dialect.by_alias()["2020"]
@@ -42,21 +42,21 @@ def test_eq():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -72,21 +72,21 @@ def test_eq_different_seqs():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -98,21 +98,21 @@ def test_eq_different_seqs():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=200,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -128,21 +128,21 @@ def test_eq_different_order():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -154,7 +154,7 @@ def test_eq_different_order():
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         SeqCase(
@@ -162,14 +162,14 @@ def test_eq_different_order():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -185,21 +185,21 @@ def test_eq_different_seqs_different_order():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -211,7 +211,7 @@ def test_eq_different_seqs_different_order():
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         SeqCase(
@@ -219,14 +219,14 @@ def test_eq_different_seqs_different_order():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=100,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         NO_FAIL_FAST,
     ]
@@ -241,21 +241,21 @@ def test_ne_different_results():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -267,21 +267,21 @@ def test_ne_different_results():
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": False}]),
+            result=CaseResult(results=[TestResult.INVALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,
@@ -306,21 +306,21 @@ def test_ne_different_implementations(dialect):
             case=TestCase(
                 description="foo",
                 schema={},
-                tests=[Test(description="1", instance=1)],
+                tests=[Example(description="1", instance=1)],
             ),
         ).serializable(),
         SeqResult(
             seq=1,
             implementation="foo",
             expected=[None],
-            result=CaseResult(results=[{"valid": True}]),
+            result=CaseResult(results=[TestResult.VALID]),
         ).serializable(),
         SeqCase(
             seq=2,
             case=TestCase(
                 description="bar",
                 schema={},
-                tests=[Test(description="1", instance="bar")],
+                tests=[Example(description="1", instance="bar")],
             ),
         ).serializable(),
         NO_FAIL_FAST,

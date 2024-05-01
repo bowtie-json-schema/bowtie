@@ -70,8 +70,12 @@ def test_known_dialects(dialect):
 
 @given(strategies.report_data())
 @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
-def test_report_data_generates_implementations_with_metadata(data):
-    assert Report.from_input(data).implementations
+def test_report_data_generates_implementations_which_support_the_dialect(data):
+    report = Report.from_input(data)
+    assert all(
+        report.metadata.dialect in each.dialects
+        for each in report.implementations
+    )
 
 
 @given(strategies.report_data(fail_fast=just(True)))

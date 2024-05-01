@@ -32,7 +32,7 @@ idna==3.7
     # via
     #   requests
     #   yarl
-jsonschema==4.21.1
+jsonschema==4.22.0
 jsonschema-lexer==0.2.1
 jsonschema-specifications==2023.12.1
     # via jsonschema
@@ -61,14 +61,14 @@ referencing==0.35.0
     #   jsonschema
     #   jsonschema-specifications
     #   referencing-loaders
-referencing-loaders==2024.5.1
+referencing-loaders==2024.5.2
 requests==2.31.0
     # via github3-py
 rich==13.7.1
     # via
     #   diagnostic
     #   rich-click
-rich-click==1.8.0.dev7
+rich-click==1.8.0
 rpds-py==0.18.0
     # via
     #   jsonschema
