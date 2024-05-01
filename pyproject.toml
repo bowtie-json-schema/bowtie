@@ -55,7 +55,7 @@ dependencies = [
   "jsonschema>=4.19.0",
   "jsonschema_lexer",
   "referencing>=0.31.0",
-  "referencing-loaders>=0.4.2",
+  "referencing-loaders>=2024.5.2",
   "rich",
   "rich-click>=1.8.0dev6",
   "rpds.py>=0.18.0",
