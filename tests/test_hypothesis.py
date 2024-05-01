@@ -78,6 +78,17 @@ def test_report_data_generates_implementations_which_support_the_dialect(data):
     )
 
 
+@given(strategies.report_data())
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
+def test_report_data_generates_boolean_schemas_only_when_supported(data):
+    report = Report.from_input(data)
+    if not report.metadata.dialect.has_boolean_schemas:
+        assert not any(
+            isinstance(case.schema, bool)
+            for case, _ in report.cases_with_results()
+        )
+
+
 @given(strategies.report_data(fail_fast=just(True)))
 @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_report_data_can_be_marked_fail_fast(data):
