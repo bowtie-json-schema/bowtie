@@ -26,6 +26,7 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
+from bowtie._registry import ValidatorRegistry
 from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
@@ -138,7 +139,7 @@ class Dialect:
         return specification_with(str(self.uri), **kwargs)
 
     def current_dialect_resource(self) -> SchemaResource:
-        referrer = bowtie_schemas_registry().contents(
+        referrer = validator_registry().schema(
             "tag:bowtie.report,2024:ihop:schemaInCurrentDialect",
         )
 
@@ -767,6 +768,14 @@ class TestCase:
 
 
 @cache
-def bowtie_schemas_registry() -> SchemaRegistry:
+def validator_registry() -> ValidatorRegistry:
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    return EMPTY_REGISTRY.with_resources(resources).crawl()
+    registry = EMPTY_REGISTRY.with_resources(resources).crawl()
+
+    from referencing.jsonschema import DRAFT202012  # XXX
+
+    ignore_current_dialect = registry.with_resource(
+        uri="tag:bowtie.report,2023:ihop:__dialect__",
+        resource=DRAFT202012.create_resource({}),
+    )
+    return ValidatorRegistry.jsonschema(registry=ignore_current_dialect)

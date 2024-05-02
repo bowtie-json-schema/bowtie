@@ -10,7 +10,6 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
-from jsonschema.validators import validator_for
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
@@ -23,7 +22,7 @@ from bowtie._core import (
     Implementation,
     Test,
     TestCase,
-    bowtie_schemas_registry,
+    validator_registry,
 )
 from bowtie._report import EmptyReport, InvalidReport, Report
 
@@ -43,15 +42,10 @@ def tag(name: str):
     return f"bowtie-integration-tests/{name}"
 
 
-async def validate_command_output(command, output):
+async def command_validator(command):
     stdout, stderr = await bowtie(command, "--schema")
-    assert stderr == ""
-
-    schema = _json.loads(stdout)
-    Validator = validator_for(schema)
-    Validator.check_schema(schema)
-
-    Validator(schema, registry=bowtie_schemas_registry()).validate(output)
+    assert stderr == "", stderr
+    return validator_registry().for_schema(_json.loads(stdout))
 
 
 async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
@@ -1052,7 +1046,7 @@ async def test_smoke_json(envsonschema):
         exit_code=-1,  # because indeed envsonschema gets answers wrong.
     )
 
-    await validate_command_output(command="smoke", output=jsonout)
+    (await command_validator("smoke")).validate(jsonout)
     assert jsonout == [
         {
             "case": {
@@ -1301,7 +1295,7 @@ async def test_info_json(envsonschema):
     )
     jsonout = _json.loads(stdout)
 
-    await validate_command_output(command="info", output=jsonout)
+    (await command_validator("info")).validate(jsonout)
     assert jsonout == {
         "name": "envsonschema",
         "language": "python",
@@ -1334,7 +1328,7 @@ async def test_info_json_multiple_implementations(envsonschema, links):
     )
     jsonout = _json.loads(stdout)
 
-    await validate_command_output(command="info", output=jsonout)
+    (await command_validator("info")).validate(jsonout)
     assert jsonout == {
         tag("envsonschema"): {
             "name": "envsonschema",
@@ -1625,7 +1619,7 @@ async def test_summary_show_failures_json(envsonschema, tmp_path):
         json=True,
     )
 
-    await validate_command_output(command="summary", output=jsonout)
+    (await command_validator("summary")).validate(jsonout)
     assert jsonout == [
         [
             tag("envsonschema"),
@@ -1801,7 +1795,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
         json=True,
     )
 
-    await validate_command_output(command="summary", output=jsonout)
+    (await command_validator("summary")).validate(jsonout)
     assert jsonout == [
         [
             {"type": "integer"},
@@ -1994,7 +1988,7 @@ async def test_run_with_registry(always_valid):
         json=True,
     )
 
-    await validate_command_output(command="summary", output=jsonout)
+    (await command_validator("summary")).validate(jsonout)
     assert jsonout == [
         [
             {"type": "integer"},

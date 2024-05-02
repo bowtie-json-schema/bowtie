@@ -18,7 +18,7 @@ from bowtie._commands import (
     StartedDialect,
     Unsuccessful,
 )
-from bowtie._core import Dialect, TestCase
+from bowtie._core import Dialect, TestCase, validator_registry
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -219,11 +219,19 @@ class Report:
 
     @classmethod
     def from_input(cls, input: Iterable[Mapping[str, Any]]) -> Self:
+        # TODO: Support some interface for enabling/disabling validation.
+        validator = validator_registry().for_uri(
+            "tag:bowtie.report,2024:report",
+        )
+
         iterator = iter(input)
         header = next(iterator, None)
         if header is None:
             raise EmptyReport()
+        validator.validate(header)
         metadata = RunMetadata.from_dict(**header)
+
+        validator = metadata.dialect.current_dialect_resource() @ validator
 
         results: HashTrieMap[
             ImplementationId,
@@ -235,6 +243,7 @@ class Report:
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
 
         for data in iterator:
+            validator.validate(data)
             match data:
                 case {"seq": seq, "case": case}:
                     if seq in cases:

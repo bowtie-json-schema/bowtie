@@ -42,7 +42,7 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
-    bowtie_schemas_registry,
+    validator_registry,
 )
 from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
@@ -417,7 +417,7 @@ def format_option(fn: FC) -> FC:
         if not value or ctx.resilient_parsing:
             return
         uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
-        schema = bowtie_schemas_registry().contents(uri)
+        schema = validator_registry().schema(uri)
         # FIXME: Syntax highlight? But rich appears to be doing some bizarre
         #        line wrapping, even if I disable a bunch of random options
         #        (crop, no_wrap, word_wrap in Syntax, ...) which fails the
@@ -742,18 +742,13 @@ def _validation_results_table_in_markdown(
 
 
 def make_validator(*more_schemas: SchemaResource):
-    from jsonschema.validators import (
-        validator_for,  # type: ignore[reportUnknownVariableType]
-    )
-
-    registry = more_schemas @ bowtie_schemas_registry()
+    validators = more_schemas @ validator_registry()
 
     def validate(instance: Any, schema: Schema) -> None:
-        Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
         # FIXME: There's work to do upstream in referencing, but we still are
         # probably able to make this a bit better here as well
-        validator = Validator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
-        errors = list(validator.iter_errors(instance))  # type: ignore[reportUnknownVariableType]
+        validator = validators.for_schema(schema)
+        errors = list(validator.errors_for(instance))
         if errors:
             raise ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
 

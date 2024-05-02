@@ -38,16 +38,16 @@ from bowtie._core import (
     ImplementationInfo,
     Test,
     TestCase,
-    bowtie_schemas_registry,
+    validator_registry,
 )
 from bowtie._report import Report, RunMetadata
 
 
-def pattern_from(id):
+def pattern_from(uri):
     """
     Return a strategy which matches the pattern in the given schema.
     """
-    return from_regex(bowtie_schemas_registry().contents(id)["pattern"])
+    return from_regex(validator_registry().schema(uri)["pattern"])
 
 
 # FIXME: probably via hypothesis-jsonschema
