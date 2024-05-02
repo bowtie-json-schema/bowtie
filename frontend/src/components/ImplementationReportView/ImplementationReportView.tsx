@@ -41,7 +41,7 @@ const ReportComponent: React.FC<{
           <EmbedBadges implementation={implementation} />
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body className="overflow-x-auto">
           <Table>
             <tbody>
               <tr>

@@ -15,7 +15,7 @@ const DialectCompliance: React.FC<{
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
-      <Card.Body>
+      <Card.Body className="overflow-x-auto">
         <Table className="table-hover sm">
           <thead>
             <tr>
