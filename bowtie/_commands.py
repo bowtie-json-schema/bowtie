@@ -12,7 +12,7 @@ try:
 except ImportError:
     from typing_extensions import dataclass_transform
 
-from attrs import asdict, field, frozen
+from attrs import asdict, field, filters, frozen
 from url import URL
 
 from bowtie import HOMEPAGE, exceptions
@@ -175,6 +175,8 @@ class AnyTestResult(Protocol):
     @property
     def errored(self) -> bool: ...
 
+    def serializable(self) -> Message: ...
+
 
 @frozen
 class TestResult:
@@ -198,6 +200,9 @@ class TestResult:
             return ErroredTest(**data)
         return cls(valid=data["valid"])
 
+    def serializable(self) -> Message:
+        return asdict(self)
+
 
 TestResult.VALID = TestResult(valid=True)
 TestResult.INVALID = TestResult(valid=False)
@@ -220,6 +225,14 @@ class SkippedTest:
         """
         return cls(message="All tests in this test case were skipped.")
 
+    def serializable(self) -> Message:
+        return asdict(
+            self,
+            filter=lambda k, v: (
+                k.name not in {"message", "issue_url"} or v is not None
+            ),
+        )
+
 
 @frozen
 class ErroredTest:
@@ -239,6 +252,9 @@ class ErroredTest:
             context=dict(message="All tests in this test case errored."),
         )
 
+    def serializable(self) -> Message:
+        return asdict(self)
+
 
 class AnyCaseResult(Protocol):
     @property
@@ -252,6 +268,8 @@ class AnyCaseResult(Protocol):
         self,
         expected: Sequence[bool | None],
     ) -> Unsuccessful: ...
+
+    def serializable(self) -> Message: ...
 
 
 def _case_result(seq: Seq, **data: Any) -> tuple[Seq, AnyCaseResult]:
@@ -329,8 +347,8 @@ class SeqResult:
         return self.serializable()
 
     def serializable(self):
-        serializable = asdict(self)
-        serializable.update(serializable.pop("result"))
+        serializable = asdict(self, filter=filters.exclude("result"))
+        serializable.update(self.result.serializable())
         return serializable
 
 
@@ -345,6 +363,9 @@ class CaseResult:
     @classmethod
     def from_results(cls, results: list[dict[str, Any]]):
         return cls(results=[TestResult.from_dict(t) for t in results])
+
+    def serializable(self) -> Message:
+        return dict(results=[result.serializable() for result in self.results])
 
     def result_for(self, i: int) -> AnyTestResult:
         return self.results[i]
@@ -383,6 +404,9 @@ class CaseErrored:
     def uncaught(cls, message: str = "uncaught error", **context: Any):
         return cls(caught=False, message=message, context=context)
 
+    def serializable(self):
+        return asdict(self)
+
     def result_for(self, i: int) -> ErroredTest:
         return ErroredTest.in_errored_case()
 
@@ -404,6 +428,14 @@ class CaseSkipped:
     message: str | None = None
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
+
+    def serializable(self):
+        return asdict(
+            self,
+            filter=lambda k, v: (
+                k.name not in {"message", "issue_url"} or v is not None
+            ),
+        )
 
     def result_for(self, i: int) -> SkippedTest:
         return SkippedTest.in_skipped_case()
