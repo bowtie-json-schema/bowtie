@@ -78,7 +78,7 @@ const EmbedBadges: React.FC<{
                 <div className="pb-3">
                   <p>
                     Bowtie regularly rebuilds a number of badges for
-                    {implementation.name}.
+                    <code> {implementation.name}</code>.
                   </p>
                   <p>
                     If you are a maintainer, you may be interested in embedding
