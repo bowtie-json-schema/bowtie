@@ -149,7 +149,6 @@ class Dialect:
         return DRAFT202012.create_resource(
             {
                 "$id": referrer["$ref"],  # type: ignore[reportIndexIssue]
-                "$ref": str(self.uri),
             },
         )
 
