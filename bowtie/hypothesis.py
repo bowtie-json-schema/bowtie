@@ -32,8 +32,14 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
-from bowtie._cli import bowtie_schemas_registry
-from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
+from bowtie._core import (
+    Dialect,
+    Example,
+    ImplementationInfo,
+    Test,
+    TestCase,
+    bowtie_schemas_registry,
+)
 from bowtie._report import Report, RunMetadata
 
 

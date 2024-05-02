@@ -3,8 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
-from functools import cache, wraps
-from importlib.resources import files
+from functools import wraps
 from pathlib import Path
 from pprint import pformat
 from textwrap import dedent
@@ -23,14 +22,12 @@ from jsonschema_lexer import JSONSchemaLexer
 from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
     JsonLexer,
 )
-from referencing.jsonschema import EMPTY_REGISTRY
 from rich import box, console, panel
 from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
 from url import URL, RelativeURLWithoutBase
-import referencing_loaders
 import rich_click as click
 import structlog
 import structlog.typing
@@ -45,6 +42,7 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
+    bowtie_schemas_registry,
 )
 from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
@@ -60,7 +58,7 @@ if TYPE_CHECKING:
     from typing import IO, Any, TextIO
 
     from click.decorators import FC
-    from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
+    from referencing.jsonschema import Schema, SchemaResource
 
     from bowtie._commands import AnyTestResult, ImplementationId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
@@ -741,12 +739,6 @@ def _validation_results_table_in_markdown(
         final_content += row_data[1]
 
     return final_content
-
-
-@cache
-def bowtie_schemas_registry() -> SchemaRegistry:
-    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    return EMPTY_REGISTRY.with_resources(resources).crawl()
 
 
 def make_validator(*more_schemas: SchemaResource):

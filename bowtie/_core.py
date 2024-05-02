@@ -11,15 +11,11 @@ import json
 
 from attrs import asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
-from referencing.jsonschema import (
-    EMPTY_REGISTRY,
-    Schema,
-    SchemaRegistry,
-    specification_with,
-)
+from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
 from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
+import referencing_loaders
 
 from bowtie._commands import (
     START_V1,
@@ -44,7 +40,7 @@ if TYPE_CHECKING:
     from typing import Any, Self
 
     from referencing import Specification
-    from referencing.jsonschema import SchemaResource
+    from referencing.jsonschema import SchemaRegistry, SchemaResource
     from rich.console import Console, ConsoleOptions, RenderResult
 
     from bowtie._commands import (
@@ -142,14 +138,17 @@ class Dialect:
         return specification_with(str(self.uri), **kwargs)
 
     def current_dialect_resource(self) -> SchemaResource:
+        referrer = bowtie_schemas_registry().contents(
+            "tag:bowtie.report,2024:ihop:schemaInCurrentDialect",
+        )
+
         # it's of course unimportant what dialect is used for this referencing
         # schema, what matters is that the target dialect is applied
         from referencing.jsonschema import DRAFT202012
 
         return DRAFT202012.create_resource(
             {
-                # Should match the magic value for `schema` in `schemas/io/`
-                "$id": "tag:bowtie.report,2023:ihop:__dialect__",
+                "$id": referrer["$ref"],  # type: ignore[reportIndexIssue]
                 "$ref": str(self.uri),
             },
         )
@@ -766,3 +765,9 @@ class TestCase:
             for test in serializable.pop("tests")
         ]
         return serializable
+
+
+@cache
+def bowtie_schemas_registry() -> SchemaRegistry:
+    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
+    return EMPTY_REGISTRY.with_resources(resources).crawl()
