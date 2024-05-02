@@ -12,10 +12,14 @@
   "$defs": {
     "response": {
       "$anchor": "response",
+      "$ref": "#openResponse",
+      "unevaluatedProperties": false
+    },
+    "openResponse": {
+      "$anchor": "openResponse",
 
       "type": "object",
       "required": ["seq"],
-      "unevaluatedProperties": false,
       "properties": {
         "seq": {
           "description": "The unchanged sequence identifier originally provided in the request.",
