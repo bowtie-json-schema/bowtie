@@ -10,7 +10,7 @@ import "@hyperjump/json-schema/draft-2019-09";
 import "@hyperjump/json-schema/draft-07";
 import "@hyperjump/json-schema/draft-06";
 import "@hyperjump/json-schema/draft-04";
-import packageJson from "./node_modules/@hyperjump/json-schema/package.json" assert { type: "json" };
+import packageJson from "./node_modules/@hyperjump/json-schema/package.json" with { type: "json" };
 
 const hyperjump_version = packageJson.version;
 

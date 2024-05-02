@@ -2,12 +2,12 @@ import readline from "readline/promises";
 import os from "os";
 import process from "process";
 import { Validator } from "jsonschema";
-import packageJson from "./node_modules/jsonschema/package.json" assert { type: "json" };
+import packageJson from "./node_modules/jsonschema/package.json" with { type: "json" };
 
-import draft3 from "json-metaschema/draft-03-schema.json" assert { type: "json" };
-import draft4 from "json-metaschema/draft-04-schema.json" assert { type: "json" };
-import draft6 from "json-metaschema/draft-06-schema.json" assert { type: "json" };
-import draft7 from "json-metaschema/draft-07-schema.json" assert { type: "json" };
+import draft3 from "json-metaschema/draft-03-schema.json" with { type: "json" };
+import draft4 from "json-metaschema/draft-04-schema.json" with { type: "json" };
+import draft6 from "json-metaschema/draft-06-schema.json" with { type: "json" };
+import draft7 from "json-metaschema/draft-07-schema.json" with { type: "json" };
 
 const jsonschema_version = packageJson.version;
 
