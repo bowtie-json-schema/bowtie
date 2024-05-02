@@ -32,8 +32,14 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
-from bowtie._cli import bowtie_schemas_registry
-from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
+from bowtie._core import (
+    Dialect,
+    Example,
+    ImplementationInfo,
+    Test,
+    TestCase,
+    bowtie_schemas_registry,
+)
 from bowtie._report import Report, RunMetadata
 
 
@@ -165,7 +171,7 @@ def tests(
 
 def test_cases(
     description=text(),
-    schema=schemas,
+    schemas=schemas,
     tests=lists(examples() | tests(), min_size=1, max_size=8),
 ):
     r"""
@@ -174,7 +180,7 @@ def test_cases(
     return builds(
         TestCase,
         description=description,
-        schema=schema,
+        schema=schemas,
         tests=tests,
     )
 
@@ -262,6 +268,11 @@ def seq_results(
     )
 
 
+# Evade the s h a d o w
+_implementations = implementations
+_test_cases = test_cases
+
+
 @composite
 def cases_and_results(
     draw,
@@ -297,6 +308,8 @@ def cases_and_results(
             seq_results(
                 seqs=just(seq_case.seq),
                 implementations=just(implementation.id),
+                min_tests=len(seq_case.case.tests),
+                max_tests=len(seq_case.case.tests),
             ),
         )
         for seq_case in seq_cases
@@ -304,8 +317,6 @@ def cases_and_results(
     ]
 
 
-# Evade the s h a d o w
-_implementations = implementations
 _cases_and_results = cases_and_results
 
 
@@ -325,9 +336,6 @@ def run_metadata(draw, dialects=known_dialects, implementations=None):
     return RunMetadata(dialect=dialect, implementations=draw(implementations))
 
 
-_run_metadata = run_metadata
-
-
 @composite
 def report_data(
     draw,
@@ -341,8 +349,17 @@ def report_data(
     metadata = draw(run_metadata)
 
     if cases_and_results is None:
-        implementations = just(metadata.implementations)
-        cases_and_results = _cases_and_results(implementations=implementations)
+        cases = test_cases(
+            schemas=(
+                schemas
+                if metadata.dialect.has_boolean_schemas
+                else object_schemas
+            ),
+        )
+        cases_and_results = _cases_and_results(
+            test_cases=cases,
+            implementations=just(metadata.implementations),
+        )
 
     seq_cases, results = draw(cases_and_results)
     return [  # FIXME: Combine with the logic in CaseReporter

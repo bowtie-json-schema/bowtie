@@ -37,6 +37,26 @@ def test_cases_and_results_with_given_implementations(data):
     assert len(results) == n * len(seq_cases)
 
 
+@given(strategies.cases_and_results())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_cases_and_results_generates_correct_test_results(cases_results):
+    """
+    The number of test results for each test case matches the number of tests.
+    """
+    seq_cases, seq_results = cases_results
+    for seq_case in seq_cases:
+        results = [
+            seq_result.result
+            for seq_result in seq_results
+            if seq_result.seq == seq_case.seq
+        ]
+        assert all(
+            len([each.result_for(i) for i in range(len(seq_case.case.tests))])
+            == len(seq_case.case.tests)
+            for each in results
+        )
+
+
 @given(strategies.cases_and_results(min_cases=2))  # no point for 1
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_cases_are_unique_by_default(cases_results):
@@ -76,6 +96,17 @@ def test_report_data_generates_implementations_which_support_the_dialect(data):
         report.metadata.dialect in each.dialects
         for each in report.implementations
     )
+
+
+@given(strategies.report_data())
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
+def test_report_data_generates_boolean_schemas_only_when_supported(data):
+    report = Report.from_input(data)
+    if not report.metadata.dialect.has_boolean_schemas:
+        assert not any(
+            isinstance(case.schema, bool)
+            for case, _ in report.cases_with_results()
+        )
 
 
 @given(strategies.report_data(fail_fast=just(True)))

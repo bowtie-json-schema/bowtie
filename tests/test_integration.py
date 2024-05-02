@@ -17,9 +17,14 @@ import pexpect
 import pytest
 import pytest_asyncio
 
-from bowtie._cli import bowtie_schemas_registry
 from bowtie._commands import ErroredTest, TestResult
-from bowtie._core import Dialect, Implementation, Test, TestCase
+from bowtie._core import (
+    Dialect,
+    Implementation,
+    Test,
+    TestCase,
+    bowtie_schemas_registry,
+)
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (

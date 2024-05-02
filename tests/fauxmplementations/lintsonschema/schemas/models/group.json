@@ -16,9 +16,8 @@
       "type": "string"
     },
     "schema": {
-      "description": "A valid JSON Schema.",
-      "$comment": "the URI used here is a sort of 'magic' URI set by Bowtie during runs, which will resolve to (effectively) the meta-schema for the current dialect being run by Bowtie. E.g. when running tests using the Draft 2020-12 dialect, the URI will resolve to the schema `{\"$ref\": \"https://json-schema.org/draft/2020-12/schema\"}`. This sort of dynamically set value is necessary, as schemas are supposed to be valid under the current dialect being spoken by Bowtie, but that's not known until runtime.",
-      "$ref": "tag:bowtie.report,2023:ihop:__dialect__"
+      "description": "The JSON Schema to be validated with.",
+      "$ref": "tag:bowtie.report,2024:ihop:schemaInCurrentDialect"
     },
     "registry": {
       "description": "A schema registry to be made available for all tests in this group.",
