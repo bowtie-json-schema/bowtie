@@ -6,6 +6,6 @@ COPY build.sbt /opt/harness
 COPY project /opt/harness/project
 RUN sbt assembly
 
-FROM bellsoft/liberica-openjdk-alpine:21
+FROM bellsoft/liberica-openjdk-alpine:22
 COPY --from=builder /opt/harness/target/scala-*/bowtieMjs.jar /opt/app/bowtieMjs.jar
 CMD ["java", "-jar", "/opt/app/bowtieMjs.jar"]
