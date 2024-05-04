@@ -57,6 +57,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
+    directory: "/implementations/js-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
     directory: "/implementations/js-jsonschema"
     schedule:
       interval: "daily"
@@ -157,6 +162,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-hyperjump"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-json-schema"
     schedule:
       interval: "daily"
 
