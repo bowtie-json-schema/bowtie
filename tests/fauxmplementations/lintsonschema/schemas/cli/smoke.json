@@ -4,5 +4,23 @@
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2024:cli:smoke"
+  "$id": "tag:bowtie.report,2024:cli:smoke",
+
+  "type": "array",
+
+  "additionalItems": false,
+  "items": {
+    "type": "object",
+
+    "additionalProperties": false,
+    "properties": {
+      "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
+      "result": {
+        "oneOf": [
+          { "$ref": "tag:bowtie.report,2023:ihop:command:run#result" },
+          { "$ref": "tag:bowtie.report,2023:ihop:command:run#errored" }
+        ]
+      }
+    }
+  }
 }
