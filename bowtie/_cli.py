@@ -64,10 +64,12 @@ if TYPE_CHECKING:
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 
-# Windows fallbacks...
-_EX_CONFIG = getattr(os, "EX_CONFIG", 1)
-_EX_DATAERR = getattr(os, "EX_DATAERR", 1)
-_EX_NOINPUT = getattr(os, "EX_NOINPUT", 1)
+class _EX:
+    def __getattr__(self, attr: str) -> int:
+        return getattr(os, f"EX_{attr}", 1)  # Windows fallbacks...
+
+
+EX = _EX()
 
 STDERR = console.Console(stderr=True)
 
@@ -271,7 +273,7 @@ def implementation_subcommand(
                         try:
                             implementation = await each
                         except (NoSuchImplementation, StartupFailed) as error:
-                            exit_code |= _EX_CONFIG
+                            exit_code |= EX.CONFIG
                             STDERR.print(error)
                             continue
 
@@ -280,7 +282,7 @@ def implementation_subcommand(
 
                     if not successful and default_implementations:
                         # TODO: show a diagnostic that collects crash causes
-                        exit_code |= _EX_CONFIG
+                        exit_code |= EX.CONFIG
                         return
 
             fn_exit_code = await fn(start=start, **kw)
@@ -348,7 +350,7 @@ def badges(site: Path):
             ),
         )
         STDERR.print(error)
-        return _EX_CONFIG
+        return EX.CONFIG
 
     supported_versions: dict[Path, Iterable[Dialect]] = {}
 
@@ -367,7 +369,7 @@ def badges(site: Path):
                     hint_stmt="Check that site generation has not failed.",
                 )
                 STDERR.print(error)
-                return _EX_DATAERR
+                return EX.DATAERR
 
             badge_name = f"{dialect.short_name}.json"
 
@@ -398,7 +400,7 @@ def badges(site: Path):
                         ),
                     )
                     STDERR.print(error)
-                    return _EX_CONFIG
+                    return EX.CONFIG
 
     for dir, dialects in supported_versions.items():
         badge = _report.supported_version_badge(dialects=dialects)
@@ -482,7 +484,7 @@ def summary(input: TextIO, format: _F, show: str):
             ),
         )
         STDERR.print(error)
-        return _EX_NOINPUT
+        return EX.NOINPUT
     except json.JSONDecodeError as err:
         error = DiagnosticError(
             code="report-not-json",
@@ -496,7 +498,7 @@ def summary(input: TextIO, format: _F, show: str):
             ),
         )
         STDERR.print(error)
-        return _EX_DATAERR
+        return EX.DATAERR
     except _report.MissingFooter:
         error = DiagnosticError(
             code="truncated-report",
@@ -511,7 +513,7 @@ def summary(input: TextIO, format: _F, show: str):
             ),
         )
         STDERR.print(error)
-        return _EX_DATAERR
+        return EX.DATAERR
 
     if show == "failures":
         results = report.worst_to_best()
@@ -1120,7 +1122,7 @@ def validate(
     Validate instances under a schema across any supported implementation.
     """
     if not instances:
-        return _EX_NOINPUT
+        return EX.NOINPUT
 
     tests = [Example(description="", instance=each) for each in instances]
     if expect is not None:
@@ -1246,7 +1248,7 @@ async def filter_dialects(
 
     if not matching:
         click.echo("No dialects match.", file=sys.stderr)
-        return _EX_DATAERR
+        return EX.DATAERR
 
     for dialect in sorted(matching, reverse=True):
         click.echo(dialect.uri)
@@ -1334,7 +1336,7 @@ async def smoke(
         async for _, results in implementation.smoke():
             async for case, result in results:
                 if result.unsuccessful():
-                    implementation_exit_code |= _EX_DATAERR
+                    implementation_exit_code |= EX.DATAERR
 
                 match format:
                     case "json":
@@ -1445,14 +1447,14 @@ async def _run(
             try:
                 implementation = await each
             except (NoSuchImplementation, StartupFailed) as error:
-                exit_code |= _EX_CONFIG
+                exit_code |= EX.CONFIG
                 STDERR.print(error)
                 continue
 
             try:
                 runner = await implementation.start_speaking(dialect)
             except DialectError as error:
-                exit_code |= _EX_CONFIG
+                exit_code |= EX.CONFIG
                 STDERR.print(error)
             except UnsupportedDialect as error:
                 STDERR.print(error)
@@ -1464,7 +1466,7 @@ async def _run(
             STDERR.print(
                 "[bold red]No implementations started successfully![/]",
             )
-            return exit_code | _EX_CONFIG
+            return exit_code | EX.CONFIG
 
         reporter.ready(
             _report.RunMetadata(
@@ -1502,7 +1504,7 @@ async def _run(
                 break
         reporter.finished(did_fail_fast=should_stop)
         if count == 0:
-            exit_code = _EX_NOINPUT
+            exit_code = EX.NOINPUT
             STDERR.print("[bold red]No test cases ran.[/]")
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")

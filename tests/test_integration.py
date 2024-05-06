@@ -16,6 +16,7 @@ import pexpect
 import pytest
 import pytest_asyncio
 
+from bowtie._cli import EX
 from bowtie._commands import ErroredTest, TestResult
 from bowtie._core import (
     Dialect,
@@ -48,7 +49,7 @@ async def command_validator(command):
     return validator_registry().for_schema(_json.loads(stdout))
 
 
-async def bowtie(*argv, stdin: str = "", exit_code=0, json=False):
+async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
     """
     Run a Bowtie subprocess asynchronously to completion.
 
@@ -478,7 +479,7 @@ async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
 
 @pytest.mark.asyncio
 async def test_no_tests_run(envsonschema):
-    async with run("-i", envsonschema, exit_code=os.EX_NOINPUT) as send:
+    async with run("-i", envsonschema, exit_code=EX.NOINPUT) as send:
         results, stderr = await send("")
 
     assert results == []
@@ -493,7 +494,7 @@ async def test_unknown_dialect(envsonschema):
         envsonschema,
         "--dialect",
         dialect,
-        exit_code=-1,
+        exit_code=2,  # comes from click
     ) as send:
         results, stderr = await send("")
 
@@ -509,7 +510,7 @@ async def test_nonurl_dialect(envsonschema):
         envsonschema,
         "--dialect",
         dialect,
-        exit_code=-1,
+        exit_code=2,  # comes from click
     ) as send:
         results, stderr = await send("")
 
@@ -524,7 +525,7 @@ async def test_unsupported_known_dialect(only_draft3):
         only_draft3,
         "--dialect",
         str(Dialect.by_alias()["draft2020-12"].uri),
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send("")
 
@@ -562,7 +563,7 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         succeed_immediately,
         "-i",
         envsonschema,
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
             """
@@ -583,7 +584,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
     """
     Don't uselessly "run" tests on no implementations.
     """
-    async with run("-i", succeed_immediately, exit_code=-1) as send:
+    async with run("-i", succeed_immediately, exit_code=EX.CONFIG) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
@@ -606,7 +607,7 @@ async def test_it_handles_immediately_broken_implementations(
         fail_immediately,
         "-i",
         envsonschema,
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
             """
@@ -633,7 +634,7 @@ async def test_it_handles_broken_start_implementations(
         fail_on_start,
         "-i",
         envsonschema,
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
             """
@@ -657,7 +658,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
         fail_on_dialect,
         "--dialect",
         "http://json-schema.org/draft-07/schema#",
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
             """
@@ -759,7 +760,7 @@ async def test_it_handles_split_messages(envsonschema):
 
 @pytest.mark.asyncio
 async def test_it_handles_invalid_start_responses(missing_homepage):
-    async with run("-i", missing_homepage, "-V", exit_code=-1) as send:
+    async with run("-i", missing_homepage, "-V", exit_code=EX.CONFIG) as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
@@ -823,7 +824,7 @@ async def test_wrong_version(wrong_version):
         wrong_version,
         "--dialect",
         "http://json-schema.org/draft-07/schema#",
-        exit_code=-1,
+        exit_code=1,  # FIXME: We're emitting the traceback
     ) as send:
         results, stderr = await send(
             """
@@ -927,7 +928,7 @@ async def test_max_fail_with_fail_fast(envsonschema):
         "--max-fail",
         "2",
         "--fail-fast",
-        exit_code=-1,
+        exit_code=2,  # comes from click
     )
     assert stdout == ""
     assert "don't provide both" in stderr, stderr
@@ -939,7 +940,7 @@ async def test_max_fail_with_fail_fast(envsonschema):
         "--fail-fast",
         "--max-fail",
         "2",
-        exit_code=-1,
+        exit_code=2,  # comes from click
     )
     assert stdout == ""
     assert "don't provide both" in stderr, stderr
@@ -970,7 +971,7 @@ async def test_smoke_pretty(envsonschema):
         "pretty",
         "-i",
         envsonschema,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
     assert (
         dedent(stdout)
@@ -991,7 +992,7 @@ async def test_smoke_markdown(envsonschema):
         "markdown",
         "-i",
         envsonschema,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
     assert (
         dedent(stdout)
@@ -1012,7 +1013,7 @@ async def test_smoke_valid_markdown(envsonschema):
         "markdown",
         "-i",
         envsonschema,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
     parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
@@ -1043,7 +1044,7 @@ async def test_smoke_json(envsonschema):
         "-i",
         envsonschema,
         json=True,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
 
     (await command_validator("smoke")).validate(jsonout)
@@ -1111,7 +1112,7 @@ async def test_smoke_quiet(envsonschema):
         "--quiet",
         "-i",
         envsonschema,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
     assert stdout == "", stderr
 
@@ -1126,7 +1127,7 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
         envsonschema,
         "-i",
         passes_smoke,
-        exit_code=-1,  # because indeed envsonschema gets answers wrong.
+        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
     )
     assert (
         dedent(stderr)
@@ -1401,7 +1402,7 @@ async def test_info_unsuccessful_start(succeed_immediately):
         "info",
         "-i",
         succeed_immediately,
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     )
 
     assert stdout.strip() in {"", "{}"}  # empty, but ignore if JSON or not
@@ -1568,7 +1569,7 @@ async def test_filter_dialects_no_results(only_draft3):
         "-i",
         only_draft3,
         "--boolean-schemas",
-        exit_code=-1,
+        exit_code=EX.DATAERR,
     )
     assert (stdout.strip(), stderr) == ("", "No dialects match.\n")
 
@@ -1757,7 +1758,7 @@ async def test_validate_no_tests(envsonschema, tmp_path):
         "-i",
         envsonschema,
         schema,
-        exit_code=-1,
+        exit_code=EX.NOINPUT,
     )
     assert stdout == ""
     assert stderr == ""
@@ -1956,7 +1957,7 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
         "badges",
         badges,
         stdin=run_stdout,
-        exit_code=-1,
+        exit_code=2,  # comes from click
     )
     assert stdout == ""
     assert stderr != ""
@@ -2007,7 +2008,7 @@ async def test_no_such_image(tmp_path):
         "run",
         "-i",
         "no-such-image",
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     )
     assert stdout == ""
     assert (
@@ -2018,7 +2019,7 @@ async def test_no_such_image(tmp_path):
         "smoke",
         "-i",
         "no-such-image",
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     )
     assert "/no-such-image' is not a known" in stderr, stderr
 
@@ -2032,7 +2033,7 @@ async def test_no_such_image(tmp_path):
         "-",
         foo,
         stdin="{}",
-        exit_code=-1,
+        exit_code=EX.CONFIG,
     )
     assert stdout == ""
     assert (
@@ -2047,7 +2048,7 @@ async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
         "-i",
         envsonschema,
         tmp_path,
-        exit_code=-1,
+        exit_code=2,  # comes from click
     )
     assert "does not contain" in stderr, stderr
 
