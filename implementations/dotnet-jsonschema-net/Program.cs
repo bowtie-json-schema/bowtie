@@ -155,7 +155,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
 static string GetLibVersion()
 {
     var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-    return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
+    return Regex.Match(attribute!.InformationalVersion, @"\d+(\.\d+)+").Value;
 }
 
 class UnknownCommand : Exception
