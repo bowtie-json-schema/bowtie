@@ -4,7 +4,6 @@ on:
   workflow_call:
     inputs:
       report_artifact_in_scope:
-        required: false
         type: boolean
         default: false
   workflow_dispatch:
