@@ -18,7 +18,6 @@ jobs:
 
   collect:
     runs-on: ubuntu-latest
-    needs: build-frontend
     steps:
       # if called from report workflow
       - name: Download existing _site artifact having "frontend-build"
