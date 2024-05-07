@@ -168,4 +168,3 @@ jobs:
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
