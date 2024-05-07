@@ -20,7 +20,7 @@ jobs:
     needs: build-frontend
     steps:
       # if called from report workflow
-      - name: Download existing _site directory
+      - name: Download existing _site artifact having "frontend-build"
         uses: actions/download-artifact@v4
         if: inputs.report_artifact_in_scope == true
         with:
