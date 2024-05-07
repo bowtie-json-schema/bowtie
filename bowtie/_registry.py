@@ -17,6 +17,12 @@ if TYPE_CHECKING:
 ErrorsFor = Callable[[Any], Iterable[Exception]]
 
 
+class UnexpectedlyValid(Exception):
+    """
+    An instance which was expected to be invalid just isn't.
+    """
+
+
 @frozen
 class Validator:
     """
@@ -24,6 +30,7 @@ class Validator:
     """
 
     errors_for: ErrorsFor
+    _raises: tuple[type[Exception], ...] = field(alias="raises")
     _registry: ValidatorRegistry = field(alias="registry")
 
     def __rmatmul__(
@@ -37,12 +44,21 @@ class Validator:
         if exception is not None:
             raise exception
 
+    def invalidate(self, instance: Any):
+        exception = next(iter(self.errors_for(instance)), None)
+        if not isinstance(exception, self._raises):
+            raise UnexpectedlyValid(instance)
+
 
 @frozen
 class ValidatorRegistry:
 
     _compile: Callable[[Schema, SchemaRegistry], ErrorsFor] = field(
         alias="compile",
+    )
+    _raises: tuple[type[Exception], ...] = field(
+        default=(Exception,),
+        alias="raises",
     )
     _registry: SchemaRegistry = field(default=EMPTY_REGISTRY, alias="registry")
 
@@ -57,6 +73,7 @@ class ValidatorRegistry:
         """
         A registry which uses the `jsonschema` module to do validation.
         """
+        from jsonschema.exceptions import ValidationError
         from jsonschema.validators import (
             validator_for,  # type: ignore[reportUnknownVariableType]
         )
@@ -65,7 +82,7 @@ class ValidatorRegistry:
             _Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
             return _Validator(schema, registry=registry).iter_errors  # type: ignore[reportUnknownVariableType]
 
-        return cls(compile=compile, **kwargs)
+        return cls(compile=compile, raises=(ValidationError,), **kwargs)
 
     def schema(self, uri: str) -> Schema:
         """
@@ -84,4 +101,8 @@ class ValidatorRegistry:
         Return a `Validator` using the given schema.
         """
         errors_for: ErrorsFor = self._compile(schema, self._registry)
-        return Validator(errors_for=errors_for, registry=self)
+        return Validator(
+            errors_for=errors_for,
+            raises=self._raises,
+            registry=self,
+        )
