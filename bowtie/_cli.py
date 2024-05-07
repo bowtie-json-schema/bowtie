@@ -14,7 +14,6 @@ import logging
 import os
 import sys
 
-from aiodocker import Docker
 from attrs import asdict
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
@@ -32,7 +31,7 @@ import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import _containers, _report, _suite
+from bowtie import _connectables, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -72,9 +71,6 @@ class _EX:
 EX = _EX()
 
 STDERR = console.Console(stderr=True)
-
-
-IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
 
 # rich-click's CommandGroupDict seems to be missing some covariance, as using a
@@ -252,7 +248,7 @@ def implementation_subcommand(
 
     def wrapper(fn: ImplementationSubcommand):
         async def run(
-            image_names: Iterable[str],
+            connectables: Iterable[_connectables.Connectable],
             read_timeout_sec: float,
             make_validator: MakeValidator = make_validator,
             **kw: Any,
@@ -292,8 +288,8 @@ def implementation_subcommand(
         @click.option(
             "--implementation",
             "-i",
-            "image_names",
-            type=_Image(),
+            "connectables",
+            type=_connectables.ClickParam(),
             default=lambda: (
                 default_implementations
                 if sys.stdin.isatty()
@@ -305,8 +301,11 @@ def implementation_subcommand(
         )
         @TIMEOUT
         @wraps(fn)
-        def cmd(image_names: Iterable[str], **kwargs: Any) -> int:
-            return asyncio.run(run(image_names=image_names, **kwargs))
+        def cmd(
+            connectables: Iterable[_connectables.Connectable],
+            **kwargs: Any,
+        ) -> int:
+            return asyncio.run(run(connectables=connectables, **kwargs))
 
         return cmd
 
@@ -761,36 +760,6 @@ def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
 
-class _Image(click.ParamType):
-    """
-    Select a supported Bowtie implementation.
-    """
-
-    name = "implementation"
-
-    def convert(
-        self,
-        value: str,
-        param: click.Parameter | None,
-        ctx: click.Context | None,
-    ) -> str:
-        if "/" in value:  # a fully qualified image name
-            return value
-        return f"{IMAGE_REPOSITORY}/{value}"
-
-    def shell_complete(
-        self,
-        ctx: click.Context,
-        param: click.Parameter,
-        incomplete: str,
-    ) -> list[CompletionItem]:
-        return [
-            CompletionItem(name)
-            for name in Implementation.known()
-            if name.startswith(incomplete.lower())
-        ]
-
-
 class _Dialect(click.ParamType):
     """
     Select a JSON Schema dialect.
@@ -907,8 +876,8 @@ def _do_nothing(*args: Any, **kwargs: Any) -> CaseTransform:
 IMPLEMENTATION = click.option(
     "--implementation",
     "-i",
-    "image_names",
-    type=_Image(),
+    "connectables",
+    type=_connectables.ClickParam(),
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
@@ -1424,7 +1393,7 @@ def suite(
 
 
 async def _run(
-    image_names: Iterable[str],
+    connectables: Iterable[_connectables.Connectable],
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,

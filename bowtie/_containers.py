@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import asyncio
 import json
 
+from aiodocker import Docker
 from attrs import field, frozen, mutable
 import aiodocker.exceptions
 
@@ -26,6 +27,7 @@ from bowtie._core import (
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable
+    from contextlib import AbstractAsyncContextManager
     from typing import Any, Self
 
     import aiodocker.containers
@@ -33,6 +35,9 @@ if TYPE_CHECKING:
     import aiodocker.stream  # noqa: TCH004 ??? no it's not?
 
     from bowtie._commands import Message
+
+
+IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
 
 @frozen
@@ -280,3 +285,19 @@ class Connection:
         request = f"{json.dumps(message)}\n"
         with suppress(_ClosedStream):
             await self._stream.send(request)
+
+
+@frozen
+class ConnectableImage:
+
+    _id: str = field(
+        converter=lambda value: (  # type: ignore[reportUnknownLambdaType]
+            value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
+        ),
+        alias="id",
+    )
+
+    connector = "image"
+
+    def connect(self) -> AbstractAsyncContextManager[Connection]:
+        return Connection.open(image_name=self._id)

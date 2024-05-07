@@ -1,0 +1,36 @@
+{
+  "title": "Connectables",
+  "description": "A mini-language for connecting to supported harnesses.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:connectables",
+
+  "type": "string",
+
+  "oneOf": [
+    {
+      "title": "Implicit Image",
+      "pattern": "^[^:]+$"
+    },
+
+    {
+      "title": "Fully Qualified Connectable",
+      "description": "A connectable with explicit connector.",
+
+      "pattern": "^[^:]+:[^:]+(:[^:]+)?$",
+      "oneOf": [{ "$ref": "#image" }]
+    }
+  ],
+
+  "$defs": {
+    "image": {
+      "title": "Container Image",
+      "description": "An OCI container image which Bowtie will spin up and manage",
+
+      "$anchor": "image",
+
+      "pattern": "^image:*"
+    }
+  }
+}
