@@ -11,6 +11,7 @@ on:
     types: [published]
 
 jobs:
+  # if called as a separate workflow
   build-frontend:
     uses: ./.github/workflows/build-frontend.yml
     if: inputs.report_artifact_in_scope == false
