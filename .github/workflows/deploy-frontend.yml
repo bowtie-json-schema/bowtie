@@ -4,8 +4,8 @@ on:
   workflow_call:
     inputs:
       report_artifact_in_scope:
-        required: false
         type: boolean
+        default: false
   workflow_dispatch:
   release:
     types: [published]
@@ -18,15 +18,22 @@ jobs:
 
   collect:
     runs-on: ubuntu-latest
+    if: ${{ !failure() }}
     needs: build-frontend
     steps:
+      - name: Create _site directory
+        run: mkdir _site
+
       # if called from report workflow
-      - name: Download existing _site artifact having "frontend-build"
-        uses: actions/download-artifact@v4
+      - name: Download latest frontend-build
+        uses: dawidd6/action-download-artifact@v3
         if: inputs.report_artifact_in_scope == true
         with:
-          name: _site
+          workflow: build-frontend.yml
+          branch: main
+          name: frontend-build
           path: _site
+          if_no_artifact_found: warn
 
       - name: Download test report from local artifact
         uses: actions/download-artifact@v4
@@ -36,11 +43,7 @@ jobs:
           path: _site
 
       # if called as a separate workflow
-      - name: Create _site directory
-        run: mkdir _site
-        if: inputs.report_artifact_in_scope == false
-
-      - name: Download frontend build
+      - name: Download frontend-build from local artifact
         uses: actions/download-artifact@v4
         if: inputs.report_artifact_in_scope == false
         with:
