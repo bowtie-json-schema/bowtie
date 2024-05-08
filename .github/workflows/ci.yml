@@ -70,7 +70,7 @@ jobs:
         with:
           node-version-file: frontend/package.json
         if: startsWith(matrix.noxenv, 'ui')
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
           run_install: false
