@@ -18,7 +18,7 @@ jobs:
 
   collect:
     runs-on: ubuntu-latest
-    if: ${{ always() }}
+    if: ${{ !failure() }}
     needs: build-frontend
     steps:
       - name: Create _site directory
