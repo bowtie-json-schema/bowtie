@@ -77,7 +77,7 @@ jobs:
 
       - name: Generate a New Report
         run: |
-          bowtie suite $(ls implementations/ | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
+          bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
@@ -110,7 +110,7 @@ jobs:
 
       - name: Generate implementations.json file
         run: |
-          bowtie info $(ls implementations/ | sed 's/^/-i /') --format json > implementations.json
+          bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
 
       - uses: actions/upload-artifact@v4
         with:
