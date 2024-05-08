@@ -160,7 +160,7 @@ class Connection:
     _restarts: int = field(default=10, repr=False, alias="restarts")
     _read_timeout_sec: float | None = field(
         default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
+        converter=lambda value: value or None,  # type: ignore[reportUnknownLambdaType]
         repr=False,
     )
 
@@ -174,18 +174,22 @@ class Connection:
         image_name: str,
         **kwargs: Any,
     ) -> AsyncIterator[Self]:
-        self = cls(image=image_name, **kwargs)
+        async with Docker() as docker:
+            self = cls(docker=docker, image=image_name, **kwargs)
 
-        try:
-            await self._start_container_maybe_pull()
-        except GotStderr as error:
-            err = StartupFailed(name=image_name, stderr=error.stderr.decode())
-            raise err from None
-        except _ClosedStream:
-            raise StartupFailed(name=image_name) from None
+            try:
+                await self._start_container_maybe_pull()
+            except GotStderr as error:
+                err = StartupFailed(
+                    name=image_name,
+                    stderr=error.stderr.decode(),
+                )
+                raise err from None
+            except _ClosedStream:
+                raise StartupFailed(name=image_name) from None
 
-        yield self
-        await self._stream.ensure_deleted()
+            yield self
+            await self._stream.ensure_deleted()
 
     async def _start_container_maybe_pull(self):
         # You would think we would use aiodocker's container.start() function
