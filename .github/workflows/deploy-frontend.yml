@@ -23,7 +23,7 @@ jobs:
         run: mkdir _site
 
       # if called from report workflow
-      - name: Download the previous frontend-build
+      - name: Download latest frontend-build
         uses: dawidd6/action-download-artifact@v3
         if: inputs.report_artifact_in_scope == true
         with:
@@ -41,14 +41,14 @@ jobs:
           path: _site
 
       # if called as a separate workflow
-      - name: Download the frontend-build from local artifact
+      - name: Download frontend-build from local artifact
         uses: actions/download-artifact@v4
         if: inputs.report_artifact_in_scope == false
         with:
           name: frontend-build
           path: _site
 
-      - name: Generate and Download latest test report
+      - name: Download latest test report
         if: inputs.report_artifact_in_scope == false
         uses: dawidd6/action-download-artifact@v3
         with:
