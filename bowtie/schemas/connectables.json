@@ -15,6 +15,11 @@
     },
 
     {
+      "title": "Implicit Image With Repository & Tag",
+      "pattern": "^[^:/]+/[^:/]+:[^:/]+$"
+    },
+
+    {
       "title": "Fully Qualified Connectable",
       "description": "A connectable with explicit connector.",
 

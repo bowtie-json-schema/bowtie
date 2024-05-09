@@ -86,6 +86,8 @@ class Connectable:
             connector, id = "image", connector
         Connector = cls._connectors.get(connector)
         if Connector is None:
+            if "/" in connector:
+                return cls(id=fqid, connector=cls._connectors["image"](fqid))
             raise UnknownConnector(connector)
         return cls(id=fqid, connector=Connector(id))
 

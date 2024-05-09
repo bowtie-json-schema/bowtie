@@ -49,6 +49,26 @@ def test_implicit_image_no_repository():
     )
 
 
+def test_explicit_image_with_repository_and_tag():
+    id = "image:foo/bar:latest"
+    validator.validate(id)
+    connectable = Connectable.from_str(id)
+    assert connectable == Connectable(
+        id=id,
+        connector=ConnectableImage(id="foo/bar:latest"),
+    )
+
+
+def test_implicit_image_with_repository_and_tag():
+    id = "foo/bar:latest"
+    validator.validate(id)
+    connectable = Connectable.from_str(id)
+    assert connectable == Connectable(
+        id=id,
+        connector=ConnectableImage(id="foo/bar:latest"),
+    )
+
+
 def test_unknown_connector():
     id = "asdf:foo"
     validator.invalidate(id)
