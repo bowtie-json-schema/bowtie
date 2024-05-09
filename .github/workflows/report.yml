@@ -64,8 +64,6 @@ jobs:
         version: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      # FIXME: we can skip checking out if we are able to list all images in
-      #        the image repository
       - uses: actions/checkout@v4
 
       - name: Install Bowtie
