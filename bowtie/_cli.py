@@ -302,7 +302,7 @@ def implementation_subcommand(
             type=_connectables.ClickParam(),
             default=lambda: (
                 default_implementations
-                if sys.stdin.isatty()
+                if sys.stdin.isatty() or "CI" in os.environ
                 else [line.strip() for line in sys.stdin]
             ),
             multiple=True,
