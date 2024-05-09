@@ -1152,9 +1152,7 @@ KNOWN_LANGUAGES = {
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
 )
-@click.pass_context
 async def filter_implementations(
-    ctx: click.Context,
     start: Callable[
         [],
         AsyncIterator[tuple[ImplementationId, Implementation]],
