@@ -133,6 +133,10 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
+class PathError:
+    pass
+
+
 def remotes_in(
     path: Path,
     dialect: _core.Dialect,
@@ -147,7 +151,10 @@ def remotes_in(
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
 
-        relative = str(_relative_to(each, path)).replace("\\", "/")
+        try:
+            relative = str(_relative_to(each, path)).replace("\\", "/")
+        except Exception as error:  # noqa: BLE001
+            raise PathError((each, path, error))
 
         if (
             ("$schema" in schema and schema["$schema"] != str(dialect.uri))
