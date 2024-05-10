@@ -133,7 +133,7 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-class PathError:
+class PathError(Exception):
     pass
 
 
