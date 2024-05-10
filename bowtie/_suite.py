@@ -75,6 +75,7 @@ class ClickParam(click.ParamType):
 
             path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
+            data.name = ""
             succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             if not succeeded:
                 message = "Fetching the test suite from GitHub failed."
@@ -133,10 +134,6 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-class PathError(Exception):
-    pass
-
-
 def remotes_in(
     path: Path,
     dialect: _core.Dialect,
@@ -151,10 +148,7 @@ def remotes_in(
     for each in _rglob(path, "*.json"):
         schema = json.loads(each.read_text())
 
-        try:
-            relative = str(_relative_to(each, path)).replace("\\", "/")
-        except Exception as error:  # noqa: BLE001
-            raise PathError((each, path, error))
+        relative = str(_relative_to(each, path)).replace("\\", "/")
 
         if (
             ("$schema" in schema and schema["$schema"] != str(dialect.uri))
