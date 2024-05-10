@@ -68,7 +68,7 @@ rich==13.7.1
     # via
     #   diagnostic
     #   rich-click
-rich-click==1.8.0
+rich-click==1.8.1
 rpds-py==0.18.1
     # via
     #   jsonschema
