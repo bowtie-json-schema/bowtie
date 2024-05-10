@@ -37,6 +37,7 @@ FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 # Make believe we're wide for tests to avoid line breaks in rich-click.
 WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
+WIDE_TERMINAL_ENV.pop("CI", None)  # Run subprocesses as if they're not in CI
 
 
 def tag(name: str):
