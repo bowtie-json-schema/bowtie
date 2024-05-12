@@ -131,6 +131,7 @@ intersphinx_mapping = {
     "podman": ("https://docs.podman.io/en/latest", None),
     "python": ("https://docs.python.org/", None),
     "sphinx": ("https://www.sphinx-doc.org", None),
+    "twisted": ("https://docs.twistedmatrix.com/en/stable", None),
 }
 
 # -- extlinks --

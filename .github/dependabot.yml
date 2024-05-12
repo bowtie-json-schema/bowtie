@@ -102,7 +102,12 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "/implementations/java-json-schema-validator"
+    directory: "/implementations/java-json-tools-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gradle"
+    directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
 
@@ -221,7 +226,12 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/implementations/java-json-schema-validator"
+    directory: "/implementations/java-json-tools-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
 

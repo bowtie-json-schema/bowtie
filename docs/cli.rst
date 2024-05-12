@@ -15,7 +15,7 @@ Below are a few sample command lines you might be interested in.
     In the interim, it's often convenient to use a local checkout of Bowtie in order to list this information.
 
     Specifically, all supported implementations live in the ``implementations/`` directory, and therefore you can construct a string of ``-i`` arguments using a small bit of shell vomit.
-    If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
+    If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(bowtie filter-implementations | sed 's/^/-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
 
 Examples
@@ -74,7 +74,7 @@ The following will run all Draft 7 tests from the `official test suite`_ (which 
 
 .. code:: sh
 
-    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
 
 
 Running Test Suite Tests From Local Checkouts
@@ -84,7 +84,7 @@ Providing a local path to the test suite can be used as well, which is useful if
 
 .. code:: sh
 
-    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
 
 
 Checking An Implementation Functions On Basic Input
