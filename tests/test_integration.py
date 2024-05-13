@@ -118,10 +118,11 @@ def container(name, fileobj):
         yield f"container:{_container.id}"
 
         # Double Ensure that container is not running after test completion
+        # It maybe that the container auto exits wherein docker would
+        # throw an error saying Container not found.
         with suppress(DockerError):
             await _container.delete()
-
-        await images.delete(name=t, force=True)
+            await images.delete(name=t, force=True)
 
     return _container_id
 
