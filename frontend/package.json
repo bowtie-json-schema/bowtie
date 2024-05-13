@@ -45,7 +45,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
-    "vite-bundle-visualizer": "^1.1.0",
+    "vite-bundle-visualizer": "^1.2.1",
     "vitest": "^1.6.0"
   },
   "eslintConfig": {
