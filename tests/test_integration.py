@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -115,14 +115,11 @@ def container(name, fileobj):
         )
         _container = await docker.containers.create(config=config)
         await _container.start()
-
         yield f"container:{_container.id}"
+
         # Double Ensure that container is not running after test completion
-        try:
+        with suppress(DockerError):
             await _container.delete()
-        except:
-            # Container must have stopped on its own after input finished.
-            pass
 
         await images.delete(name=t, force=True)
 
@@ -145,20 +142,22 @@ def image(name, fileobj):
     return _image
 
 
-def fakecontainerimplementation(name):
-    """
-    A fake implementation using container connectable built from files in the fauxmplementations directory.
-    """
-    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
-    return container(name=name, fileobj=fileobj)
-
-
 def fauxmplementation(name):
     """
     A fake implementation built from files in the fauxmplementations directory.
     """
     fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
     return image(name=name, fileobj=fileobj)
+
+
+def fakecontainerimplementation(name):
+    """
+    A fake implementation using container connectable.
+
+    Built from files in the fauxmplementations directory.
+    """
+    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
+    return container(name=name, fileobj=fileobj)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.19"):
@@ -405,9 +404,7 @@ async def run(*args, **kwargs):
 
 
 @pytest.mark.asyncio
-async def test_validating_invalid_container_connectable(
-    envsonschema_container,
-):
+async def test_validate_invalid_container_connectable(envsonschema_container):
     async with run("-i", envsonschema_container, "-V") as send:
         results, stderr = await send(
             """
@@ -421,7 +418,7 @@ async def test_validating_invalid_container_connectable(
 
 
 @pytest.mark.asyncio
-async def test_validating_valid_container_connectable(lintsonschema_container):
+async def test_validate_valid_container_connectable(lintsonschema_container):
     async with run("-i", lintsonschema_container, "-V") as send:
         results, stderr = await send(
             """
