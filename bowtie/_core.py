@@ -171,6 +171,7 @@ class NoSuchImplementation(Exception):
             ),
         )
 
+
 @frozen
 class NoSuchContainer(Exception):
     """

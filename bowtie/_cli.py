@@ -274,9 +274,9 @@ def implementation_subcommand(
                         try:
                             connectable_implementation = await each
                         except (
-                                NoSuchImplementation,
-                                NoSuchContainer,
-                                StartupFailed,
+                            NoSuchImplementation,
+                            NoSuchContainer,
+                            StartupFailed,
                         ) as error:
                             exit_code |= EX.CONFIG
                             STDERR.print(error)
@@ -1522,9 +1522,9 @@ async def _run(
             try:
                 _, implementation = await each
             except (
-                    NoSuchImplementation,
-                    NoSuchContainer,
-                    StartupFailed,
+                NoSuchImplementation,
+                NoSuchContainer,
+                StartupFailed,
             ) as error:
                 exit_code |= EX.CONFIG
                 STDERR.print(error)
