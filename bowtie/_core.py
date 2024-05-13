@@ -175,6 +175,26 @@ class NoSuchImplementation(Exception):
             ),
         )
 
+@frozen
+class NoSuchContainer(Exception):
+    """
+    A running container with the given container_id does not exist.
+    """
+
+    container_id: str
+
+    def __rich__(self):
+        return DiagnosticError(
+            code="no-such-container",
+            message=f"No such running container: {self.container_id!r}",
+            causes=[],
+            hint_stmt=(
+                "Ensure that the specified container is running. "
+                "You can run any implementation manually using "
+                "docker run --rm -id 'implementation_image_name'. "
+            ),
+        )
+
 
 @frozen
 class GotStderr(Exception):
