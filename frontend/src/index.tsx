@@ -29,16 +29,11 @@ const fetchAllReportsData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
+      dialect.fetchReport().then((data) => allReportsData.set(dialect, data))
     );
   }
   await Promise.all(promises);
-
-  // FIXME: This magic prefix is duplicated from the backend side,
-  //        and probably we can separate handling this in Implementation
-  //        class (when we have it).
-  const implementationId = `ghcr.io/bowtie-json-schema/${langImplementation}`;
-  return prepareImplementationReport(allReportsData, implementationId);
+  return prepareImplementationReport(allReportsData, langImplementation);
 };
 
 const fetchImplementationMetadata = async () => {
@@ -51,7 +46,7 @@ const fetchImplementationMetadata = async () => {
     Object.entries(implementations).map(([id, data]) => [
       id,
       implementationFromData(data),
-    ]),
+    ])
   );
 };
 
@@ -101,6 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
