@@ -20,6 +20,7 @@ import aiodocker.exceptions
 from bowtie._core import (
     GotStderr,
     InvalidResponse,
+    NoSuchContainer,
     NoSuchImplementation,
     Restarted,
     StartupFailed,
@@ -150,10 +151,9 @@ class Connection:
     handled here.
     """
 
-    _image: str = field(alias="image")
-
     _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _stream: Stream = field(default=None, repr=False, alias="stream")
+    _image: str = field(default=None, alias="image")
+    stream: Stream = field(default=None, repr=False, alias="stream")
 
     # Maybe second versions of these will be useful also at the Implementation
     # level again, to control for non-protocol-related flakiness or slowness
@@ -189,7 +189,7 @@ class Connection:
                 raise StartupFailed(name=image_name) from None
 
             yield self
-            await self._stream.ensure_deleted()
+            await self.stream.ensure_deleted()
 
     async def _start_container_maybe_pull(self):
         # You would think we would use aiodocker's container.start() function
@@ -253,7 +253,10 @@ class Connection:
         # FIXME: name + labels
         container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
         await container.start()  # type: ignore[reportUnknownMemberType]
-        self._stream = Stream.attached_to(
+        self.attach_stream(container)
+
+    def attach_stream(self, container: aiodocker.containers.DockerContainer):
+        self.stream = Stream.attached_to(
             container,
             read_timeout_sec=self._read_timeout_sec,
         )
@@ -262,16 +265,16 @@ class Connection:
         request = f"{json.dumps(message)}\n"
 
         try:
-            await self._stream.send(request)
+            await self.stream.send(request)
         except _ClosedStream:
             self._restarts -= 1
-            await self._stream.ensure_deleted()
+            await self.stream.ensure_deleted()
             await self._start_container()
             raise Restarted() from None
 
         for _ in range(self._retry):
             try:
-                response = await self._stream.receive()
+                response = await self.stream.receive()
             except asyncio.exceptions.TimeoutError:
                 continue
             except _ClosedStream as err:
@@ -288,7 +291,32 @@ class Connection:
     async def poison(self, message: dict[str, Any]) -> None:
         request = f"{json.dumps(message)}\n"
         with suppress(_ClosedStream):
-            await self._stream.send(request)
+            await self.stream.send(request)
+
+
+@mutable
+class ManagedConnection:
+
+    @classmethod
+    @asynccontextmanager
+    async def open(
+        cls,
+        container_id: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[Connection]:
+        async with Docker() as docker:
+            try:
+                container = await docker.containers.get(container_id)  # type: ignore[reportUnknownMemberType]
+            except aiodocker.exceptions.DockerError as err:
+                _, data, *_ = err.args
+                if "No such container" in data.get("message"):
+                    raise NoSuchContainer(container_id) from err
+                raise StartupFailed(name=container_id, data=data) from err
+
+            connection = Connection(docker=docker, **kwargs)
+            connection.attach_stream(container)
+            yield connection
+            await connection.stream.ensure_deleted()
 
 
 @frozen
@@ -305,3 +333,14 @@ class ConnectableImage:
 
     def connect(self) -> AbstractAsyncContextManager[Connection]:
         return Connection.open(image_name=self._id)
+
+
+@frozen
+class ConnectedContainer:
+
+    _id: str = field(alias="id")
+
+    connector = "container"
+
+    def connect(self) -> AbstractAsyncContextManager[Connection]:
+        return ManagedConnection.open(container_id=self._id)
