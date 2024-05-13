@@ -1,7 +1,11 @@
 import pytest
 
 from bowtie._connectables import Connectable, UnknownConnector
-from bowtie._containers import IMAGE_REPOSITORY, ConnectableImage, ConnectedContainer
+from bowtie._containers import (
+    IMAGE_REPOSITORY,
+    ConnectableImage,
+    ConnectedContainer,
+)
 from bowtie._core import validator_registry
 
 validator = validator_registry().for_uri(

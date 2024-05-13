@@ -405,7 +405,9 @@ async def run(*args, **kwargs):
 
 
 @pytest.mark.asyncio
-async def test_validating_invalid_container_connectable(envsonschema_container):
+async def test_validating_invalid_container_connectable(
+    envsonschema_container,
+):
     async with run("-i", envsonschema_container, "-V") as send:
         results, stderr = await send(
             """
