@@ -23,12 +23,12 @@
     "react-bootstrap": "^2.10.2",
     "react-bootstrap-icons": "^1.11.4",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.0",
+    "react-router-dom": "^6.23.1",
     "react-syntax-highlighter": "^15.5.0",
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@types/react": "^18.3.1",
+    "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/react-test-renderer": "^18.3.0",
@@ -45,7 +45,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
-    "vite-bundle-visualizer": "^1.1.0",
+    "vite-bundle-visualizer": "^1.2.1",
     "vitest": "^1.6.0"
   },
   "eslintConfig": {
