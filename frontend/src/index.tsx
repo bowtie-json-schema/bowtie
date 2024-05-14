@@ -29,11 +29,11 @@ const fetchAllReportsData = async (langImplementation: string) => {
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
+      dialect.fetchReport().then((data) => allReportsData.set(dialect, data))
     );
   }
   await Promise.all(promises);
-  return prepareImplementationReport(allReportsData, langImplementation);
+  return prepareImplementationReport(allReportsData, "langImplementation");
 };
 
 const fetchImplementationMetadata = async () => {
@@ -46,7 +46,7 @@ const fetchImplementationMetadata = async () => {
     Object.entries(implementations).map(([id, data]) => [
       id,
       implementationFromData(data),
-    ]),
+    ])
   );
 };
 
@@ -96,6 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
