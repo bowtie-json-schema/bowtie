@@ -495,7 +495,7 @@ class _Report(click.File):
                 message="The Bowtie report looks corrupt.",
                 causes=[f"{input.name} is not valid JSON.", str(err)],
                 hint_stmt=(
-                    "If you are piping in report data data, "
+                    "If you are piping in report data, "
                     "the command producing the report has likely failed "
                     "and the real error is above this one. "
                     "Otherwise, ensure you are passing in a report generated "
