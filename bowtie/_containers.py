@@ -20,7 +20,6 @@ import aiodocker.exceptions
 from bowtie._core import (
     GotStderr,
     InvalidResponse,
-    NoSuchContainer,
     NoSuchImplementation,
     Restarted,
     StartupFailed,
@@ -309,9 +308,14 @@ class ManagedConnection:
                 container = await docker.containers.get(container_id)  # type: ignore[reportUnknownMemberType]
             except aiodocker.exceptions.DockerError as err:
                 _, data, *_ = err.args
-                if "No such container" in data.get("message"):
-                    raise NoSuchContainer(container_id) from err
-                raise StartupFailed(name=container_id, data=data) from err
+                error_message = data.get("message")
+                raise (
+                    StartupFailed(
+                        name=container_id,
+                        data=data,
+                        stderr=error_message,
+                    )
+                )
 
             connection = Connection(docker=docker, **kwargs)
             connection.attach_stream(container)

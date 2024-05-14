@@ -37,7 +37,6 @@ from bowtie._core import (
     Dialect,
     Example,
     Implementation,
-    NoSuchContainer,
     NoSuchImplementation,
     StartupFailed,
     Test,
@@ -274,7 +273,6 @@ def implementation_subcommand(
                             connectable_implementation = await each
                         except (
                             NoSuchImplementation,
-                            NoSuchContainer,
                             StartupFailed,
                         ) as error:
                             exit_code |= EX.CONFIG
@@ -1442,7 +1440,6 @@ async def _run(
                 _, implementation = await each
             except (
                 NoSuchImplementation,
-                NoSuchContainer,
                 StartupFailed,
             ) as error:
                 exit_code |= EX.CONFIG
