@@ -33,7 +33,7 @@ const fetchAllReportsData = async (langImplementation: string) => {
     );
   }
   await Promise.all(promises);
-  return prepareImplementationReport(allReportsData, "langImplementation");
+  return prepareImplementationReport(allReportsData, langImplementation);
 };
 
 const fetchImplementationMetadata = async () => {
