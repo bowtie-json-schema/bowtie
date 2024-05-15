@@ -1731,11 +1731,10 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
         # Bowtie Failures Summary
 
         | Implementation | Skips | Errors | Failures |
-        |:-:|:-:|:-:|:-:|
+        |:---------------------:|:-:|:-:|:-:|
         | envsonschema (python) | 0 | 0 | 2 |
 
         **2 tests ran**
-
         """,
     )
 
@@ -2241,3 +2240,114 @@ async def test_validate_specify_dialect(envsonschema, tmp_path):
     )
     report = Report.from_serialized(stdout.splitlines())
     assert report.metadata.dialect == Dialect.by_short_name()["draft2019-09"]
+
+
+@pytest.mark.asyncio
+async def test_statistics_pretty(envsonschema, always_valid):
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    run_stdout, run_stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "-i",
+        always_valid,
+        "-V",
+        stdin=dedent(raw.strip("\n")),
+    )
+
+    stdout, stderr = await bowtie(
+        "statistics",
+        "--format",
+        "pretty",
+        stdin=run_stdout,
+    )
+
+    assert stdout == dedent(
+        """\
+        median: 0.65
+        mean: 0.65
+        """,
+    )
+    assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.json
+async def test_statistics_json(envsonschema, always_valid):
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    run_stdout, run_stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "-i",
+        always_valid,
+        "-V",
+        stdin=dedent(raw.strip("\n")),
+    )
+
+    jsonout, stderr = await bowtie(
+        "statistics",
+        "--format",
+        "json",
+        stdin=run_stdout,
+        json=True,
+    )
+
+    (await command_validator("statistics")).validate(jsonout)
+    assert jsonout == dict(median=0.65, mean=0.65)
+    assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_statistics_markdown(envsonschema, always_valid):
+    raw = """
+        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
+        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
+        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
+        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
+        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
+        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
+    """  # noqa: E501
+    run_stdout, run_stderr = await bowtie(
+        "run",
+        "-i",
+        envsonschema,
+        "-i",
+        always_valid,
+        "-V",
+        stdin=dedent(raw.strip("\n")),
+    )
+
+    stdout, stderr = await bowtie(
+        "statistics",
+        "--format",
+        "markdown",
+        stdin=run_stdout,
+    )
+
+    assert stdout == dedent(
+        """
+        |  |  |
+        |:------:|:----:|
+        | median | 0.65 |
+        |  mean  | 0.65 |
+        """,
+    )
+    assert stderr == "", stderr

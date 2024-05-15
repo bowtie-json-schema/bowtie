@@ -75,6 +75,7 @@ class ClickParam(click.ParamType):
 
             path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
+            data.name = ""
             succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
             if not succeeded:
                 message = "Fetching the test suite from GitHub failed."
