@@ -16,8 +16,10 @@ linter
 linters
 positionally
 providable
+quantiles
 runtime
 schemas
+sensical
 shortname
 shortnames
 subcommand
