@@ -6,6 +6,7 @@ from fnmatch import fnmatch
 from functools import wraps
 from pathlib import Path
 from pprint import pformat
+from statistics import mean, median, quantiles
 from textwrap import dedent
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
@@ -589,9 +590,7 @@ def summary(report: _report.Report, format: _F, show: str):
 
 
 def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
-    widths = [
-        max(len(line[i]) for line in columns) for i in range(len(columns))
-    ]
+    widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
     rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
 
     header = "| " + " | ".join(columns) + " |"
@@ -612,7 +611,7 @@ def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
         body[idx] = "| " + " | ".join(line) + " |"
     body = "\n".join(body)
 
-    return f"\n\n{header}\n{separator}\n{body}\n\n"
+    return f"\n{header}\n{separator}\n{body}"
 
 
 def _failure_table(
@@ -661,11 +660,13 @@ def _failure_table_in_markdown(
             ],
         )
 
-    markdown_table = _convert_table_to_markdown(columns, rows)
-    return (
-        "# Bowtie Failures Summary"
-        + markdown_table
-        + f"**{report.total_tests} {test} ran**\n"
+    return "\n".join(
+        [
+            "# Bowtie Failures Summary",
+            _convert_table_to_markdown(columns, rows),
+            "",
+            f"**{report.total_tests} {test} ran**",
+        ],
     )
 
 
@@ -766,6 +767,53 @@ def _validation_results_table_in_markdown(
         final_content += row_data[1]
 
     return final_content
+
+
+@subcommand
+@format_option
+@click.option(
+    "--quantiles",
+    "n",
+    default=4,
+    type=int,
+    help=(
+        "How many quantiles should be emitted for the compliance numbers? "
+        "Computing quantiles only is sensical if this number is more than the "
+        "number of implementations reported on. By default, we compute "
+        "quartiles."
+    ),
+)
+@click.argument("report", default="-", type=_Report())
+def statistics(report: _report.Report, n: int, format: _F):
+    """
+    Show summary statistics for a previous report.
+    """
+    unsuccessful = [
+        1 - (unsuccessful.total / report.total_tests)
+        for _, unsuccessful in report.worst_to_best()
+    ]
+
+    statistics = dict(
+        median=median(unsuccessful),
+        mean=mean(unsuccessful),
+        **(  # quantiles only make sense for n < len(data)
+            {"quantiles": quantiles(unsuccessful, n=n)}
+            if n < len(unsuccessful)
+            else {}
+        ),
+    )
+    match format:
+        case "json":
+            click.echo(json.dumps(statistics, indent=2))
+        case "pretty":
+            for k, v in statistics.items():
+                click.echo(f"{k}: {v}")
+        case "markdown":
+            markdown = _convert_table_to_markdown(
+                columns=["", ""],
+                rows=[[k, str(v)] for k, v in statistics.items()],
+            )
+            click.echo(markdown)
 
 
 def make_validator(*more_schemas: SchemaResource):
