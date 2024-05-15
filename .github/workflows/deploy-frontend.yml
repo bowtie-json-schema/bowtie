@@ -4,36 +4,28 @@ on:
   workflow_call:
     inputs:
       report_artifact_in_scope:
+        required: false
         type: boolean
-        default: false
   workflow_dispatch:
   release:
     types: [published]
 
 jobs:
-  # if called as a separate workflow
   build-frontend:
     uses: ./.github/workflows/build-frontend.yml
-    if: inputs.report_artifact_in_scope == false
-
   collect:
     runs-on: ubuntu-latest
-    if: ${{ !failure() }}
     needs: build-frontend
     steps:
       - name: Create _site directory
         run: mkdir _site
-
-      # if called from report workflow
-      - name: Download latest frontend-build
-        uses: dawidd6/action-download-artifact@v3
-        if: inputs.report_artifact_in_scope == true
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
         with:
-          workflow: build-frontend.yml
           name: frontend-build
           path: _site
-          if_no_artifact_found: warn
 
+      # if called from report workflow
       - name: Download test report from local artifact
         uses: actions/download-artifact@v4
         if: inputs.report_artifact_in_scope == true
@@ -42,13 +34,6 @@ jobs:
           path: _site
 
       # if called as a separate workflow
-      - name: Download frontend-build from local artifact
-        uses: actions/download-artifact@v4
-        if: inputs.report_artifact_in_scope == false
-        with:
-          name: frontend-build
-          path: _site
-
       - name: Download latest test report
         if: inputs.report_artifact_in_scope == false
         uses: dawidd6/action-download-artifact@v3
@@ -69,7 +54,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    if: ${{ !failure() }}
     needs: collect
     steps:
       - name: Deploy to GitHub Pages
