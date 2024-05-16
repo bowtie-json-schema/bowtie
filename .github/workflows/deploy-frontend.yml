@@ -31,6 +31,7 @@ jobs:
         with:
           workflow: deploy-frontend.yml
           event: release, workflow_dispatch
+          search_artifacts: true
           name: frontend-build
           path: _site
           if_no_artifact_found: warn
