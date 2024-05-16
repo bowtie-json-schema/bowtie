@@ -4,7 +4,7 @@ from bowtie._connectables import Connectable, UnknownConnector
 from bowtie._containers import (
     IMAGE_REPOSITORY,
     ConnectableImage,
-    ConnectedContainer,
+    ConnectableContainer,
 )
 from bowtie._core import validator_registry
 
@@ -121,5 +121,5 @@ def test_container_connectable():
     connectable = Connectable.from_str(id)
     assert connectable == Connectable(
         id=id,
-        connector=ConnectedContainer(id="bar"),
+        connector=ConnectableContainer(id="c7895a98f49d"),
     )
