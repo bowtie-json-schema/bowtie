@@ -420,41 +420,49 @@ def badges(site: Path):
 _F = Literal["json", "pretty", "markdown"]
 
 
-def format_option(fn: FC) -> FC:
-    def show_schema(
-        ctx: click.Context,
-        param: click.Parameter | None,
-        value: bool,
-    ) -> None:
-        if not value or ctx.resilient_parsing:
-            return
-        uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
-        schema = validator_registry().schema(uri)
-        # FIXME: Syntax highlight? But rich appears to be doing some bizarre
-        #        line wrapping, even if I disable a bunch of random options
-        #        (crop, no_wrap, word_wrap in Syntax, ...) which fails the
-        #        integration tests.
-        click.echo(json.dumps(schema, indent=2))
-        ctx.exit()
+def format_option(**option_kwargs: Any) -> Callable[[FC], FC]:
+    if not option_kwargs:
+        option_kwargs = dict(
+            default=lambda: "pretty" if sys.stdout.isatty() else "json",
+            show_default="pretty if stdout is a tty, otherwise JSON",
+            type=click.Choice(["json", "pretty", "markdown"]),
+        )
 
-    return click.option(
-        "--format",
-        "-f",
-        "format",
-        help="What format to use for the output",
-        default=lambda: "pretty" if sys.stdout.isatty() else "json",
-        show_default="pretty if stdout is a tty, otherwise JSON",
-        type=click.Choice(["json", "pretty", "markdown"]),
-    )(
-        click.option(
-            "--schema",
-            callback=show_schema,
-            expose_value=False,
-            is_eager=True,
-            is_flag=True,
-            help="Show the JSON Schema for this command's JSON output.",
-        )(fn),
-    )
+    def _format_option(fn: FC) -> FC:
+        def show_schema(
+            ctx: click.Context,
+            param: click.Parameter | None,
+            value: bool,
+        ) -> None:
+            if not value or ctx.resilient_parsing:
+                return
+            uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
+            schema = validator_registry().schema(uri)
+            # FIXME: Syntax highlight? But rich appears to be doing some
+            #        bizarre line wrapping, even if I disable a bunch of random
+            #        options (crop, no_wrap, word_wrap in Syntax, ...) which
+            #        fails the integration tests.
+            click.echo(json.dumps(schema, indent=2))
+            ctx.exit()
+
+        return click.option(
+            "--format",
+            "-f",
+            "format",
+            help="What format to use for the output",
+            **option_kwargs,
+        )(
+            click.option(
+                "--schema",
+                callback=show_schema,
+                expose_value=False,
+                is_eager=True,
+                is_flag=True,
+                help="Show the JSON Schema for this command's JSON output.",
+            )(fn),
+        )
+
+    return _format_option
 
 
 class _Report(click.File):
@@ -523,7 +531,7 @@ class _Report(click.File):
 
 
 @subcommand
-@format_option
+@format_option()
 @click.option(
     "--show",
     "-s",
@@ -770,7 +778,7 @@ def _validation_results_table_in_markdown(
 
 
 @subcommand
-@format_option
+@format_option()
 @click.option(
     "--quantiles",
     "n",
@@ -1186,6 +1194,11 @@ KNOWN_LANGUAGES = {
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
+@format_option(
+    default="plain",
+    show_default=True,
+    type=click.Choice(["plain", "json"]),
+)
 @click.option(
     "--supports-dialect",
     "-d",
@@ -1223,6 +1236,7 @@ async def filter_implementations(
     ],
     dialects: Sequence[Dialect],
     languages: Set[str],
+    format: Literal["plain", "json"],
 ):
     """
     Output implementations which match the given criteria.
@@ -1231,13 +1245,20 @@ async def filter_implementations(
     Bowtie commands.
     """
     if not dialects and languages == KNOWN_LANGUAGES:
-        for name in start.connectables:  # type: ignore[reportFunctionMemberAccess]
-            click.echo(name)
-        return
+        matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
+    else:
+        matching = [
+            name
+            async for name, each in start()
+            if each.supports(*dialects) and each.info.language in languages
+        ]
 
-    async for name, each in start():
-        if each.supports(*dialects) and each.info.language in languages:
-            click.echo(name)
+    match format:
+        case "json":
+            click.echo(json.dumps(matching, indent=2))
+        case "plain":
+            for name in matching:
+                click.echo(name)
 
 
 @implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
@@ -1304,7 +1325,7 @@ async def filter_dialects(
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
-@format_option
+@format_option()
 async def info(
     start: Callable[
         [],
@@ -1367,7 +1388,7 @@ async def info(
     is_flag=True,
     help="Don't print any output, just exit with nonzero status on failure.",
 )
-@format_option
+@format_option()
 async def smoke(
     start: Callable[
         [],
