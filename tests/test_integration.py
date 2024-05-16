@@ -1508,6 +1508,33 @@ async def test_filter_implementations_stdin(
 
 
 @pytest.mark.asyncio
+async def test_filter_implementations_json(
+    envsonschema,
+    lintsonschema,
+    fake_js,
+):
+    jsonout, stderr = await bowtie(
+        "filter-implementations",
+        "-i",
+        envsonschema,
+        "-i",
+        lintsonschema,
+        "-i",
+        fake_js,
+        "-l",
+        "javascript",
+        "-d",
+        "7",
+        "--format",
+        "json",
+        json=True,
+    )
+    (await command_validator("filter-implementations")).validate(jsonout)
+    assert jsonout == [tag("fake_js")]
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
 async def test_filter_dialects():
     stdout, stderr = await bowtie("filter-dialects")
     dialects_supported = "\n".join(
