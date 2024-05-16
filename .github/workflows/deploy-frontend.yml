@@ -29,9 +29,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         if: inputs.report_artifact_in_scope == true
         with:
-          workflow: deploy-frontend.yml
           event: release, workflow_dispatch
-          search_artifacts: true
           name: frontend-build
           path: _site
           if_no_artifact_found: warn
