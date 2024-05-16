@@ -29,10 +29,9 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         if: inputs.report_artifact_in_scope == true
         with:
-          event: release, workflow_dispatch
+          event: workflow_dispatch
           name: frontend-build
           path: _site
-          if_no_artifact_found: warn
 
       - name: Download test report from local artifact
         uses: actions/download-artifact@v4
