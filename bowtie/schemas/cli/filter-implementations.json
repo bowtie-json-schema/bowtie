@@ -10,6 +10,6 @@
 
   "items": {
     "description": "A matching implementation, represented as a connectable.",
-    "$id": "tag:bowtie.report,2024:connectables"
+    "$ref": "tag:bowtie.report,2024:connectables"
   }
 }
