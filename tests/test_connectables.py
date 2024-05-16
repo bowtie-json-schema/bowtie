@@ -117,7 +117,7 @@ def test_terse_implicit_image_no_repository():
 
 
 def test_container_connectable():
-    id = "container:bar"
+    id = "container:c7895a98f49d"
     connectable = Connectable.from_str(id)
     assert connectable == Connectable(
         id=id,

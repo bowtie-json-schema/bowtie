@@ -78,7 +78,7 @@ class Connectable:
         (cls.connector, cls)
         for cls in [
             _containers.ConnectableImage,
-            _containers.ConnectedContainer,
+            _containers.ConnectableContainer,
         ]
     )
 
