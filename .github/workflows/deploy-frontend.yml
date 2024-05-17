@@ -16,6 +16,7 @@ on:
       - ".github/workflows/deploy-frontend.yml"
 
 jobs:
+  # only build if triggered manually or new release published or a pull request
   build-frontend:
     runs-on: ubuntu-latest
     if: inputs.report_artifact_in_scope == false || inputs.release_published == true || github.event_name == 'pull_request'
@@ -80,7 +81,7 @@ jobs:
           name: site
           path: _site
 
-      # if called as a separate workflow
+      # if called from the report workflow and it was a new release event or if this workflow was triggered manually
       - name: Download frontend-build from local artifact
         uses: actions/download-artifact@v4
         if: (inputs.report_artifact_in_scope == true && inputs.release_published == true) || inputs.report_artifact_in_scope == false
