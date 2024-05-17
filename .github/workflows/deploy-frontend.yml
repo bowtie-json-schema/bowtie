@@ -18,7 +18,7 @@ on:
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
-    if: inputs.release_published == true || github.event_name == 'pull_request' || inputs.report_artifact_in_scope == false
+    if: inputs.report_artifact_in_scope == false || inputs.release_published == true || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -83,7 +83,7 @@ jobs:
       # if called as a separate workflow
       - name: Download frontend-build from local artifact
         uses: actions/download-artifact@v4
-        if: inputs.report_artifact_in_scope == false
+        if: (inputs.report_artifact_in_scope == true && inputs.release_published == true) || inputs.report_artifact_in_scope == false
         with:
           name: frontend-build
           path: _site
