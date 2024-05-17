@@ -167,4 +167,4 @@ jobs:
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
-      release_published: ${{ inputs.release_published == true }}
+      release_published: ${{ inputs.release_published }}
