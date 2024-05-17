@@ -18,7 +18,7 @@ on:
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
-    if: inputs.release_published == true || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: inputs.release_published == true || github.event_name == 'pull_request' || inputs.report_artifact_in_scope == false
     steps:
       - uses: actions/checkout@v4
 
