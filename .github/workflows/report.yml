@@ -10,7 +10,7 @@ on:
         required: false
         default: ""
       release_published:
-        required: true
+        required: false
         type: boolean
         default: false
   workflow_dispatch:
