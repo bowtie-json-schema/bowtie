@@ -4,33 +4,73 @@ on:
   workflow_call:
     inputs:
       report_artifact_in_scope:
-        default: false
         type: boolean
+        default: false
+      release_published:
+        type: boolean
+        default: false
+        required: true
   workflow_dispatch:
-  release:
-    types: [published]
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
 
 jobs:
-  # if called as a separate workflow
   build-frontend:
-    uses: ./.github/workflows/build-frontend.yml
-    if: inputs.report_artifact_in_scope == false
+    runs-on: ubuntu-latest
+    if: inputs.release_published == true || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/package.json
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --dir frontend --frozen-lockfile --strict-peer-dependencies
+
+      - name: Build the UI
+        run: pnpm run --dir frontend build --base=${{ github.repository_owner == 'bowtie-json-schema' && '/' || '/bowtie' }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build
 
   collect:
     runs-on: ubuntu-latest
-    if: ${{ !failure() }}
+    if: ${{ !failure() && github.event_name != 'pull_request' }}
     needs: build-frontend
     steps:
       - name: Create _site directory
         run: mkdir _site
 
-      # if called from report workflow
-      - name: Download latest frontend-build
+      # if called from the report workflow and it wasn't a new release event (it was either a cron job or a manual dispatch)
+      - name: Download frontend-build from last release
         uses: dawidd6/action-download-artifact@v3
-        if: inputs.report_artifact_in_scope == true
+        if: inputs.report_artifact_in_scope == true && inputs.release_published == false
         with:
-          workflow: deploy-frontend.yml
-          event: workflow_dispatch
+          workflow: ci.yml
+          event: release
           name: frontend-build
           path: _site
 
@@ -69,7 +109,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    if: ${{ !failure() }}
+    if: ${{ !failure() && github.event_name != 'pull_request' }}
     needs: collect
     steps:
       - name: Deploy to GitHub Pages

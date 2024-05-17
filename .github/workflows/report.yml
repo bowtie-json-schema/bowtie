@@ -3,14 +3,16 @@
 name: Collect New Test Results
 
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       bowtie-version:
         type: string
         required: false
         default: ""
+      release_published:
+        required: true
+        type: boolean
+        default: false
   workflow_dispatch:
   schedule:
     # Every 6 hours, at 15 past the hour
@@ -166,3 +168,4 @@ jobs:
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true
+      release_published: ${{ inputs.release_published }}

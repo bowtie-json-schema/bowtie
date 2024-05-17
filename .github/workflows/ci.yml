@@ -161,4 +161,5 @@ jobs:
     uses: ./.github/workflows/report.yml
     with:
       bowtie-version: ${{ needs.packaging.outputs.version }}
+      release_published: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
