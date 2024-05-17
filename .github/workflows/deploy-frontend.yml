@@ -16,7 +16,7 @@ on:
       - ".github/workflows/deploy-frontend.yml"
 
 jobs:
-  # only build if triggered manually or new release published or a pull request
+  # only build if triggered manually or new release published or a PR
   build-frontend:
     runs-on: ubuntu-latest
     if: inputs.report_artifact_in_scope == false || inputs.release_published == true || github.event_name == 'pull_request'
@@ -56,6 +56,7 @@ jobs:
           name: frontend-build
           path: frontend/build
 
+  # only start collecting if the build-frontend didn't fail (got skipped or successful) and the trigger of the workflow wasn't a PR
   collect:
     runs-on: ubuntu-latest
     if: ${{ !failure() && github.event_name != 'pull_request' }}
@@ -64,7 +65,7 @@ jobs:
       - name: Create _site directory
         run: mkdir _site
 
-      # if called from the report workflow and it wasn't a new release event (it was either a cron job or a manual dispatch)
+      # if called from the report workflow and it wasn't a new release event (it was either a cron job or a manual dispatch of the report workflow)
       - name: Download frontend-build from last release
         uses: dawidd6/action-download-artifact@v3
         if: inputs.report_artifact_in_scope == true && inputs.release_published == false
@@ -101,6 +102,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
+  # only start deploying if the collect job didn't fail (got skipped or successful) and the trigger of the workflow wasn't a PR
   deploy:
     permissions:
       pages: write
