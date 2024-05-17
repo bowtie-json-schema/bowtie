@@ -171,7 +171,7 @@ class Connection:
         cls,
         container_id: str,
         **kwargs: Any,
-    ) -> AsyncIterator[Connection]:
+    ) -> AsyncIterator[Self]:
         async with Docker() as docker:
             try:
                 container = await docker.containers.get(container_id)  # type: ignore[reportUnknownMemberType]
