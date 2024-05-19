@@ -50,7 +50,7 @@ IJsonSchemaBuilder? currentBuilder = null;
 
 AssemblyLoadContext assemblyLoadContext = new TestAssemblyLoadContext();
 
-JsonSchemaTypeBuilder CreateTypeBuilder()
+static JsonSchemaTypeBuilder CreateTypeBuilder()
 {
     return new Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder(new TestDocumentResolver());
 }
@@ -64,22 +64,11 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
         continue;
     }
 
-    string? cmd = root["cmd"]?.GetValue<string>();
-
-    if (cmd is null)
-    {
-        throw new MissingCommand(root);
-    }
-
+    string? cmd = root["cmd"]?.GetValue<string>() ?? throw new MissingCommand(root);
     switch (cmd)
     {
         case "start":
-            JsonNode? version = root["version"];
-            if (version is null)
-            {
-                throw new MissingVersion(cmd);
-            }
-
+            JsonNode? version = root["version"] ?? throw new MissingVersion(cmd);
             if (version.GetValue<int>() != 1)
             {
                 throw new UnknownVersion(version);
@@ -120,12 +109,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 throw new NotStarted();
             }
 
-            string? dialect = root["dialect"]?.GetValue<string>();
-            if (dialect is null)
-            {
-                throw new MissingDialect(root);
-            }
-
+            string? dialect = root["dialect"]?.GetValue<string>() ?? throw new MissingDialect(root);
             currentBuilder = builders[dialect]();
 
             var dialectResult = new System.Text.Json.Nodes.JsonObject
@@ -142,12 +126,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 throw new NotStarted();
             }
 
-            JsonNode? testCase = root["case"];
-            if (testCase is null)
-            {
-                throw new MissingCase(root);
-            }
-
+            JsonNode? testCase = root["case"] ?? throw new MissingCase(root);
             string? nullableTestCaseDescription = testCase["description"]?.GetValue<string>();
 
             if (nullableTestCaseDescription is not string testCaseDescription)
@@ -155,12 +134,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 throw new MissingTestCaseDescription(testCase);
             }
 
-            string? schemaText = testCase["schema"]?.ToJsonString();
-            if (schemaText is null)
-            {
-                throw new MissingSchema(testCase);
-            }
-
+            string? schemaText = testCase["schema"]?.ToJsonString() ?? throw new MissingSchema(testCase);
             JsonNode? registry = testCase["registry"];
 
             if (currentBuilder is null)
@@ -181,12 +155,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 
             Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, "https://example.com/schema.json");
 
-            System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray();
-            if (tests is null)
-            {
-                throw new MissingTests(testCase);
-            }
-
+            System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
 
             try
@@ -200,20 +169,10 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                         throw new MissingTest(tests);
                     }
 
-                    string? nullableTestDescription = test["description"]?.GetValue<string>();
-                    if (nullableTestDescription is null)
-                    {
-                        throw new MissingTestDescription(test);
-                    }
-
+                    string? nullableTestDescription = test["description"]?.GetValue<string>() ?? throw new MissingTestDescription(test);
                     testDescription = nullableTestDescription;
 
-                    string? testInstance = test["instance"]?.ToJsonString();
-                    if (testInstance is null)
-                    {
-                        testInstance = "null";
-                    }
-
+                    string? testInstance = test["instance"]?.ToJsonString() ?? "null";
                     bool validationResult = ValidateType(schemaType, testInstance);
                     results.Add(new System.Text.Json.Nodes.JsonObject { ["valid"] = validationResult });
                 }
@@ -272,7 +231,7 @@ static Type SynchronouslyGenerateTypeForVirtualFile(AssemblyLoadContext assembly
 {
     builder.AddDocument($"{virtualFileName}", JsonDocument.Parse(schema));
 
-    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) = builder.SafeBuildTypesFor(new JsonReference(virtualFileName), $"BowtieTest.Model", rebase: true);
+    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) = builder.SafeBuildTypesFor(new JsonReference(virtualFileName), "BowtieTest.Model", rebase: true);
     return CompileGeneratedType(assemblyLoadContext, rootType, generatedTypes);
 }
 
@@ -367,7 +326,9 @@ static IJsonValue CreateInstance(Type type, JsonElement data)
 static string GetLibVersion()
 {
     AssemblyInformationalVersionAttribute? attribute = typeof(Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
     return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
+#pragma warning restore SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 }
 
 internal interface ICommandSource
@@ -386,7 +347,7 @@ internal class TestDocumentResolver : IDocumentResolver
 
     public void Dispose()
     {
-        List<Exception> exceptions = new();
+        List<Exception> exceptions = [];
 
         foreach (JsonDocument document in this.documents.Values)
         {
@@ -431,90 +392,63 @@ internal class TestDocumentResolver : IDocumentResolver
     }
 }
 
-internal class MissingCommand : Exception
+internal class MissingCommand(JsonNode root) : Exception
 {
-    public MissingCommand(JsonNode root)
-    {
-    }
+    public JsonNode Root { get; } = root;
 }
 
-internal class MissingTest : Exception
+internal class MissingTest(JsonNode tests) : Exception
 {
-    public MissingTest(JsonNode tests)
-    {
-    }
+    public JsonNode Tests { get; } = tests;
 }
 
-internal class MissingCase : Exception
+internal class MissingCase(JsonNode root) : Exception
 {
-    public MissingCase(JsonNode root)
-    {
-    }
+    public JsonNode Root { get; } = root;
 }
 
-internal class MissingSchema : Exception
+internal class MissingSchema(JsonNode testCase) : Exception
 {
-    public MissingSchema(JsonNode testCase)
-    {
-    }
+    public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTestDescription : Exception
+internal class MissingTestDescription(JsonNode testInstance) : Exception
 {
-    public MissingTestDescription(JsonNode testInstance)
-    {
-    }
+    public JsonNode TestInstance { get; } = testInstance;
 }
 
-internal class MissingDialect : Exception
+internal class MissingDialect(JsonNode root) : Exception
 {
-    public MissingDialect(JsonNode root)
-    {
-    }
+    public JsonNode Root { get; } = root;
 }
 
-internal class MissingTestCaseDescription : Exception
+internal class MissingTestCaseDescription(JsonNode testCase) : Exception
 {
-    public MissingTestCaseDescription(JsonNode testCase)
-    {
-    }
+    public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTests : Exception
+internal class MissingTests(JsonNode testCase) : Exception
 {
-    public MissingTests(JsonNode testCase)
-    {
-    }
+    public JsonNode TestCase { get; } = testCase;
 }
 
-internal class UnknownCommand : Exception
-{
-    public UnknownCommand(string message)
-    {
-    }
-}
-
-internal class MissingVersion : Exception
-{
-    public MissingVersion(JsonNode command)
-    {
-    }
-}
-
-internal class UnknownVersion : Exception
-{
-    public UnknownVersion(JsonNode version)
-    {
-    }
-}
-
-internal class NotStarted : Exception
+internal class UnknownCommand(string? message) : Exception(message)
 {
 }
 
-internal class CannotRunBeforeDialectIsChosen : Exception
+internal class MissingVersion(JsonNode command) : Exception
 {
+    public JsonNode Command { get; } = command;
 }
+
+internal class UnknownVersion(JsonNode version) : Exception
+{
+    public JsonNode Version { get; } = version;
+}
+
+internal class NotStarted : Exception;
+
+internal class CannotRunBeforeDialectIsChosen : Exception;
 
 internal class ConsoleCommandSource : ICommandSource
 {
@@ -524,15 +458,10 @@ internal class ConsoleCommandSource : ICommandSource
     }
 }
 
-internal class FileCommandSource : ICommandSource
+internal class FileCommandSource(string fileName) : ICommandSource
 {
-    private readonly string[] fileContents;
+    private readonly string[] fileContents = File.ReadAllLines(fileName);
     private int line;
-
-    public FileCommandSource(string fileName)
-    {
-        this.fileContents = File.ReadAllLines(fileName);
-    }
 
     public string? GetNextCommand()
     {

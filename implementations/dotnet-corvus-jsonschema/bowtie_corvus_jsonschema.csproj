@@ -1,53 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
+  <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <IsPackable>false</IsPackable>
-        <PreserveCompilationContext>true</PreserveCompilationContext>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <EndjinDisableAutoPackagesLock>true</EndjinDisableAutoPackagesLock>
+  </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633</NoWarn>
-    </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633;SA1518</NoWarn>
+  </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633</NoWarn>
-    </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633;SA1518</NoWarn>
+  </PropertyGroup>
 
 
-    <ItemGroup>
-        <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.23" />
-        <PackageReference Include="Corvus.Json.CodeGeneration.202012" Version="3.0.23" />
-        <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.23" />
-        <PackageReference Include="Corvus.Json.CodeGeneration.6" Version="3.0.23" />
-        <PackageReference Include="Corvus.Json.CodeGeneration.7" Version="3.0.23" />
-        <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.23" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+  <ItemGroup>
+    <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.202012" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.6" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.7" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.23" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
 
-        <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.9">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
-        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
+    <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
 
-    </ItemGroup>
+  </ItemGroup>
 
-    <PropertyGroup>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <RestoreLockedMode Condition="$(ContinuousIntegrationBuild) == 'true'">true</RestoreLockedMode>
-    </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Update="Roslynator.Analyzers" Version="4.6.2" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Update="Roslynator.Analyzers" Version="4.6.2" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Properties\" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
 
 </Project>
