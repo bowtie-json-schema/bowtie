@@ -243,15 +243,14 @@ class ConnectableImage:
     @asynccontextmanager
     async def connect(self) -> AsyncIterator[Connection]:
         async with Docker() as docker:
-            container_id = await start_container_maybe_pull(
+            container = await start_container_maybe_pull(
                 docker=docker,
                 image_name=self._id,
             )
-            async with Connection.open(container_id) as connection:
+            async with Connection.open(container.id) as connection:
                 yield connection
 
             with suppress(aiodocker.exceptions.DockerError):
-                container = await docker.containers.get(id)  # type: ignore[reportUnknownMemberType]
                 await container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
 
@@ -262,7 +261,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
     # pulling our harness image -- so here we reimplement it, but only
     # pull :latest when the image is missing.
     try:
-        return start_container(docker=docker, image_name=image_name)
+        return await start_container(docker=docker, image_name=image_name)
     except aiodocker.exceptions.DockerError as err:
         if err.status != 404:  # noqa: PLR2004
             raise
