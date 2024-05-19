@@ -31,7 +31,7 @@ updates:
     schedule:
       interval: "daily"
 
-- package-ecosystem: "nuget"
+  - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-corvus-jsonschema"
     schedule:
       interval: "daily"
