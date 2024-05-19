@@ -236,6 +236,7 @@ class Connection:
         with suppress(_ClosedStream):
             await self._stream.send(request)
 
+
 @frozen
 class ConnectableImage:
 
@@ -254,14 +255,14 @@ class ConnectableImage:
             Docker() as docker,
             Connection.open(
                 container_id=(
-                        await self.__start_container_maybe_pull(docker)
+                    await self._start_container_maybe_pull(docker)
                 ).id,
             ) as connection,
         ):
             yield connection
-        await self.__ensure_deleted()
+        await self._ensure_deleted()
 
-    async def __start_container_maybe_pull(
+    async def _start_container_maybe_pull(
         self,
         docker: aiodocker.docker.Docker,
     ):
@@ -271,7 +272,7 @@ class ConnectableImage:
         # pulling our harness image -- so here we reimplement it, but only
         # pull :latest when the image is missing.
         try:
-            return await self.__start_container(docker)
+            return await self._start_container(docker)
         except aiodocker.exceptions.DockerError as err:
             if err.status != 404:  # noqa: PLR2004
                 raise
@@ -315,9 +316,9 @@ class ConnectableImage:
                             raise NoSuchImplementation(self._id)
 
                 raise StartupFailed(name=self._id, data=data) from err
-            return await self.__start_container(docker)
+            return await self._start_container(docker)
 
-    async def __start_container(
+    async def _start_container(
         self,
         docker,
     ) -> aiodocker.containers.DockerContainer:
@@ -333,7 +334,7 @@ class ConnectableImage:
         await container.start()  # type: ignore[reportUnknownMemberType]
         return container
 
-    async def __ensure_deleted(self):
+    async def _ensure_deleted(self):
         with suppress(aiodocker.exceptions.DockerError):
             async with Docker() as docker:
                 container = await docker.containers.get(self._id)
