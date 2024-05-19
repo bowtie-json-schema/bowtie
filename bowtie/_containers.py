@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from typing import Any, Self
 
     import aiodocker.containers
-    import aiodocker.docker
     import aiodocker.stream  # noqa: TCH004 ??? no it's not?
 
     from bowtie._commands import Message
@@ -150,7 +149,7 @@ class Connection:
     handled here.
     """
 
-    _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
+    _docker: Docker = field(repr=False, alias="docker")
     _stream: Stream = field(default=None, repr=False, alias="stream")
 
     # Maybe second versions of these will be useful also at the Implementation
@@ -255,10 +254,7 @@ class ConnectableImage:
             yield connection
         await self._ensure_deleted()
 
-    async def _start_container_maybe_pull(
-        self,
-        docker: aiodocker.docker.Docker,
-    ):
+    async def _start_container_maybe_pull(self, docker: Docker):
         # You would think we would use aiodocker's container.start() function
         # which essentially does the below. You would think wrong.
         # That function will pull the *entire* image repository if it ends up
