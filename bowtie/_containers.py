@@ -307,19 +307,14 @@ class ConnectableImage:
                 raise StartupFailed(name=self._id, data=data) from err
             return await self._start_container(docker)
 
-    async def _start_container(
-        self,
-        docker,
-    ) -> aiodocker.containers.DockerContainer:
+    async def _start_container(self):
         config = dict(
             Image=self._id,
             OpenStdin=True,
             HostConfig=dict(NetworkMode="none"),
         )
         # FIXME: name + labels
-        container: aiodocker.containers.DockerContainer = (
-            await docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
-        )
+        container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
         await container.start()  # type: ignore[reportUnknownMemberType]
         return container
 
