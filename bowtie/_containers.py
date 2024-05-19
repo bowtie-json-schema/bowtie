@@ -176,14 +176,7 @@ class Connection:
             try:
                 container = await docker.containers.get(container_id)  # type: ignore[reportUnknownMemberType]
             except aiodocker.exceptions.DockerError as err:
-                _, data, *_ = err.args
-                error_message = data.get("message")
-                raise (
-                    StartupFailed(
-                        name=container_id,
-                        stderr=error_message,
-                    )
-                )
+                raise NoSuchImplementation(name=container_id) from err
 
             self = cls(docker=docker, **kwargs)
 
