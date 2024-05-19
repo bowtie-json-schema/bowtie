@@ -27,23 +27,26 @@ global using global::System.Net.Http;
 global using global::System.Threading;
 global using global::System.Threading.Tasks;";
 
-var unsupportedTests =
-    new Dictionary<(string, string),
-                   string>
-    {
-        [("schema that uses custom metaschema with with no validation vocabulary", "no validation: valid number")] = "We do not support optional vocabularies",
-        [("schema that uses custom metaschema with with no validation vocabulary", "no validation: invalid number, but it still validates")] = "We do not support optional vocabularies",
-        [("ignore unrecognized optional vocabulary", "string value")] = "We do not support optional vocabularies",
-        [("ignore unrecognized optional vocabulary", "number value")] = "We do not support optional vocabularies",
-    };
+var unsupportedTests = new Dictionary<(string, string), string> {
+    [("schema that uses custom metaschema with with no validation vocabulary", "no validation: valid number")] =
+        "We do not support optional vocabularies",
+    [("schema that uses custom metaschema with with no validation vocabulary",
+      "no validation: invalid number, but it still validates")] = "We do not support optional vocabularies",
+    [("ignore unrecognized optional vocabulary", "string value")] = "We do not support optional vocabularies",
+    [("ignore unrecognized optional vocabulary", "number value")] = "We do not support optional vocabularies",
+};
 
-var builders = new Dictionary<string, Func<IJsonSchemaBuilder>>
-{
-    ["https://json-schema.org/draft/2020-12/schema"] = () => new Corvus.Json.CodeGeneration.Draft202012.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["https://json-schema.org/draft/2019-09/schema"] = () => new Corvus.Json.CodeGeneration.Draft201909.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-07/schema#"] = () => new Corvus.Json.CodeGeneration.Draft7.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-06/schema#"] = () => new Corvus.Json.CodeGeneration.Draft6.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-04/schema#"] = () => new Corvus.Json.CodeGeneration.Draft4.JsonSchemaBuilder(CreateTypeBuilder()),
+var builders = new Dictionary<string, Func<IJsonSchemaBuilder>> {
+    ["https://json-schema.org/draft/2020-12/schema"] = () =>
+        new Corvus.Json.CodeGeneration.Draft202012.JsonSchemaBuilder(CreateTypeBuilder()),
+    ["https://json-schema.org/draft/2019-09/schema"] = () =>
+        new Corvus.Json.CodeGeneration.Draft201909.JsonSchemaBuilder(CreateTypeBuilder()),
+    ["http://json-schema.org/draft-07/schema#"] = () =>
+        new Corvus.Json.CodeGeneration.Draft7.JsonSchemaBuilder(CreateTypeBuilder()),
+    ["http://json-schema.org/draft-06/schema#"] = () =>
+        new Corvus.Json.CodeGeneration.Draft6.JsonSchemaBuilder(CreateTypeBuilder()),
+    ["http://json-schema.org/draft-04/schema#"] = () =>
+        new Corvus.Json.CodeGeneration.Draft4.JsonSchemaBuilder(CreateTypeBuilder()),
 };
 
 IJsonSchemaBuilder? currentBuilder = null;
@@ -55,7 +58,7 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
     return new Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder(new TestDocumentResolver());
 }
 
-while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
+while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
 {
     var root = JsonNode.Parse(line);
 
@@ -75,12 +78,10 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             }
 
             started = true;
-            var startResult = new System.Text.Json.Nodes.JsonObject
-            {
+            var startResult = new System.Text.Json.Nodes.JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new System.Text.Json.Nodes.JsonObject
-                    {
+                    new System.Text.Json.Nodes.JsonObject {
                         ["language"] = "dotnet",
                         ["name"] = "Corvus.JsonSchema",
                         ["version"] = GetLibVersion(),
@@ -90,8 +91,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                         ["source"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
 
                         ["dialects"] =
-                            new System.Text.Json.Nodes.JsonArray
-                            {
+                            new System.Text.Json.Nodes.JsonArray {
                                 "https://json-schema.org/draft/2020-12/schema",
                                 "https://json-schema.org/draft/2019-09/schema",
                                 "http://json-schema.org/draft-07/schema#",
@@ -112,8 +112,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             string? dialect = root["dialect"]?.GetValue<string>() ?? throw new MissingDialect(root);
             currentBuilder = builders[dialect]();
 
-            var dialectResult = new System.Text.Json.Nodes.JsonObject
-            {
+            var dialectResult = new System.Text.Json.Nodes.JsonObject {
                 ["ok"] = true,
             };
 
@@ -153,7 +152,8 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 }
             }
 
-            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, "https://example.com/schema.json");
+            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText,
+                                                                      "https://example.com/schema.json");
 
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
@@ -169,7 +169,8 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                         throw new MissingTest(tests);
                     }
 
-                    string? nullableTestDescription = test["description"]?.GetValue<string>() ?? throw new MissingTestDescription(test);
+                    string? nullableTestDescription =
+                        test["description"]?.GetValue<string>() ?? throw new MissingTestDescription(test);
                     testDescription = nullableTestDescription;
 
                     string? testInstance = test["instance"]?.ToJsonString() ?? "null";
@@ -177,8 +178,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                     results.Add(new System.Text.Json.Nodes.JsonObject { ["valid"] = validationResult });
                 }
 
-                var runResult = new System.Text.Json.Nodes.JsonObject
-                {
+                var runResult = new System.Text.Json.Nodes.JsonObject {
                     ["seq"] = root["seq"]?.GetValue<int>(),
                     ["results"] = results,
                 };
@@ -188,19 +188,17 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out string? message))
             {
-                var skipResult =
-                    new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.GetValue<int>(), ["skipped"] = true, ["message"] = message };
+                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.GetValue<int>(),
+                                                                         ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
-                var errorResult = new System.Text.Json.Nodes.JsonObject
-                {
+                var errorResult = new System.Text.Json.Nodes.JsonObject {
                     ["seq"] = root["seq"]?.GetValue<int>(),
                     ["errored"] = true,
                     ["context"] =
-                        new System.Text.Json.Nodes.JsonObject
-                        {
+                        new System.Text.Json.Nodes.JsonObject {
                             ["message"] = e.ToString(),
                             ["traceback"] = Environment.StackTrace,
                         },
@@ -227,15 +225,18 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
     }
 }
 
-static Type SynchronouslyGenerateTypeForVirtualFile(AssemblyLoadContext assemblyLoadContext, IJsonSchemaBuilder builder, string schema, string virtualFileName)
+static Type SynchronouslyGenerateTypeForVirtualFile(AssemblyLoadContext assemblyLoadContext, IJsonSchemaBuilder builder,
+                                                    string schema, string virtualFileName)
 {
     builder.AddDocument($"{virtualFileName}", JsonDocument.Parse(schema));
 
-    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) = builder.SafeBuildTypesFor(new JsonReference(virtualFileName), "BowtieTest.Model", rebase: true);
+    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) =
+        builder.SafeBuildTypesFor(new JsonReference(virtualFileName), "BowtieTest.Model", rebase: true);
     return CompileGeneratedType(assemblyLoadContext, rootType, generatedTypes);
 }
 
-static Type CompileGeneratedType(AssemblyLoadContext assemblyLoadContext, string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes)
+static Type CompileGeneratedType(AssemblyLoadContext assemblyLoadContext, string rootType,
+                                 ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes)
 {
     bool isCorvusType = rootType.StartsWith("Corvus.");
 
@@ -245,7 +246,8 @@ static Type CompileGeneratedType(AssemblyLoadContext assemblyLoadContext, string
 
     // We are happy with the defaults (debug etc.)
     var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-    var compilation = CSharpCompilation.Create($"Bowtie.GeneratedTypes_{Guid.NewGuid()}", syntaxTrees, references, options);
+    var compilation =
+        CSharpCompilation.Create($"Bowtie.GeneratedTypes_{Guid.NewGuid()}", syntaxTrees, references, options);
     using MemoryStream outputStream = new();
     EmitResult result = compilation.Emit(outputStream);
 
@@ -261,7 +263,8 @@ static Type CompileGeneratedType(AssemblyLoadContext assemblyLoadContext, string
 
     if (isCorvusType)
     {
-        return AssemblyLoadContext.Default.Assemblies.Single(a => a.GetName().Name == "Corvus.Json.ExtendedTypes").ExportedTypes.Single(t => t.FullName == rootType);
+        return AssemblyLoadContext.Default.Assemblies.Single(a => a.GetName().Name == "Corvus.Json.ExtendedTypes")
+            .ExportedTypes.Single(t => t.FullName == rootType);
     }
 
     return generatedAssembly.ExportedTypes.Single(t => t.FullName == rootType);
@@ -278,7 +281,8 @@ static string BuildCompilationErrors(EmitResult result)
     return builder.ToString();
 }
 
-static (IEnumerable<MetadataReference> MetadataReferences, IEnumerable<string?> Defines) BuildMetadataReferencesAndDefines()
+static (IEnumerable<MetadataReference> MetadataReferences, IEnumerable<string?> Defines)
+    BuildMetadataReferencesAndDefines()
 {
     DependencyContext? ctx = DependencyContext.Default ?? DependencyContext.Load(Assembly.GetExecutingAssembly());
     return ctx is null
@@ -289,18 +293,20 @@ static (IEnumerable<MetadataReference> MetadataReferences, IEnumerable<string?> 
            ctx.CompilationOptions.Defines.AsEnumerable());
 }
 
-static IEnumerable<SyntaxTree> ParseSyntaxTrees(ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes, IEnumerable<string?> defines)
+static IEnumerable<SyntaxTree> ParseSyntaxTrees(ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes,
+                                                IEnumerable<string?> defines)
 {
-    CSharpParseOptions parseOptions = CSharpParseOptions.Default
-        .WithLanguageVersion(LanguageVersion.Preview)
-        .WithPreprocessorSymbols(defines.Where(s => s is not null).Cast<string>());
-    yield return CSharpSyntaxTree.ParseText(GlobalUsingStatements, options: parseOptions, path: "GlobalUsingStatements.cs");
+    CSharpParseOptions parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview)
+                                          .WithPreprocessorSymbols(defines.Where(s => s is not null).Cast<string>());
+    yield return CSharpSyntaxTree.ParseText(GlobalUsingStatements, options: parseOptions,
+                                            path: "GlobalUsingStatements.cs");
 
     foreach (KeyValuePair<JsonReference, TypeAndCode> type in generatedTypes)
     {
         foreach (CodeAndFilename codeAndFilename in type.Value.Code)
         {
-            yield return CSharpSyntaxTree.ParseText(codeAndFilename.Code, options: parseOptions, path: codeAndFilename.Filename);
+            yield return CSharpSyntaxTree.ParseText(codeAndFilename.Code, options: parseOptions,
+                                                    path: codeAndFilename.Filename);
         }
     }
 }
@@ -315,17 +321,19 @@ static bool ValidateType(Type schemaType, string testInstance)
 static IJsonValue CreateInstance(Type type, JsonElement data)
 {
     ConstructorInfo? constructor =
-        type
-            .GetConstructors()
-            .SingleOrDefault(c => c.GetParameters().Length == 1 && c.GetParameters()[0].ParameterType.Name.StartsWith("JsonElement"))
-        ?? throw new InvalidOperationException($"Unable to find the public JsonElement constructor on type '{type.FullName}'");
+        type.GetConstructors().SingleOrDefault(
+            c => c.GetParameters().Length == 1 && c.GetParameters()[0].ParameterType.Name.StartsWith("JsonElement")) ??
+        throw new InvalidOperationException(
+            $"Unable to find the public JsonElement constructor on type '{type.FullName}'");
 
     return (IJsonValue)constructor.Invoke([data]);
 }
 
 static string GetLibVersion()
 {
-    AssemblyInformationalVersionAttribute? attribute = typeof(Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+    AssemblyInformationalVersionAttribute? attribute =
+        typeof(Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder)
+            .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 #pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
     return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
 #pragma warning restore SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
@@ -385,63 +393,72 @@ internal class TestDocumentResolver : IDocumentResolver
                 return ValueTask.FromResult(element);
             }
 
-            return ValueTask.FromResult<JsonElement?>(default);
+            return ValueTask.FromResult < JsonElement ? > (default);
         }
 
-        return ValueTask.FromResult<JsonElement?>(default);
+        return ValueTask.FromResult < JsonElement ? > (default);
     }
 }
 
-internal class MissingCommand(JsonNode root) : Exception
+internal class MissingCommand
+(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingTest(JsonNode tests) : Exception
+internal class MissingTest
+(JsonNode tests) : Exception
 {
     public JsonNode Tests { get; } = tests;
 }
 
-internal class MissingCase(JsonNode root) : Exception
+internal class MissingCase
+(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingSchema(JsonNode testCase) : Exception
+internal class MissingSchema
+(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTestDescription(JsonNode testInstance) : Exception
+internal class MissingTestDescription
+(JsonNode testInstance) : Exception
 {
     public JsonNode TestInstance { get; } = testInstance;
 }
 
-internal class MissingDialect(JsonNode root) : Exception
+internal class MissingDialect
+(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingTestCaseDescription(JsonNode testCase) : Exception
+internal class MissingTestCaseDescription
+(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTests(JsonNode testCase) : Exception
+internal class MissingTests
+(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class UnknownCommand(string? message) : Exception(message)
-{
-}
+internal class UnknownCommand
+(string? message) : Exception(message) { }
 
-internal class MissingVersion(JsonNode command) : Exception
+internal class MissingVersion
+(JsonNode command) : Exception
 {
     public JsonNode Command { get; } = command;
 }
 
-internal class UnknownVersion(JsonNode version) : Exception
+internal class UnknownVersion
+(JsonNode version) : Exception
 {
     public JsonNode Version { get; } = version;
 }
@@ -458,12 +475,13 @@ internal class ConsoleCommandSource : ICommandSource
     }
 }
 
-internal class FileCommandSource(string fileName) : ICommandSource
+internal class FileCommandSource
+(string fileName) : ICommandSource
 {
     private readonly string[] fileContents = File.ReadAllLines(fileName);
     private int line;
 
-    public string? GetNextCommand()
+    public string ? GetNextCommand()
     {
         if (this.line < this.fileContents.Length)
         {
@@ -476,8 +494,5 @@ internal class FileCommandSource(string fileName) : ICommandSource
 
 internal class TestAssemblyLoadContext : AssemblyLoadContext
 {
-    public TestAssemblyLoadContext()
-        : base($"TestAssemblyLoadContext_{Guid.NewGuid():N}", isCollectible: true)
-    {
-    }
+    public TestAssemblyLoadContext() : base($"TestAssemblyLoadContext_{Guid.NewGuid():N}", isCollectible: true) { }
 }
