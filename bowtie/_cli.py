@@ -796,11 +796,7 @@ def statistics(report: _report.Report, n: int, format: _F):
     """
     Show summary statistics for a previous report.
     """
-    unsuccessful = [
-        1 - (unsuccessful.total / report.total_tests)
-        for _, unsuccessful in report.worst_to_best()
-    ]
-
+    unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         median=median(unsuccessful),
         mean=mean(unsuccessful),
