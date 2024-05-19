@@ -1,4 +1,4 @@
-FROM gradle:8.5.0-jdk17 AS builder
+FROM gradle:8.7.0-jdk17 AS builder
 WORKDIR /opt/app
 COPY gradle/libs.versions.toml gradle/
 COPY settings.gradle.kts .
@@ -7,6 +7,6 @@ RUN gradle --no-daemon --parallel dependencies > /dev/null
 COPY src/ src/
 RUN gradle --no-daemon --parallel install
 
-FROM bellsoft/liberica-openjdk-alpine:21
+FROM bellsoft/liberica-openjdk-alpine:22
 COPY --from=builder /opt/app/build /opt/app/build
 CMD ["/opt/app/build/install/kmp-json-schema-validator/bin/kmp-json-schema-validator"]

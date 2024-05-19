@@ -15,6 +15,10 @@ on:
     tags:
       - "v*"
 
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   list:
     runs-on: ubuntu-latest
@@ -75,7 +79,7 @@ jobs:
           archs: amd64, arm64
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
-      - name: Set DOCKER_HOST to find the image
+      - name: Set DOCKER_HOST so podman-built images are findable
         run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
 
       - name: Install Bowtie
@@ -83,7 +87,7 @@ jobs:
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Smoke Test
-        run: bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}"
+        run: bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Publish

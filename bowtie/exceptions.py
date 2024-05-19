@@ -7,9 +7,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from attrs import frozen
+from diagnostic import DiagnosticError, DiagnosticWarning
 
 if TYPE_CHECKING:
-    from bowtie._core import Implementation
+    from collections.abc import Sequence
+
+    from jsonschema.exceptions import ValidationError
+
+    from bowtie._core import Dialect, Implementation
 
 
 #: The current version of Bowtie's IO protocol.
@@ -51,9 +56,66 @@ class VersionMismatch(Exception):
 
 
 @frozen
-class _ProtocolError(Exception):  # type: ignore[reportUnusedClass]
+class ProtocolError(Exception):
     """
     An invalid request or response was sent.
     """
 
-    errors: list[Exception]
+    errors: Sequence[ValidationError]
+
+
+@frozen
+class UnsupportedDialect(Exception):
+    """
+    An implementation does not support the dialect which is to be spoken.
+    """
+
+    implementation: Implementation
+    dialect: Dialect
+
+    def __rich__(self):
+        supports = ", ".join(
+            each.pretty_name
+            for each in sorted(self.implementation.info.dialects, reverse=True)
+        )
+        return DiagnosticWarning(
+            code="unsupported-dialect",
+            message=(
+                f"{self.implementation.name!r} does not "
+                f"support {self.dialect.pretty_name}."
+            ),
+            causes=[],
+            hint_stmt=None,
+            note_stmt=f"its supported dialects are: {supports}\n",
+        )
+
+
+@frozen
+class DialectError(Exception):
+    """
+    We tried to start sending test cases but encountered an unknown error.
+
+    It probably ain't our fault, the implementation blew up.
+    """
+
+    implementation: Implementation
+    dialect: Dialect
+    stderr: bytes
+
+    def __rich__(self):
+        return DiagnosticError(
+            code="dialect-error",
+            message=(
+                f"{self.implementation.name!r} failed as we were beginning to "
+                f"send {self.dialect.pretty_name} tests."
+            ),
+            causes=[],
+            hint_stmt=(
+                "The error may be transient, so you may want to try again. "
+                "If it does not appear to be, it may indicate a bug both in "
+                "the implementation as well as in Bowtie's test harness. "
+                "Bowtie aims not to propagate these bugs in a way that they "
+                "cause crashes, so at very least you should open a bug "
+                "(with reproducer) on Bowtie's issue board."
+            ),
+        )

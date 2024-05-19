@@ -4,7 +4,7 @@ Tests for extracting information out of GitHub URLs.
 
 import pytest
 
-from bowtie._cli import path_and_ref_from_gh_path
+from bowtie._suite import path_and_ref_from_gh_path
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,25 @@
+.code-block {
+  padding: 4rem 3rem !important;
+}
+
+.modal-width {
+  min-width: 90%;
+}
+
+@media screen and (min-width: 1920px) {
+  .modal-width {
+    min-width: 65%;
+  }
+}
+
+@media screen and (min-width: 2560px) {
+  .modal-width {
+    min-width: 50%;
+  }
+}
+
+@media screen and (min-width: 3840px) {
+  .modal-width {
+    min-width: 35%;
+  }
+}

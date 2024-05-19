@@ -1,11 +1,13 @@
-import ImplementationRow from "./ImplementationRow";
 import { useMemo } from "react";
+import Table from "react-bootstrap/Table";
+
+import ImplementationRow from "./ImplementationRow";
 import { ReportData, calculateTotals } from "../../data/parseReportData";
 
 const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
   const totals = useMemo(() => calculateTotals(reportData), [reportData]);
   return (
-    <table className="table table-sm table-hover">
+    <Table hover responsive>
       <thead>
         <tr>
           <th
@@ -57,20 +59,22 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
         </tr>
       </thead>
       <tbody className="table-group-divider">
-        {Array.from(reportData.implementations.values())
+        {Array.from(reportData.implementationsResults.entries())
           .sort(
-            (a, b) =>
-              a.failedTests +
-              a.erroredTests +
-              a.skippedTests -
-              b.failedTests -
-              b.erroredTests -
-              b.skippedTests,
+            ([, a], [, b]) =>
+              a.totals.failedTests! +
+              a.totals.erroredTests! +
+              a.totals.skippedTests! -
+              b.totals.failedTests! -
+              b.totals.erroredTests! -
+              b.totals.skippedTests!,
           )
-          .map((implementation, index) => (
+          .map(([id, implResults], index) => (
             <ImplementationRow
               cases={reportData.cases}
-              implementation={implementation}
+              id={id}
+              implementation={reportData.runMetadata.implementations.get(id)!}
+              implementationResults={implResults}
               key={index}
               index={index}
             />
@@ -97,7 +101,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           <td></td>
         </tr>
       </tfoot>
-    </table>
+    </Table>
   );
 };
 

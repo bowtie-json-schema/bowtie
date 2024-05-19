@@ -15,6 +15,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
   # Dependabot for Implementations (Harnesses)
   # ------------------------------------------
 
@@ -57,6 +62,21 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
+    directory: "/implementations/js-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/implementations/js-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/implementations/js-schemasafe"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
     directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
@@ -92,7 +112,12 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gradle"
-    directory: "/implementations/java-json-schema-validator"
+    directory: "/implementations/java-json-tools-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gradle"
+    directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
 
@@ -161,6 +186,21 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
+    directory: "/implementations/js-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-schemasafe"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/implementations/lua-jsonschema"
     schedule:
       interval: "daily"
@@ -206,7 +246,12 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/implementations/java-json-schema-validator"
+    directory: "/implementations/java-json-tools-json-schema-validator"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
 

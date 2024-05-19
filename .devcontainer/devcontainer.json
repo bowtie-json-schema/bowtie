@@ -1,0 +1,14 @@
+{
+  "name": "Bowtie",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
+  "onCreateCommand": "pip install -r requirements.txt -e .",
+  "postCreateCommand": "sudo cp /workspaces/bowtie/docs/motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt"
+}

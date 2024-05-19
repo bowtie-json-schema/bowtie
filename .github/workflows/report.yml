@@ -1,13 +1,20 @@
-name: Regenerate Test Reports
+# This workflow is the main workflow for regenerating the data needed for Bowtie's UI.
+# It retests all of Bowtie's supported implementations, publishing the reports (and other auxiliary metadata) for use in the frontend.
+name: Collect New Test Results
 
 on:
   release:
     types: [published]
   workflow_call:
+    inputs:
+      bowtie-version:
+        type: string
+        required: false
+        default: ""
   workflow_dispatch:
   schedule:
-    # Daily at 2:15
-    - cron: "15 2 * * *"
+    # Every 6 hours, at 15 past the hour
+    - cron: "15 */6 * * *"
 
 permissions:
   contents: read
@@ -19,46 +26,143 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  previous-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the previous reports
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: report.yml
+          name: report-.*
+          name_is_regexp: true
+          path: previous
+          if_no_artifact_found: warn
+
+      - name: Store previous reports for inclusion
+        uses: actions/upload-artifact@v4
+        with:
+          name: previous-reports
+          path: previous
+
+  dialects:
+    runs-on: ubuntu-latest
+    outputs:
+      dialects: ${{ steps.dialects-matrix.outputs.dialects }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect supported dialects
+        id: dialects-matrix
+        run: |
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+
+  regenerate-reports:
+    needs: dialects
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - draft2020-12
-          - draft2019-09
-          - draft7
-          - draft6
-          - draft4
-          - draft3
+        version: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      # Ha ha, without me, reports sometimes claim they're running out of disk
-      # space... See e.g. https://github.com/actions/runner-images/issues/2840
-      - name: Free up disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
-
-      # FIXME: we can skip checking out if we are able to list all images in
-      #        the image repository
       - uses: actions/checkout@v4
 
       - name: Install Bowtie
         uses: ./
-
-      - name: Generate the Report
-        run: |
-          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges
-
-      - uses: actions/upload-artifact@v3
         with:
-          name: report
-          path: |
-            ${{ matrix.version }}.json
-            badges/
+          version: ${{ inputs.bowtie-version }}
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
+
+      - name: Generate a New Report
+        run: |
+          bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
+
+      # This is useful to debug whether Bowtie accidentally fetched some huge
+      # number of container images.
+      - name: Show what images we fetched
+        run: docker images
+        if: always()
+
+      # This unfortunately can go wrong if e.g. we ever run out of memory above.
+      # Probably we should also atomically move files into place.
+      - name: Check Report is Valid
+        run: |
+          bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.version }}
+          path: ${{ matrix.version }}.json
+
+  generate-implementation-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
+
+      - name: Generate implementations.json file
+        run: |
+          bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: implementations
+          path: implementations.json
+
+  site:
+    needs:
+      - regenerate-reports
+      - previous-reports
+      - generate-implementation-metadata
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bowtie
+        uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
+
+      - name: Create our Site Structure
+        run: mkdir site
+
+      - name: Include Previous Report
+        uses: actions/download-artifact@v4
+        with:
+          name: previous-reports
+          path: site/previous/
+
+      - name: Include New Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          path: site/
+          merge-multiple: true
+
+      - name: Include Implementation Metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: implementations
+          path: site/
+
+      - name: Generate Badges
+        run: bowtie badges
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site
 
   deploy-frontend:
-    needs: test
+    needs: site
     uses: ./.github/workflows/deploy-frontend.yml
     with:
       report_artifact_in_scope: true

@@ -1,8 +1,6 @@
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 @Serializable
 class StartResponse(
@@ -20,6 +18,9 @@ class Implementation(
     val homepage: String,
     val issues: String,
     val source: String,
+    val os: String,
+    @SerialName("os_version") val osVersion: String,
+    @SerialName("language_version") val languageVersion: String,
 )
 
 @Serializable
@@ -55,7 +56,7 @@ sealed class RunResponse {
     ) : RunResponse()
 }
 
-@Serializable(with = TestResultSerializer::class)
+@Serializable
 sealed class TestResult {
 
     @Serializable
@@ -80,17 +81,4 @@ sealed class TestResult {
 class ErrorContext(
     val message: String? = null,
     val traceback: String? = null,
-    val stderr: String? = null,
 )
-
-private class TestResultSerializer : JsonContentPolymorphicSerializer<TestResult>(TestResult::class) {
-    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<TestResult> {
-        require(element is JsonObject) { "command must be an object" }
-        return when {
-            "valid" in element -> TestResult.Executed.serializer()
-            "skipped" in element -> TestResult.Skipped.serializer()
-            "errored" in element -> TestResult.ExecutionError.serializer()
-            else -> error("unknown object type")
-        }
-    }
-}

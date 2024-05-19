@@ -42,23 +42,23 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             var startResult = new JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new JsonObject {
-                        ["language"] = "dotnet",
-                        ["name"] = "JsonSchema.Net",
-                        ["version"] = GetLibVersion(),
-                        ["homepage"] = "https://json-everything.net/json-schema/",
-                        ["documentation"] = "https://docs.json-everything.net/schema/basics/",
-                        ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
-                        ["source"] = "https://github.com/gregsdennis/json-everything",
+                    new JsonObject { ["language"] = "dotnet", ["name"] = "JsonSchema.Net",
+                                     ["version"] = GetLibVersion(),
+                                     ["homepage"] = "https://json-everything.net/json-schema/",
+                                     ["documentation"] = "https://docs.json-everything.net/schema/basics/",
+                                     ["issues"] = "https://github.com/gregsdennis/json-everything/issues",
+                                     ["source"] = "https://github.com/gregsdennis/json-everything",
 
-                        ["dialects"] =
-                            new JsonArray {
-                                "https://json-schema.org/draft/2020-12/schema",
-                                "https://json-schema.org/draft/2019-09/schema",
-                                "http://json-schema.org/draft-07/schema#",
-                                "http://json-schema.org/draft-06/schema#",
-                            },
-                    },
+                                     ["dialects"] =
+                                         new JsonArray {
+                                             "https://json-schema.org/draft/2020-12/schema",
+                                             "https://json-schema.org/draft/2019-09/schema",
+                                             "http://json-schema.org/draft-07/schema#",
+                                             "http://json-schema.org/draft-06/schema#",
+                                         },
+                                     ["os"] = Environment.OSVersion.Platform.ToString(),
+                                     ["os_version"] = Environment.OSVersion.Version.ToString(),
+                                     ["language_version"] = Environment.Version.ToString() },
             };
             Console.WriteLine(startResult.ToJsonString());
             break;
@@ -85,6 +85,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             }
 
             var testCase = root["case"];
+            var seq = root["seq"].DeepClone();
             var testCaseDescription = testCase["description"].GetValue<string>();
             string? testDescription = null;
             var schemaText = testCase["schema"];
@@ -109,7 +110,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
                 }
 
                 var runResult = new JsonObject {
-                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["seq"] = seq,
                     ["results"] = results,
                 };
                 Console.WriteLine(runResult.ToJsonString());
@@ -117,14 +118,13 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out var message))
             {
-                var skipResult =
-                    new JsonObject { ["seq"] = root["seq"].GetValue<int>(), ["skipped"] = true, ["message"] = message };
+                var skipResult = new JsonObject { ["seq"] = seq, ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
                 var errorResult = new JsonObject {
-                    ["seq"] = root["seq"].GetValue<int>(),
+                    ["seq"] = seq,
                     ["errored"] = true,
                     ["context"] =
                         new JsonObject {
@@ -155,7 +155,7 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
 static string GetLibVersion()
 {
     var attribute = typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-    return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
+    return Regex.Match(attribute!.InformationalVersion, @"\d+(\.\d+)+").Value;
 }
 
 class UnknownCommand : Exception

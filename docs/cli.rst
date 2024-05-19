@@ -15,8 +15,11 @@ Below are a few sample command lines you might be interested in.
     In the interim, it's often convenient to use a local checkout of Bowtie in order to list this information.
 
     Specifically, all supported implementations live in the ``implementations/`` directory, and therefore you can construct a string of ``-i`` arguments using a small bit of shell vomit.
-    If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /')`` in any command to expand out to all implementations.
+    If you have cloned Bowtie to :file:`/path/to/bowtie` you should be able to use ``$(bowtie filter-implementations | sed 's/^/-i /')`` in any command to expand out to all implementations.
     See `below <cli:running the official suite across all implementations>` for a full example.
+
+Examples
+--------
 
 Validating a Specific Instance Against One or More Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -67,11 +70,11 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
 Running the Official Suite Across All Implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, and generate an HTML report named :file:`bowtie-report.html` in the current directory:
+The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, showing a summary of any test failures.
 
 .. code:: sh
 
-    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
 
 
 Running Test Suite Tests From Local Checkouts
@@ -81,7 +84,7 @@ Providing a local path to the test suite can be used as well, which is useful if
 
 .. code:: sh
 
-    $ bowtie suite $(ls /path/to/bowtie/implementations/ | sed 's/^| /-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
 
 
 Checking An Implementation Functions On Basic Input
@@ -93,6 +96,82 @@ E.g., to verify the Golang ``jsonschema`` implementation is functioning, you can
 .. code:: sh
 
    $ bowtie smoke -i go-jsonschema
+
+
+Enabling Shell Tab Completion
+-----------------------------
+
+The Bowtie CLI supports tab completion using the `click module's built-in support <click:shell-completion>`.
+Below are short instructions for your shell using the default configuration paths.
+
+.. tabs::
+    .. group-tab:: Bash
+
+        Add this to ``~/.bashrc``:
+
+        .. code:: sh
+
+            $ eval "$(_BOWTIE_COMPLETE=bash_source bowtie)"
+
+    .. group-tab:: Zsh
+
+        Add this to ``~/.zshrc``:
+
+        .. code:: sh
+
+            $ eval "$(_BOWTIE_COMPLETE=zsh_source bowtie)"
+
+    .. group-tab:: Fish
+
+        Add this to ``~/.config/fish/completions/bowtie.fish``:
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=fish_source bowtie | source
+
+        This is the same file used for the activation script method below. For Fish it's probably always easier to use that method.
+
+Using ``eval`` means that the command is invoked and evaluated every time a shell is started, which can delay shell responsiveness.
+To speed it up, write the generated script to a file, then source that.
+
+.. tabs::
+    .. group-tab:: Bash
+
+        Save the script somewhere.
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=bash_source bowtie > ~/.bowtie-complete.bash
+
+        Source the file in ``~/.bashrc``.
+
+        .. code:: sh
+
+            $ . ~/.bowtie-complete.bash
+
+    .. group-tab:: Zsh
+
+        Save the script somewhere.
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=zsh_source bowtie > ~/.bowtie-complete.zsh
+
+        Source the file in ``~/.zshrc``.
+
+        .. code:: sh
+
+            $ . ~/.bowtie-complete.zsh
+
+    .. group-tab:: Fish
+
+        Save the script to ``~/.config/fish/completions/bowtie.fish``:
+
+        .. code:: sh
+
+            $ _BOWTIE_COMPLETE=fish_source bowtie > ~/.config/fish/completions/bowtie.fish
+
+After modifying your shell configuration, you may need to start a new shell in order for the changes to be loaded.
 
 
 Reference

@@ -19,54 +19,9 @@ fun getFilter(schemaType: SchemaType?): TestFilter =
         SchemaType.DRAFT_2020_12 -> TestFilterDraft202012
     }
 
-object TestFilterDraft7 : TestFilter {
-    /**
-     * All these cases are ignored because they contain remote refs
-     * Library does not support them yet.
-     */
-    private val IGNORED_CASES: Set<String> = hashSetOf(
-        "validate definition against metaschema",
-        "base URI change - change folder",
-        "base URI change - change folder in subschema",
-        "base URI change",
-        "retrieved nested refs resolve relative to their URI not \$id",
-        "\$ref to \$ref finds location-independent \$id",
-    )
-
-    override fun shouldSkipCase(caseDescription: String): String? {
-        return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            caseDescription in IGNORED_CASES || caseDescription.contains("remote ref") ->
-                "remote schema loading is not yet supported"
-
-            else -> null
-        }
-    }
-}
+object TestFilterDraft7 : TestFilter
 
 object TestFilterDraft201909 : TestFilter {
-    /**
-     * All these cases are ignored because they contain remote refs or meta schema
-     * Library does not support them yet.
-     */
-    private val IGNORED_CASES_WITH_REMOTE_REF: Set<String> = hashSetOf(
-        "invalid anchors",
-        "Invalid use of fragments in location-independent \$id",
-        "Valid use of empty fragments in location-independent \$id",
-        "Unnormalized \$ids are allowed but discouraged",
-        "URN base URI with f-component",
-        "remote HTTP ref with different \$id",
-        "remote HTTP ref with different URN \$id",
-        "remote HTTP ref with nested absolute ref",
-        "\$ref to \$ref finds detached \$anchor",
-        "schema that uses custom metaschema with with no validation vocabulary",
-        "ignore unrecognized optional vocabulary",
-        "validate definition against metaschema",
-        "retrieved nested refs resolve relative to their URI not \$id",
-        "base URI change - change folder in subschema",
-        "base URI change - change folder",
-        "base URI change",
-    )
 
     private val IGNORE_CASES_WITH_MIN_CONTAINS_ZERO = setOf(
         "minContains = 0 with no maxContains",
@@ -74,9 +29,6 @@ object TestFilterDraft201909 : TestFilter {
 
     override fun shouldSkipCase(caseDescription: String): String? {
         return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            caseDescription in IGNORED_CASES_WITH_REMOTE_REF || caseDescription.contains("remote ref") ->
-                "remote schema loading and meta schemas are not yet supported"
             caseDescription in IGNORE_CASES_WITH_MIN_CONTAINS_ZERO ->
                 "'minContains' does not affect contains work - at least one element must match 'contains' schema"
             else -> null
@@ -94,41 +46,4 @@ object TestFilterDraft201909 : TestFilter {
     }
 }
 
-object TestFilterDraft202012 : TestFilter {
-    /**
-     * All these cases are ignored because they contain remote refs or meta schema
-     * Library does not support them yet.
-     */
-    private val IGNORED_CASES_WITH_REMOTE_REF: Set<String> = hashSetOf(
-        "invalid anchors",
-        "Invalid use of fragments in location-independent \$id",
-        "Valid use of empty fragments in location-independent \$id",
-        "Unnormalized \$ids are allowed but discouraged",
-        "URN base URI with f-component",
-        "remote HTTP ref with different \$id",
-        "remote HTTP ref with different URN \$id",
-        "remote HTTP ref with nested absolute ref",
-        "\$ref to \$ref finds detached \$anchor",
-        "schema that uses custom metaschema with with no validation vocabulary",
-        "ignore unrecognized optional vocabulary",
-        "validate definition against metaschema",
-        "retrieved nested refs resolve relative to their URI not \$id",
-        "base URI change - change folder in subschema",
-        "base URI change - change folder",
-        "base URI change",
-        "strict-tree schema, guards against misspelled properties",
-        "tests for implementation dynamic anchor and reference link",
-        "\$ref and \$dynamicAnchor are independent of order - \$defs first",
-        "\$ref and \$dynamicAnchor are independent of order - \$ref first",
-        "\$ref to \$dynamicRef finds detached \$dynamicAnchor",
-    )
-
-    override fun shouldSkipCase(caseDescription: String): String? {
-        return when {
-            caseDescription.endsWith(" format") -> "the format keyword is not yet supported"
-            caseDescription in IGNORED_CASES_WITH_REMOTE_REF || caseDescription.contains("remote ref") ->
-                "remote schema loading and meta schemas are not yet supported"
-            else -> null
-        }
-    }
-}
+object TestFilterDraft202012 : TestFilter

@@ -2,13 +2,9 @@
 Test Bowtie's schemas for proper functionality.
 """
 
-from jsonschema.validators import validator_for
 import pytest
 
-from bowtie._cli import DRAFT2020, bowtie_schemas_registry
-from bowtie._core import current_dialect_resource
-
-REGISTRY = current_dialect_resource(DRAFT2020) @ bowtie_schemas_registry()
+from bowtie._core import validator_registry
 
 TEST = {
     "description": "a test",
@@ -21,9 +17,7 @@ ANOTHER_TEST = {
 
 
 def errors(uri, instance):
-    schema = REGISTRY.contents(uri)
-    validator = validator_for(schema)(schema, registry=REGISTRY)
-    return list(validator.iter_errors(instance))
+    return list(validator_registry().for_uri(uri).errors_for(instance))
 
 
 @pytest.mark.parametrize(
@@ -151,15 +145,11 @@ def errors(uri, instance):
     ],
 )
 def test_group(valid, instance):
-    got = errors("tag:bowtie.report,2023:ihop:group", instance)
+    got = errors("tag:bowtie.report,2023:models:group", instance)
     assert valid == (not got), got
 
 
 def test_root_schema():
     canonical_url = "tag:bowtie.report,2023:ihop"
-    retrieved = REGISTRY.get_or_retrieve(canonical_url)
-    assert retrieved.value.contents["$id"] == canonical_url
-
-
-def test_nonempty():
-    assert REGISTRY
+    schema = validator_registry().schema(canonical_url)
+    assert schema["$id"] == canonical_url

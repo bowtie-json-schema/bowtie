@@ -1,7 +1,7 @@
 [versions]
-validator = "2024.1"
+validator = "2024.3"
 
-kotlin = "1.9.22"
+kotlin = "1.9.24"
 build-jdk = "11"
 
 [libraries]
@@ -10,11 +10,11 @@ jsv-validator = { module = "io.openapiprocessor:json-schema-validator" }
 io-interfaces = { module = "io.openapiprocessor:io-interfaces" }
 io-jackson = { module = "io.openapiprocessor:io-jackson" }
 
-jackson-bom = "com.fasterxml.jackson:jackson-bom:2.16.1"
+jackson-bom = "com.fasterxml.jackson:jackson-bom:2.17.1"
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
 
-logback = "ch.qos.logback:logback-classic:1.4.14"
+logback = "ch.qos.logback:logback-classic:1.5.6"
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

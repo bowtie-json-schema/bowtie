@@ -1,8 +1,8 @@
 {
-  "description": "A collection of related, runnable tests, either individually or themselves in subgroups",
+  "description": "A collection of related, runnable tests, either individually or themselves in subgroups. Groups are used only for organizing test input and reporting -- they are not sent to harnesses when actually running tests, as there's no need for the harness to have to deal with any grouping structure.",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2023:ihop:group",
+  "$id": "tag:bowtie.report,2023:models:group",
 
   "type": "object",
   "required": ["description", "children"],
@@ -16,13 +16,12 @@
       "type": "string"
     },
     "schema": {
-      "description": "A valid JSON Schema.",
-      "$comment": "the URI used here is a sort of 'magic' URI set by Bowtie during runs, which will resolve to (effectively) the meta-schema for the current dialect being run by Bowtie. E.g. when running tests using the Draft 2020-12 dialect, the URI will resolve to the schema `{\"$ref\": \"https://json-schema.org/draft/2020-12/schema\"}`. This sort of dynamically set value is necessary, as schemas are supposed to be valid under the current dialect being spoken by Bowtie, but that's not known until runtime.",
-      "$ref": "tag:bowtie.report,2023:ihop:__dialect__"
+      "description": "The JSON Schema to be validated with.",
+      "$ref": "tag:bowtie.report,2024:ihop:schemaInCurrentDialect"
     },
     "registry": {
       "description": "A schema registry to be made available for all tests in this group.",
-      "$ref": "tag:bowtie.report,2023:ihop:registry"
+      "$ref": "tag:bowtie.report,2023:models:registry"
     },
     "children": {
       "description": "A set of related children of this test group",
@@ -34,7 +33,9 @@
     {
       "description": "a leaf test group (whose children are tests, and which therefore declares a schema for its children)",
       "properties": {
-        "children": { "items": { "$ref": "tag:bowtie.report,2023:ihop:test" } }
+        "children": {
+          "items": { "$ref": "tag:bowtie.report,2023:models:test" }
+        }
       },
       "required": ["schema"]
     },

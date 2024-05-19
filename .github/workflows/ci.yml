@@ -2,12 +2,17 @@ name: CI
 
 on:
   push:
+    branches-ignore:
+      - "wip*"
+    tags:
+      - "v*"
   pull_request:
   release:
     types: [published]
   schedule:
     # Daily at 5:12
     - cron: "12 5 * * *"
+  workflow_dispatch:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -21,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.04.15
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -36,22 +41,20 @@ jobs:
       fail-fast: false
       matrix:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
+        posargs: [""]
+        include:
+          - noxenv: tests-3.12
+            posargs: coverage github
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: >
-          sudo apt-get update &&
-          sudo apt-get install -y libenchant-2-dev
+        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
         if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -62,8 +65,25 @@ jobs:
             pypy3.10
           allow-prereleases: true
           cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/package.json
+        if: startsWith(matrix.noxenv, 'ui')
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+          run_install: false
+        if: startsWith(matrix.noxenv, 'ui')
+      # We temporarily build images in the noxfile, and do so with podman.
+      - name: Set DOCKER_HOST so podman-built images are findable
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        if: startsWith(matrix.noxenv, 'ui')
+
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.04.15
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
@@ -89,6 +109,9 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+
     environment:
       name: PyPI
       url: https://pypi.org/p/bowtie-json-schema
@@ -108,8 +131,10 @@ jobs:
         run: python -m pip install build
       - name: Create packages
         run: python -m build .
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
       - name: Set up nox
-        uses: wntrblm/nox@2023.04.22
+        uses: wntrblm/nox@2024.04.15
       - name: Build a Bowtie PyApp
         run: nox -s app -- .
       - uses: actions/upload-artifact@v4
@@ -121,13 +146,19 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
       - name: Create a Release
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             app/bowtie*
           generate_release_notes: true
+      - name: Current version
+        id: version
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
   report:
     needs: packaging
     uses: ./.github/workflows/report.yml
+    with:
+      bowtie-version: ${{ needs.packaging.outputs.version }}
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')

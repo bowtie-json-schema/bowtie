@@ -6,23 +6,24 @@
   "required": ["seq", "case"],
   "properties": {
     "cmd": { "const": "run" },
-    "seq": {
-      "description": "A sequence identifier for the test case. It must be passed along as-is in the response.",
-      "$anchor": "seq"
-    },
+    "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
     "case": { "$ref": "tag:bowtie.report,2023:ihop#case" }
   },
   "$defs": {
     "response": {
       "$anchor": "response",
+      "$ref": "#openResponse",
+      "unevaluatedProperties": false
+    },
+    "openResponse": {
+      "$anchor": "openResponse",
 
       "type": "object",
       "required": ["seq"],
-      "unevaluatedProperties": false,
       "properties": {
         "seq": {
           "description": "The unchanged sequence identifier originally provided in the request.",
-          "$ref": "tag:bowtie.report,2023:ihop:command:run#seq"
+          "$ref": "tag:bowtie.report,2024:report:seq"
         }
       },
       "oneOf": [

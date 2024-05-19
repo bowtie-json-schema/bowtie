@@ -1,55 +1,51 @@
-import { Card } from "react-bootstrap";
-import { useLoaderData, useParams, Link, Navigate } from "react-router-dom";
-import { Table, Container } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import LoadingAnimation from "../LoadingAnimation";
+import Container from "react-bootstrap/Container";
+import Card from "react-bootstrap/Card";
+import Table from "react-bootstrap/Table";
+import { useLoaderData, Link, Navigate } from "react-router-dom";
+
 import DialectCompliance from "./DialectCompliance";
+import EmbedBadges from "./EmbedBadges";
+import LoadingAnimation from "../LoadingAnimation";
+import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
+import { versionsBadgeFor } from "../../data/Badge";
 
 export const ImplementationReportView = () => {
-  // Fetch all supported implementation's metadata.
-  const allImplementations = useLoaderData() as Record<string, Implementation>;
+  const implementationReport = useLoaderData() as ImplementationReport | null;
 
-  // Get the selected implementation's name from the URL parameters.
-  const { langImplementation } = useParams();
-  // FIXME: This magic prefix is duplicated from the backend side,
-  //        and probably needs some tweaking for when using a local image.
-  const image = langImplementation
-    ? `ghcr.io/bowtie-json-schema/${langImplementation}`
-    : "";
-  const implementation = allImplementations[image];
-
-  // FIXME: Probably redirect to /implementations if/when that's a thing.
-  return allImplementations ? (
-    implementation ? (
-      <ReportComponent implementation={implementation} />
-    ) : (
-      <Navigate to="/" />
-    )
-  ) : (
+  return implementationReport === null ? (
+    // FIXME: Probably redirect to /implementations if/when that's a thing.
+    <Navigate to="/" />
+  ) : !implementationReport ? (
     <LoadingAnimation />
+  ) : (
+    <ReportComponent implementationReport={implementationReport} />
   );
 };
 
-const ReportComponent: React.FC<{ implementation: Implementation }> = ({
-  implementation,
-}) => {
+const ReportComponent: React.FC<{
+  implementationReport: ImplementationReport;
+}> = ({ implementationReport }) => {
+  const { implementation } = implementationReport;
+
   return (
     <Container className="p-4">
-      <Card className="mx-auto mb-3 w-75">
-        <Card.Header>
-          <span className="px-1 text-muted">
-            {mapLanguage(implementation.language)}
+      <Card className="mx-auto mb-3 col-md-9">
+        <Card.Header className="d-flex align-items-center justify-content-between">
+          <span className="d-flex">
+            <span className="pe-2 text-muted">
+              {mapLanguage(implementation.language)}
+            </span>
+            <span>{implementation.name}</span>
           </span>
-
-          <span>{implementation.name}</span>
+          <EmbedBadges implementation={implementation} />
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body className="overflow-x-auto">
           <Table>
             <tbody>
               <tr>
-                <th>Homepage:</th>
+                <th>Homepage</th>
                 <td>
                   <Link to={implementation.homepage}>
                     {implementation.homepage}
@@ -58,7 +54,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.documentation && (
                 <tr>
-                  <th>Documentation:</th>
+                  <th>Documentation</th>
                   <td>
                     <Link to={implementation.documentation}>
                       {implementation.documentation}
@@ -67,7 +63,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Source:</th>
+                <th>Source</th>
                 <td>
                   <Link to={implementation.source}>
                     {implementation.source}
@@ -75,7 +71,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Issues:</th>
+                <th>Issues</th>
                 <td>
                   <Link to={implementation.issues}>
                     {implementation.issues}
@@ -83,11 +79,11 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </td>
               </tr>
               <tr>
-                <th>Version:</th>
+                <th>Version</th>
                 <td>{implementation.version}</td>
               </tr>
               <tr>
-                <th>Language:</th>
+                <th>Language</th>
                 <td>
                   {mapLanguage(implementation.language)}
                   <span className="text-muted">
@@ -99,7 +95,7 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
               </tr>
               {implementation.os && (
                 <tr>
-                  <th>OS:</th>
+                  <th>OS</th>
                   <td>
                     {implementation.os}
                     <span className="text-muted">
@@ -110,22 +106,37 @@ const ReportComponent: React.FC<{ implementation: Implementation }> = ({
                 </tr>
               )}
               <tr>
-                <th>Supported Dialects:</th>
-                <td>
-                  <ul>
-                    {implementation.dialects.map(
-                      (dialect: string, index: number) => (
-                        <li key={index}>{dialect}</li>
-                      ),
-                    )}
-                  </ul>
+                <th>Supported Dialects</th>
+                <td className="col-7">
+                  <img
+                    alt={implementation.name}
+                    className="my-1"
+                    src={versionsBadgeFor(implementation).href()}
+                    style={{ maxWidth: "100%" }}
+                  />
                 </td>
               </tr>
+              {implementation.links && !!implementation.links.length && (
+                <tr>
+                  <th>Additional Links</th>
+                  <td>
+                    <ul>
+                      {implementation.links.map(
+                        ({ description, url }, index: number) => (
+                          <li key={index}>
+                            <Link to={url ?? ""}>{description}</Link>
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance implementation={implementation} />
+      <DialectCompliance implementationReport={implementationReport} />
     </Container>
   );
 };

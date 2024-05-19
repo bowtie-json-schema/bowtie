@@ -1,0 +1,148 @@
+{
+  "title": "Bowtie Test Result Report",
+  "description": "Bowtie's (private API) report format",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$todo": [
+    "Represent the private-ness with a keyword?",
+    "Represent the state machine, at least until we don't have one."
+  ],
+
+  "$id": "tag:bowtie.report,2024:report",
+
+  "type": "object",
+
+  "unevaluatedProperties": false,
+  "oneOf": [
+    { "$ref": "#header" },
+    { "$ref": "#case" },
+    { "$ref": "#results" },
+    { "$ref": "#footer" }
+  ],
+
+  "$defs": {
+    "seq": {
+      "$id": "tag:bowtie.report,2024:report:seq",
+      "description": "A sequence identifier for the test case. Its exact structure is private, though unique to each test case in a run."
+    },
+
+    "header": {
+      "title": "Run Metadata",
+
+      "$anchor": "header",
+
+      "required": ["bowtie_version", "implementations", "started", "dialect"],
+      "properties": {
+        "bowtie_version": {
+          "description": "The version of Bowtie which produced the report.",
+
+          "type": "string"
+        },
+        "implementations": {
+          "description": "Metadata about each of the participating implementations.",
+
+          "type": "object",
+
+          "minProperties": 1,
+          "propertyNames": {
+            "$ref": "tag:bowtie.report,2024:models:implementation:id"
+          },
+          "additionalProperties": {
+            "$ref": "tag:bowtie.report,2024:models:implementation"
+          }
+        },
+        "metadata": {
+          "description": "Metadata about the test run itself.",
+
+          "default": {},
+
+          "type": "object"
+        },
+        "dialect": {
+          "description": "Which dialect was the report run for? This field will change when we support multidialect reports.",
+
+          "type": "string"
+        },
+        "started": {
+          "description": "When the report started.",
+
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+
+    "case": {
+      "title": "Test Case Metadata",
+
+      "$anchor": "case",
+
+      "required": ["seq", "case"],
+      "properties": {
+        "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
+        "case": { "$ref": "tag:bowtie.report,2023:ihop#case" }
+      }
+    },
+
+    "results": {
+      "title": "Test Case Results",
+
+      "$fixme": "The flattening here really doesn't help things.",
+
+      "$anchor": "results",
+
+      "type": "object",
+
+      "$ref": "tag:bowtie.report,2023:ihop:command:run#openResponse",
+
+      "if": { "$ref": "tag:bowtie.report,2023:ihop:command:run#errored" },
+      "then": {
+        "properties": {
+          "caught": {
+            "description": "Whether the implementation harness caught the exception or whether Bowtie had to save it from crashing.",
+
+            "type": "boolean"
+          },
+
+          "message": {
+            "$fixme": "Why is this here instead of in context??",
+            "type": "string"
+          }
+        }
+      },
+
+      "required": ["seq", "implementation", "expected"],
+      "properties": {
+        "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
+        "implementation": {
+          "$ref": "tag:bowtie.report,2024:models:implementation:id"
+        },
+        "expected": {
+          "title": "Expected Results",
+
+          "$todo": "Length should match tests, requiring $data.",
+
+          "type": "array",
+
+          "minItems": 1,
+          "items": { "type": ["boolean", "null"] }
+        }
+      }
+    },
+
+    "footer": {
+      "title": "Report Footer",
+
+      "$anchor": "footer",
+
+      "required": ["did_fail_fast"],
+      "properties": {
+        "did_fail_fast": {
+          "description": "Whether the test run was halted due to exceeding the number of allowed unsuccessful tests.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

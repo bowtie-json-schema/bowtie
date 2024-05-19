@@ -1,9 +1,16 @@
+import Accordion from "react-bootstrap/Accordion";
+
 import { ReportData } from "../../data/parseReportData";
 import CaseItem from "./CaseItem";
-import { Accordion } from "react-bootstrap";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
-  const implementations = Array.from(reportData.implementations.values());
+  const implementationsResults = Array.from(
+    reportData.implementationsResults.values(),
+  );
+  const implementations = Array.from(
+    reportData.implementationsResults.keys(),
+  ).map((id) => reportData.runMetadata.implementations.get(id)!);
+
   return (
     <Accordion id="cases">
       {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
@@ -12,6 +19,7 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
           seq={seq}
           caseData={caseData}
           implementations={implementations}
+          implementationsResults={implementationsResults}
         />
       ))}
     </Accordion>

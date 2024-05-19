@@ -1,19 +1,34 @@
-import SummaryTable from "./SummaryTable";
-import { ReportData } from "../../data/parseReportData.ts";
+import Alert from "react-bootstrap/Alert";
+import Card from "react-bootstrap/Card";
 
-const SummarySection = ({ reportData }: { reportData: ReportData }) => {
+import SummaryTable from "./SummaryTable";
+import { Implementation, ReportData } from "../../data/parseReportData.ts";
+import { OtherImplementations } from "../OtherImplementations.tsx";
+
+const SummarySection = ({
+  reportData,
+  otherImplementationsData,
+}: {
+  reportData: ReportData;
+  otherImplementationsData: Record<string, Implementation>;
+}) => {
   return (
-    <div className="card mx-auto mb-3 w-75" id="summary">
-      <div className="card-header">Summary</div>
-      <div className="card-body">
+    <Card className="mx-auto mb-3" id="summary">
+      <Card.Header>Summary</Card.Header>
+      <Card.Body>
         <SummaryTable reportData={reportData} />
         {reportData.didFailFast && (
-          <div className="alert alert-warning" role="alert">
+          <Alert variant="warning">
             This run failed fast, so some input cases may not have been run.
-          </div>
+          </Alert>
         )}
-      </div>
-    </div>
+        {Object.keys(otherImplementationsData).length > 0 && (
+          <OtherImplementations
+            otherImplementationsData={otherImplementationsData}
+          />
+        )}
+      </Card.Body>
+    </Card>
   );
 };
 

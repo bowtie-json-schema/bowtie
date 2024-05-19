@@ -1,89 +1,254 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager, suppress
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
-import asyncio
+from collections.abc import Callable
+from contextlib import asynccontextmanager
+from datetime import date
+from functools import cache
+from importlib.resources import files
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from uuid import uuid4
 import json
 
-from aiodocker.exceptions import DockerError
-from attrs import asdict, field, frozen, mutable
-from referencing import Registry, Specification
-from referencing.jsonschema import Schema, SchemaRegistry, specification_with
+from attrs import asdict, evolve, field, frozen, mutable
+from diagnostic import DiagnosticError
+from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
+from rich.panel import Panel
+from rpds import HashTrieMap
 from url import URL
+import httpx
+import referencing_loaders
 
-from bowtie import _commands, exceptions
-from bowtie._containers import (
-    GotStderr,
-    NoSuchImage,
-    StartupFailed,
-    Stream,
-    StreamClosed,
+from bowtie import HOMEPAGE
+from bowtie._commands import (
+    START_V1,
+    STOP,
+    CaseErrored,
+    Dialect as DialectCommand,
+    SeqCase,
+    SeqResult,
+    StartedDialect,
 )
+from bowtie._registry import ValidatorRegistry
+from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
-        Awaitable,
-        Callable,
         Iterable,
         Mapping,
+        Sequence,
         Set,
     )
+    from typing import Self
 
-    from referencing.jsonschema import SchemaResource
-    import aiodocker.containers
-    import aiodocker.docker
-    import aiodocker.stream
+    from referencing import Specification
+    from referencing.jsonschema import SchemaRegistry, SchemaResource
+    from rich.console import Console, ConsoleOptions, RenderResult
 
+    from bowtie._commands import (
+        AnyCaseResult,
+        Command,
+        ImplementationId,
+        Message,
+        Run,
+        Seq,
+    )
     from bowtie._report import Reporter
 
 
-class _InvalidResponse:
-    def __repr__(self) -> str:
-        return "<InvalidResponse>"
+@frozen
+class Dialect:
+    """
+    A dialect of JSON Schema.
+    """
+
+    pretty_name: str
+    uri: URL = field(repr=False)
+    short_name: str = field(repr=False)
+    first_publication_date: date = field(repr=False)
+    aliases: Set[str] = field(
+        default=cast(frozenset[str], frozenset()),
+        repr=False,
+    )
+    has_boolean_schemas: bool = field(default=True, repr=False)
+
+    def __lt__(self, other: Any):
+        if other.__class__ is not Dialect:
+            return NotImplemented
+        return self.first_publication_date < other.first_publication_date
+
+    @classmethod
+    @cache
+    def by_short_name(cls) -> HashTrieMap[str, Dialect]:
+        return HashTrieMap((each.short_name, each) for each in cls.known())
+
+    @classmethod
+    @cache
+    def by_alias(cls) -> HashTrieMap[str, Dialect]:
+        return cls.by_short_name().update(
+            (alias, dialect)
+            for dialect in cls.known()
+            for alias in dialect.aliases
+        )
+
+    @classmethod
+    @cache
+    def by_uri(cls) -> HashTrieMap[URL, Dialect]:
+        return HashTrieMap((each.uri, each) for each in cls.known())
+
+    @classmethod
+    @cache
+    def known(cls) -> Iterable[Dialect]:
+        data = files("bowtie") / "data"
+        if not data.is_dir():
+            data = Path(__file__).parent.parent / "data"
+
+        return frozenset(
+            Dialect.from_dict(**each)
+            for each in json.loads(data.joinpath("dialects.json").read_text())
+        )
+
+    @classmethod
+    def from_dict(
+        cls,
+        firstPublicationDate: str,
+        prettyName: str,
+        shortName: str,
+        uri: str,
+        aliases: Iterable[str] = (),
+        hasBooleanSchemas: bool = True,
+        **_: Any,
+    ) -> Self:
+
+        return cls(
+            uri=URL.parse(uri),
+            pretty_name=prettyName,
+            short_name=shortName,
+            first_publication_date=date.fromisoformat(firstPublicationDate),
+            aliases=frozenset(aliases),
+            has_boolean_schemas=hasBooleanSchemas,
+        )
+
+    @classmethod
+    def from_str(cls, uri: str):
+        return cls.by_uri()[URL.parse(uri)]
+
+    async def latest_report(self):
+        url = HOMEPAGE / f"{self.short_name}.json"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(str(url))
+
+        from bowtie._report import Report
+
+        return Report.from_serialized(response.iter_lines())
+
+    def serializable(self):
+        return str(self.uri)
+
+    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+        return specification_with(str(self.uri), **kwargs)
 
 
-INVALID = _InvalidResponse()
+@frozen
+class NoSuchImplementation(Exception):
+    """
+    An implementation with the given name does not exist.
+    """
+
+    name: str
+
+    def __rich__(self):
+        return DiagnosticError(
+            code="no-such-implementation",
+            message=f"{self.name!r} is not a known Bowtie implementation.",
+            causes=[],
+            hint_stmt=(
+                "Check Bowtie's supported list of implementations "
+                "to ensure you have the name correct. "
+                "If you are developing a new harness, ensure you have "
+                "built and tagged it properly."
+            ),
+        )
+
+
+@frozen
+class GotStderr(Exception):
+    """
+    An implementation sent data on standard error.
+
+    We were trying to communicate with it (via Bowtie's protocol), but the
+    implementation has likely encountered some unexpected error.
+
+    It may have crashed.
+
+    Implementations of the `Connection` protocol should raise this exception
+    when they detect this kind of out-of-band error (in whatever concrete
+    connection-specific mechanism indicates this has occurred).
+    """
+
+    stderr: bytes
+
+
+class Restarted(Exception):
+    """
+    A connection was restarted, so we may need to replay some messages.
+    """
+
+
+@frozen
+class InvalidResponse(Exception):
+    """
+    An invalid response was sent by a harnes.
+    """
+
+    contents: str
+
+
+@frozen
+class StartupFailed(Exception):
+    name: str
+    stderr: str = ""
+    data: Any = None
+
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
+        causes: list[str] = []
+        if self.__cause__ is None:
+            hint = (
+                "If you are developing a new harness, check if stderr "
+                "(shown below) contains harness-specific information "
+                "which can help. Otherwise, you may have an issue with your "
+                "local container setup (podman, docker, etc.)."
+            )
+        else:
+            errors = getattr(self.__cause__, "errors", [])
+            hint = (
+                "The harness sent an invalid response for Bowtie's protocol. "
+                "Details for what was wrong are above. If you are developing "
+                "support for a new harness you should address them, otherwise "
+                "if you are not, this is a bug in Bowtie's harness for this "
+                "implementation! File an issue on Bowtie's issue tracker."
+            )
+            causes.extend(str(error) for error in errors)
+
+        yield DiagnosticError(
+            code="startup-failed",
+            message=f"{self.name!r} failed to start.",
+            causes=causes,
+            hint_stmt=hint,
+        )
+        if self.stderr:
+            yield Panel(self.stderr, title="stderr")
+
 
 R = TypeVar("R")
 
 
-@frozen
-class DialectRunner:
-    implementation: _commands.ImplementationId
-    dialect: URL
-    send: Callable[[_commands.Command[Any]], Awaitable[Any]]
-    _start_response: _commands.StartedDialect = field(alias="start_response")
-
-    @classmethod
-    async def start(
-        cls,
-        send: Callable[[_commands.Command[R]], Awaitable[R]],
-        dialect: URL,
-        implementation: _commands.ImplementationId,
-    ) -> DialectRunner:
-        request = _commands.Dialect(dialect=str(dialect))
-        return cls(
-            implementation=implementation,
-            send=send,
-            dialect=dialect,
-            start_response=await send(request),  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-        )
-
-    def warn_if_unacknowledged(self, reporter: Reporter):
-        if self._start_response != _commands.StartedDialect.OK:
-            reporter.unacknowledged_dialect(
-                implementation=self.implementation,
-                dialect=self.dialect,
-                response=self._start_response,
-            )
-
-
-class _MakeValidator(Protocol):
-    def __call__(
-        self,
-        *more_schemas: SchemaResource,
-    ) -> Callable[..., None]: ...
+MakeValidator = Callable[[], Callable[[Any, Schema], None]]
 
 
 @frozen
@@ -103,14 +268,14 @@ class Link:
 class ImplementationInfo:
     # FIXME: Combine with / separate out more from `Implementation`
 
-    _image: _commands.ImplementationId = field(alias="image")
+    _image: ImplementationId = field(alias="image")
 
     name: str
     language: str
     homepage: URL
     issues: URL
     source: URL
-    dialects: Set[URL]
+    dialects: frozenset[Dialect]
 
     version: str | None = None
     language_version: str | None = None
@@ -133,22 +298,22 @@ class ImplementationInfo:
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
             source=URL.parse(source),
-            dialects=frozenset(URL.parse(dialect) for dialect in dialects),
+            dialects=frozenset(Dialect.from_str(each) for each in dialects),
             links=[Link.from_dict(**each) for each in links],
             **kwargs,
         )
 
     @property
-    def id(self) -> _commands.ImplementationId:
+    def id(self):
         return self._image
 
     def serializable(self):
         as_dict = {
             k: v
-            for k, v in asdict(self).items()
+            for k, v in asdict(self, recurse=False).items()
             if not k.startswith("_") and v
         }
-        dialects = (str(d) for d in as_dict["dialects"])
+        dialects = (str(dialect.uri) for dialect in as_dict["dialects"])
         as_dict.update(
             homepage=str(as_dict["homepage"]),
             issues=str(as_dict["issues"]),
@@ -159,201 +324,246 @@ class ImplementationInfo:
         return as_dict
 
 
+class Connection(Protocol):
+    """
+    A connection to a specific JSON Schema implementation.
+
+    Concrete implementations of this protocol will decide what means of
+    communication are used -- e.g. sockets, files, in-memory -- as
+    well as how the JSON Schema implementation is running -- in a separate
+    process, in-memory, et cetera.
+    """
+
+    async def request(self, message: Message) -> Message | None:
+        """
+        Send a request to the harness.
+        """
+        ...
+
+    async def poison(self, message: Message) -> None:
+        """
+        Poison the harness by sending a message which causes it to stop itself.
+        """
+        ...
+
+
+@frozen
+class HarnessClient:
+    """
+    A client which speaks to a specific running implementation harness.
+    """
+
+    _connection: Connection = field(alias="connection")
+
+    _make_validator: MakeValidator = field(alias="make_validator")
+
+    # FIXME: Remove this somehow by making the state machine even more explicit
+    #: A sequence of commands to replay if we end up restarting the connection.
+    _if_replaying: Sequence[Command[Any]] = ()
+
+    async def _get_back_up_to_date(self):
+        for each in self._if_replaying:
+            await self.request(each)  # TODO: response assert?
+
+    async def transition(self, cmd: Command[R]) -> tuple[Self, R | None]:
+        response = await self.request(cmd)
+        harness = evolve(self, if_replaying=[*self._if_replaying, cmd])
+        return harness, response
+
+    async def request(self, cmd: Command[R]) -> R | None:
+        """
+        Send a given command to the implementation and return its response.
+        """
+        validate = self._make_validator()
+        request = cmd.to_request(validate=validate)
+        try:
+            response = await self._connection.request(request)
+        except Restarted:
+            await self._get_back_up_to_date()
+            # FIXME: Probably handle infinitely restarting harnesses
+            response = await self._connection.request(request)
+        if response is not None:
+            return cmd.from_response(response, validate=validate)
+
+    async def poison(self) -> None:
+        validate = self._make_validator()
+        await self._connection.poison(STOP.to_request(validate=validate))  # type: ignore[reportArgumentType]
+
+
+@frozen
+class DialectRunner:
+    """
+    A running implementation which is speaking a specific dialect.
+    """
+
+    dialect: Dialect
+    implementation: ImplementationId
+    _harness: HarnessClient = field(repr=False, alias="harness")
+
+    @classmethod
+    async def for_dialect(
+        cls,
+        dialect: Dialect,
+        implementation: ImplementationId,
+        harness: HarnessClient,
+        reporter: Reporter,
+    ):
+        new_harness: HarnessClient
+        response: StartedDialect
+        new_harness, response = await harness.transition(
+            DialectCommand(dialect=str(dialect.uri)),  # type: ignore[reportArgumentType]
+        )
+
+        if response != StartedDialect.OK:
+            reporter.unacknowledged_dialect(
+                implementation=implementation,
+                dialect=dialect,
+                response=response,
+            )
+
+        return cls(
+            dialect=dialect,
+            implementation=implementation,
+            harness=new_harness,
+        )
+
+    async def validate(
+        self,
+        run: Run,
+        expected: Sequence[bool | None],
+    ) -> SeqResult:
+        try:
+            response: tuple[Seq, AnyCaseResult] | None = (
+                await self._harness.request(run)  # type: ignore[reportArgumentType]
+            )
+            if response is None:
+                result = CaseErrored.uncaught()
+            else:
+                seq, result = response
+                if seq != run.seq:
+                    result = CaseErrored.uncaught(
+                        message="mismatched seq",
+                        expected=run.seq,
+                        got=seq,
+                        response=result,
+                    )
+        except GotStderr as error:
+            result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
+        except InvalidResponse as error:
+            result = CaseErrored.uncaught(response=error.contents)
+        return SeqResult(
+            seq=run.seq,
+            implementation=self.implementation,
+            expected=expected,
+            result=result,
+        )
+
+
 @mutable
 class Implementation:
     """
     A running implementation under test.
     """
 
-    name: str
-
-    # TODO: Potential areas to split this class up on
-
-    # Request/response validation -- probably can wrap protocol
-    _make_validator: _MakeValidator = field(alias="make_validator")
-    _maybe_validate: Callable[..., None] = field(alias="maybe_validate")
-
-    # Error reporting
+    info: ImplementationInfo
+    _harness: HarnessClient = field(repr=False, alias="harness")
     _reporter: Reporter = field(alias="reporter")
 
-    # Low level network / communication
-    _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _stream: Stream = field(default=None, repr=False, alias="stream")
-
-    # Possibly also related to the above networking, but also potentially
-    # useful for not waiting forever for results that really will complete
-    _read_timeout_sec: float | None = field(
-        default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownArgumentType]
-        repr=False,
-    )
-
-    # Protocol fragile-ness, but also tolerance for how broken an
-    # implementation is
-    _restarts: int = field(default=20, repr=False, alias="restarts")
-
-    _info: ImplementationInfo | None = None
-
-    # FIXME: Still some refactoring into DialectRunner needed.
-    _dialect: URL = None  # type: ignore[reportGeneralTypeIssues]
+    @classmethod
+    def known(cls) -> Set[str]:
+        # TODO: Possibly this should return running instances.
+        #       For now it just returns image names clearly.
+        data = files("bowtie") / "data"
+        if data.is_dir():
+            path = data / "known_implementations.json"
+            known = json.loads(path.read_text())
+        else:
+            root = Path(__file__).parent.parent
+            dir = root.joinpath("implementations").iterdir()
+            known = (d.name for d in dir if not d.name.startswith("."))
+        return frozenset(known)
 
     @classmethod
     @asynccontextmanager
     async def start(
         cls,
-        image_name: str,
-        make_validator: _MakeValidator,
+        id: ImplementationId,
+        reporter: Reporter,
         **kwargs: Any,
-    ) -> AsyncIterator[Implementation]:
-        self = cls(
-            name=image_name,
-            make_validator=make_validator,
-            maybe_validate=make_validator(),
-            **kwargs,
-        )
+    ) -> AsyncIterator[Self]:
+        _harness = HarnessClient(**kwargs)
 
         try:
-            await self._start_container()
-        except GotStderr as error:
-            err = StartupFailed(name=image_name, stderr=error.stderr.decode())
-            raise err from None
-        except StreamClosed:
-            raise StartupFailed(name=image_name) from None
-        except DockerError as err:
-            # This craziness can go wrong in various ways, none of them
-            # machine parseable.
+            harness, started = await _harness.transition(START_V1)  # type: ignore[reportArgumentType]
+        except ProtocolError as err:
+            raise StartupFailed(name=id) from err
+        except GotStderr as err:
+            raise StartupFailed(name=id, stderr=err.stderr.decode()) from err
+        else:
+            if started is None:
+                raise StartupFailed(name=id)
 
-            status, data, *_ = err.args
-            if data.get("cause") == "image not known":
-                raise NoSuchImage(name=image_name, data=data) from err
+        info = ImplementationInfo.from_dict(image=id, **started.implementation)  # type: ignore[reportUnknownArgumentType]
 
-            message = ghcr = data.get("message", "")
+        yield cls(harness=harness, info=info, reporter=reporter)
 
-            if status == 500:  # noqa: PLR2004
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Get "https://ghcr.io/v2/bowtie-json-schema/image-name/tags/list": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no real good way to detect this specific case
-                    no_image = message.endswith('/tags/list": denied')
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImage(name=image_name, data=data)
+        await _harness.poison()
 
-                try:
-                    # GitHub Registry saying an image doesn't exist as reported
-                    # locally via podman on macOS...
+    @property
+    def name(self):
+        return self.info.id
 
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImage(name=image_name, data=data)
+    def supports(self, *dialects: Dialect) -> bool:
+        """
+        Does the implementation support (all of) the given dialect(s)?
+        """
+        return self.info.dialects.issuperset(dialects)
 
-            raise StartupFailed(name=image_name, data=data) from err
-
-        yield self
-        await self._stop()
-
-    async def _start_container(self):
-        container = await self._docker.containers.run(  # type: ignore[reportUnknownMemberType]
-            config=dict(
-                Image=self.name,
-                OpenStdin=True,
-                HostConfig=dict(NetworkMode="none"),
-            ),
-        )
-        self._stream = Stream.attached_to(
-            container,
-            read_timeout_sec=self._read_timeout_sec,
-        )
-        started: _commands.Started = await self._send(_commands.START_V1)  # type: ignore[reportGeneralTypeIssues]  # uh?? no idea what's going on here.
-        if started is INVALID:
-            raise StartupFailed(name=self.name)
-        self._info = ImplementationInfo.from_dict(
-            image=self.name,
-            **started.implementation,
-        )
-
-    def info(self) -> ImplementationInfo:
-        # FIXME: Do this higher up
-        if self._info is None:
-            raise StartupFailed(name=self.name)
-        return self._info
-
-    def start_speaking(self, dialect: URL) -> Awaitable[DialectRunner]:
-        self._dialect = dialect
-        current_dialect = current_dialect_resource(dialect)
-        self._maybe_validate = self._make_validator(current_dialect)
-        return DialectRunner.start(
-            implementation=self.name,
-            send=self._send,
-            dialect=dialect,
-        )
-
-    async def _stop(self):
-        request = _commands.STOP.to_request(validate=self._maybe_validate)  # type: ignore[reportUnknownMemberType]  # uh?? no idea what's going on here.
-        with suppress(StreamClosed):
-            await self._stream.send(request)  # type: ignore[reportUnknownArgumentType]
-        await self._stream.ensure_deleted()
-
-    async def _send_no_response(self, cmd: _commands.Command[R]) -> None:
-        request = cmd.to_request(validate=self._maybe_validate)
-
-        try:
-            await self._stream.send(request)
-        except StreamClosed:
-            self._restarts -= 1
-            await self._stream.ensure_deleted()
-            await self._start_container()
-            await self.start_speaking(dialect=self._dialect)
-            await self._stream.send(request)
-
-    async def _send(
+    async def validate(
         self,
-        cmd: _commands.Command[R],
-        retry: int = 3,
-    ) -> R | _InvalidResponse:
-        await self._send_no_response(cmd)
-        for _ in range(retry):
-            try:
-                response = await self._stream.receive()
-            except asyncio.exceptions.TimeoutError:
-                continue
+        dialect: Dialect,
+        cases: Iterable[TestCase],
+    ) -> AsyncIterator[tuple[TestCase, SeqResult]]:
+        """
+        Run a collection of test cases under the given dialect.
+        """
+        runner = await self.start_speaking(dialect)
 
-            try:
-                return cmd.from_response(
-                    response=response,
-                    validate=self._maybe_validate,
-                )
-            except exceptions._ProtocolError as error:  # type: ignore[reportPrivateUsage]
-                self._reporter.invalid_response(
-                    error=error,
-                    implementation=self,
-                    response=response,
-                    cmd=cmd,
-                )
-                break
-        return INVALID
+        for case in cases:
+            seq_case = SeqCase(seq=uuid4().hex, case=case)
+            yield case, await seq_case.run(runner=runner)
+
+    async def start_speaking(self, dialect: Dialect) -> DialectRunner:
+        if not self.supports(dialect):
+            raise UnsupportedDialect(implementation=self, dialect=dialect)
+        try:
+            return await DialectRunner.for_dialect(
+                implementation=self.name,
+                dialect=dialect,
+                harness=self._harness,
+                reporter=self._reporter,
+            )
+        except GotStderr as error:
+            # the implementation failed on the dialect request.
+            # there's likely no reason to continue, so we throw an exception
+            raise DialectError(
+                implementation=self,
+                dialect=dialect,
+                stderr=error.stderr,
+            ) from error
 
     async def smoke(
         self,
-    ) -> AsyncIterator[tuple[_commands.SeqCase, _commands.SeqResult],]:
+    ) -> AsyncIterator[
+        tuple[Dialect, AsyncIterator[tuple[TestCase, SeqResult]]]
+    ]:
         """
         Smoke test this implementation.
         """
-        # FIXME: All dialects / and/or newest dialect with proper sort
-        dialect = max(self.info().dialects, key=str)
-        runner = await self.start_speaking(dialect)
-
         instances = [
-            ("nil", None),
+            # FIXME: When horejsek/python-fastjsonschema#181 is merged
+            #        and/or we special-case fastjsonschema...
+            # ("nulll", None),  # noqa: ERA001
             ("boolean", True),
             ("integer", 37),
             ("number", 37.37),
@@ -361,91 +571,143 @@ class Implementation:
             ("array", [37]),
             ("object", {"foo": 37}),
         ]
-        cases = [
-            TestCase(
-                description="allow-everything",
-                schema={"$schema": str(dialect)},
-                tests=[
-                    Test(
-                        description=json_type,
-                        instance=instance,
-                        valid=True,
-                    )
-                    for json_type, instance in instances
-                ],
-            ),
-            TestCase(
-                description="allow-nothing",
-                schema={"$schema": str(dialect), "not": {}},
-                tests=[
-                    Test(
-                        description=json_type,
-                        instance=instance,
-                        valid=False,
-                    )
-                    for json_type, instance in instances
-                ],
-            ),
-        ]
 
-        for seq_case in _commands.SeqCase.for_cases(cases):
-            result = await seq_case.run(runner=runner)
-            yield seq_case, result
+        # FIXME: All dialects
+        for dialect in [max(self.info.dialects)]:
+            cases = [
+                TestCase(
+                    description="allow-everything",
+                    schema={},
+                    tests=[
+                        Test(
+                            description=json_type,
+                            instance=instance,
+                            valid=True,
+                        )
+                        for json_type, instance in instances
+                    ],
+                ).with_explicit_dialect(dialect),
+                TestCase(
+                    description="allow-nothing",
+                    schema={"not": {}},
+                    tests=[
+                        Test(
+                            description=json_type,
+                            instance=instance,
+                            valid=False,
+                        )
+                        for json_type, instance in instances
+                    ],
+                ).with_explicit_dialect(dialect),
+            ]
+
+            yield dialect, self.validate(dialect=dialect, cases=cases)
 
 
-def current_dialect_resource(dialect: URL):
-    # it's of course unimportant what dialect is used for this referencing
-    # schema, what matters is that the target dialect is applied
-    from referencing.jsonschema import DRAFT202012
+@frozen
+class Example:
+    """
+    A validation example where we don't have any particularly expected result.
+    """
 
-    return DRAFT202012.create_resource(
-        {
-            # Should match the magic value used for `schema` in `schemas/io/`
-            "$id": "tag:bowtie.report,2023:ihop:__dialect__",
-            "$ref": str(dialect),
-        },
-    )
+    description: str
+    instance: Any
+    comment: str | None = None
+
+    def expected(self) -> None:
+        """
+        We have no expected result.
+        """
+        return None
+
+    def expect(self, valid: bool) -> Test:
+        """
+        Decide we really do expect some specific result.
+        """
+        return Test(**asdict(self), valid=valid)
+
+    @classmethod
+    def from_dict(
+        cls,
+        valid: bool | None = None,
+        **data: Any,
+    ) -> Example | Test:
+        if valid is None:
+            return cls(**data)
+        return Test(**data, valid=valid)
 
 
 @frozen
 class Test:
+    """
+    An `Example` with a specific expected result.
+    """
+
     description: str
     instance: Any
+    valid: bool
     comment: str | None = None
-    valid: bool | None = None
+
+    def expected(self) -> bool:
+        """
+        Expect our expected validity result.
+        """
+        return self.valid
+
+
+@frozen
+class Group:
+    description: str
+    children: Sequence[Group | LeafGroup]
+    comment: str | None = None
+    registry: SchemaRegistry = EMPTY_REGISTRY
+
+
+@frozen
+class LeafGroup:
+    description: str
+    schema: Schema
+    children: Sequence[Example | Test]
+    comment: str | None = None
+    registry: SchemaRegistry = EMPTY_REGISTRY
 
 
 @frozen
 class TestCase:
     description: str
     schema: Any
-    tests: list[Test]
+    tests: Sequence[Example | Test]
     comment: str | None = None
-    registry: SchemaRegistry = Registry()
+    registry: SchemaRegistry = EMPTY_REGISTRY
 
     @classmethod
     def from_dict(
         cls,
-        dialect: URL,
+        dialect: Dialect,
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
     ):
-        empty: SchemaRegistry = Registry()
-        populated = empty.with_contents(
+        populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
-            default_specification=specification_with(
-                str(dialect),
-                default=Specification.OPAQUE,
-            ),
+            default_specification=dialect.specification(),
         )
         return cls(
-            tests=[Test(**test) for test in tests],
+            tests=[Example.from_dict(**test) for test in tests],
             registry=populated,
             **kwargs,
         )
 
-    def serializable(self) -> dict[str, Any]:
+    def with_explicit_dialect(self, dialect: Dialect):
+        """
+        Return a version of this test case with an explicit dialect ID.
+        """
+        schema = self.schema
+        if not isinstance(self.schema, bool):
+            schema = {"$schema": str(dialect.uri), **self.schema}
+        return evolve(self, schema=schema)
+
+    def serializable(self) -> Message:
         as_dict = asdict(
             self,
             filter=lambda k, v: k.name != "registry"
@@ -468,7 +730,10 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def without_expected_results(self) -> dict[str, Any]:
+    def expected_results(self) -> Sequence[bool | None]:
+        return [each.expected() for each in self.tests]
+
+    def without_expected_results(self) -> Message:
         serializable = self.serializable()
         serializable["tests"] = [
             {
@@ -479,3 +744,10 @@ class TestCase:
             for test in serializable.pop("tests")
         ]
         return serializable
+
+
+@cache
+def validator_registry() -> ValidatorRegistry:
+    resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
+    registry = EMPTY_REGISTRY.with_resources(resources).crawl()
+    return ValidatorRegistry.jsonschema(registry=registry)

@@ -1,6 +1,8 @@
+from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 from zipfile import ZipFile
 import os
 import shlex
@@ -26,18 +28,21 @@ REQUIREMENTS = dict(
 )
 REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
     (
-        ROOT / "pyproject.toml"
-        if path.absolute() == REQUIREMENTS["main"].absolute()
-        else path.parent / f"{path.stem}.in"
+        (
+            ROOT / "pyproject.toml"
+            if path.absolute() == REQUIREMENTS["main"].absolute()
+            else path.parent / f"{path.stem}.in"
+        ),
+        path,
     )
     for path in REQUIREMENTS.values()
 ]
 
 
-# aiohttp / aiodocker don't support 3.12
-SUPPORTED = ["pypy3.10", "3.11"]
+SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
+nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.sessions = []
 
 
@@ -48,6 +53,29 @@ def session(default=True, python=LATEST, **kwargs):  # noqa: D103
         return nox.session(python=python, **kwargs)(fn)
 
     return _session
+
+
+def _install_coverage_hook(session: nox.Session):
+    """
+    Enable measurement of coverage in sub-processes.
+
+    See https://coverage.readthedocs.io/en/latest/subprocess.html.
+    """
+    session.run(
+        "python",
+        "-c",
+        dedent(
+            r"""
+            from pathlib import Path
+            import sysconfig
+
+            Path(sysconfig.get_path("purelib")).joinpath("coverage.pth").write_text(
+                "import coverage; coverage.process_startup()\n",
+                encoding="utf-8",
+            )
+            """,
+        ).lstrip("\n"),
+    )
 
 
 @session(python=SUPPORTED)
@@ -64,19 +92,37 @@ def tests(session):
             github = None
 
         session.install("coverage[toml]")
-        session.run("coverage", "run", "-m", "pytest", TESTS)
-        if github is None:
-            session.run("coverage", "report")
-        else:
-            with github.open("a") as summary:
-                summary.write("### Coverage\n\n")
-                summary.flush()  # without a flush, output seems out of order.
-                session.run(
-                    "coverage",
-                    "report",
-                    "--format=markdown",
-                    stdout=summary,
-                )
+
+        _install_coverage_hook(session)
+        with TemporaryDirectory() as _tmpdir:
+            tmpdir = Path(_tmpdir)
+            coverage = os.environ.get("COVERAGE_FILE", tmpdir / "coverage")
+            env = dict(
+                COVERAGE_PROCESS_START=os.fsencode(PYPROJECT.resolve()),
+                COVERAGE_FILE=os.fsencode(coverage),
+            )
+            session.run(
+                "coverage",
+                "run",
+                "-m",
+                "pytest",
+                TESTS,
+                env=env,
+            )
+            session.run("coverage", "combine", env=env)
+            if github is None:
+                session.run("coverage", "report", env=env)
+            else:
+                with github.open("a") as summary:
+                    summary.write("### Coverage\n\n")
+                    summary.flush()  # without flush, output seems out of order
+                    session.run(
+                        "coverage",
+                        "report",
+                        "--format=markdown",
+                        stdout=summary,
+                        env=env,
+                    )
     else:
         session.run("pytest", *session.posargs, TESTS)
 
@@ -132,7 +178,7 @@ def build(session):
             )
 
 
-@session(tags=["build"])
+@session(default=False, tags=["build"])
 def app(session):
     """
     Build a PyApp which will run Bowtie.
@@ -147,7 +193,7 @@ def style(session):
     Lint for style on Bowtie's Python codebase.
     """
     session.install("ruff")
-    session.run("ruff", "check", BOWTIE, TESTS, __file__)
+    session.run("ruff", "check", BOWTIE, TESTS, *ROOT.glob("*.py"))
 
 
 @session()
@@ -156,7 +202,7 @@ def typing(session):
     Check Bowtie's codebase using pyright.
     """
     session.install("pyright", f"{ROOT}[strategies]")
-    session.run("pyright", BOWTIE)
+    session.run("pyright", *session.posargs, BOWTIE)
 
 
 @session(tags=["docs"])
@@ -318,62 +364,98 @@ def requirements(session):
     """
     Update bowtie's requirements.txt files.
     """
-    session.install("pip-tools")
-    for each in REQUIREMENTS_IN:
-        session.run(
-            "pip-compile",
-            "--resolver",
-            "backtracking",
-            "--strip-extras",
-            "-U",
-            each.relative_to(ROOT),
-        )
+    if session.venv_backend == "uv":
+        cmd = ["uv", "pip", "compile"]
+    else:
+        session.install("pip-tools")
+        cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
+
+    for each, out in REQUIREMENTS_IN:
+        # otherwise output files end up with silly absolute path comments...
+        relative = each.relative_to(ROOT)
+        session.run(*cmd, "--upgrade", "--output-file", out, relative)
 
 
 @session(default=False, python=False)
 def ui(session):
     """
     Run a local development UI.
+
+    You can use `nox -s ui -- --pr 123` to automatically checkout a pull
+    request.
     """
-    _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "start")
+    pnpm(session.run_install, "install", "--frozen-lockfile")
+
+    with ExitStack() as stack:
+        if session.posargs and session.posargs[0] == "--pr":
+            _, pr = session.posargs
+            session.run("gh", "pr", "checkout", pr, external=True)
+            stack.callback(
+                lambda: session.run("git", "switch", "-", external=True),
+            )
+
+        pnpm(session.run, "run", "start")
 
 
-@session(python=False, name="ui(audit)")
+@session(python=False, tags=["ui"], name="ui(audit)")
 def ui_audit(session):
     """
     Audit the UI dependencies.
     """
-    session.run("pnpm", "--dir", UI, "audit")
+    pnpm(session.run, "audit")
 
 
-@session(python=False, name="ui(build)")
+@session(python=False, tags=["build", "ui"], name="ui(build)")
 def ui_build(session):
     """
     Check that the UI properly builds.
     """
-    _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "build")
+    pnpm(session.run_install, "install", "--frozen-lockfile")
+    pnpm(session.run, "run", "build")
 
 
-@session(tags=["style"], python=False, name="ui(style)")
+@session(python=False, tags=["style", "ui"], name="ui(style)")
 def ui_style(session):
     """
     Lint for style on Bowtie's frontend.
     """
-    _maybe_install_ui(session)
-    session.run("pnpm", "run", "--dir", UI, "lint")
+    pnpm(session.run_install, "install", "--frozen-lockfile")
+    pnpm(session.run, "run", "lint")
 
 
-@session(python=False, name="ui(tests)")
+@session(tags=["ui"], name="ui(tests)")
 def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.run("pnpm", "install-test", "--frozen-lockfile", "--dir", UI)
+    session.install("-r", REQUIREMENTS["main"], ROOT)
+    podman = os.environ.get("CONTAINER_BUILDER", "podman")
+    image_id = session.run_always(  # TODO: do this from the TS test suite
+        podman,
+        "build",
+        "--quiet",
+        "-f",
+        TESTS / "fauxmplementations/envsonschema/Dockerfile",
+        "-t",
+        "bowtie-ui-tests/envsonschema",
+        external=True,
+        silent=True,
+    )
+    try:
+        pnpm(session.run, "install-test", "--frozen-lockfile")
+    finally:
+        if image_id is not None:
+            session.run_always(
+                podman,
+                "rmi",
+                "--force",
+                image_id.strip(),
+                external=True,
+            )
 
 
-def _maybe_install_ui(session):
-    if UI.joinpath("node_modules").is_dir():
-        return
-    session.run("pnpm", "install", "--frozen-lockfile", "--dir", UI)
+def pnpm(run, *args):
+    """
+    Run pnpm on the UI.
+    """
+    run("pnpm", "--dir", UI, *args, external=True)

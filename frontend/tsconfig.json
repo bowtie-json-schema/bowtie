@@ -13,11 +13,11 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
 
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src", "jest.config.ts", "vite.config.ts"]
+  "include": ["src", "vite.config.ts"]
 }

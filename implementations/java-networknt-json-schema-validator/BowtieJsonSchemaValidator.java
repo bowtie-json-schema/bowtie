@@ -4,15 +4,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.JsonMetaSchema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.JsonSchemaVersion;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-import com.networknt.schema.uri.URIFetcher;
+import com.networknt.schema.resource.InputStreamSource;
+import com.networknt.schema.resource.SchemaLoader;
 import java.io.*;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -139,31 +141,33 @@ public class BowtieJsonSchemaValidator {
     try {
 
       final JsonSchemaFactory factory;
-      if (runRequest.testCase().registry() == null) {
-        factory = JsonSchemaFactory.getInstance(versionFlag);
-      } else {
-        CustomURIFetcher uriFetcher = new CustomURIFetcher(
+      JsonSchemaVersion jsonSchemaVersion = JsonSchemaFactory.checkVersion(versionFlag);
+      JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
+      JsonSchemaFactory.Builder factoryBuilder = JsonSchemaFactory
+        .builder()
+        .schemaMappers(schemaMappers ->
+          schemaMappers
+            .mapPrefix("https://json-schema.org", "classpath:")
+            .mapPrefix("http://json-schema.org", "classpath:"))
+        .defaultMetaSchemaIri(metaSchema.getIri())
+        .addMetaSchema(metaSchema);
+
+      if (runRequest.testCase().registry() != null) {
+        CustomSchemaLoader schemaLoader = new CustomSchemaLoader(
           runRequest.testCase().registry()
         );
-
-        JsonSchemaVersion jsonSchemaVersion = JsonSchemaFactory.checkVersion(versionFlag);
-        JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
-        factory = JsonSchemaFactory
-          .builder()
-          .uriFetcher(uriFetcher, "http")
-          .uriFetcher(uriFetcher, "https")
-          .defaultMetaSchemaURI(metaSchema.getUri())
-          .addMetaSchema(metaSchema)
-          .build();
+        factoryBuilder.schemaLoaders(schemaLoaders -> schemaLoaders.add(schemaLoader));
       }
-
+      factory = factoryBuilder.build();
       List<TestResult> results = runRequest
         .testCase()
         .tests()
         .stream()
         .map(test -> {
+          SchemaValidatorsConfig config = new SchemaValidatorsConfig();
           JsonSchema jsonSchema = factory.getSchema(
-            runRequest.testCase().schema()
+            runRequest.testCase().schema(),
+            config
           );
           Set<ValidationMessage> errors = jsonSchema.validate(
             test.instance()
@@ -196,28 +200,30 @@ public class BowtieJsonSchemaValidator {
     return stringWriter.toString();
   }
 
-  class CustomURIFetcher implements URIFetcher {
+  class CustomSchemaLoader implements SchemaLoader {
 
     private final Map<String, JsonNode> registry;
 
-    CustomURIFetcher(JsonNode registryNode) {
+    CustomSchemaLoader(JsonNode registryNode) {
       this.registry = objectMapper.convertValue(registryNode, new TypeReference<>() {});
     }
 
     @Override
-    public InputStream fetch(URI uri) throws IOException {
-      String uriString = uri.toString();
+    public InputStreamSource getSchema(AbsoluteIri iri) {
+      String iriString = iri.toString();
 
-      if (registry.containsKey(uriString)) {
-        JsonNode mappingSchema = registry.get(uriString);
+      if (registry.containsKey(iriString)) {
+        JsonNode mappingSchema = registry.get(iriString);
         String mappingSchemaString = mappingSchema.toString();
-        return new ByteArrayInputStream(
+        return () -> new ByteArrayInputStream(
           mappingSchemaString.getBytes(StandardCharsets.UTF_8)
         );
       }
-
+      if (iriString.startsWith("classpath:")) {
+        return null;
+      }
       String emptySchema = "{}";
-      return new ByteArrayInputStream(
+      return () -> new ByteArrayInputStream(
         emptySchema.getBytes(StandardCharsets.UTF_8)
       );
     }

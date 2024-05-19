@@ -114,7 +114,11 @@ func main() {
 				compiler.Draft = draft
 			}
 			compiler.LoadURL = func(s string) (io.ReadCloser, error) {
-				refSchema, ok := testCase["registry"].(map[string]interface{})[s]
+				registry, ok := testCase["registry"]
+				if !ok {
+					return nil, fmt.Errorf("%q not found", s)
+				}
+				refSchema, ok := registry.(map[string]interface{})[s]
 				if !ok {
 					return nil, fmt.Errorf("%q not found", s)
 				}

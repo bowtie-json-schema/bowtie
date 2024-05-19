@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { Check, Clipboard } from "react-bootstrap-icons";
-import Button from "react-bootstrap/Button";
+import { CheckLg, Copy } from "react-bootstrap-icons";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 
 interface CopyProps {
   textToCopy: string;
+  style?: string;
 }
 
-function CopyToClipboard({ textToCopy }: CopyProps) {
+function CopyToClipboard({ textToCopy, style }: CopyProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(textToCopy).then(
-      () => setCopied(true),
-      () => setCopied(false),
-    );
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch((error) => {
+        console.error("Error copying text to clipboard:", error);
+      });
   };
 
   return (
@@ -28,13 +33,13 @@ function CopyToClipboard({ textToCopy }: CopyProps) {
           </Tooltip>
         }
       >
-        <Button
-          variant="outline-primary"
-          className="btn mt-0 me-0"
+        <div
+          className={style}
           onClick={handleCopy}
+          style={{ cursor: "pointer" }}
         >
-          {copied ? <Check /> : <Clipboard />}
-        </Button>
+          {copied ? <CheckLg className="text-success" /> : <Copy />}
+        </div>
       </OverlayTrigger>
     </>
   );

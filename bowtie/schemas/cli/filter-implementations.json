@@ -1,0 +1,15 @@
+{
+  "title": "bowtie filter-implementations",
+  "description": "Filter implementations by any given criteria.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:cli:filter-implementations",
+
+  "type": "array",
+
+  "items": {
+    "description": "A matching implementation, represented as a connectable.",
+    "$ref": "tag:bowtie.report,2024:connectables"
+  }
+}

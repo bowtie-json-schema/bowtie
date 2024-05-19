@@ -39,11 +39,12 @@
   flex-direction: row;
   justify-content: space-between;
   gap: 0.7rem;
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-primary);
+  text-wrap: nowrap;
 }
 
-.hover-details span {
-  font-style: italic;
-  font-weight: 500;
-  color: rgb(112, 112, 112);
-  font-size: 0.8rem;
+.table-implementation-name:hover {
+  cursor: pointer;
 }

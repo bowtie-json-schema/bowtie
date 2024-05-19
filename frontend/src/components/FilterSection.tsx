@@ -1,5 +1,6 @@
 import "./FilterSection.css";
-import { Badge, Card } from "react-bootstrap";
+import Badge from "react-bootstrap/Badge";
+import Card from "react-bootstrap/Card";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";
@@ -9,7 +10,7 @@ export const FilterSection = ({ languages }: { languages: string[] }) => {
   const params = useSearchParams();
 
   return (
-    <Card className="mx-auto mb-3 w-75">
+    <Card className="mx-auto mb-3">
       <Card.Header>Filtering</Card.Header>
       <Card.Body>
         <Card.Title>Language</Card.Title>

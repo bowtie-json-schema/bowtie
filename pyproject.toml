@@ -6,10 +6,15 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build]
-packages = ["bowtie"]
-exclude = ["implementations/"]
+exclude = [".github"]
 
-[tool.hatch.build.target.app]
+[tool.hatch.build.targets.wheel]
+packages = ["bowtie"]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+
+[tool.hatch.build.targets.wheel.force-include]
+data = "bowtie/data"
 
 [project]
 name = "bowtie-json-schema"
@@ -25,8 +30,7 @@ keywords = [
     "json schema",
 ]
 authors = [
-  {email = "Julian+bowtie@GrayVines.com"},
-  {name = "Julian Berman"},
+  { name = "Julian Berman", email = "Julian+bowtie@GrayVines.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -36,6 +40,7 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
@@ -45,16 +50,17 @@ dynamic = ["version"]
 dependencies = [
   "aiodocker",
   "attrs>=22.2.0",
-  "click",
   "diagnostic",
   "github3.py",
+  "httpx",
   "jsonschema>=4.19.0",
+  "jsonschema_lexer",
   "referencing>=0.31.0",
-  "referencing-loaders>=0.4.2",
+  "referencing-loaders>=2024.5.2",
   "rich",
-  "rpds.py>=0.16.2",
+  "rich-click>=1.8.0",
+  "rpds.py>=0.18.0",
   "structlog",
-  "trogon>=0.4.0",
   "typing-extensions; python_version<'3.11'",
   "url.py",
 ]
@@ -78,6 +84,7 @@ skip_covered = false
 
 [tool.coverage.run]
 branch = true
+parallel = true  # to support subprocess collection
 source = ["bowtie"]
 dynamic_context = "test_function"
 
@@ -95,6 +102,13 @@ ignore = [
     "D001",  # one sentence per line, so max length doesn't make sense
 ]
 
+[tool.pytest.ini_options]
+addopts = ["--strict-markers"]
+xfail_strict = true
+markers = [
+    "json: Tests of Bowtie's JSON output",
+]
+
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true
 strict = ["**/*.py"]
@@ -104,7 +118,9 @@ exclude = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 79
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = [
   "A001",  # It's fine to shadow builtins
@@ -139,7 +155,9 @@ ignore = [
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
   "PYI025",  # No, importing it as Set is fine.
-  "RET503",  # Returning None implicitly is fine
+  "RET501",  # Returning None explicitly is *definitely* fine
+  "RET502",  # Returning None implicitly is fine
+  "RET503",
   "RET505",  # These push you to use `if` instead of `elif`, but for no reason
   "RET506",
   "RSE102",  # Ha, what, who even knew you could leave the parens off. But no.
@@ -152,15 +170,15 @@ ignore = [
 [tool.ruff.lint.flake8-pytest-style]
 mark-parentheses = false
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
 from-first = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"tests/*" = ["ANN", "D", "RUF012", "S"]
+"tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]

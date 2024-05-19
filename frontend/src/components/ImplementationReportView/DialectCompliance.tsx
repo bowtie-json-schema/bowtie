@@ -1,15 +1,21 @@
 import React from "react";
-import { Card, Table } from "react-bootstrap";
-import { Implementation } from "../../data/parseReportData";
-import Dialect from "../../data/Dialect";
+import { Link } from "react-router-dom";
+import Card from "react-bootstrap/Card";
+import Image from "react-bootstrap/Image";
+import Table from "react-bootstrap/Table";
+
+import { complianceBadgeFor } from "../../data/Badge";
+import { ImplementationReport } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
-  implementation: Implementation;
-}> = ({ implementation }) => {
+  implementationReport: ImplementationReport;
+}> = ({ implementationReport }) => {
+  const { implementation, dialectCompliance } = implementationReport;
+
   return (
-    <Card className="mx-auto mb-3 w-75">
+    <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
-      <Card.Body>
+      <Card.Body className="overflow-x-auto">
         <Table className="table-hover sm">
           <thead>
             <tr>
@@ -19,6 +25,9 @@ const DialectCompliance: React.FC<{
               <th colSpan={3} className="text-center">
                 Tests
               </th>
+              <th rowSpan={2} scope="col" className="text-center align-middle">
+                Badge
+              </th>
             </tr>
             <tr className="text-center">
               <th>Failed</th>
@@ -27,7 +36,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Object.entries(implementation.results)
+            {Array.from(dialectCompliance.entries())
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
@@ -36,16 +45,27 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +Dialect.forPath(b[0]).firstPublicationDate -
-                    +Dialect.forPath(a[0]).firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
               )
-              .map(([dialectName, result], index) => {
+              .map(([dialect, result], index) => {
                 return (
                   <tr key={index}>
-                    <td>{Dialect.forPath(dialectName).uri}</td>
+                    <td>{dialect.prettyName}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
                     <td className="text-center">{result.erroredTests}</td>
+                    <td>
+                      <Link className="mx-1" to={dialect.routePath}>
+                        <Image
+                          src={complianceBadgeFor(
+                            implementation,
+                            dialect,
+                          ).href()}
+                          alt={dialect.prettyName}
+                          className="float-end"
+                        />
+                      </Link>
+                    </td>
                   </tr>
                 );
               })}

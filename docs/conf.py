@@ -7,12 +7,17 @@ from bowtie import GITHUB, HOMEPAGE, ORG, REPO
 DOCS = Path(__file__).parent
 STATIC = DOCS / "_static"
 
+IMPLEMENTATIONS = Path(__file__).parent.parent / "implementations"
+IMPLEMENTATION_COUNT = sum(
+    1 for path in IMPLEMENTATIONS.iterdir() if not path.name.startswith(".")
+)
+
 project = "bowtie"
 author = "Julian Berman"
 copyright = "2022, " + author
 
 release = importlib.metadata.version("bowtie-json-schema")
-version = release.partition("-")[0]
+version = ".".join(release.split(".")[:3])
 
 language = "en"
 default_role = "any"
@@ -28,7 +33,9 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_click",
     "sphinx_copybutton",
+    "sphinx_tabs.tabs",
     "sphinx_json_schema_spec",
+    "sphinx_substitution_extensions",
     "sphinxcontrib.spelling",
     "sphinxext.opengraph",
 ]
@@ -39,17 +46,55 @@ pygments_dark_style = "one-dark"
 html_theme = "furo"
 html_logo = str(STATIC / "logo.svg")
 html_static_path = [str(STATIC)]
-html_theme_options = {"sidebar_hide_name": True}
+html_theme_options = dict(
+    sidebar_hide_name=True,
+    # Evade pradyunsg/furo#668
+    source_edit_link=str(REPO / "edit/main/docs/") + "{filename}",
+)
 
 rst_prolog = f"""
 .. |site| replace:: {HOMEPAGE}
-.. |gitpod| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
-  :alt: Open in Gitpod
-  :target: https://gitpod.io/#{REPO}
+.. |version| replace:: {version}
+
+.. |implementation-count| replace:: {IMPLEMENTATION_COUNT}
+
+.. |codespaces| image:: https://github.com/codespaces/badge.svg
+    :alt: Open in GitHub Codespaces
+    :target: https://codespaces.new{REPO.path}
+
+.. |codespaces-badge| image:: https://github.com/codespaces/badge.svg
+    :alt: Open in GitHub Codespaces
+    :target: https://codespaces.new{REPO.path}
+
+.. |gitpod| image:: https://gitpod.io/button/open-in-gitpod.svg
+    :alt: Open in Gitpod
+    :target: https://gitpod.io/#{REPO}
+
+.. |gitpod-badge| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
+    :alt: Open in Gitpod
+    :target: https://gitpod.io/#{REPO}
+    :height: 32px
 
 
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501, RUF100
+
+
+def _resolve_broken_refs(app, env, node, contnode):
+    # Make `bowtie foo` try `bowtie-foo`, i.e. assume it's a CLI command
+    if node["reftarget"].startswith("bowtie "):
+        return app.env.get_domain("std").resolve_any_xref(
+            env,
+            node["refdoc"],
+            app.builder,
+            node["reftarget"].replace(" ", "-"),
+            node,
+            contnode,
+        )
+
+
+def setup(app):
+    app.connect("missing-reference", _resolve_broken_refs)
 
 
 def entire_domain(host):
@@ -80,11 +125,13 @@ autosectionlabel_prefix_document = True
 # -- intersphinx --
 
 intersphinx_mapping = {
+    "click": ("https://click.palletsprojects.com", None),
     "nox": ("https://nox.thea.codes/en/stable/", None),
-    "podman": ("https://docs.podman.io/en/latest", None),
     "pip": ("https://pip.pypa.io/en/stable/", None),
+    "podman": ("https://docs.podman.io/en/latest", None),
     "python": ("https://docs.python.org/", None),
     "sphinx": ("https://www.sphinx-doc.org", None),
+    "twisted": ("https://docs.twistedmatrix.com/en/stable", None),
 }
 
 # -- extlinks --

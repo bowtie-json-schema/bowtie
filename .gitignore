@@ -1,6 +1,8 @@
 /TODO*
-bowtie-report.html
-/badges/
+/output
+/site
+_cache
+_templates
 
 /frontend/node_modules
 /frontend/build
@@ -155,7 +157,3 @@ cython_debug/
 # Editor vomit
 .idea/
 .vscode/
-
-# User defined
-_cache
-_templates

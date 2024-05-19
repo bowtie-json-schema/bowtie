@@ -1,8 +1,13 @@
 import io.github.optimumcode.json.schema.ErrorCollector
 import io.github.optimumcode.json.schema.JsonSchema
+import io.github.optimumcode.json.schema.JsonSchemaLoader
 import io.github.optimumcode.json.schema.SchemaType
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -17,6 +22,7 @@ fun main() {
             ignoreUnknownKeys = true
             prettyPrint = false
             encodeDefaults = true
+            classDiscriminatorMode = ClassDiscriminatorMode.NONE
         }
         val processor = BowtieSampsonSchemaValidatorLauncher(outputWriter, json)
         input.lines().forEach {
@@ -91,7 +97,7 @@ class BowtieSampsonSchemaValidatorLauncher(
 
         @Suppress("detekt:TooGenericExceptionCaught")
         val schema = try {
-            JsonSchema.fromJsonElement(schemaDefinition, currentDialect)
+            loadSchema(command, schemaDefinition)
         } catch (ex: Exception) {
             writer.writeLine(
                 json.encodeToString(
@@ -107,6 +113,38 @@ class BowtieSampsonSchemaValidatorLauncher(
             return
         }
         runCase(command, schema)
+    }
+
+    private fun loadSchema(
+        command: Command.Run,
+        schemaDefinition: JsonElement,
+    ): JsonSchema = JsonSchemaLoader.create()
+        .apply {
+            currentDialect?.also(this::registerWellKnown)
+            for ((uri, schema) in command.case.registry) {
+                if (skipSchema(uri, schema)) {
+                    continue
+                }
+                @Suppress("detekt:TooGenericExceptionCaught")
+                try {
+                    register(schema, uri)
+                } catch (ex: Exception) {
+                    throw IllegalStateException("cannot register schema for URI '$uri'", ex)
+                }
+            }
+        }.fromJsonElement(schemaDefinition, currentDialect)
+
+    private fun skipSchema(uri: String, schema: JsonElement): Boolean {
+        if (uri.contains("draft4", ignoreCase = true)) {
+            // skip draft4 schemas
+            return true
+        }
+        // ignore schemas for unsupported drafts
+        return schema is JsonObject &&
+            schema["\$schema"]
+                ?.jsonPrimitive
+                ?.content
+                .let { it != null && SchemaType.find(it) == null }
     }
 
     private fun runCase(command: Command.Run, schema: JsonSchema) {
@@ -170,6 +208,9 @@ class BowtieSampsonSchemaValidatorLauncher(
                         dialects = SUPPORTED_DIALECTS,
                         issues = libraryIssues,
                         source = librarySource,
+                        os = System.getProperty("os.name"),
+                        osVersion = System.getProperty("os.version"),
+                        languageVersion = KotlinVersion.CURRENT.toString(),
                     ),
                 ),
             ),
