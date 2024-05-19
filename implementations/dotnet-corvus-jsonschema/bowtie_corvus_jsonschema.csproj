@@ -46,4 +46,8 @@
         <PackageReference Update="Roslynator.Analyzers" Version="4.6.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Properties\" />
+    </ItemGroup>
+
 </Project>
