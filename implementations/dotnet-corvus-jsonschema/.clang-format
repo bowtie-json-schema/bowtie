@@ -1,0 +1,8 @@
+---
+# Almost manages to match dotnet format...
+BasedOnStyle: Microsoft
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+IndentCaseLabels: true
+SpaceInEmptyBlock: true
