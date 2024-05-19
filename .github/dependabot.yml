@@ -135,7 +135,7 @@ updates:
     schedule:
       interval: "daily"
 
-- package-ecosystem: "docker"
+  - package-ecosystem: "docker"
     directory: "/implementations/dotnet-corvus-jsonschema"
     schedule:
       interval: "daily"
