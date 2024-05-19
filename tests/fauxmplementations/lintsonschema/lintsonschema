@@ -9,24 +9,16 @@ import json
 import os
 import sys
 
-from referencing.jsonschema import EMPTY_REGISTRY, specification_with
+from referencing.jsonschema import EMPTY_REGISTRY
 import jsonschema.validators
 import referencing_loaders as loaders
 
 SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMAS", "/schemas"))
 
 _schemas = loaders.from_path(SCHEMA_PATH)
-_REGISTRY = EMPTY_REGISTRY.with_resources(_schemas).crawl()
+REGISTRY = EMPTY_REGISTRY.with_resources(_schemas).crawl()
 ROOT_URI = "tag:bowtie.report,2023:ihop"
-METASCHEMA_ID = _REGISTRY.contents(ROOT_URI)["$schema"]
-SPECIFICATION = specification_with(METASCHEMA_ID)
-CURRENT_DIALECT = SPECIFICATION.create_resource(  # FIXME: wrong spec...
-    {
-        "$id": "tag:bowtie.report,2023:ihop:__dialect__",
-        "$ref": METASCHEMA_ID,
-    },
-)
-REGISTRY = CURRENT_DIALECT @ _REGISTRY
+METASCHEMA_ID = REGISTRY.contents(ROOT_URI)["$schema"]
 
 Validator = jsonschema.validators.validator_for(METASCHEMA_ID)
 

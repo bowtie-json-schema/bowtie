@@ -231,8 +231,6 @@ class Report:
         validator.validate(header)
         metadata = RunMetadata.from_dict(**header)
 
-        validator = metadata.dialect.current_dialect_resource() @ validator
-
         results: HashTrieMap[
             ImplementationId,
             HashTrieMap[Seq, SeqResult],

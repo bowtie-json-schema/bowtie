@@ -824,8 +824,8 @@ def statistics(report: _report.Report, n: int, format: _F):
             click.echo(markdown)
 
 
-def make_validator(*more_schemas: SchemaResource):
-    validators = more_schemas @ validator_registry()
+def make_validator():
+    validators = validator_registry()
 
     def validate(instance: Any, schema: Schema) -> None:
         # FIXME: There's work to do upstream in referencing, but we still are
