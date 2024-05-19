@@ -3,8 +3,8 @@ import pytest
 from bowtie._connectables import Connectable, UnknownConnector
 from bowtie._containers import (
     IMAGE_REPOSITORY,
-    ConnectableImage,
     ConnectableContainer,
+    ConnectableImage,
 )
 from bowtie._core import validator_registry
 
