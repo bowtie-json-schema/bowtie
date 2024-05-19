@@ -243,16 +243,14 @@ class ConnectableImage:
 
     @asynccontextmanager
     async def connect(self) -> AbstractAsyncContextManager[Connection]:
-        async with (
-            Docker() as docker,
-            Connection.open(
-                container_id=(
-                    await self._start_container_maybe_pull(docker)
-                ).id,
-            ) as connection,
-        ):
-            yield connection
-        await self._ensure_deleted()
+        async with Docker() as docker:
+            id = await self._start_container_maybe_pull(docker)
+            async with Connection.open(container_id=id) as connection:
+                yield connection
+
+            with suppress(aiodocker.exceptions.DockerError):
+                container = await docker.containers.get(id)
+                await container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
     async def _start_container_maybe_pull(self, docker: Docker):
         # You would think we would use aiodocker's container.start() function
@@ -317,12 +315,6 @@ class ConnectableImage:
         container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
         await container.start()  # type: ignore[reportUnknownMemberType]
         return container
-
-    async def _ensure_deleted(self):
-        with suppress(aiodocker.exceptions.DockerError):
-            async with Docker() as docker:
-                container = await docker.containers.get(self._id)
-                await container.delete(force=True)  # type: ignore[reportUnknownMemberType]
 
 
 @frozen
