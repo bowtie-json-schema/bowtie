@@ -16,8 +16,10 @@ from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
 from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
+import httpx
 import referencing_loaders
 
+from bowtie import HOMEPAGE
 from bowtie._commands import (
     START_V1,
     STOP,
@@ -131,6 +133,15 @@ class Dialect:
     @classmethod
     def from_str(cls, uri: str):
         return cls.by_uri()[URL.parse(uri)]
+
+    async def latest_report(self):
+        url = HOMEPAGE / f"{self.short_name}.json"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(str(url))
+
+        from bowtie._report import Report
+
+        return Report.from_serialized(response.iter_lines())
 
     def serializable(self):
         return str(self.uri)
