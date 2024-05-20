@@ -41,7 +41,13 @@ jobs:
 
   build:
     needs: list
-    runs-on: ubuntu-latest
+
+    # Particularly for .NET (which we special case below),
+    # we need a newer buildah than what's in 22.04 (which is buildah 1.23.1)
+    # so that it properly sets TARGETARCH and therefore multi-architecture
+    # container image builds know which architecture we're building for.
+    # See https://github.com/containers/buildah/pull/4295.
+    runs-on: ubuntu-24.04
 
     permissions:
       packages: write
