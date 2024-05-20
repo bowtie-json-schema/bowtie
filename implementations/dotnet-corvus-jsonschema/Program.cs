@@ -152,8 +152,9 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
                 }
             }
 
-            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText,
-                                                                      "https://example.com/schema.json");
+            string fakeURI = $"https://example.com/bowtie-sent-schema-{root["seq"]?.ToJsonString()}.json";
+            Type schemaType =
+                SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, fakeURI);
 
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
