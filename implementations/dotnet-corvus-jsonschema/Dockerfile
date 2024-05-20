@@ -1,6 +1,8 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.300 AS build
 WORKDIR /source
 
+RUN dotnet --info
+
 COPY *.csproj .
 RUN dotnet restore
 
