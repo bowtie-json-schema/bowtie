@@ -179,7 +179,7 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
                 }
 
                 var runResult = new System.Text.Json.Nodes.JsonObject {
-                    ["seq"] = root["seq"]?.GetValue<int>(),
+                    ["seq"] = root["seq"]?.DeepClone(),
                     ["results"] = results,
                 };
 
@@ -188,14 +188,14 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out string? message))
             {
-                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.GetValue<int>(),
+                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.DeepClone(),
                                                                          ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
                 var errorResult = new System.Text.Json.Nodes.JsonObject {
-                    ["seq"] = root["seq"]?.GetValue<int>(),
+                    ["seq"] = root["seq"]?.DeepClone(),
                     ["errored"] = true,
                     ["context"] =
                         new System.Text.Json.Nodes.JsonObject {
