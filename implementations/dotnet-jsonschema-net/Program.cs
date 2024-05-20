@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Reflection;
@@ -89,10 +90,9 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             var testCaseDescription = testCase["description"].GetValue<string>();
             string? testDescription = null;
             var schemaText = testCase["schema"];
-            var registry = testCase["registry"];
+            var registry = testCase["registry"].AsObject().ToDictionary(x => new Uri(x.Key), x => x.Value);
 
-            options.SchemaRegistry.Fetch = uri =>
-            { return registry[uri.ToString()].Deserialize<JsonSchema>(); };
+            options.SchemaRegistry.Fetch = uri => registry[uri].Deserialize<JsonSchema>();
 
             var schema = schemaText.Deserialize<JsonSchema>();
             var tests = testCase["tests"].AsArray();
