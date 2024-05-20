@@ -231,8 +231,6 @@ class Report:
         validator.validate(header)
         metadata = RunMetadata.from_dict(**header)
 
-        validator = metadata.dialect.current_dialect_resource() @ validator
-
         results: HashTrieMap[
             ImplementationId,
             HashTrieMap[Seq, SeqResult],
@@ -300,6 +298,15 @@ class Report:
     @property
     def total_tests(self):
         return sum(len(case.tests) for case in self._cases.values())
+
+    def compliance_by_implementation(self):
+        """
+        Return the fraction of passing tests for each reported implementation.
+        """
+        return {
+            implementation.name: 1 - (unsuccessful.total / self.total_tests)
+            for implementation, unsuccessful in self.worst_to_best()
+        }
 
     def unsuccessful(self, implementation: ImplementationId) -> Unsuccessful:
         """

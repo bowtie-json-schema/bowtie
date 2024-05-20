@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
 
@@ -15,8 +16,10 @@ from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
 from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
+import httpx
 import referencing_loaders
 
+from bowtie import HOMEPAGE
 from bowtie._commands import (
     START_V1,
     STOP,
@@ -32,13 +35,12 @@ from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
-        Callable,
         Iterable,
         Mapping,
         Sequence,
         Set,
     )
-    from typing import Any, Self
+    from typing import Self
 
     from referencing import Specification
     from referencing.jsonschema import SchemaRegistry, SchemaResource
@@ -132,26 +134,20 @@ class Dialect:
     def from_str(cls, uri: str):
         return cls.by_uri()[URL.parse(uri)]
 
+    async def latest_report(self):
+        url = HOMEPAGE / f"{self.short_name}.json"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(str(url))
+
+        from bowtie._report import Report
+
+        return Report.from_serialized(response.iter_lines())
+
     def serializable(self):
         return str(self.uri)
 
     def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
         return specification_with(str(self.uri), **kwargs)
-
-    def current_dialect_resource(self) -> SchemaResource:
-        referrer = validator_registry().schema(
-            "tag:bowtie.report,2024:ihop:schemaInCurrentDialect",
-        )
-
-        # it's of course unimportant what dialect is used for this referencing
-        # schema, what matters is that the target dialect is applied
-        from referencing.jsonschema import DRAFT202012
-
-        return DRAFT202012.create_resource(
-            {
-                "$id": referrer["$ref"],  # type: ignore[reportIndexIssue]
-            },
-        )
 
 
 @frozen
@@ -252,11 +248,7 @@ class StartupFailed(Exception):
 R = TypeVar("R")
 
 
-class MakeValidator(Protocol):
-    def __call__(
-        self,
-        *more_schemas: SchemaResource,
-    ) -> Callable[..., None]: ...
+MakeValidator = Callable[[], Callable[[Any, Schema], None]]
 
 
 @frozen
@@ -364,10 +356,6 @@ class HarnessClient:
     _connection: Connection = field(alias="connection")
 
     _make_validator: MakeValidator = field(alias="make_validator")
-    _resources_for_validation: Sequence[SchemaResource] = field(
-        default=(),
-        alias="resources_for_validation",
-    )
 
     # FIXME: Remove this somehow by making the state machine even more explicit
     #: A sequence of commands to replay if we end up restarting the connection.
@@ -377,24 +365,16 @@ class HarnessClient:
         for each in self._if_replaying:
             await self.request(each)  # TODO: response assert?
 
-    async def transition(
-        self,
-        cmd: Command[R],
-        resources: Sequence[SchemaResource] = (),
-    ) -> tuple[Self, R | None]:
+    async def transition(self, cmd: Command[R]) -> tuple[Self, R | None]:
         response = await self.request(cmd)
-        harness = evolve(
-            self,
-            if_replaying=[*self._if_replaying, cmd],
-            resources_for_validation=resources,
-        )
+        harness = evolve(self, if_replaying=[*self._if_replaying, cmd])
         return harness, response
 
     async def request(self, cmd: Command[R]) -> R | None:
         """
         Send a given command to the implementation and return its response.
         """
-        validate = self._make_validator(*self._resources_for_validation)
+        validate = self._make_validator()
         request = cmd.to_request(validate=validate)
         try:
             response = await self._connection.request(request)
@@ -432,7 +412,6 @@ class DialectRunner:
         response: StartedDialect
         new_harness, response = await harness.transition(
             DialectCommand(dialect=str(dialect.uri)),  # type: ignore[reportArgumentType]
-            resources=[dialect.current_dialect_resource()],
         )
 
         if response != StartedDialect.OK:
@@ -771,11 +750,4 @@ class TestCase:
 def validator_registry() -> ValidatorRegistry:
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
     registry = EMPTY_REGISTRY.with_resources(resources).crawl()
-
-    from referencing.jsonschema import DRAFT202012  # XXX
-
-    ignore_current_dialect = registry.with_resource(
-        uri="tag:bowtie.report,2023:ihop:__dialect__",
-        resource=DRAFT202012.create_resource({}),
-    )
-    return ValidatorRegistry.jsonschema(registry=ignore_current_dialect)
+    return ValidatorRegistry.jsonschema(registry=registry)

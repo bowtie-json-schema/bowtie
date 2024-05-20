@@ -796,11 +796,7 @@ def statistics(report: _report.Report, n: int, format: _F):
     """
     Show summary statistics for a previous report.
     """
-    unsuccessful = [
-        1 - (unsuccessful.total / report.total_tests)
-        for _, unsuccessful in report.worst_to_best()
-    ]
-
+    unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         median=median(unsuccessful),
         mean=mean(unsuccessful),
@@ -824,8 +820,8 @@ def statistics(report: _report.Report, n: int, format: _F):
             click.echo(markdown)
 
 
-def make_validator(*more_schemas: SchemaResource):
-    validators = more_schemas @ validator_registry()
+def make_validator():
+    validators = validator_registry()
 
     def validate(instance: Any, schema: Schema) -> None:
         # FIXME: There's work to do upstream in referencing, but we still are
