@@ -24,10 +24,7 @@
       "description": "A connectable with explicit connector.",
 
       "pattern": "^[^:]+:[^:]+(:[^:]+)?$",
-      "oneOf": [
-        { "$ref": "#image" },
-        { "$ref": "#container" }
-      ]
+      "oneOf": [{ "$ref": "#image" }, { "$ref": "#container" }]
     }
   ],
 
