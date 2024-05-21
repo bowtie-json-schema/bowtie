@@ -51,7 +51,8 @@ repos:
     rev: "v4.0.0-alpha.8"
     hooks:
       - name: prettier (javascript implementations & bowtie internals)
-        exclude: frontend/pnpm-lock.yaml
+        # REMOVEME: Once we remove Corvus's vendored metaschemas
+        exclude: ^frontend/pnpm-lock.yaml|implementations/dotnet-corvus-jsonschema/metaschema/.*.json$
         id: prettier
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"

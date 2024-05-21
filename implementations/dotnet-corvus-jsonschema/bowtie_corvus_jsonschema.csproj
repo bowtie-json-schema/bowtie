@@ -20,10 +20,10 @@
   <ItemGroup>
     <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.23" />
     <PackageReference Include="Corvus.Json.CodeGeneration.202012" Version="3.0.23" />
-    <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.24" />
     <PackageReference Include="Corvus.Json.CodeGeneration.6" Version="3.0.23" />
     <PackageReference Include="Corvus.Json.CodeGeneration.7" Version="3.0.23" />
-    <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.23" />
+    <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.24" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
