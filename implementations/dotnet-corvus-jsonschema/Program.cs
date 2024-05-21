@@ -67,40 +67,40 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
                         JsonDocument.Parse(File.ReadAllText("./metaschema/draft7/schema.json")));
 
     builder.AddDocument("https://json-schema.org/draft/2019-09/schema",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/schema.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/schema.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/applicator",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/applicator.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/applicator.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/content",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/content.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/content.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/core",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/core.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/core.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/format",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/format.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/format.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/hyper-schema",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/hyper-schema.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/hyper-schema.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/meta-data",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/meta-data.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/meta-data.json")));
     builder.AddDocument("https://json-schema.org/draft/2019-09/meta/validation",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/validation.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2019-09/meta/validation.json")));
 
     builder.AddDocument("https://json-schema.org/draft/2020-12/schema",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/schema.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/schema.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/applicator",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/applicator.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/applicator.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/content",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/content.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/content.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/core",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/core.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/core.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-annotation",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-annotation.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/format-annotation.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-assertion",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-assertion.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/format-assertion.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/hyper-schema",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/hyper-schema.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/hyper-schema.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/meta-data",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/meta-data.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/meta-data.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/validation",
-                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/validation.json")));
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/validation.json")));
 
     return builder;
 }
