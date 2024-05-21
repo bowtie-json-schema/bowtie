@@ -30,4 +30,78 @@
 
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="metaschema\draft4\" />
+    <Folder Include="metaschema\draft6\" />
+    <Folder Include="metaschema\draft7\" />
+    <Folder Include="metaschema\draft2019-09\" />
+    <Folder Include="metaschema\draft2020-12\" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="metaschema\draft2019-09\meta\applicator.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\content.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\core.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\format.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\hyper-schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\meta-data.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\validation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\applicator.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\content.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\core.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\format-annotation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\format-assertion.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\hyper-schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\meta-data.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\unevaluated.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\validation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft4\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft6\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft7\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
