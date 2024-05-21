@@ -55,7 +55,34 @@ AssemblyLoadContext assemblyLoadContext = new TestAssemblyLoadContext();
 
 static JsonSchemaTypeBuilder CreateTypeBuilder()
 {
-    return new Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder(new TestDocumentResolver());
+    var builder = new Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder(new TestDocumentResolver());
+
+    builder.AddDocument("http://json-schema.org/draft-04/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft4/schema.json")));
+
+    builder.AddDocument("http://json-schema.org/draft-06/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft6/schema.json")));
+
+    builder.AddDocument("http://json-schema.org/draft-07/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft7/schema.json")));
+
+    builder.AddDocument("https://json-schema.org/draft/2019-09/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/applicator", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/applicator.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/content", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/content.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/core", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/core.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/format", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/format.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/hyper-schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/hyper-schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/meta-data", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/meta-data.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/validation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/validation.json")));
+
+    builder.AddDocument("https://json-schema.org/draft/2020-12/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/applicator", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/applicator.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/content", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/content.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/core", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/core.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-annotation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-annotation.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-assertion", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-assertion.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/hyper-schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/hyper-schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/meta-data", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/meta-data.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/validation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/validation.json")));
+
+    return builder;
 }
 
 while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
@@ -152,8 +179,9 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
                 }
             }
 
-            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText,
-                                                                      "https://example.com/schema.json");
+            string fakeURI = $"https://example.com/bowtie-sent-schema-{root["seq"]?.ToJsonString()}.json";
+            Type schemaType =
+                SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, fakeURI);
 
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
@@ -179,7 +207,7 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
                 }
 
                 var runResult = new System.Text.Json.Nodes.JsonObject {
-                    ["seq"] = root["seq"]?.GetValue<int>(),
+                    ["seq"] = root["seq"]?.DeepClone(),
                     ["results"] = results,
                 };
 
@@ -188,14 +216,14 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out string? message))
             {
-                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.GetValue<int>(),
+                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.DeepClone(),
                                                                          ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
                 var errorResult = new System.Text.Json.Nodes.JsonObject {
-                    ["seq"] = root["seq"]?.GetValue<int>(),
+                    ["seq"] = root["seq"]?.DeepClone(),
                     ["errored"] = true,
                     ["context"] =
                         new System.Text.Json.Nodes.JsonObject {
