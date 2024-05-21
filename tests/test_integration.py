@@ -98,35 +98,6 @@ def tar_from_directory(directory):
     return fileobj
 
 
-def container(name, fileobj):
-    @pytest_asyncio.fixture(scope="module")
-    async def _container_id(docker):
-        images = docker.images
-        t = tag(name)
-        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=t)
-        try:
-            await docker.images.inspect(t)
-        except DockerError:
-            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
-        config = dict(
-            Image=t,
-            OpenStdin=True,
-            HostConfig=dict(NetworkMode="none"),
-        )
-        _container = await docker.containers.create(config=config)
-        await _container.start()
-        yield f"container:{_container.id}"
-
-        # Double Ensure that container is not running after test completion
-        # It maybe that the container auto exits wherein docker would
-        # throw an error saying Container not found.
-        with suppress(DockerError):
-            await _container.delete()
-            await images.delete(name=t, force=True)
-
-    return _container_id
-
-
 def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
@@ -149,16 +120,6 @@ def fauxmplementation(name):
     """
     fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
     return image(name=name, fileobj=fileobj)
-
-
-def fakecontainerimplementation(name):
-    """
-    A fake implementation using container connectable.
-
-    Built from files in the fauxmplementations directory.
-    """
-    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
-    return container(name=name, fileobj=fileobj)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.19"):
@@ -199,8 +160,6 @@ def shellplementation(name, contents):
 
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
-envsonschema_container = fakecontainerimplementation("envsonschema")
-lintsonschema_container = fakecontainerimplementation("lintsonschema")
 always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
@@ -374,6 +333,38 @@ fake_js = shellplementation(
     printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
     """,  # noqa: E501
 )
+
+
+@pytest_asyncio.fixture
+async def envsonschema_container(docker, envsonschema):
+    config = dict(
+        Image=envsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
+
+
+@pytest_asyncio.fixture
+async def lintsonschema_container(docker, lintsonschema):
+    config = dict(
+        Image=lintsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
 
 
 @asynccontextmanager
