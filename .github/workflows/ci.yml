@@ -124,7 +124,7 @@ jobs:
       - name: Set up nox
         uses: wntrblm/nox@2024.04.15
       - name: Install dependencies
-        run: uv pip install build
+        run: uv pip install --system build
 
       - name: Create packages
         run: python -m build .
