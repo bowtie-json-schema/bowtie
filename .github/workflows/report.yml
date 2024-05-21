@@ -159,8 +159,8 @@ jobs:
           name: site
           path: site
 
-  deploy-frontend:
+  redeploy-frontend:
     needs: site
-    uses: ./.github/workflows/deploy-frontend.yml
+    uses: .github/workflows/ui.yml
     with:
       report_artifact_in_scope: true
