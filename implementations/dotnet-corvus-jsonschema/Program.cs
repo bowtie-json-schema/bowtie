@@ -27,8 +27,7 @@ global using global::System.Net.Http;
 global using global::System.Threading;
 global using global::System.Threading.Tasks;";
 
-var unsupportedTests = new Dictionary<(string, string), string>
-{
+var unsupportedTests = new Dictionary<(string, string), string> {
     [("schema that uses custom metaschema with with no validation vocabulary", "no validation: valid number")] =
         "We do not support optional vocabularies",
     [("schema that uses custom metaschema with with no validation vocabulary",
@@ -37,8 +36,7 @@ var unsupportedTests = new Dictionary<(string, string), string>
     [("ignore unrecognized optional vocabulary", "number value")] = "We do not support optional vocabularies",
 };
 
-var builders = new Dictionary<string, Func<IJsonSchemaBuilder>>
-{
+var builders = new Dictionary<string, Func<IJsonSchemaBuilder>> {
     ["https://json-schema.org/draft/2020-12/schema"] = () =>
         new Corvus.Json.CodeGeneration.Draft202012.JsonSchemaBuilder(CreateTypeBuilder()),
     ["https://json-schema.org/draft/2019-09/schema"] = () =>
@@ -107,7 +105,7 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
     return builder;
 }
 
-while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
+while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
 {
     var root = JsonNode.Parse(line);
 
@@ -127,12 +125,10 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             }
 
             started = true;
-            var startResult = new System.Text.Json.Nodes.JsonObject
-            {
+            var startResult = new System.Text.Json.Nodes.JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new System.Text.Json.Nodes.JsonObject
-                    {
+                    new System.Text.Json.Nodes.JsonObject {
                         ["language"] = "dotnet",
                         ["name"] = "Corvus.JsonSchema",
                         ["version"] = GetLibVersion(),
@@ -163,8 +159,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             string? dialect = root["dialect"]?.GetValue<string>() ?? throw new MissingDialect(root);
             currentBuilder = builders[dialect]();
 
-            var dialectResult = new System.Text.Json.Nodes.JsonObject
-            {
+            var dialectResult = new System.Text.Json.Nodes.JsonObject {
                 ["ok"] = true,
             };
 
@@ -231,8 +226,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                     results.Add(new System.Text.Json.Nodes.JsonObject { ["valid"] = validationResult });
                 }
 
-                var runResult = new System.Text.Json.Nodes.JsonObject
-                {
+                var runResult = new System.Text.Json.Nodes.JsonObject {
                     ["seq"] = root["seq"]?.DeepClone(),
                     ["results"] = results,
                 };
@@ -242,23 +236,17 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             catch (Exception)
                 when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out string? message))
             {
-                var skipResult = new System.Text.Json.Nodes.JsonObject
-                {
-                    ["seq"] = root["seq"]?.DeepClone(),
-                    ["skipped"] = true,
-                    ["message"] = message
-                };
+                var skipResult = new System.Text.Json.Nodes.JsonObject { ["seq"] = root["seq"]?.DeepClone(),
+                                                                         ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
-                var errorResult = new System.Text.Json.Nodes.JsonObject
-                {
+                var errorResult = new System.Text.Json.Nodes.JsonObject {
                     ["seq"] = root["seq"]?.DeepClone(),
                     ["errored"] = true,
                     ["context"] =
-                        new System.Text.Json.Nodes.JsonObject
-                        {
+                        new System.Text.Json.Nodes.JsonObject {
                             ["message"] = e.ToString(),
                             ["traceback"] = Environment.StackTrace,
                         },
@@ -453,10 +441,10 @@ internal class TestDocumentResolver : IDocumentResolver
                 return ValueTask.FromResult(element);
             }
 
-            return ValueTask.FromResult<JsonElement?>(default);
+            return ValueTask.FromResult < JsonElement ? > (default);
         }
 
-        return ValueTask.FromResult<JsonElement?>(default);
+        return ValueTask.FromResult < JsonElement ? > (default);
     }
 }
 
@@ -509,8 +497,7 @@ internal class MissingTests
 }
 
 internal class UnknownCommand
-(string? message) : Exception(message)
-{ }
+(string? message) : Exception(message) { }
 
 internal class MissingVersion
 (JsonNode command) : Exception
@@ -542,7 +529,7 @@ internal class FileCommandSource
     private readonly string[] fileContents = File.ReadAllLines(fileName);
     private int line;
 
-    public string? GetNextCommand()
+    public string ? GetNextCommand()
     {
         if (this.line < this.fileContents.Length)
         {
