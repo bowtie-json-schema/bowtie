@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.9.24"
+kotlin = "2.0.0"
 json-schema-validator = "0.0.15"
 
 [plugins]
