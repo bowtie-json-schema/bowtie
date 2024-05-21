@@ -99,6 +99,8 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
                         JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/hyper-schema.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/meta-data",
                         JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/meta-data.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/unevaluated",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/unevaluated.json")));
     builder.AddDocument("https://json-schema.org/draft/2020-12/meta/validation",
                         JsonDocument.Parse(File.ReadAllText("./metaschema/draft2020-12/meta/validation.json")));
 
