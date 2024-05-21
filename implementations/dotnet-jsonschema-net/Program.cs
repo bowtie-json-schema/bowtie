@@ -90,9 +90,13 @@ while (cmdSource.GetNextCommand() is {} line && line != "")
             var testCaseDescription = testCase["description"].GetValue<string>();
             string? testDescription = null;
             var schemaText = testCase["schema"];
-            var registry = testCase["registry"].AsObject().ToDictionary(x => new Uri(x.Key), x => x.Value);
 
-            options.SchemaRegistry.Fetch = uri => registry[uri].Deserialize<JsonSchema>();
+            JsonNode? nullableRegistry = testCase["registry"];
+            if (nullableRegistry is not null)
+            {
+                var registry = nullableRegistry.AsObject().ToDictionary(x => new Uri(x.Key), x => x.Value);
+                options.SchemaRegistry.Fetch = uri => registry[uri].Deserialize<JsonSchema>();
+            }
 
             var schema = schemaText.Deserialize<JsonSchema>();
             var tests = testCase["tests"].AsArray();
