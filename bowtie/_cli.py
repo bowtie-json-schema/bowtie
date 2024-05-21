@@ -309,7 +309,13 @@ def implementation_subcommand(
             ),
             multiple=True,
             metavar="IMPLEMENTATION",
-            help="A container image which implements the bowtie IO protocol.",
+            help=(
+                "A connectable ID for a JSON Schema implementation supported "
+                "by Bowtie. May be repeated multiple times to select multiple "
+                "implementations to run."
+                "Run `bowtie filter-implementations` for the full list of "
+                "supported implementations."
+            ),
         )
         @TIMEOUT
         @wraps(fn)
@@ -960,7 +966,13 @@ IMPLEMENTATION = click.option(
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A container image which implements the bowtie IO protocol.",
+    help=(
+        "A connectable ID for a JSON Schema implementation supported "
+        "by Bowtie. May be repeated multiple times to select multiple "
+        "implementations to run."
+        "Run `bowtie filter-implementations` for the full list of "
+        "supported implementations."
+    ),
 )
 DIALECT = click.option(
     "--dialect",
