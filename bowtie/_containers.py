@@ -8,7 +8,7 @@ special-to-this-package logic occasionally.
 from __future__ import annotations
 
 from collections import deque
-from contextlib import asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 import asyncio
 import json
@@ -26,12 +26,10 @@ from bowtie._core import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable
-    from contextlib import AbstractAsyncContextManager
-    from typing import Any, Self
+    from collections.abc import AsyncIterator, Awaitable, Callable
+    from typing import Any
 
     import aiodocker.containers
-    import aiodocker.docker
     import aiodocker.stream  # noqa: TCH004 ??? no it's not?
 
     from bowtie._commands import Message
@@ -136,10 +134,6 @@ class Stream:
                 message = await self._read_with_timeout()
             self._last += line  # type: ignore[reportUnknownMemberType]
 
-    async def ensure_deleted(self):
-        with suppress(aiodocker.exceptions.DockerError):
-            await self._container.delete(force=True)  # type: ignore[reportUnknownMemberType]
-
 
 @mutable
 class Connection:
@@ -150,128 +144,39 @@ class Connection:
     handled here.
     """
 
-    _image: str = field(alias="image")
-
-    _docker: aiodocker.docker.Docker = field(repr=False, alias="docker")
-    _stream: Stream = field(default=None, repr=False, alias="stream")
+    _new_stream: Callable[[], Awaitable[Stream]] = field(
+        repr=False,
+        alias="new_stream",
+    )
 
     # Maybe second versions of these will be useful also at the Implementation
     # level again, to control for non-protocol-related flakiness or slowness
     _restarts: int = field(default=10, repr=False, alias="restarts")
-    _read_timeout_sec: float | None = field(
-        default=2.0,
-        converter=lambda value: value or None,  # type: ignore[reportUnknownLambdaType]
-        repr=False,
-    )
 
     #: A per-request number of retries, before giving up
     _retry: int = field(default=3, repr=False)
 
-    @classmethod
-    @asynccontextmanager
-    async def open(
-        cls,
-        image_name: str,
-        **kwargs: Any,
-    ) -> AsyncIterator[Self]:
-        async with Docker() as docker:
-            self = cls(docker=docker, image=image_name, **kwargs)
+    _connected_to: Stream | None = None
 
-            try:
-                await self._start_container_maybe_pull()
-            except GotStderr as error:
-                err = StartupFailed(
-                    name=image_name,
-                    stderr=error.stderr.decode(),
-                )
-                raise err from None
-            except _ClosedStream:
-                raise StartupFailed(name=image_name) from None
-
-            yield self
-            await self._stream.ensure_deleted()
-
-    async def _start_container_maybe_pull(self):
-        # You would think we would use aiodocker's container.start() function
-        # which essentially does the below. You would think wrong.
-        # That function will pull the *entire* image repository if it ends up
-        # pulling our harness image -- so here we reimplement it, but only
-        # pull :latest when the image is missing.
-        try:
-            await self._start_container()
-        except aiodocker.exceptions.DockerError as err:
-            if err.status != 404:  # noqa: PLR2004
-                raise
-            try:
-                await self._docker.pull(from_image=self._image, tag="latest")  # type: ignore[reportUnknownMemberType]
-            except aiodocker.exceptions.DockerError as err:
-                # This craziness can go wrong in various ways, none of them
-                # machine parseable.
-
-                status, data, *_ = err.args
-                if data.get("cause") == "image not known":
-                    raise NoSuchImplementation(self._image) from err
-
-                message = ghcr = data.get("message", "")
-
-                if status == 500:  # noqa: PLR2004
-                    try:
-                        # GitHub Registry saying an image doesn't exist as
-                        # reported within GitHub Actions' version of Podman...
-                        # This is some crazy string like:
-                        #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
-                        # with seemingly no other indication elsewhere and
-                        # obviously no good way to detect this specific case
-                        no_image = message.endswith('/latest": denied')
-                    except Exception:  # noqa: BLE001, S110
-                        pass
-                    else:
-                        if no_image:
-                            raise NoSuchImplementation(self._image)
-
-                    try:
-                        # GitHub Registry saying an image doesn't exist as
-                        # reported locally via podman on macOS...
-
-                        # message will be ... a JSON string !?! ...
-                        error = json.loads(ghcr).get("message", "")
-                    except Exception:  # noqa: BLE001, S110
-                        pass  # nonJSON / missing key
-                    else:
-                        if "403 (forbidden)" in error.casefold():
-                            raise NoSuchImplementation(self._image)
-
-                raise StartupFailed(name=self._image, data=data) from err
-            await self._start_container()
-
-    async def _start_container(self):
-        config = dict(
-            Image=self._image,
-            OpenStdin=True,
-            HostConfig=dict(NetworkMode="none"),
-        )
-        # FIXME: name + labels
-        container = await self._docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
-        await container.start()  # type: ignore[reportUnknownMemberType]
-        self._stream = Stream.attached_to(
-            container,
-            read_timeout_sec=self._read_timeout_sec,
-        )
+    @property
+    async def _stream(self) -> Stream:
+        if self._connected_to is None:
+            self._connected_to = await self._new_stream()
+        return self._connected_to
 
     async def request(self, message: Message) -> Message | None:
         request = f"{json.dumps(message)}\n"
 
         try:
-            await self._stream.send(request)
+            await (await self._stream).send(request)
         except _ClosedStream:
             self._restarts -= 1
-            await self._stream.ensure_deleted()
-            await self._start_container()
+            self._connected_to = None
             raise Restarted() from None
 
         for _ in range(self._retry):
             try:
-                response = await self._stream.receive()
+                response = await (await self._stream).receive()
             except asyncio.exceptions.TimeoutError:
                 continue
             except _ClosedStream as err:
@@ -288,7 +193,7 @@ class Connection:
     async def poison(self, message: dict[str, Any]) -> None:
         request = f"{json.dumps(message)}\n"
         with suppress(_ClosedStream):
-            await self._stream.send(request)
+            await (await self._stream).send(request)
 
 
 @frozen
@@ -303,5 +208,121 @@ class ConnectableImage:
 
     connector = "image"
 
-    def connect(self) -> AbstractAsyncContextManager[Connection]:
-        return Connection.open(image_name=self._id)
+    @asynccontextmanager
+    async def connect(self) -> AsyncIterator[Connection]:
+        async with AsyncExitStack() as stack:
+            docker = await stack.enter_async_context(Docker())
+            create = start_container_maybe_pull
+
+            async def new_stream():
+                nonlocal create
+
+                container = await create(docker=docker, image_name=self._id)
+                stack.push_async_callback(container.delete, force=True)  # type: ignore[reportUnknownMemberType]
+                create = start_container
+
+                try:
+                    return Stream.attached_to(
+                        container,
+                        read_timeout_sec=2.0,  # FIXME: Parameters
+                    )
+                except GotStderr as error:
+                    err = StartupFailed(
+                        name=self._id,
+                        stderr=error.stderr.decode(),
+                    )
+                    raise err from None
+                except _ClosedStream:
+                    raise StartupFailed(name=self._id) from None
+
+            yield Connection(new_stream=new_stream)
+
+
+async def start_container_maybe_pull(docker: Docker, image_name: str):
+    # You would think we would use aiodocker's container.start() function
+    # which essentially does the below. You would think wrong.
+    # That function will pull the *entire* image repository if it ends up
+    # pulling our harness image -- so here we reimplement it, but only
+    # pull :latest when the image is missing.
+    try:
+        return await start_container(docker=docker, image_name=image_name)
+    except aiodocker.exceptions.DockerError as err:
+        if err.status != 404:  # noqa: PLR2004
+            raise
+        try:
+            await docker.pull(from_image=image_name, tag="latest")  # type: ignore[reportUnknownMemberType]
+        except aiodocker.exceptions.DockerError as err:
+            # This craziness can go wrong in various ways, none of them
+            # machine parseable.
+
+            status, data, *_ = err.args
+            if data.get("cause") == "image not known":
+                raise NoSuchImplementation(image_name) from err
+
+            message = ghcr = data.get("message", "")
+
+            if status == 500:  # noqa: PLR2004
+                try:
+                    # GitHub Registry saying an image doesn't exist as
+                    # reported within GitHub Actions' version of Podman...
+                    # This is some crazy string like:
+                    #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
+                    # with seemingly no other indication elsewhere and
+                    # obviously no good way to detect this specific case
+                    no_image = message.endswith('/latest": denied')
+                except Exception:  # noqa: BLE001, S110
+                    pass
+                else:
+                    if no_image:
+                        raise NoSuchImplementation(image_name)
+
+                try:
+                    # GitHub Registry saying an image doesn't exist as
+                    # reported locally via podman on macOS...
+
+                    # message will be ... a JSON string !?! ...
+                    error = json.loads(ghcr).get("message", "")
+                except Exception:  # noqa: BLE001, S110
+                    pass  # nonJSON / missing key
+                else:
+                    if "403 (forbidden)" in error.casefold():
+                        raise NoSuchImplementation(image_name)
+
+            raise StartupFailed(name=image_name, data=data) from err
+        return await start_container(docker=docker, image_name=image_name)
+
+
+async def start_container(docker: Docker, image_name: str):
+    config = dict(
+        Image=image_name,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    # FIXME: name + labels
+    container = await docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
+    await container.start()  # type: ignore[reportUnknownMemberType]
+    return container
+
+
+@frozen
+class ConnectableContainer:
+
+    _id: str = field(alias="id")
+
+    connector = "container"
+
+    @asynccontextmanager
+    async def connect(self) -> AsyncIterator[Connection]:
+        async with Docker() as docker:
+            try:
+                container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
+            except aiodocker.exceptions.DockerError as err:
+                raise NoSuchImplementation(name=self._id) from err
+
+            async def new_stream():
+                return Stream.attached_to(
+                    container,
+                    read_timeout_sec=2.0,  # FIXME: Parameters
+                )
+
+            yield Connection(new_stream=new_stream)

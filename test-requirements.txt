@@ -141,7 +141,7 @@ pyjwt==2.8.0
     # via
     #   -r requirements.txt
     #   github3-py
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
@@ -165,7 +165,7 @@ referencing-loaders==2024.5.2
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-requests==2.31.0
+requests==2.32.0
     # via
     #   -r requirements.txt
     #   github3-py

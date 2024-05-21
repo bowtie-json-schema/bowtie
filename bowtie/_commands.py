@@ -9,7 +9,7 @@ import re
 
 try:
     from typing import dataclass_transform
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import dataclass_transform
 
 from attrs import asdict, field, filters, frozen

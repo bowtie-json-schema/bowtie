@@ -18,6 +18,8 @@ The currently supported connectors are:
 
     * ``image``: a container image which Bowtie will start, stop and delete
                  which must speak Bowtie's harness protocol
+    * ``container``: an external running container which Bowtie will connect to
+                 which must speak Bowtie's harness protocol
 
 If no connector is specified, ``image`` is assumed.
 
@@ -76,6 +78,7 @@ class Connectable:
         (cls.connector, cls)
         for cls in [
             _containers.ConnectableImage,
+            _containers.ConnectableContainer,
         ]
     )
 

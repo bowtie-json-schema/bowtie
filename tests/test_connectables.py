@@ -1,7 +1,11 @@
 import pytest
 
 from bowtie._connectables import Connectable, UnknownConnector
-from bowtie._containers import IMAGE_REPOSITORY, ConnectableImage
+from bowtie._containers import (
+    IMAGE_REPOSITORY,
+    ConnectableContainer,
+    ConnectableImage,
+)
 from bowtie._core import validator_registry
 
 validator = validator_registry().for_uri(
@@ -110,3 +114,13 @@ def test_terse_implicit_image_no_repository():
     id = "bar"
     validator.validate(id)
     assert Connectable.from_str(id).to_terse() == "bar"
+
+
+def test_container_connectable():
+    id = "container:c7895a98f49d"
+    validator.validate(id)
+    connectable = Connectable.from_str(id)
+    assert connectable == Connectable(
+        id=id,
+        connector=ConnectableContainer(id="c7895a98f49d"),
+    )
