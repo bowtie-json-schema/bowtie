@@ -291,6 +291,7 @@ def test_ne_different_results():
 
 
 @given(dialect=known_dialects)
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_ne_different_implementations(dialect):
     foo = RunMetadata(
         dialect=dialect,
