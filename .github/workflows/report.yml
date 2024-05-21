@@ -161,6 +161,6 @@ jobs:
 
   redeploy-frontend:
     needs: site
-    uses: .github/workflows/ui.yml
+    uses: ./.github/workflows/ui.yml
     with:
       report_artifact_in_scope: true
