@@ -57,30 +57,50 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
 {
     var builder = new Corvus.Json.CodeGeneration.JsonSchemaTypeBuilder(new TestDocumentResolver());
 
-    builder.AddDocument("http://json-schema.org/draft-04/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft4/schema.json")));
+    builder.AddDocument("http://json-schema.org/draft-04/schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft4/schema.json")));
 
-    builder.AddDocument("http://json-schema.org/draft-06/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft6/schema.json")));
+    builder.AddDocument("http://json-schema.org/draft-06/schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft6/schema.json")));
 
-    builder.AddDocument("http://json-schema.org/draft-07/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft7/schema.json")));
+    builder.AddDocument("http://json-schema.org/draft-07/schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft7/schema.json")));
 
-    builder.AddDocument("https://json-schema.org/draft/2019-09/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/schema.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/applicator", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/applicator.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/content", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/content.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/core", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/core.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/format", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/format.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/hyper-schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/hyper-schema.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/meta-data", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/meta-data.json")));
-    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/validation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/validation.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/applicator",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/applicator.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/content",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/content.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/core",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/core.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/format",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/format.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/hyper-schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/hyper-schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/meta-data",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/meta-data.json")));
+    builder.AddDocument("https://json-schema.org/draft/2019-09/meta/validation",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft201909/meta/validation.json")));
 
-    builder.AddDocument("https://json-schema.org/draft/2020-12/schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/schema.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/applicator", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/applicator.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/content", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/content.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/core", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/core.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-annotation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-annotation.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-assertion", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-assertion.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/hyper-schema", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/hyper-schema.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/meta-data", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/meta-data.json")));
-    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/validation", JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/validation.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/applicator",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/applicator.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/content",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/content.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/core",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/core.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-annotation",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-annotation.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/format-assertion",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/format-assertion.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/hyper-schema",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/hyper-schema.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/meta-data",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/meta-data.json")));
+    builder.AddDocument("https://json-schema.org/draft/2020-12/meta/validation",
+                        JsonDocument.Parse(File.ReadAllText("./metaschema/draft202012/meta/validation.json")));
 
     return builder;
 }
@@ -180,8 +200,8 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             }
 
             string fakeURI = $"https://example.com/bowtie-sent-schema-{root["seq"]?.ToJsonString()}.json";
-            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText,
-                                                                      fakeURI);
+            Type schemaType =
+                SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, fakeURI);
 
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
