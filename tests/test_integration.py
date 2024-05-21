@@ -405,34 +405,6 @@ async def run(*args, **kwargs):
 
 
 @pytest.mark.asyncio
-async def test_validate_invalid_container_connectable(envsonschema_container):
-    async with run("-i", envsonschema_container, "-V") as send:
-        results, stderr = await send(
-            """
-            {"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
-            """,  # noqa: E501
-        )
-
-    assert results == [
-        {envsonschema_container: TestResult.INVALID},
-    ], stderr
-
-
-@pytest.mark.asyncio
-async def test_validate_valid_container_connectable(lintsonschema_container):
-    async with run("-i", lintsonschema_container, "-V") as send:
-        results, stderr = await send(
-            """
-            {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
-            """,  # noqa: E501
-        )
-
-    assert results == [
-        {lintsonschema_container: TestResult.VALID},
-    ], stderr
-
-
-@pytest.mark.asyncio
 async def test_validating_on_both_sides(lintsonschema):
     async with run("-i", lintsonschema, "-V") as send:
         results, stderr = await send(
@@ -2378,3 +2350,38 @@ async def test_statistics_markdown(envsonschema, always_valid):
         """,
     )
     assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_container_connectables(
+    lintsonschema_container,
+    envsonschema_container,
+    tmp_path,
+):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        lintsonschema_container,
+        "-i",
+        envsonschema_container,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+        exit_code=0,
+    )
+    assert stderr == ""
+
+    report = Report.from_serialized(stdout.splitlines())
+    assert [
+        [test_results for _, test_results in results]
+        for _, results in report.cases_with_results()
+    ] == [
+        [
+            {
+                envsonschema_container: TestResult.INVALID,
+                lintsonschema_container: TestResult.VALID,
+            },
+        ],
+    ], stderr
