@@ -3,8 +3,6 @@
 name: Collect New Test Results
 
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       bowtie-version:
@@ -161,8 +159,8 @@ jobs:
           name: site
           path: site
 
-  deploy-frontend:
+  redeploy-frontend:
     needs: site
-    uses: ./.github/workflows/deploy-frontend.yml
+    uses: .github/workflows/ui.yml
     with:
       report_artifact_in_scope: true
