@@ -13,18 +13,18 @@ TestCase.__test__ = False  # frigging py.test
 
 DIALECT = Dialect.by_alias()["2020"]
 FOO = ImplementationInfo(
+    id="foo",
     name="foo",
     language="blub",
-    image="foo",
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,
     dialects=frozenset([DIALECT]),
 )
 BAR = ImplementationInfo(
+    id="x/baz",
     name="bar",
     language="crust",
-    image="x/baz",
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,

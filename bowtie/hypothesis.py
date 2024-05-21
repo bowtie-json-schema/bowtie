@@ -109,7 +109,7 @@ def implementation_infos(
     name = draw(names)
     language = draw(languages)
     return ImplementationInfo(
-        image=f"bowtie-hypothesis-generated/{language}/{name}",
+        id=f"bowtie-hypothesis-generated/{language}/{name}",
         name=name,
         language=language,
         homepage=draw(urls().map(URL.parse)),

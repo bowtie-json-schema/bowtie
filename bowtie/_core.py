@@ -49,11 +49,11 @@ if TYPE_CHECKING:
     from bowtie._commands import (
         AnyCaseResult,
         Command,
-        ImplementationId,
         Message,
         Run,
         Seq,
     )
+    from bowtie._connectables import ConnectableId
     from bowtie._report import Reporter
 
 
@@ -268,7 +268,7 @@ class Link:
 class ImplementationInfo:
     # FIXME: Combine with / separate out more from `Implementation`
 
-    _image: ImplementationId = field(alias="image")
+    id: ConnectableId
 
     name: str
     language: str
@@ -303,15 +303,11 @@ class ImplementationInfo:
             **kwargs,
         )
 
-    @property
-    def id(self):
-        return self._image
-
     def serializable(self):
         as_dict = {
             k: v
             for k, v in asdict(self, recurse=False).items()
-            if not k.startswith("_") and v
+            if k != "id" and v
         }
         dialects = (str(dialect.uri) for dialect in as_dict["dialects"])
         as_dict.update(
@@ -397,14 +393,14 @@ class DialectRunner:
     """
 
     dialect: Dialect
-    implementation: ImplementationId
+    implementation: ConnectableId
     _harness: HarnessClient = field(repr=False, alias="harness")
 
     @classmethod
     async def for_dialect(
         cls,
         dialect: Dialect,
-        implementation: ImplementationId,
+        implementation: ConnectableId,
         harness: HarnessClient,
         reporter: Reporter,
     ):
@@ -487,7 +483,7 @@ class Implementation:
     @asynccontextmanager
     async def start(
         cls,
-        id: ImplementationId,
+        id: ConnectableId,
         reporter: Reporter,
         **kwargs: Any,
     ) -> AsyncIterator[Self]:
@@ -503,7 +499,7 @@ class Implementation:
             if started is None:
                 raise StartupFailed(name=id)
 
-        info = ImplementationInfo.from_dict(image=id, **started.implementation)  # type: ignore[reportUnknownArgumentType]
+        info = ImplementationInfo.from_dict(id=id, **started.implementation)  # type: ignore[reportUnknownArgumentType]
 
         yield cls(harness=harness, info=info, reporter=reporter)
 

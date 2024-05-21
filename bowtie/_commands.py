@@ -23,14 +23,12 @@ if TYPE_CHECKING:
 
     from structlog.stdlib import BoundLogger
 
+    from bowtie._connectables import ConnectableId
     from bowtie._core import Dialect as _Dialect, DialectRunner, TestCase
 
 
 #: A unique identifier for a test case within a run or report.
 Seq = int | str
-
-#: A unique identifier for an implementation within a run or report.
-ImplementationId = str
 
 #: A JSON representation of the command
 Message = dict[str, Any]
@@ -297,7 +295,7 @@ class SeqResult:
     """
 
     seq: Seq
-    implementation: ImplementationId
+    implementation: ConnectableId
 
     result: AnyCaseResult
     expected: Sequence[bool | None]

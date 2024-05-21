@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Any, Literal, Self, TextIO
 
-    from bowtie._commands import AnyTestResult, ImplementationId
+    from bowtie._commands import AnyTestResult
+    from bowtie._connectables import ConnectableId
     from bowtie._core import Example, ImplementationInfo, Test
 
 
@@ -147,8 +148,8 @@ class RunMetadata:
         return cls(
             dialect=Dialect.from_str(dialect),
             implementations=[
-                ImplementationInfo.from_dict(image=image, **data)
-                for image, data in implementations.items()
+                ImplementationInfo.from_dict(id=id, **data)
+                for id, data in implementations.items()
             ],
             **kwargs,
         )
@@ -185,7 +186,7 @@ class Report:
 
     _cases: HashTrieMap[Seq, TestCase] = field(alias="cases", repr=False)
     _results: HashTrieMap[
-        ImplementationId,
+        ConnectableId,
         HashTrieMap[Seq, SeqResult],
     ] = field(
         repr=False,
@@ -232,7 +233,7 @@ class Report:
         metadata = RunMetadata.from_dict(**header)
 
         results: HashTrieMap[
-            ImplementationId,
+            ConnectableId,
             HashTrieMap[Seq, SeqResult],
         ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]
             (each.id for each in metadata.implementations),
@@ -308,7 +309,7 @@ class Report:
             for implementation, unsuccessful in self.worst_to_best()
         }
 
-    def unsuccessful(self, implementation: ImplementationId) -> Unsuccessful:
+    def unsuccessful(self, implementation: ConnectableId) -> Unsuccessful:
         """
         A count of the unsuccessful tests for the given implementation.
         """

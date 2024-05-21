@@ -60,7 +60,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from contextlib import AbstractAsyncContextManager
 
-    from bowtie._commands import ImplementationId
     from bowtie._core import Connection
 
 
@@ -78,10 +77,15 @@ class Connector(Protocol):
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
 
+#: A string identifying an implementation supporting Bowtie's harness protocol.
+#: Connectable IDs should be unique within a run or report.
+ConnectableId = str
+
+
 @frozen
 class Connectable:
 
-    _id: str = field(alias="id", repr=False)
+    _id: ConnectableId = field(alias="id", repr=False)
     _connector: Connector = field(alias="connector")
 
     _connectors = HashTrieMap(
@@ -93,7 +97,7 @@ class Connectable:
     )
 
     @classmethod
-    def from_str(cls, fqid: ImplementationId):
+    def from_str(cls, fqid: ConnectableId):
         connector, sep, id = fqid.partition(":")
         if not sep:
             connector, id = "image", connector
@@ -116,7 +120,7 @@ class Connectable:
         ):
             yield implementation
 
-    def to_terse(self) -> ImplementationId:
+    def to_terse(self) -> ConnectableId:
         """
         The tersest connectable description someone could write.
         """
