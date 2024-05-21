@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager, suppress
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from textwrap import dedent, indent
+from textwrap import dedent
 import asyncio
 import json as _json
 import os
@@ -374,11 +374,6 @@ fake_js = shellplementation(
     printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
     """,  # noqa: E501
 )
-
-
-def _failed(message, stderr):
-    indented = indent(stderr.decode(), prefix=" " * 2)
-    pytest.fail(f"{message}. stderr contained:\n\n{indented}")
 
 
 @asynccontextmanager
