@@ -30,7 +30,6 @@
 
   </ItemGroup>
 
-
   <ItemGroup>
     <Folder Include="metaschema\draft4\" />
     <Folder Include="metaschema\draft6\" />
@@ -105,5 +104,4 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>

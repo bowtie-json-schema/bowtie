@@ -41,7 +41,13 @@ jobs:
 
   build:
     needs: list
-    runs-on: ubuntu-latest
+
+    # Particularly for .NET (which we special case below),
+    # we need a newer buildah than what's in 22.04 (which is buildah 1.23.1)
+    # so that it properly sets TARGETARCH and therefore multi-architecture
+    # container image builds know which architecture we're building for.
+    # See https://github.com/containers/buildah/pull/4295.
+    runs-on: ubuntu-24.04
 
     permissions:
       packages: write
@@ -65,7 +71,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            steps.changes.outputs.impl == 'true'
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+          )
+          && !startsWith(matrix.image, 'dotnet-')
+        # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
 
       - name: Build
         id: build_image
@@ -80,14 +92,20 @@ jobs:
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Set DOCKER_HOST so podman-built images are findable
-        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+        run: |
+          systemctl --user enable --now podman.socket
+          sudo loginctl enable-linger $USER
+          podman --remote info
+          echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
 
       - name: Install Bowtie
         uses: ./
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Smoke Test
-        run: bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
+        run: |
+          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
+          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
         if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
 
       - name: Publish
