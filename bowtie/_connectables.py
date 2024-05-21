@@ -5,16 +5,16 @@ They allow connecting to various kinds of harnesses over different
 "connectors", for example:
 
     * in a container which Bowtie manages (starts and stops)
-    * in a pre-existing / externally managed container (not yet implemented)
+    * in a pre-existing / externally managed container
     * in-memory within Bowtie itself, with no IPC (not yet implemented)
 
-The general form of a connectable is:
+The general form of a connectable (also known as a *connectable ID*,
+*connectable string* or *connectable description*) is:
 
     [<connector>:]<id>[:<arguments>*]
 
 where the connector indicates how to connect to the harness.
-
-The currently supported connectors are:
+Currently supported connectors are:
 
     * ``image``: a container image which Bowtie will start, stop and delete
                  which must speak Bowtie's harness protocol
@@ -23,11 +23,21 @@ The currently supported connectors are:
 
 If no connector is specified, ``image`` is assumed.
 
-The ``id`` is interpreted in a connector-specific manner and should indicate
+The ``id`` is a connector-specific identifier and should indicate
 the specific intended implementation. For example, for container images, it
 must be the name of a container image which will be pulled if needed.
 It need not be fully qualified (i.e. include the repository),
 and will default to pulling from Bowtie's own image repository.
+
+As concrete examples:
+
+    * ``image:example`` refers to an implemenetation image named `"example"`
+      (which will be retrieved from Bowtie's container registry if not present)
+    * ``example``, with no ``image`` connector, refers to the same image above
+    * ``image:foo/bar:latest`` is an image with fully specified OCI container
+      registry
+    * ``container:deadbeef`` refers to an OCI container with ID ``deadbeef``
+      which is assumed to be running (and will be attached to)
 
 Connectables are loosely inspired by `Twisted's strports
 <twisted.internet.endpoints.clientFromString`.
@@ -50,7 +60,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from contextlib import AbstractAsyncContextManager
 
-    from bowtie._commands import ImplementationId
     from bowtie._core import Connection
 
 
@@ -68,10 +77,15 @@ class Connector(Protocol):
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
 
+#: A string identifying an implementation supporting Bowtie's harness protocol.
+#: Connectable IDs should be unique within a run or report.
+ConnectableId = str
+
+
 @frozen
 class Connectable:
 
-    _id: str = field(alias="id", repr=False)
+    _id: ConnectableId = field(alias="id", repr=False)
     _connector: Connector = field(alias="connector")
 
     _connectors = HashTrieMap(
@@ -83,7 +97,7 @@ class Connectable:
     )
 
     @classmethod
-    def from_str(cls, fqid: ImplementationId):
+    def from_str(cls, fqid: ConnectableId):
         connector, sep, id = fqid.partition(":")
         if not sep:
             connector, id = "image", connector
@@ -106,7 +120,7 @@ class Connectable:
         ):
             yield implementation
 
-    def to_terse(self) -> ImplementationId:
+    def to_terse(self) -> ConnectableId:
         """
         The tersest connectable description someone could write.
         """

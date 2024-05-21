@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager, suppress
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from textwrap import dedent, indent
+from textwrap import dedent
 import asyncio
 import json as _json
 import os
@@ -98,35 +98,6 @@ def tar_from_directory(directory):
     return fileobj
 
 
-def container(name, fileobj):
-    @pytest_asyncio.fixture(scope="module")
-    async def _container_id(docker):
-        images = docker.images
-        t = tag(name)
-        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=t)
-        try:
-            await docker.images.inspect(t)
-        except DockerError:
-            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
-        config = dict(
-            Image=t,
-            OpenStdin=True,
-            HostConfig=dict(NetworkMode="none"),
-        )
-        _container = await docker.containers.create(config=config)
-        await _container.start()
-        yield f"container:{_container.id}"
-
-        # Double Ensure that container is not running after test completion
-        # It maybe that the container auto exits wherein docker would
-        # throw an error saying Container not found.
-        with suppress(DockerError):
-            await _container.delete()
-            await images.delete(name=t, force=True)
-
-    return _container_id
-
-
 def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
     async def _image(docker):
@@ -149,16 +120,6 @@ def fauxmplementation(name):
     """
     fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
     return image(name=name, fileobj=fileobj)
-
-
-def fakecontainerimplementation(name):
-    """
-    A fake implementation using container connectable.
-
-    Built from files in the fauxmplementations directory.
-    """
-    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
-    return container(name=name, fileobj=fileobj)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.19"):
@@ -199,8 +160,6 @@ def shellplementation(name, contents):
 
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
-envsonschema_container = fakecontainerimplementation("envsonschema")
-lintsonschema_container = fakecontainerimplementation("lintsonschema")
 always_valid = shellplementation(  # I'm sorry future me.
     name="always_valid",
     contents=r"""
@@ -376,9 +335,36 @@ fake_js = shellplementation(
 )
 
 
-def _failed(message, stderr):
-    indented = indent(stderr.decode(), prefix=" " * 2)
-    pytest.fail(f"{message}. stderr contained:\n\n{indented}")
+@pytest_asyncio.fixture
+async def envsonschema_container(docker, envsonschema):
+    config = dict(
+        Image=envsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
+
+
+@pytest_asyncio.fixture
+async def lintsonschema_container(docker, lintsonschema):
+    config = dict(
+        Image=lintsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
 
 
 @asynccontextmanager
@@ -402,34 +388,6 @@ async def run(*args, **kwargs):
         return results, stderr
 
     yield _send
-
-
-@pytest.mark.asyncio
-async def test_validate_invalid_container_connectable(envsonschema_container):
-    async with run("-i", envsonschema_container, "-V") as send:
-        results, stderr = await send(
-            """
-            {"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }
-            """,  # noqa: E501
-        )
-
-    assert results == [
-        {envsonschema_container: TestResult.INVALID},
-    ], stderr
-
-
-@pytest.mark.asyncio
-async def test_validate_valid_container_connectable(lintsonschema_container):
-    async with run("-i", lintsonschema_container, "-V") as send:
-        results, stderr = await send(
-            """
-            {"description": "a test case", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }
-            """,  # noqa: E501
-        )
-
-    assert results == [
-        {lintsonschema_container: TestResult.VALID},
-    ], stderr
 
 
 @pytest.mark.asyncio
@@ -2378,3 +2336,38 @@ async def test_statistics_markdown(envsonschema, always_valid):
         """,
     )
     assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_container_connectables(
+    lintsonschema_container,
+    envsonschema_container,
+    tmp_path,
+):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        lintsonschema_container,
+        "-i",
+        envsonschema_container,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+        exit_code=0,
+    )
+    assert stderr == ""
+
+    report = Report.from_serialized(stdout.splitlines())
+    assert [
+        [test_results for _, test_results in results]
+        for _, results in report.cases_with_results()
+    ] == [
+        [
+            {
+                envsonschema_container: TestResult.INVALID,
+                lintsonschema_container: TestResult.VALID,
+            },
+        ],
+    ], stderr

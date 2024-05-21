@@ -60,7 +60,8 @@ if TYPE_CHECKING:
     from click.decorators import FC
     from referencing.jsonschema import Schema, SchemaResource
 
-    from bowtie._commands import AnyTestResult, ImplementationId
+    from bowtie._commands import AnyTestResult
+    from bowtie._connectables import ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 
@@ -230,7 +231,7 @@ class ImplementationSubcommand(Protocol):
         self,
         start: Callable[
             [],
-            AsyncIterator[tuple[ImplementationId, Implementation]],
+            AsyncIterator[tuple[ConnectableId, Implementation]],
         ],
         **kwargs: Any,
     ) -> Awaitable[int | None]: ...
@@ -308,7 +309,13 @@ def implementation_subcommand(
             ),
             multiple=True,
             metavar="IMPLEMENTATION",
-            help="A container image which implements the bowtie IO protocol.",
+            help=(
+                "A connectable ID for a JSON Schema implementation supported "
+                "by Bowtie. May be repeated multiple times to select multiple "
+                "implementations to run."
+                "Run `bowtie filter-implementations` for the full list of "
+                "supported implementations."
+            ),
         )
         @TIMEOUT
         @wraps(fn)
@@ -959,7 +966,13 @@ IMPLEMENTATION = click.option(
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A container image which implements the bowtie IO protocol.",
+    help=(
+        "A connectable ID for a JSON Schema implementation supported "
+        "by Bowtie. May be repeated multiple times to select multiple "
+        "implementations to run."
+        "Run `bowtie filter-implementations` for the full list of "
+        "supported implementations."
+    ),
 )
 DIALECT = click.option(
     "--dialect",
@@ -1228,7 +1241,7 @@ KNOWN_LANGUAGES = {
 async def filter_implementations(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     dialects: Sequence[Dialect],
     languages: Set[str],
@@ -1289,7 +1302,7 @@ async def filter_implementations(
 async def filter_dialects(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     dialects: Iterable[Dialect],
     latest: bool,
@@ -1325,14 +1338,14 @@ async def filter_dialects(
 async def info(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     format: _F,
 ):
     """
     Show information about a supported implementation.
     """
-    serializable: dict[ImplementationId, dict[str, Any]] = {}
+    serializable: dict[ConnectableId, dict[str, Any]] = {}
 
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
@@ -1388,7 +1401,7 @@ async def info(
 async def smoke(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     format: _F,
     echo: Callable[..., None],

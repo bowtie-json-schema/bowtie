@@ -12,10 +12,6 @@ on:
     - cron: "12 5 * * *"
   workflow_dispatch:
 
-env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PIP_NO_PYTHON_VERSION_WARNING: "1"
-
 jobs:
   list:
     runs-on: ubuntu-latest
@@ -62,7 +58,6 @@ jobs:
             3.12
             pypy3.10
           allow-prereleases: true
-          cache: pip
 
       - uses: actions/setup-node@v4
         with:
@@ -123,22 +118,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          cache: pip
           python-version: "3.x"
-      - name: Install dependencies
-        run: python -m pip install build
-      - name: Create packages
-        run: python -m build .
       - name: Set up uv
         uses: hynek/setup-cached-uv@v1
       - name: Set up nox
         uses: wntrblm/nox@2024.04.15
+      - name: Install dependencies
+        run: uv pip install --system build
+
+      - name: Create packages
+        run: python -m build .
       - name: Build a Bowtie PyApp
         run: nox -s app -- .
       - uses: actions/upload-artifact@v4
         with:
           name: pyapp
           path: app/bowtie*
+
       - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
