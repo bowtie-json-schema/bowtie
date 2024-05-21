@@ -36,20 +36,21 @@ var unsupportedTests = new Dictionary<(string, string), string> {
     [("ignore unrecognized optional vocabulary", "number value")] = "We do not support optional vocabularies",
 };
 
-var builders = new Dictionary<string, Func<IJsonSchemaBuilder>> {
-    ["https://json-schema.org/draft/2020-12/schema"] = () =>
-        new Corvus.Json.CodeGeneration.Draft202012.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["https://json-schema.org/draft/2019-09/schema"] = () =>
-        new Corvus.Json.CodeGeneration.Draft201909.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-07/schema#"] = () =>
-        new Corvus.Json.CodeGeneration.Draft7.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-06/schema#"] = () =>
-        new Corvus.Json.CodeGeneration.Draft6.JsonSchemaBuilder(CreateTypeBuilder()),
-    ["http://json-schema.org/draft-04/schema#"] = () =>
-        new Corvus.Json.CodeGeneration.Draft4.JsonSchemaBuilder(CreateTypeBuilder()),
+var builders = new Dictionary<string, (Func<IJsonSchemaBuilder>, bool)> {
+    ["https://json-schema.org/draft/2020-12/schema"] =
+        (() => new Corvus.Json.CodeGeneration.Draft202012.JsonSchemaBuilder(CreateTypeBuilder()), false),
+    ["https://json-schema.org/draft/2019-09/schema"] =
+        (() => new Corvus.Json.CodeGeneration.Draft201909.JsonSchemaBuilder(CreateTypeBuilder()), true),
+    ["http://json-schema.org/draft-07/schema#"] =
+        (() => new Corvus.Json.CodeGeneration.Draft7.JsonSchemaBuilder(CreateTypeBuilder()), true),
+    ["http://json-schema.org/draft-06/schema#"] =
+        (() => new Corvus.Json.CodeGeneration.Draft6.JsonSchemaBuilder(CreateTypeBuilder()), true),
+    ["http://json-schema.org/draft-04/schema#"] =
+        (() => new Corvus.Json.CodeGeneration.Draft4.JsonSchemaBuilder(CreateTypeBuilder()), true),
 };
 
 IJsonSchemaBuilder? currentBuilder = null;
+bool validateFormat = false;
 
 AssemblyLoadContext assemblyLoadContext = new TestAssemblyLoadContext();
 
@@ -159,8 +160,8 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             }
 
             string? dialect = root["dialect"]?.GetValue<string>() ?? throw new MissingDialect(root);
-            currentBuilder = builders[dialect]();
-
+            (Func<IJsonSchemaBuilder>? builderFactory, validateFormat) = builders[dialect];
+            currentBuilder = builderFactory();
             var dialectResult = new System.Text.Json.Nodes.JsonObject {
                 ["ok"] = true,
             };
@@ -202,8 +203,8 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             }
 
             string fakeURI = $"https://example.com/bowtie-sent-schema-{root["seq"]?.ToJsonString()}.json";
-            Type schemaType =
-                SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText, fakeURI);
+            Type schemaType = SynchronouslyGenerateTypeForVirtualFile(assemblyLoadContext, currentBuilder, schemaText,
+                                                                      fakeURI, validateFormat);
 
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
             string testDescription = string.Empty;
@@ -276,12 +277,12 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
 }
 
 static Type SynchronouslyGenerateTypeForVirtualFile(AssemblyLoadContext assemblyLoadContext, IJsonSchemaBuilder builder,
-                                                    string schema, string virtualFileName)
+                                                    string schema, string virtualFileName, bool validateFormat)
 {
     builder.AddDocument($"{virtualFileName}", JsonDocument.Parse(schema));
 
-    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) =
-        builder.SafeBuildTypesFor(new JsonReference(virtualFileName), "BowtieTest.Model", rebase: true);
+    (string rootType, ImmutableDictionary<JsonReference, TypeAndCode> generatedTypes) = builder.SafeBuildTypesFor(
+        new JsonReference(virtualFileName), "BowtieTest.Model", rebase: true, validateFormat: validateFormat);
     return CompileGeneratedType(assemblyLoadContext, rootType, generatedTypes);
 }
 
