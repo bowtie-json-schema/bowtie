@@ -200,7 +200,7 @@ class Connection:
 class ConnectableImage:
 
     _id: str = field(
-        converter=lambda value: (  # type: ignore[reportUnknownLambdaType]
+        converter=lambda value: (
             value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
         ),
         alias="id",
