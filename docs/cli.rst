@@ -39,20 +39,19 @@ For summarizing the results in the terminal however, the above command when summ
 .. code:: sh
 
     $ bowtie validate -i js-ajv -i js-hyperjump <(printf '{"type": "integer"}') <(printf 37) <(printf '"foo"') | bowtie summary
-    2023-11-02 15:43.10 [debug    ] Will speak                     dialect=https://json-schema.org/draft/2020-12/schema
-    2023-11-02 15:43.10 [info     ] Finished                       count=1
-                                            Bowtie
-    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Schema              ┃                                                              ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │                     │                                                              │
-    │ {                   │   Instance   ajv (javascript)   hyperjump-jsv (javascript)   │
-    │   "type": "integer" │  ──────────────────────────────────────────────────────────  │
-    │ }                   │   37         valid              valid                        │
-    │                     │   "foo"      invalid            invalid                      │
-    │                     │                                                              │
-    └─────────────────────┴──────────────────────────────────────────────────────────────┘
-                                        2 tests ran
+
+                                                Bowtie
+    ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Schema              ┃                                                                      ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │                     │                                                                      │
+    │ {                   │   Instance   hyperjump-json-schema (javascript)   ajv (javascript)   │
+    │   "type": "integer" │  ──────────────────────────────────────────────────────────────────  │
+    │ }                   │   37         valid                                valid              │
+    │                     │   "foo"      invalid                              invalid            │
+    │                     │                                                                      │
+    └─────────────────────┴──────────────────────────────────────────────────────────────────────┘
+                                            2 tests ran
 
 
 Running the Official Suite Across Implementations
