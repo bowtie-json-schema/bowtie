@@ -14,7 +14,7 @@ Below are a few sample command lines you might be interested in.
 
     For now, if you wish to run against all implementations you can make use of the `filter-implementations <cli:filter-implementations>` command to simply output the full list, along with some simple shell vomit to insert the needed ``-i`` options.
     Specifically, running ``$(bowtie filter-implementations | sed 's/^/-i /')`` will expand out to something you can use to run against all implementations.
-    See `below <cli:running the official suite across all implementations>` for a concrete example.
+    See `below <cli:running the official suite across implementations>` for a concrete example.
 
 Examples
 --------
@@ -55,6 +55,16 @@ For summarizing the results in the terminal however, the above command when summ
                                         2 tests ran
 
 
+Running the Official Suite Across Implementations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, showing a summary of any test failures.
+
+.. code:: sh
+
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') draft7 | bowtie summary --show failures
+
+
 Running a Single Test Suite File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -65,20 +75,10 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
     $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
 
 
-Running the Official Suite Across All Implementations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following will run all Draft 7 tests from the `official test suite`_ (which it will automatically retrieve) across all implementations supporting Draft 7, showing a summary of any test failures.
-
-.. code:: sh
-
-    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7 | bowtie summary --show failures
-
-
 Running Test Suite Tests From Local Checkouts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Providing a local path to the test suite can be used as well, which is useful if you have local changes:
+Providing a local path to the test suite can be used as well, which is useful if you have additional tests in development locally:
 
 .. code:: sh
 
@@ -94,6 +94,69 @@ E.g., to verify the Golang ``jsonschema`` implementation is functioning, you can
 .. code:: sh
 
    $ bowtie smoke -i go-jsonschema
+
+
+Connectables
+------------
+
+In all of the examples presented above, we passed our desired implementations to Bowtie's ``-i / --implementation`` option.
+
+In truth, this option is more flexible than indicated above, though generally this extra flexibility is useful for more advanced use cases, which this section elaborates on.
+
+The full syntax of the ``-i`` option is known as a *connectable*.
+
+Connectables implement a mini-language for connecting to supported harnesses.
+
+They allow connecting to implementations supported by Bowtie without making assumptions about the specific mechanism used to run or execute them.
+
+In most simple use cases, users likely will only use the ``image`` connectable, which runs implementations in a managed OCI container (sometimes specifically "docker container") which Bowtie will create and destroy.
+For more advanced usage, the full collection of supported connectables will now be described.
+
+The general syntax for connectables looks like:
+
+    [<kind>:]<id>[:<arguments>*]
+
+The ``kind`` of connectable is optional, and when unspecified defaults to the ``image`` connectable, making an example of the simplest connectable look like ``lua-jsonschema`` (which expands to ``image:lua-jsonschema``).
+
+More generally, the ``id`` is an identifier whose exact form depends on each kind of connectable.
+Arguments customize the actual connection to the implementation, and which arguments are supported again depends on the kind of connectable.
+
+Connectables are loosely inspired by `Twisted's strports <twisted:core/howto/endpoints>`.
+
+
+``image``
+^^^^^^^^^
+
+*A container image which Bowtie will start, stop and delete when finished.*
+
+The image ``id`` should be the image name.
+Providing a repository is optional, and if unprovided, will default to pulling images from Bowtie's own public repository of images.
+
+The image must be an image whose entrypoint speaks Bowtie's harness protocol (which of course all of Bowtie's own published harnesses images will do).
+
+Examples:
+
+    * ``image:example``: an image named ``example``, retrieved from Bowtie's repository
+    * ``example``: with no explicit ``image``, referring to the same image as previous
+    * ``image:foo/bar:latest``: an image with fully specified OCI container repository which will be pulled if not already present
+
+
+``container``
+^^^^^^^^^^^^^
+
+*An externally running container which Bowtie will connect to.*
+
+The container must be listening on standard input for input valid under Bowtie's harness protocol.
+
+Bowtie will *not* attempt to manage the container, so this connectable is suitable for cases where you wish to spin up a container externally, leave it running and potentially have Bowtie connect to it multiple times.
+
+The ``id`` is a connector-specific identifier and should indicate the specific intended implementation.
+For example, for container images, it must be the name of a container image which will be pulled if needed.
+It need not be fully qualified (i.e. include the repository), and will default to pulling from Bowtie's own image repository.
+
+Examples:
+
+    * ``container:deadbeef``: an OCI container with ID ``deadbeef`` which is assumed to be running (and will be attached to)
 
 
 Enabling Shell Tab Completion

@@ -1,46 +1,5 @@
 """
 Connectables implement a mini-language for connecting to supported harnesses.
-
-They allow connecting to various kinds of harnesses over different
-"connectors", for example:
-
-    * in a container which Bowtie manages (starts and stops)
-    * in a pre-existing / externally managed container
-    * in-memory within Bowtie itself, with no IPC (not yet implemented)
-
-The general form of a connectable (also known as a *connectable ID*,
-*connectable string* or *connectable description*) is:
-
-    [<connector>:]<id>[:<arguments>*]
-
-where the connector indicates how to connect to the harness.
-Currently supported connectors are:
-
-    * ``image``: a container image which Bowtie will start, stop and delete
-                 which must speak Bowtie's harness protocol
-    * ``container``: an external running container which Bowtie will connect to
-                 which must speak Bowtie's harness protocol
-
-If no connector is specified, ``image`` is assumed.
-
-The ``id`` is a connector-specific identifier and should indicate
-the specific intended implementation. For example, for container images, it
-must be the name of a container image which will be pulled if needed.
-It need not be fully qualified (i.e. include the repository),
-and will default to pulling from Bowtie's own image repository.
-
-As concrete examples:
-
-    * ``image:example`` refers to an implemenetation image named `"example"`
-      (which will be retrieved from Bowtie's container registry if not present)
-    * ``example``, with no ``image`` connector, refers to the same image above
-    * ``image:foo/bar:latest`` is an image with fully specified OCI container
-      registry
-    * ``container:deadbeef`` refers to an OCI container with ID ``deadbeef``
-      which is assumed to be running (and will be attached to)
-
-Connectables are loosely inspired by `Twisted's strports
-<twisted.internet.endpoints.clientFromString`.
 """
 
 from __future__ import annotations
@@ -84,6 +43,16 @@ ConnectableId = str
 
 @frozen
 class Connectable:
+    """
+    A parsed connectable description.
+
+    In this internal codebase and in docstrings, "connectable" refers to
+    instances of this object, and we use "connectable description" to refer
+    to the string which specifies the connectable.
+
+    In user-facing documentation, we simplify talking about connectables by
+    simply referring to the string as being the connectable itself.
+    """
 
     _id: ConnectableId = field(alias="id", repr=False)
     _connector: Connector = field(alias="connector")
