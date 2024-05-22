@@ -156,12 +156,12 @@ class NoSuchImplementation(Exception):
     An implementation with the given name does not exist.
     """
 
-    name: str
+    id: str
 
     def __rich__(self):
         return DiagnosticError(
             code="no-such-implementation",
-            message=f"{self.name!r} is not a known Bowtie implementation.",
+            message=f"{self.id!r} is not a known Bowtie implementation.",
             causes=[],
             hint_stmt=(
                 "Check Bowtie's supported list of implementations "
@@ -207,7 +207,7 @@ class InvalidResponse(Exception):
 
 @frozen
 class StartupFailed(Exception):
-    name: str
+    id: ConnectableId
     stderr: str = ""
     data: Any = None
 
@@ -237,7 +237,7 @@ class StartupFailed(Exception):
 
         yield DiagnosticError(
             code="startup-failed",
-            message=f"{self.name!r} failed to start.",
+            message=f"{self.id!r} failed to start.",
             causes=causes,
             hint_stmt=hint,
         )
@@ -267,8 +267,6 @@ class Link:
 @frozen(order=True)
 class ImplementationInfo:
     # FIXME: Combine with / separate out more from `Implementation`
-
-    id: ConnectableId
 
     name: str
     language: str
@@ -304,20 +302,17 @@ class ImplementationInfo:
         )
 
     def serializable(self):
-        as_dict = {
-            k: v
-            for k, v in asdict(self, recurse=False).items()
-            if k != "id" and v
+        return {
+            **{k: v for k, v in asdict(self, recurse=False).items() if v},
+            "dialects": sorted(
+                (str(dialect.uri) for dialect in self.dialects),
+                reverse=True,
+            ),
+            "homepage": str(self.homepage),
+            "issues": str(self.issues),
+            "source": str(self.source),
+            "links": [link.serializable() for link in self.links],
         }
-        dialects = (str(dialect.uri) for dialect in as_dict["dialects"])
-        as_dict.update(
-            homepage=str(as_dict["homepage"]),
-            issues=str(as_dict["issues"]),
-            source=str(as_dict["source"]),
-            dialects=sorted(dialects, reverse=True),
-            links=[link.serializable() for link in self.links],
-        )
-        return as_dict
 
 
 class Connection(Protocol):
@@ -461,6 +456,7 @@ class Implementation:
     A running implementation under test.
     """
 
+    id: ConnectableId
     info: ImplementationInfo
     _harness: HarnessClient = field(repr=False, alias="harness")
     _reporter: Reporter = field(alias="reporter")
@@ -492,22 +488,18 @@ class Implementation:
         try:
             harness, started = await _harness.transition(START_V1)  # type: ignore[reportArgumentType]
         except ProtocolError as err:
-            raise StartupFailed(name=id) from err
+            raise StartupFailed(id=id) from err
         except GotStderr as err:
-            raise StartupFailed(name=id, stderr=err.stderr.decode()) from err
+            raise StartupFailed(id=id, stderr=err.stderr.decode()) from err
         else:
             if started is None:
-                raise StartupFailed(name=id)
+                raise StartupFailed(id=id)
 
-        info = ImplementationInfo.from_dict(id=id, **started.implementation)  # type: ignore[reportUnknownArgumentType]
+        info = ImplementationInfo.from_dict(**started.implementation)  # type: ignore[reportUnknownArgumentType]
 
-        yield cls(harness=harness, info=info, reporter=reporter)
+        yield cls(harness=harness, id=id, info=info, reporter=reporter)
 
         await _harness.poison()
-
-    @property
-    def name(self):
-        return self.info.id
 
     def supports(self, *dialects: Dialect) -> bool:
         """
@@ -534,7 +526,7 @@ class Implementation:
             raise UnsupportedDialect(implementation=self, dialect=dialect)
         try:
             return await DialectRunner.for_dialect(
-                implementation=self.name,
+                implementation=self.id,
                 dialect=dialect,
                 harness=self._harness,
                 reporter=self._reporter,

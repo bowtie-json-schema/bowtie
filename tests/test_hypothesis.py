@@ -93,8 +93,8 @@ def test_known_dialects(dialect):
 def test_report_data_generates_implementations_which_support_the_dialect(data):
     report = Report.from_input(data)
     assert all(
-        report.metadata.dialect in each.dialects
-        for each in report.implementations
+        report.metadata.dialect in implementation.dialects
+        for implementation in report.implementations.values()
     )
 
 

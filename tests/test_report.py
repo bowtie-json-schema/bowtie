@@ -13,7 +13,6 @@ TestCase.__test__ = False  # frigging py.test
 
 DIALECT = Dialect.by_alias()["2020"]
 FOO = ImplementationInfo(
-    id="foo",
     name="foo",
     language="blub",
     homepage=HOMEPAGE,
@@ -22,7 +21,6 @@ FOO = ImplementationInfo(
     dialects=frozenset([DIALECT]),
 )
 BAR = ImplementationInfo(
-    id="x/baz",
     name="bar",
     language="crust",
     homepage=HOMEPAGE,
@@ -30,7 +28,7 @@ BAR = ImplementationInfo(
     source=REPO,
     dialects=frozenset([DIALECT]),
 )
-FOO_RUN = RunMetadata(dialect=DIALECT, implementations=[FOO])
+FOO_RUN = RunMetadata(dialect=DIALECT, implementations={"foo": FOO})
 NO_FAIL_FAST = dict(did_fail_fast=False)
 
 
@@ -295,11 +293,11 @@ def test_ne_different_results():
 def test_ne_different_implementations(dialect):
     foo = RunMetadata(
         dialect=dialect,
-        implementations=[FOO],
+        implementations={"foo": FOO},
     )
     foo_and_bar = RunMetadata(
         dialect=dialect,
-        implementations=[FOO, BAR],
+        implementations={"foo": FOO, "x/baz": BAR},
     )
     data = [
         SeqCase(

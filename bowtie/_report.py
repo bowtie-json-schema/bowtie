@@ -21,7 +21,7 @@ from bowtie._commands import (
 from bowtie._core import Dialect, TestCase, validator_registry
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Mapping
     from typing import Any, Literal, Self, TextIO
 
     from bowtie._commands import AnyTestResult
@@ -115,7 +115,7 @@ class Reporter:
 @frozen
 class RunMetadata:
     dialect: Dialect
-    implementations: Sequence[ImplementationInfo] = field(
+    implementations: Mapping[ConnectableId, ImplementationInfo] = field(
         repr=lambda value: (
             f"({len(value)} implementation{'s' if len(value) != 1 else ''})"
         ),
@@ -147,10 +147,10 @@ class RunMetadata:
             kwargs["started"] = datetime.fromisoformat(started)
         return cls(
             dialect=Dialect.from_str(dialect),
-            implementations=[
-                ImplementationInfo.from_dict(id=id, **data)
+            implementations={
+                id: ImplementationInfo.from_dict(**data)
                 for id, data in implementations.items()
-            ],
+            },
             **kwargs,
         )
 
@@ -165,7 +165,8 @@ class RunMetadata:
             started=as_dict.pop("started").isoformat(),
             # FIXME: This transformation is to support the UI parsing
             implementations={
-                i.id: i.serializable() for i in self.implementations
+                id: implementation.serializable()
+                for id, implementation in self.implementations.items()
             },
         )
         return as_dict
@@ -236,7 +237,7 @@ class Report:
             ConnectableId,
             HashTrieMap[Seq, SeqResult],
         ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]
-            (each.id for each in metadata.implementations),
+            metadata.implementations,
             HashTrieMap(),
         )
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
@@ -275,7 +276,7 @@ class Report:
     @classmethod
     def empty(
         cls,
-        implementations: Sequence[ImplementationInfo] = (),
+        implementations: Mapping[ConnectableId, ImplementationInfo] = {},
         **kwargs: Any,
     ):
         """
@@ -289,7 +290,7 @@ class Report:
         )
 
     @property
-    def implementations(self) -> Sequence[ImplementationInfo]:
+    def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
 
     @property
@@ -305,8 +306,8 @@ class Report:
         Return the fraction of passing tests for each reported implementation.
         """
         return {
-            implementation.name: 1 - (unsuccessful.total / self.total_tests)
-            for implementation, unsuccessful in self.worst_to_best()
+            id: 1 - (unsuccessful.total / self.total_tests)
+            for id, _, unsuccessful in self.worst_to_best()
         }
 
     def unsuccessful(self, implementation: ConnectableId) -> Unsuccessful:
@@ -323,10 +324,10 @@ class Report:
         Ties are then broken alphabetically.
         """
         unsuccessful = [
-            (implementation, self.unsuccessful(implementation.id))
-            for implementation in self.implementations
+            (id, implementation, self.unsuccessful(id))
+            for id, implementation in self.implementations.items()
         ]
-        unsuccessful.sort(key=lambda each: (each[1].total, each[0].name))
+        unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
         return unsuccessful
 
     def cases_with_results(
@@ -343,15 +344,15 @@ class Report:
             ] = []
             for i, test in enumerate(case.tests):
                 test_result = {
-                    each.id: self._results[each.id][seq].result_for(i)
-                    for each in self.implementations
+                    id: self._results[id][seq].result_for(i)
+                    for id in self.implementations
                 }
                 test_results.append((test, test_result))
             yield case, test_results
 
     def compliance_badges(self) -> Iterable[tuple[ImplementationInfo, Badge]]:
-        for implementation in self.implementations:
-            unsuccessful = self.unsuccessful(implementation.id)
+        for id, implementation in self.implementations.items():
+            unsuccessful = self.unsuccessful(id)
             passed = self.total_tests - unsuccessful.total
             percentage = 100 * (passed / self.total_tests)
             r, g, b = 100 - int(percentage), int(percentage), 0

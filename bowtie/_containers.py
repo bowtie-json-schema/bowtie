@@ -228,12 +228,12 @@ class ConnectableImage:
                     )
                 except GotStderr as error:
                     err = StartupFailed(
-                        name=self._id,
+                        id=self._id,
                         stderr=error.stderr.decode(),
                     )
                     raise err from None
                 except _ClosedStream:
-                    raise StartupFailed(name=self._id) from None
+                    raise StartupFailed(id=self._id) from None
 
             yield Connection(new_stream=new_stream)
 
@@ -288,7 +288,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
                     if "403 (forbidden)" in error.casefold():
                         raise NoSuchImplementation(image_name)
 
-            raise StartupFailed(name=image_name, data=data) from err
+            raise StartupFailed(id=image_name, data=data) from err
         return await start_container(docker=docker, image_name=image_name)
 
 
@@ -317,7 +317,7 @@ class ConnectableContainer:
             try:
                 container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
             except aiodocker.exceptions.DockerError as err:
-                raise NoSuchImplementation(name=self._id) from err
+                raise NoSuchImplementation(id=self._id) from err
 
             async def new_stream():
                 return Stream.attached_to(
