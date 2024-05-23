@@ -13,17 +13,15 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
 import CopyToClipboard from "../CopyToClipboard";
-import { Implementation } from "../../data/parseReportData";
+import { EmbedBadgesContextType } from "./ImplementationReportView";
 import { Badge, badgesFor } from "../../data/Badge";
 import { ThemeContext } from "../../context/ThemeContext";
 import "./EmbedBadges.css";
 
 const EmbedBadges = () => {
   const navigate = useNavigate();
-  const { implementationId, implementation } = useOutletContext<{
-    implementationId: string;
-    implementation: Implementation;
-  }>();
+  const { implementationId, implementation } =
+    useOutletContext<EmbedBadgesContextType>();
   const allBadges = badgesFor(implementation);
   const { isDarkMode } = useContext(ThemeContext);
 

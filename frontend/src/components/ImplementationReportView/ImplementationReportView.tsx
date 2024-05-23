@@ -16,6 +16,11 @@ import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
 
+export type EmbedBadgesContextType = Pick<
+  ImplementationReport,
+  "implementationId" | "implementation"
+>;
+
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
 
@@ -48,7 +53,14 @@ const ReportComponent: React.FC<{
           <Button variant="info" size="sm" onClick={() => navigate("badges")}>
             Badges
           </Button>
-          <Outlet context={{ implementation, implementationId }} />
+          <Outlet
+            context={
+              {
+                implementation,
+                implementationId,
+              } satisfies EmbedBadgesContextType
+            }
+          />
         </Card.Header>
 
         <Card.Body className="overflow-x-auto">
@@ -136,7 +148,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
