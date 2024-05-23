@@ -1,0 +1,107 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633;SA1518</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>RCS1029;RCS1110;RCS1194;CS1591;SA1402;SA1649;SA1633;SA1518</NoWarn>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.202012" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.6" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.7" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.25" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="metaschema\draft4\" />
+    <Folder Include="metaschema\draft6\" />
+    <Folder Include="metaschema\draft7\" />
+    <Folder Include="metaschema\draft2019-09\" />
+    <Folder Include="metaschema\draft2020-12\" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="metaschema\draft2019-09\meta\applicator.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\content.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\core.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\format.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\hyper-schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\meta-data.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\meta\validation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2019-09\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\applicator.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\content.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\core.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\format-annotation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\format-assertion.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\hyper-schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\meta-data.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\unevaluated.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\meta\validation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft2020-12\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft4\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft6\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="metaschema\draft7\schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

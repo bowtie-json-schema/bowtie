@@ -15,7 +15,6 @@ DIALECT = Dialect.by_alias()["2020"]
 FOO = ImplementationInfo(
     name="foo",
     language="blub",
-    image="foo",
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,
@@ -24,13 +23,12 @@ FOO = ImplementationInfo(
 BAR = ImplementationInfo(
     name="bar",
     language="crust",
-    image="x/baz",
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,
     dialects=frozenset([DIALECT]),
 )
-FOO_RUN = RunMetadata(dialect=DIALECT, implementations=[FOO])
+FOO_RUN = RunMetadata(dialect=DIALECT, implementations={"foo": FOO})
 NO_FAIL_FAST = dict(did_fail_fast=False)
 
 
@@ -291,14 +289,15 @@ def test_ne_different_results():
 
 
 @given(dialect=known_dialects)
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_ne_different_implementations(dialect):
     foo = RunMetadata(
         dialect=dialect,
-        implementations=[FOO],
+        implementations={"foo": FOO},
     )
     foo_and_bar = RunMetadata(
         dialect=dialect,
-        implementations=[FOO, BAR],
+        implementations={"foo": FOO, "x/baz": BAR},
     )
     data = [
         SeqCase(

@@ -8,6 +8,9 @@ Podman
 autoformatter
 boolean
 bowtie
+connectable
+connectables
+entrypoint
 errored
 frontend
 golang
@@ -17,6 +20,7 @@ linters
 positionally
 providable
 quantiles
+quartiles
 runtime
 schemas
 sensical

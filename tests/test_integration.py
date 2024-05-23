@@ -1,8 +1,8 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from textwrap import dedent, indent
+from textwrap import dedent
 import asyncio
 import json as _json
 import os
@@ -335,9 +335,36 @@ fake_js = shellplementation(
 )
 
 
-def _failed(message, stderr):
-    indented = indent(stderr.decode(), prefix=" " * 2)
-    pytest.fail(f"{message}. stderr contained:\n\n{indented}")
+@pytest_asyncio.fixture
+async def envsonschema_container(docker, envsonschema):
+    config = dict(
+        Image=envsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
+
+
+@pytest_asyncio.fixture
+async def lintsonschema_container(docker, lintsonschema):
+    config = dict(
+        Image=lintsonschema,
+        OpenStdin=True,
+        HostConfig=dict(NetworkMode="none"),
+    )
+    container = await docker.containers.create(config=config)
+    await container.start()
+    yield f"container:{container.id}"
+
+    # FIXME: When this happens, it's likely due to #1187.
+    with suppress(DockerError):
+        await container.delete()
 
 
 @asynccontextmanager
@@ -2309,3 +2336,38 @@ async def test_statistics_markdown(envsonschema, always_valid):
         """,
     )
     assert stderr == "", stderr
+
+
+@pytest.mark.asyncio
+async def test_container_connectables(
+    lintsonschema_container,
+    envsonschema_container,
+    tmp_path,
+):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        lintsonschema_container,
+        "-i",
+        envsonschema_container,
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+        exit_code=0,
+    )
+    assert stderr == ""
+
+    report = Report.from_serialized(stdout.splitlines())
+    assert [
+        [test_results for _, test_results in results]
+        for _, results in report.cases_with_results()
+    ] == [
+        [
+            {
+                envsonschema_container: TestResult.INVALID,
+                lintsonschema_container: TestResult.VALID,
+            },
+        ],
+    ], stderr

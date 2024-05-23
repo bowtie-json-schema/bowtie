@@ -64,6 +64,7 @@ object_schemas = dictionaries(
 schemas = booleans() | object_schemas
 
 seqs = uuids().map(lambda uuid: uuid.hex)
+connectable_ids = text()
 implementation_names = pattern_from(
     "tag:bowtie.report,2024:models:implementation:name",
 )
@@ -109,7 +110,6 @@ def implementation_infos(
     name = draw(names)
     language = draw(languages)
     return ImplementationInfo(
-        image=f"bowtie-hypothesis-generated/{language}/{name}",
         name=name,
         language=language,
         homepage=draw(urls().map(URL.parse)),
@@ -127,11 +127,11 @@ def implementations(
     """
     Generate (unique) collections of implementations.
     """
-    return lists(
+    return dictionaries(
+        connectable_ids,
         infos,
         min_size=min_size,
         max_size=max_size,
-        unique_by=lambda info: info.id,
     )
 
 
@@ -307,13 +307,13 @@ def cases_and_results(
         draw(
             seq_results(
                 seqs=just(seq_case.seq),
-                implementations=just(implementation.id),
+                implementations=just(id),
                 min_tests=len(seq_case.case.tests),
                 max_tests=len(seq_case.case.tests),
             ),
         )
         for seq_case in seq_cases
-        for implementation in draw(responding(seq_case))
+        for id in draw(responding(seq_case))
     ]
 
 

@@ -24,7 +24,7 @@
       "description": "A connectable with explicit connector.",
 
       "pattern": "^[^:]+:[^:]+(:[^:]+)?$",
-      "oneOf": [{ "$ref": "#image" }]
+      "oneOf": [{ "$ref": "#image" }, { "$ref": "#container" }]
     }
   ],
 
@@ -36,6 +36,14 @@
       "$anchor": "image",
 
       "pattern": "^image:*"
+    },
+    "container": {
+      "title": "External Container",
+      "description": "An already running OCI container which Bowtie will connect to",
+
+      "$anchor": "container",
+
+      "pattern": "^container:*"
     }
   }
 }

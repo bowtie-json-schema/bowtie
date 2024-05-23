@@ -36,6 +36,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "nuget"
+    directory: "/implementations/dotnet-corvus-jsonschema"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "gomod"
     directory: "/implementations/go-jsonschema"
     schedule:
@@ -152,6 +157,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/dotnet-jsonschema-net"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/dotnet-corvus-jsonschema"
     schedule:
       interval: "daily"
 

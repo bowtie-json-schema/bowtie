@@ -60,7 +60,8 @@ if TYPE_CHECKING:
     from click.decorators import FC
     from referencing.jsonschema import Schema, SchemaResource
 
-    from bowtie._commands import AnyTestResult, ImplementationId
+    from bowtie._commands import AnyTestResult
+    from bowtie._connectables import ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
 
 
@@ -230,7 +231,7 @@ class ImplementationSubcommand(Protocol):
         self,
         start: Callable[
             [],
-            AsyncIterator[tuple[ImplementationId, Implementation]],
+            AsyncIterator[tuple[ConnectableId, Implementation]],
         ],
         **kwargs: Any,
     ) -> Awaitable[int | None]: ...
@@ -308,7 +309,13 @@ def implementation_subcommand(
             ),
             multiple=True,
             metavar="IMPLEMENTATION",
-            help="A container image which implements the bowtie IO protocol.",
+            help=(
+                "A connectable ID for a JSON Schema implementation supported "
+                "by Bowtie. May be repeated multiple times to select multiple "
+                "implementations to run."
+                "Run `bowtie filter-implementations` for the full list of "
+                "supported implementations."
+            ),
         )
         @TIMEOUT
         @wraps(fn)
@@ -555,9 +562,11 @@ def summary(report: _report.Report, format: _F, show: str):
         to_markdown_table = _failure_table_in_markdown
 
         def to_serializable(  # type: ignore[reportRedeclaration]
-            value: Iterable[tuple[ImplementationInfo, Unsuccessful]],
+            value: Iterable[
+                tuple[ConnectableId, ImplementationInfo, Unsuccessful],
+            ],
         ):
-            return [(each.id, asdict(counts)) for each, counts in value]
+            return [(id, asdict(counts)) for id, _, counts in value]
 
     else:
         results = report.cases_with_results()
@@ -624,7 +633,7 @@ def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
 
 def _failure_table(
     report: _report.Report,
-    results: list[tuple[ImplementationInfo, Unsuccessful]],
+    results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
@@ -635,7 +644,7 @@ def _failure_table(
         title="Bowtie",
         caption=f"{report.total_tests} {test} ran\n",
     )
-    for each, unsuccessful in results:
+    for _, each, unsuccessful in results:
         table.add_row(
             Text.assemble(each.name, (f" ({each.language})", "dim")),
             str(unsuccessful.skipped),
@@ -647,7 +656,7 @@ def _failure_table(
 
 def _failure_table_in_markdown(
     report: _report.Report,
-    results: list[tuple[ImplementationInfo, Unsuccessful]],
+    results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
 ):
     test = "tests" if report.total_tests != 1 else "test"
     rows: list[list[str]] = []
@@ -658,7 +667,7 @@ def _failure_table_in_markdown(
         "Failures",
     ]
 
-    for each, unsuccessful in results:
+    for _, each, unsuccessful in results:
         rows.append(
             [
                 f"{each.name} ({each.language})",
@@ -697,7 +706,7 @@ def _validation_results_table(
 
     for case, test_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
-        for implementation in implementations:
+        for implementation in implementations.values():
             subtable.add_column(
                 Text.assemble(
                     implementation.name,
@@ -713,10 +722,7 @@ def _validation_results_table(
                     background_color="default",
                     word_wrap=True,
                 ),
-                *(
-                    Text(test_result[each.id].description)
-                    for each in implementations
-                ),
+                *(Text(test_result[id].description) for id in implementations),
             )
 
         table.add_row(
@@ -745,8 +751,8 @@ def _validation_results_table_in_markdown(
     inner_table_columns = ["Instance"]
     implementations = report.implementations
     inner_table_columns.extend(
-        f"{implementation.name} ({implementation.language})"
-        for implementation in implementations
+        f"{id} ({implementation.language})"
+        for id, implementation in implementations.items()
     )
 
     for case, test_results in results:
@@ -755,10 +761,7 @@ def _validation_results_table_in_markdown(
             inner_table_rows.append(
                 [
                     json.dumps(test.instance),
-                    *(
-                        test_result[each.id].description
-                        for each in implementations
-                    ),
+                    *(test_result[id].description for id in implementations),
                 ],
             )
         inner_markdown_table = _convert_table_to_markdown(
@@ -959,7 +962,13 @@ IMPLEMENTATION = click.option(
     required=True,
     multiple=True,
     metavar="IMPLEMENTATION",
-    help="A container image which implements the bowtie IO protocol.",
+    help=(
+        "A connectable ID for a JSON Schema implementation supported "
+        "by Bowtie. May be repeated multiple times to select multiple "
+        "implementations to run."
+        "Run `bowtie filter-implementations` for the full list of "
+        "supported implementations."
+    ),
 )
 DIALECT = click.option(
     "--dialect",
@@ -1228,7 +1237,7 @@ KNOWN_LANGUAGES = {
 async def filter_implementations(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     dialects: Sequence[Dialect],
     languages: Set[str],
@@ -1289,7 +1298,7 @@ async def filter_implementations(
 async def filter_dialects(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     dialects: Iterable[Dialect],
     latest: bool,
@@ -1325,14 +1334,14 @@ async def filter_dialects(
 async def info(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     format: _F,
 ):
     """
     Show information about a supported implementation.
     """
-    serializable: dict[ImplementationId, dict[str, Any]] = {}
+    serializable: dict[ConnectableId, dict[str, Any]] = {}
 
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
@@ -1349,7 +1358,7 @@ async def info(
 
         match format:
             case "json":
-                serializable[each.name] = dict(metadata)
+                serializable[each.id] = dict(metadata)
             case "pretty":
                 click.echo(
                     "\n".join(
@@ -1388,7 +1397,7 @@ async def info(
 async def smoke(
     start: Callable[
         [],
-        AsyncIterator[tuple[ImplementationId, Implementation]],
+        AsyncIterator[tuple[ConnectableId, Implementation]],
     ],
     format: _F,
     echo: Callable[..., None],
@@ -1399,7 +1408,7 @@ async def smoke(
     exit_code = 0
 
     async for _, implementation in start():
-        echo(f"Testing {implementation.name!r}...\n", file=sys.stderr)
+        echo(f"Testing {implementation.id!r}...\n", file=sys.stderr)
         serializable: list[dict[str, Any]] = []
         implementation_exit_code = 0
 
@@ -1506,7 +1515,7 @@ async def _run(
     **kwargs: Any,
 ) -> int:
     exit_code = 0
-    acknowledged: list[ImplementationInfo] = []
+    acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
     runners: list[DialectRunner] = []
     async with _start(
         connectables=connectables,
@@ -1529,7 +1538,7 @@ async def _run(
             except UnsupportedDialect as error:
                 STDERR.print(error)
             else:
-                acknowledged.append(implementation.info)
+                acknowledged[implementation.id] = implementation.info
                 runners.append(runner)
 
         if not runners:

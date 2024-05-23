@@ -81,7 +81,7 @@ class UnsupportedDialect(Exception):
         return DiagnosticWarning(
             code="unsupported-dialect",
             message=(
-                f"{self.implementation.name!r} does not "
+                f"{self.implementation.id!r} does not "
                 f"support {self.dialect.pretty_name}."
             ),
             causes=[],
@@ -106,7 +106,7 @@ class DialectError(Exception):
         return DiagnosticError(
             code="dialect-error",
             message=(
-                f"{self.implementation.name!r} failed as we were beginning to "
+                f"{self.implementation.id!r} failed as we were beginning to "
                 f"send {self.dialect.pretty_name} tests."
             ),
             causes=[],
