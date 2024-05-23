@@ -24,7 +24,11 @@
       "description": "A connectable with explicit connector.",
 
       "pattern": "^[^:]+:[^:]+(:[^:]+)?$",
-      "oneOf": [{ "$ref": "#image" }, { "$ref": "#container" }]
+      "oneOf": [
+        { "$ref": "#image" },
+        { "$ref": "#container" },
+        { "$ref": "#direct" }
+      ]
     }
   ],
 
@@ -44,6 +48,14 @@
       "$anchor": "container",
 
       "pattern": "^container:*"
+    },
+    "direct": {
+      "title": "Direct Python Connection",
+      "description": "A directly importable (from Python) implementation which Bowtie will speak to",
+
+      "$anchor": "direct",
+
+      "pattern": "^direct:[^.]*"
     }
   }
 }

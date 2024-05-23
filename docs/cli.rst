@@ -158,6 +158,19 @@ Examples:
     * ``container:deadbeef``: an OCI container with ID ``deadbeef`` which is assumed to be running (and will be attached to)
 
 
+``direct``
+^^^^^^^^^^
+
+*An implementation which is directly importable from Python*
+
+This connectable is useful for implementations Bowtie can speak directly to without inter-process communication.
+The list of such implementations is small relative to those reachable using containers.
+
+Examples:
+
+    * ``direct:jsonschema``: a direct connection to the Python implementation known as ``jsonschema``
+
+
 Enabling Shell Tab Completion
 -----------------------------
 
