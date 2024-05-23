@@ -294,10 +294,11 @@ describe("parseReportData", () => {
   test("prepares a summarized implementation report using all the dialect reports", () => {
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
     const allReportsData = new Map<Dialect, ReportData>();
+    const fakeImplementationId = tag("envsonschema");
 
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
-        ["run", "-i", tag("envsonschema"), "-D", dialect.shortName],
+        ["run", "-i", fakeImplementationId, "-D", dialect.shortName],
         cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
@@ -306,12 +307,13 @@ describe("parseReportData", () => {
 
     const implementationReport = prepareImplementationReport(
       allReportsData,
-      tag("envsonschema"),
+      fakeImplementationId,
     );
 
     const metadata = implementationReport!.implementation;
 
     expect(implementationReport).toStrictEqual({
+      implementationId: fakeImplementationId,
       implementation: {
         name: "envsonschema",
         language: "python",

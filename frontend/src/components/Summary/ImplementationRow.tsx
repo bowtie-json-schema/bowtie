@@ -26,13 +26,12 @@ const ImplementationRow = ({
   const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
-  const implementationPath = getImplementationPath(id);
 
   return (
     <tr>
       <th
         className="table-implementation-name align-middle p-0"
-        onClick={() => navigate(`/implementations/${implementationPath}`)}
+        onClick={() => navigate(`/implementations/${id}`)}
         scope="row"
       >
         <span
@@ -94,11 +93,6 @@ const ImplementationRow = ({
       />
     </tr>
   );
-};
-
-const getImplementationPath = (id: string) => {
-  const pathSegment = id.split("/");
-  return pathSegment[pathSegment.length - 1];
 };
 
 export default ImplementationRow;

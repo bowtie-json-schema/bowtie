@@ -204,11 +204,13 @@ export const prepareImplementationReport = (
 
       if (!implementationReport) {
         implementationReport = {
+          implementationId,
           implementation,
           dialectCompliance,
         };
       } else {
         implementationReport = {
+          implementationId,
           implementation: Object.assign(
             {},
             implementationReport.implementation,
@@ -309,6 +311,7 @@ export interface Implementation {
 }
 
 export interface ImplementationReport {
+  implementationId: string;
   implementation: Implementation;
   dialectCompliance: Map<Dialect, Partial<Totals>>;
 }
