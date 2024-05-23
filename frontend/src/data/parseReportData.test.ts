@@ -131,7 +131,7 @@ describe("parseReportData", () => {
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
     const testCase = report.cases.get(1);
 
@@ -154,7 +154,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -194,13 +194,13 @@ describe("parseReportData", () => {
 
     const lines = bowtie(
       ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
 
     const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
+      tag("envsonschema")
     )!;
 
     expect(report).toStrictEqual({
@@ -222,7 +222,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -294,11 +294,12 @@ describe("parseReportData", () => {
   test("prepares a summarized implementation report using all the dialect reports", () => {
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
     const allReportsData = new Map<Dialect, ReportData>();
+    const fakeImplementationId = tag("envsonschema");
 
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
-        ["run", "-i", tag("envsonschema"), "-D", dialect.shortName],
-        cases.join("\n") + "\n",
+        ["run", "-i", fakeImplementationId, "-D", dialect.shortName],
+        cases.join("\n") + "\n"
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
@@ -306,12 +307,13 @@ describe("parseReportData", () => {
 
     const implementationReport = prepareImplementationReport(
       allReportsData,
-      tag("envsonschema"),
+      fakeImplementationId
     );
 
     const metadata = implementationReport!.implementation;
 
     expect(implementationReport).toStrictEqual({
+      implementationId: fakeImplementationId,
       implementation: {
         name: "envsonschema",
         language: "python",
