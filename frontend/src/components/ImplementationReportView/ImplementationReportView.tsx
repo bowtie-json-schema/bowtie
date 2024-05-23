@@ -1,10 +1,16 @@
+import {
+  useLoaderData,
+  Link,
+  Navigate,
+  Outlet,
+  useNavigate,
+} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import Table from "react-bootstrap/Table";
-import { useLoaderData, Link, Navigate } from "react-router-dom";
+import Button from "react-bootstrap/Button";
 
 import DialectCompliance from "./DialectCompliance";
-import EmbedBadges from "./EmbedBadges";
 import LoadingAnimation from "../LoadingAnimation";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
@@ -26,6 +32,7 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
+  const navigate = useNavigate();
   const { implementation } = implementationReport;
 
   return (
@@ -38,7 +45,10 @@ const ReportComponent: React.FC<{
             </span>
             <span>{implementation.name}</span>
           </span>
-          <EmbedBadges implementation={implementation} />
+          <Button variant="info" size="sm" onClick={() => navigate("badges")}>
+            Badges
+          </Button>
+          <Outlet context={implementation} />
         </Card.Header>
 
         <Card.Body className="overflow-x-auto">
@@ -126,7 +136,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>

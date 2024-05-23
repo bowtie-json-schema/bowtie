@@ -17,6 +17,7 @@ import {
   implementationFromData,
   prepareImplementationReport,
 } from "./data/parseReportData";
+import EmbedBadges from "./components/ImplementationReportView/EmbedBadges";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
@@ -84,6 +85,12 @@ const router = createHashRouter([
         Component: ImplementationReportView,
         loader: async ({ params }) =>
           fetchAllReportsData(params.langImplementation!),
+        children: [
+          {
+            path: "badges",
+            Component: EmbedBadges,
+          },
+        ],
       },
     ],
   },
