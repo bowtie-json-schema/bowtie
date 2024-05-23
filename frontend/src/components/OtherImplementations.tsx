@@ -20,7 +20,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
+    otherImplementationsData
   );
   return (
     <div
@@ -49,14 +49,13 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                 <Container className="p-0">
                   <Row className="d-grid gap-2">
                     {otherImplementationsDataArray.map(([id, impl]) => {
-                      const implementationPath = getImplementationPath(id);
                       const latest = getLatestSupportedDialect(impl);
                       return (
                         <Col key={id}>
                           <div>
                             <NavLink
                               style={{ fontSize: "1rem", fontWeight: "bold" }}
-                              to={`/implementations/${implementationPath}`}
+                              to={`/implementations/${id}`}
                             >
                               {impl.name}
                             </NavLink>
@@ -92,13 +91,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   );
 };
 
-const getImplementationPath = (id: string): string => {
-  const pathSegment = id.split("/");
-  return pathSegment[pathSegment.length - 1];
-};
-
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   return impl.dialects.reduce((acc, curr) =>
-    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
   );
 };

@@ -20,7 +20,10 @@ import "./EmbedBadges.css";
 
 const EmbedBadges = () => {
   const navigate = useNavigate();
-  const implementation = useOutletContext<Implementation>();
+  const { implementationId, implementation } = useOutletContext<{
+    implementationId: string;
+    implementation: Implementation;
+  }>();
   const allBadges = badgesFor(implementation);
   const { isDarkMode } = useContext(ThemeContext);
 
@@ -36,7 +39,7 @@ const EmbedBadges = () => {
       dialogClassName="modal-width"
       show={show}
       onHide={() => setShow(false)}
-      onExited={() => navigate(-1)}
+      onExited={() => navigate(`/implementations/${implementationId}`)}
     >
       <Modal.Header closeButton className="border-0 mt-4">
         <Modal.Title className="fs-5 ms-3">Badges</Modal.Title>

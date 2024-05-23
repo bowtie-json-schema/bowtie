@@ -33,7 +33,7 @@ const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementation } = implementationReport;
+  const { implementationId, implementation } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -48,7 +48,7 @@ const ReportComponent: React.FC<{
           <Button variant="info" size="sm" onClick={() => navigate("badges")}>
             Badges
           </Button>
-          <Outlet context={implementation} />
+          <Outlet context={{ implementation, implementationId }} />
         </Card.Header>
 
         <Card.Body className="overflow-x-auto">
