@@ -7,6 +7,7 @@ from bowtie._containers import (
     ConnectableImage,
 )
 from bowtie._core import validator_registry
+from bowtie._direct_connectable import Direct
 
 validator = validator_registry().for_uri(
     "tag:bowtie.report,2024:connectables",
@@ -124,3 +125,20 @@ def test_container_connectable():
         id=id,
         connector=ConnectableContainer(id="c7895a98f49d"),
     )
+
+
+def test_direct_connectable_jsonschema():
+    id = "direct:jsonschema"
+    validator.validate(id)
+    connectable = Connectable.from_str(id)
+    assert connectable == Connectable(
+        id=id,
+        connector=Direct(id="jsonschema"),
+    )
+
+
+def test_direct_connectable_unknown():
+    id = "direct:foobar"
+    validator.validate(id)
+    with pytest.raises(ValueError, match="'jsonschema'"):
+        Connectable.from_str(id)

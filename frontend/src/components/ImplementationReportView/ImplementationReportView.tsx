@@ -1,14 +1,25 @@
+import {
+  useLoaderData,
+  Link,
+  Navigate,
+  Outlet,
+  useNavigate,
+} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import Table from "react-bootstrap/Table";
-import { useLoaderData, Link, Navigate } from "react-router-dom";
+import Button from "react-bootstrap/Button";
 
 import DialectCompliance from "./DialectCompliance";
-import EmbedBadges from "./EmbedBadges";
 import LoadingAnimation from "../LoadingAnimation";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { versionsBadgeFor } from "../../data/Badge";
+
+export type EmbedBadgesContextType = Pick<
+  ImplementationReport,
+  "implementationId" | "implementation"
+>;
 
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
@@ -26,7 +37,8 @@ export const ImplementationReportView = () => {
 const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
-  const { implementation } = implementationReport;
+  const navigate = useNavigate();
+  const { implementationId, implementation } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -38,7 +50,17 @@ const ReportComponent: React.FC<{
             </span>
             <span>{implementation.name}</span>
           </span>
-          <EmbedBadges implementation={implementation} />
+          <Button variant="info" size="sm" onClick={() => navigate("badges")}>
+            Badges
+          </Button>
+          <Outlet
+            context={
+              {
+                implementation,
+                implementationId,
+              } satisfies EmbedBadgesContextType
+            }
+          />
         </Card.Header>
 
         <Card.Body className="overflow-x-auto">

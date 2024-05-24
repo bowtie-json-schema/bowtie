@@ -303,14 +303,25 @@ class ImplementationInfo:
 
     def serializable(self):
         return {
-            **{k: v for k, v in asdict(self, recurse=False).items() if v},
+            **{
+                k: (
+                    str(v)
+                    if k
+                    in {
+                        "homepage",
+                        "issues",
+                        "source",
+                        "documentation",
+                    }
+                    else v
+                )
+                for k, v in asdict(self, recurse=False).items()
+                if v
+            },
             "dialects": sorted(
                 (str(dialect.uri) for dialect in self.dialects),
                 reverse=True,
             ),
-            "homepage": str(self.homepage),
-            "issues": str(self.issues),
-            "source": str(self.source),
             "links": [link.serializable() for link in self.links],
         }
 

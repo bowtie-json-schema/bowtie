@@ -12,7 +12,7 @@ from click.shell_completion import CompletionItem
 from rpds import HashTrieMap
 import click
 
-from bowtie import _containers
+from bowtie import _containers, _direct_connectable
 from bowtie._core import Implementation
 
 if TYPE_CHECKING:
@@ -32,6 +32,8 @@ class Connector(Protocol):
 
     #: The string name of this connector type.
     connector: str
+
+    def __init__(self, id: str): ...
 
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
@@ -62,6 +64,7 @@ class Connectable:
         for cls in [
             _containers.ConnectableImage,
             _containers.ConnectableContainer,
+            _direct_connectable.Direct,
         ]
     )
 

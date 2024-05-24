@@ -2371,3 +2371,27 @@ async def test_container_connectables(
             },
         ],
     ], stderr
+
+
+@pytest.mark.asyncio
+async def test_direct_connectable_python_jsonschema(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("instance.json").write_text("12")
+
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        "direct:jsonschema",
+        tmp_path / "schema.json",
+        tmp_path / "instance.json",
+        exit_code=0,
+    )
+    assert stderr == ""
+
+    report = Report.from_serialized(stdout.splitlines())
+    assert [
+        [test_results for _, test_results in results]
+        for _, results in report.cases_with_results()
+    ] == [
+        [{"direct:jsonschema": TestResult.VALID}],
+    ], stderr

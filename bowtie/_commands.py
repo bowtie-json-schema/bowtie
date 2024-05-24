@@ -356,7 +356,7 @@ class CaseResult:
     A test case which at least was run by the implementation.
     """
 
-    results: list[AnyTestResult]
+    results: Sequence[AnyTestResult]
 
     @classmethod
     def from_results(cls, results: list[dict[str, Any]]):
