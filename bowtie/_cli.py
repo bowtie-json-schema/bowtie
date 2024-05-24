@@ -8,7 +8,7 @@ from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
-from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
+from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol, ValuesView
 import asyncio
 import json
 import logging
@@ -780,49 +780,6 @@ def _validation_results_table_in_markdown(
     return final_content
 
 
-@subcommand
-@format_option()
-@click.option(
-    "--quantiles",
-    "n",
-    default=4,
-    type=int,
-    help=(
-        "How many quantiles should be emitted for the compliance numbers? "
-        "Computing quantiles only is sensical if this number is more than the "
-        "number of implementations reported on. By default, we compute "
-        "quartiles."
-    ),
-)
-@click.argument("report", default="-", type=_Report())
-def statistics(report: _report.Report, n: int, format: _F):
-    """
-    Show summary statistics for a previous report.
-    """
-    unsuccessful = report.compliance_by_implementation().values()
-    statistics = dict(
-        median=median(unsuccessful),
-        mean=mean(unsuccessful),
-        **(  # quantiles only make sense for n < len(data)
-            {"quantiles": quantiles(unsuccessful, n=n)}
-            if n < len(unsuccessful)
-            else {}
-        ),
-    )
-    match format:
-        case "json":
-            click.echo(json.dumps(statistics, indent=2))
-        case "pretty":
-            for k, v in statistics.items():
-                click.echo(f"{k}: {v}")
-        case "markdown":
-            markdown = _convert_table_to_markdown(
-                columns=["", ""],
-                rows=[[k, str(v)] for k, v in statistics.items()],
-            )
-            click.echo(markdown)
-
-
 def make_validator():
     validators = validator_registry()
 
@@ -1456,6 +1413,107 @@ async def smoke(
 
     return exit_code
 
+def calculate_stats(
+    unsuccessful: ValuesView[float], 
+    n: int
+):
+    return {
+        "median": median(unsuccessful),
+        "mean": mean(unsuccessful),
+        **( # quantiles only make sense for n < len(data)
+            {"quantiles": quantiles(unsuccessful, n=n)} 
+            if n < len(unsuccessful) 
+            else {}
+        )
+    }
+
+@subcommand
+@format_option()
+@click.option(
+    "--quantiles",
+    "n",
+    default=4,
+    type=int,
+    help=(
+        "How many quantiles should be emitted for the compliance numbers? "
+        "Computing quantiles only is sensical if this number is more than the "
+        "number of implementations reported on. By default, we compute "
+        "quartiles."
+    ),
+)
+@click.option(
+    "--dialect",
+    "-d",
+    "dialects",
+    type=_Dialect(),
+    default=Dialect.known(),
+    metavar="URI_OR_NAME",
+    multiple=True,
+    help="Provide statistics for the given list of dialects only.",
+)
+@click.argument(
+    "report", 
+    default="-" if not sys.stdin.isatty() else None,
+    type=_Report(),
+    required=False
+)
+def statistics(
+    report: _report.Report | None, 
+    n: int, 
+    format: _F, 
+    dialects: Iterable[Dialect]
+):
+    """Show summary statistics for a previous report."""    
+    reports = {}
+    if report is None:
+        async def fetch_latest_report(dialect: Dialect):
+            return (dialect.short_name, await dialect.latest_report())
+
+        async def fetch_all_dialect_reports():
+            return dict(
+                await asyncio.gather(
+                    *[fetch_latest_report(dialect) for dialect in dialects]
+                )
+            )
+        
+        reports = asyncio.run(fetch_all_dialect_reports())
+        report_stats = [
+            {
+                "dialect": dialect_name,
+                **calculate_stats(report.compliance_by_implementation().values(), n)
+            }
+            for dialect_name, report in reports.items()
+        ]
+    else:
+        unsuccessful = report.compliance_by_implementation().values()
+        report_stats = calculate_stats(unsuccessful, n)
+        
+    match format:
+        case "json":
+            click.echo(json.dumps(report_stats, indent=2))
+        case "pretty":
+            print(report_stats)
+            for stats in report_stats:
+                print(stats)
+                if "dialect" in stats:
+                    click.echo(f"Dialect: {stats['dialect']}")
+                for k, v in stats.items():
+                    if k != "dialect":
+                        click.echo(f"  {k}: {v}")
+        case "markdown":
+            if isinstance(report_stats, list):
+                columns = ["Dialect"] + [k for k in report_stats[0].keys()][1:]
+                rows = [
+                    [str(stats["dialect"])] + 
+                    [str(stats[column]) for column in columns[1:]]
+                    for stats in report_stats
+                ]
+            else:
+                columns = ["", ""]
+                rows = [[str(k), str(v)] for k, v in report_stats.items()]
+
+            markdown = _convert_table_to_markdown(columns=columns, rows=rows)
+            click.echo(markdown)
 
 @subcommand
 @IMPLEMENTATION
