@@ -1495,12 +1495,16 @@ def statistics(
         case "json":
             click.echo(json.dumps(report_stats, indent=2))
         case "pretty":
-            for stats in report_stats:
-                if "dialect" in stats:
-                    click.echo(f"Dialect: {stats['dialect']}")
-                for k, v in stats.items():
-                    if k != "dialect":
-                        click.echo(f"  {k}: {v}")
+            if isinstance(report_stats, list):
+                for stats in report_stats:
+                    if "dialect" in stats:
+                        click.echo(f"Dialect: {stats['dialect']}")
+                    for k, v in stats.items():
+                        if k != "dialect":
+                            click.echo(f"  {k}: {v}")
+            else:
+                for k, v in report_stats.items():
+                    click.echo(f"{k}: {v}")
         case "markdown":
             if isinstance(report_stats, list):
                 columns = ["Dialect"] + list(report_stats[0].keys())[1:]
