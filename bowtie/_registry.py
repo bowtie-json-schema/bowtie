@@ -8,13 +8,14 @@ from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any
 
 from attrs import evolve, field, frozen
-from referencing.jsonschema import EMPTY_REGISTRY
+from referencing.jsonschema import EMPTY_REGISTRY, Schema, SchemaRegistry
 
 if TYPE_CHECKING:
-    from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
+    from referencing.jsonschema import SchemaResource
 
 
 ErrorsFor = Callable[[Any], Iterable[Exception]]
+SchemaCompiler = Callable[[Schema, SchemaRegistry], Callable[[Any], ErrorsFor]]
 
 
 class UnexpectedlyValid(Exception):
