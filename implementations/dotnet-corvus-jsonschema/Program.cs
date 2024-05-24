@@ -131,26 +131,26 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
             var startResult = new System.Text.Json.Nodes.JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new System.Text.Json.Nodes.JsonObject {
-                        ["language"] = "dotnet",
-                        ["name"] = "Corvus.JsonSchema",
-                        ["version"] = GetLibVersion(),
-                        ["homepage"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
-                        ["documentation"] = "https://github.com/corvus-dotnet/Corvus.JsonSchema/blob/main/README.md",
-                        ["issues"] = "https://github.com/corvus-dotnet/corvus.jsonschema/issues",
-                        ["source"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
+                    new System.Text.Json.Nodes
+                        .JsonObject { ["language"] = "dotnet", ["name"] = "Corvus.JsonSchema",
+                                      ["version"] = GetLibVersion(),
+                                      ["homepage"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
+                                      ["documentation"] =
+                                          "https://github.com/corvus-dotnet/Corvus.JsonSchema/blob/main/README.md",
+                                      ["issues"] = "https://github.com/corvus-dotnet/corvus.jsonschema/issues",
+                                      ["source"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
 
-                        ["dialects"] =
-                            new System.Text.Json.Nodes.JsonArray {
-                                "https://json-schema.org/draft/2020-12/schema",
-                                "https://json-schema.org/draft/2019-09/schema",
-                                "http://json-schema.org/draft-07/schema#",
-                                "http://json-schema.org/draft-06/schema#",
-                                "http://json-schema.org/draft-04/schema#",
-                            },
-                        ["os"] = Environment.OSVersion.Platform.ToString(),
-                        ["os_version"] = Environment.OSVersion.Version.ToString(),
-                        ["language_version"] = Environment.Version.ToString() },
+                                      ["dialects"] =
+                                          new System.Text.Json.Nodes.JsonArray {
+                                              "https://json-schema.org/draft/2020-12/schema",
+                                              "https://json-schema.org/draft/2019-09/schema",
+                                              "http://json-schema.org/draft-07/schema#",
+                                              "http://json-schema.org/draft-06/schema#",
+                                              "http://json-schema.org/draft-04/schema#",
+                                          },
+                                      ["os"] = Environment.OSVersion.Platform.ToString(),
+                                      ["os_version"] = Environment.OSVersion.Version.ToString(),
+                                      ["language_version"] = Environment.Version.ToString() },
             };
             Console.WriteLine(startResult.ToJsonString());
             break;
