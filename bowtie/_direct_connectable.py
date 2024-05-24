@@ -5,7 +5,7 @@ Direct connectables do not really connect anywhere and just operate in-memory.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
 from attrs import asdict, field, frozen, mutable
 from attrs.validators import in_
@@ -14,13 +14,13 @@ from url import URL
 
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Connection, Dialect, ImplementationInfo
+from bowtie._registry import E_co, SchemaCompiler
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
-    from bowtie._registry import SchemaCompiler
 
 
 def not_yet_connected(*_: Any):
@@ -31,18 +31,18 @@ def not_yet_connected(*_: Any):
 
 
 @mutable
-class Unconnection:
+class Unconnection(Generic[E_co]):
 
     _id: ConnectableId = field(alias="id")
     _info: ImplementationInfo = field(
         repr=lambda value: f"{value.language}-{value.name}",
         alias="info",
     )
-    _compile: Callable[[Dialect], SchemaCompiler] = field(
+    _compile: Callable[[Dialect], SchemaCompiler[E_co]] = field(
         repr=False,
         alias="compile",
     )
-    _for_current_dialect: SchemaCompiler = not_yet_connected
+    _for_current_dialect: SchemaCompiler[E_co] = not_yet_connected
 
     async def request(self, message: Message) -> Message:
         """
