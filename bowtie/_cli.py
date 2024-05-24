@@ -1413,6 +1413,7 @@ async def smoke(
 
     return exit_code
 
+
 def calculate_stats(
     unsuccessful: ValuesView[float],
     n: int,
@@ -1420,12 +1421,13 @@ def calculate_stats(
     return {
         "median": median(unsuccessful),
         "mean": mean(unsuccessful),
-        **( # quantiles only make sense for n < len(data)
+        **(  # quantiles only make sense for n < len(data)
             {"quantiles": quantiles(unsuccessful, n=n)}
             if n < len(unsuccessful)
             else {}
         ),
     }
+
 
 @subcommand
 @format_option()
@@ -1470,6 +1472,7 @@ def statistics(
     """Show summary statistics for a previous report."""
     reports = {}
     if report is None:
+
         async def fetch_latest_report(dialect: Dialect):
             return (dialect.short_name, await dialect.latest_report())
 
@@ -1513,8 +1516,8 @@ def statistics(
             if isinstance(report_stats, list):
                 columns = ["Dialect"] + list(report_stats[0].keys())[1:]
                 rows = [
-                    [str(stats["dialect"])] +
-                    [str(stats[column]) for column in columns[1:]]
+                    [str(stats["dialect"])]
+                    + [str(stats[column]) for column in columns[1:]]
                     for stats in report_stats
                 ]
             else:
@@ -1523,6 +1526,7 @@ def statistics(
 
             markdown = _convert_table_to_markdown(columns=columns, rows=rows)
             click.echo(markdown)
+
 
 @subcommand
 @IMPLEMENTATION
