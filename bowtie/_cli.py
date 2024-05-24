@@ -1449,7 +1449,11 @@ def calculate_stats(
     default=Dialect.known(),
     metavar="URI_OR_NAME",
     multiple=True,
-    help="Provide statistics for the given list of dialects only.",
+    help=(
+        "A URI or a shortname identifying the dialect to calculate "
+        f"statistics of. Possible shortnames include: "
+        f"{', '.join(sorted(Dialect.by_alias()))}."
+    ),
 )
 @click.argument(
     "report",
