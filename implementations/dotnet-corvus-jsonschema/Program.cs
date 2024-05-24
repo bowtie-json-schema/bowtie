@@ -150,7 +150,7 @@ while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
                             },
                         ["os"] = Environment.OSVersion.Platform.ToString(),
                         ["os_version"] = Environment.OSVersion.Version.ToString(),
-                        ["language_version"] = Environment.Version.ToString() 
+                        ["language_version"] = Environment.Version.ToString()
                     },
             };
             Console.WriteLine(startResult.ToJsonString());
