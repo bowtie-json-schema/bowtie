@@ -779,6 +779,7 @@ def _validation_results_table_in_markdown(
 
     return final_content
 
+
 def _get_latest_dialect_report(
     ctx: click.Context,
     _,
@@ -791,6 +792,7 @@ def _get_latest_dialect_report(
             asyncio.run(latest_dialect.latest_report()),
         )
     return None, report
+
 
 @subcommand
 @format_option()
@@ -827,9 +829,7 @@ def statistics(
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         **(  # latest dialect if no report was provided
-            {"latest_dialect": dialect}
-            if dialect
-            else {}
+            {"latest_dialect": dialect} if dialect else {}
         ),
         median=median(unsuccessful),
         mean=mean(unsuccessful),
