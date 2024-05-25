@@ -785,7 +785,7 @@ def _get_latest_dialect_report(
     report: _report.Report | None,
 ):
     if report is None:
-        latest_dialect = Dialect.by_short_name()["draft2020-12"]
+        latest_dialect = sorted(Dialect.known(), reverse=True)[0]
         return (
             latest_dialect.pretty_name,
             asyncio.run(latest_dialect.latest_report()),
@@ -827,7 +827,7 @@ def statistics(
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         **(  # latest dialect if no report was provided
-            {"latest_dialect": dialect}
+            {"dialect": dialect}
             if dialect
             else {}
         ),
