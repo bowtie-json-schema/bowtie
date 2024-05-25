@@ -829,9 +829,7 @@ def statistics(
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         **(  # latest dialect if no report was provided
-            {"dialect": dialect}
-            if dialect
-            else {}
+            {"dialect": dialect} if dialect else {}
         ),
         median=median(unsuccessful),
         mean=mean(unsuccessful),
