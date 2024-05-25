@@ -779,6 +779,7 @@ def _validation_results_table_in_markdown(
 
     return final_content
 
+
 def _get_latest_dialect_report(
     ctx: click.Context,
     _,
@@ -791,6 +792,7 @@ def _get_latest_dialect_report(
             asyncio.run(latest_dialect.latest_report()),
         )
     return None, report
+
 
 @subcommand
 @format_option()
