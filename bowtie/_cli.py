@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, ValuesView
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
@@ -779,6 +779,79 @@ def _validation_results_table_in_markdown(
 
     return final_content
 
+def _get_latest_dialect_report(
+    ctx: click.Context,
+    _,
+    report: _report.Report | None,
+):
+    if report is None:
+        latest_dialect = Dialect.by_short_name()["draft2020-12"]
+        return (
+            latest_dialect.pretty_name,
+            asyncio.run(latest_dialect.latest_report()),
+        )
+    return None, report
+
+@subcommand
+@format_option()
+@click.option(
+    "--quantiles",
+    "n",
+    default=4,
+    type=int,
+    help=(
+        "How many quantiles should be emitted for the compliance numbers? "
+        "Computing quantiles only is sensical if this number is more than the "
+        "number of implementations reported on. By default, we compute "
+        "quartiles."
+    ),
+)
+@click.argument(
+    "report_data",
+    default="-" if not sys.stdin.isatty() else None,
+    required=False,
+    type=_Report(),
+    callback=_get_latest_dialect_report,
+)
+def statistics(
+    report_data: tuple[str | None, _report.Report],
+    n: int,
+    format: _F,
+):
+    """
+    Show summary statistics for a previous report.
+
+    If no report provided, defaults to Bowtie's latest dialect's latest report.
+    """
+    dialect, report = report_data
+    unsuccessful = report.compliance_by_implementation().values()
+    statistics = dict(
+        **(  # latest dialect if no report was provided
+            {"latest_dialect": dialect}
+            if dialect
+            else {}
+        ),
+        median=median(unsuccessful),
+        mean=mean(unsuccessful),
+        **(  # quantiles only make sense for n < len(data)
+            {"quantiles": quantiles(unsuccessful, n=n)}
+            if n < len(unsuccessful)
+            else {}
+        ),
+    )
+    match format:
+        case "json":
+            click.echo(json.dumps(statistics, indent=2))
+        case "pretty":
+            for k, v in statistics.items():
+                click.echo(f"{k}: {v}")
+        case "markdown":
+            markdown = _convert_table_to_markdown(
+                columns=["", ""],
+                rows=[[k, str(v)] for k, v in statistics.items()],
+            )
+            click.echo(markdown)
+
 
 def make_validator():
     validators = validator_registry()
@@ -1412,120 +1485,6 @@ async def smoke(
         exit_code |= implementation_exit_code
 
     return exit_code
-
-
-def calculate_stats(
-    unsuccessful: ValuesView[float],
-    n: int,
-):
-    return {
-        "median": median(unsuccessful),
-        "mean": mean(unsuccessful),
-        **(  # quantiles only make sense for n < len(data)
-            {"quantiles": quantiles(unsuccessful, n=n)}
-            if n < len(unsuccessful)
-            else {}
-        ),
-    }
-
-
-@subcommand
-@format_option()
-@click.option(
-    "--quantiles",
-    "n",
-    default=4,
-    type=int,
-    help=(
-        "How many quantiles should be emitted for the compliance numbers? "
-        "Computing quantiles only is sensical if this number is more than the "
-        "number of implementations reported on. By default, we compute "
-        "quartiles."
-    ),
-)
-@click.option(
-    "--dialect",
-    "-d",
-    "dialects",
-    type=_Dialect(),
-    default=Dialect.known(),
-    metavar="URI_OR_NAME",
-    multiple=True,
-    help=(
-        "A URI or a shortname identifying the dialect to calculate "
-        f"statistics of. Possible shortnames include: "
-        f"{', '.join(sorted(Dialect.by_alias()))}."
-    ),
-)
-@click.argument(
-    "report",
-    default="-" if not sys.stdin.isatty() else None,
-    type=_Report(),
-    required=False,
-)
-def statistics(
-    report: _report.Report | None,
-    n: int,
-    format: _F,
-    dialects: Iterable[Dialect],
-):
-    """Show summary statistics for a previous report."""
-    reports = {}
-    if report is None:
-
-        async def fetch_latest_report(dialect: Dialect):
-            return (dialect.short_name, await dialect.latest_report())
-
-        async def fetch_all_dialect_reports():
-            return dict(
-                await asyncio.gather(
-                    *[fetch_latest_report(dialect) for dialect in dialects],
-                ),
-            )
-
-        reports = asyncio.run(fetch_all_dialect_reports())
-        report_stats = [
-            {
-                "dialect": dialect_name,
-                **calculate_stats(
-                    report.compliance_by_implementation().values(),
-                    n,
-                ),
-            }
-            for dialect_name, report in reports.items()
-        ]
-    else:
-        unsuccessful = report.compliance_by_implementation().values()
-        report_stats = calculate_stats(unsuccessful, n)
-
-    match format:
-        case "json":
-            click.echo(json.dumps(report_stats, indent=2))
-        case "pretty":
-            if isinstance(report_stats, list):
-                for stats in report_stats:
-                    if "dialect" in stats:
-                        click.echo(f"Dialect: {stats['dialect']}")
-                    for k, v in stats.items():
-                        if k != "dialect":
-                            click.echo(f"  {k}: {v}")
-            else:
-                for k, v in report_stats.items():
-                    click.echo(f"{k}: {v}")
-        case "markdown":
-            if isinstance(report_stats, list):
-                columns = ["Dialect"] + list(report_stats[0].keys())[1:]
-                rows = [
-                    [str(stats["dialect"])]
-                    + [str(stats[column]) for column in columns[1:]]
-                    for stats in report_stats
-                ]
-            else:
-                columns = ["", ""]
-                rows = [[str(k), str(v)] for k, v in report_stats.items()]
-
-            markdown = _convert_table_to_markdown(columns=columns, rows=rows)
-            click.echo(markdown)
 
 
 @subcommand
