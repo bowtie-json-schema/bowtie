@@ -832,7 +832,7 @@ def make_validator():
         validator = validators.for_schema(schema)
         errors = list(validator.errors_for(instance))
         if errors:
-            raise ProtocolError(errors=errors)  # type: ignore[reportPrivateUsage]
+            raise ProtocolError(errors=errors)
 
     return validate
 

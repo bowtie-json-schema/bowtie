@@ -744,7 +744,7 @@ class TestCase:
 
 
 @cache
-def validator_registry() -> ValidatorRegistry:
+def validator_registry():
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
     registry = EMPTY_REGISTRY.with_resources(resources).crawl()
     return ValidatorRegistry.jsonschema(registry=registry)

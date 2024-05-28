@@ -184,7 +184,7 @@ def app(session):
     Build a PyApp which will run Bowtie.
     """
     session.install("hatch")
-    session.run("hatch", "build", "-t", "app", *session.posargs)
+    session.run("hatch", "build", "-t", "binary", *session.posargs)
 
 
 @session(tags=["style"])

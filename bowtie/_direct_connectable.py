@@ -4,39 +4,45 @@ Direct connectables do not really connect anywhere and just operate in-memory.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
 from attrs import asdict, field, frozen, mutable
 from attrs.validators import in_
-from referencing.jsonschema import EMPTY_REGISTRY, Schema, SchemaRegistry
+from referencing.jsonschema import EMPTY_REGISTRY
 from url import URL
 
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Connection, Dialect, ImplementationInfo
+from bowtie._registry import E_co, SchemaCompiler
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Callable
+
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
 
 
-SchemaCompiler = Callable[[Schema, SchemaRegistry], Callable[[Any], bool]]
+def not_yet_connected(*_: Any):
+    def _not_yet_connected(*_: Any):
+        raise RuntimeError("Not yet connected!")
+
+    return _not_yet_connected
 
 
 @mutable
-class Unconnection:
+class Unconnection(Generic[E_co]):
 
     _id: ConnectableId = field(alias="id")
     _info: ImplementationInfo = field(
         repr=lambda value: f"{value.language}-{value.name}",
         alias="info",
     )
-    _compile: Callable[[Dialect], SchemaCompiler] = field(
+    _compile: Callable[[Dialect], SchemaCompiler[E_co]] = field(
         repr=False,
         alias="compile",
     )
-    _for_current_dialect: SchemaCompiler = lambda _, __: lambda _: False
+    _for_current_dialect: SchemaCompiler[E_co] = not_yet_connected
 
     async def request(self, message: Message) -> Message:
         """
@@ -61,7 +67,7 @@ class Unconnection:
                     case.get("registry", EMPTY_REGISTRY),
                 )
                 results = [
-                    TestResult(valid=validate(test["instance"]))
+                    TestResult(valid=bool(validate(test["instance"])))
                     for test in case["tests"]
                 ]
                 return {  # FIXME: Bleh this is not SeqResult
@@ -153,7 +159,7 @@ class Direct:
                     )(
                         schema,
                         registry=registry,
-                    ).is_valid
+                    ).iter_errors
                 )
             ),
         )
