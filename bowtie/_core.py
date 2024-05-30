@@ -490,7 +490,6 @@ class Implementation:
         cls,
         id: ConnectableId,
         reporter: Reporter,
-        should_poison_harness: bool = False,
         **kwargs: Any,
     ) -> AsyncIterator[Self]:
         _harness = HarnessClient(**kwargs)
@@ -508,9 +507,6 @@ class Implementation:
         info = ImplementationInfo.from_dict(**started.implementation)  # type: ignore[reportUnknownArgumentType]
 
         yield cls(harness=harness, id=id, info=info, reporter=reporter)
-
-        if should_poison_harness:
-            await _harness.poison()
 
     def supports(self, *dialects: Dialect) -> bool:
         """
