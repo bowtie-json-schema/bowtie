@@ -2297,7 +2297,7 @@ async def test_statistics_pretty(envsonschema, always_valid):
             datetime.strptime(
                 last_ran_on_str,
                 user_locale_dt_fmt,
-            ).astimezone(timezone.utc),
+            ).astimezone(timezone.utc)
         ),
         mins=5,
     )
@@ -2400,7 +2400,7 @@ async def test_statistics_markdown(envsonschema, always_valid):
             datetime.strptime(
                 last_ran_on_str,
                 user_locale_dt_fmt,
-            ).astimezone(timezone.utc),
+            ).astimezone(timezone.utc)
         ),
         mins=5,
     )
