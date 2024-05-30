@@ -780,20 +780,6 @@ def _validation_results_table_in_markdown(
     return final_content
 
 
-def _get_latest_dialect_report(
-    ctx: click.Context,
-    _,
-    report: _report.Report | None,
-):
-    if report is None:
-        latest_dialect = sorted(Dialect.known(), reverse=True)[0]
-        return (
-            latest_dialect.pretty_name,
-            asyncio.run(latest_dialect.latest_report()),
-        )
-    return None, report
-
-
 @subcommand
 @format_option()
 @click.option(
@@ -809,14 +795,16 @@ def _get_latest_dialect_report(
     ),
 )
 @click.argument(
-    "report_data",
-    default="-" if not sys.stdin.isatty() else None,
-    required=False,
+    "report",
+    default=(
+        "-"
+        if not sys.stdin.isatty()
+        else asyncio.run(max(Dialect.known()).latest_report())
+    ),
     type=_Report(),
-    callback=_get_latest_dialect_report,
 )
 def statistics(
-    report_data: tuple[str | None, _report.Report],
+    report: _report.Report,
     n: int,
     format: _F,
 ):
@@ -825,12 +813,13 @@ def statistics(
 
     If no report provided, defaults to Bowtie's latest dialect's latest report.
     """
-    dialect, report = report_data
+    import locale
+
+    locale.setlocale(locale.LC_TIME, "")
+    USER_LOCALE_DT_FMT = locale.nl_langinfo(locale.D_T_FMT)
+
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
-        **(  # latest dialect if no report was provided
-            {"dialect": dialect} if dialect else {}
-        ),
         median=median(unsuccessful),
         mean=mean(unsuccessful),
         **(  # quantiles only make sense for n < len(data)
@@ -839,13 +828,25 @@ def statistics(
             else {}
         ),
     )
+    header = (
+        f"Dialect: {report.metadata.dialect.pretty_name}\n"
+        f"Last ran on: "
+        f"{report.metadata.started.strftime(USER_LOCALE_DT_FMT)}"
+    )
     match format:
         case "json":
+            statistics = {
+                "dialect": str(report.metadata.dialect.uri),
+                "last_ran_on": str(report.metadata.started),
+                **statistics,
+            }
             click.echo(json.dumps(statistics, indent=2))
         case "pretty":
+            click.echo(f"{header}\n")
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
         case "markdown":
+            click.echo(header)
             markdown = _convert_table_to_markdown(
                 columns=["", ""],
                 rows=[[k, str(v)] for k, v in statistics.items()],
