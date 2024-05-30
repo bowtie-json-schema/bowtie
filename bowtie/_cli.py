@@ -796,7 +796,7 @@ def _validation_results_table_in_markdown(
 )
 @click.argument(
     "report",
-    default=(
+    default=lambda: (
         "-"
         if not sys.stdin.isatty()
         else asyncio.run(max(Dialect.known()).latest_report())
@@ -813,7 +813,7 @@ def statistics(
 
     If no report provided, defaults to Bowtie's latest dialect's latest report.
     """
-    dialect, ran_on_dt = report.metadata.dialect, report.metadata.started
+    dialect, ran_on_date = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         median=median(unsuccessful),
@@ -828,21 +828,21 @@ def statistics(
         case "json":
             statistics = {
                 "dialect": str(dialect.uri),
-                "ran_on": ran_on_dt.isoformat(),
+                "ran_on": ran_on_date.isoformat(),
                 **statistics,
             }
             click.echo(json.dumps(statistics, indent=2))
         case "pretty":
             click.echo(
                 f"Dialect: {dialect.pretty_name}\n"
-                f"Ran on: {ran_on_dt.strftime('%x %X')}",
+                f"Ran on: {ran_on_date.strftime('%x %X')}",
             )
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
         case "markdown":
             heading = (
                 f"## Dialect: {dialect.pretty_name}\n"
-                f"### Ran on: {ran_on_dt.strftime('%x %X')}"
+                f"### Ran on: {ran_on_date.strftime('%x %X')}"
             )
             markdown = _convert_table_to_markdown(
                 columns=["Metric", "Value"],
