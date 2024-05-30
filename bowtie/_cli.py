@@ -1372,7 +1372,7 @@ async def filter_dialects(
     "-D",
     "dialect",
     type=_Dialect(),
-    default=max(Dialect.known()),
+    default=lambda: max(Dialect.known()),
     show_default=True,
     metavar="URI_OR_NAME",
     help=(
