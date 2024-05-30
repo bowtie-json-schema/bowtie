@@ -813,6 +813,7 @@ def statistics(
 
     If no report provided, defaults to Bowtie's latest dialect's latest report.
     """
+    dialect, ran_on_dt = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         median=median(unsuccessful),
@@ -826,23 +827,22 @@ def statistics(
     match format:
         case "json":
             statistics = {
-                "dialect": str(report.metadata.dialect.uri),
-                "ran_on": report.metadata.started.isoformat(),
+                "dialect": str(dialect.uri),
+                "ran_on": ran_on_dt.isoformat(),
                 **statistics,
             }
             click.echo(json.dumps(statistics, indent=2))
         case "pretty":
             click.echo(
-                f"Dialect: {report.metadata.dialect.pretty_name}\n"
-                f"Ran on: "
-                f"{report.metadata.started.strftime('%x %X')}",
+                f"Dialect: {dialect.pretty_name}\n"
+                f"Ran on: {ran_on_dt.strftime('%x %X')}",
             )
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
         case "markdown":
             heading = (
-                f"## Dialect: {report.metadata.dialect.pretty_name}\n"
-                f"### Ran on: {report.metadata.started.strftime('%x %X')}"
+                f"## Dialect: {dialect.pretty_name}\n"
+                f"### Ran on: {ran_on_dt.strftime('%x %X')}"
             )
             markdown = _convert_table_to_markdown(
                 columns=["Metric", "Value"],
