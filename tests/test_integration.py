@@ -115,6 +115,7 @@ def image(name, fileobj):
 
     return _image
 
+
 async def validate_date_within_mins(
     now: datetime,
     last_ran_on_dt: datetime,
@@ -129,19 +130,22 @@ async def validate_date_within_mins(
         f"is not within {mins} minutes of now {now}"
     )
 
+
 async def validate_date_in_output(output: str):
     lines = output.splitlines()
     last_ran_on_line = next(
         (line for line in lines if line.startswith("Last ran on:")),
-         None,
+        None,
     )
     assert last_ran_on_line is not None, "Last ran on date not found in stdout"
 
     return last_ran_on_line.split("Last ran on:")[1].strip()
 
+
 def get_locale_dt_fmt():
     locale.setlocale(locale.LC_TIME, "")
     return locale.nl_langinfo(locale.D_T_FMT).replace("%e", "%d")
+
 
 def fauxmplementation(name):
     """
