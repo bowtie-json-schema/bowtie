@@ -813,11 +813,6 @@ def statistics(
 
     If no report provided, defaults to Bowtie's latest dialect's latest report.
     """
-    import locale
-
-    locale.setlocale(locale.LC_TIME, "")
-    USER_LOCALE_DT_FMT = locale.nl_langinfo(locale.D_T_FMT)
-
     unsuccessful = report.compliance_by_implementation().values()
     statistics = dict(
         median=median(unsuccessful),
@@ -828,30 +823,32 @@ def statistics(
             else {}
         ),
     )
-    header = (
-        f"Dialect: {report.metadata.dialect.pretty_name}\n"
-        f"Last ran on: "
-        f"{report.metadata.started.strftime(USER_LOCALE_DT_FMT)}"
-    )
     match format:
         case "json":
             statistics = {
                 "dialect": str(report.metadata.dialect.uri),
-                "last_ran_on": str(report.metadata.started),
+                "ran_on": report.metadata.started.isoformat(),
                 **statistics,
             }
             click.echo(json.dumps(statistics, indent=2))
         case "pretty":
-            click.echo(f"{header}\n")
+            click.echo(
+                f"Dialect: {report.metadata.dialect.pretty_name}\n"
+                f"Ran on: "
+                f"{report.metadata.started.strftime("%x %X")}",
+            )
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
         case "markdown":
-            click.echo(header)
+            heading = (
+                f"## Dialect: {report.metadata.dialect.pretty_name}\n"
+                f"### Ran on: {report.metadata.started.strftime('%x %X')}"
+            )
             markdown = _convert_table_to_markdown(
-                columns=["", ""],
+                columns=["Metric", "Value"],
                 rows=[[k, str(v)] for k, v in statistics.items()],
             )
-            click.echo(markdown)
+            click.echo(heading + markdown)
 
 
 def make_validator():

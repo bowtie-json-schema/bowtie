@@ -6,7 +6,6 @@ from pprint import pformat
 from textwrap import dedent
 import asyncio
 import json as _json
-import locale
 import os
 import sys
 import tarfile
@@ -114,37 +113,6 @@ def image(name, fileobj):
         await images.delete(name=t, force=True)
 
     return _image
-
-
-async def validate_date_within_mins(
-    now: datetime,
-    last_ran_on_dt: datetime,
-    mins: int,
-):
-    assert (
-        now - timedelta(minutes=5)
-        <= last_ran_on_dt
-        <= now + timedelta(minutes=5)
-    ), (
-        f"Last ran on date {last_ran_on_dt} "
-        f"is not within {mins} minutes of now {now}"
-    )
-
-
-async def validate_date_in_output(output: str):
-    lines = output.splitlines()
-    last_ran_on_line = next(
-        (line for line in lines if line.startswith("Last ran on:")),
-        None,
-    )
-    assert last_ran_on_line is not None, "Last ran on date not found in stdout"
-
-    return last_ran_on_line.split("Last ran on:")[1].strip()
-
-
-def get_locale_dt_fmt():
-    locale.setlocale(locale.LC_TIME, "")
-    return locale.nl_langinfo(locale.D_T_FMT).replace("%e", "%d")
 
 
 def fauxmplementation(name):
@@ -2262,7 +2230,6 @@ async def test_validate_specify_dialect(envsonschema, tmp_path):
 
 @pytest.mark.asyncio
 async def test_statistics_pretty(envsonschema, always_valid):
-    user_locale_dt_fmt = get_locale_dt_fmt()
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -2289,24 +2256,29 @@ async def test_statistics_pretty(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
-    last_ran_on_str = await validate_date_in_output(stdout)
+    lines = stdout.splitlines()
+    ran_on_line = next(
+        (line for line in lines if line.startswith("Ran on:")),
+        None,
+    )
+    assert ran_on_line is not None, "Ran on date not found in stdout"
 
-    await validate_date_within_mins(
-        now=datetime.now(timezone.utc),
-        last_ran_on_dt=(
-            datetime.strptime(
-                last_ran_on_str,
-                user_locale_dt_fmt,
-            ).astimezone(timezone.utc)
-        ),
-        mins=5,
+    ran_on_str = ran_on_line.split("Ran on:")[1].strip()
+
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
+        <= now + timedelta(minutes=5)
+    ), (
+        f"Ran on date {ran_on_str} "
+        f"is not within 5 minutes of now {now}"
     )
 
     assert stdout == dedent(
         f"""\
         Dialect: Draft 2020-12
-        Last ran on: {last_ran_on_str}
-
+        Ran on: {ran_on_str}
         median: 0.65
         mean: 0.65
         """,
@@ -2344,19 +2316,22 @@ async def test_statistics_json(envsonschema, always_valid):
         json=True,
     )
 
-    last_ran_on_str = jsonout["last_ran_on"]
-    assert last_ran_on_str is not None, "Last ran on date not found in jsonout"
+    ran_on_str = jsonout["ran_on"]
 
-    await validate_date_within_mins(
-        now=datetime.now(timezone.utc),
-        last_ran_on_dt=datetime.fromisoformat(last_ran_on_str),
-        mins=5,
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.fromisoformat(ran_on_str)
+        <= now + timedelta(minutes=5)
+    ), (
+        f"Ran on date {ran_on_str} "
+        f"is not within 5 minutes of now {now}"
     )
 
     (await command_validator("statistics")).validate(jsonout)
     assert jsonout == dict(
         dialect="https://json-schema.org/draft/2020-12/schema",
-        last_ran_on=last_ran_on_str,
+        ran_on=ran_on_str,
         median=0.65,
         mean=0.65,
     )
@@ -2365,7 +2340,6 @@ async def test_statistics_json(envsonschema, always_valid):
 
 @pytest.mark.asyncio
 async def test_statistics_markdown(envsonschema, always_valid):
-    user_locale_dt_fmt = get_locale_dt_fmt()
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -2392,25 +2366,30 @@ async def test_statistics_markdown(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
-    last_ran_on_str = await validate_date_in_output(stdout)
+    lines = stdout.splitlines()
+    ran_on_line = next(
+        (line for line in lines if line.startswith("### Ran on:")),
+        None,
+    )
+    assert ran_on_line is not None, "Ran on date not found in stdout"
 
-    await validate_date_within_mins(
-        now=datetime.now(timezone.utc),
-        last_ran_on_dt=(
-            datetime.strptime(
-                last_ran_on_str,
-                user_locale_dt_fmt,
-            ).astimezone(timezone.utc)
-        ),
-        mins=5,
+    ran_on_str = ran_on_line.split("### Ran on:")[1].strip()
+
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
+        <= now + timedelta(minutes=5)
+    ), (
+        f"Ran on date {ran_on_str} "
+        f"is not within 5 minutes of now {now}"
     )
 
     assert stdout == dedent(
         f"""\
-        Dialect: Draft 2020-12
-        Last ran on: {last_ran_on_str}
-
-        |  |  |
+        ## Dialect: Draft 2020-12
+        ### Ran on: {ran_on_str}
+        | Metric | Value |
         |:------:|:----:|
         | median | 0.65 |
         |  mean  | 0.65 |

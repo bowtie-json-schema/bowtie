@@ -9,7 +9,7 @@
   "type": "object",
 
   "additionalProperties": false,
-  "required": ["dialect", "last_ran_on", "median", "mean"],
+  "required": ["dialect", "ran_on", "median", "mean"],
   "properties": {
     "dialect": {
       "description": "The JSON Schema dialect used for the Bowtie report.",
@@ -18,7 +18,7 @@
 
       "format": "uri"
     },
-    "last_ran_on": {
+    "ran_on": {
       "description": "The timestamp when the Bowtie report was last generated.",
 
       "type": "string",
