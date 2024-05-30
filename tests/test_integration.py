@@ -2270,10 +2270,7 @@ async def test_statistics_pretty(envsonschema, always_valid):
         now - timedelta(minutes=5)
         <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
         <= now + timedelta(minutes=5)
-    ), (
-        f"Ran on date {ran_on_str} "
-        f"is not within 5 minutes of now {now}"
-    )
+    ), (f"Ran on date {ran_on_str} " f"is not within 5 minutes of now {now}")
 
     assert stdout == dedent(
         f"""\
@@ -2323,10 +2320,7 @@ async def test_statistics_json(envsonschema, always_valid):
         now - timedelta(minutes=5)
         <= datetime.fromisoformat(ran_on_str)
         <= now + timedelta(minutes=5)
-    ), (
-        f"Ran on date {ran_on_str} "
-        f"is not within 5 minutes of now {now}"
-    )
+    ), (f"Ran on date {ran_on_str} " f"is not within 5 minutes of now {now}")
 
     (await command_validator("statistics")).validate(jsonout)
     assert jsonout == dict(
@@ -2380,10 +2374,7 @@ async def test_statistics_markdown(envsonschema, always_valid):
         now - timedelta(minutes=5)
         <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
         <= now + timedelta(minutes=5)
-    ), (
-        f"Ran on date {ran_on_str} "
-        f"is not within 5 minutes of now {now}"
-    )
+    ), (f"Ran on date {ran_on_str} " f"is not within 5 minutes of now {now}")
 
     assert stdout == dedent(
         f"""\
