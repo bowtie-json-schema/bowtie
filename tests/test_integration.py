@@ -2290,8 +2290,10 @@ async def test_statistics_pretty(envsonschema, always_valid):
     await validate_date_within_mins(
         now=datetime.now(timezone.utc),
         last_ran_on_dt=(
-            datetime.strptime(last_ran_on_str, user_locale_dt_fmt)
-            .astimezone(timezone.utc)
+            datetime.strptime(
+                last_ran_on_str,
+                user_locale_dt_fmt,
+            ).astimezone(timezone.utc),
         ),
         mins=5,
     )
@@ -2391,8 +2393,10 @@ async def test_statistics_markdown(envsonschema, always_valid):
     await validate_date_within_mins(
         now=datetime.now(timezone.utc),
         last_ran_on_dt=(
-            datetime.strptime(last_ran_on_str, user_locale_dt_fmt)
-            .astimezone(timezone.utc)
+            datetime.strptime(
+                last_ran_on_str,
+                user_locale_dt_fmt,
+            ).astimezone(timezone.utc),
         ),
         mins=5,
     )
