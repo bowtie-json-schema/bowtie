@@ -806,7 +806,9 @@ def _validation_results_table_in_markdown(
     default=lambda: (
         "-"
         if not sys.stdin.isatty()
-        else asyncio.run(max(Dialect.known()).latest_report())
+        else _report.Report.from_serialized(
+            asyncio.run(max(Dialect.known()).latest_report()).iter_lines(),
+        )
     ),
     type=_Report(),
 )
@@ -1363,6 +1365,24 @@ async def filter_dialects(
         if latest:
             break
 
+@subcommand
+@click.option(
+    "--dialect",
+    "-D",
+    "dialect",
+    type=_Dialect(),
+    default=max(Dialect.known()),
+    show_default=True,
+    metavar="URI_OR_NAME",
+    help=(
+        "A URI or a shortname identifying the dialect of a test report. "
+        f"Possible shortnames include: "
+        f"{', '.join(sorted(Dialect.by_alias()))}"
+    ),
+)
+def latest_report(dialect: Dialect):
+    for line in asyncio.run(dialect.latest_report()).iter_lines():
+        click.echo(line)
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()

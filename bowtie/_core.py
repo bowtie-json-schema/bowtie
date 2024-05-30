@@ -137,11 +137,7 @@ class Dialect:
     async def latest_report(self):
         url = HOMEPAGE / f"{self.short_name}.json"
         async with httpx.AsyncClient() as client:
-            response = await client.get(str(url))
-
-        from bowtie._report import Report
-
-        return Report.from_serialized(response.iter_lines())
+            return await client.get(str(url))
 
     def serializable(self):
         return str(self.uri)
