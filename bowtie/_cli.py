@@ -835,7 +835,7 @@ def statistics(
             click.echo(
                 f"Dialect: {report.metadata.dialect.pretty_name}\n"
                 f"Ran on: "
-                f"{report.metadata.started.strftime("%x %X")}",
+                f"{report.metadata.started.strftime('%x %X')}",
             )
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
