@@ -508,8 +508,6 @@ class Implementation:
 
         yield cls(harness=harness, id=id, info=info, reporter=reporter)
 
-        await _harness.poison()
-
     def supports(self, *dialects: Dialect) -> bool:
         """
         Does the implementation support (all of) the given dialect(s)?
