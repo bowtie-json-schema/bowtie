@@ -1382,6 +1382,12 @@ async def filter_dialects(
     ),
 )
 def latest_report(dialect: Dialect):
+    """
+    Output latest Bowtie report for a given dialect.
+
+    If no dialect provided, it outputs Bowtie's latest
+    dialect's latest report.
+    """
     for line in asyncio.run(dialect.latest_report()).iter_lines():
         click.echo(line)
 
