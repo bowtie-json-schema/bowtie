@@ -1365,6 +1365,7 @@ async def filter_dialects(
         if latest:
             break
 
+
 @subcommand
 @click.option(
     "--dialect",
@@ -1383,6 +1384,7 @@ async def filter_dialects(
 def latest_report(dialect: Dialect):
     for line in asyncio.run(dialect.latest_report()).iter_lines():
         click.echo(line)
+
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()
