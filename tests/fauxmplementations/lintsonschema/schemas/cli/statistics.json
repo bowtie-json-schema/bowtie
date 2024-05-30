@@ -9,8 +9,22 @@
   "type": "object",
 
   "additionalProperties": false,
-  "required": ["median", "mean"],
+  "required": ["dialect", "ran_on", "median", "mean"],
   "properties": {
+    "dialect": {
+      "description": "The JSON Schema dialect used for the Bowtie report.",
+
+      "type": "string",
+
+      "format": "uri"
+    },
+    "ran_on": {
+      "description": "The timestamp when the Bowtie report was last generated.",
+
+      "type": "string",
+
+      "format": "date-time"
+    },
     "median": {
       "description": "The median of all implementations' compliance scores.",
 

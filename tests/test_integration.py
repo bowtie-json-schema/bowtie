@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager, suppress
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -2255,8 +2256,26 @@ async def test_statistics_pretty(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
+    lines = stdout.splitlines()
+    ran_on_line = next(
+        (line for line in lines if line.startswith("Ran on:")),
+        None,
+    )
+    assert ran_on_line is not None, "Ran on date not found in stdout"
+
+    ran_on_str = ran_on_line.split("Ran on:")[1].strip()
+
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
+        <= now + timedelta(minutes=5)
+    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+
     assert stdout == dedent(
-        """\
+        f"""\
+        Dialect: Draft 2020-12
+        Ran on: {ran_on_str}
         median: 0.65
         mean: 0.65
         """,
@@ -2294,8 +2313,22 @@ async def test_statistics_json(envsonschema, always_valid):
         json=True,
     )
 
+    ran_on_str = jsonout["ran_on"]
+
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.fromisoformat(ran_on_str)
+        <= now + timedelta(minutes=5)
+    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+
     (await command_validator("statistics")).validate(jsonout)
-    assert jsonout == dict(median=0.65, mean=0.65)
+    assert jsonout == dict(
+        dialect="https://json-schema.org/draft/2020-12/schema",
+        ran_on=ran_on_str,
+        median=0.65,
+        mean=0.65,
+    )
     assert stderr == "", stderr
 
 
@@ -2327,9 +2360,27 @@ async def test_statistics_markdown(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
+    lines = stdout.splitlines()
+    ran_on_line = next(
+        (line for line in lines if line.startswith("### Ran on:")),
+        None,
+    )
+    assert ran_on_line is not None, "Ran on date not found in stdout"
+
+    ran_on_str = ran_on_line.split("### Ran on:")[1].strip()
+
+    now = datetime.now(timezone.utc)
+    assert (
+        now - timedelta(minutes=5)
+        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
+        <= now + timedelta(minutes=5)
+    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+
     assert stdout == dedent(
-        """
-        |  |  |
+        f"""\
+        ## Dialect: Draft 2020-12
+        ### Ran on: {ran_on_str}
+        | Metric | Value |
         |:------:|:----:|
         | median | 0.65 |
         |  mean  | 0.65 |
