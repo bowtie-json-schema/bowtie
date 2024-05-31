@@ -87,7 +87,12 @@ _COMMAND_GROUPS = {
         ),
         CommandGroupDict(
             name="Advanced Usage",
-            commands=["filter-dialects", "filter-implementations", "run"],
+            commands=[
+                "filter-dialects",
+                "filter-implementations",
+                "run",
+                "statistics",
+            ],
         ),
         CommandGroupDict(
             name="Plumbing Commands",
