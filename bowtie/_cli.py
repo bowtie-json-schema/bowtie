@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from typing import IO, Any, TextIO
 
     from click.decorators import FC
+    from httpx import Response
     from referencing.jsonschema import Schema, SchemaResource
 
     from bowtie._commands import AnyTestResult
@@ -822,8 +823,9 @@ def statistics(
     Show summary statistics for a Bowtie generated report.
 
     If no report provided, it shows statistics for Bowtie's latest dialect's
-    latest report. For getting statistics on other dialect reports, do
-    `bowtie latest-report --dialect {YOUR_DESIRED_DIALECT} | bowtie statistics`
+    latest generated report. For getting statistics on other Bowtie generated
+    dialect reports, do
+    `bowtie latest-report -D {YOUR_DESIRED_DIALECT} | bowtie statistics`
     """
     dialect, ran_on_date = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
@@ -1373,13 +1375,12 @@ async def filter_dialects(
 @DIALECT
 def latest_report(dialect: Dialect):
     """
-    Get latest Bowtie generated report for a dialect.
+    Print latest Bowtie generated report for a dialect.
 
-    If no dialect provided, it outputs Bowtie's latest
+    If no dialect provided, it prints Bowtie's latest
     dialect's latest generated report.
     """
-
-    async def write(response):
+    async def write(response: Coroutine[Any, Any, Response]):
         async for chunk in (await response).aiter_bytes():
             click.echo(chunk)
 
