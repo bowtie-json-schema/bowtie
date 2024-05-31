@@ -1380,9 +1380,11 @@ def latest_report(dialect: Dialect):
     If no dialect provided, it prints Bowtie's latest
     dialect's latest generated report.
     """
+
     async def write(response: Coroutine[Any, Any, Response]):
         async for chunk in (await response).aiter_bytes():
             click.echo(chunk)
+
     asyncio.run(write(dialect.latest_report()))
 
 
