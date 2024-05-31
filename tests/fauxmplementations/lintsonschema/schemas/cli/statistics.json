@@ -1,6 +1,6 @@
 {
   "title": "bowtie statistics",
-  "description": "Compute summary statistics about a previous Bowtie report.",
+  "description": "Compute summary statistics about a Bowtie generated report.",
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -12,14 +12,14 @@
   "required": ["dialect", "ran_on", "median", "mean"],
   "properties": {
     "dialect": {
-      "description": "The JSON Schema dialect used for the Bowtie report.",
+      "description": "The JSON Schema dialect used for the Bowtie generated report.",
 
       "type": "string",
 
       "format": "uri"
     },
     "ran_on": {
-      "description": "The timestamp when the Bowtie report was last generated.",
+      "description": "The timestamp when the Bowtie report was generated.",
 
       "type": "string",
 
