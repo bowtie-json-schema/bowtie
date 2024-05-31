@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine, Iterable
+from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
@@ -1402,7 +1402,7 @@ def latest_report(dialect: Dialect):
     dialect's latest generated report.
     """
 
-    async def write(response: Coroutine[Any, Any, Response]):
+    async def write(response: Awaitable[Response]):
         async for chunk in (await response).aiter_bytes():
             click.echo(chunk)
 
