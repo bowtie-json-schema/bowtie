@@ -92,6 +92,7 @@ _COMMAND_GROUPS = {
                 "filter-implementations",
                 "run",
                 "statistics",
+                "latest-report",
             ],
         ),
         CommandGroupDict(
@@ -818,9 +819,11 @@ def statistics(
     format: _F,
 ):
     """
-    Show summary statistics for a previous report.
+    Show summary statistics for a Bowtie generated report.
 
-    If no report provided, defaults to Bowtie's latest dialect's latest report.
+    If no report provided, it shows statistics for Bowtie's latest dialect's
+    latest report. For getting statistics on other dialect reports, do
+    `bowtie latest-report --dialect {YOUR_DESIRED_DIALECT} | bowtie statistics`
     """
     dialect, ran_on_date = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
@@ -1367,29 +1370,18 @@ async def filter_dialects(
 
 
 @subcommand
-@click.option(
-    "--dialect",
-    "-D",
-    "dialect",
-    type=_Dialect(),
-    default=lambda: max(Dialect.known()),
-    show_default=True,
-    metavar="URI_OR_NAME",
-    help=(
-        "A URI or a shortname identifying the dialect of a test report. "
-        f"Possible shortnames include: "
-        f"{', '.join(sorted(Dialect.by_alias()))}"
-    ),
-)
+@DIALECT
 def latest_report(dialect: Dialect):
     """
-    Output latest Bowtie report for a given dialect.
+    Get latest Bowtie generated report for a dialect.
 
     If no dialect provided, it outputs Bowtie's latest
-    dialect's latest report.
+    dialect's latest generated report.
     """
-    for line in asyncio.run(dialect.latest_report()).iter_lines():
-        click.echo(line)
+    async def write(response):
+        async for chunk in (await response).aiter_bytes():
+            click.echo(chunk)
+    asyncio.run(write(dialect.latest_report()))
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
