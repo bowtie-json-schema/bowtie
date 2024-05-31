@@ -110,6 +110,14 @@ class Dialect:
         )
 
     @classmethod
+    @cache
+    def latest(cls):
+        """
+        The latest dialect known to Bowtie.
+        """
+        return max(cls.known())
+
+    @classmethod
     def from_dict(
         cls,
         firstPublicationDate: str,

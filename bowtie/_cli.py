@@ -809,7 +809,7 @@ def _validation_results_table_in_markdown(
         "-"
         if not sys.stdin.isatty()
         else _report.Report.from_serialized(
-            asyncio.run(max(Dialect.known()).latest_report()).iter_lines(),
+            asyncio.run(Dialect.latest().latest_report()).iter_lines(),
         )
     ),
     type=_Report(),
@@ -987,7 +987,7 @@ def _set_dialect_via_schema(ctx: click.Context, _, value: _Dialect):
     return (
         Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
         if dialect_from_schema
-        else max(Dialect.known())
+        else Dialect.latest()
     )
 
 
@@ -1077,7 +1077,7 @@ VALIDATE = click.option(
 
 
 def dialect_option(
-    default: Dialect | None = max(Dialect.known()),
+    default: Dialect | None = Dialect.latest(),
     **kwargs: Any,
 ):
     if default is not None:

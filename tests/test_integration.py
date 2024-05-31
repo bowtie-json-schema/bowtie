@@ -1580,7 +1580,7 @@ async def test_filter_dialects_latest_dialect():
         "filter-dialects",
         "-l",
     )
-    assert (stdout, stderr) == (f"{max(Dialect.known()).uri}\n", "")
+    assert (stdout, stderr) == (f"{Dialect.latest().uri}\n", "")
 
 
 @pytest.mark.asyncio
