@@ -6,7 +6,7 @@ aiohttp==3.9.5
     # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
-anyio==4.4.0
+anyio==4.3.0
     # via httpx
 attrs==23.2.0
     # via
@@ -83,7 +83,7 @@ referencing==0.35.1
     #   referencing-loaders
 referencing-loaders==2024.5.2
     # via bowtie-json-schema (pyproject.toml)
-requests==2.32.3
+requests==2.32.0
     # via github3-py
 rich==13.7.1
     # via
@@ -103,9 +103,9 @@ sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-structlog==24.2.0
+structlog==24.1.0
     # via bowtie-json-schema (pyproject.toml)
-typing-extensions==4.12.0
+typing-extensions==4.11.0
     # via
     #   aiodocker
     #   rich-click
