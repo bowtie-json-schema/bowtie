@@ -26,6 +26,7 @@ schemas
 sensical
 shortname
 shortnames
+stdin
 subcommand
 subcommands
 validator
