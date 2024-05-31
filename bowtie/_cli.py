@@ -1370,6 +1370,7 @@ async def filter_dialects(
         if latest:
             break
 
+
 def show_report_schema(
     ctx: click.Context,
     param: click.Parameter | None,
@@ -1381,6 +1382,7 @@ def show_report_schema(
     schema = validator_registry().schema(uri)
     click.echo(json.dumps(schema, indent=2))
     ctx.exit()
+
 
 @subcommand
 @DIALECT
