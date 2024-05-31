@@ -91,9 +91,9 @@ _COMMAND_GROUPS = {
             commands=[
                 "filter-dialects",
                 "filter-implementations",
+                "latest-report",
                 "run",
                 "statistics",
-                "latest-report",
             ],
         ),
         CommandGroupDict(
@@ -822,10 +822,16 @@ def statistics(
     """
     Show summary statistics for a Bowtie generated report.
 
-    If no report provided, it shows statistics for Bowtie's latest dialect's
-    latest generated report. For getting statistics on other Bowtie generated
-    dialect reports, do
-    `bowtie latest-report -D {YOUR_DESIRED_DIALECT} | bowtie statistics`
+    If stdin is a TTY, the most recent public report for the latest JSON Schema
+    dialect is downloaded.
+    Otherwise, if it *is not* a TTY (e.g. if it is a pipe) then it should
+    contain report data.
+
+    Piping input via:
+
+      $ bowtie latest-report --dialect <some-dialect> | bowtie statistics
+
+    can be useful to retrieve the latest report for a specific dialect.
     """
     dialect, ran_on_date = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
