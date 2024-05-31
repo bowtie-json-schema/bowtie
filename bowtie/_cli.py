@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from typing import IO, Any, TextIO
 
     from click.decorators import FC
+    from httpx import Response
     from referencing.jsonschema import Schema, SchemaResource
 
     from bowtie._commands import AnyTestResult
@@ -92,6 +93,7 @@ _COMMAND_GROUPS = {
                 "filter-implementations",
                 "run",
                 "statistics",
+                "latest-report",
             ],
         ),
         CommandGroupDict(
@@ -806,7 +808,9 @@ def _validation_results_table_in_markdown(
     default=lambda: (
         "-"
         if not sys.stdin.isatty()
-        else asyncio.run(max(Dialect.known()).latest_report())
+        else _report.Report.from_serialized(
+            asyncio.run(max(Dialect.known()).latest_report()).iter_lines(),
+        )
     ),
     type=_Report(),
 )
@@ -816,9 +820,12 @@ def statistics(
     format: _F,
 ):
     """
-    Show summary statistics for a previous report.
+    Show summary statistics for a Bowtie generated report.
 
-    If no report provided, defaults to Bowtie's latest dialect's latest report.
+    If no report provided, it shows statistics for Bowtie's latest dialect's
+    latest generated report. For getting statistics on other Bowtie generated
+    dialect reports, do
+    `bowtie latest-report -D {YOUR_DESIRED_DIALECT} | bowtie statistics`
     """
     dialect, ran_on_date = report.metadata.dialect, report.metadata.started
     unsuccessful = report.compliance_by_implementation().values()
@@ -1362,6 +1369,44 @@ async def filter_dialects(
         click.echo(dialect.uri)
         if latest:
             break
+
+
+def show_report_schema(
+    ctx: click.Context,
+    param: click.Parameter | None,
+    value: bool,
+) -> None:
+    if not value or ctx.resilient_parsing:
+        return
+    uri = "tag:bowtie.report,2024:report"
+    schema = validator_registry().schema(uri)
+    click.echo(json.dumps(schema, indent=2))
+    ctx.exit()
+
+
+@subcommand
+@DIALECT
+@click.option(
+    "--schema",
+    callback=show_report_schema,
+    expose_value=False,
+    is_eager=True,
+    is_flag=True,
+    help="Show the JSON Schema for this command's JSON output.",
+)
+def latest_report(dialect: Dialect):
+    """
+    Print latest Bowtie generated report for a dialect.
+
+    If no dialect provided, it prints Bowtie's latest
+    dialect's latest generated report.
+    """
+
+    async def write(response: Coroutine[Any, Any, Response]):
+        async for chunk in (await response).aiter_bytes():
+            click.echo(chunk)
+
+    asyncio.run(write(dialect.latest_report()))
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
