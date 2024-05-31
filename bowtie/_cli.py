@@ -75,24 +75,31 @@ EX = _EX()
 STDERR = console.Console(stderr=True)
 
 
+# Evade ewels/rich-click#201
+_PROG = "main" if sys.argv[0].endswith("__main__.py") else "bowtie"
 # rich-click's CommandGroupDict seems to be missing some covariance, as using a
 # regular dict here makes pyright complain.
-_COMMAND_GROUPS = dict(
-    bowtie=[
+_COMMAND_GROUPS = {
+    _PROG: [
         CommandGroupDict(
             name="Basic Commands",
             commands=["validate", "suite", "summary", "info"],
         ),
         CommandGroupDict(
             name="Advanced Usage",
-            commands=["filter-dialects", "filter-implementations", "run"],
+            commands=[
+                "filter-dialects",
+                "filter-implementations",
+                "run",
+                "statistics",
+            ],
         ),
         CommandGroupDict(
             name="Plumbing Commands",
             commands=["badges", "smoke"],
         ),
     ],
-)
+}
 _OPTION_GROUPS = {
     f"bowtie {command}": [
         *[
