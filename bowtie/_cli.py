@@ -972,7 +972,7 @@ class _Filter(click.ParamType):
         )
 
 
-def _set_dialect(ctx: click.Context, _, value: _Dialect):
+def _set_dialect_via_schema(ctx: click.Context, _, value: _Dialect):
     """
     Set the dialect according to a possibly present :kw:`$schema` keyword.
     """
@@ -1016,19 +1016,6 @@ IMPLEMENTATION = click.option(
         "implementations to run."
         "Run `bowtie filter-implementations` for the full list of "
         "supported implementations."
-    ),
-)
-DIALECT = click.option(
-    "--dialect",
-    "-D",
-    "dialect",
-    type=_Dialect(),
-    callback=_set_dialect,
-    show_default=True,
-    metavar="URI_OR_NAME",
-    help=(
-        "A URI or shortname identifying the dialect of each test. Possible "
-        f"shortnames include: {', '.join(sorted(Dialect.by_alias()))}."
     ),
 )
 FILTER = click.option(
@@ -1087,6 +1074,28 @@ VALIDATE = click.option(
         "you are developing a new implementation container."
     ),
 )
+
+
+def dialect_option(
+    default: Dialect | None = max(Dialect.known()),
+    **kwargs: Any,
+):
+    if default is not None:
+        kwargs.update(default=default, show_default=default.pretty_name)
+
+    shortnames = ", ".join(sorted(Dialect.by_alias()))
+    return click.option(
+        "--dialect",
+        "-D",
+        "dialect",
+        type=_Dialect(),
+        metavar="URI_OR_NAME",
+        help=(
+            "A URI or shortname identifying the dialect of each test. "
+            f"Possible shortnames include: {shortnames}."
+        ),
+        **kwargs,
+    )
 
 
 def fail_fast(fn: FC) -> FC:
@@ -1155,8 +1164,8 @@ class JSON(click.File):
 
 
 @subcommand
+@dialect_option()
 @IMPLEMENTATION
-@DIALECT
 @FILTER
 @fail_fast
 @SET_SCHEMA
@@ -1188,8 +1197,8 @@ def run(
 
 
 @subcommand
+@dialect_option(default=None, callback=_set_dialect_via_schema)
 @IMPLEMENTATION
-@DIALECT
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
@@ -1378,13 +1387,10 @@ async def filter_dialects(
 
 
 @subcommand
-@DIALECT
+@dialect_option()
 def latest_report(dialect: Dialect):
     """
-    Print latest Bowtie generated report for a dialect.
-
-    If no dialect provided, it prints Bowtie's latest
-    dialect's latest generated report.
+    Output the latest published report from Bowtie's website.
     """
 
     async def write(response: Awaitable[Response]):
