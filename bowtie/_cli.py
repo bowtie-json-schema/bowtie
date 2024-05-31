@@ -1378,9 +1378,11 @@ def latest_report(dialect: Dialect):
     If no dialect provided, it outputs Bowtie's latest
     dialect's latest generated report.
     """
+
     async def write(response):
         async for chunk in (await response).aiter_bytes():
             click.echo(chunk)
+
     asyncio.run(write(dialect.latest_report()))
 
 
