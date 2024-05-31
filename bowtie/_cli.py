@@ -1370,9 +1370,28 @@ async def filter_dialects(
         if latest:
             break
 
+def show_report_schema(
+    ctx: click.Context,
+    param: click.Parameter | None,
+    value: bool,
+) -> None:
+    if not value or ctx.resilient_parsing:
+        return
+    uri = "tag:bowtie.report,2024:report"
+    schema = validator_registry().schema(uri)
+    click.echo(json.dumps(schema, indent=2))
+    ctx.exit()
 
 @subcommand
 @DIALECT
+@click.option(
+    "--schema",
+    callback=show_report_schema,
+    expose_value=False,
+    is_eager=True,
+    is_flag=True,
+    help="Show the JSON Schema for this command's JSON output.",
+)
 def latest_report(dialect: Dialect):
     """
     Print latest Bowtie generated report for a dialect.
