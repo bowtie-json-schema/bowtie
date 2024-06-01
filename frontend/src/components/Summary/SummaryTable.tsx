@@ -34,10 +34,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           <OverlayTrigger
             placement="left-start"
             overlay={
-              <Popover
-                style={{ border: "1px solid var(--bs-primary)" }}
-                arrowProps={{ style: {} }}
-              >
+              <Popover style={{ border: "1px solid var(--bs-primary)" }}>
                 <Popover.Body>
                   <Container className="p-0 text-center">
                     <Row className="d-flex flex-column gap-2">
