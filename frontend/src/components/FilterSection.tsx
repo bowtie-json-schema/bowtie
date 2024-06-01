@@ -1,10 +1,11 @@
-import "./FilterSection.css";
+import { Link } from "react-router-dom";
 import Badge from "react-bootstrap/Badge";
 import Card from "react-bootstrap/Card";
-import { Link } from "react-router-dom";
-import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { X } from "react-bootstrap-icons";
+
+import { useSearchParams } from "../hooks/useSearchParams.ts";
 import { mapLanguage } from "../data/mapLanguage.ts";
+import styles from "./FilterSection.module.css";
 
 export const FilterSection = ({ languages }: { languages: string[] }) => {
   const params = useSearchParams();
@@ -40,7 +41,7 @@ const FilterChip = ({
       .forEach((lang) => newParams.append("language", lang));
     return (
       <Link key={current} to={{ search: newParams.toString() }}>
-        <Badge pill bg="filter-active">
+        <Badge pill bg="" className={styles["bg-filter-active"]}>
           <div className="px-2">{mapLanguage(current)}</div>
           <X size="20px" className="mr-1" />
         </Badge>
@@ -51,7 +52,7 @@ const FilterChip = ({
     newParams.append("language", current);
     return (
       <Link key={current} to={{ search: newParams.toString() }}>
-        <Badge pill bg="filter">
+        <Badge pill bg="" className={styles["bg-filter"]}>
           <div className="px-2">{mapLanguage(current)}</div>
         </Badge>
       </Link>

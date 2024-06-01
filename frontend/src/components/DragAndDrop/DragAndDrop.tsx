@@ -1,9 +1,10 @@
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import { useLocation } from "react-router-dom";
-import "./DragAndDrop.css";
+
 import { DialectReportView } from "../../DialectReportView";
 import { ReportData, parseReportData } from "../../data/parseReportData";
+import styles from "./DragAndDrop.module.css";
 
 export const DragAndDrop = () => {
   const location = useLocation();
@@ -64,7 +65,7 @@ export const DragAndDrop = () => {
       try {
         const dataObjectsArray = result.trim().split(/\r?\n/);
         const lines = dataObjectsArray.map(
-          (line) => JSON.parse(line) as Record<string, unknown>,
+          (line) => JSON.parse(line) as Record<string, unknown>
         );
         setLines(parseReportData(lines));
       } catch (error) {
@@ -89,7 +90,7 @@ export const DragAndDrop = () => {
 
       <div className="card-body d-grid justify-content-center">
         <form
-          className="form-file-upload"
+          className={styles["form-file-upload"]}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -105,11 +106,12 @@ export const DragAndDrop = () => {
           />
 
           <div
-            id="label-file-upload"
-            className={dragActive ? "drag-active" : ""}
+            className={`${styles["label-file-upload"]} ${
+              dragActive ? styles["drag-active"] : ""
+            }`}
             style={{ backgroundColor: `${invalidFile ? "#f00b0b39" : ""}` }}
           >
-            <div className="flex-div text-center">
+            <div className={`${styles["flex-div"]} text-center`}>
               <p>
                 You can generate a report by running{" "}
                 <a href="https://docs.bowtie.report/en/stable/cli/">
@@ -133,7 +135,7 @@ export const DragAndDrop = () => {
                 upload here!
               </p>
             </div>
-            <div className="flex-div text-center">
+            <div className={`${styles["flex-div"]} text-center`}>
               <CloudArrowUpFill size={80} />
               {invalidFile ? (
                 <h5 className={"pt-3 text-danger"}>

@@ -16,7 +16,7 @@ import CopyToClipboard from "../CopyToClipboard";
 import { EmbedBadgesContextType } from "./ImplementationReportView";
 import { Badge, badgesFor } from "../../data/Badge";
 import { ThemeContext } from "../../context/ThemeContext";
-import "./EmbedBadges.css";
+import styles from "./EmbedBadges.module.css";
 
 const EmbedBadges = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const EmbedBadges = () => {
     <Modal
       fullscreen="xl-down"
       contentClassName="px-4"
-      dialogClassName="modal-width"
+      dialogClassName={styles["modal-width"]}
       show={show}
       onHide={() => setShow(false)}
       onExited={() => navigate(`/implementations/${implementationId}`)}
@@ -97,7 +97,7 @@ const EmbedBadges = () => {
                 <SyntaxHighlighter
                   language={activeFormat.name.toLowerCase()}
                   style={isDarkMode ? oneDark : oneLight}
-                  className="code-block"
+                  className={styles["code-block"]}
                   wrapLongLines
                 >
                   {badgeEmbed}
