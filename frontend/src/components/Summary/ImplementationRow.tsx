@@ -65,20 +65,20 @@ const ImplementationRow = ({
               <Container className="p-0">
                 <Row className="d-flex flex-column gap-2">
                   <Col>
-                    <span>
-                      <b style={{ fontSize: "1rem" }}>failed</b>:&nbsp;
+                    <b style={{ fontSize: "1rem" }}>failed:</b>&nbsp;
+                    <span style={{ fontWeight: "500" }}>
                       {implementationResults.totals.failedTests}
                     </span>
                   </Col>
                   <Col>
-                    <span>
-                      <b style={{ fontSize: "1rem" }}>errored</b>:&nbsp;
+                    <b style={{ fontSize: "1rem" }}>errored:</b>&nbsp;
+                    <span style={{ fontWeight: "500" }}>
                       {implementationResults.totals.erroredTests}
                     </span>
                   </Col>
                   <Col>
-                    <span>
-                      <b style={{ fontSize: "1rem" }}>skipped</b>:&nbsp;
+                    <b style={{ fontSize: "1rem" }}>skipped:</b>&nbsp;
+                    <span style={{ fontWeight: "500" }}>
                       {implementationResults.totals.skippedTests}
                     </span>
                   </Col>

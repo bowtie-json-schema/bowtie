@@ -39,31 +39,25 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                   <Container className="p-0 text-center">
                     <Row className="d-flex flex-column gap-2">
                       <Col>
-                        <span style={{ fontSize: "1rem" }} className="fw-bold">
-                          failed
-                        </span>
+                        <b style={{ fontSize: "1rem" }}>failed</b>
                         <br />
-                        <span>
+                        <span style={{ fontWeight: "500" }}>
                           implementation worked successfully but got the wrong
                           answer
                         </span>
                       </Col>
                       <Col>
-                        <span style={{ fontSize: "1rem" }} className="fw-bold">
-                          errored
-                        </span>
+                        <b style={{ fontSize: "1rem" }}>errored</b>
                         <br />
-                        <span>
+                        <span style={{ fontWeight: "500" }}>
                           implementation crashed when trying to calculate an
                           answer
                         </span>
                       </Col>
                       <Col>
-                        <span style={{ fontSize: "1rem" }} className="fw-bold">
-                          skipped
-                        </span>
+                        <b style={{ fontSize: "1rem" }}>skipped</b>
                         <br />
-                        <span>
+                        <span style={{ fontWeight: "500" }}>
                           implementation skipped the test (typically because it
                           is a known bug)
                         </span>
@@ -93,7 +87,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               a.totals.skippedTests! -
               b.totals.failedTests! -
               b.totals.erroredTests! -
-              b.totals.skippedTests!,
+              b.totals.skippedTests!
           )
           .map(([id, implResults], index) => (
             <ImplementationRow
@@ -119,23 +113,23 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                   <Container className="p-0">
                     <Row className="d-flex flex-column gap-2">
                       <Col>
-                        <span>
-                          <b style={{ fontSize: "1rem" }}>total failed</b>
-                          :&nbsp;
+                        <b style={{ fontSize: "1rem" }}>total failed:</b>
+                        &nbsp;
+                        <span style={{ fontWeight: "500" }}>
                           {totals.failedTests}
                         </span>
                       </Col>
                       <Col>
-                        <span>
-                          <b style={{ fontSize: "1rem" }}>total errored</b>
-                          :&nbsp;
+                        <b style={{ fontSize: "1rem" }}>total errored:</b>
+                        &nbsp;
+                        <span style={{ fontWeight: "500" }}>
                           {totals.erroredTests}
                         </span>
                       </Col>
                       <Col>
-                        <span>
-                          <b style={{ fontSize: "1rem" }}>total skipped</b>
-                          :&nbsp;
+                        <b style={{ fontSize: "1rem" }}>total skipped:</b>
+                        &nbsp;
+                        <span style={{ fontWeight: "500" }}>
                           {totals.skippedTests}
                         </span>
                       </Col>
