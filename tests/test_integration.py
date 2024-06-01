@@ -2147,6 +2147,32 @@ async def test_run_mismatched_dialect(envsonschema):
 
 
 @pytest.mark.asyncio
+async def test_run_registry_metasschema_not_mismatched_dialect(envsonschema):
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": {"$schema": "urn:metaschema"}, "registry": {"urn:metaschema": {"$schema": "https://json-schema.org/draft/2019-09/schema"}}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_run_registry_metasschema_still_mismatched_dialect(envsonschema):
+    async with run("-i", envsonschema, "-D", "2019") as send:
+        results, stderr = await send(
+            """
+            {"description": "wrong dialect", "schema": {"$schema": "urn:metaschema"}, "registry": {"urn:metaschema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}}, "tests": [{"description": "a test", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert "$schema keyword does not" in stderr, stderr
+
+
+@pytest.mark.asyncio
 async def test_run_mismatched_dialect_total_junk(envsonschema):
     """
     A $schema keyword that isn't even a string just gets ignored.
