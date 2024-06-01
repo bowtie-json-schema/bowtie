@@ -71,21 +71,17 @@ class SeqCase:
         return dict(seq=self.seq, case=self.case.serializable())
 
     def matches_dialect(self, dialect: _Dialect):
-        registry, schema = self.case.registry, self.case.schema
-
         # FIXME: This of course belongs in a JSON Schema library for traversing
         #        these metaschemas.
+        resource = dialect.specification().create_resource(self.case.schema)
         metaschema_uri = dialect.uri
-        while metaschema_uri is not None:
+        while resource is not None:
             try:
-                metaschema_uri = URL.parse(schema["$schema"])
+                metaschema_uri = URL.parse(resource.contents["$schema"])  # type: ignore[reportIndexIssue]
             except (TypeError, LookupError):
                 return True
 
-            resource = registry.get(str(metaschema_uri))
-            if resource is None:
-                break
-            schema = resource.contents
+            resource = self.case.registry.get(str(metaschema_uri))
         return metaschema_uri == dialect.uri
 
 
