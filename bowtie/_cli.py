@@ -855,14 +855,14 @@ def statistics(
         case "pretty":
             click.echo(
                 f"Dialect: {dialect.pretty_name}\n"
-                f"Ran on: {ran_on_date.strftime('%x %X')}",
+                f"Ran on: {ran_on_date.strftime('%x %X %Z')}\n",
             )
             for k, v in statistics.items():
                 click.echo(f"{k}: {v}")
         case "markdown":
             heading = (
-                f"## Dialect: {dialect.pretty_name}\n"
-                f"### Ran on: {ran_on_date.strftime('%x %X')}"
+                f"## Dialect: {dialect.pretty_name}\n\n"
+                f"### Ran on: {ran_on_date.strftime('%x %X %Z')}\n"
             )
             markdown = _convert_table_to_markdown(
                 columns=["Metric", "Value"],

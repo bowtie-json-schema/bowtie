@@ -1,4 +1,4 @@
-file:.#egg=bowtie-json-schema
+file:.
 -r requirements.txt
 hypothesis
 jsonschema
@@ -6,4 +6,5 @@ markdown-it-py==3.0.0
 pytest
 pytest-asyncio==0.21.2
 pytest-icdiff
+python-dateutil
 pexpect

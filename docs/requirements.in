@@ -1,4 +1,4 @@
-file:.#egg=bowtie-json-schema
+file:.
 furo
 pygments-github-lexers
 sphinx-click

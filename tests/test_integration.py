@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
@@ -11,6 +11,9 @@ import sys
 import tarfile
 
 from aiodocker.exceptions import DockerError
+from dateutil.parser import isoparse, parse as parse_datetime
+from dateutil.tz import tzlocal
+from dateutil.utils import default_tzinfo, within_delta
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
@@ -2256,26 +2259,23 @@ async def test_statistics_pretty(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
-    lines = stdout.splitlines()
-    ran_on_line = next(
-        (line for line in lines if line.startswith("Ran on:")),
-        None,
-    )
-    assert ran_on_line is not None, "Ran on date not found in stdout"
+    prefix = "Ran on: "
+    ran_on_lines = [
+        line.removeprefix(prefix)
+        for line in stdout.splitlines()
+        if line.startswith(prefix)
+    ]
+    assert len(ran_on_lines) == 1, ("Couldn't find run date", stdout, stderr)
+    ran_on = default_tzinfo(parse_datetime(ran_on_lines[0]), tzlocal())
 
-    ran_on_str = ran_on_line.split("Ran on:")[1].strip()
-
-    now = datetime.now(timezone.utc)
-    assert (
-        now - timedelta(minutes=5)
-        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
-        <= now + timedelta(minutes=5)
-    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+    now, delta = datetime.now(tzlocal()), timedelta(minutes=1)
+    assert within_delta(ran_on, now, delta), f"{ran_on} is too far from {now}."
 
     assert stdout == dedent(
         f"""\
         Dialect: Draft 2020-12
-        Ran on: {ran_on_str}
+        {prefix}{ran_on_lines[0]}
+
         median: 0.65
         mean: 0.65
         """,
@@ -2313,19 +2313,14 @@ async def test_statistics_json(envsonschema, always_valid):
         json=True,
     )
 
-    ran_on_str = jsonout["ran_on"]
-
-    now = datetime.now(timezone.utc)
-    assert (
-        now - timedelta(minutes=5)
-        <= datetime.fromisoformat(ran_on_str)
-        <= now + timedelta(minutes=5)
-    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+    ran_on = isoparse(jsonout["ran_on"])
+    now, delta = datetime.now(tzlocal()), timedelta(minutes=1)
+    assert within_delta(ran_on, now, delta), f"{ran_on} is too far from {now}."
 
     (await command_validator("statistics")).validate(jsonout)
     assert jsonout == dict(
         dialect="https://json-schema.org/draft/2020-12/schema",
-        ran_on=ran_on_str,
+        ran_on=jsonout["ran_on"],
         median=0.65,
         mean=0.65,
     )
@@ -2360,26 +2355,25 @@ async def test_statistics_markdown(envsonschema, always_valid):
         stdin=run_stdout,
     )
 
-    lines = stdout.splitlines()
-    ran_on_line = next(
-        (line for line in lines if line.startswith("### Ran on:")),
-        None,
-    )
-    assert ran_on_line is not None, "Ran on date not found in stdout"
+    prefix = "### Ran on:"
 
-    ran_on_str = ran_on_line.split("### Ran on:")[1].strip()
+    ran_on_lines = [
+        line.removeprefix(prefix)
+        for line in stdout.splitlines()
+        if line.startswith(prefix)
+    ]
+    assert len(ran_on_lines) == 1, ("Couldn't find run date", stdout, stderr)
+    ran_on = default_tzinfo(parse_datetime(ran_on_lines[0]), tzlocal())
 
-    now = datetime.now(timezone.utc)
-    assert (
-        now - timedelta(minutes=5)
-        <= datetime.strptime(ran_on_str, "%x %X").astimezone(timezone.utc)
-        <= now + timedelta(minutes=5)
-    ), f"Ran on date {ran_on_str} is not within 5 minutes of now {now}"
+    now, delta = datetime.now(tzlocal()), timedelta(minutes=1)
+    assert within_delta(ran_on, now, delta), f"{ran_on} is too far from {now}."
 
     assert stdout == dedent(
         f"""\
         ## Dialect: Draft 2020-12
-        ### Ran on: {ran_on_str}
+
+        {prefix}{ran_on_lines[0]}
+
         | Metric | Value |
         |:------:|:----:|
         | median | 0.65 |
