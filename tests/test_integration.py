@@ -2134,7 +2134,7 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_run_mismatched_dialect(envsonschema, tmp_path):
+async def test_run_mismatched_dialect(envsonschema):
     async with run("-i", envsonschema, "-D", "2019") as send:
         results, stderr = await send(
             """
@@ -2147,7 +2147,7 @@ async def test_run_mismatched_dialect(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_run_mismatched_dialect_total_junk(envsonschema, tmp_path):
+async def test_run_mismatched_dialect_total_junk(envsonschema):
     """
     A $schema keyword that isn't even a string just gets ignored.
 
