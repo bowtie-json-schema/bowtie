@@ -65,25 +65,28 @@ const ImplementationRow = ({
               <Container className="p-0">
                 <Row className="d-flex flex-column gap-2">
                   <Col>
-                    <span>
-                      <h6 className="mb-0">
-                        failed: {implementationResults.totals.failedTests}
-                      </h6>
-                    </span>
+                    <h6 className="fw-bold mb-0">
+                      failed:&nbsp;
+                      <span className="fw-medium">
+                        {implementationResults.totals.failedTests}
+                      </span>
+                    </h6>
                   </Col>
                   <Col>
-                    <span>
-                      <h6 className="mb-0">
-                        errored: {implementationResults.totals.erroredTests}
-                      </h6>
-                    </span>
+                    <h6 className="fw-bold mb-0">
+                      errored:&nbsp;
+                      <span className="fw-medium">
+                        {implementationResults.totals.erroredTests}
+                      </span>
+                    </h6>
                   </Col>
                   <Col>
-                    <span>
-                      <h6 className="mb-0">
-                        skipped: {implementationResults.totals.skippedTests}
-                      </h6>
-                    </span>
+                    <h6 className="fw-bold mb-0">
+                      skipped:&nbsp;
+                      <span className="fw-medium">
+                        {implementationResults.totals.skippedTests}
+                      </span>
+                    </h6>
                   </Col>
                 </Row>
               </Container>

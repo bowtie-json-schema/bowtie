@@ -40,21 +40,21 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                     <Row className="d-flex flex-column gap-3">
                       <Col>
                         <h6 className="fw-bold mb-0">failed</h6>
-                        <span style={{ fontWeight: "500" }}>
+                        <span className="fw-medium">
                           implementation worked successfully but got the wrong
                           answer
                         </span>
                       </Col>
                       <Col>
                         <h6 className="fw-bold mb-0">errored</h6>
-                        <span style={{ fontWeight: "500" }}>
+                        <span className="fw-medium">
                           implementation crashed when trying to calculate an
                           answer
                         </span>
                       </Col>
                       <Col>
                         <h6 className="fw-bold mb-0">skipped</h6>
-                        <span style={{ fontWeight: "500" }}>
+                        <span className="fw-medium">
                           implementation skipped the test (typically because it
                           is a known bug)
                         </span>
@@ -110,18 +110,27 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                   <Container className="p-0">
                     <Row className="d-flex flex-column gap-2">
                       <Col>
-                        <h6 className="mb-0">
-                          total failed: {totals.failedTests}
+                        <h6 className="fw-bold mb-0">
+                          total failed:&nbsp;
+                          <span className="fw-medium">
+                            {totals.failedTests}
+                          </span>
                         </h6>
                       </Col>
                       <Col>
-                        <h6 className="mb-0">
-                          total errored: {totals.erroredTests}
+                        <h6 className="fw-bold mb-0">
+                          total errored:&nbsp;
+                          <span className="fw-medium">
+                            {totals.erroredTests}
+                          </span>
                         </h6>
                       </Col>
                       <Col>
-                        <h6 className="mb-0">
-                          total skipped: {totals.skippedTests}
+                        <h6 className="fw-bold mb-0">
+                          total skipped:&nbsp;
+                          <span className="fw-medium">
+                            {totals.skippedTests}
+                          </span>
                         </h6>
                       </Col>
                     </Row>
