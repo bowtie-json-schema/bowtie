@@ -84,7 +84,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               a.totals.skippedTests! -
               b.totals.failedTests! -
               b.totals.erroredTests! -
-              b.totals.skippedTests!,
+              b.totals.skippedTests!
           )
           .map(([id, implResults], index) => (
             <ImplementationRow
@@ -112,7 +112,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                       <Col>
                         <h6 className="fw-bold mb-0">
                           total failed:&nbsp;
-                          <span className="fw-medium">
+                          <span className="fw-normal">
                             {totals.failedTests}
                           </span>
                         </h6>
@@ -120,7 +120,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                       <Col>
                         <h6 className="fw-bold mb-0">
                           total errored:&nbsp;
-                          <span className="fw-medium">
+                          <span className="fw-normal">
                             {totals.erroredTests}
                           </span>
                         </h6>
@@ -128,7 +128,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
                       <Col>
                         <h6 className="fw-bold mb-0">
                           total skipped:&nbsp;
-                          <span className="fw-medium">
+                          <span className="fw-normal">
                             {totals.skippedTests}
                           </span>
                         </h6>

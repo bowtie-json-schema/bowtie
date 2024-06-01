@@ -67,7 +67,7 @@ const ImplementationRow = ({
                   <Col>
                     <h6 className="fw-bold mb-0">
                       failed:&nbsp;
-                      <span className="fw-medium">
+                      <span className="fw-normal">
                         {implementationResults.totals.failedTests}
                       </span>
                     </h6>
@@ -75,7 +75,7 @@ const ImplementationRow = ({
                   <Col>
                     <h6 className="fw-bold mb-0">
                       errored:&nbsp;
-                      <span className="fw-medium">
+                      <span className="fw-normal">
                         {implementationResults.totals.erroredTests}
                       </span>
                     </h6>
@@ -83,7 +83,7 @@ const ImplementationRow = ({
                   <Col>
                     <h6 className="fw-bold mb-0">
                       skipped:&nbsp;
-                      <span className="fw-medium">
+                      <span className="fw-normal">
                         {implementationResults.totals.skippedTests}
                       </span>
                     </h6>
