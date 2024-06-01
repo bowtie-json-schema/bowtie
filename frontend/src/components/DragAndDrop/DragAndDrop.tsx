@@ -106,9 +106,8 @@ export const DragAndDrop = () => {
           />
 
           <div
-            className={`${styles["label-file-upload"]} ${
-              dragActive ? styles["drag-active"] : ""
-            }`}
+            id={styles["label-file-upload"]}
+            className={dragActive ? styles["drag-active"] : ""}
             style={{ backgroundColor: `${invalidFile ? "#f00b0b39" : ""}` }}
           >
             <div className={`${styles["flex-div"]} text-center`}>
