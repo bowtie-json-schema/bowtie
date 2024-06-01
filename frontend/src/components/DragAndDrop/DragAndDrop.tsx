@@ -65,7 +65,7 @@ export const DragAndDrop = () => {
       try {
         const dataObjectsArray = result.trim().split(/\r?\n/);
         const lines = dataObjectsArray.map(
-          (line) => JSON.parse(line) as Record<string, unknown>
+          (line) => JSON.parse(line) as Record<string, unknown>,
         );
         setLines(parseReportData(lines));
       } catch (error) {
