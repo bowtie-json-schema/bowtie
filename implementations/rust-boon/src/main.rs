@@ -58,8 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     compiler.set_default_draft(draft);
                 }
                 if let Value::Object(obj) = &case["registry"] {
-                    compiler.register_url_loader("http", Box::new(MapUrlLoader(obj.clone())));
-                    compiler.register_url_loader("https", Box::new(MapUrlLoader(obj.clone())));
+                    compiler.use_loader(Box::new(MapUrlLoader(obj.clone())));
                 }
                 let fake_url = "http://fake.com/schema.json";
                 if let Err(e) = compiler.add_resource(fake_url, case["schema"].clone()) {
