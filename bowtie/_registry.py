@@ -17,10 +17,7 @@ if TYPE_CHECKING:
 
 E_co = TypeVar("E_co", bound=Exception, covariant=True)
 ErrorsFor = Callable[[Any], Iterable[E_co]]
-SchemaCompiler = Callable[
-    [Schema, SchemaRegistry],
-    Callable[[Any], ErrorsFor[E_co]],
-]
+SchemaCompiler = Callable[[Schema, SchemaRegistry], ErrorsFor[E_co]]
 
 
 class UnexpectedlyValid(Exception):

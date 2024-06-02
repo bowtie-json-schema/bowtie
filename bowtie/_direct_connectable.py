@@ -19,16 +19,18 @@ from bowtie._core import Connection, Dialect, ImplementationInfo
 from bowtie._registry import E_co, SchemaCompiler
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable
+    from collections.abc import AsyncIterator, Callable, Iterable
 
     from jsonschema import ValidationError
+    from jsonschema.protocols import Validator
+    from referencing.jsonschema import Schema, SchemaRegistry
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
 
 
-def not_yet_connected(*_: Any):
-    def _not_yet_connected(*_: Any):
+def not_yet_connected(schema: Schema, registry: SchemaRegistry):
+    def _not_yet_connected(instance: Any):
         raise RuntimeError("Not yet connected!")
 
     return _not_yet_connected
@@ -66,12 +68,17 @@ class Unconnection(Generic[E_co]):
                 self._for_current_dialect = self._compile(dialect)
                 return asdict(StartedDialect.OK)
             case {"cmd": "run", "seq": seq, "case": case}:
-                validate = self._for_current_dialect(
+                errors_for = self._for_current_dialect(
                     case["schema"],
                     case.get("registry", EMPTY_REGISTRY),
                 )
                 results = [
-                    TestResult(valid=bool(validate(test["instance"])))
+                    TestResult(
+                        valid=(
+                            next(iter(errors_for(test["instance"])), None)
+                            is None
+                        ),
+                    )
                     for test in case["tests"]
                 ]
                 return {  # FIXME: Bleh this is not SeqResult
@@ -98,6 +105,20 @@ def jsonschema(id: str) -> Unconnection[ValidationError]:
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
+
+    def compile(dialect: Dialect) -> SchemaCompiler[ValidationError]:
+        def _compile(
+            schema: Schema,
+            registry: SchemaRegistry,
+        ) -> Callable[[Any], Iterable[ValidationError]]:
+            DialectValidator: type[Validator] = validator_for(  # type: ignore[reportUnknownVariableType]
+                schema,
+                default=validator_for({"$schema": str(dialect.uri)}),
+            )
+            validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
+            return validator.iter_errors  # type: ignore[reportUnknownMemberType]
+
+        return _compile
 
     return Unconnection(
         id=id,
@@ -131,17 +152,7 @@ def jsonschema(id: str) -> Unconnection[ValidationError]:
             os_version=platform.release(),
             language_version=platform.python_version(),
         ),
-        compile=lambda dialect: (
-            lambda schema, registry: (  # type: ignore[reportUnknownMemberType]
-                validator_for(
-                    schema,
-                    default=validator_for({"$schema": str(dialect.uri)}),
-                )(
-                    schema,
-                    registry=registry,
-                ).iter_errors
-            )
-        ),
+        compile=compile,
     )
 
 

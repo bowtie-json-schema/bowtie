@@ -2466,3 +2466,8 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
     ] == [
         [{"direct:jsonschema": TestResult.VALID}],
     ], stderr
+
+
+@pytest.mark.asyncio
+async def test_smoke_direct_connectable_jsonschema():
+    await bowtie("smoke", "-i", "direct:jsonschema", exit_code=0)
