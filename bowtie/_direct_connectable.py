@@ -5,7 +5,9 @@ Direct connectables do not really connect anywhere and just operate in-memory.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from importlib import metadata
 from typing import TYPE_CHECKING, Any, Generic
+import platform
 
 from attrs import asdict, field, frozen, mutable
 from attrs.validators import in_
@@ -18,6 +20,8 @@ from bowtie._registry import E_co, SchemaCompiler
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable
+
+    from jsonschema import ValidationError
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
@@ -85,6 +89,65 @@ class Unconnection(Generic[E_co]):
         """
 
 
+def jsonschema(id: str) -> Unconnection[ValidationError]:
+    """
+    An (un)connection to the python-jsonschema implementation.
+    """
+    dialects = Dialect.by_alias()
+
+    from jsonschema.validators import (
+        validator_for,  # type: ignore[reportUnknownVariableType]
+    )
+
+    return Unconnection(
+        id=id,
+        info=ImplementationInfo(
+            language="python",
+            name="jsonschema",
+            version=metadata.version("jsonschema"),
+            homepage=URL.parse(
+                "https://python-jsonschema.readthedocs.io/",
+            ),
+            documentation=URL.parse(
+                "https://python-jsonschema.readthedocs.io/",
+            ),
+            issues=URL.parse(
+                "https://github.com/python-jsonschema/jsonschema/issues",
+            ),
+            source=URL.parse(
+                "https://github.com/python-jsonschema/jsonschema",
+            ),
+            dialects=frozenset(
+                [
+                    dialects["2020"],
+                    dialects["2019"],
+                    dialects["7"],
+                    dialects["6"],
+                    dialects["4"],
+                    dialects["3"],
+                ],
+            ),
+            os=platform.system(),
+            os_version=platform.release(),
+            language_version=platform.python_version(),
+        ),
+        compile=lambda dialect: (
+            lambda schema, registry: (  # type: ignore[reportUnknownMemberType]
+                validator_for(
+                    schema,
+                    default=validator_for({"$schema": str(dialect.uri)}),
+                )(
+                    schema,
+                    registry=registry,
+                ).iter_errors
+            )
+        ),
+    )
+
+
+IMPLEMENTATIONS = {fn.__name__: fn for fn in [jsonschema]}
+
+
 @frozen
 class Direct:
     """
@@ -102,7 +165,7 @@ class Direct:
 
     _id: ConnectableId = field(
         repr=False,
-        validator=in_(["jsonschema"]),
+        validator=in_(IMPLEMENTATIONS.keys()),
         alias="id",
     )
 
@@ -110,56 +173,4 @@ class Direct:
 
     @asynccontextmanager
     async def connect(self, **kwargs: Any) -> AsyncIterator[Connection]:
-        from importlib import metadata
-        import platform
-
-        dialects = Dialect.by_alias()
-
-        from jsonschema.validators import (
-            validator_for,  # type: ignore[reportUnknownVariableType]
-        )
-
-        yield Unconnection(
-            id=f"{self.connector}:{self._id}",
-            info=ImplementationInfo(
-                language="python",
-                name="jsonschema",
-                version=metadata.version("jsonschema"),
-                homepage=URL.parse(
-                    "https://python-jsonschema.readthedocs.io/",
-                ),
-                documentation=URL.parse(
-                    "https://python-jsonschema.readthedocs.io/",
-                ),
-                issues=URL.parse(
-                    "https://github.com/python-jsonschema/jsonschema/issues",
-                ),
-                source=URL.parse(
-                    "https://github.com/python-jsonschema/jsonschema",
-                ),
-                dialects=frozenset(
-                    [
-                        dialects["2020"],
-                        dialects["2019"],
-                        dialects["7"],
-                        dialects["6"],
-                        dialects["4"],
-                        dialects["3"],
-                    ],
-                ),
-                os=platform.system(),
-                os_version=platform.release(),
-                language_version=platform.python_version(),
-            ),
-            compile=lambda dialect: (
-                lambda schema, registry: (  # type: ignore[reportUnknownMemberType]
-                    validator_for(
-                        schema,
-                        default=validator_for({"$schema": str(dialect.uri)}),
-                    )(
-                        schema,
-                        registry=registry,
-                    ).iter_errors
-                )
-            ),
-        )
+        yield IMPLEMENTATIONS[self._id](f"{self.connector}:{self._id}")
