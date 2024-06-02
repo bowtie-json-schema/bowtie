@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Generic
 import platform
 
 from attrs import asdict, field, frozen, mutable
-from attrs.validators import in_
 from referencing.jsonschema import EMPTY_REGISTRY
 from url import URL
 
@@ -27,6 +26,16 @@ if TYPE_CHECKING:
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
+
+
+class NoDirectConnection(Exception):
+    @classmethod
+    def check(cls, _: Any, __: Any, id: ConnectableId):
+        if id not in IMPLEMENTATIONS:
+            raise cls(id)
+
+    def __str__(self):
+        return f"No direct connection can be made to {self.args[0]!r}."
 
 
 def not_yet_connected(schema: Schema, registry: SchemaRegistry):
@@ -156,7 +165,9 @@ def jsonschema(id: str) -> Unconnection[ValidationError]:
     )
 
 
-IMPLEMENTATIONS = {fn.__name__: fn for fn in [jsonschema]}
+IMPLEMENTATIONS = {
+    "python-jsonschema": jsonschema,
+}
 
 
 @frozen
@@ -174,11 +185,7 @@ class Direct:
     target implementation.
     """
 
-    _id: ConnectableId = field(
-        repr=False,
-        validator=in_(IMPLEMENTATIONS.keys()),
-        alias="id",
-    )
+    _id: ConnectableId = field(alias="id", validator=NoDirectConnection.check)
 
     connector = "direct"
 

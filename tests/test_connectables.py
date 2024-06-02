@@ -127,18 +127,18 @@ def test_container_connectable():
     )
 
 
-def test_direct_connectable_jsonschema():
-    id = "direct:jsonschema"
+def test_direct_connectable_python_jsonschema():
+    id = "direct:python-jsonschema"
     validator.validate(id)
     connectable = Connectable.from_str(id)
     assert connectable == Connectable(
         id=id,
-        connector=Direct(id="jsonschema"),
+        connector=Direct(id="python-jsonschema"),
     )
 
 
 def test_direct_connectable_unknown():
     id = "direct:foobar"
     validator.validate(id)
-    with pytest.raises(ValueError, match="'jsonschema'"):
+    with pytest.raises(ValueError, match="'python-jsonschema'"):
         Connectable.from_str(id)

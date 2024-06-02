@@ -2452,7 +2452,7 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
     stdout, stderr = await bowtie(
         "validate",
         "-i",
-        "direct:jsonschema",
+        "direct:python-jsonschema",
         tmp_path / "schema.json",
         tmp_path / "instance.json",
         exit_code=0,
@@ -2464,10 +2464,10 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
         [test_results for _, test_results in results]
         for _, results in report.cases_with_results()
     ] == [
-        [{"direct:jsonschema": TestResult.VALID}],
+        [{"direct:python-jsonschema": TestResult.VALID}],
     ], stderr
 
 
 @pytest.mark.asyncio
 async def test_smoke_direct_connectable_jsonschema():
-    await bowtie("smoke", "-i", "direct:jsonschema", exit_code=0)
+    await bowtie("smoke", "-i", "direct:python-jsonschema", exit_code=0)
