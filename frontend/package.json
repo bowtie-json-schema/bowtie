@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=21.0.0"
   },
-  "packageManager": "pnpm@9.1.2",
+  "packageManager": "pnpm@9.1.4",
   "scripts": {
     "start": "vite --no-clearScreen",
     "build": "tsc && vite build",
