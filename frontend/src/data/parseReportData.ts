@@ -73,7 +73,6 @@ export const parseReportData = (
     implementationsResultsMap.set(id, {
       caseResults: new Map(),
       totals: {
-        erroredCases: 0,
         skippedTests: 0,
         failedTests: 0,
         erroredTests: 0,
@@ -95,7 +94,6 @@ export const parseReportData = (
         const context = line.context as Record<string, unknown>;
         const errorMessage: string = (context?.message ??
           context?.stderr) as string;
-        implementationResults.totals.erroredCases!++;
         implementationResults.totals.erroredTests! += caseData.tests.length;
         implementationResults.caseResults.set(
           line.seq as number,
@@ -236,14 +234,12 @@ export const calculateTotals = (data: ReportData): Totals => {
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
       totalTests,
-      erroredCases: prev.erroredCases + curr.totals.erroredCases!,
       skippedTests: prev.skippedTests + curr.totals.skippedTests!,
       failedTests: prev.failedTests + curr.totals.failedTests!,
       erroredTests: prev.erroredTests + curr.totals.erroredTests!,
     }),
     {
       totalTests: totalTests,
-      erroredCases: 0,
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
@@ -265,7 +261,6 @@ interface Header {
 
 export interface Totals {
   totalTests: number;
-  erroredCases: number;
   skippedTests: number;
   failedTests: number;
   erroredTests: number;

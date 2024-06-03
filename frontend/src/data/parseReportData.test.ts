@@ -161,7 +161,6 @@ describe("parseReportData", () => {
           tag("envsonschema"),
           {
             totals: {
-              erroredCases: 0,
               erroredTests: 0,
               skippedTests: 0,
               failedTests: 1,
@@ -229,7 +228,6 @@ describe("parseReportData", () => {
           tag("envsonschema"),
           {
             totals: {
-              erroredCases: 0,
               erroredTests: 0,
               skippedTests: 0,
               failedTests: 4,

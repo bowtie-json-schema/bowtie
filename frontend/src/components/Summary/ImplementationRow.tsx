@@ -1,8 +1,13 @@
-import "./ImplementationRow.css";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Popover from "react-bootstrap/Popover";
+import Row from "react-bootstrap/Row";
+
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import { useNavigate } from "react-router-dom";
 import {
   Case,
   Implementation,
@@ -30,9 +35,10 @@ const ImplementationRow = ({
   return (
     <tr>
       <th
-        className="table-implementation-name align-middle p-0"
-        onClick={() => navigate(`/implementations/${id}`)}
         scope="row"
+        style={{ cursor: "pointer" }}
+        className="align-middle p-0"
+        onClick={() => navigate(`/implementations/${id}`)}
       >
         <span
           className={`text-decoration-underline ${
@@ -51,26 +57,51 @@ const ImplementationRow = ({
         </small>
       </td>
 
-      <td className="text-center align-middle">
-        {implementationResults.totals.erroredCases}
-      </td>
-      <td className="text-center align-middle">
-        {implementationResults.totals.skippedTests}
-      </td>
-      <td className="text-center align-middle details-required">
-        {implementationResults.totals.failedTests! +
-          implementationResults.totals.erroredTests!}
-        <div className="hover-details text-center">
-          <p>
-            <b>failed</b>: &nbsp;{implementationResults.totals.failedTests}
-          </p>
-          <p>
-            <b>errored</b>: &nbsp;{implementationResults.totals.erroredTests}
-          </p>
-        </div>
-      </td>
+      <OverlayTrigger
+        placement="left-end"
+        overlay={
+          <Popover style={{ border: "1px solid var(--bs-primary)" }}>
+            <Popover.Body>
+              <Container className="p-0">
+                <Row className="d-flex flex-column gap-2">
+                  <Col>
+                    <h6 className="fw-bold mb-0">
+                      failed:&nbsp;
+                      <span className="fw-normal">
+                        {implementationResults.totals.failedTests}
+                      </span>
+                    </h6>
+                  </Col>
+                  <Col>
+                    <h6 className="fw-bold mb-0">
+                      errored:&nbsp;
+                      <span className="fw-normal">
+                        {implementationResults.totals.erroredTests}
+                      </span>
+                    </h6>
+                  </Col>
+                  <Col>
+                    <h6 className="fw-bold mb-0">
+                      skipped:&nbsp;
+                      <span className="fw-normal">
+                        {implementationResults.totals.skippedTests}
+                      </span>
+                    </h6>
+                  </Col>
+                </Row>
+              </Container>
+            </Popover.Body>
+          </Popover>
+        }
+      >
+        <td scope="row" colSpan={4} className="text-center">
+          {implementationResults.totals.failedTests! +
+            implementationResults.totals.erroredTests! +
+            implementationResults.totals.skippedTests!}
+        </td>
+      </OverlayTrigger>
 
-      <td className="align-middle p-0">
+      <td scope="row" colSpan={4} className="align-middle p-0">
         {implementationResults.totals.failedTests! +
           implementationResults.totals.erroredTests! +
           implementationResults.totals.skippedTests! >
