@@ -29,6 +29,7 @@ from bowtie._core import (
     TestCase,
     validator_registry,
 )
+from bowtie._direct_connectable import IMPLEMENTATIONS
 from bowtie._report import EmptyReport, InvalidReport, Report
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
@@ -2468,6 +2469,7 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
     ], stderr
 
 
+@pytest.mark.parametrize("id", IMPLEMENTATIONS.keys())
 @pytest.mark.asyncio
-async def test_smoke_direct_connectable_jsonschema():
-    await bowtie("smoke", "-i", "direct:python-jsonschema", exit_code=0)
+async def test_smoke_direct_connectables(id):
+    await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
