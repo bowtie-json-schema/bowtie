@@ -9,16 +9,13 @@ from bowtie._containers import (
 from bowtie._core import validator_registry
 from bowtie._direct_connectable import Direct, NoDirectConnection
 
-validator = validator_registry().for_uri(
-    "tag:bowtie.report,2024:connectables",
-)
+validator = validator_registry().for_uri("tag:bowtie.report,2024:connectables")
 
 
 def test_explicit_image_with_repository():
     id = "image:foo/bar"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id="foo/bar"),
     )
@@ -27,8 +24,7 @@ def test_explicit_image_with_repository():
 def test_explicit_image_no_repository():
     id = "image:bar"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id=f"{IMAGE_REPOSITORY}/bar"),
     )
@@ -37,8 +33,7 @@ def test_explicit_image_no_repository():
 def test_implicit_image_with_repository():
     id = "foo/bar"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id="foo/bar"),
     )
@@ -47,8 +42,7 @@ def test_implicit_image_with_repository():
 def test_implicit_image_no_repository():
     id = "bar"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id=f"{IMAGE_REPOSITORY}/bar"),
     )
@@ -57,8 +51,7 @@ def test_implicit_image_no_repository():
 def test_explicit_image_with_repository_and_tag():
     id = "image:foo/bar:latest"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id="foo/bar:latest"),
     )
@@ -67,8 +60,7 @@ def test_explicit_image_with_repository_and_tag():
 def test_implicit_image_with_repository_and_tag():
     id = "foo/bar:latest"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableImage(id="foo/bar:latest"),
     )
@@ -81,47 +73,10 @@ def test_unknown_connector():
         Connectable.from_str(id)
 
 
-def test_terse_explicit_image_with_repository():
-    id = "image:foo/bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "foo/bar"
-
-
-def test_terse_explicit_image_bowtie_repository():
-    id = "image:ghcr.io/bowtie-json-schema/bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "bar"
-
-
-def test_terse_explicit_image_no_repository():
-    id = "image:bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "bar"
-
-
-def test_terse_implicit_image_with_repository():
-    id = "foo/bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "foo/bar"
-
-
-def test_terse_implicit_image_bowtie_repository():
-    id = "ghcr.io/bowtie-json-schema/bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "bar"
-
-
-def test_terse_implicit_image_no_repository():
-    id = "bar"
-    validator.validate(id)
-    assert Connectable.from_str(id).to_terse() == "bar"
-
-
 def test_container_connectable():
     id = "container:c7895a98f49d"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=ConnectableContainer(id="c7895a98f49d"),
     )
@@ -130,8 +85,7 @@ def test_container_connectable():
 def test_direct_connectable_python_jsonschema():
     id = "direct:python-jsonschema"
     validator.validate(id)
-    connectable = Connectable.from_str(id)
-    assert connectable == Connectable(
+    assert Connectable.from_str(id) == Connectable(
         id=id,
         connector=Direct(id="python-jsonschema"),
     )
@@ -142,3 +96,35 @@ def test_direct_connectable_unknown():
     validator.validate(id)
     with pytest.raises(NoDirectConnection, match="'foobar'"):
         Connectable.from_str(id)
+
+
+class TestToTerse:
+    def test_explicit_image_with_repository(self):
+        id = "image:foo/bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "foo/bar"
+
+    def test_explicit_image_bowtie_repository(self):
+        id = "image:ghcr.io/bowtie-json-schema/bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "bar"
+
+    def test_explicit_image_no_repository(self):
+        id = "image:bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "bar"
+
+    def test_implicit_image_with_repository(self):
+        id = "foo/bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "foo/bar"
+
+    def test_implicit_image_bowtie_repository(self):
+        id = "ghcr.io/bowtie-json-schema/bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "bar"
+
+    def test_implicit_image_no_repository(self):
+        id = "bar"
+        validator.validate(id)
+        assert Connectable.from_str(id).to_terse() == "bar"
