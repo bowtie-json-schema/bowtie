@@ -104,63 +104,63 @@ class Unconnection(Generic[E_co]):
         """
 
 
-def jsonschema() -> Unconnection[ValidationError]:
-    """
-    An (un)connection to the python-jsonschema implementation.
-    """
-    dialects = Dialect.by_alias()
+def python_implementation(
+    **kwargs: Any,
+) -> Callable[
+    [Callable[[Dialect], SchemaCompiler[E_co]]],
+    Callable[[], Unconnection[E_co]],
+]:
+    def _python_implementation(
+        fn: Callable[[Dialect], SchemaCompiler[E_co]],
+    ) -> Callable[[], Unconnection[E_co]]:
+        name = kwargs.pop("name", fn.__name__)
+        info = ImplementationInfo(
+            name=name,
+            version=metadata.version(name),
+            language="python",
+            os=platform.system(),
+            os_version=platform.release(),
+            language_version=platform.python_version(),
+            **kwargs,
+        )
+        return lambda: Unconnection(compile=fn, info=info)
 
+    return _python_implementation
+
+
+@python_implementation(
+    homepage=URL.parse("https://python-jsonschema.readthedocs.io/"),
+    documentation=URL.parse("https://python-jsonschema.readthedocs.io/"),
+    issues=URL.parse("https://github.com/python-jsonschema/jsonschema/issues"),
+    source=URL.parse("https://github.com/python-jsonschema/jsonschema"),
+    dialects=frozenset(
+        [
+            Dialect.by_short_name()["draft2020-12"],
+            Dialect.by_short_name()["draft2019-09"],
+            Dialect.by_short_name()["draft7"],
+            Dialect.by_short_name()["draft6"],
+            Dialect.by_short_name()["draft4"],
+            Dialect.by_short_name()["draft3"],
+        ],
+    ),
+)
+def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
-    def compile(dialect: Dialect) -> SchemaCompiler[ValidationError]:
-        def _compile(
-            schema: Schema,
-            registry: SchemaRegistry,
-        ) -> Callable[[Any], Iterable[ValidationError]]:
-            DialectValidator: type[Validator] = validator_for(  # type: ignore[reportUnknownVariableType]
-                schema,
-                default=validator_for({"$schema": str(dialect.uri)}),
-            )
-            validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
-            return validator.iter_errors  # type: ignore[reportUnknownMemberType]
+    def compile(
+        schema: Schema,
+        registry: SchemaRegistry,
+    ) -> Callable[[Any], Iterable[ValidationError]]:
+        DialectValidator: type[Validator] = validator_for(  # type: ignore[reportUnknownVariableType]
+            schema,
+            default=validator_for({"$schema": str(dialect.uri)}),
+        )
+        validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
+        return validator.iter_errors  # type: ignore[reportUnknownMemberType]
 
-        return _compile
-
-    return Unconnection(
-        info=ImplementationInfo(
-            language="python",
-            name="jsonschema",
-            version=metadata.version("jsonschema"),
-            homepage=URL.parse(
-                "https://python-jsonschema.readthedocs.io/",
-            ),
-            documentation=URL.parse(
-                "https://python-jsonschema.readthedocs.io/",
-            ),
-            issues=URL.parse(
-                "https://github.com/python-jsonschema/jsonschema/issues",
-            ),
-            source=URL.parse(
-                "https://github.com/python-jsonschema/jsonschema",
-            ),
-            dialects=frozenset(
-                [
-                    dialects["2020"],
-                    dialects["2019"],
-                    dialects["7"],
-                    dialects["6"],
-                    dialects["4"],
-                    dialects["3"],
-                ],
-            ),
-            os=platform.system(),
-            os_version=platform.release(),
-            language_version=platform.python_version(),
-        ),
-        compile=compile,
-    )
+    return compile
 
 
 IMPLEMENTATIONS = {
