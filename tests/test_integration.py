@@ -2473,3 +2473,60 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
 @pytest.mark.asyncio
 async def test_smoke_direct_connectables(id):
     await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
+
+
+@pytest.mark.asyncio
+async def test_implicit_dialect_unsupported(envsonschema, tmp_path):
+    """
+    Sending a schema with no explicit dialect warns once if the
+    implementation does not support implicit dialect requests.
+    """
+    schema = tmp_path / "schema.json"
+    schema.write_text("{}")
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        schema,
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_implicit_dialect_supported(envsonschema, tmp_path):
+    """
+    Sending a schema with no explicit dialect does not warn if the
+    implementation supports implicit dialect requests.
+    """
+    schema = tmp_path / "schema.json"
+    schema.write_text("{}")
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        schema,
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_explicit_dialect_no_implicit_support(envsonschema, tmp_path):
+    """
+    Sending a schema with an explicit dialect does not warn even if the
+    implementation does not support implicit dialect requests.
+    """
+    schema = tmp_path / "schema.json"
+    schema.write_text("{}")
+    stdout, stderr = await bowtie(
+        "validate",
+        "-i",
+        envsonschema,
+        schema,
+        exit_code=-1,
+    )
+    assert stdout == ""
+    assert stderr == ""
