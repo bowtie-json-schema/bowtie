@@ -56,6 +56,7 @@ class Unconnection(Generic[E_co]):
         repr=False,
         alias="compile",
     )
+    _dialect: Dialect = Dialect.latest()
     _for_current_dialect: SchemaCompiler[E_co] = not_yet_connected
 
     async def request(self, message: Message) -> Message:
@@ -72,14 +73,16 @@ class Unconnection(Generic[E_co]):
                 )
                 return asdict(started)
             case {"cmd": "dialect", "dialect": uri}:
-                dialect = Dialect.by_uri()[URL.parse(uri)]
-                self._for_current_dialect = self._compile(dialect)
+                self._dialect = Dialect.by_uri()[URL.parse(uri)]
+                self._for_current_dialect = self._compile(self._dialect)
                 return asdict(StartedDialect.OK)
             case {"cmd": "run", "seq": seq, "case": case}:
-                errors_for = self._for_current_dialect(
-                    case["schema"],
-                    case.get("registry", EMPTY_REGISTRY),
+                schema = case["schema"]
+                registry = EMPTY_REGISTRY.with_contents(
+                    case.get("registry", {}).items(),
+                    default_specification=self._dialect.specification(),
                 )
+                errors_for = self._for_current_dialect(schema, registry)
                 results = [
                     TestResult(
                         valid=(
