@@ -298,7 +298,6 @@ async def start_container(docker: Docker, image_name: str):
         OpenStdin=True,
         HostConfig=dict(NetworkMode="none"),
     )
-    # FIXME: name + labels
     container = await docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
     await container.start()  # type: ignore[reportUnknownMemberType]
     return container
