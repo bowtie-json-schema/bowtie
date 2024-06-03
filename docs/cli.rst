@@ -108,14 +108,17 @@ Connectables implement a mini-language for connecting to supported harnesses.
 
 They allow connecting to implementations supported by Bowtie without making assumptions about the specific mechanism used to run or execute them.
 
-In most simple use cases, users likely will only use the ``image`` connectable, which runs implementations in a managed OCI container (sometimes specifically "docker container") which Bowtie will create and destroy.
-For more advanced usage, the full collection of supported connectables will now be described.
+In most simple use cases, users likely will not interact directly with the connectable syntax.
+Passing ``-i some-supported-implementation`` will generally do The Right Thing™.
+But for more advanced usage, the full collection of supported connectables will now be described.
 
 The general syntax for connectables looks like:
 
     [<kind>:]<id>[:<arguments>*]
 
-The ``kind`` of connectable is optional, and when unspecified defaults to the ``image`` connectable, making an example of the simplest connectable look like ``lua-jsonschema`` (which expands to ``image:lua-jsonschema``).
+The ``kind`` of connectable is optional, and when unspecified defaults to the ``happy`` connectable, making an example of the simplest connectable look like ``lua-jsonschema`` (which expands to ``happy:lua-jsonschema``).
+A slightly longer description of what the ``happy`` connectable means is below, but in brief, the ``happy`` connectable will speak *directly* to any implementation which can be imported from Python.
+For any *other* implementation, an OCI container will be created (and later destroyed) using the ``image`` connectable.
 
 More generally, the ``id`` is an identifier whose exact form depends on each kind of connectable.
 Arguments customize the actual connection to the implementation, and which arguments are supported again depends on the kind of connectable.
@@ -168,7 +171,26 @@ The list of such implementations is small relative to those reachable using cont
 
 Examples:
 
-    * ``direct:jsonschema``: a direct connection to the Python implementation known as ``jsonschema``
+    * ``direct:python-jsonschema``: a direct connection to the Python implementation known as ``jsonschema``
+
+
+``happy``
+^^^^^^^^^
+
+*A connectable which intelligently picks the best possible way to connect to an implementation*
+
+The ``happy`` connectable is a sort of "higher-level" connectable.
+Given the name of an implementation, the ``happy`` connectable will pick the *best* possible way to connect to the implementation.
+Best here is defined to be "most reliable" and/or "fastest".
+
+Generally this means "connect directly when possible, falling back to spinning up a container".
+
+This connectable is used when no connector is specified, effectively giving the best behavior when no specific connectable is requested.
+
+Examples:
+
+    * ``happy:python-jsonschema``: a direct connection to the Python implementation known as ``jsonschema``, equivalent to ``direct:python-jsonschema``
+    * ``happy:some-not-directly-connectable-implementation``: for any non-directly connectable implementation, equivalent to ``image:some-not-directly-connectable-implementation``
 
 
 Enabling Shell Tab Completion

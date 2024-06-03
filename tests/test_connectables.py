@@ -98,6 +98,30 @@ def test_direct_connectable_unknown():
         Connectable.from_str(id)
 
 
+def test_implicit_happy_connectable_known_direct():
+    name = "python-jsonschema"
+    happy, direct = name, f"direct:{name}"
+    validator.validate(name)
+    validator.validate(direct)
+    assert Connectable.from_str(happy) == Connectable.from_str(direct)
+
+
+def test_happy_connectable_known_direct():
+    name = "python-jsonschema"
+    happy, direct = f"happy:{name}", f"direct:{name}"
+    validator.validate(happy)
+    validator.validate(direct)
+    assert Connectable.from_str(happy) == Connectable.from_str(direct)
+
+
+def test_happy_connectable_unknown_direct():
+    name = "asdf"
+    happy, image = f"happy:{name}", f"image:{name}"
+    validator.validate(happy)
+    validator.validate(image)
+    assert Connectable.from_str(happy) == Connectable.from_str(image)
+
+
 class TestToTerse:
     def test_explicit_image_with_repository(self):
         id = "image:foo/bar"

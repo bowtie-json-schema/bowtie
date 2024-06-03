@@ -12,8 +12,9 @@ from click.shell_completion import CompletionItem
 from rpds import HashTrieMap
 import click
 
-from bowtie import _containers, _direct_connectable
+from bowtie import _containers
 from bowtie._core import Implementation
+from bowtie._direct_connectable import Direct, NoDirectConnection
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -43,6 +44,35 @@ class Connector(Protocol):
 ConnectableId = str
 
 
+def happy(id: str):
+    """
+    A happy (eyeballs) connector.
+
+    Connectables using the Happy connector will connect directly if possible,
+    or otherwise if not, will fallback to the image connector.
+
+    This behavior connects "as quickly/reliably as possible" to any
+    implementation supporting direct connection, and otherwise still ensures
+    connection to any implementation where that isn't possible.
+
+    The name is inspired by the Happy Eyeballs algorithm in networking.
+    """
+    try:
+        return Direct(id=id)
+    except NoDirectConnection:
+        return _containers.ConnectableImage(id=id)
+
+
+CONNECTORS = HashTrieMap(
+    [
+        ("happy", happy),
+        ("image", _containers.ConnectableImage),
+        ("container", _containers.ConnectableContainer),
+        ("direct", Direct),
+    ],
+)
+
+
 @frozen
 class Connectable:
     """
@@ -56,27 +86,18 @@ class Connectable:
     simply referring to the string as being the connectable itself.
     """
 
-    _id: ConnectableId = field(alias="id", repr=False)
+    _id: ConnectableId = field(alias="id", repr=False, eq=False)
     _connector: Connector = field(alias="connector")
-
-    _connectors = HashTrieMap(
-        (cls.connector, cls)
-        for cls in [
-            _containers.ConnectableImage,
-            _containers.ConnectableContainer,
-            _direct_connectable.Direct,
-        ]
-    )
 
     @classmethod
     def from_str(cls, fqid: ConnectableId):
         connector, sep, id = fqid.partition(":")
         if not sep:
-            connector, id = "image", connector
-        Connector = cls._connectors.get(connector)
+            connector, id = "happy", connector
+        Connector = CONNECTORS.get(connector)
         if Connector is None:
             if "/" in connector:
-                return cls(id=fqid, connector=cls._connectors["image"](fqid))
+                return cls(id=fqid, connector=CONNECTORS["image"](fqid))
             raise UnknownConnector(connector)
         return cls(id=fqid, connector=Connector(id))
 

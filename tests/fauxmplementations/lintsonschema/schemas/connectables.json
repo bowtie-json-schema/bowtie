@@ -10,7 +10,7 @@
 
   "oneOf": [
     {
-      "title": "Implicit Image",
+      "title": "Implicit Connectable",
       "pattern": "^[^:]+$"
     },
 
@@ -27,7 +27,8 @@
       "oneOf": [
         { "$ref": "#image" },
         { "$ref": "#container" },
-        { "$ref": "#direct" }
+        { "$ref": "#direct" },
+        { "$ref": "#happy" }
       ]
     }
   ],
@@ -56,6 +57,14 @@
       "$anchor": "direct",
 
       "pattern": "^direct:[^.]*"
+    },
+    "happy": {
+      "title": "Happy (Eyeballs) Connection",
+      "description": "A 'best possible' connection to the given ID. Best is defined to prefer connecting directly using the `direct` connectable when possible, otherwise falling back to the `image` connectable when no direct connection is possible. The name is inspired by the Happy Eyeballs Algorithm in networking.",
+
+      "$anchor": "happy",
+
+      "pattern": "^happy:[^.]*"
     }
   }
 }
