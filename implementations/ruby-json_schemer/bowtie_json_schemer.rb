@@ -86,18 +86,18 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
     kase, seq = request.fetch_values('case', 'seq')
 
     begin
-      if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
-        schemer = JSONSchemer.schema(
+      schemer = if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+        JSONSchemer.schema(
           kase.fetch('schema'),
           meta_schema: @meta_schema,
           format: false,
           regexp_resolver: 'ecma',
-          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || @meta_schema_refs[uri] }
+          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || @meta_schema_refs[uri] },
         )
       else
-        schemer = @draft.new(
+        @draft.new(
           kase.fetch('schema'),
-          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) }
+          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) },
         )
       end
 
