@@ -45,10 +45,7 @@ def not_yet_connected(schema: Schema, registry: SchemaRegistry):
 @mutable
 class Unconnection(Generic[E_co]):
 
-    _info: ImplementationInfo = field(
-        repr=lambda value: f"{value.language}-{value.name}",
-        alias="info",
-    )
+    _info: ImplementationInfo = field(repr=lambda i: i.id, alias="info")
     _compile: Callable[[Dialect], SchemaCompiler[E_co]] = field(
         repr=False,
         alias="compile",

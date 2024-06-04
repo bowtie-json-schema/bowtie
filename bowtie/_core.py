@@ -305,6 +305,16 @@ class ImplementationInfo:
             **kwargs,
         )
 
+    @property
+    def id(self):
+        """
+        A unique identifier we use to refer to the implementation.
+
+        This ID is *independent* of the connectable (i.e. how we speak to the
+        implementation) but should be unique across disparate implementations.
+        """
+        return f"{self.language}-{self.name}"
+
     def serializable(self):
         return {
             **{

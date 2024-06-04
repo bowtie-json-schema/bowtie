@@ -400,7 +400,7 @@ def badges(site: Path):
             badge_name = f"{dialect.short_name}.json"
 
             for each, badge in report.compliance_badges():
-                dir = outdir / f"{each.language}-{each.name}"
+                dir = outdir / each.id
 
                 compliance = dir / "compliance"
                 compliance.mkdir(parents=True, exist_ok=True)
