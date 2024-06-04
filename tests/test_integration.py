@@ -428,7 +428,8 @@ class TestRun:
 
 
 @pytest.mark.asyncio
-async def test_suite(tmp_path, envsonschema):
+@pytest.mark.containerless
+async def test_suite(tmp_path):
     # FIXME: maybe make suite not read the remotes until it needs them
     tmp_path.joinpath("remotes").mkdir()
 
@@ -459,7 +460,12 @@ async def test_suite(tmp_path, envsonschema):
         ),
     )
 
-    stdout, stderr = await bowtie("suite", "-i", envsonschema, definitions)
+    stdout, stderr = await bowtie(
+        "suite",
+        "-i",
+        miniatures.always_invalid,
+        definitions,
+    )
     report = Report.from_serialized(stdout.splitlines())
 
     one = Test(
@@ -485,13 +491,13 @@ async def test_suite(tmp_path, envsonschema):
                     (
                         one,
                         {
-                            tag("envsonschema"): TestResult.INVALID,
+                            miniatures.always_invalid: TestResult.INVALID,
                         },
                     ),
                     (
                         two,
                         {
-                            tag("envsonschema"): TestResult.INVALID,
+                            miniatures.always_invalid: TestResult.INVALID,
                         },
                     ),
                 ],
@@ -501,17 +507,17 @@ async def test_suite(tmp_path, envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
-    async with run("-i", envsonschema, "--set-schema") as send:
+@pytest.mark.containerless
+async def test_set_schema_sets_a_dialect_explicitly():
+    async with run("-i", miniatures.always_valid, "--set-schema") as send:
         results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [
-        {tag("envsonschema"): TestResult.VALID},
-    ], stderr
+    # XXX: we need to make run() return the whole report
+    assert results == [{miniatures.always_valid: TestResult.VALID}], stderr
 
 
 @pytest.mark.asyncio
@@ -596,24 +602,20 @@ async def test_restarts_crashed_implementations(envsonschema):
         )
 
     assert results == [
-        {
-            tag("envsonschema"): ErroredTest.in_errored_case(),
-        },
+        {tag("envsonschema"): ErroredTest.in_errored_case()},
         {tag("envsonschema"): TestResult.INVALID},
-        {
-            tag("envsonschema"): ErroredTest.in_errored_case(),
-        },
+        {tag("envsonschema"): ErroredTest.in_errored_case()},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
-async def test_handles_dead_implementations(succeed_immediately, envsonschema):
+async def test_handles_dead_implementations(succeed_immediately):
     async with run(
         "-i",
         succeed_immediately,
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
@@ -624,8 +626,8 @@ async def test_handles_dead_implementations(succeed_immediately, envsonschema):
         )
 
     assert results == [
-        {tag("envsonschema"): TestResult.INVALID},
-        {tag("envsonschema"): TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
     ], stderr
     assert "failed to start" in stderr, stderr
 
@@ -649,15 +651,12 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
 
 @pytest.mark.asyncio
-async def test_it_handles_immediately_broken_implementations(
-    fail_immediately,
-    envsonschema,
-):
+async def test_it_handles_immediately_broken_implementations(fail_immediately):
     async with run(
         "-i",
         fail_immediately,
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
@@ -670,21 +669,18 @@ async def test_it_handles_immediately_broken_implementations(
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {tag("envsonschema"): TestResult.INVALID},
-        {tag("envsonschema"): TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
     ], stderr
 
 
 @pytest.mark.asyncio
-async def test_it_handles_broken_start_implementations(
-    fail_on_start,
-    envsonschema,
-):
+async def test_it_handles_broken_start_implementations(fail_on_start):
     async with run(
         "-i",
         fail_on_start,
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send(
@@ -697,8 +693,8 @@ async def test_it_handles_broken_start_implementations(
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {tag("envsonschema"): TestResult.INVALID},
-        {tag("envsonschema"): TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
+        {miniatures.always_invalid: TestResult.INVALID},
     ], stderr
 
 
@@ -781,14 +777,8 @@ async def test_implementations_can_signal_errors(envsonschema):
         )
 
     assert results == [
-        {
-            tag("envsonschema"): ErroredTest.in_errored_case(),
-        },
-        {
-            tag("envsonschema"): ErroredTest(
-                context=dict(message="boom"),
-            ),
-        },
+        {tag("envsonschema"): ErroredTest.in_errored_case()},
+        {tag("envsonschema"): ErroredTest(context=dict(message="boom"))},
         {tag("envsonschema"): TestResult.VALID},
     ], stderr
     assert stderr != ""
@@ -914,26 +904,28 @@ async def test_wrong_seq(wrong_seq):
 
 
 @pytest.mark.asyncio
-async def test_fail_fast(envsonschema):
-    async with run("-i", envsonschema, "-x") as send:
+@pytest.mark.containerless
+async def test_fail_fast():
+    async with run("-i", miniatures.always_valid, "-x") as send:
         results, stderr = await send(
             """
-            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
-            {"description": "3", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "3", "instance": {}, "valid": false}] }
             """,  # noqa: E501
         )
 
     assert results == [
-        {tag("envsonschema"): TestResult.VALID},
-        {tag("envsonschema"): TestResult.INVALID},
+        {miniatures.always_valid: TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
-async def test_fail_fast_many_tests_at_once(envsonschema):
-    async with run("-i", envsonschema, "-x") as send:
+@pytest.mark.containerless
+async def test_fail_fast_many_tests_at_once():
+    async with run("-i", miniatures.always_valid, "-x") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}] }
@@ -943,39 +935,40 @@ async def test_fail_fast_many_tests_at_once(envsonschema):
         )
 
     assert results == [
-        {tag("envsonschema"): TestResult.VALID},
-        {tag("envsonschema"): TestResult.VALID},
-        {tag("envsonschema"): TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
-async def test_max_fail(envsonschema):
-    async with run("-i", envsonschema, "--max-fail", "2") as send:
+async def test_max_fail():
+    async with run("-i", miniatures.always_valid, "--max-fail", "2") as send:
         results, stderr = await send(
             """
-            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
-            {"description": "2", "schema": {}, "tests": [{"description": "valid:0", "instance": 7, "valid": true}] }
-            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": 8, "valid": true}] }
-            {"description": "4", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "3", "instance": 8, "valid": false}] }
+            {"description": "4", "schema": {}, "tests": [{"description": "4", "instance": {}, "valid": false}] }
             """,  # noqa: E501
         )
 
     assert results == [
-        {tag("envsonschema"): TestResult.VALID},
-        {tag("envsonschema"): TestResult.INVALID},
-        {tag("envsonschema"): TestResult.INVALID},
+        {miniatures.always_valid: TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
+        {miniatures.always_valid: TestResult.VALID},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
-async def test_max_fail_with_fail_fast(envsonschema):
+@pytest.mark.containerless
+async def test_max_fail_with_fail_fast():
     stdout, stderr = await bowtie(
         "run",
         "-i",
-        envsonschema,
+        ARBITRARY,
         "--max-fail",
         "2",
         "--fail-fast",
@@ -987,7 +980,7 @@ async def test_max_fail_with_fail_fast(envsonschema):
     stdout, stderr = await bowtie(
         "run",
         "-i",
-        envsonschema,
+        ARBITRARY,
         "--fail-fast",
         "--max-fail",
         "2",
@@ -998,8 +991,9 @@ async def test_max_fail_with_fail_fast(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_filter(envsonschema):
-    async with run("-i", envsonschema, "-k", "baz") as send:
+@pytest.mark.containerless
+async def test_filter():
+    async with run("-i", miniatures.always_valid, "-k", "baz") as send:
         results, stderr = await send(
             """
             {"description": "foo", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
@@ -1008,9 +1002,7 @@ async def test_filter(envsonschema):
             """,  # noqa: E501
         )
 
-    assert results == [
-        {tag("envsonschema"): TestResult.VALID},
-    ], stderr
+    assert results == [{miniatures.always_valid: TestResult.VALID}], stderr
     assert stderr == ""
 
 
@@ -1476,56 +1468,48 @@ async def test_filter_implementations_no_arguments():
 
 
 @pytest.mark.asyncio
-async def test_filter_implementations_by_language(
-    envsonschema,
-    lintsonschema,
-):
+async def test_filter_implementations_by_language():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
         "-i",
-        lintsonschema,
+        miniatures.always_invalid,
         "-i",
         miniatures.fake_javascript,
         "--language",
         "python",
     )
-    expected = [tag("envsonschema"), tag("lintsonschema")]
+    expected = [miniatures.always_invalid, miniatures.always_valid]
     assert (sorted(stdout.splitlines()), stderr) == (expected, "")
 
 
 @pytest.mark.asyncio
-async def test_filter_implementations_by_dialect(
-    envsonschema,
-    lintsonschema,
-):
+@pytest.mark.containerless
+async def test_filter_implementations_by_dialect():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
         "-i",
-        lintsonschema,
+        miniatures.always_invalid,
         "-i",
         miniatures.only_draft3,
         "--supports-dialect",
-        "2020-12",
+        "202012",
     )
-    expected = [tag("envsonschema"), tag("lintsonschema")]
+    expected = [miniatures.always_invalid, miniatures.always_valid]
     assert (sorted(stdout.splitlines()), stderr) == (expected, "")
 
 
 @pytest.mark.asyncio
-async def test_filter_implementations_both_language_and_dialect(
-    envsonschema,
-    lintsonschema,
-):
+async def test_filter_implementations_both_language_and_dialect():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
         "-i",
-        lintsonschema,
+        miniatures.always_invalid,
         "-i",
         miniatures.fake_javascript,
         "-l",
@@ -1537,16 +1521,14 @@ async def test_filter_implementations_both_language_and_dialect(
 
 
 @pytest.mark.asyncio
-async def test_filter_implementations_stdin(
-    envsonschema,
-    lintsonschema,
-):
-    lines = "\n".join(
-        [
-            tag("envsonschema"),
-            tag("lintsonschema"),
-            miniatures.fake_javascript,
-        ],
+@pytest.mark.containerless
+async def test_filter_implementations_stdin():
+    lines = dedent(
+        f"""\
+        {miniatures.always_valid}
+        {miniatures.always_invalid}
+        {miniatures.fake_javascript}
+        """.rstrip(),
     )
     stdout, stderr = await bowtie(
         "filter-implementations",
@@ -1558,17 +1540,15 @@ async def test_filter_implementations_stdin(
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 @pytest.mark.json
-async def test_filter_implementations_json(
-    envsonschema,
-    lintsonschema,
-):
+async def test_filter_implementations_json():
     jsonout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
         "-i",
-        lintsonschema,
+        miniatures.always_invalid,
         "-i",
         miniatures.fake_javascript,
         "-l",
@@ -1585,6 +1565,7 @@ async def test_filter_implementations_json(
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 async def test_filter_dialects():
     stdout, stderr = await bowtie("filter-dialects")
     dialects_supported = "\n".join(
@@ -2081,11 +2062,12 @@ async def test_no_such_image(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_suite_not_a_suite_directory(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_suite_not_a_suite_directory(tmp_path):
     _, stderr = await bowtie(
         "suite",
         "-i",
-        envsonschema,
+        ARBITRARY,
         tmp_path,
         exit_code=2,  # comes from click
     )
