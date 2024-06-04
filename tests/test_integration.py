@@ -1540,6 +1540,7 @@ async def test_filter_implementations_stdin(
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_filter_implementations_json(
     envsonschema,
     lintsonschema,
