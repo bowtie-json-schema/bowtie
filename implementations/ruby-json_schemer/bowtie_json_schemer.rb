@@ -15,7 +15,7 @@ JSON_SCHEMER_VERSION = Gem::Version.new(Gem::Specification.find_by_name('json_sc
 @meta_schema = nil
 @draft = nil
 
-if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
   @meta_schema_refs = {
     JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
     JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
@@ -30,7 +30,7 @@ else
   @meta_schema_refs = {}
 end
 
-additional_dialects = if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+additional_dialects = if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
   [
     'https://json-schema.org/draft/2020-12/schema',
     'https://json-schema.org/draft/2019-09/schema',
@@ -71,11 +71,11 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   when 'dialect'
     dialect = request.fetch('dialect')
 
-    if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+    if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
       @meta_schema = JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect]
-    elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.25')
+    elsif Gem::Version.new('0.2.25') <= JSON_SCHEMER_VERSION
       @draft = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect]
-    elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.17')
+    elsif Gem::Version.new('0.2.17') <= JSON_SCHEMER_VERSION
       @draft = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect]
     end
 
@@ -86,7 +86,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
     kase, seq = request.fetch_values('case', 'seq')
 
     begin
-      if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+      if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
         schemer = JSONSchemer.schema(
           kase.fetch('schema'),
           meta_schema: @meta_schema,
