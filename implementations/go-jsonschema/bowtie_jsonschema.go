@@ -2,10 +2,8 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"runtime"
@@ -13,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 var drafts = map[string]*jsonschema.Draft{
@@ -111,22 +109,15 @@ func main() {
 
 			compiler := jsonschema.NewCompiler()
 			if draft != nil {
-				compiler.Draft = draft
+				compiler.DefaultDraft(draft)
 			}
-			compiler.LoadURL = func(s string) (io.ReadCloser, error) {
-				registry, ok := testCase["registry"]
-				if !ok {
-					return nil, fmt.Errorf("%q not found", s)
-				}
-				refSchema, ok := registry.(map[string]interface{})[s]
-				if !ok {
-					return nil, fmt.Errorf("%q not found", s)
-				}
-				return jsonReader(refSchema), nil
+			registry, ok := testCase["registry"]
+			if ok {
+				loader := registryLoader(registry.(map[string]any))
+				compiler.UseLoader(loader)
 			}
-
 			var fakeURI = "bowtie.sent.schema.json"
-			if err := compiler.AddResource(fakeURI, jsonReader(testCase["schema"])); err != nil {
+			if err := compiler.AddResource(fakeURI, testCase["schema"]); err != nil {
 				printError(request["seq"].(json.Number), err)
 				break
 			}
@@ -165,6 +156,16 @@ func main() {
 	}
 }
 
+type registryLoader map[string]any
+
+func (l registryLoader) Load(url string) (any, error) {
+	refSchema, ok := l[url]
+	if !ok {
+		return nil, fmt.Errorf("%q not found", url)
+	}
+	return refSchema, nil
+}
+
 func jsonschemaVersion() string {
 	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -179,14 +180,6 @@ func jsonschemaVersion() string {
 		}
 	}
 	return version
-}
-
-func jsonReader(v interface{}) io.ReadCloser {
-	b, err := json.Marshal(v)
-	if err != nil {
-		panic("This should never happen.")
-	}
-	return io.NopCloser(bytes.NewReader(b))
 }
 
 func printJSON(v interface{}) {
