@@ -10,18 +10,34 @@ class UnsupportedCommand < StandardError; end
 class UnsupportedVersion < StandardError; end
 class UnsupportedDialect < StandardError; end
 
-@meta_schema = nil
+JSON_SCHEMER_VERSION = Gem::Version.new(Gem::Specification.find_by_name('json_schemer').version)
 
-@meta_schema_refs = {
-  JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
-  JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
-  JSONSchemer::Draft7::BASE_URI => JSONSchemer::Draft7::SCHEMA,
-  JSONSchemer::Draft6::BASE_URI => JSONSchemer::Draft6::SCHEMA,
-  JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA,
-}
-@meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
-@meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
-@meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
+@meta_schema = nil
+@draft = nil
+
+if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+  @meta_schema_refs = {
+    JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
+    JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
+    JSONSchemer::Draft7::BASE_URI => JSONSchemer::Draft7::SCHEMA,
+    JSONSchemer::Draft6::BASE_URI => JSONSchemer::Draft6::SCHEMA,
+    JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA,
+  }
+  @meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
+  @meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
+  @meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
+else
+  @meta_schema_refs = {}
+end
+
+additional_dialects = if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+  [
+    'https://json-schema.org/draft/2020-12/schema',
+    'https://json-schema.org/draft/2019-09/schema',
+  ]
+else
+  []
+end
 
 ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   request = JSON.parse(line)
@@ -37,14 +53,12 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
       implementation: {
         language: :ruby,
         name: :json_schemer,
-        version: Gem::Specification.find_by_name('json_schemer').version,
+        version: JSON_SCHEMER_VERSION.to_s,
         homepage: 'https://github.com/davishmcclurg/json_schemer',
         issues: 'https://github.com/davishmcclurg/json_schemer/issues',
         source: 'https://github.com/davishmcclurg/json_schemer',
 
-        dialects: [
-          'https://json-schema.org/draft/2020-12/schema',
-          'https://json-schema.org/draft/2019-09/schema',
+        dialects: additional_dialects + [
           'http://json-schema.org/draft-07/schema#',
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
@@ -56,23 +70,36 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
     }
   when 'dialect'
     dialect = request.fetch('dialect')
-    @meta_schema = JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect]
-    raise UnsupportedDialect, dialect unless @meta_schema
+
+    if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+      @meta_schema = JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect]
+    elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.25')
+      @draft = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect]
+    elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.17')
+      @draft = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect]
+    end
+
+    raise UnsupportedDialect, dialect unless @meta_schema || @draft
 
     { ok: true }
   when 'run'
     kase, seq = request.fetch_values('case', 'seq')
 
     begin
-      schemer = JSONSchemer.schema(
-        kase.fetch('schema'),
-        meta_schema: @meta_schema,
-        format: false,
-        regexp_resolver: 'ecma',
-        ref_resolver: proc do |uri|
-          kase.dig('registry', uri.to_s) || @meta_schema_refs[uri]
-        end,
-      )
+      if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0')
+        schemer = JSONSchemer.schema(
+          kase.fetch('schema'),
+          meta_schema: @meta_schema,
+          format: false,
+          regexp_resolver: 'ecma',
+          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || @meta_schema_refs[uri] }
+        )
+      else
+        schemer = @draft.new(
+          kase.fetch('schema'),
+          ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) }
+        )
+      end
 
       {
         seq: seq,
