@@ -178,19 +178,6 @@ def shellplementation(name, contents):
 
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
-passes_smoke = shellplementation(
-    name="passes_smoke",
-    contents=r"""
-    read -r request
-    printf '{"implementation": {"name": "passes-smoke", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
-    read -r request
-    printf '{"ok": true}\n'
-    read -r request
-    printf '{"seq": %s, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
-    read -r request
-    printf '{"seq": %s, "results": [{"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}, {"valid": false}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
-    """,  # noqa: E501
-)
 succeed_immediately = strimplementation(
     name="succeed",
     contents="ENTRYPOINT true",
@@ -1007,14 +994,15 @@ async def test_filter():
 
 
 @pytest.mark.asyncio
-async def test_smoke_pretty(envsonschema):
+@pytest.mark.containerless
+async def test_smoke_pretty():
     stdout, stderr = await bowtie(
         "smoke",
         "--format",
         "pretty",
         "-i",
-        envsonschema,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        miniatures.always_invalid,
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
     assert (
         dedent(stdout)
@@ -1028,14 +1016,15 @@ async def test_smoke_pretty(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_smoke_markdown(envsonschema):
+@pytest.mark.containerless
+async def test_smoke_markdown():
     stdout, stderr = await bowtie(
         "smoke",
         "--format",
         "markdown",
         "-i",
-        envsonschema,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        miniatures.always_invalid,
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
     assert (
         dedent(stdout)
@@ -1049,14 +1038,15 @@ async def test_smoke_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_smoke_valid_markdown(envsonschema):
+@pytest.mark.containerless
+async def test_smoke_valid_markdown():
     stdout, stderr = await bowtie(
         "smoke",
         "--format",
         "markdown",
         "-i",
-        envsonschema,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        miniatures.always_invalid,
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
     parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
@@ -1079,15 +1069,15 @@ async def test_smoke_valid_markdown(envsonschema):
 
 @pytest.mark.asyncio
 @pytest.mark.json
-async def test_smoke_json(envsonschema):
+async def test_smoke_json():
     jsonout, stderr = await bowtie(
         "smoke",
         "--format",
         "json",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         json=True,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
 
     (await command_validator("smoke")).validate(jsonout)
@@ -1149,38 +1139,39 @@ async def test_smoke_json(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_smoke_quiet(envsonschema):
+@pytest.mark.containerless
+async def test_smoke_quiet():
     stdout, stderr = await bowtie(
         "smoke",
         "--quiet",
         "-i",
-        envsonschema,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        miniatures.always_invalid,
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
     assert stdout == "", stderr
 
 
 @pytest.mark.asyncio
-async def test_smoke_multiple(envsonschema, passes_smoke):
+async def test_smoke_multiple():
     stdout, stderr = await bowtie(
         "smoke",
         "--format",
         "pretty",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         "-i",
-        passes_smoke,
-        exit_code=EX.DATAERR,  # because indeed envsonschema gets answers wrong
+        miniatures.passes_smoke,
+        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
     assert (
         dedent(stderr)
         == dedent(
-            """\
-            Testing 'bowtie-integration-tests/passes_smoke'...
+            f"""\
+            Testing '{miniatures.passes_smoke}'...
 
 
             ✅ all passed
-            Testing 'bowtie-integration-tests/envsonschema'...
+            Testing '{miniatures.always_invalid}'...
 
 
             ❌ some failures
@@ -1188,12 +1179,12 @@ async def test_smoke_multiple(envsonschema, passes_smoke):
         )
         or dedent(stderr)
         == dedent(
-            """\
-            Testing 'bowtie-integration-tests/envsonschema'...
+            f"""\
+            Testing '{miniatures.always_invalid}'...
 
 
             ❌ some failures
-            Testing 'bowtie-integration-tests/passes_smoke'...
+            Testing '{miniatures.passes_smoke}'...
 
 
             ✅ all passed
