@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, Self
+import pkgutil
 import platform
 
 from attrs import asdict, field, frozen, mutable
@@ -29,11 +30,6 @@ if TYPE_CHECKING:
 
 
 class NoDirectConnection(Exception):
-    @classmethod
-    def check(cls, _: Any, __: Any, id: ConnectableId):
-        if id not in IMPLEMENTATIONS:
-            raise cls(id)
-
     def __str__(self):
         return f"No direct connection can be made to {self.args[0]!r}."
 
@@ -186,10 +182,18 @@ class Direct:
     target implementation.
     """
 
-    _id: ConnectableId = field(alias="id", validator=NoDirectConnection.check)
+    _connect: Callable[[], Connection] = field(alias="connect")
 
-    connector = "direct"
+    @classmethod
+    def from_id(cls, id: ConnectableId) -> Self:
+        if "." in id and ":" in id:
+            connect = pkgutil.resolve_name(id)
+        else:
+            connect = IMPLEMENTATIONS.get(id)
+            if connect is None:
+                raise NoDirectConnection(id)
+        return cls(connect=connect)
 
     @asynccontextmanager
     async def connect(self, **kwargs: Any) -> AsyncIterator[Connection]:
-        yield IMPLEMENTATIONS[self._id]()
+        yield self._connect()

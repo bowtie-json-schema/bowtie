@@ -14,11 +14,11 @@ validator = validator_registry().for_uri("tag:bowtie.report,2024:connectables")
 
 class TestImplicit:
     def test_with_repository(self):
-        id = "foo/bar"
+        id = "example.com/bar"
         validator.validate(id)
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=ConnectableImage(id="foo/bar"),
+            connector=ConnectableImage(id="example.com/bar"),
         )
 
     def test_no_repository(self):
@@ -30,11 +30,11 @@ class TestImplicit:
         )
 
     def test_with_repository_and_tag(self):
-        id = "foo/bar:latest"
+        id = "example.com/bar:latest"
         validator.validate(id)
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=ConnectableImage(id="foo/bar:latest"),
+            connector=ConnectableImage(id="example.com/bar:latest"),
         )
 
     def test_known_direct(self):
@@ -89,19 +89,31 @@ class TestContainer:
 
 
 class TestDirect:
-    def test_python_jsonschema(self):
+    def test_named_python_jsonschema(self):
         id = "direct:python-jsonschema"
         validator.validate(id)
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=Direct(id="python-jsonschema"),
+            connector=Direct.from_id(id="python-jsonschema"),
         )
 
-    def test_unknown(self):
+    def test_named_unknown(self):
         id = "direct:foobar"
         validator.validate(id)
+        # TODO: Probably this should be NoSuchImplementation
         with pytest.raises(NoDirectConnection, match="'foobar'"):
             Connectable.from_str(id)
+
+    def test_import(self):
+        id = "direct:bowtie._direct_connectable:jsonschema"
+        validator.validate(id)
+
+        from bowtie._direct_connectable import jsonschema
+
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=Direct(connect=jsonschema),
+        )
 
 
 class TestExplicitHappy:

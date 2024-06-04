@@ -31,11 +31,6 @@ class UnknownConnector(Exception):
 
 class Connector(Protocol):
 
-    #: The string name of this connector type.
-    connector: str
-
-    def __init__(self, id: str): ...
-
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
 
@@ -58,7 +53,7 @@ def happy(id: str):
     The name is inspired by the Happy Eyeballs algorithm in networking.
     """
     try:
-        return Direct(id=id)
+        return Direct.from_id(id=id)
     except NoDirectConnection:
         return _containers.ConnectableImage(id=id)
 
@@ -68,7 +63,7 @@ CONNECTORS = HashTrieMap(
         ("happy", happy),
         ("image", _containers.ConnectableImage),
         ("container", _containers.ConnectableContainer),
-        ("direct", Direct),
+        ("direct", Direct.from_id),
     ],
 )
 
