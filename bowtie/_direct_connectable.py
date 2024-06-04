@@ -4,7 +4,7 @@ Direct connectables do not really connect anywhere and just operate in-memory.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+from contextlib import nullcontext
 from importlib import metadata
 from typing import TYPE_CHECKING, Any, Generic
 import pkgutil
@@ -19,7 +19,8 @@ from bowtie._core import Connection, Dialect, ImplementationInfo
 from bowtie._registry import E_co, SchemaCompiler
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterable
+    from collections.abc import Callable, Iterable
+    from contextlib import AbstractAsyncContextManager
 
     from jsonschema import ValidationError
     from jsonschema.protocols import Validator
@@ -194,6 +195,8 @@ class Direct:
                 raise NoDirectConnection(id)
         return cls(connect=connect)
 
-    @asynccontextmanager
-    async def connect(self, **kwargs: Any) -> AsyncIterator[Connection]:
-        yield self._connect()
+    def connect(
+        self,
+        **kwargs: Any,
+    ) -> AbstractAsyncContextManager[Connection]:
+        return nullcontext(self._connect())
