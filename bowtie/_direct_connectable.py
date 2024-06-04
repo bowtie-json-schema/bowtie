@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Generic, Self
+from typing import TYPE_CHECKING, Any, Generic
 import pkgutil
 import platform
 
@@ -185,7 +185,7 @@ class Direct:
     _connect: Callable[[], Connection] = field(alias="connect")
 
     @classmethod
-    def from_id(cls, id: ConnectableId) -> Self:
+    def from_id(cls, id: ConnectableId):
         if "." in id and ":" in id:
             connect = pkgutil.resolve_name(id)
         else:
