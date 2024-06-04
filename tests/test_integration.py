@@ -1608,6 +1608,7 @@ async def test_filter_dialects_boolean_schemas():
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 async def test_filter_dialects_non_boolean_schemas():
     stdout, stderr = await bowtie("filter-dialects", "-B")
     non_boolean_schemas = "\n".join(
@@ -1634,7 +1635,8 @@ async def test_filter_dialects_no_results():
 
 
 @pytest.mark.asyncio
-async def test_validate(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_validate(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")
     tmp_path.joinpath("b.json").write_text('"foo"')
@@ -1642,7 +1644,7 @@ async def test_validate(envsonschema, tmp_path):
     stdout, _ = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
         tmp_path / "schema.json",
         tmp_path / "a.json",
         tmp_path / "b.json",
@@ -1652,8 +1654,9 @@ async def test_validate(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 @pytest.mark.json
-async def test_summary_show_failures_json(envsonschema, tmp_path):
+async def test_summary_show_failures_json(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
@@ -1661,7 +1664,9 @@ async def test_summary_show_failures_json(envsonschema, tmp_path):
     validate_stdout, _ = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
+        "-i",
+        miniatures.always_invalid,
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -1682,7 +1687,11 @@ async def test_summary_show_failures_json(envsonschema, tmp_path):
     (await command_validator("summary")).validate(jsonout)
     assert jsonout == [
         [
-            tag("envsonschema"),
+            miniatures.always_valid,
+            dict(failed=0, skipped=0, errored=0),
+        ],
+        [
+            miniatures.always_invalid,
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
@@ -1690,7 +1699,8 @@ async def test_summary_show_failures_json(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_show_failures_markdown(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_summary_show_failures_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
@@ -1698,7 +1708,9 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
     validate_stdout, _ = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        miniatures.always_valid,
+        "-i",
+        miniatures.always_invalid,
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -1720,8 +1732,9 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
         # Bowtie Failures Summary
 
         | Implementation | Skips | Errors | Failures |
-        |:---------------------:|:-:|:-:|:-:|
-        | envsonschema (python) | 0 | 0 | 2 |
+        |:-----------------------:|:-:|:-:|:-:|
+        |  always_valid (python)  | 0 | 0 | 0 |
+        | always_invalid (python) | 0 | 0 | 2 |
 
         **2 tests ran**
         """,
@@ -1729,7 +1742,8 @@ async def test_summary_show_failures_markdown(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_summary_failures_valid_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
@@ -1737,7 +1751,7 @@ async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
     validate_stdout, _ = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        ARBITRARY,
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -1805,7 +1819,8 @@ async def test_summary_failures_valid_markdown(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_validate_no_tests(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_validate_no_tests(tmp_path):
     """
     Don't bother starting up if we have nothing to run.
     """
@@ -1814,7 +1829,7 @@ async def test_validate_no_tests(envsonschema, tmp_path):
     stdout, stderr = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        ARBITRARY,
         schema,
         exit_code=EX.NOINPUT,
     )
