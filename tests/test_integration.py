@@ -2016,11 +2016,12 @@ async def test_badges(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_badges_nothing_ran(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_badges_nothing_ran(tmp_path):
     run_stdout, _ = await bowtie(
         "run",
         "-i",
-        envsonschema,
+        ARBITRARY,
         stdin="",
         exit_code=-1,  # no test cases run causes a non-zero here
     )
@@ -2090,7 +2091,8 @@ async def test_suite_not_a_suite_directory(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_validate_mismatched_dialect(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_validate_mismatched_dialect(tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
     )
@@ -2101,7 +2103,7 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
         "-D",
         "7",
         "-i",
-        envsonschema,
+        ARBITRARY,
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
@@ -2112,71 +2114,76 @@ async def test_validate_mismatched_dialect(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_run_mismatched_dialect(envsonschema):
-    async with run("-i", envsonschema, "-D", "2019") as send:
+@pytest.mark.containerless
+async def test_run_mismatched_dialect():
+    async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
             """
             {"description": "wrong dialect", "schema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
 @pytest.mark.asyncio
-async def test_run_registry_metasschema_not_mismatched_dialect(envsonschema):
-    async with run("-i", envsonschema, "-D", "2019") as send:
+@pytest.mark.containerless
+async def test_run_registry_metasschema_not_mismatched_dialect():
+    async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
             """
             {"description": "wrong dialect", "schema": {"$schema": "urn:metaschema"}, "registry": {"urn:metaschema": {"$schema": "https://json-schema.org/draft/2019-09/schema"}}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
 @pytest.mark.asyncio
-async def test_run_registry_metasschema_still_mismatched_dialect(envsonschema):
-    async with run("-i", envsonschema, "-D", "2019") as send:
+@pytest.mark.containerless
+async def test_run_registry_metasschema_still_mismatched_dialect():
+    async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
             """
             {"description": "wrong dialect", "schema": {"$schema": "urn:metaschema"}, "registry": {"urn:metaschema": {"$schema": "https://json-schema.org/draft/2020-12/schema"}}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
 @pytest.mark.asyncio
-async def test_run_mismatched_dialect_total_junk(envsonschema):
+@pytest.mark.containerless
+async def test_run_mismatched_dialect_total_junk():
     """
     A $schema keyword that isn't even a string just gets ignored.
 
     At this point we're likely testing completely broken schemas.
     """
-    async with run("-i", envsonschema, "-D", "2019") as send:
+    async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
             """
             {"description": "BOOM", "schema": {"$schema": 37}, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
 @pytest.mark.asyncio
-async def test_validate_boolean_schema(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_validate_boolean_schema(tmp_path):
     tmp_path.joinpath("schema.json").write_text("false")
     tmp_path.joinpath("instance.json").write_text("12")
 
     _, stderr = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        ARBITRARY,
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
@@ -2185,20 +2192,22 @@ async def test_validate_boolean_schema(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_run_boolean_schema(envsonschema, tmp_path):
-    async with run("-i", envsonschema) as send:
+@pytest.mark.containerless
+async def test_run_boolean_schema(tmp_path):
+    async with run("-i", miniatures.always_invalid) as send:
         results, stderr = await send(
             """
             {"description": "wrong dialect", "schema": false, "tests": [{"description": "a test", "instance": {}}] }
             """,  # noqa: E501
         )
 
-    assert results == [{tag("envsonschema"): TestResult.INVALID}], stderr
+    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
     assert stderr == "", stderr
 
 
 @pytest.mark.asyncio
-async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
+@pytest.mark.containerless
+async def test_validate_set_dialect_from_schema(tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         '{"$schema": "https://json-schema.org/draft/2019-09/schema"}',
     )
@@ -2207,7 +2216,7 @@ async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
     stdout, stderr = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        ARBITRARY,
         tmp_path / "schema.json",
         tmp_path / "instance.json",
     )
@@ -2216,16 +2225,15 @@ async def test_validate_set_dialect_from_schema(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_validate_specify_dialect(envsonschema, tmp_path):
-    tmp_path.joinpath("schema.json").write_text(
-        "{}",
-    )
+@pytest.mark.containerless
+async def test_validate_specify_dialect(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
 
     stdout, stderr = await bowtie(
         "validate",
         "-i",
-        envsonschema,
+        ARBITRARY,
         "-D",
         "2019",
         tmp_path / "schema.json",
@@ -2423,6 +2431,7 @@ async def test_container_connectables(
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 async def test_direct_connectable_python_jsonschema(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
@@ -2448,6 +2457,7 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
 
 @pytest.mark.parametrize("id", IMPLEMENTATIONS.keys())
 @pytest.mark.asyncio
+@pytest.mark.containerless
 async def test_smoke_direct_connectables(id):
     await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
 
