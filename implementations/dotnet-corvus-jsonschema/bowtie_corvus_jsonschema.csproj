@@ -18,7 +18,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.25" />
+    <PackageReference Include="Corvus.Json.CodeGeneration.201909" Version="3.0.26" />
     <PackageReference Include="Corvus.Json.CodeGeneration.202012" Version="3.0.25" />
     <PackageReference Include="Corvus.Json.CodeGeneration.4" Version="3.0.26" />
     <PackageReference Include="Corvus.Json.CodeGeneration.6" Version="3.0.25" />
