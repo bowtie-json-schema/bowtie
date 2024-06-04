@@ -31,6 +31,7 @@ from bowtie._core import (
 )
 from bowtie._direct_connectable import IMPLEMENTATIONS
 from bowtie._report import EmptyReport, InvalidReport, Report
+import tests.fauxmplementations.miniatures
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
     False  # frigging py.test
@@ -43,6 +44,18 @@ FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 # Make believe we're wide for tests to avoid line breaks in rich-click.
 WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
 WIDE_TERMINAL_ENV.pop("CI", None)  # Run subprocesses as if they're not in CI
+
+
+class _Miniatures:
+    def __getattr__(self, name: str):
+        getattr(tests.fauxmplementations.miniatures, name)  # check for typos
+        return f"direct:{tests.fauxmplementations.miniatures.__name__}:{name}"
+
+
+miniatures = _Miniatures()
+
+#: An arbitrary harness for when behavior shouldn't depend on a specific one.
+ARBITRARY = miniatures.always_valid
 
 
 def tag(name: str):
@@ -165,33 +178,6 @@ def shellplementation(name, contents):
 
 lintsonschema = fauxmplementation("lintsonschema")
 envsonschema = fauxmplementation("envsonschema")
-always_valid = shellplementation(  # I'm sorry future me.
-    name="always_valid",
-    contents=r"""
-    read -r request
-    printf '{"implementation": {"name": "always-valid", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
-    read -r request
-    printf '{"ok": true}\n'
-    while IFS= read -r input; do
-      [[ "$input" == '{"cmd": "stop"}' ]] && exit
-      echo $input | awk '{
-       seq = gensub(/.*"seq": ([^,]+).*/, "\\1", "g", $0);
-       tests = gensub(/.*"tests": \[([^]]+)\].*/, "\\1", "g", $0);
-       gsub(/}, \{/, "\n", tests);
-       count = split(tests, tests_array, ",");
-       result = sprintf("{\"seq\": %s, \"results\": [", seq);
-       for (i = 1; i <= count; i++) {
-         result = result "{\"valid\": true}";
-         if (i < count) {
-             result = result ",";
-         }
-       }
-       result = result "]}";
-       print result;
-      }'
-    done
-    """,  # noqa: E501
-)
 passes_smoke = shellplementation(
     name="passes_smoke",
     contents=r"""
@@ -316,28 +302,6 @@ links = shellplementation(
     printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
-only_draft3 = shellplementation(
-    name="only_draft3",
-    contents=r"""
-    read -r request
-    printf '{"implementation": {"name": "only-draft3", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-03/schema#"]}, "version": 1}\n'
-    read -r request
-    printf '{"ok": true}\n'
-    read -r request
-    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
-    """,  # noqa: E501
-)
-# we have this rather than making use of any of the above essentially
-# because sh isn't one of our "real" programming languages, so we doubly
-# lie here by claiming to be a Javascript implementation so that the test which
-# uses this doesn't blow up for unrelated reasons to what we're testing
-fake_js = shellplementation(
-    name="fake_js",
-    contents=r"""
-    read -r request
-    printf '{"implementation": {"name": "fake-js", "language": "javascript", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"]}, "version": 1}\n'
-    """,  # noqa: E501
-)
 
 
 @pytest_asyncio.fixture
@@ -409,18 +373,58 @@ async def test_validating_on_both_sides(lintsonschema):
     ], stderr
 
 
-@pytest.mark.asyncio
-async def test_it_runs_tests_from_a_file(tmp_path, envsonschema):
-    tests = tmp_path / "tests.jsonl"
-    tests.write_text(
-        """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
-    )
-    async with run("-i", envsonschema, tests) as send:
-        results, stderr = await send()
+class TestRun:
+    @pytest.mark.asyncio
+    @pytest.mark.containerless
+    async def test_from_file(self, tmp_path):
+        tests = tmp_path / "tests.jsonl"
+        tests.write_text(
+            """{"description": "foo", "schema": {}, "tests": [{"description": "bar", "instance": {}}] }\n""",  # noqa: E501
+        )
 
-    assert results == [
-        {tag("envsonschema"): TestResult.INVALID},
-    ], stderr
+        async with run("-i", miniatures.always_invalid, tests) as send:
+            results, stderr = await send()
+
+        assert results == [
+            {miniatures.always_invalid: TestResult.INVALID},
+        ], stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.containerless
+    async def test_with_registry(self):
+        raw = """
+            {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
+        """  # noqa: E501
+
+        run_stdout, run_stderr = await bowtie(
+            "run",
+            "-i",
+            miniatures.always_valid,
+            "-V",
+            stdin=dedent(raw.strip("\n")),
+        )
+
+        jsonout, stderr = await bowtie(
+            "summary",
+            "--format",
+            "json",
+            "--show",
+            "validation",
+            stdin=run_stdout,
+            json=True,
+        )
+
+        (await command_validator("summary")).validate(jsonout)
+        assert jsonout == [
+            [
+                {"type": "integer"},
+                [
+                    [12, {miniatures.always_valid: "valid"}],
+                    [12.5, {miniatures.always_valid: "valid"}],
+                ],
+            ],
+        ], run_stderr
+        assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -511,8 +515,9 @@ async def test_set_schema_sets_a_dialect_explicitly(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_no_tests_run(envsonschema):
-    async with run("-i", envsonschema, exit_code=EX.NOINPUT) as send:
+@pytest.mark.containerless
+async def test_no_tests_run():
+    async with run("-i", ARBITRARY, exit_code=EX.NOINPUT) as send:
         results, stderr = await send("")
 
     assert results == []
@@ -520,11 +525,12 @@ async def test_no_tests_run(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_unknown_dialect(envsonschema):
+@pytest.mark.containerless
+async def test_unknown_dialect():
     dialect = "some://other/URI/"
     async with run(
         "-i",
-        envsonschema,
+        ARBITRARY,
         "--dialect",
         dialect,
         exit_code=2,  # comes from click
@@ -536,11 +542,12 @@ async def test_unknown_dialect(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_nonurl_dialect(envsonschema):
+@pytest.mark.containerless
+async def test_nonurl_dialect():
     dialect = ";;;;;"
     async with run(
         "-i",
-        envsonschema,
+        ARBITRARY,
         "--dialect",
         dialect,
         exit_code=2,  # comes from click
@@ -552,12 +559,23 @@ async def test_nonurl_dialect(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_unsupported_known_dialect(only_draft3):
+@pytest.mark.containerless
+async def test_unsupported_known_dialect():
     async with run(
         "-i",
-        only_draft3,
+        miniatures.only_draft3,
         "--dialect",
-        str(Dialect.by_alias()["draft2020-12"].uri),
+        str(Dialect.by_short_name()["draft3"].uri),
+        exit_code=-1,  # because no test cases ran
+    ) as send:
+        results, stderr = await send("")
+    assert "does not support" not in stderr, stderr
+
+    async with run(
+        "-i",
+        miniatures.only_draft3,
+        "--dialect",
+        str(Dialect.by_short_name()["draft2020-12"].uri),
         exit_code=EX.CONFIG,
     ) as send:
         results, stderr = await send("")
@@ -814,7 +832,7 @@ async def test_it_preserves_all_metadata(with_versions):
             """,  # noqa: E501
         )
 
-    # FIXME: we need to make run() return the whole report
+    # XXX: we need to make run() return the whole report
     assert results == [
         {tag("with_versions"): TestResult.VALID},
     ], stderr
@@ -1461,7 +1479,6 @@ async def test_filter_implementations_no_arguments():
 async def test_filter_implementations_by_language(
     envsonschema,
     lintsonschema,
-    fake_js,
 ):
     stdout, stderr = await bowtie(
         "filter-implementations",
@@ -1470,7 +1487,7 @@ async def test_filter_implementations_by_language(
         "-i",
         lintsonschema,
         "-i",
-        fake_js,
+        miniatures.fake_javascript,
         "--language",
         "python",
     )
@@ -1482,7 +1499,6 @@ async def test_filter_implementations_by_language(
 async def test_filter_implementations_by_dialect(
     envsonschema,
     lintsonschema,
-    fake_js,
 ):
     stdout, stderr = await bowtie(
         "filter-implementations",
@@ -1491,7 +1507,7 @@ async def test_filter_implementations_by_dialect(
         "-i",
         lintsonschema,
         "-i",
-        fake_js,
+        miniatures.only_draft3,
         "--supports-dialect",
         "2020-12",
     )
@@ -1503,7 +1519,6 @@ async def test_filter_implementations_by_dialect(
 async def test_filter_implementations_both_language_and_dialect(
     envsonschema,
     lintsonschema,
-    fake_js,
 ):
     stdout, stderr = await bowtie(
         "filter-implementations",
@@ -1512,31 +1527,34 @@ async def test_filter_implementations_both_language_and_dialect(
         "-i",
         lintsonschema,
         "-i",
-        fake_js,
+        miniatures.fake_javascript,
         "-l",
         "javascript",
         "-d",
         "7",
     )
-    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+    assert (stdout, stderr) == (f"{miniatures.fake_javascript}\n", "")
 
 
 @pytest.mark.asyncio
 async def test_filter_implementations_stdin(
     envsonschema,
     lintsonschema,
-    fake_js,
 ):
-    stdin = "\n".join(
-        tag(each) for each in ["envsonschema", "lintsonschema", "fake_js"]
+    lines = "\n".join(
+        [
+            tag("envsonschema"),
+            tag("lintsonschema"),
+            miniatures.fake_javascript,
+        ],
     )
     stdout, stderr = await bowtie(
         "filter-implementations",
         "--language",
         "javascript",
-        stdin=stdin + "\n",
+        stdin=lines + "\n",
     )
-    assert (stdout, stderr) == (f"{tag('fake_js')}\n", "")
+    assert (stdout, stderr) == (f"{miniatures.fake_javascript}\n", "")
 
 
 @pytest.mark.asyncio
@@ -1544,7 +1562,6 @@ async def test_filter_implementations_stdin(
 async def test_filter_implementations_json(
     envsonschema,
     lintsonschema,
-    fake_js,
 ):
     jsonout, stderr = await bowtie(
         "filter-implementations",
@@ -1553,7 +1570,7 @@ async def test_filter_implementations_json(
         "-i",
         lintsonschema,
         "-i",
-        fake_js,
+        miniatures.fake_javascript,
         "-l",
         "javascript",
         "-d",
@@ -1563,7 +1580,7 @@ async def test_filter_implementations_json(
         json=True,
     )
     (await command_validator("filter-implementations")).validate(jsonout)
-    assert jsonout == [tag("fake_js")]
+    assert jsonout == [miniatures.fake_javascript]
     assert stderr == ""
 
 
@@ -1580,6 +1597,7 @@ async def test_filter_dialects():
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 async def test_filter_dialects_latest_dialect():
     stdout, stderr = await bowtie(
         "filter-dialects",
@@ -1589,12 +1607,10 @@ async def test_filter_dialects_latest_dialect():
 
 
 @pytest.mark.asyncio
-async def test_filter_dialects_supporting_implementation(only_draft3):
-    stdout, stderr = await bowtie("filter-dialects", "-i", only_draft3)
-    assert (stdout, stderr) == (
-        "http://json-schema.org/draft-03/schema#\n",
-        "",
-    )
+@pytest.mark.containerless
+async def test_filter_dialects_supporting_implementation():
+    output = await bowtie("filter-dialects", "-i", miniatures.only_draft3)
+    assert output == ("http://json-schema.org/draft-03/schema#\n", "")
 
 
 @pytest.mark.asyncio
@@ -1624,11 +1640,12 @@ async def test_filter_dialects_non_boolean_schemas():
 
 
 @pytest.mark.asyncio
-async def test_filter_dialects_no_results(only_draft3):
+@pytest.mark.containerless
+async def test_filter_dialects_no_results():
     stdout, stderr = await bowtie(
         "filter-dialects",
         "-i",
-        only_draft3,
+        miniatures.only_draft3,
         "--boolean-schemas",
         exit_code=EX.DATAERR,
     )
@@ -1826,7 +1843,7 @@ async def test_validate_no_tests(envsonschema, tmp_path):
 
 @pytest.mark.asyncio
 @pytest.mark.json
-async def test_summary_show_validation_json(envsonschema, always_valid):
+async def test_summary_show_validation_json(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -1841,7 +1858,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
         "-i",
         envsonschema,
         "-i",
-        always_valid,
+        miniatures.always_valid,
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -1864,14 +1881,14 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     12,
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "valid",
                     },
                 ],
                 [
                     12.5,
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -1883,7 +1900,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "{}",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -1895,14 +1912,14 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "{}",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     37,
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -1914,7 +1931,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -1926,7 +1943,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -1938,14 +1955,14 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     12,
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -1957,7 +1974,7 @@ async def test_summary_show_validation_json(envsonschema, always_valid):
                 [
                     "",
                     {
-                        tag("always_valid"): "valid",
+                        miniatures.always_valid: "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -2022,44 +2039,6 @@ async def test_badges_nothing_ran(envsonschema, tmp_path):
     assert stdout == ""
     assert stderr != ""
     assert not badges.is_dir()
-
-
-@pytest.mark.asyncio
-@pytest.mark.json
-async def test_run_with_registry(always_valid):
-    raw = """
-        {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-    """  # noqa: E501
-
-    run_stdout, run_stderr = await bowtie(
-        "run",
-        "-i",
-        always_valid,
-        "-V",
-        stdin=dedent(raw.strip("\n")),
-    )
-
-    jsonout, stderr = await bowtie(
-        "summary",
-        "--format",
-        "json",
-        "--show",
-        "validation",
-        stdin=run_stdout,
-        json=True,
-    )
-
-    (await command_validator("summary")).validate(jsonout)
-    assert jsonout == [
-        [
-            {"type": "integer"},
-            [
-                [12, {tag("always_valid"): "valid"}],
-                [12.5, {tag("always_valid"): "valid"}],
-            ],
-        ],
-    ], run_stderr
-    assert stderr == ""
 
 
 @pytest.mark.asyncio
@@ -2260,7 +2239,7 @@ async def test_validate_specify_dialect(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_statistics_pretty(envsonschema, always_valid):
+async def test_statistics_pretty(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -2275,7 +2254,7 @@ async def test_statistics_pretty(envsonschema, always_valid):
         "-i",
         envsonschema,
         "-i",
-        always_valid,
+        miniatures.always_valid,
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -2313,7 +2292,7 @@ async def test_statistics_pretty(envsonschema, always_valid):
 
 @pytest.mark.asyncio
 @pytest.mark.json
-async def test_statistics_json(envsonschema, always_valid):
+async def test_statistics_json(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -2328,7 +2307,7 @@ async def test_statistics_json(envsonschema, always_valid):
         "-i",
         envsonschema,
         "-i",
-        always_valid,
+        miniatures.always_valid,
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -2356,7 +2335,7 @@ async def test_statistics_json(envsonschema, always_valid):
 
 
 @pytest.mark.asyncio
-async def test_statistics_markdown(envsonschema, always_valid):
+async def test_statistics_markdown(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
         {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
@@ -2371,7 +2350,7 @@ async def test_statistics_markdown(envsonschema, always_valid):
         "-i",
         envsonschema,
         "-i",
-        always_valid,
+        miniatures.always_valid,
         "-V",
         stdin=dedent(raw.strip("\n")),
     )

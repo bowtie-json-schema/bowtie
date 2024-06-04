@@ -105,6 +105,8 @@ class Unconnection(Generic[E_co]):
 
 
 def python_implementation(
+    language: str = "python",
+    version: str = "",
     **kwargs: Any,
 ) -> Callable[
     [Callable[[Dialect], SchemaCompiler[E_co]]],
@@ -116,8 +118,8 @@ def python_implementation(
         name = kwargs.pop("name", fn.__name__)
         info = ImplementationInfo(
             name=name,
-            version=metadata.version(name),
-            language="python",
+            version=version or metadata.version(name),
+            language=language,
             os=platform.system(),
             os_version=platform.release(),
             language_version=platform.python_version(),
@@ -181,6 +183,10 @@ class Direct:
     Connecting will lookup and call the object from the identified location.
     The return value should then be an object which makes use of a specific
     target implementation.
+
+    Note that unlike when running implementations via containers, here we do
+    *not* (cannot) restrict network access. Implementations making use of this
+    functionaly should still ensure no networking takes place.
     """
 
     _connect: Callable[[], Connection] = field(alias="connect")

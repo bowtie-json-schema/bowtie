@@ -107,6 +107,7 @@ addopts = ["--strict-markers"]
 xfail_strict = true
 markers = [
     "json: Tests of Bowtie's JSON output",
+    "containerless: (Integration) tests not dependent on podman/dockerd",
 ]
 
 [tool.pyright]
