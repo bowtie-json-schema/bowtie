@@ -19,7 +19,7 @@ SUPPORTED_DIALECTS = [
 
 @meta_schema = nil
 @get_meta_schema = nil
-@setup_schemer = -> (kase, meta_schema) {
+@setup_schemer = lambda { |kase, meta_schema|
   meta_schema.new(
     kase.fetch('schema'),
     ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) },
@@ -40,11 +40,11 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
 
   SUPPORTED_DIALECTS.unshift(
     'https://json-schema.org/draft/2020-12/schema',
-    'https://json-schema.org/draft/2019-09/schema'
+    'https://json-schema.org/draft/2019-09/schema',
   )
 
-  @get_meta_schema = -> (dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
-  @setup_schemer = -> (kase, meta_schema) { 
+  @get_meta_schema = ->(dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
+  @setup_schemer = lambda { |kase, meta_schema|
     JSONSchemer.schema(
       kase.fetch('schema'),
       meta_schema: meta_schema,
@@ -54,9 +54,9 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
     )
   }
 elsif Gem::Version.new('0.2.25') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = -> (dialect) { JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = ->(dialect) { JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
 elsif Gem::Version.new('0.2.17') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = -> (dialect) { JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = ->(dialect) { JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
 end
 
 ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
