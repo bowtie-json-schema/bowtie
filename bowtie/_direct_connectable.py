@@ -15,8 +15,8 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from url import URL
 
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
-from bowtie._core import Connection, Dialect, ImplementationInfo
-from bowtie._registry import E_co, SchemaCompiler
+from bowtie._core import Dialect, ImplementationInfo, registry
+from bowtie._registry import E_co, SchemaCompiler, ValidatorRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -46,7 +46,7 @@ def not_yet_connected(schema: Schema, registry: SchemaRegistry):
 class Unconnection(Generic[E_co]):
 
     _info: ImplementationInfo = field(repr=lambda i: i.id, alias="info")
-    _compiler_for: Callable[[Dialect], SchemaCompiler[E_co]] = field(
+    compiler_for: Callable[[Dialect], SchemaCompiler[E_co]] = field(
         repr=False,
         alias="compiler_for",
     )
@@ -74,7 +74,7 @@ class Unconnection(Generic[E_co]):
                 return asdict(started)
             case {"cmd": "dialect", "dialect": uri}:
                 self._current_dialect = Dialect.by_uri()[URL.parse(uri)]
-                self._compile = self._compiler_for(self._current_dialect)
+                self._compile = self.compiler_for(self._current_dialect)
                 return asdict(self._implicit_dialect_response)
             case {"cmd": "run", "seq": seq, "case": case}:
                 schema = case["schema"]
@@ -173,7 +173,7 @@ IMPLEMENTATIONS = {
 
 
 @frozen
-class Direct:
+class Direct(Generic[E_co]):
     """
     A direct connectable connects by simply importing some Python object.
 
@@ -191,10 +191,10 @@ class Direct:
     functionaly should still ensure no networking takes place.
     """
 
-    _connect: Callable[[], Connection] = field(alias="connect")
+    _connect: Callable[[], Unconnection[E_co]] = field(alias="connect")
 
     @classmethod
-    def from_id(cls, id: ConnectableId):
+    def from_id(cls, id: ConnectableId) -> Direct[Any]:
         if "." in id and ":" in id:
             connect = pkgutil.resolve_name(id)
         else:
@@ -206,5 +206,13 @@ class Direct:
     def connect(
         self,
         **kwargs: Any,
-    ) -> AbstractAsyncContextManager[Connection]:
+    ) -> AbstractAsyncContextManager[Unconnection[E_co]]:
         return nullcontext(self._connect())
+
+    def registry(self, **kwargs: Any) -> ValidatorRegistry[E_co]:
+        if "registry" not in kwargs:
+            kwargs["registry"] = registry()
+        return ValidatorRegistry(
+            compile=self._connect().compiler_for(Dialect.latest()),  # XXX
+            **kwargs,
+        )

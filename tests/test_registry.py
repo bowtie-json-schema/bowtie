@@ -2,13 +2,14 @@ from jsonschema.exceptions import ValidationError
 from referencing.jsonschema import DRAFT202012, EMPTY_REGISTRY
 import pytest
 
-from bowtie._registry import UnexpectedlyValid, ValidatorRegistry
+from bowtie._direct_connectable import Direct
+from bowtie._registry import UnexpectedlyValid
 
 REGISTRY = [
     DRAFT202012.create_resource({"$id": "urn:everything-valid"}),
     DRAFT202012.create_resource({"$id": "urn:nothing-valid", "not": True}),
 ] @ EMPTY_REGISTRY
-VALIDATORS = ValidatorRegistry.jsonschema(registry=REGISTRY)
+VALIDATORS = Direct.from_id("python-jsonschema").registry(registry=REGISTRY)
 
 
 def test_validated_valid():

@@ -39,7 +39,7 @@ class Connector(Protocol):
 ConnectableId = str
 
 
-def happy(id: str):
+def happy(id: str) -> Connector:
     """
     A happy (eyeballs) connector.
 

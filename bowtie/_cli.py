@@ -42,8 +42,8 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
-    validator_registry,
 )
+from bowtie._direct_connectable import Direct
 from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
@@ -453,7 +453,7 @@ def format_option(**option_kwargs: Any) -> Callable[[FC], FC]:
             if not value or ctx.resilient_parsing:
                 return
             uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
-            schema = validator_registry().schema(uri)
+            schema = Direct.from_id("python-jsonschema").registry().schema(uri)
             # FIXME: Syntax highlight? But rich appears to be doing some
             #        bizarre line wrapping, even if I disable a bunch of random
             #        options (crop, no_wrap, word_wrap in Syntax, ...) which
@@ -872,7 +872,7 @@ def statistics(
 
 
 def make_validator():
-    validators = validator_registry()
+    validators = Direct.from_id("python-jsonschema").registry()
 
     def validate(instance: Any, schema: Schema) -> None:
         # FIXME: There's work to do upstream in referencing, but we still are

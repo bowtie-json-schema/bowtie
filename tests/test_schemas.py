@@ -4,7 +4,7 @@ Test Bowtie's schemas for proper functionality.
 
 import pytest
 
-from bowtie._core import validator_registry
+from bowtie._direct_connectable import Direct
 
 TEST = {
     "description": "a test",
@@ -141,13 +141,14 @@ ANOTHER_TEST = {
     ],
 )
 def test_group(valid, instance):
-    registry = validator_registry()
+    registry = Direct.from_id("python-jsonschema").registry()
     validator = registry.for_uri("tag:bowtie.report,2023:models:group")
     errors = list(validator.errors_for(instance))
     assert valid == (not errors), errors
 
 
 def test_root_schema():
+    registry = Direct.from_id("python-jsonschema").registry()
     canonical_url = "tag:bowtie.report,2023:ihop"
-    schema = validator_registry().schema(canonical_url)
+    schema = registry.schema(canonical_url)
     assert schema["$id"] == canonical_url

@@ -28,7 +28,6 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie._registry import ValidatorRegistry
 from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 
 if TYPE_CHECKING:
@@ -758,7 +757,6 @@ class TestCase:
 
 
 @cache
-def validator_registry():
+def registry():
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
-    registry = EMPTY_REGISTRY.with_resources(resources).crawl()
-    return ValidatorRegistry.jsonschema(registry=registry)
+    return EMPTY_REGISTRY.with_resources(resources).crawl()

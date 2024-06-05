@@ -12,7 +12,8 @@ from rpds import HashTrieMap
 import structlog.stdlib
 
 from bowtie._commands import Seq, SeqCase, SeqResult, Unsuccessful
-from bowtie._core import Dialect, TestCase, validator_registry
+from bowtie._core import Dialect, TestCase
+from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -217,8 +218,12 @@ class Report:
     @classmethod
     def from_input(cls, input: Iterable[Mapping[str, Any]]) -> Self:
         # TODO: Support some interface for enabling/disabling validation.
-        validator = validator_registry().for_uri(
-            "tag:bowtie.report,2024:report",
+        validator = (
+            Direct.from_id("python-jsonschema")
+            .registry()
+            .for_uri(
+                "tag:bowtie.report,2024:report",
+            )
         )
 
         iterator = iter(input)

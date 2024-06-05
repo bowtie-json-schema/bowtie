@@ -11,7 +11,6 @@ from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY, Schema, SchemaRegistry
 
 if TYPE_CHECKING:
-    from jsonschema.exceptions import ValidationError
     from referencing.jsonschema import SchemaResource
 
 
@@ -65,24 +64,6 @@ class ValidatorRegistry(Generic[E_co]):
         resources: SchemaResource | Iterable[SchemaResource],
     ) -> ValidatorRegistry[E_co]:
         return evolve(self, registry=resources @ self._registry)
-
-    @classmethod
-    def jsonschema(cls, **kwargs: Any) -> ValidatorRegistry[ValidationError]:
-        """
-        A registry which uses the `jsonschema` module to do validation.
-        """
-        from jsonschema.validators import (
-            validator_for,  # type: ignore[reportUnknownVariableType]
-        )
-
-        def compile(
-            schema: Schema,
-            registry: SchemaRegistry,
-        ) -> ErrorsFor[ValidationError]:
-            _Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
-            return _Validator(schema, registry=registry).iter_errors  # type: ignore[reportUnknownVariableType]
-
-        return cls(compile=compile, **kwargs)  # type: ignore[reportAssignmentType]  ?!?
 
     def schema(self, uri: str) -> Schema:
         """

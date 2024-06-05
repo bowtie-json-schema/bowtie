@@ -28,9 +28,8 @@ from bowtie._core import (
     Implementation,
     Test,
     TestCase,
-    validator_registry,
 )
-from bowtie._direct_connectable import IMPLEMENTATIONS
+from bowtie._direct_connectable import IMPLEMENTATIONS, Direct
 from bowtie._report import EmptyReport, InvalidReport, Report
 import tests.fauxmplementations.miniatures
 
@@ -58,6 +57,8 @@ miniatures = _Miniatures()
 #: An arbitrary harness for when behavior shouldn't depend on a specific one.
 ARBITRARY = miniatures.always_valid
 
+VALIDATORS = Direct.from_id("python-jsonschema").registry()
+
 
 def tag(name: str):
     return f"bowtie-integration-tests/{name}"
@@ -66,7 +67,7 @@ def tag(name: str):
 async def command_validator(command):
     stdout, stderr = await bowtie(command, "--schema")
     assert stderr == "", stderr
-    return validator_registry().for_schema(_json.loads(stdout))
+    return VALIDATORS.for_schema(_json.loads(stdout))
 
 
 async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):

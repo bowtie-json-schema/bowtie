@@ -38,8 +38,8 @@ from bowtie._core import (
     ImplementationInfo,
     Test,
     TestCase,
-    validator_registry,
 )
+from bowtie._direct_connectable import Direct
 from bowtie._report import Report, RunMetadata
 
 
@@ -47,7 +47,8 @@ def pattern_from(uri):
     """
     Return a strategy which matches the pattern in the given schema.
     """
-    return from_regex(validator_registry().schema(uri)["pattern"])
+    validators = Direct.from_id("python-jsonschema").registry()
+    return from_regex(validators.schema(uri)["pattern"])
 
 
 # FIXME: probably via hypothesis-jsonschema

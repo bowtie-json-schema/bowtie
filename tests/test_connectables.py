@@ -6,10 +6,10 @@ from bowtie._containers import (
     ConnectableContainer,
     ConnectableImage,
 )
-from bowtie._core import validator_registry
 from bowtie._direct_connectable import Direct, NoDirectConnection
 
-validator = validator_registry().for_uri("tag:bowtie.report,2024:connectables")
+validators = Direct.from_id("python-jsonschema").registry()
+validator = validators.for_uri("tag:bowtie.report,2024:connectables")
 validated, invalidated = validator.validated, validator.invalidated
 
 
