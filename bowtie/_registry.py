@@ -33,7 +33,6 @@ class Validator(Generic[E_co]):
     """
 
     errors_for: ErrorsFor[E_co]
-    _raises: tuple[type[E_co], ...] = field(alias="raises")
     _registry: ValidatorRegistry[E_co] = field(alias="registry")
 
     def __rmatmul__(
@@ -50,7 +49,7 @@ class Validator(Generic[E_co]):
 
     def invalidated(self, instance: Any):
         exception = next(iter(self.errors_for(instance)), None)
-        if not isinstance(exception, self._raises):
+        if exception is None:
             raise UnexpectedlyValid(instance)
         return instance
 
@@ -58,13 +57,7 @@ class Validator(Generic[E_co]):
 @frozen
 class ValidatorRegistry(Generic[E_co]):
 
-    _compile: Callable[[Schema, SchemaRegistry], ErrorsFor[E_co]] = field(
-        alias="compile",
-    )
-    _raises: tuple[type[E_co], ...] = field(  # type: ignore[reportAssignmentType]  ?!?
-        default=(Exception,),
-        alias="raises",
-    )
+    _compile: SchemaCompiler[E_co] = field(alias="compile")
     _registry: SchemaRegistry = field(default=EMPTY_REGISTRY, alias="registry")
 
     def __rmatmul__(
@@ -78,7 +71,6 @@ class ValidatorRegistry(Generic[E_co]):
         """
         A registry which uses the `jsonschema` module to do validation.
         """
-        from jsonschema.exceptions import ValidationError
         from jsonschema.validators import (
             validator_for,  # type: ignore[reportUnknownVariableType]
         )
@@ -90,7 +82,7 @@ class ValidatorRegistry(Generic[E_co]):
             _Validator = validator_for(schema)  # type: ignore[reportUnknownVariableType]
             return _Validator(schema, registry=registry).iter_errors  # type: ignore[reportUnknownVariableType]
 
-        return cls(compile=compile, raises=(ValidationError,), **kwargs)  # type: ignore[reportAssignmentType]  ?!?
+        return cls(compile=compile, **kwargs)  # type: ignore[reportAssignmentType]  ?!?
 
     def schema(self, uri: str) -> Schema:
         """
@@ -109,8 +101,4 @@ class ValidatorRegistry(Generic[E_co]):
         Return a `Validator` using the given schema.
         """
         errors_for: ErrorsFor[E_co] = self._compile(schema, self._registry)
-        return Validator(
-            errors_for=errors_for,
-            raises=self._raises,
-            registry=self,
-        )
+        return Validator(errors_for=errors_for, registry=self)
