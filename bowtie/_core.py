@@ -668,7 +668,7 @@ class Test:
 @frozen
 class Group:
     description: str
-    children: Sequence[Group | LeafGroup]
+    children: Sequence[Group] | Sequence[LeafGroup]
     comment: str | None = None
     registry: SchemaRegistry = EMPTY_REGISTRY
 
