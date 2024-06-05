@@ -15,7 +15,7 @@ SUPPORTED_DIALECTS = [
   'http://json-schema.org/draft-07/schema#',
   'http://json-schema.org/draft-06/schema#',
   'http://json-schema.org/draft-04/schema#',
-]
+].freeze
 
 @meta_schema = nil
 @get_meta_schema = nil
@@ -38,10 +38,10 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
   meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
   meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
 
-  SUPPORTED_DIALECTS.unshift(
+  SUPPORTED_DIALECTS = SUPPORTED_DIALECTS.dup.unshift(
     'https://json-schema.org/draft/2020-12/schema',
     'https://json-schema.org/draft/2019-09/schema'
-  )
+  ).freeze
 
   @get_meta_schema = -> (dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
   @setup_schemer = -> (kase, meta_schema) { 
