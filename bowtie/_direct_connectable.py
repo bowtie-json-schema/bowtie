@@ -101,11 +101,6 @@ class Unconnection(Generic[E_co]):
             case _:
                 raise RuntimeError(f"Unknown message: {message!r}")
 
-    async def poison(self, message: Message) -> None:
-        """
-        Do nothing.
-        """
-
 
 def direct_implementation(
     implicit_dialect_response: StartedDialect = StartedDialect.OK,

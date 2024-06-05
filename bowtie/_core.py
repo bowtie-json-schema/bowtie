@@ -22,7 +22,6 @@ import referencing_loaders
 from bowtie import HOMEPAGE
 from bowtie._commands import (
     START_V1,
-    STOP,
     CaseErrored,
     Dialect as DialectCommand,
     SeqCase,
@@ -356,12 +355,6 @@ class Connection(Protocol):
         """
         ...
 
-    async def poison(self, message: Message) -> None:
-        """
-        Poison the harness by sending a message which causes it to stop itself.
-        """
-        ...
-
 
 @frozen
 class HarnessClient:
@@ -400,10 +393,6 @@ class HarnessClient:
             response = await self._connection.request(request)
         if response is not None:
             return cmd.from_response(response, validate=validate)
-
-    async def poison(self) -> None:
-        validate = self._make_validator()
-        await self._connection.poison(STOP.to_request(validate=validate))  # type: ignore[reportArgumentType]
 
 
 @frozen

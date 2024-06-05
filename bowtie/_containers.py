@@ -8,7 +8,7 @@ special-to-this-package logic occasionally.
 from __future__ import annotations
 
 from collections import deque
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import TYPE_CHECKING
 import asyncio
 import json
@@ -189,11 +189,6 @@ class Connection:
                 return json.loads(response)
             except json.JSONDecodeError as err:
                 raise InvalidResponse(contents=response) from err
-
-    async def poison(self, message: dict[str, Any]) -> None:
-        request = f"{json.dumps(message)}\n"
-        with suppress(_ClosedStream):
-            await (await self._stream).send(request)
 
 
 @frozen
