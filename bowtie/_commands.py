@@ -64,8 +64,14 @@ class SeqCase:
     case: TestCase
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
-        if "$schema" not in self.case.schema:
+        try:
+            schema_without_dialect = "$schema" not in self.case.schema
+        except TypeError:  # we could either warn or not warn here seemingly...
+            schema_without_dialect = False
+
+        if schema_without_dialect:
             runner.schema_without_dialect(self.case.schema)
+
         run = Run(seq=self.seq, case=self.case.without_expected_results())
         return runner.validate(run, expected=self.case.expected_results())
 
