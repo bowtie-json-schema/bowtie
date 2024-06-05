@@ -63,9 +63,7 @@ def fake_javascript(dialect: Dialect):
 @fake()
 def passes_smoke(dialect: Dialect):
     """
-    Claims to be written in Javascript.
-
-    The validity of instances should not be relied on.
+    An implementation which crudely passes `bowtie smoke`.
     """
     return lambda schema, registry: lambda instance: (  # naively...
         [] if "not" not in schema else [NotValid(instance)]
