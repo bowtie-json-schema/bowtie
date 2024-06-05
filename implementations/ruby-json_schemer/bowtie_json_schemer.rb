@@ -40,7 +40,7 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
 
   SUPPORTED_DIALECTS = SUPPORTED_DIALECTS.dup.unshift(
     'https://json-schema.org/draft/2020-12/schema',
-    'https://json-schema.org/draft/2019-09/schema'
+    'https://json-schema.org/draft/2019-09/schema',
   ).freeze
 
   @get_meta_schema = ->(dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
