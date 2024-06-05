@@ -4,24 +4,29 @@ A collection of small mini-fake implementations with deterministic behavior.
 Useful for testing Bowtie's own internal behavior.
 """
 
+from url import URL
+
 from bowtie import HOMEPAGE, REPO
 from bowtie._commands import StartedDialect
-from bowtie._core import Dialect
-from bowtie._direct_connectable import python_implementation
+from bowtie._core import Dialect, Link
+from bowtie._direct_connectable import direct_implementation
 
 
 class NotValid(Exception):
     pass
 
 
-def fake(dialects=frozenset(Dialect.known()), **kwargs):
-    return python_implementation(
-        homepage=HOMEPAGE,
-        issues=REPO / "issues",
-        source=REPO,
-        version="v1.0.0",
-        dialects=dialects,
-        **kwargs,
+def fake(**kwargs):
+    return direct_implementation(
+        **{
+            "language": "python",
+            "homepage": HOMEPAGE,
+            "source": REPO,
+            "issues": REPO / "issues",
+            "version": "v1.0.0",
+            "dialects": frozenset(Dialect.known()),
+            **kwargs,
+        },
     )
 
 
@@ -75,6 +80,25 @@ def passes_smoke(dialect: Dialect):
 def no_implicit_dialect_support(dialect: Dialect):
     """
     An implementation which crudely passes `bowtie smoke`.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: []
+
+
+@fake(
+    homepage=URL.parse("urn:example"),
+    issues=URL.parse("urn:example"),
+    source=URL.parse("urn:example"),
+    dialects=frozenset([Dialect.by_short_name()["draft7"]]),
+    links=[
+        Link(description="foo", url=URL.parse("urn:example:foo")),
+        Link(description="bar", url=URL.parse("urn:example:bar")),
+    ],
+)
+def links(dialect: Dialect):
+    """
+    An implementation which declares some additional links.
 
     The validity result of instances should not be relied on.
     """

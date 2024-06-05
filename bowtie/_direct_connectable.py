@@ -107,15 +107,14 @@ class Unconnection(Generic[E_co]):
         """
 
 
-def python_implementation(
-    language: str = "python",
+def direct_implementation(
     implicit_dialect_response: StartedDialect = StartedDialect.OK,
     **kwargs: Any,
 ) -> Callable[
     [Callable[[Dialect], SchemaCompiler[E_co]]],
     Callable[[], Unconnection[E_co]],
 ]:
-    def _python_implementation(
+    def connect(
         fn: Callable[[Dialect], SchemaCompiler[E_co]],
     ) -> Callable[[], Unconnection[E_co]]:
         name = kwargs.pop("name", fn.__name__)
@@ -123,7 +122,6 @@ def python_implementation(
             kwargs["version"] = metadata.version(name)
         info = ImplementationInfo(
             name=name,
-            language=language,
             os=platform.system(),
             os_version=platform.release(),
             language_version=platform.python_version(),
@@ -135,10 +133,11 @@ def python_implementation(
             implicit_dialect_response=implicit_dialect_response,
         )
 
-    return _python_implementation
+    return connect
 
 
-@python_implementation(
+@direct_implementation(
+    language="python",
     homepage=URL.parse("https://python-jsonschema.readthedocs.io/"),
     documentation=URL.parse("https://python-jsonschema.readthedocs.io/"),
     issues=URL.parse("https://github.com/python-jsonschema/jsonschema/issues"),

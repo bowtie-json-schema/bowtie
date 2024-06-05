@@ -7,6 +7,7 @@ from textwrap import dedent
 import asyncio
 import json as _json
 import os
+import platform
 import sys
 import tarfile
 
@@ -272,17 +273,6 @@ with_versions = shellplementation(
     contents=r"""
     read -r request
     printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 1}\n'
-    read -r request
-    printf '{"ok": true}\n'
-    read -r request
-    printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
-    """,  # noqa: E501
-)
-links = shellplementation(
-    name="links",
-    contents=r"""
-    read -r request
-    printf '{"implementation": {"name": "links", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["http://json-schema.org/draft-07/schema#"], "links": [{"description": "foo", "url": "urn:example:foo"}, {"description": "bar", "url": "urn:example:bar"}]}, "version": 1}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -1194,20 +1184,25 @@ async def test_smoke_multiple():
 
 
 @pytest.mark.asyncio
-async def test_info_pretty(envsonschema):
+@pytest.mark.containerless
+async def test_info_pretty():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "pretty",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
     )
     assert stdout == dedent(
-        """\
-        name: "envsonschema"
+        f"""\
+        name: "always_invalid"
         language: "python"
-        homepage: "https://github.com/bowtie-json-schema/bowtie"
+        version: "v1.0.0"
+        homepage: "https://bowtie.report/"
         issues: "https://github.com/bowtie-json-schema/bowtie/issues"
+        language_version: "{platform.python_version()}"
+        os: "{platform.system()}"
+        os_version: "{platform.release()}"
         source: "https://github.com/bowtie-json-schema/bowtie"
         dialects: [
           "https://json-schema.org/draft/2020-12/schema",
@@ -1223,20 +1218,25 @@ async def test_info_pretty(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_info_markdown(envsonschema):
+@pytest.mark.containerless
+async def test_info_markdown():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "markdown",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
     )
     assert stdout == dedent(
-        """\
-        **name**: "envsonschema"
+        f"""\
+        **name**: "always_invalid"
         **language**: "python"
-        **homepage**: "https://github.com/bowtie-json-schema/bowtie"
+        **version**: "v1.0.0"
+        **homepage**: "https://bowtie.report/"
         **issues**: "https://github.com/bowtie-json-schema/bowtie/issues"
+        **language_version**: "{platform.python_version()}"
+        **os**: "{platform.system()}"
+        **os_version**: "{platform.release()}"
         **source**: "https://github.com/bowtie-json-schema/bowtie"
         **dialects**: [
           "https://json-schema.org/draft/2020-12/schema",
@@ -1252,91 +1252,117 @@ async def test_info_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
-async def test_info_valid_markdown(envsonschema):
+@pytest.mark.containerless
+async def test_info_valid_markdown():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "markdown",
         "-i",
-        envsonschema,
+        ARBITRARY,
     )
     parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
     assert (
         tokens
-        == (
+        == dedent(
             """
-        <root>
-  <paragraph>
-    <inline>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <strong>
-        <text>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-      <softbreak>
-      <text>
-        """
+            <root>
+              <paragraph>
+                <inline>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <strong>
+                    <text>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+                  <softbreak>
+                  <text>
+            """,
         ).strip()
     )
     assert stderr == ""
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 @pytest.mark.json
-async def test_info_json(envsonschema):
+async def test_info_json():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
     )
     jsonout = _json.loads(stdout)
 
     (await command_validator("info")).validate(jsonout)
     assert jsonout == {
-        "name": "envsonschema",
+        "name": "always_invalid",
         "language": "python",
-        "homepage": "https://github.com/bowtie-json-schema/bowtie",
+        "homepage": "https://bowtie.report/",
         "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
         "source": "https://github.com/bowtie-json-schema/bowtie",
+        "language_version": platform.python_version(),
+        "os_version": platform.release(),
+        "os": platform.system(),
+        "version": "v1.0.0",
         "dialects": [
             "https://json-schema.org/draft/2020-12/schema",
             "https://json-schema.org/draft/2019-09/schema",
@@ -1350,27 +1376,32 @@ async def test_info_json(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containerless
 @pytest.mark.json
-async def test_info_json_multiple_implementations(envsonschema, links):
+async def test_info_json_multiple_implementations():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
-        envsonschema,
+        miniatures.always_invalid,
         "-i",
-        links,
+        miniatures.links,
     )
     jsonout = _json.loads(stdout)
 
     (await command_validator("info")).validate(jsonout)
     assert jsonout == {
-        tag("envsonschema"): {
-            "name": "envsonschema",
+        miniatures.always_invalid: {
+            "name": "always_invalid",
             "language": "python",
-            "homepage": "https://github.com/bowtie-json-schema/bowtie",
+            "homepage": "https://bowtie.report/",
             "issues": "https://github.com/bowtie-json-schema/bowtie/issues",
             "source": "https://github.com/bowtie-json-schema/bowtie",
+            "language_version": platform.python_version(),
+            "os_version": platform.release(),
+            "os": platform.system(),
+            "version": "v1.0.0",
             "dialects": [
                 "https://json-schema.org/draft/2020-12/schema",
                 "https://json-schema.org/draft/2019-09/schema",
@@ -1380,12 +1411,16 @@ async def test_info_json_multiple_implementations(envsonschema, links):
                 "http://json-schema.org/draft-03/schema#",
             ],
         },
-        tag("links"): {
+        miniatures.links: {
             "name": "links",
-            "language": "sh",
+            "language": "python",
             "homepage": "urn:example",
             "issues": "urn:example",
+            "language_version": platform.python_version(),
+            "os_version": platform.release(),
+            "os": platform.system(),
             "source": "urn:example",
+            "version": "v1.0.0",
             "dialects": ["http://json-schema.org/draft-07/schema#"],
             "links": [
                 {"description": "foo", "url": "urn:example:foo"},
@@ -1397,33 +1432,38 @@ async def test_info_json_multiple_implementations(envsonschema, links):
 
 
 @pytest.mark.asyncio
-async def test_info_links(links):
+@pytest.mark.containerless
+async def test_info_links():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "pretty",
         "-i",
-        links,
+        miniatures.links,
     )
     assert stdout == dedent(
-        """\
+        f"""\
         name: "links"
-        language: "sh"
+        language: "python"
+        version: "v1.0.0"
         homepage: "urn:example"
         issues: "urn:example"
+        language_version: "{platform.python_version()}"
+        os: "{platform.system()}"
+        os_version: "{platform.release()}"
         source: "urn:example"
         dialects: [
           "http://json-schema.org/draft-07/schema#"
         ]
         links: [
-          {
+          {{
             "description": "foo",
             "url": "urn:example:foo"
-          },
-          {
+          }},
+          {{
             "description": "bar",
             "url": "urn:example:bar"
-          }
+          }}
         ]
         """,
     )
