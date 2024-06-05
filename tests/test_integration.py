@@ -407,9 +407,6 @@ class TestRun:
 @pytest.mark.asyncio
 @pytest.mark.containerless
 async def test_suite(tmp_path):
-    # FIXME: maybe make suite not read the remotes until it needs them
-    tmp_path.joinpath("remotes").mkdir()
-
     definitions = tmp_path / "tests/draft7/definitions.json"
     definitions.parent.mkdir(parents=True)
     definitions.write_text(

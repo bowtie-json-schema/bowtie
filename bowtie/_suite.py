@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from contextlib import suppress
 from fnmatch import fnmatch
+from functools import cache
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -134,7 +135,7 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-def remotes_in(
+def _remotes_in(
     path: Path,
     dialect: _core.Dialect,
 ) -> Iterable[tuple[URL, Any]]:
@@ -164,15 +165,19 @@ def remotes_in(
         yield SUITE_REMOTE_BASE_URI / relative, schema
 
 
+@cache
+def remotes_in(path: Path, dialect: _core.Dialect) -> dict[str, Any]:
+    return {str(k): v for k, v in _remotes_in(path=path, dialect=dialect)}
+
+
 def cases_from(
     paths: Iterable[_P],
     remotes: Path,
     dialect: _core.Dialect,
 ) -> Iterable[_core.TestCase]:
-    populated = {str(k): v for k, v in remotes_in(remotes, dialect=dialect)}
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = populated
+            registry = remotes_in(remotes, dialect=dialect)
         else:
             registry = {}
 
