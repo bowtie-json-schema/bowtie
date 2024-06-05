@@ -19,7 +19,8 @@ from url import URL, RelativeURLWithoutBase
 import click
 import rich
 
-from bowtie import GITHUB, _core
+from bowtie import GITHUB
+from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -30,8 +31,7 @@ TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
 TESTS_DIR_URL = TEST_SUITE_URL / "tree/main/tests"
 
 URL_FOR_DIALECT = {
-    dialect: TESTS_DIR_URL / dialect.short_name
-    for dialect in _core.Dialect.known()
+    dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
 }
 
 # Magic constants assumed/used by the official test suite for $ref tests
@@ -50,12 +50,12 @@ class ClickParam(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[_core.TestCase], _core.Dialect, dict[str, Any]]:
+    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
-        value = _core.Dialect.by_alias().get(value, value)
+        value = Dialect.by_alias().get(value, value)
         value = URL_FOR_DIALECT.get(value, value)
 
         try:
@@ -123,7 +123,7 @@ class ClickParam(click.ParamType):
 
         remotes = version_path.parent.parent / "remotes"
 
-        dialect = _core.Dialect.by_short_name().get(version_path.name)
+        dialect = Dialect.by_short_name().get(version_path.name)
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
@@ -135,10 +135,7 @@ class ClickParam(click.ParamType):
 _P = Path | zipfile.Path
 
 
-def _remotes_in(
-    path: Path,
-    dialect: _core.Dialect,
-) -> Iterable[tuple[URL, Any]]:
+def _remotes_in(path: Path, dialect: Dialect) -> Iterable[tuple[URL, Any]]:
     # This messy logic is because the test suite is terrible at indicating
     # what remotes are needed for what drafts, and mixes in schemas which
     # have no $schema and which are invalid under earlier versions, in with
@@ -166,15 +163,15 @@ def _remotes_in(
 
 
 @cache
-def remotes_in(path: Path, dialect: _core.Dialect) -> dict[str, Any]:
+def remotes_in(path: Path, dialect: Dialect) -> dict[str, Any]:
     return {str(k): v for k, v in _remotes_in(path=path, dialect=dialect)}
 
 
 def cases_from(
     paths: Iterable[_P],
     remotes: Path,
-    dialect: _core.Dialect,
-) -> Iterable[_core.TestCase]:
+    dialect: Dialect,
+) -> Iterable[TestCase]:
     for path in paths:
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = remotes_in(remotes, dialect=dialect)
@@ -185,7 +182,7 @@ def cases_from(
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
             case.pop("specification", None)  # we do nothing with this now
-            yield _core.TestCase.from_dict(
+            yield TestCase.from_dict(
                 dialect=dialect,
                 registry=registry,
                 **case,
