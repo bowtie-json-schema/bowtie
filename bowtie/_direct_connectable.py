@@ -46,12 +46,18 @@ def not_yet_connected(schema: Schema, registry: SchemaRegistry):
 class Unconnection(Generic[E_co]):
 
     _info: ImplementationInfo = field(repr=lambda i: i.id, alias="info")
-    _compile: Callable[[Dialect], SchemaCompiler[E_co]] = field(
+    _compiler_for: Callable[[Dialect], SchemaCompiler[E_co]] = field(
         repr=False,
-        alias="compile",
+        alias="compiler_for",
     )
-    _dialect: Dialect = Dialect.latest()
-    _for_current_dialect: SchemaCompiler[E_co] = not_yet_connected
+    _implicit_dialect_response: StartedDialect = field(
+        default=StartedDialect.OK,
+        repr=False,
+        alias="implicit_dialect_response",
+    )
+
+    _current_dialect: Dialect = Dialect.latest()
+    _compile: SchemaCompiler[E_co] = not_yet_connected
 
     async def request(self, message: Message) -> Message:
         """
@@ -67,16 +73,16 @@ class Unconnection(Generic[E_co]):
                 )
                 return asdict(started)
             case {"cmd": "dialect", "dialect": uri}:
-                self._dialect = Dialect.by_uri()[URL.parse(uri)]
-                self._for_current_dialect = self._compile(self._dialect)
-                return asdict(StartedDialect.OK)
+                self._current_dialect = Dialect.by_uri()[URL.parse(uri)]
+                self._compile = self._compiler_for(self._current_dialect)
+                return asdict(self._implicit_dialect_response)
             case {"cmd": "run", "seq": seq, "case": case}:
                 schema = case["schema"]
                 registry = EMPTY_REGISTRY.with_contents(
                     case.get("registry", {}).items(),
-                    default_specification=self._dialect.specification(),
+                    default_specification=self._current_dialect.specification(),
                 )
-                errors_for = self._for_current_dialect(schema, registry)
+                errors_for = self._compile(schema, registry)
                 results = [
                     TestResult(
                         valid=(
@@ -122,7 +128,7 @@ def python_implementation(
             language_version=platform.python_version(),
             **kwargs,
         )
-        return lambda: Unconnection(compile=fn, info=info)
+        return lambda: Unconnection(compiler_for=fn, info=info)
 
     return _python_implementation
 
