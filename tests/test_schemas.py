@@ -16,10 +16,6 @@ ANOTHER_TEST = {
 }
 
 
-def errors(uri, instance):
-    return list(validator_registry().for_uri(uri).errors_for(instance))
-
-
 @pytest.mark.parametrize(
     "valid, instance",
     [
@@ -145,8 +141,10 @@ def errors(uri, instance):
     ],
 )
 def test_group(valid, instance):
-    got = errors("tag:bowtie.report,2023:models:group", instance)
-    assert valid == (not got), got
+    registry = validator_registry()
+    validator = registry.for_uri("tag:bowtie.report,2023:models:group")
+    errors = list(validator.errors_for(instance))
+    assert valid == (not errors), errors
 
 
 def test_root_schema():
