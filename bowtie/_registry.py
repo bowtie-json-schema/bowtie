@@ -42,15 +42,17 @@ class Validator(Generic[E_co]):
     ) -> Validator[E_co]:
         return evolve(self, registry=resources @ self._registry)
 
-    def validate(self, instance: Any):
+    def validated(self, instance: Any):
         exception = next(iter(self.errors_for(instance)), None)
         if exception is not None:
             raise exception
+        return instance
 
-    def invalidate(self, instance: Any):
+    def invalidated(self, instance: Any):
         exception = next(iter(self.errors_for(instance)), None)
         if not isinstance(exception, self._raises):
             raise UnexpectedlyValid(instance)
+        return instance
 
 
 @frozen

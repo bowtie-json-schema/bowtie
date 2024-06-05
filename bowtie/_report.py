@@ -225,8 +225,7 @@ class Report:
         header = next(iterator, None)
         if header is None:
             raise EmptyReport()
-        validator.validate(header)
-        metadata = RunMetadata.from_dict(**header)
+        metadata = RunMetadata.from_dict(**validator.validated(header))
 
         results: HashTrieMap[
             ConnectableId,
@@ -238,8 +237,7 @@ class Report:
         cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
 
         for data in iterator:
-            validator.validate(data)
-            match data:
+            match validator.validated(data):
                 case {"seq": seq, "case": case}:
                     if seq in cases:
                         raise DuplicateCase(seq)

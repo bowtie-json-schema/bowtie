@@ -391,8 +391,7 @@ class TestRun:
             json=True,
         )
 
-        (await command_validator("summary")).validate(jsonout)
-        assert jsonout == [
+        assert (await command_validator("summary")).validated(jsonout) == [
             [
                 {"type": "integer"},
                 [
@@ -1067,8 +1066,7 @@ async def test_smoke_json():
         exit_code=EX.DATAERR,  # because indeed invalid isn't always right
     )
 
-    (await command_validator("smoke")).validate(jsonout)
-    assert jsonout == [
+    assert (await command_validator("smoke")).validated(jsonout) == [
         {
             "case": {
                 "description": "allow-everything",
@@ -1349,8 +1347,7 @@ async def test_info_json():
     )
     jsonout = _json.loads(stdout)
 
-    (await command_validator("info")).validate(jsonout)
-    assert jsonout == {
+    assert (await command_validator("info")).validated(jsonout) == {
         "name": "always_invalid",
         "language": "python",
         "homepage": "https://bowtie.report/",
@@ -1387,8 +1384,7 @@ async def test_info_json_multiple_implementations():
     )
     jsonout = _json.loads(stdout)
 
-    (await command_validator("info")).validate(jsonout)
-    assert jsonout == {
+    assert (await command_validator("info")).validated(jsonout) == {
         miniatures.always_invalid: {
             "name": "always_invalid",
             "language": "python",
@@ -1587,8 +1583,9 @@ async def test_filter_implementations_json():
         "json",
         json=True,
     )
-    (await command_validator("filter-implementations")).validate(jsonout)
-    assert jsonout == [miniatures.fake_javascript]
+    assert (await command_validator("filter-implementations")).validated(
+        jsonout,
+    ) == [miniatures.fake_javascript]
     assert stderr == ""
 
 
@@ -1712,8 +1709,7 @@ async def test_summary_show_failures_json(tmp_path):
         json=True,
     )
 
-    (await command_validator("summary")).validate(jsonout)
-    assert jsonout == [
+    assert (await command_validator("summary")).validated(jsonout) == [
         [
             miniatures.always_valid,
             dict(failed=0, skipped=0, errored=0),
@@ -1897,8 +1893,7 @@ async def test_summary_show_validation_json(envsonschema):
         json=True,
     )
 
-    (await command_validator("summary")).validate(jsonout)
-    assert jsonout == [
+    assert (await command_validator("summary")).validated(jsonout) == [
         [
             {"type": "integer"},
             [
@@ -2357,8 +2352,7 @@ async def test_statistics_json(envsonschema):
     now, delta = datetime.now(tzlocal()), timedelta(minutes=1)
     assert within_delta(ran_on, now, delta), f"{ran_on} is too far from {now}."
 
-    (await command_validator("statistics")).validate(jsonout)
-    assert jsonout == dict(
+    assert (await command_validator("statistics")).validated(jsonout) == dict(
         dialect="https://json-schema.org/draft/2020-12/schema",
         ran_on=jsonout["ran_on"],
         median=0.65,
