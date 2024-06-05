@@ -3,8 +3,8 @@ FROM ruby:3-alpine as builder
 # unf_ext wants libc++ to compile itself
 RUN apk add --no-cache g++ make
 
-ARG JSON_SCHEMER_VERSION=2.3.0
-ENV JSON_SCHEMER_VERSION=$JSON_SCHEMER_VERSION
+ARG IMPLEMENTATION_VERSION=2.3.0
+ENV IMPLEMENTATION_VERSION=$IMPLEMENTATION_VERSION
 
 COPY Gemfile* .
 RUN bundle install
