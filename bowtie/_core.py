@@ -416,6 +416,11 @@ class DialectRunner:
     implementation: ConnectableId
     _harness: HarnessClient = field(repr=False, alias="harness")
 
+    schema_without_dialect: Callable[[Any], None] = field(
+        repr=False,
+        alias="schema_without_dialect",
+    )
+
     @classmethod
     async def for_dialect(
         cls,
@@ -430,17 +435,25 @@ class DialectRunner:
             DialectCommand(dialect=str(dialect.uri)),  # type: ignore[reportArgumentType]
         )
 
-        if response != StartedDialect.OK:
-            reporter.unacknowledged_dialect(
-                implementation=implementation,
-                dialect=dialect,
-                response=response,
-            )
+        if response == StartedDialect.OK:
+
+            def schema_without_dialect(_: Any):  # type: ignore[reportRedeclaration]
+                pass
+
+        else:
+
+            def schema_without_dialect(schema: Any):
+                reporter.schema_without_dialect(
+                    schema=schema,
+                    implementation=implementation,
+                    dialect=dialect,
+                )
 
         return cls(
             dialect=dialect,
             implementation=implementation,
             harness=new_harness,
+            schema_without_dialect=schema_without_dialect,
         )
 
     async def validate(

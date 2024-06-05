@@ -5,6 +5,7 @@ Useful for testing Bowtie's own internal behavior.
 """
 
 from bowtie import HOMEPAGE, REPO
+from bowtie._commands import StartedDialect
 from bowtie._core import Dialect
 from bowtie._direct_connectable import python_implementation
 
@@ -45,7 +46,7 @@ def only_draft3(dialect: Dialect):
     """
     Claims to only support Draft 3.
 
-    The validity of instances should not be relied on.
+    The validity result of instances should not be relied on.
     """
     return lambda schema, registry: lambda instance: []
 
@@ -55,7 +56,7 @@ def fake_javascript(dialect: Dialect):
     """
     Claims to be written in Javascript.
 
-    The validity of instances should not be relied on.
+    The validity result of instances should not be relied on.
     """
     return lambda schema, registry: lambda instance: []
 
@@ -68,3 +69,13 @@ def passes_smoke(dialect: Dialect):
     return lambda schema, registry: lambda instance: (  # naively...
         [] if "not" not in schema else [NotValid(instance)]
     )
+
+
+@fake(implicit_dialect_response=StartedDialect(ok=False))
+def no_implicit_dialect_support(dialect: Dialect):
+    """
+    An implementation which crudely passes `bowtie smoke`.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: []

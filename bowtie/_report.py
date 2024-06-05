@@ -11,13 +11,7 @@ from attrs.filters import exclude
 from rpds import HashTrieMap
 import structlog.stdlib
 
-from bowtie._commands import (
-    Seq,
-    SeqCase,
-    SeqResult,
-    StartedDialect,
-    Unsuccessful,
-)
+from bowtie._commands import Seq, SeqCase, SeqResult, Unsuccessful
 from bowtie._core import Dialect, TestCase, validator_registry
 
 if TYPE_CHECKING:
@@ -67,21 +61,22 @@ class Reporter:
         factory=structlog.stdlib.get_logger,
     )
 
-    def unacknowledged_dialect(
+    def schema_without_dialect(
         self,
         implementation: str,
         dialect: Dialect,
-        response: StartedDialect,
+        schema: Any,
     ):
         self._log.warn(
             (
-                "Implicit dialect not acknowledged. "
-                "Proceeding, but implementation may not have configured "
-                "itself to handle schemas without $schema."
+                f"The schema {schema!r} does not indicate its dialect via "
+                "the $schema keyword. "
+                f"This implementation does not support external dialect "
+                "configuration, so validation results may not properly "
+                "take the current dialect into account."
             ),
             logger_name=implementation,
             dialect=dialect.pretty_name,
-            response=response,
         )
 
     def ready(self, run_metadata: RunMetadata):

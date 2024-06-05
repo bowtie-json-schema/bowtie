@@ -2453,61 +2453,64 @@ async def test_smoke_direct_connectables(id):
     await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
 
 
-@pytest.mark.skip("We need a fake implementation twiddle-able for this.")
-@pytest.mark.asyncio
-async def test_implicit_dialect_unsupported(envsonschema, tmp_path):
-    """
-    Sending a schema with no explicit dialect warns once if the
-    implementation does not support implicit dialect requests.
-    """
-    schema = tmp_path / "schema.json"
-    schema.write_text("{}")
-    stdout, stderr = await bowtie(
-        "validate",
-        "-i",
-        envsonschema,
-        schema,
-        exit_code=-1,
-    )
-    assert stdout != ""
-    assert stderr == ""
+class TestImplicitDialectSupport:
+    @pytest.mark.asyncio
+    @pytest.mark.containerless
+    async def test_dialectless_schema_with_no_such_support(self, tmp_path):
+        """
+        Sending a schema with no explicit dialect warns once if the
+        implementation does not support implicit dialect requests.
+        """
+        tmp_path.joinpath("schema.json").write_text("{}")
+        tmp_path.joinpath("instance.json").write_text("12")
+        stdout, stderr = await bowtie(
+            "validate",
+            "-i",
+            miniatures.no_implicit_dialect_support,
+            tmp_path / "schema.json",
+            tmp_path / "instance.json",
+        )
 
+        assert not Report.from_serialized(stdout.splitlines()).is_empty
+        assert "does not indicate its dialect" in stderr
 
-@pytest.mark.skip("We need a fake implementation twiddle-able for this.")
-@pytest.mark.asyncio
-async def test_implicit_dialect_supported(envsonschema, tmp_path):
-    """
-    Sending a schema with no explicit dialect does not warn if the
-    implementation supports implicit dialect requests.
-    """
-    schema = tmp_path / "schema.json"
-    schema.write_text("{}")
-    stdout, stderr = await bowtie(
-        "validate",
-        "-i",
-        envsonschema,
-        schema,
-        exit_code=-1,
-    )
-    assert stdout == ""
-    assert stderr == ""
+    @pytest.mark.asyncio
+    @pytest.mark.containerless
+    async def test_dialectless_schema_with_support(self, tmp_path):
+        """
+        Sending a schema with no explicit dialect does not warn if the
+        implementation supports implicit dialect requests.
+        """
+        tmp_path.joinpath("schema.json").write_text("{}")
+        tmp_path.joinpath("instance.json").write_text("12")
+        stdout, stderr = await bowtie(
+            "validate",
+            "-i",
+            ARBITRARY,
+            tmp_path / "schema.json",
+            tmp_path / "instance.json",
+        )
 
+        assert not Report.from_serialized(stdout.splitlines()).is_empty
+        assert stderr == ""
 
-@pytest.mark.skip("We need a fake implementation twiddle-able for this.")
-@pytest.mark.asyncio
-async def test_explicit_dialect_no_implicit_support(envsonschema, tmp_path):
-    """
-    Sending a schema with an explicit dialect does not warn even if the
-    implementation does not support implicit dialect requests.
-    """
-    schema = tmp_path / "schema.json"
-    schema.write_text("{}")
-    stdout, stderr = await bowtie(
-        "validate",
-        "-i",
-        envsonschema,
-        schema,
-        exit_code=-1,
-    )
-    assert stdout == ""
-    assert stderr == ""
+    @pytest.mark.asyncio
+    @pytest.mark.containerless
+    async def test_schema_with_dialect(self, tmp_path):
+        """
+        Sending a schema with an explicit dialect does not warn even if the
+        implementation does not support implicit dialect requests.
+        """
+        tmp_path.joinpath("schema.json").write_text(
+            '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
+        )
+        tmp_path.joinpath("instance.json").write_text("12")
+        stdout, stderr = await bowtie(
+            "validate",
+            "-i",
+            miniatures.no_implicit_dialect_support,
+            tmp_path / "schema.json",
+            tmp_path / "instance.json",
+        )
+        assert not Report.from_serialized(stdout.splitlines()).is_empty
+        assert stderr == ""

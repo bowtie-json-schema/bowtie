@@ -109,7 +109,7 @@ class Unconnection(Generic[E_co]):
 
 def python_implementation(
     language: str = "python",
-    version: str = "",
+    implicit_dialect_response: StartedDialect = StartedDialect.OK,
     **kwargs: Any,
 ) -> Callable[
     [Callable[[Dialect], SchemaCompiler[E_co]]],
@@ -119,16 +119,21 @@ def python_implementation(
         fn: Callable[[Dialect], SchemaCompiler[E_co]],
     ) -> Callable[[], Unconnection[E_co]]:
         name = kwargs.pop("name", fn.__name__)
+        if "version" not in kwargs:
+            kwargs["version"] = metadata.version(name)
         info = ImplementationInfo(
             name=name,
-            version=version or metadata.version(name),
             language=language,
             os=platform.system(),
             os_version=platform.release(),
             language_version=platform.python_version(),
             **kwargs,
         )
-        return lambda: Unconnection(compiler_for=fn, info=info)
+        return lambda: Unconnection(
+            compiler_for=fn,
+            info=info,
+            implicit_dialect_response=implicit_dialect_response,
+        )
 
     return _python_implementation
 
