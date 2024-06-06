@@ -1325,14 +1325,19 @@ async def filter_implementations(
         and not direct_connectables
         and languages == KNOWN_LANGUAGES
     ):
+        # to speedup:
+        #   $ bowtie filter-implementations
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     elif (
         not dialects
         and direct_connectables
         and languages == KNOWN_LANGUAGES
-        and frozenset(start.connectables)
-        == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
+        and (
+            frozenset(start.connectables) == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
+        )
     ):
+        # to speedup:
+        #   $ bowtie filter-implementations --direct
         matching = direct_connectables
     else:
         matching = [
