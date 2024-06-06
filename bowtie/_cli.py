@@ -321,7 +321,7 @@ def implementation_subcommand(
             help=(
                 "A connectable ID for a JSON Schema implementation supported "
                 "by Bowtie. May be repeated multiple times to select multiple "
-                "implementations to run."
+                "implementations to run. "
                 "Run `bowtie filter-implementations` for the full list of "
                 "supported implementations."
             ),
@@ -1013,7 +1013,7 @@ IMPLEMENTATION = click.option(
     help=(
         "A connectable ID for a JSON Schema implementation supported "
         "by Bowtie. May be repeated multiple times to select multiple "
-        "implementations to run."
+        "implementations to run. "
         "Run `bowtie filter-implementations` for the full list of "
         "supported implementations."
     ),
