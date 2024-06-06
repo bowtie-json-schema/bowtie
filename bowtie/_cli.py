@@ -43,7 +43,10 @@ from bowtie._core import (
     Test,
     TestCase,
 )
-from bowtie._direct_connectable import Direct
+from bowtie._direct_connectable import (
+    IMPLEMENTATIONS,
+    Direct,
+)
 from bowtie.exceptions import DialectError, UnsupportedDialect
 
 if TYPE_CHECKING:
@@ -149,7 +152,12 @@ _OPTION_GROUPS = {
             [
                 (
                     "Filters",
-                    ["supports-dialect", "language", "implementation"],
+                    [
+                        "supports-dialect",
+                        "language",
+                        "implementation",
+                        "direct",
+                    ],
                 ),
             ],
         ),
@@ -1284,6 +1292,20 @@ KNOWN_LANGUAGES = {
     metavar="LANGUAGE",
     help="Only include implementations in the given programming language",
 )
+@click.option(
+    "--direct",
+    "direct_connectables",
+    is_flag=True,
+    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+        frozenset(IMPLEMENTATIONS.keys())
+        if value
+        else frozenset()
+    ),
+    help=(
+        "Only include implementations with direct connectable functionality "
+        "i.e. which can run without the presence of podman/dockerd"
+    ),
+)
 async def filter_implementations(
     start: Callable[
         [],
@@ -1291,6 +1313,7 @@ async def filter_implementations(
     ],
     dialects: Sequence[Dialect],
     languages: Set[str],
+    direct_connectables: Set[str],
     format: Literal["plain", "json"],
 ):
     """
@@ -1299,13 +1322,24 @@ async def filter_implementations(
     Useful for piping or otherwise using the resulting output for further
     Bowtie commands.
     """
-    if not dialects and languages == KNOWN_LANGUAGES:
+    if (
+        not dialects and
+        not direct_connectables and
+        languages == KNOWN_LANGUAGES
+    ):
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     else:
         matching = [
             name
             async for name, each in start()
-            if each.supports(*dialects) and each.info.language in languages
+            if (
+                each.supports(*dialects) and
+                each.info.language in languages and
+                (
+                    not direct_connectables or
+                    each.info.id in direct_connectables
+                )
+            )
         ]
 
     match format:
