@@ -55,7 +55,7 @@ class _Miniatures:
 miniatures = _Miniatures()
 
 #: An arbitrary harness for when behavior shouldn't depend on a specific one.
-ARBITRARY = miniatures.always_valid
+ARBITRARY = miniatures.always_invalid
 
 VALIDATORS = Direct.from_id("python-jsonschema").registry()
 
@@ -376,7 +376,7 @@ class TestRun:
         run_stdout, run_stderr = await bowtie(
             "run",
             "-i",
-            miniatures.always_valid,
+            "direct:null",
             "-V",
             stdin=dedent(raw.strip("\n")),
         )
@@ -395,8 +395,8 @@ class TestRun:
             [
                 {"type": "integer"},
                 [
-                    [12, {miniatures.always_valid: "valid"}],
-                    [12.5, {miniatures.always_valid: "valid"}],
+                    [12, {"direct:null": "valid"}],
+                    [12.5, {"direct:null": "valid"}],
                 ],
             ],
         ], run_stderr
@@ -480,7 +480,7 @@ async def test_suite(tmp_path):
 
 @pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
-    async with run("-i", miniatures.always_valid, "--set-schema") as send:
+    async with run("-i", "direct:null", "--set-schema") as send:
         results, stderr = await send(
             """
             {"description": "a test case", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
@@ -488,7 +488,7 @@ async def test_set_schema_sets_a_dialect_explicitly():
         )
 
     # XXX: we need to make run() return the whole report
-    assert results == [{miniatures.always_valid: TestResult.VALID}], stderr
+    assert results == [{"direct:null": TestResult.VALID}], stderr
 
 
 @pytest.mark.asyncio
@@ -887,7 +887,7 @@ async def test_wrong_seq(wrong_seq):
 
 @pytest.mark.asyncio
 async def test_fail_fast():
-    async with run("-i", miniatures.always_valid, "-x") as send:
+    async with run("-i", "direct:null", "-x") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
@@ -897,15 +897,15 @@ async def test_fail_fast():
         )
 
     assert results == [
-        {miniatures.always_valid: TestResult.VALID},
-        {miniatures.always_valid: TestResult.VALID},
+        {"direct:null": TestResult.VALID},
+        {"direct:null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
 async def test_fail_fast_many_tests_at_once():
-    async with run("-i", miniatures.always_valid, "-x") as send:
+    async with run("-i", "direct:null", "-x") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}, {"description": "valid:1", "instance": {}, "valid": false}] }
@@ -915,16 +915,16 @@ async def test_fail_fast_many_tests_at_once():
         )
 
     assert results == [
-        {miniatures.always_valid: TestResult.VALID},
-        {miniatures.always_valid: TestResult.VALID},
-        {miniatures.always_valid: TestResult.VALID},
+        {"direct:null": TestResult.VALID},
+        {"direct:null": TestResult.VALID},
+        {"direct:null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
 
 @pytest.mark.asyncio
 async def test_max_fail():
-    async with run("-i", miniatures.always_valid, "--max-fail", "2") as send:
+    async with run("-i", "direct:null", "--max-fail", "2") as send:
         results, stderr = await send(
             """
             {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
@@ -935,9 +935,9 @@ async def test_max_fail():
         )
 
     assert results == [
-        {miniatures.always_valid: TestResult.VALID},
-        {miniatures.always_valid: TestResult.VALID},
-        {miniatures.always_valid: TestResult.VALID},
+        {"direct:null": TestResult.VALID},
+        {"direct:null": TestResult.VALID},
+        {"direct:null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -971,7 +971,7 @@ async def test_max_fail_with_fail_fast():
 
 @pytest.mark.asyncio
 async def test_filter():
-    async with run("-i", miniatures.always_valid, "-k", "baz") as send:
+    async with run("-i", "direct:null", "-k", "baz") as send:
         results, stderr = await send(
             """
             {"description": "foo", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
@@ -980,7 +980,7 @@ async def test_filter():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_valid: TestResult.VALID}], stderr
+    assert results == [{"direct:null": TestResult.VALID}], stderr
     assert stderr == ""
 
 
@@ -1492,7 +1492,7 @@ async def test_filter_implementations_by_language():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "-i",
@@ -1500,7 +1500,7 @@ async def test_filter_implementations_by_language():
         "--language",
         "python",
     )
-    expected = [miniatures.always_invalid, miniatures.always_valid]
+    expected = sorted([miniatures.always_invalid, "direct:null"])
     assert (sorted(stdout.splitlines()), stderr) == (expected, "")
 
 
@@ -1509,7 +1509,7 @@ async def test_filter_implementations_by_dialect():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "-i",
@@ -1517,7 +1517,7 @@ async def test_filter_implementations_by_dialect():
         "--supports-dialect",
         "202012",
     )
-    expected = [miniatures.always_invalid, miniatures.always_valid]
+    expected = sorted([miniatures.always_invalid, "direct:null"])
     assert (sorted(stdout.splitlines()), stderr) == (expected, "")
 
 
@@ -1526,7 +1526,7 @@ async def test_filter_implementations_both_language_and_dialect():
     stdout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "-i",
@@ -1543,7 +1543,7 @@ async def test_filter_implementations_both_language_and_dialect():
 async def test_filter_implementations_stdin():
     lines = dedent(
         f"""\
-        {miniatures.always_valid}
+        {"direct:null"}
         {miniatures.always_invalid}
         {miniatures.fake_javascript}
         """.rstrip(),
@@ -1563,7 +1563,7 @@ async def test_filter_implementations_json():
     jsonout, stderr = await bowtie(
         "filter-implementations",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "-i",
@@ -1656,7 +1656,7 @@ async def test_validate(tmp_path):
     stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         tmp_path / "schema.json",
         tmp_path / "a.json",
         tmp_path / "b.json",
@@ -1675,7 +1675,7 @@ async def test_summary_show_failures_json(tmp_path):
     validate_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "--expect",
@@ -1697,7 +1697,7 @@ async def test_summary_show_failures_json(tmp_path):
 
     assert (await command_validator("summary")).validated(jsonout) == [
         [
-            miniatures.always_valid,
+            "direct:null",
             dict(failed=0, skipped=0, errored=0),
         ],
         [
@@ -1717,7 +1717,7 @@ async def test_summary_show_failures_markdown(tmp_path):
     validate_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-i",
         miniatures.always_invalid,
         "--expect",
@@ -1742,7 +1742,7 @@ async def test_summary_show_failures_markdown(tmp_path):
 
         | Implementation | Skips | Errors | Failures |
         |:-----------------------:|:-:|:-:|:-:|
-        |  always_valid (python)  | 0 | 0 | 0 |
+        |      null (python)      | 0 | 0 | 0 |
         | always_invalid (python) | 0 | 0 | 2 |
 
         **2 tests ran**
@@ -1862,7 +1862,7 @@ async def test_summary_show_validation_json(envsonschema):
         "-i",
         envsonschema,
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -1884,14 +1884,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     12,
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "valid",
                     },
                 ],
                 [
                     12.5,
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -1903,7 +1903,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -1915,14 +1915,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     37,
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -1934,7 +1934,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -1946,7 +1946,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -1958,14 +1958,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     12,
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -1977,7 +1977,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        miniatures.always_valid: "valid",
+                        "direct:null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -2258,7 +2258,7 @@ async def test_statistics_pretty(envsonschema):
         "-i",
         envsonschema,
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -2312,7 +2312,7 @@ async def test_statistics_json(envsonschema):
         "-i",
         envsonschema,
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-V",
         stdin=dedent(raw.strip("\n")),
     )
@@ -2355,7 +2355,7 @@ async def test_statistics_markdown(envsonschema):
         "-i",
         envsonschema,
         "-i",
-        miniatures.always_valid,
+        "direct:null",
         "-V",
         stdin=dedent(raw.strip("\n")),
     )

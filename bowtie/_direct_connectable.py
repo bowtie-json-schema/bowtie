@@ -14,6 +14,7 @@ from attrs import asdict, field, frozen, mutable
 from referencing.jsonschema import EMPTY_REGISTRY
 from url import URL
 
+from bowtie import DOCS, HOMEPAGE, REPO
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Dialect, ImplementationInfo, registry
 from bowtie._registry import E_co, SchemaCompiler, ValidatorRegistry
@@ -167,6 +168,19 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     return compile
 
 
+@direct_implementation(
+    language="python",
+    version=metadata.version("bowtie-json-schema"),
+    homepage=HOMEPAGE,
+    documentation=DOCS,
+    issues=REPO / "issues",
+    source=REPO,
+    dialects=frozenset(Dialect.known()),
+)
+def null(dialect: Dialect) -> SchemaCompiler[ValidationError]:
+    return lambda _, __: lambda _: []
+
+
 IMPLEMENTATIONS = {
     "python-jsonschema": jsonschema,
 }
@@ -197,11 +211,23 @@ class Direct(Generic[E_co]):
     def from_id(cls, id: ConnectableId) -> Direct[Any]:
         if "." in id and ":" in id:
             connect = pkgutil.resolve_name(id)
+        elif id == "null":
+            return cls.null()
         else:
             connect = IMPLEMENTATIONS.get(id)
             if connect is None:
                 raise NoDirectConnection(id)
         return cls(connect=connect)
+
+    @classmethod
+    def null(cls):
+        """
+        The null direct connectable considers all instances always valid.
+
+        It can be useful e.g. for simply testing whether something is valid
+        JSON, or for disabling validation where it otherwise would happen.
+        """
+        return cls(connect=null)
 
     def connect(
         self,

@@ -86,6 +86,16 @@ class TestDirect:
             connector=Direct.from_id(id="python-jsonschema"),
         )
 
+    def test_null(self):
+        id = validated("direct:null")
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=Direct.null(),
+        )
+
+    def test_null_considers_everything_valid(self):
+        assert Direct.null().registry().for_schema(False).is_valid(37)
+
     def test_named_unknown(self):
         id = validated("direct:foobar")
         # TODO: Probably this should be NoSuchImplementation

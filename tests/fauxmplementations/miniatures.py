@@ -31,17 +31,11 @@ def fake(**kwargs):
 
 
 @fake()
-def always_valid(dialect: Dialect):
-    """
-    Always considers any instance valid.
-    """
-    return lambda schema, registry: lambda instance: []
-
-
-@fake()
 def always_invalid(dialect: Dialect):
     """
     Always considers any instance invalid.
+
+    For the inverse, see `Direct.null`.
     """
     return lambda schema, registry: lambda instance: [NotValid(instance)]
 
