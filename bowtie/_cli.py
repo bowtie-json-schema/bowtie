@@ -1297,9 +1297,7 @@ KNOWN_LANGUAGES = {
     "direct_connectables",
     is_flag=True,
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        frozenset(IMPLEMENTATIONS.keys())
-        if value
-        else frozenset()
+        frozenset(IMPLEMENTATIONS.keys()) if value else frozenset()
     ),
     help=(
         "Only include implementations with direct connectable functionality "
@@ -1323,9 +1321,9 @@ async def filter_implementations(
     Bowtie commands.
     """
     if (
-        not dialects and
-        not direct_connectables and
-        languages == KNOWN_LANGUAGES
+        not dialects
+        and not direct_connectables
+        and languages == KNOWN_LANGUAGES
     ):
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     else:
@@ -1333,11 +1331,11 @@ async def filter_implementations(
             name
             async for name, each in start()
             if (
-                each.supports(*dialects) and
-                each.info.language in languages and
-                (
-                    not direct_connectables or
-                    each.info.id in direct_connectables
+                each.supports(*dialects)
+                and each.info.language in languages
+                and (
+                    not direct_connectables
+                    or each.info.id in direct_connectables
                 )
             )
         ]

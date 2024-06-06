@@ -1486,6 +1486,7 @@ async def test_filter_implementations_no_arguments():
     expected = sorted(Implementation.known())
     assert (sorted(stdout), stderr) == (expected, "")
 
+
 @pytest.mark.parametrize("id", IMPLEMENTATIONS.keys())
 @pytest.mark.asyncio
 async def test_filter_implementations_direct(id):
@@ -1500,6 +1501,7 @@ async def test_filter_implementations_direct(id):
 
     expected = [direct_connectable]
     assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
 
 @pytest.mark.asyncio
 async def test_filter_implementations_direct_by_language():
@@ -1517,6 +1519,7 @@ async def test_filter_implementations_direct_by_language():
     )
     expected = []
     assert (stdout.splitlines(), stderr) == (expected, "")
+
 
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language():
