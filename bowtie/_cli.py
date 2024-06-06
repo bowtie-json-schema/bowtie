@@ -146,8 +146,10 @@ _OPTION_GROUPS = {
         (
             "filter-implementations",
             [
-                ("Required", ["implementation"]),
-                ("Filters", ["supports-dialect", "language"]),
+                (
+                    "Filters",
+                    ["supports-dialect", "language", "implementation"],
+                ),
             ],
         ),
         (
