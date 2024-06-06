@@ -51,11 +51,11 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
     )
   }
 
-  @get_meta_schema = lambda { |dialect| JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
+  @get_meta_schema = ->(dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
 elsif Gem::Version.new('0.2.25') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = lambda { |dialect| JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = ->(dialect) { JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
 elsif Gem::Version.new('0.2.17') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = lambda { |dialect| JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = ->(dialect) { JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
 end
 
 ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
