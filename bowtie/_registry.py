@@ -12,6 +12,7 @@ from referencing.jsonschema import EMPTY_REGISTRY, Schema, SchemaRegistry
 
 if TYPE_CHECKING:
     from referencing.jsonschema import SchemaResource
+    from url import URL
 
 
 E_co = TypeVar("E_co", bound=Exception, covariant=True)
@@ -68,13 +69,13 @@ class ValidatorRegistry(Generic[E_co]):
     ) -> ValidatorRegistry[E_co]:
         return evolve(self, registry=resources @ self._registry)
 
-    def schema(self, uri: str) -> Schema:
+    def schema(self, uri: URL) -> Schema:
         """
         Return the schema identified by the given URI.
         """
-        return self._registry.contents(uri)
+        return self._registry.contents(str(uri))
 
-    def for_uri(self, uri: str) -> Validator[E_co]:
+    def for_uri(self, uri: URL) -> Validator[E_co]:
         """
         Return a `Validator` using the schema at the given URI.
         """
