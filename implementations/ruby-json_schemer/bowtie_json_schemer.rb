@@ -25,8 +25,12 @@ SUPPORTED_DIALECTS = [
     ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) },
   )
 }
-
 if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
+  SUPPORTED_DIALECTS = SUPPORTED_DIALECTS.dup.unshift(
+    'https://json-schema.org/draft/2020-12/schema',
+    'https://json-schema.org/draft/2019-09/schema',
+  ).freeze
+
   meta_schema_refs = {
     JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
     JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
@@ -37,13 +41,6 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
   meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
   meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
   meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
-
-  SUPPORTED_DIALECTS = SUPPORTED_DIALECTS.dup.unshift(
-    'https://json-schema.org/draft/2020-12/schema',
-    'https://json-schema.org/draft/2019-09/schema',
-  ).freeze
-
-  @get_meta_schema = ->(dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
   @setup_schemer = lambda { |kase, meta_schema|
     JSONSchemer.schema(
       kase.fetch('schema'),
@@ -53,10 +50,12 @@ if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
       ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || meta_schema_refs[uri] },
     )
   }
+
+  @get_meta_schema = lambda { |dialect| JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
 elsif Gem::Version.new('0.2.25') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = ->(dialect) { JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = lambda { |dialect| JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
 elsif Gem::Version.new('0.2.17') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = ->(dialect) { JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
+  @get_meta_schema = lambda { |dialect| JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
 end
 
 ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
@@ -87,6 +86,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
     dialect = request.fetch('dialect')
 
     @meta_schema = @get_meta_schema.call(dialect)
+
     raise UnsupportedDialect, dialect unless @meta_schema
 
     { ok: true }
