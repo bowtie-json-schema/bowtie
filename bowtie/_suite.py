@@ -20,7 +20,7 @@ import click
 import rich
 
 from bowtie import GITHUB
-from bowtie._core import Dialect, TestCase
+from bowtie._core import Dialect, Group, LeafGroup, Test
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -50,7 +50,7 @@ class ClickParam(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+    ) -> tuple[Iterable[Group], Dialect, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
@@ -167,26 +167,31 @@ def remotes_in(path: Path, dialect: Dialect) -> dict[str, Any]:
     return {str(k): v for k, v in _remotes_in(path=path, dialect=dialect)}
 
 
+def tests_in(tests: Iterable[dict[str, Any]]):
+    return [Test(instance=test.pop("data"), **test) for test in tests]
+
+
 def cases_from(
     paths: Iterable[_P],
     remotes: Path,
     dialect: Dialect,
-) -> Iterable[TestCase]:
+) -> Iterable[Group]:
     for path in paths:
+        contents = json.loads(path.read_text())
+
         if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = remotes_in(remotes, dialect=dialect)
         else:
             registry = {}
 
-        for case in json.loads(path.read_text()):
-            for test in case["tests"]:
-                test["instance"] = test.pop("data")
-            case.pop("specification", None)  # we do nothing with this now
-            yield TestCase.from_dict(
-                dialect=dialect,
-                registry=registry,
-                **case,
-            )
+        yield Group(
+            description=path.name,
+            registry=registry,
+            children=[
+                LeafGroup(children=tests_in(case.pop("tests")), **case)
+                for case in contents
+            ],
+        )
 
 
 def path_and_ref_from_gh_path(path: list[str]):
