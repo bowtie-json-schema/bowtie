@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     from bowtie._connectables import ConnectableId
     from bowtie._core import Dialect as _Dialect, DialectRunner, TestCase
-    from bowtie._registry import ValidatorRegistry
+    from bowtie._registry import Validator, ValidatorRegistry
 
 
 #: A unique identifier for a test case within a run or report.
@@ -115,6 +115,13 @@ class Command(Protocol[R_co]):
     ) -> R_co: ...
 
 
+def validated(validator: Validator[Any], instance: Any):
+    errors = list(validator.errors_for(instance))
+    if errors:
+        raise exceptions.ProtocolError(errors=errors)
+    return instance
+
+
 @dataclass_transform(frozen_default=True)
 def command(
     Response: Callable[..., R_co],
@@ -133,7 +140,7 @@ def command(
             registry: ValidatorRegistry[Any],
         ) -> Message:
             request = {"cmd": name, **asdict(self)}
-            return registry.for_uri(uri).validated(request)
+            return validated(registry.for_uri(uri), request)
 
         @staticmethod
         def from_response(
@@ -141,7 +148,7 @@ def command(
             registry: ValidatorRegistry[Any],
         ) -> R_co:
             validator = registry.for_schema(response_schema)
-            return Response(**validator.validated(response))
+            return Response(**validated(validator, response))
 
         cls.to_request = to_request
         cls.from_response = from_response
