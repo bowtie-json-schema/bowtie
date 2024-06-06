@@ -1486,6 +1486,7 @@ async def test_filter_implementations_no_arguments():
     expected = sorted(Implementation.known())
     assert (sorted(stdout), stderr) == (expected, "")
 
+
 @pytest.mark.asyncio
 async def test_filter_implementations_direct():
     stdout, stderr = [], ""

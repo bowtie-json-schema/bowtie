@@ -1327,10 +1327,11 @@ async def filter_implementations(
     ):
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     elif (
-        not dialects and
-        direct_connectables and
-        languages == KNOWN_LANGUAGES and
-        frozenset(start.connectables) == Implementation.known() # type: ignore[reportFunctionMemberAccess]
+        not dialects
+        and direct_connectables
+        and languages == KNOWN_LANGUAGES
+        and frozenset(start.connectables)
+        == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
     ):
         matching = direct_connectables
     else:
