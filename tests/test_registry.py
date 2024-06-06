@@ -36,3 +36,11 @@ def test_invalidated_valid():
 
     with pytest.raises(UnexpectedlyValid):
         validator.invalidated(37)
+
+
+def test_is_valid():
+    assert VALIDATORS.for_uri("urn:everything-valid").is_valid(37)
+
+
+def test_is_not_valid():
+    assert not VALIDATORS.for_uri("urn:nothing-valid").is_valid(37)
