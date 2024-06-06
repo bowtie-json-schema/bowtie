@@ -126,7 +126,7 @@ def command(
 
         uri = f"tag:{HOMEPAGE.host_str},2023:ihop:command:{name}"
         request_schema = {"$ref": str(uri)}
-        response_schema = {"$ref": f"{uri}#response"}  # FIXME: crate-py/url#6
+        response_schema = {"$ref": str(uri.with_fragment("response"))}
 
         def to_request(
             self: Command[R_co],
