@@ -338,6 +338,7 @@ async def run(*args, **kwargs):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_validating_on_both_sides(lintsonschema):
     async with run("-i", lintsonschema, "-V") as send:
         results, stderr = await send(
@@ -353,7 +354,6 @@ async def test_validating_on_both_sides(lintsonschema):
 
 class TestRun:
     @pytest.mark.asyncio
-    @pytest.mark.containerless
     async def test_from_file(self, tmp_path):
         tests = tmp_path / "tests.jsonl"
         tests.write_text(
@@ -368,7 +368,6 @@ class TestRun:
         ], stderr
 
     @pytest.mark.asyncio
-    @pytest.mark.containerless
     async def test_with_registry(self):
         raw = """
             {"description":"one","schema":{"type": "integer"}, "registry":{"urn:example:foo": "http://example.com"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
@@ -405,7 +404,6 @@ class TestRun:
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_suite(tmp_path):
     definitions = tmp_path / "tests/draft7/definitions.json"
     definitions.parent.mkdir(parents=True)
@@ -481,7 +479,6 @@ async def test_suite(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", miniatures.always_valid, "--set-schema") as send:
         results, stderr = await send(
@@ -495,7 +492,6 @@ async def test_set_schema_sets_a_dialect_explicitly():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_no_tests_run():
     async with run("-i", ARBITRARY, exit_code=EX.NOINPUT) as send:
         results, stderr = await send("")
@@ -505,7 +501,6 @@ async def test_no_tests_run():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_unknown_dialect():
     dialect = "some://other/URI/"
     async with run(
@@ -522,7 +517,6 @@ async def test_unknown_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_nonurl_dialect():
     dialect = ";;;;;"
     async with run(
@@ -539,7 +533,6 @@ async def test_nonurl_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_unsupported_known_dialect():
     async with run(
         "-i",
@@ -565,6 +558,7 @@ async def test_unsupported_known_dialect():
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_restarts_crashed_implementations(envsonschema):
     async with run("-i", envsonschema) as send:
         results, stderr = await send(
@@ -584,6 +578,7 @@ async def test_restarts_crashed_implementations(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_handles_dead_implementations(succeed_immediately):
     async with run(
         "-i",
@@ -607,6 +602,7 @@ async def test_handles_dead_implementations(succeed_immediately):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
     """
     Don't uselessly "run" tests on no implementations.
@@ -625,6 +621,7 @@ async def test_it_exits_when_no_implementations_succeed(succeed_immediately):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_immediately_broken_implementations(fail_immediately):
     async with run(
         "-i",
@@ -649,6 +646,7 @@ async def test_it_handles_immediately_broken_implementations(fail_immediately):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_broken_start_implementations(fail_on_start):
     async with run(
         "-i",
@@ -673,6 +671,7 @@ async def test_it_handles_broken_start_implementations(fail_on_start):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
     async with run(
         "-i",
@@ -692,6 +691,7 @@ async def test_it_handles_broken_dialect_implementations(fail_on_dialect):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_broken_run_implementations(fail_on_run):
     async with run(
         "-i",
@@ -718,6 +718,7 @@ async def test_it_handles_broken_run_implementations(fail_on_run):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
     async with run(
         "-i",
@@ -740,6 +741,7 @@ async def test_it_handles_invalid_json_run_implementations(nonjson_on_run):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_implementations_can_signal_errors(envsonschema):
     async with run("-i", envsonschema) as send:
         results, stderr = await send(
@@ -759,6 +761,7 @@ async def test_implementations_can_signal_errors(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_split_messages(envsonschema):
     async with run("-i", envsonschema) as send:
         results, stderr = await send(
@@ -774,6 +777,7 @@ async def test_it_handles_split_messages(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_handles_invalid_start_responses(missing_homepage):
     async with run("-i", missing_homepage, "-V", exit_code=EX.CONFIG) as send:
         results, stderr = await send(
@@ -788,6 +792,7 @@ async def test_it_handles_invalid_start_responses(missing_homepage):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_preserves_all_metadata(with_versions):
     async with run("-i", with_versions, "-V") as send:
         results, stderr = await send(
@@ -803,6 +808,7 @@ async def test_it_preserves_all_metadata(with_versions):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_it_prevents_network_access(hit_the_network_once):
     """
     Don't uselessly "run" tests on no implementations.
@@ -830,6 +836,7 @@ async def test_it_prevents_network_access(hit_the_network_once):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_wrong_version(wrong_version):
     """
     An implementation speaking the wrong version of the protocol is skipped.
@@ -852,6 +859,7 @@ async def test_wrong_version(wrong_version):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_wrong_seq(wrong_seq):
     """
     Sending the wrong seq for a test case produces an error.
@@ -878,7 +886,6 @@ async def test_wrong_seq(wrong_seq):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_fail_fast():
     async with run("-i", miniatures.always_valid, "-x") as send:
         results, stderr = await send(
@@ -897,7 +904,6 @@ async def test_fail_fast():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_fail_fast_many_tests_at_once():
     async with run("-i", miniatures.always_valid, "-x") as send:
         results, stderr = await send(
@@ -937,7 +943,6 @@ async def test_max_fail():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_max_fail_with_fail_fast():
     stdout, stderr = await bowtie(
         "run",
@@ -965,7 +970,6 @@ async def test_max_fail_with_fail_fast():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter():
     async with run("-i", miniatures.always_valid, "-k", "baz") as send:
         results, stderr = await send(
@@ -981,7 +985,6 @@ async def test_filter():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_smoke_pretty():
     stdout, stderr = await bowtie(
         "smoke",
@@ -1003,7 +1006,6 @@ async def test_smoke_pretty():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_smoke_markdown():
     stdout, stderr = await bowtie(
         "smoke",
@@ -1025,7 +1027,6 @@ async def test_smoke_markdown():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_smoke_valid_markdown():
     stdout, stderr = await bowtie(
         "smoke",
@@ -1125,7 +1126,6 @@ async def test_smoke_json():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_smoke_quiet():
     stdout, stderr = await bowtie(
         "smoke",
@@ -1180,7 +1180,6 @@ async def test_smoke_multiple():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_info_pretty():
     stdout, stderr = await bowtie(
         "info",
@@ -1214,7 +1213,6 @@ async def test_info_pretty():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_info_markdown():
     stdout, stderr = await bowtie(
         "info",
@@ -1248,7 +1246,6 @@ async def test_info_markdown():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_info_valid_markdown():
     stdout, stderr = await bowtie(
         "info",
@@ -1336,7 +1333,6 @@ async def test_info_valid_markdown():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 @pytest.mark.json
 async def test_info_json():
     stdout, stderr = await bowtie(
@@ -1371,7 +1367,6 @@ async def test_info_json():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 @pytest.mark.json
 async def test_info_json_multiple_implementations():
     stdout, stderr = await bowtie(
@@ -1426,7 +1421,6 @@ async def test_info_json_multiple_implementations():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_info_links():
     stdout, stderr = await bowtie(
         "info",
@@ -1465,6 +1459,7 @@ async def test_info_links():
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_info_unsuccessful_start(succeed_immediately):
     stdout, stderr = await bowtie(
         "info",
@@ -1510,7 +1505,6 @@ async def test_filter_implementations_by_language():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_implementations_by_dialect():
     stdout, stderr = await bowtie(
         "filter-implementations",
@@ -1546,7 +1540,6 @@ async def test_filter_implementations_both_language_and_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_implementations_stdin():
     lines = dedent(
         f"""\
@@ -1565,7 +1558,6 @@ async def test_filter_implementations_stdin():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 @pytest.mark.json
 async def test_filter_implementations_json():
     jsonout, stderr = await bowtie(
@@ -1591,7 +1583,6 @@ async def test_filter_implementations_json():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_dialects():
     stdout, stderr = await bowtie("filter-dialects")
     dialects_supported = "\n".join(
@@ -1604,7 +1595,6 @@ async def test_filter_dialects():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_dialects_latest_dialect():
     stdout, stderr = await bowtie(
         "filter-dialects",
@@ -1614,7 +1604,6 @@ async def test_filter_dialects_latest_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_dialects_supporting_implementation():
     output = await bowtie("filter-dialects", "-i", miniatures.only_draft3)
     assert output == ("http://json-schema.org/draft-03/schema#\n", "")
@@ -1634,7 +1623,6 @@ async def test_filter_dialects_boolean_schemas():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_dialects_non_boolean_schemas():
     stdout, stderr = await bowtie("filter-dialects", "-B")
     non_boolean_schemas = "\n".join(
@@ -1648,7 +1636,6 @@ async def test_filter_dialects_non_boolean_schemas():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_filter_dialects_no_results():
     stdout, stderr = await bowtie(
         "filter-dialects",
@@ -1661,7 +1648,6 @@ async def test_filter_dialects_no_results():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")
@@ -1680,7 +1666,6 @@ async def test_validate(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 @pytest.mark.json
 async def test_summary_show_failures_json(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
@@ -1724,7 +1709,6 @@ async def test_summary_show_failures_json(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_summary_show_failures_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
@@ -1767,7 +1751,6 @@ async def test_summary_show_failures_markdown(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_summary_failures_valid_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
@@ -1844,7 +1827,6 @@ async def test_summary_failures_valid_markdown(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate_no_tests(tmp_path):
     """
     Don't bother starting up if we have nothing to run.
@@ -1863,6 +1845,7 @@ async def test_validate_no_tests(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 @pytest.mark.json
 async def test_summary_show_validation_json(envsonschema):
     raw = """
@@ -2005,6 +1988,7 @@ async def test_summary_show_validation_json(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_badges(envsonschema, tmp_path):
     site = tmp_path / "site"
     site.mkdir()
@@ -2040,7 +2024,6 @@ async def test_badges(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_badges_nothing_ran(tmp_path):
     run_stdout, _ = await bowtie(
         "run",
@@ -2063,6 +2046,7 @@ async def test_badges_nothing_ran(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_no_such_image(tmp_path):
     stdout, stderr = await bowtie(
         "run",
@@ -2102,7 +2086,6 @@ async def test_no_such_image(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_suite_not_a_suite_directory(tmp_path):
     _, stderr = await bowtie(
         "suite",
@@ -2115,7 +2098,6 @@ async def test_suite_not_a_suite_directory(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate_mismatched_dialect(tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         '{"$schema": "https://json-schema.org/draft/2020-12/schema"}',
@@ -2138,7 +2120,6 @@ async def test_validate_mismatched_dialect(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_run_mismatched_dialect():
     async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
@@ -2152,7 +2133,6 @@ async def test_run_mismatched_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_run_registry_metasschema_not_mismatched_dialect():
     async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
@@ -2166,7 +2146,6 @@ async def test_run_registry_metasschema_not_mismatched_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_run_registry_metasschema_still_mismatched_dialect():
     async with run("-i", miniatures.always_invalid, "-D", "2019") as send:
         results, stderr = await send(
@@ -2180,7 +2159,6 @@ async def test_run_registry_metasschema_still_mismatched_dialect():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_run_mismatched_dialect_total_junk():
     """
     A $schema keyword that isn't even a string just gets ignored.
@@ -2199,7 +2177,6 @@ async def test_run_mismatched_dialect_total_junk():
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate_boolean_schema(tmp_path):
     tmp_path.joinpath("schema.json").write_text("false")
     tmp_path.joinpath("instance.json").write_text("12")
@@ -2216,7 +2193,6 @@ async def test_validate_boolean_schema(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_run_boolean_schema(tmp_path):
     async with run("-i", miniatures.always_invalid) as send:
         results, stderr = await send(
@@ -2230,7 +2206,6 @@ async def test_run_boolean_schema(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate_set_dialect_from_schema(tmp_path):
     tmp_path.joinpath("schema.json").write_text(
         '{"$schema": "https://json-schema.org/draft/2019-09/schema"}',
@@ -2249,7 +2224,6 @@ async def test_validate_set_dialect_from_schema(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_validate_specify_dialect(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
@@ -2268,6 +2242,7 @@ async def test_validate_specify_dialect(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_statistics_pretty(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
@@ -2320,6 +2295,7 @@ async def test_statistics_pretty(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 @pytest.mark.json
 async def test_statistics_json(envsonschema):
     raw = """
@@ -2363,6 +2339,7 @@ async def test_statistics_json(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_statistics_markdown(envsonschema):
     raw = """
         {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
@@ -2419,6 +2396,7 @@ async def test_statistics_markdown(envsonschema):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
 async def test_container_connectables(
     lintsonschema_container,
     envsonschema_container,
@@ -2454,7 +2432,6 @@ async def test_container_connectables(
 
 
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_direct_connectable_python_jsonschema(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
@@ -2480,14 +2457,12 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
 
 @pytest.mark.parametrize("id", IMPLEMENTATIONS.keys())
 @pytest.mark.asyncio
-@pytest.mark.containerless
 async def test_smoke_direct_connectables(id):
     await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
 
 
 class TestImplicitDialectSupport:
     @pytest.mark.asyncio
-    @pytest.mark.containerless
     async def test_dialectless_schema_with_no_such_support(self, tmp_path):
         """
         Sending a schema with no explicit dialect warns once if the
@@ -2507,7 +2482,6 @@ class TestImplicitDialectSupport:
         assert "does not indicate its dialect" in stderr
 
     @pytest.mark.asyncio
-    @pytest.mark.containerless
     async def test_dialectless_schema_with_support(self, tmp_path):
         """
         Sending a schema with no explicit dialect does not warn if the
@@ -2527,7 +2501,6 @@ class TestImplicitDialectSupport:
         assert stderr == ""
 
     @pytest.mark.asyncio
-    @pytest.mark.containerless
     async def test_schema_with_dialect(self, tmp_path):
         """
         Sending a schema with an explicit dialect does not warn even if the
