@@ -62,7 +62,7 @@ dependencies = [
   "rpds.py>=0.18.0",
   "structlog",
   "typing-extensions; python_version<'3.11'",
-  "url.py",
+  "url.py>=0.11.3",
 ]
 
 [project.optional-dependencies]
