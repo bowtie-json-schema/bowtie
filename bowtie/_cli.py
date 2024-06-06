@@ -32,7 +32,7 @@ import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import _connectables, _report, _suite
+from bowtie import DOCS, _connectables, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -181,11 +181,11 @@ _OPTION_GROUPS = {
     # needing to explicitly dedent here, as well as the extra newline
     # before "Full documentation" both seem like rich-click bugs.
     epilog=dedent(
-        """
+        f"""
         If you don't know where to begin, `bowtie validate --help` or
         `bowtie suite --help` are likely good places to start.
 
-        Full documentation can also be found at https://docs.bowtie.report
+        Full documentation can also be found at {DOCS}
         """,
     ),
 )
