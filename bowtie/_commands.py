@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from bowtie._connectables import ConnectableId
     from bowtie._core import Dialect as _Dialect, DialectRunner, TestCase
+    from bowtie._registry import ValidatorRegistry
 
 
 #: A unique identifier for a test case within a run or report.
@@ -105,12 +106,12 @@ R_co = TypeVar("R_co", covariant=True)
 
 
 class Command(Protocol[R_co]):
-    def to_request(self, validate: Callable[..., None]) -> Message: ...
+    def to_request(self, registry: ValidatorRegistry[Any]) -> Message: ...
 
     @staticmethod
     def from_response(
         response: Message,
-        validate: Callable[..., None],
+        registry: ValidatorRegistry[Any],
     ) -> R_co: ...
 
 
@@ -125,24 +126,22 @@ def command(
             name = re.sub(r"([a-z])([A-Z])", r"\1-\2", cls.__name__).lower()
 
         uri = URL.parse(f"tag:{HOMEPAGE.host_str},2023:ihop:command:{name}")
-        request_schema = {"$ref": str(uri)}
         response_schema = {"$ref": str(uri.with_fragment("response"))}
 
         def to_request(
             self: Command[R_co],
-            validate: Callable[..., None],
+            registry: ValidatorRegistry[Any],
         ) -> Message:
-            request = dict(cmd=name, **asdict(self))
-            validate(instance=request, schema=request_schema)
-            return request
+            request = {"cmd": name, **asdict(self)}
+            return registry.for_uri(uri).validated(request)
 
         @staticmethod
         def from_response(
             response: Message,
-            validate: Callable[..., None],
+            registry: ValidatorRegistry[Any],
         ) -> R_co:
-            validate(instance=response, schema=response_schema)
-            return Response(**response)
+            validator = registry.for_schema(response_schema)
+            return Response(**validator.validated(response))
 
         cls.to_request = to_request
         cls.from_response = from_response

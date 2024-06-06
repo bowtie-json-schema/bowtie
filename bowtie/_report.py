@@ -9,6 +9,7 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
+from url import URL
 import structlog.stdlib
 
 from bowtie._commands import Seq, SeqCase, SeqResult, Unsuccessful
@@ -222,7 +223,7 @@ class Report:
             Direct.from_id("python-jsonschema")
             .registry()
             .for_uri(
-                "tag:bowtie.report,2024:report",
+                URL.parse("tag:bowtie.report,2024:report"),
             )
         )
 

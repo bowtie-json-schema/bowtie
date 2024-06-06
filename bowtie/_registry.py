@@ -73,7 +73,7 @@ class ValidatorRegistry(Generic[E_co]):
         """
         Return the schema identified by the given URI.
         """
-        return self._registry.contents(str(uri))
+        return self._registry.resolver().lookup(str(uri)).contents
 
     def for_uri(self, uri: URL) -> Validator[E_co]:
         """

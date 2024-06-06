@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import date
 from functools import cache
@@ -33,6 +32,7 @@ from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
 if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
+        Callable,
         Iterable,
         Mapping,
         Sequence,
@@ -52,6 +52,7 @@ if TYPE_CHECKING:
         Seq,
     )
     from bowtie._connectables import ConnectableId
+    from bowtie._registry import ValidatorRegistry
     from bowtie._report import Reporter
 
 
@@ -250,9 +251,6 @@ class StartupFailed(Exception):
 R = TypeVar("R")
 
 
-MakeValidator = Callable[[], Callable[[Any, Schema], None]]
-
-
 @frozen
 class Link:
     description: str
@@ -363,7 +361,7 @@ class HarnessClient:
 
     _connection: Connection = field(alias="connection")
 
-    _make_validator: MakeValidator = field(alias="make_validator")
+    _registry: ValidatorRegistry[Any] = field(alias="registry")
 
     # FIXME: Remove this somehow by making the state machine even more explicit
     #: A sequence of commands to replay if we end up restarting the connection.
@@ -382,8 +380,7 @@ class HarnessClient:
         """
         Send a given command to the implementation and return its response.
         """
-        validate = self._make_validator()
-        request = cmd.to_request(validate=validate)
+        request = cmd.to_request(registry=self._registry)
         try:
             response = await self._connection.request(request)
         except Restarted:
@@ -391,7 +388,7 @@ class HarnessClient:
             # FIXME: Probably handle infinitely restarting harnesses
             response = await self._connection.request(request)
         if response is not None:
-            return cmd.from_response(response, validate=validate)
+            return cmd.from_response(response, registry=self._registry)
 
 
 @frozen

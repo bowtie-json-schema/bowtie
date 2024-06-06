@@ -44,7 +44,7 @@ from bowtie._core import (
     TestCase,
 )
 from bowtie._direct_connectable import Direct
-from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
+from bowtie.exceptions import DialectError, UnsupportedDialect
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -59,11 +59,12 @@ if TYPE_CHECKING:
 
     from click.decorators import FC
     from httpx import Response
-    from referencing.jsonschema import Schema, SchemaResource
+    from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import AnyTestResult
     from bowtie._connectables import ConnectableId
-    from bowtie._core import DialectRunner, ImplementationInfo, MakeValidator
+    from bowtie._core import DialectRunner, ImplementationInfo
+    from bowtie._registry import ValidatorRegistry
 
 
 class _EX:
@@ -266,7 +267,9 @@ def implementation_subcommand(
         async def run(
             connectables: Iterable[_connectables.Connectable],
             read_timeout_sec: float,
-            make_validator: MakeValidator = make_validator,
+            registry: ValidatorRegistry[Any] = Direct.from_id(
+                "python-jsonschema",
+            ).registry(),
             **kw: Any,
         ) -> int:
             exit_code = 0
@@ -277,7 +280,7 @@ def implementation_subcommand(
                 successful = 0
                 async with _start(
                     connectables=connectables,
-                    make_validator=make_validator,
+                    registry=registry,
                     reporter=reporter,
                     read_timeout_sec=read_timeout_sec,
                 ) as implementations:
@@ -454,7 +457,7 @@ def format_option(**option_kwargs: Any) -> Callable[[FC], FC]:
         ) -> None:
             if not value or ctx.resilient_parsing:
                 return
-            uri = f"tag:bowtie.report,2024:cli:{ctx.command.name}"
+            uri = URL.parse(f"tag:bowtie.report,2024:cli:{ctx.command.name}")
             schema = Direct.from_id("python-jsonschema").registry().schema(uri)
             # FIXME: Syntax highlight? But rich appears to be doing some
             #        bizarre line wrapping, even if I disable a bunch of random
@@ -873,20 +876,6 @@ def statistics(
             click.echo(heading + markdown)
 
 
-def make_validator():
-    validators = Direct.from_id("python-jsonschema").registry()
-
-    def validate(instance: Any, schema: Schema) -> None:
-        # FIXME: There's work to do upstream in referencing, but we still are
-        # probably able to make this a bit better here as well
-        validator = validators.for_schema(schema)
-        errors = list(validator.errors_for(instance))
-        if errors:
-            raise ProtocolError(errors=errors)
-
-    return validate
-
-
 def do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
     return lambda *args, **kwargs: None
 
@@ -1062,11 +1051,13 @@ TIMEOUT = click.option(
 VALIDATE = click.option(
     "--validate-implementations",
     "-V",
-    "make_validator",
+    "registry",
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: make_validator if v else do_not_validate,  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, v: (  # type: ignore[reportUnknownLambdaType]
+        Direct.from_id("python-jsonschema" if v else "null").registry()
+    ),
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
