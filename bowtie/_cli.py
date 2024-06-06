@@ -1303,7 +1303,7 @@ KNOWN_LANGUAGES = {
     ),
     help=(
         "Only include implementations with direct connectable functionality "
-        "i.e. which can run without the presence of podman/dockerd"
+        "i.e. which can run without the presence of podman/docker"
     ),
 )
 async def filter_implementations(
@@ -1328,6 +1328,13 @@ async def filter_implementations(
         languages == KNOWN_LANGUAGES
     ):
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
+    elif (
+        not dialects and
+        direct_connectables and
+        languages == KNOWN_LANGUAGES and
+        frozenset(start.connectables) == Implementation.known() # type: ignore[reportFunctionMemberAccess]
+    ):
+        matching = direct_connectables
     else:
         matching = [
             name

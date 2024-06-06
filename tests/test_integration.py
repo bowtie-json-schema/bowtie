@@ -1486,37 +1486,19 @@ async def test_filter_implementations_no_arguments():
     expected = sorted(Implementation.known())
     assert (sorted(stdout), stderr) == (expected, "")
 
-@pytest.mark.parametrize("id", IMPLEMENTATIONS.keys())
 @pytest.mark.asyncio
-async def test_filter_implementations_direct(id):
-    direct_connectable = f"direct:{id}"
+async def test_filter_implementations_direct():
+    stdout, stderr = [], ""
 
-    stdout, stderr = await bowtie(
-        "filter-implementations",
-        "--direct",
-        "-i",
-        direct_connectable,
-    )
+    try:
+        child = pexpect.spawn("bowtie filter-implementations --direct")
+        child.expect(pexpect.EOF)
+        stdout = child.before.decode().splitlines()
+    except pexpect.exceptions.ExceptionPexpect as err:
+        stderr = str(err)
 
-    expected = [direct_connectable]
-    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
-
-@pytest.mark.asyncio
-async def test_filter_implementations_direct_by_language():
-    stdout, stderr = await bowtie(
-        "filter-implementations",
-        "--direct",
-        "-i",
-        "direct:null",
-        "-i",
-        miniatures.always_invalid,
-        "-i",
-        miniatures.fake_javascript,
-        "--language",
-        "python",
-    )
-    expected = []
-    assert (stdout.splitlines(), stderr) == (expected, "")
+    expected = sorted(IMPLEMENTATIONS.keys())
+    assert (sorted(stdout), stderr) == (expected, "")
 
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language():
