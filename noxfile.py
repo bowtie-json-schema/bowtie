@@ -365,7 +365,7 @@ def requirements(session):
     Update bowtie's requirements.txt files.
     """
     if session.venv_backend == "uv":
-        cmd = ["uv", "pip", "compile"]
+        cmd = ["uv", "pip", "compile", "--no-cache"]
     else:
         session.install("pip-tools")
         cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
