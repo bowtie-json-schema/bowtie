@@ -1500,6 +1500,7 @@ async def test_filter_implementations_direct():
     expected = sorted(IMPLEMENTATIONS.keys())
     assert (sorted(stdout), stderr) == (expected, "")
 
+
 @pytest.mark.asyncio
 async def test_filter_implementations_by_language():
     stdout, stderr = await bowtie(
