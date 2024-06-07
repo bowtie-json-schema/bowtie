@@ -1080,6 +1080,8 @@ VALIDATE = click.option(
 
 
 POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
+
+
 def dialect_option(
     default: Dialect | None = Dialect.latest(),
     **kwargs: Any,
