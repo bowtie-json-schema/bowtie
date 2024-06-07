@@ -9,8 +9,7 @@
   "type": "array",
 
   "items": {
-    "type": "string",
-    "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    "$ref": "tag:bowtie.report,2024:models:implementation:version"
   },
 
   "uniqueItems": true
