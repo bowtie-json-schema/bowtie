@@ -1330,7 +1330,9 @@ async def filter_implementations(
         #   $ bowtie filter-implementations
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     elif (
-        not dialects and not languages and direct_connectables
+        not dialects
+        and not languages
+        and direct_connectables
         and start.connectables == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
     ):
         # to speedup:
@@ -1342,10 +1344,7 @@ async def filter_implementations(
             async for name, each in start()
             if (
                 each.supports(*dialects)
-                and (
-                    not languages
-                    or each.info.language in languages
-                )
+                and (not languages or each.info.language in languages)
                 and (
                     not direct_connectables
                     or each.info.id in direct_connectables
