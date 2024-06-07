@@ -12,7 +12,7 @@ class UnsupportedDialect < StandardError; end
 
 JSON_SCHEMER_VERSION = Gem::Version.new(Gem::Specification.find_by_name('json_schemer').version)
 
-if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0') # rubocop:disable Style/YodaCondition
+if JSON_SCHEMER_VERSION >= '2.0.0'
   SUPPORTED_DIALECTS = [
     'https://json-schema.org/draft/2020-12/schema',
     'https://json-schema.org/draft/2019-09/schema',
@@ -50,9 +50,9 @@ else
     'http://json-schema.org/draft-04/schema#',
   ].freeze
 
-  if JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.25') # rubocop:disable Style/YodaCondition
+  if JSON_SCHEMER_VERSION >= '0.2.25'
     @classes_by_meta_schema = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA
-  elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.17') # rubocop:disable Style/YodaCondition
+  elsif JSON_SCHEMER_VERSION >= '0.2.17'
     @classes_by_meta_schema = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA
   end
 
