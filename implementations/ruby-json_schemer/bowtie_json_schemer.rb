@@ -108,7 +108,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
         errored: true,
         context: {
           message: e.message,
-          traceback: e.backtrace.join('\n'),
+          traceback: e.full_message,
         },
       }
     end
