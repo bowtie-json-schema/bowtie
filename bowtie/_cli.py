@@ -155,8 +155,8 @@ _OPTION_GROUPS = {
                     [
                         "supports-dialect",
                         "language",
-                        "implementation",
                         "direct",
+                        "implementation",
                     ],
                 ),
             ],
