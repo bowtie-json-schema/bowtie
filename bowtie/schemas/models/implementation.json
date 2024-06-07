@@ -26,6 +26,9 @@
     },
     "version": {
       "description": "The implementation version",
+
+      "$id": "tag:bowtie.report,2024:models:implementation:version",
+
       "type": "string"
     },
     "dialects": {
