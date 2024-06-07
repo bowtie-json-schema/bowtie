@@ -4,7 +4,7 @@
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "$id": "tag:bowtie.report,2024:implementation_matrix_versions",
+  "$id": "tag:bowtie.report,2024:implementation-matrix-versions",
 
   "type": "array",
 
