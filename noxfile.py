@@ -346,6 +346,13 @@ def develop_harness(session):
     packages.
     """
     for each in session.posargs:
+        each, has_version, version = each.partition("@")
+        build_args = [
+            "--build-arg",
+            f"IMPLEMENTATION_VERSION={version}",
+        ]
+        tag = f":{version}" if has_version else ""
+
         name = Path(each).name
         session.run(
             "podman",
@@ -353,7 +360,8 @@ def develop_harness(session):
             "-f",
             IMPLEMENTATIONS / name / "Dockerfile",
             "-t",
-            f"ghcr.io/bowtie-json-schema/{name}",
+            f"ghcr.io/bowtie-json-schema/{name}{tag}",
+            *build_args if has_version else [],
             external=True,
         )
         session.run("bowtie", "smoke", "--quiet", "-i", name, external=True)
