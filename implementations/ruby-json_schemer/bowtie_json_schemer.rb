@@ -11,52 +11,63 @@ class UnsupportedVersion < StandardError; end
 class UnsupportedDialect < StandardError; end
 
 JSON_SCHEMER_VERSION = Gem::Version.new(Gem::Specification.find_by_name('json_schemer').version)
-SUPPORTED_DIALECTS = [
-  'http://json-schema.org/draft-07/schema#',
-  'http://json-schema.org/draft-06/schema#',
-  'http://json-schema.org/draft-04/schema#',
-].freeze
 
-@meta_schema = nil
-@get_meta_schema = nil
-@setup_schemer = lambda { |kase, meta_schema|
-  meta_schema.new(
-    kase.fetch('schema'),
-    ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) },
-  )
-}
-if Gem::Version.new('2.0.0') <= JSON_SCHEMER_VERSION
-  SUPPORTED_DIALECTS = SUPPORTED_DIALECTS.dup.unshift(
+if JSON_SCHEMER_VERSION >= Gem::Version.new('2.0.0') # rubocop:disable Style/YodaCondition
+  SUPPORTED_DIALECTS = [
     'https://json-schema.org/draft/2020-12/schema',
     'https://json-schema.org/draft/2019-09/schema',
-  ).freeze
+    'http://json-schema.org/draft-07/schema#',
+    'http://json-schema.org/draft-06/schema#',
+    'http://json-schema.org/draft-04/schema#',
+  ].freeze
 
-  meta_schema_refs = {
+  @meta_schema_refs = {
     JSONSchemer::Draft202012::BASE_URI => JSONSchemer::Draft202012::SCHEMA,
     JSONSchemer::Draft201909::BASE_URI => JSONSchemer::Draft201909::SCHEMA,
     JSONSchemer::Draft7::BASE_URI => JSONSchemer::Draft7::SCHEMA,
     JSONSchemer::Draft6::BASE_URI => JSONSchemer::Draft6::SCHEMA,
     JSONSchemer::Draft4::BASE_URI => JSONSchemer::Draft4::SCHEMA,
   }
-  meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
-  meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
-  meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
-  @setup_schemer = lambda { |kase, meta_schema|
-    JSONSchemer.schema(
-      kase.fetch('schema'),
-      meta_schema: meta_schema,
-      format: false,
-      regexp_resolver: 'ecma',
-      ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || meta_schema_refs[uri] },
-    )
-  }
+  @meta_schema_refs.merge!(JSONSchemer::Draft202012::Meta::SCHEMAS)
+  @meta_schema_refs.merge!(JSONSchemer::Draft201909::Meta::SCHEMAS)
+  @meta_schema_refs.transform_keys! { |uri| uri.dup.tap { _1.fragment = nil } }
 
-  @get_meta_schema = ->(dialect) { JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect] }
-elsif Gem::Version.new('0.2.25') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = ->(dialect) { JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA[dialect] }
-elsif Gem::Version.new('0.2.17') <= JSON_SCHEMER_VERSION
-  @get_meta_schema = ->(dialect) { JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA[dialect] }
+  def compiler_for(dialect)
+    lambda { |kase|
+      JSONSchemer.schema(
+        kase.fetch('schema'),
+        meta_schema: JSONSchemer::META_SCHEMAS_BY_BASE_URI_STR[dialect],
+        format: false,
+        regexp_resolver: 'ecma',
+        ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) || @meta_schema_refs[uri] },
+      )
+    }
+  end
+else
+  SUPPORTED_DIALECTS = [
+    'http://json-schema.org/draft-07/schema#',
+    'http://json-schema.org/draft-06/schema#',
+    'http://json-schema.org/draft-04/schema#',
+  ].freeze
+
+  if JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.25') # rubocop:disable Style/YodaCondition
+    @classes_by_meta_schema = JSONSchemer::SCHEMA_CLASS_BY_META_SCHEMA
+  elsif JSON_SCHEMER_VERSION >= Gem::Version.new('0.2.17') # rubocop:disable Style/YodaCondition
+    @classes_by_meta_schema = JSONSchemer::DRAFT_CLASS_BY_META_SCHEMA
+  end
+
+  def compiler_for(dialect)
+    schemer = @classes_by_meta_schema[dialect]
+    lambda { |kase|
+      schemer.new(
+        kase.fetch('schema'),
+        ref_resolver: proc { |uri| kase.dig('registry', uri.to_s) },
+      )
+    }
+  end
 end
+
+@compiler = nil
 
 ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   request = JSON.parse(line)
@@ -85,16 +96,15 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   when 'dialect'
     dialect = request.fetch('dialect')
 
-    @meta_schema = @get_meta_schema.call(dialect)
-
-    raise UnsupportedDialect, dialect unless @meta_schema
+    @compiler = compiler_for(dialect)
+    raise UnsupportedDialect, dialect unless @compiler
 
     { ok: true }
   when 'run'
     kase, seq = request.fetch_values('case', 'seq')
 
     begin
-      schemer = @setup_schemer.call(kase, @meta_schema)
+      schemer = @compiler.call kase
 
       {
         seq: seq,
