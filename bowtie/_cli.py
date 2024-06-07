@@ -1302,7 +1302,7 @@ KNOWN_LANGUAGES = {
     "direct_connectables",
     is_flag=True,
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        frozenset(IMPLEMENTATIONS.keys()) if value else frozenset()
+        frozenset() if not value else frozenset(IMPLEMENTATIONS.keys())
     ),
     help=(
         "Only include implementations with direct connectable functionality "
