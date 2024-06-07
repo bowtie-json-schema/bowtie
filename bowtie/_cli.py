@@ -1286,7 +1286,7 @@ KNOWN_LANGUAGES = {
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        KNOWN_LANGUAGES
+        frozenset()
         if not value
         else frozenset(
             LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
@@ -1325,18 +1325,12 @@ async def filter_implementations(
     Useful for piping or otherwise using the resulting output for further
     Bowtie commands.
     """
-    if (
-        not dialects
-        and languages == KNOWN_LANGUAGES
-        and not direct_connectables
-    ):
+    if not dialects and not languages and not direct_connectables:
         # to speedup:
         #   $ bowtie filter-implementations
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     elif (
-        not dialects
-        and languages == KNOWN_LANGUAGES
-        and direct_connectables
+        not dialects and not languages and direct_connectables
         and start.connectables == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
     ):
         # to speedup:
@@ -1348,7 +1342,10 @@ async def filter_implementations(
             async for name, each in start()
             if (
                 each.supports(*dialects)
-                and each.info.language in languages
+                and (
+                    not languages
+                    or each.info.language in languages
+                )
                 and (
                     not direct_connectables
                     or each.info.id in direct_connectables
