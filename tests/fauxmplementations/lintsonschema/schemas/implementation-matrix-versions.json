@@ -1,0 +1,16 @@
+{
+  "title": "Implementation Matrix Versions",
+  "description": "Versions of an implementation that we are allowed to build images for.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:implementation-matrix-versions",
+
+  "type": "array",
+
+  "items": {
+    "$ref": "tag:bowtie.report,2024:models:implementation:version"
+  },
+
+  "uniqueItems": true
+}
