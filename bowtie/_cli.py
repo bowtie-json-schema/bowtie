@@ -313,7 +313,9 @@ def implementation_subcommand(
             #        and introducing another type is annoying when most of the
             #        complexity has to do with _run / _start still existing --
             #        we need to finish removing them.
-            start.connectables = [each.to_terse() for each in connectables]  # type: ignore[reportFunctionMemberAccess]
+            start.connectables = frozenset(  # type: ignore[reportFunctionMemberAccess]
+                [each.to_terse() for each in connectables],
+            )
 
             fn_exit_code = await fn(start=start, **kw)
             return exit_code | (fn_exit_code or 0)
@@ -1077,6 +1079,7 @@ VALIDATE = click.option(
 )
 
 
+POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
 def dialect_option(
     default: Dialect | None = Dialect.latest(),
     **kwargs: Any,
@@ -1084,7 +1087,6 @@ def dialect_option(
     if default is not None:
         kwargs.update(default=default, show_default=default.pretty_name)
 
-    shortnames = ", ".join(sorted(Dialect.by_alias()))
     return click.option(
         "--dialect",
         "-D",
@@ -1093,7 +1095,7 @@ def dialect_option(
         metavar="URI_OR_NAME",
         help=(
             "A URI or shortname identifying the dialect of each test. "
-            f"Possible shortnames include: {shortnames}."
+            f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}."
         ),
         **kwargs,
     )
@@ -1271,8 +1273,9 @@ KNOWN_LANGUAGES = {
     metavar="URI_OR_NAME",
     multiple=True,
     help=(
-        "Only include implementations supporting the given dialect or dialect "
-        "short name."
+        "Only include implementations supporting the given dialect URI "
+        "or dialect shortname. "
+        f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}."
     ),
 )
 @click.option(
@@ -1290,7 +1293,7 @@ KNOWN_LANGUAGES = {
     ),
     multiple=True,
     metavar="LANGUAGE",
-    help="Only include implementations in the given programming language",
+    help="Only include implementations in the given programming language.",
 )
 @click.option(
     "--direct",
@@ -1301,7 +1304,7 @@ KNOWN_LANGUAGES = {
     ),
     help=(
         "Only include implementations with direct connectable functionality "
-        "i.e. which can run without the presence of podman/docker"
+        "i.e. which can run without the presence of podman/dockerd."
     ),
 )
 async def filter_implementations(
@@ -1322,19 +1325,17 @@ async def filter_implementations(
     """
     if (
         not dialects
-        and not direct_connectables
         and languages == KNOWN_LANGUAGES
+        and not direct_connectables
     ):
         # to speedup:
         #   $ bowtie filter-implementations
         matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
     elif (
         not dialects
-        and direct_connectables
         and languages == KNOWN_LANGUAGES
-        and (
-            frozenset(start.connectables) == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
-        )
+        and direct_connectables
+        and start.connectables == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
     ):
         # to speedup:
         #   $ bowtie filter-implementations --direct
