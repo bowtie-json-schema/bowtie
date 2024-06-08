@@ -719,8 +719,7 @@ def _failure_table_in_markdown(
     for _, each, unsuccessful in results:
         rows.append(
             [
-                f"{each.name}"
-                + f" ({each.language})"
+                f"{each.name} ({each.language})"
                 + (
                     f" {each.version}"
                     if implementation_counts[each.id] > 1
@@ -821,13 +820,12 @@ def _validation_results_table_in_markdown(
         each.id for each in implementations.values()
     )
     inner_table_columns.extend(
-        f"{implementation.name}"
+        f"{implementation.name} ({implementation.language})"
         + (
             f" {implementation.version}"
             if implementation_counts[implementation.id] > 1
             else ""
         )
-        + f" ({implementation.language})"
         for implementation in implementations.values()
     )
 
