@@ -684,9 +684,11 @@ def _failure_table(
             Text.assemble(
                 each.name,
                 (f" ({each.language})", "dim"),
-                (f" {each.version}", "dim")
-                if implementation_counts[each.id] > 1
-                else ("",""),
+                (
+                    (f" {each.version}", "dim")
+                    if implementation_counts[each.id] > 1
+                    else ("", "")
+                ),
             ),
             str(unsuccessful.skipped),
             str(unsuccessful.errored),
@@ -717,10 +719,13 @@ def _failure_table_in_markdown(
     for _, each, unsuccessful in results:
         rows.append(
             [
-                f"{each.name} ({each.language})"
-                f" {each.version}"
-                if implementation_counts[each.id] > 1
-                else "",
+                f"{each.name}"
+                + f" ({each.language})"
+                + (
+                    f" {each.version}"
+                    if implementation_counts[each.id] > 1
+                    else ""
+                ),
                 str(unsuccessful.skipped),
                 str(unsuccessful.errored),
                 str(unsuccessful.failed),
@@ -766,9 +771,11 @@ def _validation_results_table(
                 Text.assemble(
                     implementation.name,
                     (f" ({implementation.language})", "dim"),
-                    (f" {implementation.version}", "dim")
-                    if implementation_counts[implementation.id] > 1
-                    else ("",""),
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
                 ),
             )
 
@@ -814,10 +821,13 @@ def _validation_results_table_in_markdown(
         each.id for each in implementations.values()
     )
     inner_table_columns.extend(
-        f"{implementation.name} ({implementation.language})"
-        f" {implementation.version}"
-        if implementation_counts[implementation.id] > 1
-        else ""
+        f"{implementation.name}"
+        + (
+            f" {implementation.version}"
+            if implementation_counts[implementation.id] > 1
+            else ""
+        )
+        + f" ({implementation.language})"
         for implementation in implementations.values()
     )
 
