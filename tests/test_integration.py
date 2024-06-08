@@ -1488,6 +1488,39 @@ async def test_filter_implementations_no_arguments():
 
 
 @pytest.mark.asyncio
+async def test_filter_implementations_direct():
+    stdout, stderr = [], ""
+
+    try:
+        child = pexpect.spawn("bowtie filter-implementations --direct")
+        child.expect(pexpect.EOF)
+        stdout = child.before.decode().splitlines()
+    except pexpect.exceptions.ExceptionPexpect as err:
+        stderr = str(err)
+
+    expected = sorted(IMPLEMENTATIONS.keys())
+    assert (sorted(stdout), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
+async def test_filter_implementations_direct_by_language():
+    stdout, stderr = await bowtie(
+        "filter-implementations",
+        "--direct",
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "-i",
+        miniatures.fake_javascript,
+        "--language",
+        "python",
+    )
+    expected = []
+    assert (sorted(stdout.splitlines()), stderr) == (expected, "")
+
+
+@pytest.mark.asyncio
 async def test_filter_implementations_by_language():
     stdout, stderr = await bowtie(
         "filter-implementations",
