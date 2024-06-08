@@ -207,6 +207,8 @@ class Direct(Generic[E_co]):
 
     _connect: Callable[[], Unconnection[E_co]] = field(alias="connect")
 
+    kind = "direct"
+
     @classmethod
     def from_id(cls, id: ConnectableId) -> Direct[Any]:
         if "." in id and ":" in id:

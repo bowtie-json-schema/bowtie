@@ -201,6 +201,8 @@ class ConnectableImage:
         alias="id",
     )
 
+    kind = "image"
+
     @asynccontextmanager
     async def connect(self) -> AsyncIterator[Connection]:
         async with AsyncExitStack() as stack:
@@ -300,6 +302,8 @@ async def start_container(docker: Docker, image_name: str):
 class ConnectableContainer:
 
     _id: str = field(alias="id")
+
+    kind = "container"
 
     @asynccontextmanager
     async def connect(self) -> AsyncIterator[Connection]:

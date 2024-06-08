@@ -43,10 +43,7 @@ from bowtie._core import (
     Test,
     TestCase,
 )
-from bowtie._direct_connectable import (
-    IMPLEMENTATIONS,
-    Direct,
-)
+from bowtie._direct_connectable import Direct
 from bowtie.exceptions import DialectError, UnsupportedDialect
 
 if TYPE_CHECKING:
@@ -65,7 +62,7 @@ if TYPE_CHECKING:
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import AnyTestResult
-    from bowtie._connectables import ConnectableId
+    from bowtie._connectables import Connectable, ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
 
@@ -246,13 +243,20 @@ def subcommand(fn: Callable[P, int | None]):
     return run
 
 
+class Starter(Protocol):
+
+    connectables: Iterable[Connectable]
+
+    def __call__(
+        self,
+        connectables: Iterable[Connectable] = [],
+    ) -> AsyncIterator[tuple[ConnectableId, Implementation]]: ...
+
+
 class ImplementationSubcommand(Protocol):
     def __call__(
         self,
-        start: Callable[
-            [],
-            AsyncIterator[tuple[ConnectableId, Implementation]],
-        ],
+        start: Starter,
         **kwargs: Any,
     ) -> Awaitable[int | None]: ...
 
@@ -273,7 +277,7 @@ def implementation_subcommand(
 
     def wrapper(fn: ImplementationSubcommand):
         async def run(
-            connectables: Iterable[_connectables.Connectable],
+            connectables: Iterable[Connectable],
             read_timeout_sec: float,
             registry: ValidatorRegistry[Any] = Direct.from_id(
                 "python-jsonschema",
@@ -282,7 +286,9 @@ def implementation_subcommand(
         ) -> int:
             exit_code = 0
 
-            async def start():
+            async def start(
+                connectables: Iterable[Connectable] = connectables,
+            ):
                 nonlocal exit_code
 
                 successful = 0
@@ -313,11 +319,9 @@ def implementation_subcommand(
             #        and introducing another type is annoying when most of the
             #        complexity has to do with _run / _start still existing --
             #        we need to finish removing them.
-            start.connectables = frozenset(  # type: ignore[reportFunctionMemberAccess]
-                [each.to_terse() for each in connectables],
-            )
+            start.connectables = connectables  # type: ignore[reportFunctionMemberAccess]
 
-            fn_exit_code = await fn(start=start, **kw)
+            fn_exit_code = await fn(start=start, **kw)  # type: ignore[reportArgumentType]
             return exit_code | (fn_exit_code or 0)
 
         @subcommand
@@ -344,7 +348,7 @@ def implementation_subcommand(
         @TIMEOUT
         @wraps(fn)
         def cmd(
-            connectables: Iterable[_connectables.Connectable],
+            connectables: Iterable[Connectable],
             **kwargs: Any,
         ) -> int:
             return asyncio.run(run(connectables=connectables, **kwargs))
@@ -1286,7 +1290,7 @@ KNOWN_LANGUAGES = {
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        frozenset()
+        KNOWN_LANGUAGES
         if not value
         else frozenset(
             LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
@@ -1299,24 +1303,23 @@ KNOWN_LANGUAGES = {
 )
 @click.option(
     "--direct",
-    "direct_connectables",
+    "filter_connectable",
     is_flag=True,
     callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        frozenset() if not value else frozenset(IMPLEMENTATIONS.keys())
+        (lambda connectable: connectable.kind == "direct")  # type: ignore[reportUnknownLambdaType]
+        if value
+        else (lambda connectable: True)  # type: ignore[reportUnknownLambdaType]
     ),
     help=(
         "Only include implementations with direct connectable functionality "
-        "i.e. which can run without the presence of podman/dockerd."
+        "(i.e. which can run without the presence of a container runtime)."
     ),
 )
 async def filter_implementations(
-    start: Callable[
-        [],
-        AsyncIterator[tuple[ConnectableId, Implementation]],
-    ],
+    start: Starter,
     dialects: Sequence[Dialect],
     languages: Set[str],
-    direct_connectables: Set[str],
+    filter_connectable: Callable[[Connectable], bool],
     format: Literal["plain", "json"],
 ):
     """
@@ -1325,31 +1328,15 @@ async def filter_implementations(
     Useful for piping or otherwise using the resulting output for further
     Bowtie commands.
     """
-    if not dialects and not languages and not direct_connectables:
-        # to speedup:
-        #   $ bowtie filter-implementations
-        matching = start.connectables  # type: ignore[reportFunctionMemberAccess]
-    elif (
-        not dialects
-        and not languages
-        and direct_connectables
-        and start.connectables == Implementation.known()  # type: ignore[reportFunctionMemberAccess]
-    ):
-        # to speedup:
-        #   $ bowtie filter-implementations --direct
-        matching = direct_connectables
+    filtered = (c for c in start.connectables if filter_connectable(c))
+    if not dialects and languages == KNOWN_LANGUAGES:
+        # speed up `bowtie filter-implementations`with no args or with --direct
+        matching = [each.to_terse() for each in filtered]
     else:
-        matching = [
+        matching: Sequence[str] = [
             name
-            async for name, each in start()
-            if (
-                each.supports(*dialects)
-                and (not languages or each.info.language in languages)
-                and (
-                    not direct_connectables
-                    or each.info.id in direct_connectables
-                )
-            )
+            async for name, each in start(connectables=filtered)
+            if each.supports(*dialects) and each.info.language in languages
         ]
 
     match format:
@@ -1390,10 +1377,7 @@ async def filter_implementations(
     ),
 )
 async def filter_dialects(
-    start: Callable[
-        [],
-        AsyncIterator[tuple[ConnectableId, Implementation]],
-    ],
+    start: Starter,
     dialects: Iterable[Dialect],
     latest: bool,
     booleans: bool | None,
@@ -1440,10 +1424,7 @@ def latest_report(dialect: Dialect):
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()
 async def info(
-    start: Callable[
-        [],
-        AsyncIterator[tuple[ConnectableId, Implementation]],
-    ],
+    start: Starter,
     format: _F,
 ):
     """
@@ -1503,10 +1484,7 @@ async def info(
 )
 @format_option()
 async def smoke(
-    start: Callable[
-        [],
-        AsyncIterator[tuple[ConnectableId, Implementation]],
-    ],
+    start: Starter,
     format: _F,
     echo: Callable[..., None],
 ) -> int:
@@ -1611,7 +1589,7 @@ def suite(
 
 
 async def _run(
-    connectables: Iterable[_connectables.Connectable],
+    connectables: Iterable[Connectable],
     cases: Iterable[TestCase],
     dialect: Dialect,
     fail_fast: bool,
@@ -1700,12 +1678,12 @@ async def _run(
 
 @asynccontextmanager
 async def _start(
-    connectables: Iterable[_connectables.Connectable],
+    connectables: Iterable[Connectable],
     read_timeout_sec: float,
     **kwargs: Any,
 ):
     async def _connected(
-        connectable: _connectables.Connectable,
+        connectable: Connectable,
         **kwargs: Any,
     ):
         implementation = await stack.enter_async_context(

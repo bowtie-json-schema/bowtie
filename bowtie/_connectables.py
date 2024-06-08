@@ -31,6 +31,8 @@ class UnknownConnector(Exception):
 
 class Connector(Protocol):
 
+    kind: str
+
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
 
@@ -61,9 +63,12 @@ def happy(id: str) -> Connector:
 CONNECTORS = HashTrieMap(
     [
         ("happy", happy),
-        ("image", _containers.ConnectableImage),
-        ("container", _containers.ConnectableContainer),
-        ("direct", Direct.from_id),
+        (Direct.kind, Direct.from_id),
+        (_containers.ConnectableImage.kind, _containers.ConnectableImage),
+        (
+            _containers.ConnectableContainer.kind,
+            _containers.ConnectableContainer,
+        ),
     ],
 )
 
@@ -97,6 +102,10 @@ class Connectable:
         else:
             raise UnknownConnector(kind)
         return cls(id=fqid, connector=connector)
+
+    @property
+    def kind(self):
+        return self._connector.kind
 
     @asynccontextmanager
     async def connect(self, **kwargs: Any) -> AsyncIterator[Implementation]:
