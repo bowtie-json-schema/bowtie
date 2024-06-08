@@ -706,9 +706,11 @@ def _failure_table_in_markdown(
         rows.append(
             [
                 f"{each.name} ({each.language})"
-                f" {each.version}"
-                if implementation_counts[each.id] > 1
-                else "",
+                + (
+                    f" {each.version}"
+                    if implementation_counts[each.id] > 1
+                    else ""
+                ),
                 str(unsuccessful.skipped),
                 str(unsuccessful.errored),
                 str(unsuccessful.failed),
@@ -805,9 +807,11 @@ def _validation_results_table_in_markdown(
     )
     inner_table_columns.extend(
         f"{implementation.name} ({implementation.language})"
-        f" {implementation.version}"
-        if implementation_counts[implementation.id] > 1
-        else ""
+        + (
+            f" {implementation.version}"
+            if implementation_counts[implementation.id] > 1
+            else ""
+        )
         for implementation in implementations.values()
     )
 
