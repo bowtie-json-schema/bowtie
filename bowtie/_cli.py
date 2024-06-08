@@ -670,9 +670,11 @@ def _failure_table(
             Text.assemble(
                 each.name,
                 (f" ({each.language})", "dim"),
-                (f" {each.version}", "dim")
-                if implementation_counts[each.id] > 1
-                else ("", ""),
+                (
+                    (f" {each.version}", "dim")
+                    if implementation_counts[each.id] > 1
+                    else ("", "")
+                ),
             ),
             str(unsuccessful.skipped),
             str(unsuccessful.errored),
@@ -754,9 +756,11 @@ def _validation_results_table(
                 Text.assemble(
                     implementation.name,
                     (f" ({implementation.language})", "dim"),
-                    (f" {implementation.version}", "dim")
-                    if implementation_counts[implementation.id] > 1
-                    else ("", ""),
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
                 ),
             )
 
