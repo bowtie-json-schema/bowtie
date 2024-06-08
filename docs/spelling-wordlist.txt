@@ -14,8 +14,6 @@ entrypoint
 errored
 frontend
 golang
-podman
-dockerd
 implementers
 linter
 linters
