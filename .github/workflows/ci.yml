@@ -35,10 +35,6 @@ jobs:
       fail-fast: false
       matrix:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
-        posargs: [""]
-        include:
-          - noxenv: tests-3.12
-            posargs: coverage github
 
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +75,29 @@ jobs:
         uses: wntrblm/nox@2024.04.15
 
       - name: Run nox
-        run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
+        run: nox -s "${{ matrix.noxenv }}"
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          allow-prereleases: true
+
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
+      - name: Set up nox
+        uses: wntrblm/nox@2024.04.15
+
+      - name: Run nox
+        run: nox -s tests-3.12 -- coverage github
 
   automerge:
     needs: ci
