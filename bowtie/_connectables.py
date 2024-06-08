@@ -86,15 +86,17 @@ class Connectable:
 
     @classmethod
     def from_str(cls, fqid: ConnectableId):
-        connector, sep, id = fqid.partition(":")
+        kind, sep, id = fqid.partition(":")
         if not sep:
-            connector, id = "happy", connector
-        Connector = CONNECTORS.get(connector)
-        if Connector is None:
-            if "/" in connector:
-                return cls(id=fqid, connector=CONNECTORS["image"](fqid))
-            raise UnknownConnector(connector)
-        return cls(id=fqid, connector=Connector(id))
+            kind, id = "happy", kind
+        Connector = CONNECTORS.get(kind)
+        if Connector is not None:
+            connector = Connector(id)
+        elif "/" in kind:
+            connector = CONNECTORS["image"](fqid)
+        else:
+            raise UnknownConnector(kind)
+        return cls(id=fqid, connector=connector)
 
     @asynccontextmanager
     async def connect(self, **kwargs: Any) -> AsyncIterator[Implementation]:
