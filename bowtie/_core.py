@@ -159,7 +159,7 @@ class NoSuchImplementation(Exception):
     An implementation with the given name does not exist.
     """
 
-    id: str
+    id: ConnectableId
 
     def __rich__(self):
         return DiagnosticError(
