@@ -984,199 +984,191 @@ async def test_filter():
     assert stderr == ""
 
 
-@pytest.mark.asyncio
-async def test_smoke_pretty():
-    stdout, stderr = await bowtie(
-        "smoke",
-        "--format",
-        "pretty",
-        "-i",
-        miniatures.always_invalid,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-    assert (
-        dedent(stdout)
-        == dedent(
-            """
+class TestSmoke:
+    @pytest.mark.asyncio
+    async def test_pretty(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.always_invalid,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+        )
+        assert dedent(stdout) == dedent(
+            """\
             · allow-everything: ✗✗✗✗✗✗
             · allow-nothing: ✓✓✓✓✓✓
-        """,
-        ).lstrip("\n")
-    ), stderr
+            """,
+        ), stderr
 
-
-@pytest.mark.asyncio
-async def test_smoke_markdown():
-    stdout, stderr = await bowtie(
-        "smoke",
-        "--format",
-        "markdown",
-        "-i",
-        miniatures.always_invalid,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-    assert (
-        dedent(stdout)
-        == dedent(
-            """
+    @pytest.mark.asyncio
+    async def test_markdown(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "markdown",
+            "-i",
+            miniatures.always_invalid,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+        )
+        assert dedent(stdout) == dedent(
+            """\
             * allow-everything: ✗✗✗✗✗✗
             * allow-nothing: ✓✓✓✓✓✓
-        """,
-        ).lstrip("\n")
-    ), stderr
-
-
-@pytest.mark.asyncio
-async def test_smoke_valid_markdown():
-    stdout, stderr = await bowtie(
-        "smoke",
-        "--format",
-        "markdown",
-        "-i",
-        miniatures.always_invalid,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
-    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
-    assert (
-        tokens
-        == """
-        <root>
-  <bullet_list>
-    <list_item>
-      <paragraph>
-        <inline>
-          <text>
-    <list_item>
-      <paragraph>
-        <inline>
-          <text>
-        """.strip()
-    ), stderr
-
-
-@pytest.mark.asyncio
-@pytest.mark.json
-async def test_smoke_json():
-    jsonout, stderr = await bowtie(
-        "smoke",
-        "--format",
-        "json",
-        "-i",
-        miniatures.always_invalid,
-        json=True,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-
-    assert (await command_validator("smoke")).validated(jsonout) == [
-        {
-            "case": {
-                "description": "allow-everything",
-                "schema": {
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                },
-                "tests": [
-                    {"description": "boolean", "instance": True},
-                    {"description": "integer", "instance": 37},
-                    {"description": "number", "instance": 37.37},
-                    {"description": "string", "instance": "37"},
-                    {"description": "array", "instance": [37]},
-                    {"description": "object", "instance": {"foo": 37}},
-                ],
-            },
-            "result": {
-                "results": [
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                ],
-            },
-        },
-        {
-            "case": {
-                "description": "allow-nothing",
-                "schema": {
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "not": {},
-                },
-                "tests": [
-                    {"description": "boolean", "instance": True},
-                    {"description": "integer", "instance": 37},
-                    {"description": "number", "instance": 37.37},
-                    {"description": "string", "instance": "37"},
-                    {"description": "array", "instance": [37]},
-                    {"description": "object", "instance": {"foo": 37}},
-                ],
-            },
-            "result": {
-                "results": [
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                    {"valid": False},
-                ],
-            },
-        },
-    ], stderr
-
-
-@pytest.mark.asyncio
-async def test_smoke_quiet():
-    stdout, stderr = await bowtie(
-        "smoke",
-        "--quiet",
-        "-i",
-        miniatures.always_invalid,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-    assert stdout == "", stderr
-
-
-@pytest.mark.asyncio
-async def test_smoke_multiple():
-    stdout, stderr = await bowtie(
-        "smoke",
-        "--format",
-        "pretty",
-        "-i",
-        miniatures.always_invalid,
-        "-i",
-        miniatures.passes_smoke,
-        exit_code=EX.DATAERR,  # because indeed invalid isn't always right
-    )
-    assert (
-        dedent(stderr)
-        == dedent(
-            f"""\
-            Testing '{miniatures.passes_smoke}'...
-
-
-            ✅ all passed
-            Testing '{miniatures.always_invalid}'...
-
-
-            ❌ some failures
             """,
+        ), stderr
+
+    @pytest.mark.asyncio
+    async def test_markdown_is_valid(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "markdown",
+            "-i",
+            miniatures.always_invalid,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
-        or dedent(stderr)
-        == dedent(
-            f"""\
-            Testing '{miniatures.always_invalid}'...
-
-
-            ❌ some failures
-            Testing '{miniatures.passes_smoke}'...
-
-
-            ✅ all passed
+        parsed = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+        tokens = SyntaxTreeNode(parsed).pretty(indent=2)
+        assert (
+            tokens
+            == dedent(
+                """\
+            <root>
+              <bullet_list>
+                <list_item>
+                  <paragraph>
+                    <inline>
+                      <text>
+                <list_item>
+                  <paragraph>
+                    <inline>
+                      <text>
             """,
+            ).rstrip("\n")
+        ), stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_json(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.always_invalid,
+            json=True,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
-    ), stdout
+
+        assert (await command_validator("smoke")).validated(jsonout) == [
+            {
+                "case": {
+                    "description": "allow-everything",
+                    "schema": {
+                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    },
+                    "tests": [
+                        {"description": "boolean", "instance": True},
+                        {"description": "integer", "instance": 37},
+                        {"description": "number", "instance": 37.37},
+                        {"description": "string", "instance": "37"},
+                        {"description": "array", "instance": [37]},
+                        {"description": "object", "instance": {"foo": 37}},
+                    ],
+                },
+                "result": {
+                    "results": [
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                    ],
+                },
+            },
+            {
+                "case": {
+                    "description": "allow-nothing",
+                    "schema": {
+                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        "not": {},
+                    },
+                    "tests": [
+                        {"description": "boolean", "instance": True},
+                        {"description": "integer", "instance": 37},
+                        {"description": "number", "instance": 37.37},
+                        {"description": "string", "instance": "37"},
+                        {"description": "array", "instance": [37]},
+                        {"description": "object", "instance": {"foo": 37}},
+                    ],
+                },
+                "result": {
+                    "results": [
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                        {"valid": False},
+                    ],
+                },
+            },
+        ], stderr
+
+    @pytest.mark.asyncio
+    async def test_quiet(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--quiet",
+            "-i",
+            miniatures.always_invalid,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+        )
+        assert stdout == "", stderr
+
+    @pytest.mark.asyncio
+    async def test_smoke_multiple(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.always_invalid,
+            "-i",
+            miniatures.passes_smoke,
+            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+        )
+        assert (
+            dedent(stderr)
+            == dedent(
+                f"""\
+                Testing '{miniatures.passes_smoke}'...
+
+
+                ✅ all passed
+                Testing '{miniatures.always_invalid}'...
+
+
+                ❌ some failures
+                """,
+            )
+            or dedent(stderr)
+            == dedent(
+                f"""\
+                Testing '{miniatures.always_invalid}'...
+
+
+                ❌ some failures
+                Testing '{miniatures.passes_smoke}'...
+
+
+                ✅ all passed
+                """,
+            )
+        ), stdout
 
 
 @pytest.mark.asyncio
@@ -2513,6 +2505,9 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
 @pytest.mark.parametrize("id", KNOWN_DIRECT.keys())
 @pytest.mark.asyncio
 async def test_smoke_direct_connectables(id):
+    """
+    All direct connectables pass their smoke test.
+    """
     await bowtie("smoke", "-i", f"direct:{id}", exit_code=0)
 
 
