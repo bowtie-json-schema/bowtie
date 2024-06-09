@@ -219,16 +219,20 @@ class StartupFailed(Exception):
         console: Console,
         options: ConsoleOptions,
     ) -> RenderResult:
-        causes: list[str] = []
-        if self.__cause__ is None:
-            hint = (
+        cause = self.__cause__
+        if cause is None:
+            root_causes, hint = [], (
                 "If you are developing a new harness, check if stderr "
                 "(shown below) contains harness-specific information "
                 "which can help. Otherwise, you may have an issue with your "
                 "local container setup (podman, docker, etc.)."
             )
         else:
-            errors = getattr(self.__cause__, "errors", [])
+            root_causes: Iterable[Exception] = getattr(
+                cause.__cause__,
+                "exceptions",
+                [],
+            )
             hint = (
                 "The harness sent an invalid response for Bowtie's protocol. "
                 "Details for what was wrong are above. If you are developing "
@@ -236,12 +240,11 @@ class StartupFailed(Exception):
                 "if you are not, this is a bug in Bowtie's harness for this "
                 "implementation! File an issue on Bowtie's issue tracker."
             )
-            causes.extend(str(error) for error in errors)
 
         yield DiagnosticError(
             code="startup-failed",
             message=f"{self.id!r} failed to start.",
-            causes=causes,
+            causes=[str(exc) for exc in root_causes],
             hint_stmt=hint,
         )
         if self.stderr:
