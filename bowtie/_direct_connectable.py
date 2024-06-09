@@ -17,10 +17,10 @@ from url import URL
 from bowtie import DOCS, HOMEPAGE, REPO
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Dialect, ImplementationInfo, registry
-from bowtie._registry import E_co, SchemaCompiler, ValidatorRegistry
+from bowtie._registry import E_co, Invalid, SchemaCompiler, ValidatorRegistry
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from contextlib import AbstractAsyncContextManager
 
     from jsonschema import ValidationError
@@ -83,14 +83,9 @@ class Unconnection(Generic[E_co]):
                     case.get("registry", {}).items(),
                     default_specification=self._current_dialect.specification(),
                 )
-                errors_for = self._compile(schema, registry)
+                validate = self._compile(schema, registry)
                 results = [
-                    TestResult(
-                        valid=(
-                            next(iter(errors_for(test["instance"])), None)
-                            is None
-                        ),
-                    )
+                    TestResult(valid=validate(test["instance"]) is None)
                     for test in case["tests"]
                 ]
                 return {  # FIXME: Bleh this is not SeqResult
@@ -157,13 +152,19 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     def compile(
         schema: Schema,
         registry: SchemaRegistry,
-    ) -> Callable[[Any], Iterable[ValidationError]]:
+    ) -> Callable[[Any], Invalid[ValidationError] | None]:
         DialectValidator: type[Validator] = validator_for(  # type: ignore[reportUnknownVariableType]
             schema,
             default=validator_for({"$schema": str(dialect.uri)}),
         )
         validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
-        return validator.iter_errors  # type: ignore[reportUnknownMemberType]
+
+        def validate(instance: Any):
+            exceptions = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  FIXME: lazy
+            if exceptions:
+                return Invalid("Not valid.", exceptions)  # FIXME: message
+
+        return validate
 
     return compile
 
@@ -178,7 +179,7 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     dialects=frozenset(Dialect.known()),
 )
 def null(dialect: Dialect) -> SchemaCompiler[ValidationError]:
-    return lambda _, __: lambda _: []
+    return lambda _, __: lambda _: None
 
 
 IMPLEMENTATIONS = {

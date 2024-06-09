@@ -19,7 +19,7 @@ data = "bowtie/data"
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 readme = "README.rst"
 license = {text = "MIT"}
 keywords = [
@@ -38,7 +38,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3",
@@ -61,7 +60,6 @@ dependencies = [
   "rich-click>=1.8.0",
   "rpds.py>=0.18.0",
   "structlog",
-  "typing-extensions; python_version<'3.11'",
   "url.py>=0.11.3",
 ]
 

@@ -11,9 +11,7 @@ from bowtie._commands import StartedDialect
 from bowtie._core import Dialect, Link
 from bowtie._direct_connectable import direct_implementation
 
-
-class NotValid(Exception):
-    pass
+ARBITRARILY_INVALID = ExceptionGroup("Not valid!", [ZeroDivisionError()])
 
 
 def fake(**kwargs):
@@ -37,7 +35,7 @@ def always_invalid(dialect: Dialect):
 
     For the inverse, see `Direct.null`.
     """
-    return lambda schema, registry: lambda instance: [NotValid(instance)]
+    return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
 
 @fake(dialects=frozenset([Dialect.by_short_name()["draft3"]]))
@@ -47,7 +45,7 @@ def only_draft3(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None
 
 
 @fake(language="javascript")
@@ -57,7 +55,7 @@ def fake_javascript(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None
 
 
 @fake()
@@ -66,7 +64,7 @@ def passes_smoke(dialect: Dialect):
     An implementation which crudely passes `bowtie smoke`.
     """
     return lambda schema, registry: lambda instance: (  # naively...
-        [] if "not" not in schema else [NotValid(instance)]
+        None if "not" not in schema else ARBITRARILY_INVALID
     )
 
 
@@ -77,7 +75,7 @@ def no_implicit_dialect_support(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None
 
 
 @fake(
@@ -96,4 +94,4 @@ def links(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None

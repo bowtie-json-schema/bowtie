@@ -143,8 +143,7 @@ ANOTHER_TEST = {
 def test_group(valid, instance):
     registry = Direct.from_id("python-jsonschema").registry()
     validator = registry.for_uri("tag:bowtie.report,2023:models:group")
-    errors = list(validator.errors_for(instance))
-    assert valid == (not errors), errors
+    assert validator.is_valid(instance) == valid, validator.validate(instance)
 
 
 def test_root_schema():

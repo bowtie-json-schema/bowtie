@@ -1,10 +1,9 @@
-from jsonschema.exceptions import ValidationError
 from referencing.jsonschema import DRAFT202012, EMPTY_REGISTRY
 from url import URL
 import pytest
 
 from bowtie._direct_connectable import Direct
-from bowtie._registry import UnexpectedlyValid
+from bowtie._registry import Invalid, UnexpectedlyValid
 
 ALL_VALID = URL.parse("urn:example:everything-valid")
 ALL_INVALID = URL.parse("urn:example:nothing-valid")
@@ -25,7 +24,7 @@ def test_validated_valid():
 def test_validated_invalid():
     validator = VALIDATORS.for_uri(ALL_INVALID)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(Invalid):
         validator.validated(37)
 
 

@@ -10,10 +10,6 @@ from attrs import frozen
 from diagnostic import DiagnosticError, DiagnosticWarning
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from jsonschema.exceptions import ValidationError
-
     from bowtie._core import Dialect, Implementation
 
 
@@ -60,8 +56,6 @@ class ProtocolError(Exception):
     """
     An invalid request or response was sent.
     """
-
-    errors: Sequence[ValidationError]
 
 
 @frozen

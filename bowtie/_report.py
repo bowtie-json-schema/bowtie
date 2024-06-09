@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -125,7 +125,7 @@ class RunMetadata:
     )
     metadata: Mapping[str, Any] = field(factory=dict, repr=False)
     started: datetime = field(
-        factory=lambda: datetime.now(timezone.utc),
+        factory=lambda: datetime.now(UTC),
         eq=False,
         repr=False,
     )

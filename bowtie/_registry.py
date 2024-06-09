@@ -16,8 +16,14 @@ if TYPE_CHECKING:
 
 
 E_co = TypeVar("E_co", bound=Exception, covariant=True)
-ErrorsFor = Callable[[Any], Iterable[E_co]]
-SchemaCompiler = Callable[[Schema, SchemaRegistry], ErrorsFor[E_co]]
+Validate = Callable[[Any], ExceptionGroup[E_co] | None]
+SchemaCompiler = Callable[[Schema, SchemaRegistry], Validate[E_co]]
+
+
+class Invalid(ExceptionGroup[E_co]):
+    """
+    An instance is not valid under a schema.
+    """
 
 
 class UnexpectedlyValid(Exception):
@@ -32,7 +38,7 @@ class Validator(Generic[E_co]):
     A compiled schema, ready to validate instances.
     """
 
-    errors_for: ErrorsFor[E_co]
+    validate: Validate[E_co]
     _registry: ValidatorRegistry[E_co] = field(alias="registry")
 
     def __rmatmul__(
@@ -42,17 +48,16 @@ class Validator(Generic[E_co]):
         return evolve(self, registry=resources @ self._registry)
 
     def is_valid(self, instance: Any):
-        return next(iter(self.errors_for(instance)), None) is None
+        return self.validate(instance) is None
 
     def validated(self, instance: Any):
-        exception = next(iter(self.errors_for(instance)), None)
+        exception = self.validate(instance)
         if exception is not None:
             raise exception
         return instance
 
     def invalidated(self, instance: Any):
-        exception = next(iter(self.errors_for(instance)), None)
-        if exception is None:
+        if self.is_valid(instance):
             raise UnexpectedlyValid(instance)
         return instance
 
@@ -85,5 +90,5 @@ class ValidatorRegistry(Generic[E_co]):
         """
         Return a `Validator` using the given schema.
         """
-        errors_for: ErrorsFor[E_co] = self._compile(schema, self._registry)
-        return Validator(errors_for=errors_for, registry=self)
+        validate: Validate[E_co] = self._compile(schema, self._registry)
+        return Validator(validate=validate, registry=self)
