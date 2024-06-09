@@ -97,7 +97,7 @@ class Connectable:
         Connector = CONNECTORS.get(kind)
         if Connector is not None:
             connector = Connector(id)
-        elif "/" in kind:
+        elif "/" in kind:  # special case allowing foo/bar:baz, image w/repo
             connector = CONNECTORS["image"](fqid)
         else:
             raise UnknownConnector(kind)
