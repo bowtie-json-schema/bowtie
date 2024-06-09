@@ -149,6 +149,20 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
 
+    # FIXME: python-jsonschema/jsonschema#1011
+    def to_group(error: ValidationError):
+        """
+        Upconvert a validation error to an exception group.
+        """
+        if error.context:  # FIXME: Throws away all the other attributes...
+            return Invalid(
+                error.message,
+                [to_group(each) for each in error.context],
+            )
+        elif error.cause:
+            return Invalid(error.message, [error.cause])
+        return error
+
     def compile(
         schema: Schema,
         registry: SchemaRegistry,
@@ -160,9 +174,10 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
         validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
 
         def validate(instance: Any):
-            exceptions = list(validator.iter_errors(instance))  # type: ignore[reportUnknownMemberType]  FIXME: lazy
+            errors = validator.iter_errors(instance)  # type: ignore[reportUnknownMemberType]
+            exceptions = [to_group(each) for each in errors]
             if exceptions:
-                return Invalid("Not valid.", exceptions)  # FIXME: message
+                return Invalid("Not valid.", exceptions)
 
         return validate
 
