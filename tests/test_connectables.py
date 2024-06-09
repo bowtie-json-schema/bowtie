@@ -114,13 +114,13 @@ class TestDirect:
 
 
 class TestExplicitHappy:
-    def test_explicit_known_direct(self):
+    def test_known_direct(self):
         name = "python-jsonschema"
         happy = validated(f"happy:{name}")
         direct = validated(f"direct:{name}")
         assert Connectable.from_str(happy) == Connectable.from_str(direct)
 
-    def test_explicit_unknown_direct(self):
+    def test_unknown_direct_becomes_image(self):
         name = "asdf"
         happy = validated(f"happy:{name}")
         image = validated(f"image:{name}")
