@@ -150,7 +150,7 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     )
 
     # FIXME: python-jsonschema/jsonschema#1011
-    def to_group(error: ValidationError):
+    def to_group(error: ValidationError) -> ValidationError | Invalid[Any]:
         """
         Upconvert a validation error to an exception group.
         """
@@ -173,9 +173,9 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
         )
         validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
 
-        def validate(instance: Any):
+        def validate(instance: Any) -> Invalid[Any] | None:
             errors = validator.iter_errors(instance)  # type: ignore[reportUnknownMemberType]
-            exceptions = [to_group(each) for each in errors]
+            exceptions: list[Exception] = [to_group(each) for each in errors]  # type: ignore[reportUnknownArgumentType]
             if exceptions:
                 return Invalid("Not valid.", exceptions)
 
