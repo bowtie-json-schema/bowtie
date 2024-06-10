@@ -4,7 +4,7 @@ import os, pyperf
 from typing import Callable
 
 from attrs import field, frozen, asdict
-
+from statistics import geometric_mean
 from time import perf_counter_ns
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -87,6 +87,7 @@ class Benchmark:
         benchmark['dialect'] = Dialect.from_str(dialect_from_schema)
         return Benchmark.from_dict(**benchmark)
 
+
 @frozen
 class BenchmarkReport:
     pass
@@ -135,7 +136,7 @@ class Benchmarker:
             dialect,
             registry,
     ):
-        bench_suites = []
+        bench_suite_for_connectable = {}
         for connectable in connectables:
 
             silent_reporter = _report.Reporter(write=lambda **_: None)
@@ -169,13 +170,19 @@ class Benchmarker:
                         benchmark_results.append(bench)
             if len(benchmark_results):
                 benchmark_suite = pyperf.BenchmarkSuite(benchmarks=benchmark_results)
-                benchmark_suite.dump(f"/tmp/{connectable.to_terse()}.json")
-                bench_suites.append(f"/tmp/{connectable.to_terse()}.json")
+                bench_suite_for_connectable[connectable.to_terse()] = benchmark_suite
 
             print()
 
-        await self._pyperf_compare_command(*bench_suites)
-        self._delete_bench_suites_if_any(bench_suites)
+        bench_suite_for_connectable = self._sort_benchmark_suites(bench_suite_for_connectable)
+        benchmark_suite_filenames = []
+        for connectable_name, bench_suite in bench_suite_for_connectable.items():
+            filename = f"/tmp/{connectable_name}.json"
+            bench_suite.dump(filename)
+            benchmark_suite_filenames.append(filename)
+
+        await self._pyperf_compare_command(*benchmark_suite_filenames)
+        self._delete_bench_suites_if_any(benchmark_suite_filenames)
 
     async def _run_benchmark(self, benchmark, dialect, connectable):
         start = perf_counter_ns()
@@ -252,11 +259,22 @@ class Benchmarker:
         print(output.decode())
 
     @staticmethod
-    def _do_not_validate(*ignored: SchemaResource) -> Callable[..., None]:
-        return lambda *args, **kwargs: None
-
-    @staticmethod
     def _delete_bench_suites_if_any(bench_suites):
         for bench_suite in bench_suites:
             if os.path.isfile(bench_suite):
                 os.remove(bench_suite)
+
+    @staticmethod
+    def _sort_benchmark_suites(bench_suite_for_connectable):
+
+        def _geometric_mean_of_bench_suite(bench_suite):
+            means = [benchmark.mean() for benchmark in bench_suite.get_benchmarks()]
+            return geometric_mean(means)
+
+        return {
+            connectable_name: bench_suite
+            for connectable_name, bench_suite in sorted(
+                bench_suite_for_connectable.items(),
+                key=lambda item: _geometric_mean_of_bench_suite(item[1])
+            )
+        }
