@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
@@ -672,9 +673,21 @@ def _failure_table(
         title="Bowtie",
         caption=f"{report.total_tests} {test} ran\n",
     )
+
+    implementation_counts = Counter(
+        each.id for each in report.implementations.values()
+    )
     for _, each, unsuccessful in results:
         table.add_row(
-            Text.assemble(each.name, (f" ({each.language})", "dim")),
+            Text.assemble(
+                each.name,
+                (
+                    (f" {each.version}", "dim")
+                    if implementation_counts[each.id] > 1
+                    else ("", "")
+                ),
+                (f" ({each.language})", "dim"),
+            ),
             str(unsuccessful.skipped),
             str(unsuccessful.errored),
             str(unsuccessful.failed),
@@ -695,10 +708,19 @@ def _failure_table_in_markdown(
         "Failures",
     ]
 
+    implementation_counts = Counter(
+        each.id for each in report.implementations.values()
+    )
     for _, each, unsuccessful in results:
         rows.append(
             [
-                f"{each.name} ({each.language})",
+                f"{each.name}"
+                + (
+                    f" {each.version}"
+                    if implementation_counts[each.id] > 1
+                    else ""
+                )
+                + f" ({each.language})",
                 str(unsuccessful.skipped),
                 str(unsuccessful.errored),
                 str(unsuccessful.failed),
@@ -731,6 +753,9 @@ def _validation_results_table(
 
     # TODO: sort the columns by results?
     implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
 
     for case, test_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
@@ -738,6 +763,11 @@ def _validation_results_table(
             subtable.add_column(
                 Text.assemble(
                     implementation.name,
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
                     (f" ({implementation.language})", "dim"),
                 ),
             )
@@ -778,9 +808,18 @@ def _validation_results_table_in_markdown(
 
     inner_table_columns = ["Instance"]
     implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
     inner_table_columns.extend(
-        f"{id} ({implementation.language})"
-        for id, implementation in implementations.items()
+        f"{implementation.name}"
+        + (
+            f" {implementation.version}"
+            if implementation_counts[implementation.id] > 1
+            else ""
+        )
+        + f" ({implementation.language})"
+        for implementation in implementations.values()
     )
 
     for case, test_results in results:
