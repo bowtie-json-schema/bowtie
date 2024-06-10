@@ -32,7 +32,7 @@ import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import DOCS, _connectables, _report, _suite
+from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -1251,6 +1251,89 @@ def validate(
         tests = [test.expect(expect) for test in tests]
     case = TestCase(description=description, schema=schema, tests=tests)
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+
+
+
+@subcommand
+@IMPLEMENTATION
+@dialect_option()
+@click.option(
+    "--processes",
+    "-p",
+    "processes",
+    type=int,
+    default=3,
+    show_default=True,
+    help=(
+        "Number of processes used to run benchmarks."
+    ),
+)
+@click.option(
+    "--values",
+    "-v",
+    "values",
+    type=int,
+    default=2,
+    show_default=True,
+    help=(
+        "Number of values per process."
+    ),
+)
+@click.option(
+    "--warmups",
+    "-w",
+    "warmups",
+    type=int,
+    default=1,
+    show_default=True,
+    help=(
+        "Number of skipped values per run used to warmup the benchmark."
+    ),
+)
+@click.option(
+    "--loops",
+    "-l",
+    "loops",
+    type=int,
+    default=1,
+    show_default=True,
+    help=(
+        "Number of loops per value."
+    ),
+)
+@click.option(
+    "-d",
+    "--description",
+    default="bowtie perf",
+    help="A (human-readable) description for this benchmark.",
+)
+@click.argument("schema", type=JSON(), required=False)
+@click.argument("instances", nargs=-1, type=JSON())
+def perf(
+    connectables: Iterable[_connectables.Connectable],
+    dialect: Dialect,
+    instances: Iterable[Any],
+    schema: Any,
+    **kwargs: Any,
+):
+    """
+    Perform performance measurements across supported implementations.
+    """
+    if schema is None:
+        benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
+            **kwargs
+        )
+
+    else:
+        if not instances:
+            return EX.NOINPUT
+        benchmarker = _benchmarks.Benchmarker.from_input(
+            schema=schema,
+            instances=instances,
+            **kwargs,
+        )
+
+    asyncio.run(benchmarker.start(connectables, dialect))
 
 
 LANGUAGE_ALIASES = {
