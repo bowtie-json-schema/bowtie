@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
@@ -663,8 +664,6 @@ def _failure_table(
     report: _report.Report,
     results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
 ):
-    from collections import Counter
-
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         "Implementation",
@@ -700,8 +699,6 @@ def _failure_table_in_markdown(
     report: _report.Report,
     results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
 ):
-    from collections import Counter
-
     test = "tests" if report.total_tests != 1 else "test"
     rows: list[list[str]] = []
     columns = [
@@ -746,8 +743,6 @@ def _validation_results_table(
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
 ):
-    from collections import Counter
-
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         Column(header="Schema", vertical="middle"),
@@ -808,8 +803,6 @@ def _validation_results_table_in_markdown(
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
 ):
-    from collections import Counter
-
     rows_data: list[list[str]] = []
     final_content = ""
 
