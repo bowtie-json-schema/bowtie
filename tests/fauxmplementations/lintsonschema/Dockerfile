@@ -1,4 +1,4 @@
-FROM python:3.12.3-alpine
+FROM python:3.12.4-alpine
 RUN python -m pip install jsonschema 'referencing-loaders>=2024.5.2'
 COPY lintsonschema /usr/local/bin
 COPY schemas /schemas
