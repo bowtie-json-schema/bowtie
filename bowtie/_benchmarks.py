@@ -133,6 +133,7 @@ class Benchmarker:
             self,
             connectables,
             dialect,
+            registry,
     ):
         bench_suites = []
         for connectable in connectables:
@@ -140,7 +141,7 @@ class Benchmarker:
             silent_reporter = _report.Reporter(write=lambda **_: None)
             async with connectable.connect(
                     reporter=silent_reporter,
-                    make_validator=self._do_not_validate,
+                    registry=registry,
             ) as implementation:
                 supports_dialect = dialect in implementation.info.dialects
 

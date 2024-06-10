@@ -1256,6 +1256,7 @@ def validate(
 
 @subcommand
 @IMPLEMENTATION
+@VALIDATE
 @dialect_option()
 @click.option(
     "--processes",
@@ -1314,6 +1315,8 @@ def perf(
     dialect: Dialect,
     instances: Iterable[Any],
     schema: Any,
+    description: str,
+    registry,
     **kwargs: Any,
 ):
     """
@@ -1330,10 +1333,11 @@ def perf(
         benchmarker = _benchmarks.Benchmarker.from_input(
             schema=schema,
             instances=instances,
+            description=description,
             **kwargs,
         )
 
-    asyncio.run(benchmarker.start(connectables, dialect))
+    asyncio.run(benchmarker.start(connectables, dialect, registry))
 
 
 LANGUAGE_ALIASES = {
