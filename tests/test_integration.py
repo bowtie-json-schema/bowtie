@@ -212,7 +212,7 @@ fail_on_run = shellplementation(
     read -r request
     printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -223,7 +223,7 @@ nonjson_on_run = shellplementation(
     read -r request
     printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf 'BOOM!\n'
     """,  # noqa: E501
@@ -234,7 +234,7 @@ wrong_seq = shellplementation(
     read -r request
     printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
