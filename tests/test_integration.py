@@ -1796,6 +1796,7 @@ async def test_summary_show_failures_markdown(tmp_path):
         """,
     )
 
+
 @pytest.mark.asyncio
 async def test_summary_show_failures_markdown_different_versions(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
