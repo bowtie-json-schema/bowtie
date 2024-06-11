@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=21.0.0"
   },
-  "packageManager": "pnpm@9.1.4",
+  "packageManager": "pnpm@9.3.0",
   "scripts": {
     "start": "vite --no-clearScreen",
     "build": "tsc && vite build",
@@ -41,6 +41,7 @@
     "eslint-plugin-react-hooks": "4.6.2",
     "jsdom": "^24.1.0",
     "react-test-renderer": "^18.3.1",
+    "braces": "^3.0.3",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
