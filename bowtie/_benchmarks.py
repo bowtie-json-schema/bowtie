@@ -310,7 +310,7 @@ class Benchmarker:
     ) -> dict[str, pyperf.BenchmarkSuite]:
 
         def _geometric_mean_of_bench_suite(bench_suite: pyperf.BenchmarkSuite):
-            means = [benchmbark.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType])
+            means = [b.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType])
             return geometric_mean(means) # type: ignore[reportUnknownArguementType])
 
         return dict(sorted(
