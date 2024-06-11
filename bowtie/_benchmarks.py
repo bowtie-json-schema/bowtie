@@ -1,24 +1,27 @@
 from __future__ import annotations
 
-import os, pyperf
-from typing import Callable
-
-from attrs import field, frozen, asdict
-from statistics import geometric_mean
-from time import perf_counter_ns
-from collections.abc import Iterable, Sequence
 from pathlib import Path
-import importlib, json, subprocess, asyncio
-from typing import Any
+from statistics import geometric_mean
+from typing import TYPE_CHECKING, Any
+import asyncio
+import importlib
+import json
+import os
+import subprocess
 
-from referencing.jsonschema import SchemaResource
+from attrs import asdict, field, frozen
+import pyperf  # type: ignore[reportMissingTypeStubs]
 
-from bowtie import _report
-from bowtie._core import TestCase, Example, Test, Dialect
-from bowtie._report import RunMetadata
-from bowtie._commands import (
-    Message,
-)
+from bowtie import _connectables, _report
+from bowtie._core import Dialect, Example, Test
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from bowtie._commands import (
+        Message,
+    )
+    from bowtie._registry import ValidatorRegistry
 
 BENCHMARKS_MODULE = "bowtie.benchmarks"
 
@@ -28,11 +31,11 @@ def get_default_benchmarks() -> Iterable[dict[str, Any]]:
     benchmark_dir = bowtie_dir.joinpath("benchmarks").iterdir()
 
     for file in benchmark_dir:
-        if file.suffix == ".py" and file.name != '__init__.py':
+        if file.suffix == ".py" and file.name != "__init__.py":
             benchmark_module_name = "." + file.stem
             benchmark = importlib.import_module(
                 benchmark_module_name,
-                BENCHMARKS_MODULE
+                BENCHMARKS_MODULE,
             ).get_benchmark()
         elif file.suffix == ".json":
             benchmark = json.loads(file.read_text())
@@ -63,15 +66,14 @@ class Benchmark:
         )
 
     def serializable(self) -> Message:
-        as_dict = asdict(
+        return asdict(
             self,
             filter=lambda _, v: v is not None,
         )
-        return as_dict
 
-    def benchmark_with_diff_tests(self, tests):
+    def benchmark_with_diff_tests(self, tests: Sequence[Example | Test]):
         benchmark = self.serializable()
-        benchmark['tests'] = tests
+        benchmark["tests"] = tests
         return Benchmark(**benchmark)
 
     def maybe_set_dialect_from_schema(self):
@@ -84,7 +86,7 @@ class Benchmark:
             return self
 
         benchmark = self.serializable()
-        benchmark['dialect'] = Dialect.from_str(dialect_from_schema)
+        benchmark["dialect"] = Dialect.from_str(dialect_from_schema) # type: ignore[reportUnknownArgumentType]
         return Benchmark.from_dict(**benchmark)
 
 
@@ -115,7 +117,7 @@ class Benchmarker:
     )
 
     @classmethod
-    def from_default_benchmarks(cls, **kwargs):
+    def from_default_benchmarks(cls, **kwargs: Any):
         benchmarks = [
             Benchmark.from_dict(
                 **benchmark,
@@ -125,24 +127,42 @@ class Benchmarker:
         return cls(benchmarks=benchmarks, **kwargs)
 
     @classmethod
-    def from_input(cls, schema, instances, description, **kwargs):
-        tests = [Example(description=str(idx), instance=each) for idx, each in enumerate(instances)]
-        benchmarks = [Benchmark(name=description, description=description, tests=tests, schema=schema)]
+    def from_input(
+        cls,
+        schema: Any,
+        instances: Iterable[Any],
+        description: str,
+        **kwargs: Any,
+    ):
+        tests = [
+            Example(description=str(idx), instance=each)
+            for idx, each in enumerate(instances)
+        ]
+        benchmarks = [
+            Benchmark(
+                name=description,
+                description=description,
+                tests=tests,
+                schema=schema,
+            ),
+        ]
         return cls(benchmarks=benchmarks, **kwargs)
 
     async def start(
-            self,
-            connectables,
-            dialect,
-            registry,
+        self,
+        connectables: Iterable[_connectables.Connectable],
+        dialect: Dialect,
+        registry: ValidatorRegistry[Any],
     ):
-        bench_suite_for_connectable = {}
+        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite] = {}
         for connectable in connectables:
 
-            silent_reporter = _report.Reporter(write=lambda **_: None)
+            silent_reporter = _report.Reporter(
+                write=lambda **_: None, # type: ignore[reportUnknownArgumentType])
+            )
             async with connectable.connect(
-                    reporter=silent_reporter,
-                    registry=registry,
+                reporter=silent_reporter,
+                registry=registry,
             ) as implementation:
                 supports_dialect = dialect in implementation.info.dialects
 
@@ -153,14 +173,16 @@ class Benchmarker:
             print(connectable.to_terse())
             print()
 
-            benchmark_results = []
+            benchmark_results: list[pyperf.Benchmark] = []
             for benchmark in self._benchmarks:
                 if benchmark.dialect and benchmark.dialect != dialect:
                     print(f"Skipping {benchmark.name} as it does not support dialect {dialect.serializable()}")
                     continue
                 tests = benchmark.tests
                 for test in tests:
-                    benchmark_case = benchmark.benchmark_with_diff_tests(tests=[test])
+                    benchmark_case = benchmark.benchmark_with_diff_tests(
+                        tests=[test],
+                    )
                     bench = await self._run_benchmark(
                         benchmark_case,
                         dialect,
@@ -169,29 +191,42 @@ class Benchmarker:
                     if bench:
                         benchmark_results.append(bench)
             if len(benchmark_results):
-                benchmark_suite = pyperf.BenchmarkSuite(benchmarks=benchmark_results)
-                bench_suite_for_connectable[connectable.to_terse()] = benchmark_suite
+                benchmark_suite = pyperf.BenchmarkSuite(
+                    benchmarks=benchmark_results,
+                )
+                bench_suite_for_connectable[
+                    connectable.to_terse()
+                ] = benchmark_suite
 
             print()
 
-        bench_suite_for_connectable = self._sort_benchmark_suites(bench_suite_for_connectable)
-        benchmark_suite_filenames = []
-        for connectable_name, bench_suite in bench_suite_for_connectable.items():
+        bench_suite_for_connectable = self._sort_benchmark_suites(
+            bench_suite_for_connectable,
+        )
+        benchmark_suite_filenames: list[str] = []
+        for (
+            connectable_name,
+            bench_suite,
+        )in bench_suite_for_connectable.items():
             filename = f"/tmp/{connectable_name}.json"
-            bench_suite.dump(filename)
+            bench_suite.dump(filename) # type: ignore[reportUnknownMemberType]
             benchmark_suite_filenames.append(filename)
 
         await self._pyperf_compare_command(*benchmark_suite_filenames)
         self._delete_bench_suites_if_any(benchmark_suite_filenames)
 
-    async def _run_benchmark(self, benchmark, dialect, connectable):
-        start = perf_counter_ns()
-        benchmark_name = f"{benchmark.name}  ::  {benchmark.tests[0].description}"
+    async def _run_benchmark(
+        self,
+        benchmark: Benchmark,
+        dialect: Dialect,
+        connectable: _connectables.Connectable,
+    ) -> Any:
+        benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
         tmp_file = f"/tmp/{benchmark_name}"
         benchmark_dict = benchmark.serializable()
         benchmark_dict.pop("name")
-        if 'dialect' in benchmark_dict:
+        if "dialect" in benchmark_dict:
             benchmark_dict.pop("dialect")
 
         with open(tmp_file, "w") as file:
@@ -205,27 +240,29 @@ class Benchmarker:
             )
         except:
             print('err')
-            return None, 0
+            return None
 
-        bench = pyperf.Benchmark.loads(output)
+        bench = pyperf.Benchmark.loads(output) # type: ignore[reportUnknownArgumentType])
         os.remove(tmp_file)
-        end = (perf_counter_ns() - start) / 1e9
         print(f"Running Benchmark - {benchmark_name}")
-        return bench
+        return bench # type: ignore[reportUnknownVariableType])
 
-    async def _run_subprocess(self, *cmd):
+    async def _run_subprocess(
+        self,
+        *cmd: str,
+    ):
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         stdout, stderr = await process.communicate()
         return stdout, stderr
 
     async def _pyperf_benchmark_command(
-            self,
-            *benchmark_cmd,
-            name,
+        self,
+        *benchmark_cmd: str,
+        name: str,
     ):
         stdout_fd = "1"
         output, err = await self._run_subprocess(
@@ -240,7 +277,7 @@ class Benchmarker:
         )
         if err:
             _, inner_err = await self._run_subprocess(
-                *benchmark_cmd
+                *benchmark_cmd,
             )
             if inner_err:
                 print(inner_err)
@@ -249,32 +286,34 @@ class Benchmarker:
             raise Exception
         return output
 
-    async def _pyperf_compare_command(self, *benchmark_suites):
+    async def _pyperf_compare_command(self, *benchmark_suite_filenames: str):
         output, err = await self._run_subprocess(
             "pyperf", "compare_to",
             "--table",
             "--table-format", "md",
-            *benchmark_suites,
+            *benchmark_suite_filenames,
         )
+        if err:
+            print(err)
         print(output.decode())
 
-    @staticmethod
-    def _delete_bench_suites_if_any(bench_suites):
-        for bench_suite in bench_suites:
-            if os.path.isfile(bench_suite):
-                os.remove(bench_suite)
 
     @staticmethod
-    def _sort_benchmark_suites(bench_suite_for_connectable):
+    def _delete_bench_suites_if_any(bench_suite_filenames: list[str]):
+        for bench_suite_filename in bench_suite_filenames:
+            if os.path.isfile(bench_suite_filename):
+                os.remove(bench_suite_filename)
 
-        def _geometric_mean_of_bench_suite(bench_suite):
-            means = [benchmark.mean() for benchmark in bench_suite.get_benchmarks()]
-            return geometric_mean(means)
+    @staticmethod
+    def _sort_benchmark_suites(
+        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite],
+    ) -> dict[str, pyperf.BenchmarkSuite]:
 
-        return {
-            connectable_name: bench_suite
-            for connectable_name, bench_suite in sorted(
+        def _geometric_mean_of_bench_suite(bench_suite: pyperf.BenchmarkSuite):
+            means = [benchmbark.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType])
+            return geometric_mean(means) # type: ignore[reportUnknownArguementType])
+
+        return dict(sorted(
                 bench_suite_for_connectable.items(),
-                key=lambda item: _geometric_mean_of_bench_suite(item[1])
-            )
-        }
+                key=lambda item: _geometric_mean_of_bench_suite(item[1]),
+            ))
