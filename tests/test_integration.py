@@ -1798,6 +1798,51 @@ async def test_summary_show_failures_markdown(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_summary_show_failures_markdown_different_versions(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    validate_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.version_1,
+        "-i",
+        miniatures.version_2,
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    stdout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "markdown",
+        "--show",
+        "failures",
+        stdin=validate_stdout,
+    )
+    assert stderr == ""
+    assert stdout == dedent(
+        """\
+        # Bowtie Failures Summary
+
+        | Implementation | Skips | Errors | Failures |
+        |:----------------------:|:-:|:-:|:-:|
+        |     null (python)      | 0 | 0 | 0 |
+        | versioned 2.0 (python) | 0 | 0 | 0 |
+        | versioned 1.0 (python) | 0 | 0 | 0 |
+
+        **2 tests ran**
+        """,
+    )
+
+
+@pytest.mark.asyncio
 async def test_summary_failures_valid_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
