@@ -1834,8 +1834,8 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         | Implementation | Skips | Errors | Failures |
         |:----------------------:|:-:|:-:|:-:|
         |     null (python)      | 0 | 0 | 0 |
-        | versioned 1.0 (python) | 0 | 0 | 2 |
-        | versioned 2.0 (python) | 0 | 0 | 2 |
+        | versioned 2.0 (python) | 0 | 0 | 0 |
+        | versioned 1.0 (python) | 0 | 0 | 0 |
 
         **2 tests ran**
         """,

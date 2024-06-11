@@ -104,7 +104,7 @@ def version_1(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None
 
 
 @fake(name="versioned", version="2.0")
@@ -114,4 +114,4 @@ def version_2(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: []
+    return lambda schema, registry: lambda instance: None
