@@ -72,21 +72,27 @@ class Dialect:
     )
     has_boolean_schemas: bool = field(default=True, repr=False)
 
-    _top: Schema | None = field(
+    _top_schema: Schema | None = field(
         default=Factory(
             lambda self: {"$schema": str(self.uri)},
             takes_self=True,
         ),
         hash=False,
-        alias="top",
+        repr=False,
+        alias="top_schema",
     )
-    _bottom: Schema | None = field(
+    _bottom_schema: Schema | None = field(
         default=Factory(
-            lambda self: {"$schema": str(self.uri), "not": self._top},
+            lambda self: (
+                None
+                if self._top_schema is None
+                else {"$schema": str(self.uri), "not": self.top_schema}
+            ),
             takes_self=True,
         ),
         hash=False,
-        alias="bottom",
+        repr=False,
+        alias="bottom_schema",
     )
 
     def __lt__(self, other: Any):
@@ -145,6 +151,10 @@ class Dialect:
         **kwargs: Any,
     ) -> Self:
 
+        for each in "top", "bottom":
+            if each in kwargs:
+                kwargs[f"{each}_schema"] = kwargs.pop(each)
+
         del kwargs["$schema"]
         return cls(
             uri=URL.parse(uri),
@@ -171,27 +181,57 @@ class Dialect:
     def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
         return specification_with(str(self.uri), **kwargs)
 
+    @property
+    def top_schema(self):
+        if self._top_schema is None:
+            raise ValueError(f"{self} has no top schema.")
+        return self._top_schema
+
+    @property
+    def bottom_schema(self):
+        if self._bottom_schema is None:
+            raise ValueError(f"{self} has no bottom schema.")
+        return self._bottom_schema
+
     def top(self):
         """
         Create a validator in this dialect which allows all instances.
         """
-        if self._top is None:
-            raise ValueError(f"{self} has no top schema.")
         from bowtie._direct_connectable import Direct
 
         validators = Direct.from_id("python-jsonschema").registry()
-        return validators.for_schema(self._top)
+        return validators.for_schema(self.top_schema)
 
     def bottom(self):
         """
         Create a validator in this dialect which does not allow any instances.
         """
-        if self._bottom is None:
-            raise ValueError(f"{self} has no bottom schema.")
         from bowtie._direct_connectable import Direct
 
         validators = Direct.from_id("python-jsonschema").registry()
-        return validators.for_schema(self._bottom)
+        return validators.for_schema(self.bottom_schema)
+
+    def top_test_case(
+        self,
+        examples: Iterable[Example],
+        description: str = "top allows everything",
+    ):
+        return TestCase(
+            description=description,
+            schema=self.top_schema,
+            tests=[example.expect(True) for example in examples],
+        )
+
+    def bottom_test_case(
+        self,
+        examples: Iterable[Example],
+        description: str = "bottom allows nothing",
+    ):
+        return TestCase(
+            description=description,
+            schema=self.bottom_schema,
+            tests=[example.expect(False) for example in examples],
+        )
 
 
 @frozen
@@ -611,45 +651,23 @@ class Implementation:
         """
         Smoke test this implementation.
         """
-        instances = [
+        examples = [
             # FIXME: When horejsek/python-fastjsonschema#181 is merged
             #        and/or we special-case fastjsonschema...
-            # ("nulll", None),  # noqa: ERA001
-            ("boolean", True),
-            ("integer", 37),
-            ("number", 37.37),
-            ("string", "37"),
-            ("array", [37]),
-            ("object", {"foo": 37}),
+            # Example(description="null", instance=None),  # noqa: ERA001
+            Example(description="boolean", instance=True),
+            Example(description="integer", instance=37),
+            Example(description="number", instance=37.37),
+            Example(description="string", instance="37"),
+            Example(description="array", instance=[37]),
+            Example(description="object", instance={"foo": 37}),
         ]
 
         # FIXME: All dialects
         for dialect in [max(self.info.dialects)]:
             cases = [
-                TestCase(
-                    description="allow-everything",
-                    schema={},
-                    tests=[
-                        Test(
-                            description=json_type,
-                            instance=instance,
-                            valid=True,
-                        )
-                        for json_type, instance in instances
-                    ],
-                ).with_explicit_dialect(dialect),
-                TestCase(
-                    description="allow-nothing",
-                    schema={"not": {}},
-                    tests=[
-                        Test(
-                            description=json_type,
-                            instance=instance,
-                            valid=False,
-                        )
-                        for json_type, instance in instances
-                    ],
-                ).with_explicit_dialect(dialect),
+                dialect.top_test_case(examples),
+                dialect.bottom_test_case(examples),
             ]
 
             yield dialect, self.validate(dialect=dialect, cases=cases)

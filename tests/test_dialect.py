@@ -39,7 +39,7 @@ def test_no_top():
         short_name="NoTop",
         uri="urn:example:no-top",
         first_publication_date=date.today(),
-        top=None,
+        top_schema=None,
     )
     with pytest.raises(ValueError, match="has no top"):
         no_top.top()
@@ -51,7 +51,7 @@ def test_no_bottom():
         short_name="NoBottom",
         uri="urn:example:no-bottom",
         first_publication_date=date.today(),
-        bottom=None,
+        bottom_schema=None,
     )
     with pytest.raises(ValueError, match="has no bottom"):
         no_bottom.bottom()
