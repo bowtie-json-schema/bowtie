@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 import asyncio
 import importlib
 import json
-import os
 import subprocess
 import tempfile
 
@@ -218,14 +217,17 @@ class Benchmarker:
         with tempfile.TemporaryDirectory(
             delete=True,
         ) as tmp_dir_path:
+            suite_dir = Path(tmp_dir_path)
             benchmark_suite_filenames: list[str] = []
             for (
                     connectable_name,
                     bench_suite,
             ) in bench_suite_for_connectable.items():
-                bench_suite_tmp_filename = os.path.join(tmp_dir_path, f"{connectable_name}.json")
-                bench_suite.dump(bench_suite_tmp_filename)  # type: ignore[reportUnknownMemberType]
-                benchmark_suite_filenames.append(bench_suite_tmp_filename)
+                bench_suite_tmp_filename = suite_dir.joinpath(
+                    f"{connectable_name}.json",
+                )
+                bench_suite.dump(str(bench_suite_tmp_filename))  # type: ignore[reportUnknownMemberType]
+                benchmark_suite_filenames.append(str(bench_suite_tmp_filename))
 
             await self._pyperf_compare_command(*benchmark_suite_filenames)
 
@@ -246,8 +248,8 @@ class Benchmarker:
         with tempfile.NamedTemporaryFile(
             delete=True,
         ) as fp:
-            with open(fp.name, "w") as file:
-                json.dump(benchmark_dict, file)
+            path = Path(fp.name)
+            path.write_text(json.dumps(benchmark_dict))
             try:
                 output = await self._pyperf_benchmark_command(
                     "bowtie", "run", "-i", connectable.to_terse(),
@@ -256,7 +258,7 @@ class Benchmarker:
                     name=benchmark_name,
                 )
             except:
-                print('err')
+                print("err")
                 return None
 
         bench = pyperf.Benchmark.loads(output)  # type: ignore[reportUnknownArgumentType]
