@@ -158,7 +158,7 @@ class Benchmarker:
         for connectable in connectables:
 
             silent_reporter = _report.Reporter(
-                write=lambda **_: None, # type: ignore[reportUnknownArgumentType])
+                write=lambda **_: None, # type: ignore[reportUnknownArgumentType]
             )
             async with connectable.connect(
                 reporter=silent_reporter,
@@ -242,10 +242,10 @@ class Benchmarker:
             print('err')
             return None
 
-        bench = pyperf.Benchmark.loads(output) # type: ignore[reportUnknownArgumentType])
+        bench = pyperf.Benchmark.loads(output) # type: ignore[reportUnknownArgumentType]
         os.remove(tmp_file)
         print(f"Running Benchmark - {benchmark_name}")
-        return bench # type: ignore[reportUnknownVariableType])
+        return bench # type: ignore[reportUnknownVariableType]
 
     async def _run_subprocess(
         self,
@@ -310,8 +310,8 @@ class Benchmarker:
     ) -> dict[str, pyperf.BenchmarkSuite]:
 
         def _geometric_mean_of_bench_suite(bench_suite: pyperf.BenchmarkSuite):
-            means = [b.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType])
-            return geometric_mean(means) # type: ignore[reportUnknownArguementType])
+            means = [b.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType]
+            return geometric_mean(means) # type: ignore[reportUnknownArgumentType]
 
         return dict(sorted(
                 bench_suite_for_connectable.items(),
