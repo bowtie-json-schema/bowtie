@@ -1310,7 +1310,7 @@ def validate(
     default=False,
     show_default=True,
     help=(
-        "Enable quiet mode (Only output the final result).",
+        "Enable quiet mode (Only output the final result)."
     ),
 )
 @click.option(
