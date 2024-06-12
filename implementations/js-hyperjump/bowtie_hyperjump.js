@@ -1,7 +1,10 @@
 import readline from "readline/promises";
 import os from "os";
 import process from "process";
-import packageJson from "./node_modules/@hyperjump/json-schema/package.json" with { type: "json" };
+import { createRequire } from "node:module";
+const packageJson = createRequire(import.meta.url)(
+  "./node_modules/@hyperjump/json-schema/package.json"
+);
 
 const hyperjump_version = packageJson.version;
 
@@ -214,7 +217,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI,
+          retrievalURI
         );
 
         results = testCase.tests.map((test) => {
