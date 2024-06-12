@@ -1303,6 +1303,17 @@ def validate(
     ),
 )
 @click.option(
+    "--quiet",
+    "-q",
+    "quiet",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help=(
+        "Enable quiet mode (Only output the final result).",
+    ),
+)
+@click.option(
     "-d",
     "--description",
     default="bowtie perf",

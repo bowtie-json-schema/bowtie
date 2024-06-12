@@ -112,6 +112,9 @@ class Benchmarker:
     _num_values: int = field(
         alias="values",
     )
+    _quiet: bool = field(
+        alias="quiet",
+    )
     _report: BenchmarkReport = field(
         alias="report",
         default=BenchmarkReport(),
@@ -171,8 +174,9 @@ class Benchmarker:
                 print(f"{connectable.to_terse()} does not supports dialect {dialect.serializable()}")
                 continue
 
-            print(connectable.to_terse())
-            print()
+            if not self._quiet:
+                print(connectable.to_terse())
+                print()
 
             benchmark_results: list[pyperf.Benchmark] = []
             for benchmark in self._benchmarks:
@@ -199,7 +203,8 @@ class Benchmarker:
                     connectable.to_terse()
                 ] = benchmark_suite
 
-            print()
+            if not self._quiet:
+                print()
 
         bench_suite_for_connectable = self._sort_benchmark_suites(
             bench_suite_for_connectable,
@@ -255,7 +260,8 @@ class Benchmarker:
                 return None
 
         bench = pyperf.Benchmark.loads(output)  # type: ignore[reportUnknownArgumentType]
-        print(f"Running Benchmark - {benchmark_name}")
+        if not self._quiet:
+            print(f"Running Benchmark - {benchmark_name}")
         return bench  # type: ignore[reportUnknownVariableType]
 
     async def _run_subprocess(
