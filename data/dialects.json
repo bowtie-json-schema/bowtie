@@ -47,6 +47,10 @@
     "prettyName": "Draft 3",
     "firstPublicationDate": "2010-11-22",
     "hasBooleanSchemas": false,
-    "aliases": ["3"]
+    "aliases": ["3"],
+    "bottom": {
+      "$schema": "http://json-schema.org/draft-03/schema#",
+      "disallow": [{}]
+    }
   }
 ]

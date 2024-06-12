@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
 
-from attrs import asdict, evolve, field, frozen, mutable
+from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
-from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
+from referencing.jsonschema import EMPTY_REGISTRY, specification_with
 from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from referencing import Specification
-    from referencing.jsonschema import SchemaRegistry, SchemaResource
+    from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
     from rich.console import Console, ConsoleOptions, RenderResult
 
     from bowtie._commands import (
@@ -71,6 +71,23 @@ class Dialect:
         repr=False,
     )
     has_boolean_schemas: bool = field(default=True, repr=False)
+
+    _top: Schema | None = field(
+        default=Factory(
+            lambda self: {"$schema": str(self.uri)},
+            takes_self=True,
+        ),
+        hash=False,
+        alias="top",
+    )
+    _bottom: Schema | None = field(
+        default=Factory(
+            lambda self: {"$schema": str(self.uri), "not": self._top},
+            takes_self=True,
+        ),
+        hash=False,
+        alias="bottom",
+    )
 
     def __lt__(self, other: Any):
         if other.__class__ is not Dialect:
@@ -125,9 +142,10 @@ class Dialect:
         uri: str,
         aliases: Iterable[str] = (),
         hasBooleanSchemas: bool = True,
-        **_: Any,
+        **kwargs: Any,
     ) -> Self:
 
+        del kwargs["$schema"]
         return cls(
             uri=URL.parse(uri),
             pretty_name=prettyName,
@@ -135,6 +153,7 @@ class Dialect:
             first_publication_date=date.fromisoformat(firstPublicationDate),
             aliases=frozenset(aliases),
             has_boolean_schemas=hasBooleanSchemas,
+            **kwargs,
         )
 
     @classmethod
@@ -151,6 +170,28 @@ class Dialect:
 
     def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
         return specification_with(str(self.uri), **kwargs)
+
+    def top(self):
+        """
+        A validator in this dialect. which allows all instances.
+        """
+        if self._top is None:
+            raise ValueError(f"{self} has no top schema.")
+        from bowtie._direct_connectable import Direct
+
+        validators = Direct.from_id("python-jsonschema").registry()
+        return validators.for_schema(self._top)
+
+    def bottom(self):
+        """
+        A validator in this dialect. which does not allow any instances.
+        """
+        if self._bottom is None:
+            raise ValueError(f"{self} has no bottom schema.")
+        from bowtie._direct_connectable import Direct
+
+        validators = Direct.from_id("python-jsonschema").registry()
+        return validators.for_schema(self._bottom)
 
 
 @frozen
