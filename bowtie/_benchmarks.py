@@ -8,6 +8,7 @@ import importlib
 import json
 import os
 import subprocess
+import tempfile
 
 from attrs import asdict, field, frozen
 import pyperf  # type: ignore[reportMissingTypeStubs]
@@ -86,7 +87,7 @@ class Benchmark:
             return self
 
         benchmark = self.serializable()
-        benchmark["dialect"] = Dialect.from_str(dialect_from_schema) # type: ignore[reportUnknownArgumentType]
+        benchmark["dialect"] = Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
         return Benchmark.from_dict(**benchmark)
 
 
@@ -158,7 +159,7 @@ class Benchmarker:
         for connectable in connectables:
 
             silent_reporter = _report.Reporter(
-                write=lambda **_: None, # type: ignore[reportUnknownArgumentType]
+                write=lambda **_: None,  # type: ignore[reportUnknownArgumentType]
             )
             async with connectable.connect(
                 reporter=silent_reporter,
@@ -203,17 +204,25 @@ class Benchmarker:
         bench_suite_for_connectable = self._sort_benchmark_suites(
             bench_suite_for_connectable,
         )
-        benchmark_suite_filenames: list[str] = []
-        for (
-            connectable_name,
-            bench_suite,
-        )in bench_suite_for_connectable.items():
-            filename = f"/tmp/{connectable_name}.json"
-            bench_suite.dump(filename) # type: ignore[reportUnknownMemberType]
-            benchmark_suite_filenames.append(filename)
+        await self._compare_benchmark_suites(bench_suite_for_connectable)
 
-        await self._pyperf_compare_command(*benchmark_suite_filenames)
-        self._delete_bench_suites_if_any(benchmark_suite_filenames)
+    async def _compare_benchmark_suites(
+        self,
+        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite],
+    ):
+        with tempfile.TemporaryDirectory(
+            delete=True,
+        ) as tmp_dir_path:
+            benchmark_suite_filenames: list[str] = []
+            for (
+                    connectable_name,
+                    bench_suite,
+            ) in bench_suite_for_connectable.items():
+                bench_suite_tmp_filename = os.path.join(tmp_dir_path, f"{connectable_name}.json")
+                bench_suite.dump(bench_suite_tmp_filename)  # type: ignore[reportUnknownMemberType]
+                benchmark_suite_filenames.append(bench_suite_tmp_filename)
+
+            await self._pyperf_compare_command(*benchmark_suite_filenames)
 
     async def _run_benchmark(
         self,
@@ -223,29 +232,31 @@ class Benchmarker:
     ) -> Any:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
-        tmp_file = f"/tmp/{benchmark_name}"
         benchmark_dict = benchmark.serializable()
         benchmark_dict.pop("name")
+
         if "dialect" in benchmark_dict:
             benchmark_dict.pop("dialect")
 
-        with open(tmp_file, "w") as file:
-            json.dump(benchmark_dict, file)
-        try:
-            output = await self._pyperf_benchmark_command(
-                "bowtie", "run", "-i", connectable.to_terse(),
-                "-D", dialect.serializable(),
-                tmp_file,
-                name=benchmark_name,
-            )
-        except:
-            print('err')
-            return None
+        with tempfile.NamedTemporaryFile(
+            delete=True,
+        ) as fp:
+            with open(fp.name, "w") as file:
+                json.dump(benchmark_dict, file)
+            try:
+                output = await self._pyperf_benchmark_command(
+                    "bowtie", "run", "-i", connectable.to_terse(),
+                    "-D", dialect.serializable(),
+                    fp.name,
+                    name=benchmark_name,
+                )
+            except:
+                print('err')
+                return None
 
-        bench = pyperf.Benchmark.loads(output) # type: ignore[reportUnknownArgumentType]
-        os.remove(tmp_file)
+        bench = pyperf.Benchmark.loads(output)  # type: ignore[reportUnknownArgumentType]
         print(f"Running Benchmark - {benchmark_name}")
-        return bench # type: ignore[reportUnknownVariableType]
+        return bench  # type: ignore[reportUnknownVariableType]
 
     async def _run_subprocess(
         self,
@@ -297,23 +308,16 @@ class Benchmarker:
             print(err)
         print(output.decode())
 
-
-    @staticmethod
-    def _delete_bench_suites_if_any(bench_suite_filenames: list[str]):
-        for bench_suite_filename in bench_suite_filenames:
-            if os.path.isfile(bench_suite_filename):
-                os.remove(bench_suite_filename)
-
     @staticmethod
     def _sort_benchmark_suites(
         bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite],
     ) -> dict[str, pyperf.BenchmarkSuite]:
 
         def _geometric_mean_of_bench_suite(bench_suite: pyperf.BenchmarkSuite):
-            means = [b.mean() for b in bench_suite.get_benchmarks()] # type: ignore[reportUnknownVariableType]
-            return geometric_mean(means) # type: ignore[reportUnknownArgumentType]
+            means = [b.mean() for b in bench_suite.get_benchmarks()]  # type: ignore[reportUnknownVariableType]
+            return geometric_mean(means)  # type: ignore[reportUnknownArgumentType]
 
         return dict(sorted(
-                bench_suite_for_connectable.items(),
-                key=lambda item: _geometric_mean_of_bench_suite(item[1]),
-            ))
+            bench_suite_for_connectable.items(),
+            key=lambda item: _geometric_mean_of_bench_suite(item[1]),
+        ))
