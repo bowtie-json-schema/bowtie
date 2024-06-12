@@ -68,25 +68,34 @@ int main() {
         }
       }
 
-      const auto schema_template{compile( 
-          message.at("case").at("schema"),
-          default_schema_walker, resolver,
-          default_schema_compiler, default_dialect)};
+      try {
+        const auto schema_template{compile( 
+            message.at("case").at("schema"),
+            default_schema_walker, resolver,
+            default_schema_compiler, default_dialect)};
 
-      auto response{JSON::make_object()};
-      response.assign("seq", message.at("seq"));
-      response.assign("results", JSON::make_array());
+        auto response{JSON::make_object()};
+        response.assign("seq", message.at("seq"));
+        response.assign("results", JSON::make_array());
 
-      for (const auto &test : message.at("case").at("tests").as_array()) {
-        assert(test.defines("instance"));
-        const bool valid{evaluate(schema_template, test.at("instance"))};
-        auto test_result{JSON::make_object()};
-        test_result.assign("valid", JSON{valid});
-        response.at("results").push_back(std::move(test_result));
+        for (const auto &test : message.at("case").at("tests").as_array()) {
+          assert(test.defines("instance"));
+          const bool valid{evaluate(schema_template, test.at("instance"))};
+          auto test_result{JSON::make_object()};
+          test_result.assign("valid", JSON{valid});
+          response.at("results").push_back(std::move(test_result));
+        }
+
+        stringify(response, std::cout);
+        std::cout << std::endl;
+      } catch (const std::exception &error) {
+        auto response{JSON::make_object()};
+        response.assign("errored", JSON{true});
+        response.assign("context", JSON::make_object());
+        response.at("context").assign("message", JSON{error.what()});
+        stringify(response, std::cout);
+        std::cout << std::endl;
       }
-
-      stringify(response, std::cout);
-      std::cout << std::endl;
     } else if (command == "stop") {
       assert(started);
       return EXIT_SUCCESS;
