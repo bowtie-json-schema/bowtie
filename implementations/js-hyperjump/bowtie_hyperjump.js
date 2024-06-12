@@ -33,14 +33,14 @@ async function setup() {
     "base URI change - change folder in subschema": boundaryCrossingMessage,
   };
 
-  if(hyperjump_version >= "1.7.0") {
+  if (hyperjump_version >= "1.7.0") {
     await Promise.all([
       import("@hyperjump/json-schema/draft-04"),
       import("@hyperjump/json-schema/draft-06"),
       import("@hyperjump/json-schema/draft-07"),
-      import("@hyperjump/json-schema/draft-2019-09")
-    ])
-    const module = await import("@hyperjump/json-schema/draft-2020-12")
+      import("@hyperjump/json-schema/draft-2019-09"),
+    ]);
+    const module = await import("@hyperjump/json-schema/draft-2020-12");
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
@@ -49,13 +49,14 @@ async function setup() {
           module.registerSchema(schema, id, dialect);
         }
       }
-    
+
       module.registerSchema(testCase.schema, retrievalURI, dialect);
-    
-      return await module.validate(retrievalURI)
-    }
+
+      return await module.validate(retrievalURI);
+    };
     unregisterSchema = module.unregisterSchema;
-    getRetrievalURI = (_, __, args) => `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+    getRetrievalURI = (_, __, args) =>
+      `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
 
     const keywordsNotInSchemaSkippedTests = [
       "naive replacement of $ref with its destination is not correct",
@@ -67,7 +68,7 @@ async function setup() {
     }, {});
 
     const fileSchemeMessage =
-    "Self-identifying with a `file:` URI is not allowed for security reasons.";
+      "Self-identifying with a `file:` URI is not allowed for security reasons.";
     const fileSchemeSkippedTests = {
       "id with file URI still resolves pointers - *nix": fileSchemeMessage,
       "id with file URI still resolves pointers - windows": fileSchemeMessage,
@@ -80,49 +81,49 @@ async function setup() {
       ...boundaryCrossingSkippedTests,
       ...keywordsNotInSchemaSkippedTests,
       ...fileSchemeSkippedTests,
-    };    
+    };
   } else {
-    if(hyperjump_version >= "1.0.0") {
-      const module = await import("@hyperjump/json-schema")
+    if (hyperjump_version >= "1.0.0") {
+      const module = await import("@hyperjump/json-schema");
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
           try {
             module.addSchema(testCase.registry[id], id, dialect);
-            } catch {}
+          } catch {}
         }
-    
+
         module.addSchema(testCase.schema, retrievalURI, dialect);
-      
-        return await module.validate(retrievalURI)
-      }
+
+        return await module.validate(retrievalURI);
+      };
     } else {
-      const JsonSchema = await import("@hyperjump/json-schema")
+      const JsonSchema = await import("@hyperjump/json-schema");
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
           try {
             JsonSchema.add(testCase.registry[id], id, dialect);
-            } catch {}
+          } catch {}
         }
-    
+
         JsonSchema.add(testCase.schema, retrievalURI, dialect);
-        const schema = JsonSchema.get(retrievalURI)
-      
-        return await JsonSchema.validate(schema)
-      }
+        const schema = JsonSchema.get(retrievalURI);
+
+        return await JsonSchema.validate(schema);
+      };
     }
 
-    unregisterSchema = (...args) => {}
+    unregisterSchema = (...args) => {};
     getRetrievalURI = (testCase, dialect, args) => {
       const idToken =
-      dialect === "http://json-schema.org/draft-04/schema#" ? "id" : "$id";
+        dialect === "http://json-schema.org/draft-04/schema#" ? "id" : "$id";
       const host = testCase.schema?.[idToken]?.startsWith("file:")
         ? "file://"
         : "https://example.com";
 
       return `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
-    }
+    };
 
     const keywordsNotInSchemaSkippedTests = [
       "id inside an enum is not a real identifier",
@@ -135,8 +136,8 @@ async function setup() {
       "$anchor inside an enum is not a real identifier",
       "$id inside an unknown keyword is not a real identifier",
     ].reduce((acc, description) => {
-    acc[description] = keywordsNotInSchemaMessage;
-    return acc;
+      acc[description] = keywordsNotInSchemaMessage;
+      return acc;
     }, {});
 
     modernSkippedTests = { ...keywordsNotInSchemaSkippedTests };
@@ -207,11 +208,15 @@ const cmds = {
         };
       });
     } else {
-      const retrievalURI = getRetrievalURI(testCase, dialect, args)
+      const retrievalURI = getRetrievalURI(testCase, dialect, args);
 
       try {
-        const _validate = await registerSchemaAndValidate(testCase, dialect, retrievalURI)
-        
+        const _validate = await registerSchemaAndValidate(
+          testCase,
+          dialect,
+          retrievalURI,
+        );
+
         results = testCase.tests.map((test) => {
           try {
             const result = _validate(test.instance);
