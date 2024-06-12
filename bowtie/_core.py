@@ -173,7 +173,7 @@ class Dialect:
 
     def top(self):
         """
-        A validator in this dialect. which allows all instances.
+        Create a validator in this dialect which allows all instances.
         """
         if self._top is None:
             raise ValueError(f"{self} has no top schema.")
@@ -184,7 +184,7 @@ class Dialect:
 
     def bottom(self):
         """
-        A validator in this dialect. which does not allow any instances.
+        Create a validator in this dialect which does not allow any instances.
         """
         if self._bottom is None:
             raise ValueError(f"{self} has no bottom schema.")
