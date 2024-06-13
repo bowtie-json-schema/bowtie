@@ -3,7 +3,7 @@ import os from "os";
 import process from "process";
 import { createRequire } from "node:module";
 const packageJson = createRequire(import.meta.url)(
-  "./node_modules/@hyperjump/json-schema/package.json",
+  "./node_modules/@hyperjump/json-schema/package.json"
 );
 
 const hyperjump_version = packageJson.version;
@@ -18,32 +18,70 @@ function send(data) {
   console.log(JSON.stringify(data));
 }
 
+var started = false;
+var dialect = null;
+
+// skip
+const keywordsNotInSchemaMessage =
+  "Ignoring schema meta-data keywords in places that are not schemas (such as a $id in a const) is not supported. Because this implementation is dialect agnostic, there's no way to know whether a location is a schema or not. Especially because there's no reason for a schema to use keywords in places that aren't schemas, I'm not concerned about making it work.";
+const keywordsNotInSchemaSkippedTests = [
+  "naive replacement of $ref with its destination is not correct",
+  "$ref prevents a sibling id from changing the base uri",
+  "$ref prevents a sibling $id from changing the base uri",
+].reduce((acc, description) => {
+  acc[description] = keywordsNotInSchemaMessage;
+  return acc;
+}, {});
+
+const boundaryCrossingMessage =
+  "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
+const boundaryCrossingSkippedTests = {
+  "base URI change - change folder in subschema": boundaryCrossingMessage,
+};
+
+const fileSchemeMessage =
+  "Self-identifying with a `file:` URI is not allowed for security reasons.";
+const fileSchemeSkippedTests = {
+  "id with file URI still resolves pointers - *nix": fileSchemeMessage,
+  "id with file URI still resolves pointers - windows": fileSchemeMessage,
+  "$id with file URI still resolves pointers - *nix": fileSchemeMessage,
+  "$id with file URI still resolves pointers - windows": fileSchemeMessage,
+};
+
+const modernSkippedTests = { ...fileSchemeSkippedTests };
+const legacySkippedTests = {
+  ...boundaryCrossingSkippedTests,
+  ...keywordsNotInSchemaSkippedTests,
+  ...fileSchemeSkippedTests,
+};
+
+const dialectSkippedTests = {
+  "https://json-schema.org/draft/2020-12/schema": modernSkippedTests,
+  "https://json-schema.org/draft/2019-09/schema": modernSkippedTests,
+  "http://json-schema.org/draft-07/schema#": legacySkippedTests,
+  "http://json-schema.org/draft-06/schema#": legacySkippedTests,
+  "http://json-schema.org/draft-04/schema#": legacySkippedTests,
+};
+
 // versioning setup
 var unregisterSchema;
 var registerSchemaAndValidate;
-var modernSkippedTests;
-var legacySkippedTests;
 var getRetrievalURI;
 
-async function setup() {
-  // skip
-  const keywordsNotInSchemaMessage =
-    "Ignoring schema meta-data keywords in places that are not schemas (such as a $id in a const) is not supported. Because this implementation is dialect agnostic, there's no way to know whether a location is a schema or not. Especially because there's no reason for a schema to use keywords in places that aren't schemas, I'm not concerned about making it work.";
+async function importAllDrafts() {
+  const module = await import("@hyperjump/json-schema/draft-2020-12");
+  await Promise.all([
+    import("@hyperjump/json-schema/draft-2019-09"),
+    import("@hyperjump/json-schema/draft-07"),
+    import("@hyperjump/json-schema/draft-06"),
+    import("@hyperjump/json-schema/draft-04"),
+  ]);
+  return module;
+}
 
-  const boundaryCrossingMessage =
-    "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
-  const boundaryCrossingSkippedTests = {
-    "base URI change - change folder in subschema": boundaryCrossingMessage,
-  };
-
+async function versioningSetup() {
   if (hyperjump_version >= "1.7.0") {
-    await Promise.all([
-      import("@hyperjump/json-schema/draft-04"),
-      import("@hyperjump/json-schema/draft-06"),
-      import("@hyperjump/json-schema/draft-07"),
-      import("@hyperjump/json-schema/draft-2019-09"),
-    ]);
-    const module = await import("@hyperjump/json-schema/draft-2020-12");
+    const module = await importAllDrafts();
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
@@ -60,34 +98,9 @@ async function setup() {
     unregisterSchema = module.unregisterSchema;
     getRetrievalURI = (_, __, args) =>
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
-
-    const keywordsNotInSchemaSkippedTests = [
-      "naive replacement of $ref with its destination is not correct",
-      "$ref prevents a sibling id from changing the base uri",
-      "$ref prevents a sibling $id from changing the base uri",
-    ].reduce((acc, description) => {
-      acc[description] = keywordsNotInSchemaMessage;
-      return acc;
-    }, {});
-
-    const fileSchemeMessage =
-      "Self-identifying with a `file:` URI is not allowed for security reasons.";
-    const fileSchemeSkippedTests = {
-      "id with file URI still resolves pointers - *nix": fileSchemeMessage,
-      "id with file URI still resolves pointers - windows": fileSchemeMessage,
-      "$id with file URI still resolves pointers - *nix": fileSchemeMessage,
-      "$id with file URI still resolves pointers - windows": fileSchemeMessage,
-    };
-
-    modernSkippedTests = { ...fileSchemeSkippedTests };
-    legacySkippedTests = {
-      ...boundaryCrossingSkippedTests,
-      ...keywordsNotInSchemaSkippedTests,
-      ...fileSchemeSkippedTests,
-    };
   } else {
     if (hyperjump_version >= "1.0.0") {
-      const module = await import("@hyperjump/json-schema");
+      const module = await importAllDrafts();
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
@@ -127,40 +140,8 @@ async function setup() {
 
       return `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
     };
-
-    const keywordsNotInSchemaSkippedTests = [
-      "id inside an enum is not a real identifier",
-      "$id inside an enum is not a real identifier",
-      "$id inside an unknown keyword is not a real identifier",
-      "naive replacement of $ref with its destination is not correct",
-      "$ref prevents a sibling id from changing the base uri",
-      "$ref prevents a sibling $id from changing the base uri",
-      "$anchor inside an enum is not a real identifier",
-      "$anchor inside an enum is not a real identifier",
-      "$id inside an unknown keyword is not a real identifier",
-    ].reduce((acc, description) => {
-      acc[description] = keywordsNotInSchemaMessage;
-      return acc;
-    }, {});
-
-    modernSkippedTests = { ...keywordsNotInSchemaSkippedTests };
-    legacySkippedTests = {
-      ...boundaryCrossingSkippedTests,
-      ...keywordsNotInSchemaSkippedTests,
-    };
   }
 }
-
-const dialectSkippedTests = {
-  "https://json-schema.org/draft/2020-12/schema": modernSkippedTests,
-  "https://json-schema.org/draft/2019-09/schema": modernSkippedTests,
-  "http://json-schema.org/draft-07/schema#": legacySkippedTests,
-  "http://json-schema.org/draft-06/schema#": legacySkippedTests,
-  "http://json-schema.org/draft-04/schema#": legacySkippedTests,
-};
-
-var started = false;
-var dialect = null;
 
 const cmds = {
   start: async (args) => {
@@ -217,7 +198,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI,
+          retrievalURI
         );
 
         results = testCase.tests.map((test) => {
@@ -252,7 +233,7 @@ const cmds = {
 };
 
 async function main() {
-  await setup();
+  await versioningSetup();
   for await (const line of stdio) {
     const request = JSON.parse(line);
     const response = await cmds[request.cmd](request);
