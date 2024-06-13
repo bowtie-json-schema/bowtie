@@ -183,8 +183,7 @@ const cmds = {
     const testCase = args.case;
 
     let results;
-    const dialectSkipped = dialectSkippedTests[dialect];
-    if (dialectSkipped && testCase.description in dialectSkipped) {
+    if (testCase.description in dialectSkippedTests[dialect]) {
       results = testCase.tests.map((_) => {
         return {
           skipped: true,
