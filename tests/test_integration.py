@@ -997,8 +997,8 @@ class TestSmoke:
         )
         assert dedent(stdout) == dedent(
             """\
-            · allow-everything: ✗✗✗✗✗✗
-            · allow-nothing: ✓✓✓✓✓✓
+            · top allows everything: ✗✗✗✗✗✗
+            · bottom allows nothing: ✓✓✓✓✓✓
             """,
         ), stderr
 
@@ -1014,8 +1014,8 @@ class TestSmoke:
         )
         assert dedent(stdout) == dedent(
             """\
-            * allow-everything: ✗✗✗✗✗✗
-            * allow-nothing: ✓✓✓✓✓✓
+            * top allows everything: ✗✗✗✗✗✗
+            * bottom allows nothing: ✓✓✓✓✓✓
             """,
         ), stderr
 
@@ -1065,7 +1065,7 @@ class TestSmoke:
         assert (await command_validator("smoke")).validated(jsonout) == [
             {
                 "case": {
-                    "description": "allow-everything",
+                    "description": "top allows everything",
                     "schema": {
                         "$schema": "https://json-schema.org/draft/2020-12/schema",
                     },
@@ -1091,10 +1091,12 @@ class TestSmoke:
             },
             {
                 "case": {
-                    "description": "allow-nothing",
+                    "description": "bottom allows nothing",
                     "schema": {
                         "$schema": "https://json-schema.org/draft/2020-12/schema",
-                        "not": {},
+                        "not": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        },
                     },
                     "tests": [
                         {"description": "boolean", "instance": True},
