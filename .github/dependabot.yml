@@ -30,6 +30,7 @@ updates:
   #     interval: "daily"
 
   # ignore: cpp-valijson - builds its repository's HEAD
+  # ignore: cpp-jsontoolkit - builds its repository's HEAD
 
   - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-jsonschema-net"
@@ -152,6 +153,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-valijson"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/cpp-jsontoolkit"
     schedule:
       interval: "daily"
 
