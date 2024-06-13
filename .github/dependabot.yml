@@ -157,6 +157,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
+    directory: "/implementations/cpp-jsontoolkit"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/implementations/dotnet-jsonschema-net"
     schedule:
       interval: "daily"
