@@ -30,7 +30,7 @@ int main() {
       auto response{JSON::make_object()};
       response.assign("version", JSON{1});
       auto implementation{JSON::make_object()};
-      implementation.assign("language", JSON{"cpp"});
+      implementation.assign("language", JSON{"c++"});
       implementation.assign("name", JSON{"jsontoolkit"});
       implementation.assign("homepage",
                             JSON{"https://github.com/sourcemeta/jsontoolkit"});
