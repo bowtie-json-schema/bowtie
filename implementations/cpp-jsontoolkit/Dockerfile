@@ -1,6 +1,6 @@
 FROM alpine:3.20 AS builder
 
-RUN apk add --no-cache cmake g++ git make 
+RUN apk add --no-cache cmake g++ git make
 
 RUN git clone --depth=1 https://github.com/sourcemeta/jsontoolkit.git /tmp/jsontoolkit
 RUN cmake -S /tmp/jsontoolkit -B /tmp/build -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_SHARED_LIBS:BOOL=OFF

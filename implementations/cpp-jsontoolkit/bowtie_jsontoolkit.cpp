@@ -1,12 +1,12 @@
 #include <sourcemeta/jsontoolkit/json.h>
 #include <sourcemeta/jsontoolkit/jsonschema.h>
 
-#include <iostream>
-#include <string>
-#include <cstdlib>
 #include <cassert>
-#include <utility>
+#include <cstdlib>
+#include <iostream>
 #include <optional>
+#include <string>
+#include <utility>
 
 int main() {
   using namespace sourcemeta::jsontoolkit;
@@ -32,14 +32,16 @@ int main() {
       auto implementation{JSON::make_object()};
       implementation.assign("language", JSON{"cpp"});
       implementation.assign("name", JSON{"jsontoolkit"});
-      implementation.assign("homepage", JSON{"https://github.com/sourcemeta/jsontoolkit"});
-      implementation.assign("issues", JSON{"https://github.com/sourcemeta/jsontoolkit/issues"});
-      implementation.assign("source", JSON{"https://github.com/sourcemeta/jsontoolkit"});
-      implementation.assign("dialects", JSON{
-        JSON{"http://json-schema.org/draft-07/schema#"},
-        JSON{"http://json-schema.org/draft-06/schema#"},
-        JSON{"http://json-schema.org/draft-04/schema#"}
-      });
+      implementation.assign("homepage",
+                            JSON{"https://github.com/sourcemeta/jsontoolkit"});
+      implementation.assign(
+          "issues", JSON{"https://github.com/sourcemeta/jsontoolkit/issues"});
+      implementation.assign("source",
+                            JSON{"https://github.com/sourcemeta/jsontoolkit"});
+      implementation.assign(
+          "dialects", JSON{JSON{"http://json-schema.org/draft-07/schema#"},
+                           JSON{"http://json-schema.org/draft-06/schema#"},
+                           JSON{"http://json-schema.org/draft-04/schema#"}});
 
       response.assign("implementation", std::move(implementation));
       stringify(response, std::cout);
@@ -56,23 +58,25 @@ int main() {
       assert(started);
       assert(message.defines("seq"));
       assert(message.defines("case") && message.at("case").is_object());
-      assert(message.at("case").defines("schema") && is_schema(message.at("case").at("schema")));
-      assert(message.at("case").defines("tests") && message.at("case").at("tests").is_array());
+      assert(message.at("case").defines("schema") &&
+             is_schema(message.at("case").at("schema")));
+      assert(message.at("case").defines("tests") &&
+             message.at("case").at("tests").is_array());
 
-      sourcemeta::jsontoolkit::MapSchemaResolver
-        resolver{sourcemeta::jsontoolkit::official_resolver};
-      if (message.at("case").defines("registry") ) {
+      sourcemeta::jsontoolkit::MapSchemaResolver resolver{
+          sourcemeta::jsontoolkit::official_resolver};
+      if (message.at("case").defines("registry")) {
         assert(message.at("case").at("registry").is_object());
-        for (const auto &[ key, value ] : message.at("case").at("registry").as_object()) {
+        for (const auto &[key, value] :
+             message.at("case").at("registry").as_object()) {
           resolver.add(value, default_dialect, key);
         }
       }
 
       try {
-        const auto schema_template{compile( 
-            message.at("case").at("schema"),
-            default_schema_walker, resolver,
-            default_schema_compiler, default_dialect)};
+        const auto schema_template{
+            compile(message.at("case").at("schema"), default_schema_walker,
+                    resolver, default_schema_compiler, default_dialect)};
 
         auto response{JSON::make_object()};
         response.assign("seq", message.at("seq"));
