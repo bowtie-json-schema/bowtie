@@ -3,7 +3,7 @@ import os from "os";
 import process from "process";
 import { createRequire } from "node:module";
 const packageJson = createRequire(import.meta.url)(
-  "./node_modules/@hyperjump/json-schema/package.json"
+  "./node_modules/@hyperjump/json-schema/package.json",
 );
 
 const hyperjump_version = packageJson.version;
@@ -197,7 +197,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI
+          retrievalURI,
         );
 
         results = testCase.tests.map((test) => {
