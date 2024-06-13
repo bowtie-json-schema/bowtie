@@ -95,7 +95,7 @@ async function versioningSetup() {
 
       return await JsonSchema.validate(retrievalURI);
     };
-    unregisterSchema = module.unregisterSchema;
+    unregisterSchema = JsonSchema.unregisterSchema;
     getRetrievalURI = (_, __, args) =>
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
   } else {
