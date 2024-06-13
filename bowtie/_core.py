@@ -10,10 +10,10 @@ from uuid import uuid4
 import json
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
-from diagnostic import DiagnosticError
+from diagnostic import DiagnosticError, DiagnosticWarning
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
 from rich.panel import Panel
-from rpds import HashTrieMap
+from rpds import HashTrieMap, HashTrieSet, List
 from url import URL
 import httpx
 import referencing_loaders
@@ -562,6 +562,187 @@ class DialectRunner:
         )
 
 
+@frozen
+class Smoked:
+    """
+    The result of smoke testing an implementation.
+    """
+
+    _info: ImplementationInfo = field(alias="info")
+    _unsuccessful_dialects: HashTrieSet[Dialect] = field(
+        default=HashTrieSet(),
+        repr=False,
+        alias="unsuccessful_dialects",
+    )
+
+    errors: List[DiagnosticError] = List()
+    warnings: List[DiagnosticWarning] = List()
+
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+        from rich.table import Column, Table
+
+        table = Table.grid(
+            Column("Label", no_wrap=True, justify="center"),
+            Column("Content"),
+            padding=(1, 4),
+            pad_edge=True,
+        )
+        table.min_width = 79
+        table.title_justify = "left"
+
+        dialects = Table.grid(Column("Dialect", justify="right"))
+        for dialect in sorted(self._info.dialects, reverse=True):
+            style = "green" if dialect in self.confirmed_dialects else "red"
+            dialects.add_row(f"{dialect.pretty_name}", style=style)
+        table.add_row("Dialects\n[dim](Confirmed Working)", dialects)
+
+        prefix = f"{self._info.id}[dim] seems to"
+        if self.success:
+            table.title = f"{prefix} [/][b green]work!"
+        elif self.warnings:
+            table.title = f"{prefix} be [/][b yellow]broken!"
+
+            warnings = Table.grid(padding=1)
+            for warning in self.warnings:
+                subtable = Table.grid("Causes", pad_edge=True)
+                for cause in warning.causes:
+                    subtable.add_row(cause)
+                warnings.add_row(warning.message)
+                hint = Panel.fit(
+                    Markdown(str(warning.hint_stmt)),
+                    title="[blue]Hint",
+                    padding=(1, 4),
+                )
+                warnings.add_row(hint)
+                warnings.add_row(subtable)
+            table.add_row("[yellow]Warnings", warnings)
+        else:
+            table.title = f"{prefix} be [/][b red]broken!"
+
+            errors = Table.grid(padding=1)
+            for error in self.errors:
+                subtable = Table.grid("Causes", pad_edge=True)
+                for cause in error.causes:
+                    subtable.add_row(cause)
+                errors.add_row(error.message)
+                hint = Panel.fit(
+                    Markdown(str(error.hint_stmt)),
+                    title="[blue]Hint",
+                    padding=(1, 4),
+                )
+                errors.add_row(hint)
+                errors.add_row(subtable)
+            table.add_row("[red]Errors", errors)
+        yield table
+
+    @property
+    def latest_successful_dialect(self):
+        return max(self.confirmed_dialects, default=None)
+
+    @property
+    def confirmed_dialects(self):
+        return self._info.dialects.difference(self._unsuccessful_dialects)
+
+    @property
+    def success(self):
+        return not self.errors and not self.warnings
+
+    def dialect_failed(
+        self,
+        dialect: Dialect,
+        results: Sequence[tuple[TestCase, SeqResult]],
+    ):
+        dialects = self._unsuccessful_dialects.insert(dialect)
+
+        if dialects != self._info.dialects:
+            errors = self.errors.push_front(
+                DiagnosticError(
+                    code="smoke-found-broken-dialect",
+                    message=f"All {dialect.pretty_name} examples failed.",
+                    causes=results_to_causes(results),
+                    hint_stmt=(
+                        "Verify that the implementation truly supports "
+                        "the dialect. If you're sure it does, it is "
+                        "likely that the Bowtie harness is not "
+                        "functioning propertly."
+                    ),
+                ),
+            )
+        else:  # nothing succeeded, show an even stronger error
+            prior_failures: Sequence[DiagnosticError] = []
+            errors: List[DiagnosticError] = List()
+            for error in self.errors:
+                if error.code == "smoke-found-broken-dialect":
+                    prior_failures.append(error)
+                else:
+                    errors = errors.push_front(error)
+            errors = errors.push_front(
+                DiagnosticError(
+                    code="smoke-no-successful-results",
+                    message="No successful results were seen.",
+                    causes=[
+                        cause
+                        for each in prior_failures
+                        for cause in each.causes
+                    ],
+                    hint_stmt=(
+                        "The harness seems to be entirely broken.\n\n"
+                        "Check for error messages it may have emitted (likely "
+                        "to its standard error which is shown below).\n"
+                        "Or use programming language-specific mechanisms "
+                        "from the language the harness is written in "
+                        "to diagnose."
+                    ),
+                ),
+            )
+
+        return evolve(self, unsuccessful_dialects=dialects, errors=errors)
+
+    def no_referencing(self, results: Sequence[tuple[TestCase, SeqResult]]):
+        return evolve(
+            self,
+            warnings=self.warnings.push_front(
+                DiagnosticWarning(
+                    code="smoke-broken-referencing",
+                    message="Basic referencing support does not work.",
+                    causes=results_to_causes(results),
+                    hint_stmt=(
+                        "The implementation was sent a simple `$ref` to "
+                        "resolve and did not follow it correctly. "
+                        "Check to be sure the harness is properly handling "
+                        "the `registry` property when sent in a test case.\n"
+                        "If however the implementation does not support "
+                        "reference resolution in any form, you might not "
+                        "be able to address this warning."
+                    ),
+                ),
+            ),
+        )
+
+    def serializable(self) -> dict[str, Any]:
+        as_dict: dict[str, Any] = dict(
+            success=self.success,
+            confirmed_dialects=[
+                dialect.short_name
+                for dialect in sorted(self.confirmed_dialects, reverse=True)
+            ],
+        )
+        for each in "errors", "warnings":
+            value = getattr(self, each)
+            if value:
+                as_dict[each] = [
+                    dict(code=each.code, message=each.message)
+                    for each in value
+                ]
+        return as_dict
+
+
 @mutable
 class Implementation:
     """
@@ -629,6 +810,17 @@ class Implementation:
             seq_case = SeqCase(seq=uuid4().hex, case=case)
             yield case, await seq_case.run(runner=runner)
 
+    async def failing(
+        self,
+        dialect: Dialect,
+        cases: Iterable[TestCase],
+    ) -> Sequence[tuple[TestCase, SeqResult]]:
+        """
+        Run the given cases and yield ones which the implementation fails.
+        """
+        results = self.validate(dialect=dialect, cases=cases)
+        return [each async for each in results if each[1].unsuccessful()]
+
     async def start_speaking(self, dialect: Dialect) -> DialectRunner:
         if not self.supports(dialect):
             raise UnsupportedDialect(implementation=self, dialect=dialect)
@@ -648,11 +840,7 @@ class Implementation:
                 stderr=error.stderr,
             ) from error
 
-    async def smoke(
-        self,
-    ) -> AsyncIterator[
-        tuple[Dialect, AsyncIterator[tuple[TestCase, SeqResult]]]
-    ]:
+    async def smoke(self) -> Smoked:
         """
         Smoke test this implementation.
         """
@@ -668,14 +856,49 @@ class Implementation:
             Example(description="object", instance={"foo": 37}),
         ]
 
-        # FIXME: All dialects
-        for dialect in [max(self.info.dialects)]:
-            cases = [
-                dialect.top_test_case(examples),
-                dialect.bottom_test_case(examples),
-            ]
+        smoked = Smoked(info=self.info)
 
-            yield dialect, self.validate(dialect=dialect, cases=cases)
+        for dialect in self.info.dialects:
+            unsuccessful = await self.failing(
+                dialect=dialect,
+                cases=[
+                    dialect.top_test_case(examples),
+                    dialect.bottom_test_case(examples),
+                ],
+            )
+            if unsuccessful:
+                smoked = smoked.dialect_failed(dialect, results=unsuccessful)
+
+        last = smoked.latest_successful_dialect
+        if last is not None:  # no point checking $ref for a broken dialect
+            # We'd use a tag URI, but the goal is to use literally the simplest
+            # possible thing that should work.
+            simple_uri = "http://bowtie.report/cli/smoke/ref-to-string"
+            resource = last.specification().create_resource({"type": "string"})
+            ref_check = TestCase(
+                description="$ref / registry support",
+                schema={"$ref": simple_uri},
+                registry=EMPTY_REGISTRY.with_resource(
+                    uri=simple_uri,
+                    resource=resource,
+                ),
+                tests=[
+                    Test(description="string", instance="valid", valid=True),
+                    Test(description="non-string", instance=37, valid=False),
+                ],
+            )
+            unsuccessful = await self.failing(dialect=last, cases=[ref_check])
+            if unsuccessful:
+                smoked = smoked.no_referencing(results=unsuccessful)
+
+        return smoked
+
+
+def results_to_causes(
+    results: Sequence[tuple[TestCase, SeqResult]],
+) -> list[str]:
+    # FIXME
+    return []
 
 
 @frozen

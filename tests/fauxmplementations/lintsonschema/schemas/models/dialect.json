@@ -24,6 +24,8 @@
       "description": "A shorter, slug-like name for the dialect (with no punctuation or spaces) but which still should be unique",
       "readOnly": true,
 
+      "$id": "tag:bowtie.report,2024:models:dialect:shortName",
+
       "type": "string",
       "pattern": "[a-z]+[a-z0-9-]*"
     },
@@ -43,9 +45,7 @@
     },
     "top": {
       "description": "A 'universal' schema in this dialect, meaning one which allows (validates true against) all instances. Clearly this schema should be valid in the dialect. When unprovided, the dialect is assumed to have a $schema keyword, and a schema with no other keywords is presumed to be top. Setting this to null signals the dialect has no top.",
-      "readOnly": true,
-
-      "default": {}
+      "readOnly": true
     },
     "bottom": {
       "description": "An 'empty' schema in this dialect, meaning one which does not allow *any* instances (i.e. which validates false against everything). Clearly this schema should be valid in the dialect. When unprovided, the dialect is assumed to have a `not` keyword, which is used to invert the `top` schema. Setting this to null signals the dialect has no bottom.",

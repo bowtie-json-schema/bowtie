@@ -6,20 +6,90 @@
 
   "$id": "tag:bowtie.report,2024:cli:smoke",
 
-  "type": "array",
+  "type": "object",
 
-  "additionalItems": false,
-  "items": {
-    "type": "object",
+  "oneOf": [
+    {
+      "description": "A single implementation's smoke result",
+      "$ref": "#result"
+    },
+    {
+      "description": "Multiple implementations' results, nested by their ID.",
+      "minProperties": 2,
+      "propertyNames": {
+        "$ref": "tag:bowtie.report,2024:models:implementation:id"
+      },
+      "additionalProperties": { "$ref": "#result" }
+    }
+  ],
 
-    "additionalProperties": false,
-    "properties": {
-      "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
-      "result": {
-        "oneOf": [
-          { "$ref": "tag:bowtie.report,2023:ihop:command:run#result" },
-          { "$ref": "tag:bowtie.report,2023:ihop:command:run#errored" }
-        ]
+  "$defs": {
+    "result": {
+      "title": "Smoke Result",
+      "description": "A collection of possible warnings or errors encountered while checking an implementation (harness).",
+
+      "$anchor": "result",
+
+      "type": "object",
+
+      "unevaluatedProperties": false,
+      "required": ["success", "confirmed_dialects"],
+      "properties": {
+        "confirmed_dialects": {
+          "description": "The shortnames of the dialects which *successfully* passed the smoke test.",
+
+          "type": "array",
+
+          "items": { "$ref": "tag:bowtie.report,2024:models:dialect:shortName" }
+        }
+      },
+      "oneOf": [
+        {
+          "title": "Successful Smoke Test",
+          "properties": { "success": { "const": true } }
+        },
+        {
+          "title": "Smoke Test With Failures",
+
+          "anyOf": [{ "required": ["errors"] }, { "required": ["warnings"] }],
+          "properties": {
+            "success": { "const": false },
+            "errors": {
+              "$todo": "Constrain the messages and codes.",
+              "$ref": "#diagnostics"
+            },
+            "warnings": {
+              "$todo": "Constrain the messages and codes.",
+              "$ref": "#diagnostics"
+            }
+          }
+        }
+      ]
+    },
+    "diagnostics": {
+      "title": "Diagnostic Messages",
+
+      "$anchor": "diagnostics",
+
+      "type": "array",
+      "uniqueItems": true,
+
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "description": "A diagnostic code used for searchability in Bowtie's documentation.",
+            "type": "string"
+          },
+          "message": {
+            "description": "A human-readable explanation of the error.",
+            "type": "string"
+          }
+        }
       }
     }
   }

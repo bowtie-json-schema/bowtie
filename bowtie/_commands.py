@@ -332,24 +332,6 @@ class SeqResult:
             result=result,
         )
 
-    def dots(self):
-        """
-        Represent the result via dot glyphs.
-        """
-        results = self.result.results
-        if results is None:
-            return "".join("❗" for _ in self.expected)
-
-        return "".join(
-            (
-                "✓"
-                if got
-                == (got if expected is None else TestResult(valid=expected))
-                else "✗"
-            )
-            for got, expected in zip(results, self.expected)
-        )
-
     def result_for(self, i: int) -> AnyTestResult:
         return self.result.result_for(i)
 

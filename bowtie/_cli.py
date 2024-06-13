@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -1504,64 +1504,55 @@ async def info(
     help="Don't print any output, just exit with nonzero status on failure.",
 )
 @format_option()
-async def smoke(
-    start: Starter,
-    format: _F,
-    echo: Callable[..., None],
-) -> int:
+async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
     """
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
-    exit_code = 0
+    results = [
+        (implementation.id, implementation.info, await implementation.smoke())
+        async for _, implementation in start()
+    ]
 
-    async for _, implementation in start():
-        echo(f"Testing {implementation.id!r}...\n", file=sys.stderr)
-        serializable: list[dict[str, Any]] = []
-        implementation_exit_code = 0
+    match results, format:
+        case [(_, _, result)], "json":
+            echo(json.dumps(result.serializable(), indent=2))
+        case _, "json":
+            output = {id: result.serializable() for id, _, result in results}
+            echo(json.dumps(output, indent=2))
+        case [(_, _, result)], "pretty":
+            console.Console(width=120).print(result)
+        case _, "pretty":
+            out = console.Console(width=120)
+            for _, _, each in results:
+                out.print(each)
+        case _, "markdown":
+            for _, info, result in results:
+                echo(f"# {info.name} ({info.language})\n")
 
-        async for _, results in implementation.smoke():
-            async for case, result in results:
-                if result.unsuccessful():
-                    implementation_exit_code |= EX.DATAERR
+                if result.success:
+                    echo("Smoke test *succeeded!*")
+                else:
+                    echo("Smoke test **failed!**")
 
-                match format:
-                    case "json":
-                        serializable.append(
-                            dict(
-                                case=case.without_expected_results(),
-                                result=asdict(result.result),
-                            ),
-                        )
+                echo("\n## Working Dialects\n")
+                for dialect in sorted(result.confirmed_dialects, reverse=True):
+                    echo(f"  * {dialect.pretty_name}")
 
-                    case "pretty":
-                        echo(f"  · {case.description}: {result.dots()}")
+                for heading, diagnostics in [
+                    ("Warnings", result.warnings),
+                    ("Errors", result.errors),
+                ]:
+                    if diagnostics:
+                        echo(f"\n## {heading}")
+                        for each in diagnostics:
+                            echo(f"  * {each.message}")
 
-                    case "markdown":
-                        echo(f"* {case.description}: {result.dots()}")
+                            for cause in each.causes:
+                                echo(f"    - {cause}")
 
-        match format:
-            case "json":
-                echo(json.dumps(serializable, indent=2))
+                            echo(indent(str(each.hint_stmt), " " * 4))
 
-            case "pretty":
-                message = (
-                    "❌ some failures"
-                    if implementation_exit_code
-                    else "✅ all passed"
-                )
-                echo(f"\n{message}", file=sys.stderr)
-
-            case "markdown":
-                message = (
-                    "**❌ some failures**"
-                    if implementation_exit_code
-                    else "**✅ all passed**"
-                )
-                echo(f"\n{message}", file=sys.stderr)
-
-        exit_code |= implementation_exit_code
-
-    return exit_code
+    return 0 if all(result.success for _, _, result in results) else EX.DATAERR
 
 
 @subcommand
