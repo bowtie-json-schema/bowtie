@@ -3,7 +3,7 @@ import os from "os";
 import process from "process";
 import { createRequire } from "node:module";
 const packageJson = createRequire(import.meta.url)(
-  "./node_modules/@hyperjump/json-schema/package.json",
+  "./node_modules/@hyperjump/json-schema/package.json"
 );
 
 const hyperjump_version = packageJson.version;
@@ -81,37 +81,37 @@ async function importAllDrafts() {
 
 async function versioningSetup() {
   if (hyperjump_version >= "1.7.0") {
-    const module = await importAllDrafts();
+    const JsonSchema = await importAllDrafts();
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
         const schema = testCase.registry[id];
         if (!schema.$schema || schema.$schema === dialect) {
-          module.registerSchema(schema, id, dialect);
+          JsonSchema.registerSchema(schema, id, dialect);
         }
       }
 
-      module.registerSchema(testCase.schema, retrievalURI, dialect);
+      JsonSchema.registerSchema(testCase.schema, retrievalURI, dialect);
 
-      return await module.validate(retrievalURI);
+      return await JsonSchema.validate(retrievalURI);
     };
     unregisterSchema = module.unregisterSchema;
     getRetrievalURI = (_, __, args) =>
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
   } else {
     if (hyperjump_version >= "1.0.0") {
-      const module = await importAllDrafts();
+      const JsonSchema = await importAllDrafts();
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
           try {
-            module.addSchema(testCase.registry[id], id, dialect);
+            JsonSchema.addSchema(testCase.registry[id], id, dialect);
           } catch {}
         }
 
-        module.addSchema(testCase.schema, retrievalURI, dialect);
+        JsonSchema.addSchema(testCase.schema, retrievalURI, dialect);
 
-        return await module.validate(retrievalURI);
+        return await JsonSchema.validate(retrievalURI);
       };
     } else {
       const JsonSchema = await import("@hyperjump/json-schema");
@@ -197,7 +197,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI,
+          retrievalURI
         );
 
         results = testCase.tests.map((test) => {
