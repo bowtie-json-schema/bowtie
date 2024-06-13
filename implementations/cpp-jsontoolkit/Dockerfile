@@ -1,4 +1,4 @@
-FROM alpine AS builder
+FROM alpine:3.20 AS builder
 
 RUN apk add --no-cache cmake g++ git make 
 
@@ -18,6 +18,6 @@ RUN g++ -O3 -static -std=c++20 -o /tmp/bowtie /tmp/bowtie.cpp \
   -lsourcemeta_jsontoolkit_uri \
   -luriparser
 
-FROM alpine
+FROM alpine:3.20
 COPY --from=builder /tmp/bowtie /usr/local/bin
 CMD [ "bowtie" ]
