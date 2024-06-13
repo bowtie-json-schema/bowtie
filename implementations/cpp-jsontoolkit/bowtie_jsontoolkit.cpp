@@ -54,7 +54,7 @@ int main() {
       std::cout << std::endl;
     } else if (command == "run") {
       assert(started);
-      assert(message.defines("seq") && message.at("seq").is_integer());
+      assert(message.defines("seq"));
       assert(message.defines("case") && message.at("case").is_object());
       assert(message.at("case").defines("schema") && is_schema(message.at("case").at("schema")));
       assert(message.at("case").defines("tests") && message.at("case").at("tests").is_array());
