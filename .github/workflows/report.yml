@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download the previous reports
-        uses: dawidd6/action-download-artifact@v5
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: report.yml
           name: report-.*
