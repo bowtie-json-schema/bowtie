@@ -91,7 +91,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-packaging==24.0
+packaging==24.1
     # via sphinx
 pycparser==2.22
     # via cffi
@@ -129,7 +129,7 @@ rich==13.7.1
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.2
+rich-click==1.8.3
     # via bowtie-json-schema
 rpds-py==0.18.1
     # via
@@ -191,7 +191,7 @@ sphinxext-opengraph==0.9.1
     # via -r docs/requirements.in
 structlog==24.2.0
     # via bowtie-json-schema
-typing-extensions==4.12.1
+typing-extensions==4.12.2
     # via
     #   aiodocker
     #   rich-click

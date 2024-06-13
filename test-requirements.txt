@@ -118,7 +118,7 @@ multidict==6.0.5
     #   -r requirements.txt
     #   aiohttp
     #   yarl
-packaging==24.0
+packaging==24.1
     # via pytest
 pexpect==4.9.0
     # via -r test-requirements.in
@@ -176,7 +176,7 @@ rich==13.7.1
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.2
+rich-click==1.8.3
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -201,7 +201,7 @@ structlog==24.2.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-typing-extensions==4.12.1
+typing-extensions==4.12.2
     # via
     #   -r requirements.txt
     #   aiodocker
