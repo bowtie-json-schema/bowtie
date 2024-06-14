@@ -3,7 +3,7 @@ import os from "os";
 import process from "process";
 import { createRequire } from "node:module";
 const packageJson = createRequire(import.meta.url)(
-  "./node_modules/@hyperjump/json-schema/package.json",
+  "./node_modules/@hyperjump/json-schema/package.json"
 );
 
 const hyperjump_version = packageJson.version;
@@ -13,19 +13,8 @@ var registerSchemaAndValidate;
 var unregisterSchema;
 var getRetrievalURI;
 
-unregisterSchema = (...args) => {};
-getRetrievalURI = (testCase, dialect, args) => {
-  const idToken =
-    dialect === "http://json-schema.org/draft-04/schema#" ? "id" : "$id";
-  const host = testCase.schema?.[idToken]?.startsWith("file:")
-    ? "file://"
-    : "https://example.com";
-
-  return `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
-};
-
 await (async () => {
-  if (hyperjump_version >= "1.0.0") {
+  if (hyperjump_version >= "1.7.0") {
     await Promise.all([
       import("@hyperjump/json-schema/draft-2019-09"),
       import("@hyperjump/json-schema/draft-07"),
@@ -36,48 +25,67 @@ await (async () => {
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
-        try {
-          JsonSchema.addSchema(testCase.registry[id], id, dialect);
-        } catch {}
+        const schema = testCase.registry[id];
+        if (!schema.$schema || schema.$schema === dialect) {
+          JsonSchema.registerSchema(schema, id, dialect);
+        }
       }
 
-      JsonSchema.addSchema(testCase.schema, retrievalURI, dialect);
+      JsonSchema.registerSchema(testCase.schema, retrievalURI, dialect);
 
       return await JsonSchema.validate(retrievalURI);
     };
 
-    if (hyperjump_version >= "1.7.0") {
+    unregisterSchema = JsonSchema.unregisterSchema;
+    getRetrievalURI = (_, __, args) =>
+      `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+  } else {
+    if (hyperjump_version >= "1.0.0") {
+      await Promise.all([
+        import("@hyperjump/json-schema/draft-2019-09"),
+        import("@hyperjump/json-schema/draft-07"),
+        import("@hyperjump/json-schema/draft-06"),
+        import("@hyperjump/json-schema/draft-04"),
+      ]);
+      const JsonSchema = await import("@hyperjump/json-schema/draft-2020-12");
+
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
-          const schema = testCase.registry[id];
-          if (!schema.$schema || schema.$schema === dialect) {
-            JsonSchema.registerSchema(schema, id, dialect);
-          }
+          try {
+            JsonSchema.addSchema(testCase.registry[id], id, dialect);
+          } catch {}
         }
 
-        JsonSchema.registerSchema(testCase.schema, retrievalURI, dialect);
+        JsonSchema.addSchema(testCase.schema, retrievalURI, dialect);
 
         return await JsonSchema.validate(retrievalURI);
       };
+    } else if (hyperjump_version >= "0.18.0") {
+      const JsonSchema = await import("@hyperjump/json-schema");
 
-      unregisterSchema = JsonSchema.unregisterSchema;
-      getRetrievalURI = (_, __, args) =>
-        `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+      registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
+        for (const id in testCase.registry) {
+          try {
+            JsonSchema.add(testCase.registry[id], id, dialect);
+          } catch {}
+        }
+
+        JsonSchema.add(testCase.schema, retrievalURI, dialect);
+        const schema = JsonSchema.get(retrievalURI);
+
+        return await JsonSchema.validate(schema);
+      };
     }
-  } else {
-    const JsonSchema = await import("@hyperjump/json-schema");
 
-    registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
-      for (const id in testCase.registry) {
-        try {
-          JsonSchema.add(testCase.registry[id], id, dialect);
-        } catch {}
-      }
+    unregisterSchema = (...args) => {};
+    getRetrievalURI = (testCase, dialect, args) => {
+      const idToken =
+        dialect === "http://json-schema.org/draft-04/schema#" ? "id" : "$id";
+      const host = testCase.schema?.[idToken]?.startsWith("file:")
+        ? "file://"
+        : "https://example.com";
 
-      JsonSchema.add(testCase.schema, retrievalURI, dialect);
-      const schema = JsonSchema.get(retrievalURI);
-
-      return await JsonSchema.validate(schema);
+      return `${host}/bowtie.sent.schema.${args.seq.toString()}.json`;
     };
   }
 })();
@@ -191,7 +199,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI,
+          retrievalURI
         );
 
         results = testCase.tests.map((test) => {
