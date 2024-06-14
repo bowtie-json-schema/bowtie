@@ -34,6 +34,18 @@ await (async () => {
     ]);
     const JsonSchema = await import("@hyperjump/json-schema/draft-2020-12");
 
+    registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
+      for (const id in testCase.registry) {
+        try {
+          JsonSchema.addSchema(testCase.registry[id], id, dialect);
+        } catch {}
+      }
+
+      JsonSchema.addSchema(testCase.schema, retrievalURI, dialect);
+
+      return await JsonSchema.validate(retrievalURI);
+    };
+
     if (hyperjump_version >= "1.7.0") {
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
@@ -47,22 +59,11 @@ await (async () => {
 
         return await JsonSchema.validate(retrievalURI);
       };
+
       unregisterSchema = JsonSchema.unregisterSchema;
       getRetrievalURI = (_, __, args) =>
         `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
     }
-
-    registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
-      for (const id in testCase.registry) {
-        try {
-          JsonSchema.addSchema(testCase.registry[id], id, dialect);
-        } catch {}
-      }
-
-      JsonSchema.addSchema(testCase.schema, retrievalURI, dialect);
-
-      return await JsonSchema.validate(retrievalURI);
-    };
   } else {
     const JsonSchema = await import("@hyperjump/json-schema");
 
