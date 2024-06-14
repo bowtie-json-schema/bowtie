@@ -23,25 +23,36 @@ if TYPE_CHECKING:
     )
     from bowtie._registry import ValidatorRegistry
 
-BENCHMARKS_MODULE = "bowtie.benchmarks"
 
+def _get_benchmarks_from_file(file, module="bowtie.benchmarks") -> BenchmarkGroup | None:
+    if file.suffix == ".py" and file.name != "__init__.py":
+        benchmark_module_name = "." + file.stem
+        data = importlib.import_module(
+            benchmark_module_name,
+            module,
+        ).get_benchmark()
+    elif file.suffix == ".json":
+        data = json.loads(file.read_text())
+    else:
+        return None
 
-def get_default_benchmarks() -> Iterable[dict[str, Any]]:
-    bowtie_dir = Path(__file__).parent
-    benchmark_dir = bowtie_dir.joinpath("benchmarks").iterdir()
-
-    for file in benchmark_dir:
-        if file.suffix == ".py" and file.name != "__init__.py":
-            benchmark_module_name = "." + file.stem
-            benchmark = importlib.import_module(
-                benchmark_module_name,
-                BENCHMARKS_MODULE,
-            ).get_benchmark()
-        elif file.suffix == ".json":
-            benchmark = json.loads(file.read_text())
-        else:
-            continue
-        yield benchmark
+    if isinstance(data, dict):
+        benchmark = Benchmark.from_dict(
+            **data,
+        ).maybe_set_dialect_from_schema()
+        benchmark_group = BenchmarkGroup(name=benchmark.name, description=benchmark.description, benchmarks=[benchmark])
+        return benchmark_group
+    elif isinstance(data, list):
+        benchmarks = [
+            Benchmark.from_dict(
+                **benchmark,
+            ).maybe_set_dialect_from_schema()
+            for benchmark in data
+        ]
+        benchmark_group = BenchmarkGroup(name="", description="", benchmarks=benchmarks)
+        return benchmark_group
+    else:
+        return None
 
 
 @frozen
@@ -91,6 +102,13 @@ class Benchmark:
 
 
 @frozen
+class BenchmarkGroup:
+    name: str
+    description: str
+    benchmarks: Sequence[Benchmark]
+
+
+@frozen
 class BenchmarkReport:
     pass
     # metadata: RunMetadata
@@ -98,7 +116,7 @@ class BenchmarkReport:
 
 @frozen
 class Benchmarker:
-    _benchmarks: Sequence[Benchmark] = field(alias="benchmarks")
+    _benchmark_groups: Sequence[BenchmarkGroup] = field(alias="benchmark_groups")
     _num_processes: int = field(
         alias="processes",
     )
@@ -121,13 +139,34 @@ class Benchmarker:
 
     @classmethod
     def from_default_benchmarks(cls, **kwargs: Any):
-        benchmarks = [
-            Benchmark.from_dict(
-                **benchmark,
-            ).maybe_set_dialect_from_schema()
-            for benchmark in get_default_benchmarks()
-        ]
-        return cls(benchmarks=benchmarks, **kwargs)
+        bowtie_dir = Path(__file__).parent
+        benchmark_dir = bowtie_dir.joinpath("benchmarks").iterdir()
+        benchmark_groups = []
+
+        for file in benchmark_dir:
+            benchmark_group = _get_benchmarks_from_file(file)
+            if not benchmark_group:
+                continue
+            benchmark_groups.append(benchmark_group)
+
+        return cls(benchmark_groups=benchmark_groups, **kwargs)
+
+    @classmethod
+    def for_keywords(cls, dialect: Dialect, **kwargs: Any):
+        bowtie_dir = Path(__file__).parent
+        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+        dialect_keyword_benchmarks = keywords_benchmark_dir.joinpath(dialect.short_name).iterdir()
+
+        module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
+        benchmark_groups = []
+
+        for file in dialect_keyword_benchmarks:
+            benchmark_group = _get_benchmarks_from_file(file, module=module_name)
+            if not benchmark_group:
+                continue
+            benchmark_groups.append(benchmark_group)
+
+        return cls(benchmark_groups=benchmark_groups, **kwargs)
 
     @classmethod
     def from_input(
@@ -149,7 +188,8 @@ class Benchmarker:
                 schema=schema,
             ),
         ]
-        return cls(benchmarks=benchmarks, **kwargs)
+        benchmark_group = BenchmarkGroup(name=description, description=description, benchmarks=benchmarks)
+        return cls(benchmark_groups=[benchmark_group], **kwargs)
 
     async def start(
         self,
@@ -178,22 +218,23 @@ class Benchmarker:
                 print()
 
             benchmark_results: list[pyperf.Benchmark] = []
-            for benchmark in self._benchmarks:
-                if benchmark.dialect and benchmark.dialect != dialect:
-                    print(f"Skipping {benchmark.name} as it does not support dialect {dialect.serializable()}")
-                    continue
-                tests = benchmark.tests
-                for test in tests:
-                    benchmark_case = benchmark.benchmark_with_diff_tests(
-                        tests=[test],
-                    )
-                    bench = await self._run_benchmark(
-                        benchmark_case,
-                        dialect,
-                        connectable,
-                    )
-                    if bench:
-                        benchmark_results.append(bench)
+            for benchmark_group in self._benchmark_groups:
+                for benchmark in benchmark_group.benchmarks:
+                    if benchmark.dialect and benchmark.dialect != dialect:
+                        print(f"Skipping {benchmark.name} as it does not support dialect {dialect.serializable()}")
+                        continue
+                    tests = benchmark.tests
+                    for test in tests:
+                        benchmark_case = benchmark.benchmark_with_diff_tests(
+                            tests=[test],
+                        )
+                        bench = await self._run_benchmark(
+                            benchmark_case,
+                            dialect,
+                            connectable,
+                        )
+                        if bench:
+                            benchmark_results.append(bench)
             if len(benchmark_results):
                 benchmark_suite = pyperf.BenchmarkSuite(
                     benchmarks=benchmark_results,

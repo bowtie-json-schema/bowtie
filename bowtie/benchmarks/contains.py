@@ -1,5 +1,5 @@
 def get_benchmark():
-    array_size = 1000
+    array_size = 5000
     beginning = [37] + [0] * (array_size - 1)
     middle = [0] * (array_size // 2) + [37] + [0] * (array_size // 2)
     end = [0] * (array_size - 1) + [37]

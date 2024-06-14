@@ -1314,6 +1314,17 @@ def validate(
     ),
 )
 @click.option(
+    "--keywords",
+    "-k",
+    "keywords",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help=(
+        "Benchmark all the keywords."
+    ),
+)
+@click.option(
     "-d",
     "--description",
     default="bowtie perf",
@@ -1325,15 +1336,21 @@ def perf(
     connectables: Iterable[_connectables.Connectable],
     dialect: Dialect,
     instances: Iterable[Any],
+    keywords: bool,
     schema: Any,
     description: str,
-    registry,
+    registry: ValidatorRegistry[Any],
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
-    if schema is None:
+
+    if keywords:
+        benchmarker = _benchmarks.Benchmarker.for_keywords(
+            **kwargs
+        )
+    elif schema is None:
         benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
             **kwargs
         )
