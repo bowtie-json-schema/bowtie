@@ -1,9 +1,14 @@
 import readline from "readline/promises";
 import os from "os";
 import process from "process";
+import "@hyperjump/json-schema/draft-2020-12";
+import "@hyperjump/json-schema/draft-2019-09";
+import "@hyperjump/json-schema/draft-07";
+import "@hyperjump/json-schema/draft-06";
+import "@hyperjump/json-schema/draft-04";
 import { createRequire } from "node:module";
 const packageJson = createRequire(import.meta.url)(
-  "./node_modules/@hyperjump/json-schema/package.json",
+  "./node_modules/@hyperjump/json-schema/package.json"
 );
 
 const hyperjump_version = packageJson.version;
@@ -68,20 +73,9 @@ var unregisterSchema;
 var registerSchemaAndValidate;
 var getRetrievalURI;
 
-async function importAllDrafts() {
-  const module = await import("@hyperjump/json-schema/draft-2020-12");
-  await Promise.all([
-    import("@hyperjump/json-schema/draft-2019-09"),
-    import("@hyperjump/json-schema/draft-07"),
-    import("@hyperjump/json-schema/draft-06"),
-    import("@hyperjump/json-schema/draft-04"),
-  ]);
-  return module;
-}
-
 async function versioningSetup() {
   if (hyperjump_version >= "1.7.0") {
-    const JsonSchema = await importAllDrafts();
+    const JsonSchema = await import("@hyperjump/json-schema/draft-2020-12");
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
@@ -100,7 +94,7 @@ async function versioningSetup() {
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
   } else {
     if (hyperjump_version >= "1.0.0") {
-      const JsonSchema = await importAllDrafts();
+      const JsonSchema = await import("@hyperjump/json-schema/draft-2020-12");
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
         for (const id in testCase.registry) {
@@ -197,7 +191,7 @@ const cmds = {
         const _validate = await registerSchemaAndValidate(
           testCase,
           dialect,
-          retrievalURI,
+          retrievalURI
         );
 
         results = testCase.tests.map((test) => {
