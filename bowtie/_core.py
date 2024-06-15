@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from referencing import Specification
-    from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
+    from referencing.jsonschema import Schema, SchemaRegistry
     from rich.console import (
         Console,
         ConsoleOptions,
@@ -183,7 +183,7 @@ class Dialect:
     def serializable(self):
         return str(self.uri)
 
-    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+    def specification(self, **kwargs: Any) -> Specification[Schema]:
         return specification_with(str(self.uri), **kwargs)
 
     @property
