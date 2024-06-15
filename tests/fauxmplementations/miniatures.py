@@ -38,6 +38,16 @@ def always_invalid(dialect: Dialect):
     return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
 
+@fake()
+def always_wrong(dialect: Dialect):
+    """
+    Tries (naively) to always get the absolute wrong answer.
+    """
+    return lambda schema, registry: lambda instance: (
+        naively_incorrect(schema, registry, instance)
+    )
+
+
 @fake(dialects=frozenset([Dialect.by_short_name()["draft3"]]))
 def only_draft3(dialect: Dialect):
     """
@@ -59,7 +69,7 @@ def incorrectly_claims_draft7(dialect: Dialect):
         return lambda schema, registry: lambda instance: (
             naively_correct(schema, registry)(instance)
             if registry
-            else not naively_correct(schema, registry)(instance)
+            else naively_incorrect(schema, registry, instance)
         )
     return naively_correct
 
@@ -160,3 +170,11 @@ def naively_correct(schema, registry):
             return ARBITRARILY_INVALID
 
     return validate
+
+
+def naively_incorrect(schema, registry, instance):
+    """
+    Naively returns the wrong answer.
+    """
+    result = naively_correct(schema, registry)(instance)
+    return ARBITRARILY_INVALID if result is None else None
