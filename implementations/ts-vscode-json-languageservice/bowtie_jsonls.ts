@@ -95,7 +95,13 @@ const cmds = {
           );
           return { valid: semanticErrors.length === 0 ? true : false };
         } catch (error) {
-          return { errored: true, context: { message: error.message } };
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
         }
       }),
     );

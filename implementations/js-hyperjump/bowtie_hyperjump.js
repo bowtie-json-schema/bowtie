@@ -207,13 +207,22 @@ const cmds = {
             const result = _validate(test.instance);
             return { valid: result.valid };
           } catch (error) {
-            return { errored: true, context: { message: error.message } };
+            return {
+              errored: true,
+              context: {
+                traceback: error.stack,
+                message: error.message,
+              },
+            };
           }
         });
       } catch (error) {
         results = testCase.tests.map((_) => ({
           errored: true,
-          context: { message: error.message },
+          context: {
+            traceback: error.stack,
+            message: error.message,
+          },
         }));
       } finally {
         unregisterSchema(retrievalURI);

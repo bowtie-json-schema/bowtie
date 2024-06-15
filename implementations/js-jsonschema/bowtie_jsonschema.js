@@ -59,34 +59,45 @@ const cmds = {
     console.assert(started, "Not started!");
 
     const testCase = args.case;
-    const validator = new Validator();
 
-    validator.addSchema(draft3);
-    validator.addSchema(draft4);
-    validator.addSchema(draft6);
-    validator.addSchema(draft7);
+    try {
+      const validator = new Validator();
 
-    for (const id in testCase.registry) {
-      const schema = testCase.registry[id];
-      validator.addSchema(schema, id);
-    }
+      validator.addSchema(draft3);
+      validator.addSchema(draft4);
+      validator.addSchema(draft6);
+      validator.addSchema(draft7);
 
-    const results = testCase.tests.map((test) => {
-      try {
-        const result = validator.validate(test.instance, testCase.schema);
-        return { valid: result.valid };
-      } catch (error) {
-        return {
-          errored: true,
-          context: {
-            traceback: error.stack,
-            message: error.message,
-          },
-        };
+      for (const id in testCase.registry) {
+        validator.addSchema(testCase.registry[id], id);
       }
-    });
 
-    return { seq: args.seq, results: results };
+      const results = testCase.tests.map((test) => {
+        try {
+          const result = validator.validate(test.instance, testCase.schema);
+          return { valid: result.valid };
+        } catch (error) {
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
+        }
+      });
+
+      return { seq: args.seq, results: results };
+    } catch (error) {
+      return {
+        errored: true,
+        seq: args.seq,
+        context: {
+          traceback: error.stack,
+          message: error.message,
+        },
+      };
+    }
   },
 
   stop: async (_) => {

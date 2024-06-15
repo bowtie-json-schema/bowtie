@@ -75,26 +75,39 @@ const cmds = {
   run: (args) => {
     console.assert(started, "Not started!");
 
-    try {
-      const testCase = args.case;
-      const registry = testCase.registry;
+    const testCase = args.case;
 
+    try {
       ajv.removeSchema(); // Clear the cache.
-      for (const id in registry) ajv.addSchema(registry[id], id);
+      for (const id in testCase.registry) {
+        ajv.addSchema(testCase.registry[id], id);
+      }
 
       const validate = ajv.compile(testCase.schema);
 
-      return {
-        seq: args.seq,
-        results: testCase.tests.map((test) => ({
-          valid: validate(test.instance),
-        })),
-      };
-    } catch (e) {
+      const results = testCase.tests.map((test) => {
+        try {
+          return { valid: validate(test.instance) };
+        } catch (error) {
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
+        }
+      });
+
+      return { seq: args.seq, results: results };
+    } catch (error) {
       return {
         errored: true,
         seq: args.seq,
-        context: { message: e.toString() },
+        context: {
+          traceback: error.stack,
+          message: error.message,
+        },
       };
     }
   },
