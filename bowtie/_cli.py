@@ -19,12 +19,7 @@ import sys
 from attrs import asdict
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
-from jsonschema_lexer import JSONSchemaLexer
-from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
-    JsonLexer,
-)
 from rich import box, console, panel
-from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
@@ -774,24 +769,11 @@ def _validation_results_table(
 
         for test, test_result in test_results:
             subtable.add_row(
-                Syntax(
-                    json.dumps(test.instance),
-                    lexer=JsonLexer(),
-                    background_color="default",
-                    word_wrap=True,
-                ),
+                test.syntax(),
                 *(Text(test_result[id].description) for id in implementations),
             )
 
-        table.add_row(
-            Syntax(
-                json.dumps(case.schema, indent=2),
-                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
-                background_color="default",
-                word_wrap=True,
-            ),
-            subtable,
-        )
+        table.add_row(case.syntax(report.metadata.dialect), subtable)
         table.add_section()
 
     return table

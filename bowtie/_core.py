@@ -42,7 +42,12 @@ if TYPE_CHECKING:
 
     from referencing import Specification
     from referencing.jsonschema import Schema, SchemaRegistry, SchemaResource
-    from rich.console import Console, ConsoleOptions, RenderResult
+    from rich.console import (
+        Console,
+        ConsoleOptions,
+        RenderableType,
+        RenderResult,
+    )
 
     from bowtie._commands import (
         AnyCaseResult,
@@ -695,6 +700,19 @@ class Example:
         """
         return Test(**asdict(self), valid=valid)
 
+    def syntax(self) -> RenderableType:
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+            JsonLexer,
+        )
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.instance),
+            lexer=JsonLexer(),
+            background_color="default",
+            word_wrap=True,
+        )
+
     @classmethod
     def from_dict(
         cls,
@@ -722,6 +740,19 @@ class Test:
         Expect our expected validity result.
         """
         return self.valid
+
+    def syntax(self) -> RenderableType:
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+            JsonLexer,
+        )
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.instance),
+            lexer=JsonLexer(),
+            background_color="default",
+            word_wrap=True,
+        )
 
 
 @frozen
@@ -788,6 +819,17 @@ class TestCase:
                 k: v.contents for k, v in self.registry.items()
             }
         return as_dict
+
+    def syntax(self, dialect: Dialect) -> RenderableType:
+        from jsonschema_lexer import JSONSchemaLexer
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.schema, indent=2),
+            lexer=JSONSchemaLexer(str(dialect.uri)),
+            background_color="default",
+            word_wrap=True,
+        )
 
     def uniq(self) -> str:
         """
