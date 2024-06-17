@@ -9,11 +9,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      bowtie-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "frontend"
     schedule:
       interval: "weekly"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "devcontainers"
     directory: "/"
@@ -41,6 +49,13 @@ updates:
     directory: "/implementations/dotnet-corvus-jsonschema"
     schedule:
       interval: "daily"
+    groups:
+      corvus-json:
+        patterns:
+          - "Corvus.Json.*"
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
 
   - package-ecosystem: "gomod"
     directory: "/implementations/go-jsonschema"
