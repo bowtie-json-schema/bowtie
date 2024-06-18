@@ -10,6 +10,7 @@ RUN cmake --install /tmp/build --prefix /tmp/dist --config Release --verbose --c
 
 COPY bowtie_jsontoolkit.cpp /tmp/bowtie.cpp
 RUN g++ -O3 -static -std=c++20 -o /tmp/bowtie /tmp/bowtie.cpp \
+  -DJSONTOOLKIT_VERSION="\"$(git -C /tmp/jsontoolkit rev-parse --short=8 HEAD)\"" \
   -I/tmp/dist/include -L/tmp/dist/lib \
   -lsourcemeta_jsontoolkit_json \
   -lsourcemeta_jsontoolkit_jsonl \

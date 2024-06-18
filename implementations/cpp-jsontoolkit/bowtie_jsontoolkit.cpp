@@ -31,6 +31,7 @@ int main() {
       response.assign("version", JSON{1});
       auto implementation{JSON::make_object()};
       implementation.assign("language", JSON{"c++"});
+      implementation.assign("version", JSON{JSONTOOLKIT_VERSION});
       implementation.assign("name", JSON{"jsontoolkit"});
       implementation.assign("homepage",
                             JSON{"https://github.com/sourcemeta/jsontoolkit"});
