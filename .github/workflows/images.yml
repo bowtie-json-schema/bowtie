@@ -35,7 +35,7 @@ jobs:
 
       - id: images-matrix
         run: |
-          echo "images=$(bowtie filter-implementations | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "images=$(bowtie filter-implementations --format json" >> $GITHUB_OUTPUT
 
   build:
     needs: list
