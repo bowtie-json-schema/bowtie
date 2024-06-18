@@ -61,13 +61,13 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.1(@types/node@20.11.5)(terser@5.31.1))
       eslint:
-        specifier: 8.57.0
+        specifier: ^8.57.0
         version: 8.57.0
       eslint-plugin-react:
-        specifier: 7.34.2
+        specifier: ^7.34.2
         version: 7.34.2(eslint@8.57.0)
       eslint-plugin-react-hooks:
-        specifier: 4.6.2
+        specifier: ^4.6.2
         version: 4.6.2(eslint@8.57.0)
       jsdom:
         specifier: ^24.1.0
