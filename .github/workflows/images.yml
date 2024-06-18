@@ -26,18 +26,16 @@ jobs:
       images: ${{ steps.images-matrix.outputs.images }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+        with:
+          installation-attempts: "5"
+          installation-wait-seconds: "10"
+
       - id: images-matrix
         run: |
-          python3 -c '
-          from pathlib import Path
-          import json
-          paths = [
-              str(path.name)
-              for path in Path("implementations").iterdir()
-              if path.is_dir()
-          ]
-          print(f"images={json.dumps(paths)}")
-          ' >> $GITHUB_OUTPUT
+          echo "images=$(bowtie filter-implementations --format json | jq -c)" >> $GITHUB_OUTPUT
 
   build:
     needs: list
