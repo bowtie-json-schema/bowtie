@@ -201,7 +201,7 @@ url-py==0.11.3
     # via
     #   -r docs/requirements.in
     #   bowtie-json-schema
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 yarl==1.9.4
     # via aiohttp

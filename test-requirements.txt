@@ -77,7 +77,7 @@ httpx==0.27.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.103.1
+hypothesis==6.103.2
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -214,7 +214,7 @@ url-py==0.11.3
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   requests
