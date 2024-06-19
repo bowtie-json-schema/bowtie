@@ -3,6 +3,7 @@ import io.github.optimumcode.json.schema.ErrorCollector
 import io.github.optimumcode.json.schema.JsonSchema
 import io.github.optimumcode.json.schema.JsonSchemaLoader
 import io.github.optimumcode.json.schema.SchemaType
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
@@ -15,6 +16,7 @@ import java.io.InputStreamReader
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
+@OptIn(ExperimentalSerializationApi::class)
 fun main() {
     val input = BufferedReader(InputStreamReader(System.`in`))
     val outputWriter = System.out.bufferedWriter()
