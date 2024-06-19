@@ -16,12 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bowtie
-        uses: ./
-        with:
-          installation-attempts: "5"
-          installation-wait-seconds: "10"
-
       - id: image-versions-matrix
         run: |
           MATRIX="[]"
