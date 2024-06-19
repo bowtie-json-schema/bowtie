@@ -1,3 +1,4 @@
+import com.eygraber.uri.Uri
 import io.github.optimumcode.json.schema.ErrorCollector
 import io.github.optimumcode.json.schema.JsonSchema
 import io.github.optimumcode.json.schema.JsonSchemaLoader
@@ -35,6 +36,8 @@ fun main() {
 }
 
 private val SUPPORTED_DIALECTS: Set<String> = hashSetOf(
+    "http://json-schema.org/draft-04/schema#",
+    "http://json-schema.org/draft-06/schema#",
     "http://json-schema.org/draft-07/schema#",
     "https://json-schema.org/draft/2019-09/schema",
     "https://json-schema.org/draft/2020-12/schema",
@@ -122,30 +125,30 @@ class BowtieSampsonSchemaValidatorLauncher(
         .apply {
             currentDialect?.also(this::registerWellKnown)
             for ((uri, schema) in command.case.registry) {
-                if (skipSchema(uri, schema)) {
+                if (skipSchema(schema)) {
                     continue
+                }
+                var schemaType: SchemaType? = null
+                if (uri.contains("draft4", ignoreCase = true)) {
+                    // remote schema for draft 4 does not contain $schema block
+                    schemaType = SchemaType.DRAFT_4
                 }
                 @Suppress("detekt:TooGenericExceptionCaught")
                 try {
-                    register(schema, uri)
+                    register(schema, Uri.parse(uri), schemaType)
                 } catch (ex: Exception) {
                     throw IllegalStateException("cannot register schema for URI '$uri'", ex)
                 }
             }
         }.fromJsonElement(schemaDefinition, currentDialect)
 
-    private fun skipSchema(uri: String, schema: JsonElement): Boolean {
-        if (uri.contains("draft4", ignoreCase = true)) {
-            // skip draft4 schemas
-            return true
-        }
+    private fun skipSchema(schema: JsonElement): Boolean =
         // ignore schemas for unsupported drafts
-        return schema is JsonObject &&
+        schema is JsonObject &&
             schema["\$schema"]
                 ?.jsonPrimitive
                 ?.content
                 .let { it != null && SchemaType.find(it) == null }
-    }
 
     private fun runCase(command: Command.Run, schema: JsonSchema) {
         val results: List<TestResult> = command.case.tests.map { test ->

@@ -14,10 +14,16 @@ interface TestFilter {
 
 fun getFilter(schemaType: SchemaType?): TestFilter =
     when (schemaType ?: SchemaType.entries.last()) {
+        SchemaType.DRAFT_4 -> TestFilterDraft4
+        SchemaType.DRAFT_6 -> TestFilterDraft6
         SchemaType.DRAFT_7 -> TestFilterDraft7
         SchemaType.DRAFT_2019_09 -> TestFilterDraft201909
         SchemaType.DRAFT_2020_12 -> TestFilterDraft202012
     }
+
+object TestFilterDraft4 : TestFilter
+
+object TestFilterDraft6 : TestFilter
 
 object TestFilterDraft7 : TestFilter
 
