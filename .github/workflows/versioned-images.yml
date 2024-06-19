@@ -2,12 +2,17 @@ name: Build and Publish Versioned Images
 
 on:
   workflow_dispatch:
+    inputs:
+      implementation:
+        description: "The implementation name whose multiple versions to build for."
+        required: true
+        type: string
 
 jobs:
   list:
     runs-on: ubuntu-latest
     outputs:
-      image-versions: ${{ steps.image-versions-matrix.outputs.matrix }}
+      images: ${{ steps.image-versions-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,69 +24,23 @@ jobs:
 
       - id: image-versions-matrix
         run: |
-          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
           MATRIX="[]"
-          for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
-            if [ -f "implementations/$impl/matrix-versions.json" ]; then
-              versions=$(cat "implementations/$impl/matrix-versions.json")
-              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
-            fi
-          done
+          implementation=${{ github.event.inputs.implementation }}
+          if [ -f "implementations/$implementation/matrix-versions.json" ]; then
+            versions=$(cat "implementations/$implementation/matrix-versions.json")
+            MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+          else
+            MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+          fi
           echo "matrix=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
-  build:
+  build-image:
     needs: list
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.list.outputs.image-versions) }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install qemu
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static
-        if: |
-          !startsWith(matrix.image, 'dotnet-')
-
-      - name: Build
-        id: build_image
-        uses: redhat-actions/buildah-build@v2
-        with:
-          context: implementations/${{ matrix.image }}
-          containerfiles: |
-            implementations/${{ matrix.image }}/Dockerfile
-          image: ${{ matrix.image }}
-          tags: ${{ matrix.version }} ${{ github.sha }}
-          archs: amd64, arm64
-          build-args: |
-            IMPLEMENTATION_VERSION=${{ matrix.version }}
-
-      - name: Set DOCKER_HOST for podman
-        run: |
-          systemctl --user enable --now podman.socket
-          sudo loginctl enable-linger $USER
-          podman --remote info
-          echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
-
-      - name: Install Bowtie
-        uses: ./
-
-      - name: Smoke Test
-        run: |
-          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
-          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
-
-      - name: Publish
-        id: push
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build_image.outputs.image }}
-          tags: ${{ steps.build_image.outputs.tags }}
-          registry: ghcr.io/${{ github.repository_owner }}
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+        include: ${{ fromJson(needs.list.outputs.images) }}
+    uses: ./.github/workflows/images.yml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}

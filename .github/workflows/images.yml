@@ -1,6 +1,14 @@
 name: Rebuild Bowtie Images
 
 on:
+  workflow_call:
+    inputs:
+      image:
+        required: false
+        type: string
+      version:
+        required: false
+        type: string
   workflow_dispatch:
   pull_request:
     paths:
@@ -15,12 +23,9 @@ on:
     tags:
       - "v*"
 
-concurrency:
-  group: images-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   list:
+    if: ${{ inputs.image == '' && inputs.version == '' }}
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.images-matrix.outputs.images }}
@@ -39,6 +44,7 @@ jobs:
 
   build:
     needs: list
+    if: ${{ always() && !failure() && !cancelled() }}
 
     # Particularly for .NET (which we special case below),
     # we need a newer buildah than what's in 22.04 (which is buildah 1.23.1)
@@ -53,7 +59,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.list.outputs.images) }}
+        image:
+          - ${{ inputs.image != '' && inputs.image || fromJson(needs.list.outputs.images) }}
+        version:
+          - ${{ inputs.version != '' && inputs.version || 'latest' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +73,7 @@ jobs:
           filters: |
             impl:
               - 'implementations/${{ matrix.image }}/**'
+        if: ${{ inputs.image == '' && inputs.version == '' }}
 
       - name: Install qemu
         run: |
@@ -71,8 +81,9 @@ jobs:
           sudo apt-get install -y qemu-user-static
         if: |
           (
-            steps.changes.outputs.impl == 'true'
+            (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.image != '' && inputs.version != '')
           )
           && !startsWith(matrix.image, 'dotnet-')
         # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
@@ -85,9 +96,16 @@ jobs:
           containerfiles: |
             implementations/${{ matrix.image }}/Dockerfile
           image: ${{ matrix.image }}
-          tags: latest ${{ github.sha }}
+          tags: ${{ matrix.version }} ${{ github.sha }}
           archs: amd64, arm64
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+          build-args: |
+            ${{ inputs.image != '' && inputs.version != '' && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true') 
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            || (inputs.image != '' && inputs.version != '')
+          )
 
       - name: Set DOCKER_HOST so podman-built images are findable
         run: |
@@ -98,13 +116,23 @@ jobs:
 
       - name: Install Bowtie
         uses: ./
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true') 
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            || (inputs.image != '' && inputs.version != '')
+          )
 
       - name: Smoke Test
         run: |
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true') 
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            || (inputs.image != '' && inputs.version != '')
+          )
 
       - name: Publish
         id: push
