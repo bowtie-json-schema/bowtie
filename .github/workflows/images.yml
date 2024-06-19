@@ -68,7 +68,6 @@ jobs:
 
   build:
     needs: list
-    if: ${{ always() && !failure() && !cancelled() }}
 
     # Particularly for .NET (which we special case below),
     # we need a newer buildah than what's in 22.04 (which is buildah 1.23.1)
