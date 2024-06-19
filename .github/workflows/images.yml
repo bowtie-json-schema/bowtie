@@ -1,13 +1,13 @@
-name: Rebuild Bowtie Images (latest or versioned)
+name: Rebuild Bowtie Images (Latest or Versioned)
 
 on:
   workflow_dispatch:
     inputs:
       implementation:
         description: >
-          The implementation name whose multiple versions to build for given that a
+          An implementation name whose multiple versions to build for given that a
           "matrix-versions.json" file exists for that implementation; otherwise, builds
-          for the latest version by default.
+          its latest version by default.
         required: false
         type: string
   pull_request:
