@@ -1,15 +1,15 @@
-name: Rebuild Bowtie Images
+name: Rebuild Bowtie Images (Latest or Versioned)
 
 on:
-  workflow_call:
-    inputs:
-      image:
-        required: false
-        type: string
-      version:
-        required: false
-        type: string
   workflow_dispatch:
+    inputs:
+      implementation:
+        description: >
+          The implementation name whose multiple versions to build for given that a
+          "matrix-versions.json" file exists for that implementation; otherwise, builds
+          the latest version by default.
+        required: false
+        type: string
   pull_request:
     paths:
       - "implementations/**"
@@ -23,12 +23,15 @@ on:
     tags:
       - "v*"
 
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   list:
-    if: ${{ inputs.image == '' && inputs.version == '' }}
     runs-on: ubuntu-latest
     outputs:
-      images: ${{ steps.images-matrix.outputs.images }}
+      image-matrix: ${{ steps.image-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,9 +41,30 @@ jobs:
           installation-attempts: "5"
           installation-wait-seconds: "10"
 
-      - id: images-matrix
+      - id: image-matrix
         run: |
-          echo "images=$(bowtie filter-implementations --format json | jq -c)" >> $GITHUB_OUTPUT
+          implementation=${{ inputs.implementation }}
+          matrix_versions_file="implementations/$implementation/matrix-versions.json"
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          MATRIX="[]"
+          if [ -n "$implementation" ]; then
+            if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
+              if [ -f "$matrix_versions_file" ]; then
+                versions=$(cat "$matrix_versions_file" | jq -c)
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+              else
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" '. + [{"image": $impl, "version": "latest"}]')
+              fi
+            else
+              echo "No such implementation found ('$implementation'). Please provide the correct implementation name."
+              exit 1
+            fi
+          else
+            for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
+              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+            done
+          fi
+          echo "matrix=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   build:
     needs: list
@@ -59,10 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - ${{ inputs.image != '' && inputs.image || fromJson(needs.list.outputs.images) }}
-        version:
-          - ${{ inputs.version != '' && inputs.version || 'latest' }}
+        include: ${{ fromJson(needs.list.outputs.image-matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +94,7 @@ jobs:
           filters: |
             impl:
               - 'implementations/${{ matrix.image }}/**'
-        if: ${{ inputs.image == '' && inputs.version == '' }}
+        if: ${{ !inputs.implementation }}
 
       - name: Install qemu
         run: |
@@ -83,7 +104,7 @@ jobs:
           (
             (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.image != '' && inputs.version != '')
+            || (inputs.implementation)
           )
           && !startsWith(matrix.image, 'dotnet-')
         # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
@@ -99,12 +120,12 @@ jobs:
           tags: ${{ matrix.version }} ${{ github.sha }}
           archs: amd64, arm64
           build-args: |
-            ${{ inputs.image != '' && inputs.version != '' && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
+            ${{ inputs.implementation && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
         if: |
           (
             (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.image != '' && inputs.version != '')
+            || (inputs.implementation)
           )
 
       - name: Set DOCKER_HOST so podman-built images are findable
@@ -120,7 +141,7 @@ jobs:
           (
             (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.image != '' && inputs.version != '')
+            || (inputs.implementation)
           )
 
       - name: Smoke Test
@@ -131,7 +152,7 @@ jobs:
           (
             (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.image != '' && inputs.version != '')
+            || (inputs.implementation)
           )
 
       - name: Publish
@@ -146,5 +167,5 @@ jobs:
         if: |
           (
             (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.image != '' && inputs.version != '')
+            || (inputs.implementation)
           )
