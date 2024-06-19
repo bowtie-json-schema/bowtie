@@ -102,8 +102,8 @@ jobs:
             ${{ inputs.image != '' && inputs.version != '' && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
         if: |
           (
-            (steps.changes.outputs.impl == 'true') 
-            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
             || (inputs.image != '' && inputs.version != '')
           )
 
@@ -118,8 +118,8 @@ jobs:
         uses: ./
         if: |
           (
-            (steps.changes.outputs.impl == 'true') 
-            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
             || (inputs.image != '' && inputs.version != '')
           )
 
@@ -129,8 +129,8 @@ jobs:
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
         if: |
           (
-            (steps.changes.outputs.impl == 'true') 
-            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) 
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
             || (inputs.image != '' && inputs.version != '')
           )
 
