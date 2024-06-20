@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.302 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.302-1 AS build
 ARG TARGETARCH
 
 WORKDIR /source
