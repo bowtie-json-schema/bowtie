@@ -29,7 +29,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _connectables, _report, _suite
-from bowtie._commands import SeqCase, Unsuccessful
+from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from httpx import Response
     from referencing.jsonschema import SchemaResource
 
-    from bowtie._commands import AnyTestResult
+    from bowtie._commands import AnyTestResult, SeqResult
     from bowtie._connectables import Connectable, ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
@@ -1504,64 +1504,86 @@ async def info(
     help="Don't print any output, just exit with nonzero status on failure.",
 )
 @format_option()
-async def smoke(
-    start: Starter,
-    format: _F,
-    echo: Callable[..., None],
-) -> int:
+async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
     """
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
-    exit_code = 0
+    results = [
+        (implementation.id, implementation.info, await implementation.smoke())
+        async for _, implementation in start()
+    ]
 
-    async for _, implementation in start():
-        echo(f"Testing {implementation.id!r}...\n", file=sys.stderr)
-        serializable: list[dict[str, Any]] = []
-        implementation_exit_code = 0
+    match results, format:
+        case [(_, _, result)], "json":
+            echo(json.dumps(result.serializable(), indent=2))
+        case _, "json":
+            output = {id: result.serializable() for id, _, result in results}
+            echo(json.dumps(output, indent=2))
+        case [(_, _, result)], "pretty":
+            console.Console().print(result)
+        case _, "pretty":
+            out = console.Console()
+            for _, _, each in results:
+                out.print(each)
+        case _, "markdown":
+            for _, info, result in results:
+                echo(f"# {info.name} ({info.language})\n")
 
-        async for _, results in implementation.smoke():
-            async for case, result in results:
-                if result.unsuccessful():
-                    implementation_exit_code |= EX.DATAERR
+                if result.success:
+                    echo("Smoke test *succeeded!*")
+                else:
+                    echo("Smoke test **failed!**")
 
-                match format:
-                    case "json":
-                        serializable.append(
-                            dict(
-                                case=case.without_expected_results(),
-                                result=asdict(result.result),
-                            ),
+                epilog: Sequence[
+                    tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]
+                ] = []
+
+                echo("\n## Dialects\n")
+                for dialect, failures in result.for_each_dialect():
+                    if failures:
+                        epilog.append((dialect, failures))
+                        suffix = " **(failed)**"
+                    else:
+                        suffix = ""
+                    echo(f"* {dialect.pretty_name}{suffix}")
+
+                if epilog:
+                    echo("\n## Failures\n")
+
+                    for dialect, failures in epilog:
+                        output = dedent(
+                            f"""
+                            <details>
+                            <summary>{dialect.pretty_name}</summary>
+                            """,
                         )
+                        echo(output)
 
-                    case "pretty":
-                        echo(f"  · {case.description}: {result.dots()}")
+                        for case, each in failures:
+                            output = dedent(
+                                f"""
+                                ### Schema
 
-                    case "markdown":
-                        echo(f"* {case.description}: {result.dots()}")
+                                ```json
+                                {json.dumps(case.schema)}
+                                ```
 
-        match format:
-            case "json":
-                echo(json.dumps(serializable, indent=2))
+                                #### Instances
 
-            case "pretty":
-                message = (
-                    "❌ some failures"
-                    if implementation_exit_code
-                    else "✅ all passed"
-                )
-                echo(f"\n{message}", file=sys.stderr)
+                                """,
+                            )
+                            echo(output)
 
-            case "markdown":
-                message = (
-                    "**❌ some failures**"
-                    if implementation_exit_code
-                    else "**✅ all passed**"
-                )
-                echo(f"\n{message}", file=sys.stderr)
+                            # FIXME: This will be nicer if/when Unsuccessful
+                            #        contains the unsuccessful results.
+                            for i, test in enumerate(case.tests):
+                                result = each.result_for(i)
+                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                    echo(f"* `{test.instance}`")
 
-        exit_code |= implementation_exit_code
+                        echo("\n</details>")
 
-    return exit_code
+    return 0 if all(result.success for _, _, result in results) else EX.DATAERR
 
 
 @subcommand

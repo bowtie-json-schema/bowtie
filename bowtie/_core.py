@@ -12,7 +12,6 @@ import json
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
-from rich.panel import Panel
 from rpds import HashTrieMap
 from url import URL
 import httpx
@@ -334,6 +333,8 @@ class StartupFailed(Exception):
             hint_stmt=hint,
         )
         if self.stderr:
+            from rich.panel import Panel
+
             yield Panel(self.stderr, title="stderr")
 
 
@@ -629,6 +630,17 @@ class Implementation:
             seq_case = SeqCase(seq=uuid4().hex, case=case)
             yield case, await seq_case.run(runner=runner)
 
+    async def failing(
+        self,
+        dialect: Dialect,
+        cases: Iterable[TestCase],
+    ) -> Sequence[tuple[TestCase, SeqResult]]:
+        """
+        Run the given cases and yield ones which the implementation fails.
+        """
+        results = self.validate(dialect=dialect, cases=cases)
+        return [each async for each in results if each[1].unsuccessful()]
+
     async def start_speaking(self, dialect: Dialect) -> DialectRunner:
         if not self.supports(dialect):
             raise UnsupportedDialect(implementation=self, dialect=dialect)
@@ -648,34 +660,13 @@ class Implementation:
                 stderr=error.stderr,
             ) from error
 
-    async def smoke(
-        self,
-    ) -> AsyncIterator[
-        tuple[Dialect, AsyncIterator[tuple[TestCase, SeqResult]]]
-    ]:
+    def smoke(self):
         """
         Smoke test this implementation.
         """
-        examples = [
-            # FIXME: When horejsek/python-fastjsonschema#181 is merged
-            #        and/or we special-case fastjsonschema...
-            # Example(description="null", instance=None),  # noqa: ERA001
-            Example(description="boolean", instance=True),
-            Example(description="integer", instance=37),
-            Example(description="number", instance=37.37),
-            Example(description="string", instance="37"),
-            Example(description="array", instance=[37]),
-            Example(description="object", instance={"foo": 37}),
-        ]
+        from bowtie import _smoke
 
-        # FIXME: All dialects
-        for dialect in [max(self.info.dialects)]:
-            cases = [
-                dialect.top_test_case(examples),
-                dialect.bottom_test_case(examples),
-            ]
-
-            yield dialect, self.validate(dialect=dialect, cases=cases)
+        return _smoke.test(self)
 
 
 @frozen

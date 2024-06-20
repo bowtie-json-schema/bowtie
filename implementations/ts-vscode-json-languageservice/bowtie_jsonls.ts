@@ -23,7 +23,6 @@ const schemaIds: { [id: string]: SchemaDraft } = {
   "http://json-schema.org/draft-07/schema#": SchemaDraft.v7,
   "http://json-schema.org/draft-06/schema#": SchemaDraft.v6,
   "http://json-schema.org/draft-04/schema#": SchemaDraft.v4,
-  "http://json-schema.org/draft-03/schema#": SchemaDraft.v3,
 };
 
 function send(data) {
