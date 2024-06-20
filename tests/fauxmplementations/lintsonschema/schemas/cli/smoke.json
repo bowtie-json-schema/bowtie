@@ -33,64 +33,61 @@
       "type": "object",
 
       "unevaluatedProperties": false,
-      "required": ["success", "confirmed_dialects"],
-      "properties": {
-        "confirmed_dialects": {
-          "description": "The shortnames of the dialects which *successfully* passed the smoke test.",
-
-          "type": "array",
-
-          "items": { "$ref": "tag:bowtie.report,2024:models:dialect:shortName" }
-        }
-      },
+      "required": ["success", "dialects"],
       "oneOf": [
         {
           "title": "Successful Smoke Test",
-          "properties": { "success": { "const": true } }
+
+          "properties": {
+            "success": { "const": true },
+            "dialects": {
+              "description": "The shortnames of the dialects confirmed in the smoke test, all of which would have passed.",
+
+              "type": "array",
+              "uniqueItems": true,
+
+              "items": {
+                "$ref": "tag:bowtie.report,2024:models:dialect:shortName"
+              }
+            },
+            "registry": {
+              "description": "If present and false, indicates the implementation failed a simple $ref keyword smoke test.",
+              "type": "boolean"
+            }
+          }
         },
         {
-          "title": "Smoke Test With Failures",
+          "title": "Smoke Test With Dialect Failures",
 
-          "anyOf": [{ "required": ["errors"] }, { "required": ["warnings"] }],
           "properties": {
             "success": { "const": false },
-            "errors": {
-              "$todo": "Constrain the messages and codes.",
-              "$ref": "#diagnostics"
-            },
-            "warnings": {
-              "$todo": "Constrain the messages and codes.",
-              "$ref": "#diagnostics"
+            "dialects": {
+              "type": "object",
+
+              "propertyNames": {
+                "$ref": "tag:bowtie.report,2024:models:dialect:shortName"
+              },
+              "additionalProperties": {
+                "description": "A mapping from dialect shortnames to results received while checking their support. Non-empty arrays will contain at least one failure.",
+                "$todo": "Standardize how we represent discrepant results.",
+
+                "type": "array",
+                "items": {
+                  "type": "object",
+
+                  "required": ["schema", "instances", "expected"],
+                  "additionalProperties": true,
+                  "properties": {
+                    "schema": {},
+                    "instances": {},
+                    "expected": {}
+                  }
+                }
+              }
             }
           }
         }
       ]
-    },
-    "diagnostics": {
-      "title": "Diagnostic Messages",
-
-      "$anchor": "diagnostics",
-
-      "type": "array",
-      "uniqueItems": true,
-
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-
-        "required": ["code", "message"],
-        "properties": {
-          "code": {
-            "description": "A diagnostic code used for searchability in Bowtie's documentation.",
-            "type": "string"
-          },
-          "message": {
-            "description": "A human-readable explanation of the error.",
-            "type": "string"
-          }
-        }
-      }
     }
   }
 }

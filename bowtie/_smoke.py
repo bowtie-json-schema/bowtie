@@ -8,12 +8,14 @@ implementations may still be buggy / not fully compliant.
 
 from __future__ import annotations
 
+from functools import cached_property
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any
+import json
 
 from attrs import evolve, field, frozen
-from diagnostic import DiagnosticError, DiagnosticWarning
 from referencing.jsonschema import EMPTY_REGISTRY
-from rpds import HashTrieSet, List
+from rpds import HashTrieMap
 
 from bowtie._core import Example, Test, TestCase
 
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from rich.console import Console, ConsoleOptions, RenderResult
 
     from bowtie._commands import SeqResult
-    from bowtie._core import Dialect, Implementation, ImplementationInfo
+    from bowtie._core import ConnectableId, Dialect, Implementation
 
 EXAMPLES = [
     # FIXME: When horejsek/python-fastjsonschema#181 is merged
@@ -39,21 +41,19 @@ EXAMPLES = [
 
 
 async def test(implementation: Implementation):
-    result = Result(info=implementation.info)
+    dialects = DialectResults()
 
     for dialect in implementation.info.dialects:
-        unsuccessful = await implementation.failing(
-            dialect=dialect,
-            cases=[
-                dialect.top_test_case(EXAMPLES),
-                dialect.bottom_test_case(EXAMPLES),
-            ],
-        )
-        if unsuccessful:
-            result = result.dialect_failed(dialect, results=unsuccessful)
+        cases = [
+            dialect.top_test_case(EXAMPLES),
+            dialect.bottom_test_case(EXAMPLES),
+        ]
+        failures = await implementation.failing(dialect=dialect, cases=cases)
+        dialects = dialects.with_result(dialect, failures)
 
-    last = result.latest_successful_dialect
-    if last is not None:  # no point checking $ref for a broken dialect
+    # no point checking $ref unless we have a working dialect
+    last, ref = dialects.latest_successful, None
+    if last is not None:
         # We'd use a tag URI, but the goal is to use literally the simplest
         # possible thing that should work.
         simple_uri = "http://bowtie.report/cli/smoke/ref-to-string"
@@ -70,21 +70,11 @@ async def test(implementation: Implementation):
                 Test(description="non-string", instance=37, valid=False),
             ],
         )
-        unsuccessful = await implementation.failing(
-            dialect=last,
-            cases=[ref_check],
-        )
-        if unsuccessful:
-            result = result.no_referencing(results=unsuccessful)
+        failure = await implementation.failing(dialect=last, cases=[ref_check])
+        if failure:
+            (ref,) = failure
 
-    return result
-
-
-def results_to_causes(
-    results: Sequence[tuple[TestCase, SeqResult]],
-) -> list[str]:
-    # FIXME
-    return []
+    return Result(id=implementation.id, dialects=dialects, ref=ref)
 
 
 @frozen
@@ -93,176 +83,174 @@ class Result:
     The result of smoke testing an implementation.
     """
 
-    _info: ImplementationInfo = field(alias="info")
-    _unsuccessful_dialects: HashTrieSet[Dialect] = field(
-        default=HashTrieSet(),
-        repr=False,
-        alias="unsuccessful_dialects",
-    )
-
-    errors: List[DiagnosticError] = List()
-    warnings: List[DiagnosticWarning] = List()
+    id: ConnectableId
+    _dialects: DialectResults = field(repr=False, alias="dialects")
+    _ref: tuple[TestCase, SeqResult] | None = field(repr=False, alias="ref")
 
     def __rich_console__(
         self,
         console: Console,
         options: ConsoleOptions,
     ) -> RenderResult:
-        from rich.markdown import Markdown
+        from rich import box
         from rich.panel import Panel
         from rich.table import Column, Table
 
-        table = Table.grid(
+        epilog = Table.grid(padding=2, pad_edge=True)
+
+        failures = self._dialects.failures
+
+        prefix = f"{self.id} [dim]seems to"
+        if failures:
+            title = f"{prefix} be [/][b red]broken!"
+
+            for dialect, cases_and_results in failures:
+                first = cases_and_results[0][0]
+                subtable = Table(
+                    Column("Schema", vertical="middle", no_wrap=True),
+                    Column("Instances", vertical="middle"),
+                    title=f"{dialect.pretty_name} [red]Failures[/]",
+                    padding=2,
+                    box=box.MINIMAL,
+                    show_header=False,
+                    caption=dedent(
+                        rf"""
+                        [blue]bowtie validate -i {self.id} <(printf '
+                            {json.dumps(first.schema)}
+                        ') <(printf '
+                            {json.dumps(first.tests[0].instance)}
+                        ')
+
+                        [/]can be used to reproduce one of the failures.
+                        """,
+                    ),
+                    caption_justify="left",
+                )
+                for case, seq_result in cases_and_results:
+                    instances = Table(box=None, padding=1)
+                    for i, test in enumerate(case.tests):
+                        result = seq_result.result.result_for(i)
+                        if result.errored:
+                            message = "[b red]errored"
+                        else:
+                            word = "valid" if result.valid else "invalid"  # type: ignore[reportUnknownMemberType]
+                            message = f"[red]incorrectly[/] {word}"
+
+                        instances.add_row(test.syntax(), message)
+
+                    subtable.add_row(case.syntax(dialect), instances)
+                epilog.add_row(subtable)
+        elif self._ref:
+            title = f"{prefix} be [/][b yellow]broken!"
+
+            panel = Panel.fit(
+                (
+                    "The implementation was sent a simple `$ref` to "
+                    "resolve and did not follow it correctly. "
+                    "Check to be sure the harness is properly handling "
+                    "the `registry` property when sent in a test case.\n"
+                    "If however the implementation does not support "
+                    "reference resolution in any form, you might not "
+                    "be able to address this warning."
+                ),
+                title="[b yellow]Basic referencing support does not work.",
+                padding=1,
+            )
+            epilog.add_row(panel)
+        else:
+            title = f"{prefix} [/][b green]work!"
+
+        yield ""
+        table = Table(
             Column("Label", no_wrap=True, justify="center"),
             Column("Content"),
-            padding=(1, 4),
+            title=title,
+            padding=1,
+            box=None,
+            show_header=False,
             pad_edge=True,
+            min_width=79,
+            title_justify="center",
         )
-        table.min_width = 79
-        table.title_justify = "left"
-
-        dialects = Table.grid(Column("Dialect", justify="right"))
-        for dialect in sorted(self._info.dialects, reverse=True):
-            style = "green" if dialect in self.confirmed_dialects else "red"
-            dialects.add_row(f"{dialect.pretty_name}", style=style)
-        table.add_row("Dialects\n[dim](Confirmed Working)", dialects)
-
-        prefix = f"{self._info.id}[dim] seems to"
-        if self.success:
-            table.title = f"{prefix} [/][b green]work!"
-        elif self.warnings:
-            table.title = f"{prefix} be [/][b yellow]broken!"
-
-            warnings = Table.grid(padding=1)
-            for warning in self.warnings:
-                subtable = Table.grid("Causes", pad_edge=True)
-                for cause in warning.causes:
-                    subtable.add_row(cause)
-                warnings.add_row(warning.message)
-                hint = Panel.fit(
-                    Markdown(str(warning.hint_stmt)),
-                    title="[blue]Hint",
-                    padding=(1, 4),
-                )
-                warnings.add_row(hint)
-                warnings.add_row(subtable)
-            table.add_row("[yellow]Warnings", warnings)
-        else:
-            table.title = f"{prefix} be [/][b red]broken!"
-
-            errors = Table.grid(padding=1)
-            for error in self.errors:
-                subtable = Table.grid("Causes", pad_edge=True)
-                for cause in error.causes:
-                    subtable.add_row(cause)
-                errors.add_row(error.message)
-                hint = Panel.fit(
-                    Markdown(str(error.hint_stmt)),
-                    title="[blue]Hint",
-                    padding=(1, 4),
-                )
-                errors.add_row(hint)
-                errors.add_row(subtable)
-            table.add_row("[red]Errors", errors)
+        table.add_row("Dialects\n[dim](Confirmed Working)", self._dialects)
         yield table
+        yield epilog
 
-    @property
-    def latest_successful_dialect(self):
-        return max(self.confirmed_dialects, default=None)
+    def for_each_dialect(self):
+        return sorted(self._dialects, reverse=True)
 
-    @property
-    def confirmed_dialects(self):
-        return self._info.dialects.difference(self._unsuccessful_dialects)
-
-    @property
+    @cached_property
     def success(self):
-        return not self.errors and not self.warnings
+        # We treat referencing failures as soft failures, since so many
+        # implementations have issues :( Perhaps this will change.
+        return not self._dialects.failures
 
-    def dialect_failed(
+    def serializable(self) -> dict[str, Any]:
+        if self.success:
+            return dict(
+                success=True,
+                dialects=[
+                    each.short_name for each, _ in self.for_each_dialect()
+                ],
+                **{"registry": False} if self._ref else {},
+            )
+        return dict(
+            success=False,
+            dialects={  # FIXME: some standard representation of discrepancy
+                dialect.short_name: [
+                    dict(
+                        schema=case.schema,
+                        instances=[each.instance for each in case.tests],
+                        expected=[
+                            dict(valid=expect) for expect in each.expected
+                        ],
+                        **each.result.serializable(),
+                    )
+                    for case, each in failures
+                ]
+                for dialect, failures in self.for_each_dialect()
+            },
+        )
+
+
+@frozen
+class DialectResults:
+    """
+    An indication of whether each claimed supported dialect works.
+    """
+
+    _dialects: HashTrieMap[Dialect, Sequence[tuple[TestCase, SeqResult]]] = (
+        HashTrieMap()
+    )
+    latest_successful: Dialect | None = None
+
+    def __iter__(self):
+        return iter(self._dialects.items())
+
+    @cached_property
+    def failures(self):
+        return sorted(
+            ((k, v) for k, v in self._dialects.items() if v),
+            reverse=True,
+        )
+
+    def __rich__(self):
+        from rich.table import Column, Table
+
+        table = Table.grid(Column("Name", justify="right"))
+        ordered = sorted(self._dialects.items(), reverse=True)
+        for dialect, failures in ordered:
+            style = "red" if failures else "green"
+            table.add_row(f"{dialect.pretty_name}", style=style)
+        return table
+
+    def with_result(
         self,
         dialect: Dialect,
         results: Sequence[tuple[TestCase, SeqResult]],
     ):
-        dialects = self._unsuccessful_dialects.insert(dialect)
-
-        if dialects != self._info.dialects:
-            errors = self.errors.push_front(
-                DiagnosticError(
-                    code="smoke-found-broken-dialect",
-                    message=f"All {dialect.pretty_name} examples failed.",
-                    causes=results_to_causes(results),
-                    hint_stmt=(
-                        "Verify that the implementation truly supports "
-                        "the dialect. If you're sure it does, it is "
-                        "likely that the Bowtie harness is not "
-                        "functioning propertly."
-                    ),
-                ),
-            )
-        else:  # nothing succeeded, show an even stronger error
-            prior_failures: Sequence[DiagnosticError] = []
-            errors: List[DiagnosticError] = List()
-            for error in self.errors:
-                if error.code == "smoke-found-broken-dialect":
-                    prior_failures.append(error)
-                else:
-                    errors = errors.push_front(error)
-            errors = errors.push_front(
-                DiagnosticError(
-                    code="smoke-no-successful-results",
-                    message="No successful results were seen.",
-                    causes=[
-                        cause
-                        for each in prior_failures
-                        for cause in each.causes
-                    ],
-                    hint_stmt=(
-                        "The harness seems to be entirely broken.\n\n"
-                        "Check for error messages it may have emitted (likely "
-                        "to its standard error which is shown below).\n"
-                        "Or use programming language-specific mechanisms "
-                        "from the language the harness is written in "
-                        "to diagnose."
-                    ),
-                ),
-            )
-
-        return evolve(self, unsuccessful_dialects=dialects, errors=errors)
-
-    def no_referencing(self, results: Sequence[tuple[TestCase, SeqResult]]):
-        return evolve(
-            self,
-            warnings=self.warnings.push_front(
-                DiagnosticWarning(
-                    code="smoke-broken-referencing",
-                    message="Basic referencing support does not work.",
-                    causes=results_to_causes(results),
-                    hint_stmt=(
-                        "The implementation was sent a simple `$ref` to "
-                        "resolve and did not follow it correctly. "
-                        "Check to be sure the harness is properly handling "
-                        "the `registry` property when sent in a test case.\n"
-                        "If however the implementation does not support "
-                        "reference resolution in any form, you might not "
-                        "be able to address this warning."
-                    ),
-                ),
-            ),
-        )
-
-    def serializable(self) -> dict[str, Any]:
-        as_dict: dict[str, Any] = dict(
-            success=self.success,
-            confirmed_dialects=[
-                dialect.short_name
-                for dialect in sorted(self.confirmed_dialects, reverse=True)
-            ],
-        )
-        for each in "errors", "warnings":
-            value = getattr(self, each)
-            if value:
-                as_dict[each] = [
-                    dict(code=each.code, message=each.message)
-                    for each in value
-                ]
-        return as_dict
+        latest = self.latest_successful
+        if not results and (latest is None or dialect > latest):
+            latest = dialect
+        dialects = self._dialects.insert(dialect, results)
+        return evolve(self, dialects=dialects, latest_successful=latest)

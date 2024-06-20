@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
-from textwrap import dedent, indent
+from textwrap import dedent
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -29,7 +29,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _connectables, _report, _suite
-from bowtie._commands import SeqCase, Unsuccessful
+from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from httpx import Response
     from referencing.jsonschema import SchemaResource
 
-    from bowtie._commands import AnyTestResult
+    from bowtie._commands import AnyTestResult, SeqResult
     from bowtie._connectables import Connectable, ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
@@ -1534,23 +1534,54 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
                 else:
                     echo("Smoke test **failed!**")
 
-                echo("\n## Working Dialects\n")
-                for dialect in sorted(result.confirmed_dialects, reverse=True):
-                    echo(f"  * {dialect.pretty_name}")
+                epilog: Sequence[
+                    tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]
+                ] = []
 
-                for heading, diagnostics in [
-                    ("Warnings", result.warnings),
-                    ("Errors", result.errors),
-                ]:
-                    if diagnostics:
-                        echo(f"\n## {heading}")
-                        for each in diagnostics:
-                            echo(f"  * {each.message}")
+                echo("\n## Dialects\n")
+                for dialect, failures in result.for_each_dialect():
+                    if failures:
+                        epilog.append((dialect, failures))
+                        suffix = " **(failed)**"
+                    else:
+                        suffix = ""
+                    echo(f"* {dialect.pretty_name}{suffix}")
 
-                            for cause in each.causes:
-                                echo(f"    - {cause}")
+                if epilog:
+                    echo("\n## Failures\n")
 
-                            echo(indent(str(each.hint_stmt), " " * 4))
+                    for dialect, failures in epilog:
+                        output = dedent(
+                            f"""
+                            <details>
+                            <summary>{dialect.pretty_name}</summary>
+                            """,
+                        )
+                        echo(output)
+
+                        for case, each in failures:
+                            output = dedent(
+                                f"""
+                                ### Schema
+
+                                ```json
+                                {json.dumps(case.schema)}
+                                ```
+
+                                #### Instances
+
+                                """,
+                            )
+                            echo(output)
+
+                            # FIXME: This will be nicer if/when Unsuccessful
+                            #        contains the unsuccessful results.
+                            for i, test in enumerate(case.tests):
+                                result = each.result_for(i)
+                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                    echo(f"* `{test.instance}`")
+
+                        echo("\n</details>")
 
     return 0 if all(result.success for _, _, result in results) else EX.DATAERR
 

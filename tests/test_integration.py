@@ -986,27 +986,735 @@ async def test_filter():
 
 class TestSmoke:
     @pytest.mark.asyncio
-    @pytest.mark.containers
     @pytest.mark.json
-    async def test_full_failure(self, fail_on_run):
+    async def test_full_failure(self):
         jsonout, stderr = await bowtie(
             "smoke",
             "--format",
             "json",
             "-i",
-            fail_on_run,
+            miniatures.always_wrong,
             json=True,
             exit_code=EX.DATAERR,
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
             "success": False,
-            "confirmed_dialects": [],
-            "errors": [
-                dict(
-                    code="smoke-no-successful-results",
-                    message="No successful results were seen.",
-                ),
-            ],
+            "dialects": {
+                "draft2020-12": [
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "not": {
+                                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            },
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+                "draft2019-09": [
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2019-09/schema",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            "not": {
+                                "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            },
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+                "draft7": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+                "draft6": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-06/schema#",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-06/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-06/schema#",
+                            },
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+                "draft4": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-04/schema#",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-04/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                            },
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+                "draft3": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-03/schema#",
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-03/schema#",
+                            "disallow": [
+                                {},
+                            ],
+                        },
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                            {
+                                "valid": False,
+                            },
+                        ],
+                        "results": [
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                            {
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
         }, stderr
 
     @pytest.mark.asyncio
@@ -1023,17 +1731,76 @@ class TestSmoke:
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
             "success": False,
-            "confirmed_dialects": [
-                dialect.short_name
-                for dialect in sorted(Dialect.known(), reverse=True)
-                if dialect.short_name != "draft7"
-            ],
-            "errors": [
-                dict(
-                    code="smoke-found-broken-dialect",
-                    message="All Draft 7 examples failed.",
-                ),
-            ],
+            "dialects": {
+                "draft2019-09": [],
+                "draft2020-12": [],
+                "draft3": [],
+                "draft4": [],
+                "draft6": [],
+                "draft7": [
+                    {
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                        },
+                    },
+                    {
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "instances": [
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
+                    },
+                ],
+            },
         }, stderr
 
     @pytest.mark.asyncio
@@ -1046,19 +1813,13 @@ class TestSmoke:
             "-i",
             miniatures.no_registry_support,
             json=True,
-            exit_code=EX.DATAERR,
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
-            "success": False,
-            "confirmed_dialects": [
+            "success": True,
+            "registry": False,
+            "dialects": [
                 dialect.short_name
                 for dialect in sorted(Dialect.known(), reverse=True)
-            ],
-            "warnings": [
-                dict(
-                    code="smoke-broken-referencing",
-                    message="Basic referencing support does not work.",
-                ),
             ],
         }, stderr
 
@@ -1075,7 +1836,7 @@ class TestSmoke:
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
             "success": True,
-            "confirmed_dialects": [
+            "dialects": [
                 dialect.short_name
                 for dialect in sorted(Dialect.known(), reverse=True)
             ],
@@ -1102,24 +1863,64 @@ class TestSmoke:
             "--format",
             "markdown",
             "-i",
-            miniatures.always_invalid,
-            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+            miniatures.incorrectly_claims_draft7,
+            exit_code=EX.DATAERR,  # because indeed it isn't always right
         )
         assert dedent(stdout) == dedent(
             """\
-            # always_invalid (python)
+            # incorrectly_claims_draft7 (python)
 
             Smoke test **failed!**
 
-            ## Working Dialects
+            ## Dialects
+
+            * Draft 2020-12
+            * Draft 2019-09
+            * Draft 7 **(failed)**
+            * Draft 6
+            * Draft 4
+            * Draft 3
+
+            ## Failures
 
 
-            ## Errors
-              * No successful results were seen.
-                The harness seems to be entirely broken.
+            <details>
+            <summary>Draft 7</summary>
 
-                Check for error messages it may have emitted (likely to its standard error which is shown below).
-                Or use programming language-specific mechanisms from the language the harness is written in to diagnose.
+
+            ### Schema
+
+            ```json
+            {"$schema": "http://json-schema.org/draft-07/schema#"}
+            ```
+
+            #### Instances
+
+
+            * `True`
+            * `37`
+            * `37.37`
+            * `37`
+            * `[37]`
+            * `{'foo': 37}`
+
+            ### Schema
+
+            ```json
+            {"$schema": "http://json-schema.org/draft-07/schema#", "not": {"$schema": "http://json-schema.org/draft-07/schema#"}}
+            ```
+
+            #### Instances
+
+
+            * `True`
+            * `37`
+            * `37.37`
+            * `37`
+            * `[37]`
+            * `{'foo': 37}`
+
+            </details>
             """,  # noqa: E501
         ), stderr
 
@@ -1160,20 +1961,201 @@ class TestSmoke:
         assert (await command_validator("smoke")).validated(jsonout) == {
             miniatures.passes_smoke: {
                 "success": True,
-                "confirmed_dialects": [
+                "dialects": [
                     dialect.short_name
                     for dialect in sorted(Dialect.known(), reverse=True)
                 ],
             },
             miniatures.always_invalid: {
                 "success": False,
-                "confirmed_dialects": [],
-                "errors": [
-                    {
-                        "code": "smoke-no-successful-results",
-                        "message": "No successful results were seen.",
-                    },
-                ],
+                "dialects": {
+                    "draft2019-09": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            },
+                        },
+                    ],
+                    "draft2020-12": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            },
+                        },
+                    ],
+                    "draft3": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-03/schema#",
+                            },
+                        },
+                    ],
+                    "draft4": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                            },
+                        },
+                    ],
+                    "draft6": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-06/schema#",
+                            },
+                        },
+                    ],
+                    "draft7": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
+                    ],
+                },
             },
         }, stderr
 
