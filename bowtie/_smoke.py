@@ -70,7 +70,7 @@ async def test(implementation: Implementation):
                 Test(description="string", instance="valid", valid=True),
                 Test(description="non-string", instance=37, valid=False),
             ],
-        )
+        ).with_explicit_dialect(last)
         got = await implementation.failing(dialect=last, cases=[ref_check])
         if got:
             (failure,) = got
