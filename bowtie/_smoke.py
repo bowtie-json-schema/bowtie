@@ -42,6 +42,25 @@ EXAMPLES = [
 
 
 async def test(implementation: Implementation):
+    """
+    Smoke test an implementation for absolute basic correctness.
+
+    All implementations are expected to pass this test, and failing it is used
+    to indicate that a *harness* is misimplemented.
+
+    So nothing terribly complex should be included here, as elsewhere Bowtie of
+    course can report on overall *compliance* of an implementation in order to
+    communicate how well it implements a specification.
+
+    Right now this test consists of verifying that the implementation properly:
+
+        * validates with a schema which should consider all instances valid
+        * validates with a schema which should consider all instances invalid
+
+    In addition, we check, but do not fail, an implementation which does not
+    support *basic* referencing support, where we define this to mean that a
+    schema containing a reference to a single absolute URI is followed.
+    """
     dialects = DialectResults()
 
     for dialect in implementation.info.dialects:
