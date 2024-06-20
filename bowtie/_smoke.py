@@ -149,7 +149,7 @@ class Result:
                     subtable.add_row(case.syntax(dialect), instances)
                 epilog.add_row(subtable)
         elif self._ref:
-            title = f"{prefix} be [/][b yellow]broken!"
+            title = f"{prefix} be [/][b yellow]partially broken!"
 
             lead = Text(
                 (
