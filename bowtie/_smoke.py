@@ -17,6 +17,7 @@ from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY
 from rpds import HashTrieMap
 
+from bowtie._commands import TestResult
 from bowtie._core import Example, Test, TestCase
 
 if TYPE_CHECKING:
@@ -70,9 +71,10 @@ async def test(implementation: Implementation):
                 Test(description="non-string", instance=37, valid=False),
             ],
         )
-        failure = await implementation.failing(dialect=last, cases=[ref_check])
-        if failure:
-            (ref,) = failure
+        got = await implementation.failing(dialect=last, cases=[ref_check])
+        if got:
+            (failure,) = got
+            ref = last, *failure
 
     return Result(id=implementation.id, dialects=dialects, ref=ref)
 
@@ -85,7 +87,10 @@ class Result:
 
     id: ConnectableId
     _dialects: DialectResults = field(repr=False, alias="dialects")
-    _ref: tuple[TestCase, SeqResult] | None = field(repr=False, alias="ref")
+    _ref: tuple[Dialect, TestCase, SeqResult] | None = field(
+        repr=False,
+        alias="ref",
+    )
 
     def __rich_console__(
         self,
@@ -93,8 +98,11 @@ class Result:
         options: ConsoleOptions,
     ) -> RenderResult:
         from rich import box
+        from rich.console import Group
+        from rich.json import JSON
         from rich.panel import Panel
         from rich.table import Column, Table
+        from rich.text import Text
 
         epilog = Table.grid(padding=2, pad_edge=True)
 
@@ -143,7 +151,7 @@ class Result:
         elif self._ref:
             title = f"{prefix} be [/][b yellow]broken!"
 
-            panel = Panel.fit(
+            lead = Text(
                 (
                     "The implementation was sent a simple `$ref` to "
                     "resolve and did not follow it correctly. "
@@ -153,8 +161,41 @@ class Result:
                     "reference resolution in any form, you might not "
                     "be able to address this warning."
                 ),
+            )
+
+            ref_dialect, case, failure = self._ref
+            reason = Table(
+                Column("Schema", vertical="middle"),
+                Column("Registry", vertical="middle"),
+                Column("Instances", vertical="middle"),
+                box=box.MINIMAL,
+            )
+
+            # FIXME: Via python-jsonschema/referencing#16
+            registry = {k: v.contents for k, v in case.registry.items()}
+            instances = Table.grid(padding=2)
+            for i, test in enumerate(case.tests):
+                result = failure.result_for(i)
+                expected = TestResult(valid=test.expected())  # type: ignore[reportArgumentType]
+                if expected != result:
+                    instances.add_row(
+                        JSON(json.dumps(test.instance)),
+                        (
+                            f"[red]{result.description}[/] but should be "
+                            f"[green]{expected.description}"
+                        ),
+                    )
+
+            reason.add_row(
+                case.syntax(ref_dialect),
+                JSON(json.dumps(registry)),
+                instances,
+            )
+
+            panel = Panel(
+                Group(lead, reason),
                 title="[b yellow]Basic referencing support does not work.",
-                padding=1,
+                padding=2,
             )
             epilog.add_row(panel)
         else:
