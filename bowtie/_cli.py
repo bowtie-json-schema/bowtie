@@ -1520,9 +1520,9 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
             output = {id: result.serializable() for id, _, result in results}
             echo(json.dumps(output, indent=2))
         case [(_, _, result)], "pretty":
-            console.Console(width=120).print(result)
+            console.Console().print(result)
         case _, "pretty":
-            out = console.Console(width=120)
+            out = console.Console()
             for _, _, each in results:
                 out.print(each)
         case _, "markdown":
