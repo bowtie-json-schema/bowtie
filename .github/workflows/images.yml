@@ -1,4 +1,4 @@
-name: Rebuild Bowtie Images (Latest or Versioned)
+name: Rebuild Bowtie Images
 
 on:
   workflow_dispatch:
