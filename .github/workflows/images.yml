@@ -5,9 +5,8 @@ on:
     inputs:
       implementation:
         description: >
-          An implementation name whose multiple versions to build for given that a
-          "matrix-versions.json" file exists for that implementation; otherwise, builds
-          for its latest version by default.
+          An implementation name whose harness supports building images for its different versions; 
+          if not, then the workflow builds image for its latest version by default.
         required: false
         type: string
   pull_request:
@@ -31,7 +30,7 @@ jobs:
   list:
     runs-on: ubuntu-latest
     outputs:
-      image-matrix: ${{ steps.image-matrix.outputs.matrix }}
+      images: ${{ steps.images-matrix.outputs.images }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +40,7 @@ jobs:
           installation-attempts: "5"
           installation-wait-seconds: "10"
 
-      - id: image-matrix
+      - id: images-matrix
         run: |
           implementation=${{ inputs.implementation }}
           matrix_versions_file="implementations/$implementation/matrix-versions.json"
@@ -64,7 +63,7 @@ jobs:
               MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
             done
           fi
-          echo "matrix=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
+          echo "images=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   build:
     needs: list
@@ -82,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.list.outputs.image-matrix) }}
+        include: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -147,6 +146,11 @@ jobs:
         run: |
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
+        # We special case python-fastjsonschema, which unfortunately does not
+        # pass the smoke test, as it has multiple issues handling simple
+        # schemas using the `not` keyword.
+        # See e.g. horejsek/python-fastjsonschema#181
+        continue-on-error: ${{ matrix.image == 'python-fastjsonschema' }}
         if: |
           (
             (steps.changes.outputs.impl == 'true')
