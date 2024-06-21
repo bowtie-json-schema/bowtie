@@ -29,9 +29,7 @@ if TYPE_CHECKING:
     from bowtie._core import ConnectableId, Dialect, Implementation
 
 EXAMPLES = [
-    # FIXME: When horejsek/python-fastjsonschema#181 is merged
-    #        and/or we special-case fastjsonschema...
-    # Example(description="null", instance=None),  # noqa: ERA001
+    Example(description="null", instance=None),
     Example(description="boolean", instance=True),
     Example(description="integer", instance=37),
     Example(description="number", instance=37.37),

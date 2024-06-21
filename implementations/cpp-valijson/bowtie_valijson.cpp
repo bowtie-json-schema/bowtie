@@ -105,7 +105,6 @@ int main() {
       Value dialects(kArrayType);
       dialects.PushBack("http://json-schema.org/draft-07/schema#", allocator);
       dialects.PushBack("http://json-schema.org/draft-04/schema#", allocator);
-      dialects.PushBack("http://json-schema.org/draft-03/schema#", allocator);
       implementation.AddMember("dialects", dialects, allocator);
 
       Value os(os_info["sysname"].c_str(), allocator);

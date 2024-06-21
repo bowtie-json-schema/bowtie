@@ -1006,6 +1006,7 @@ class TestSmoke:
                             "$schema": "https://json-schema.org/draft/2020-12/schema",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
@@ -1018,44 +1019,22 @@ class TestSmoke:
                             },
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1066,56 +1045,31 @@ class TestSmoke:
                             },
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1125,56 +1079,31 @@ class TestSmoke:
                             "$schema": "https://json-schema.org/draft/2019-09/schema",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1185,56 +1114,31 @@ class TestSmoke:
                             },
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1244,56 +1148,31 @@ class TestSmoke:
                             "$schema": "http://json-schema.org/draft-07/schema#",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1304,56 +1183,31 @@ class TestSmoke:
                             },
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1363,56 +1217,31 @@ class TestSmoke:
                             "$schema": "http://json-schema.org/draft-06/schema#",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1423,56 +1252,31 @@ class TestSmoke:
                             },
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1482,56 +1286,31 @@ class TestSmoke:
                             "$schema": "http://json-schema.org/draft-04/schema#",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1542,56 +1321,31 @@ class TestSmoke:
                             },
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1601,56 +1355,31 @@ class TestSmoke:
                             "$schema": "http://json-schema.org/draft-03/schema#",
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                         "results": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                     },
                     {
@@ -1661,56 +1390,31 @@ class TestSmoke:
                             ],
                         },
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
                             "37",
-                            [
-                                37,
-                            ],
-                            {
-                                "foo": 37,
-                            },
+                            [37],
+                            {"foo": 37},
                         ],
                         "expected": [
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
-                            {
-                                "valid": False,
-                            },
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
                         ],
                         "results": [
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
-                            {
-                                "valid": True,
-                            },
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
                         ],
                     },
                 ],
@@ -1746,8 +1450,10 @@ class TestSmoke:
                             {"valid": True},
                             {"valid": True},
                             {"valid": True},
+                            {"valid": True},
                         ],
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
@@ -1756,6 +1462,7 @@ class TestSmoke:
                             {"foo": 37},
                         ],
                         "results": [
+                            {"valid": False},
                             {"valid": False},
                             {"valid": False},
                             {"valid": False},
@@ -1775,8 +1482,10 @@ class TestSmoke:
                             {"valid": False},
                             {"valid": False},
                             {"valid": False},
+                            {"valid": False},
                         ],
                         "instances": [
+                            None,
                             True,
                             37,
                             37.37,
@@ -1785,6 +1494,7 @@ class TestSmoke:
                             {"foo": 37},
                         ],
                         "results": [
+                            {"valid": True},
                             {"valid": True},
                             {"valid": True},
                             {"valid": True},
@@ -1897,6 +1607,7 @@ class TestSmoke:
             #### Instances
 
 
+            * `None`
             * `True`
             * `37`
             * `37.37`
@@ -1913,6 +1624,7 @@ class TestSmoke:
             #### Instances
 
 
+            * `None`
             * `True`
             * `37`
             * `37.37`
@@ -1978,8 +1690,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -1988,6 +1702,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
@@ -2009,8 +1724,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -2019,6 +1736,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
@@ -2040,8 +1758,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -2050,6 +1770,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
@@ -2071,8 +1792,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -2081,6 +1804,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
@@ -2102,8 +1826,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -2112,6 +1838,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
@@ -2133,8 +1860,10 @@ class TestSmoke:
                                 {"valid": True},
                                 {"valid": True},
                                 {"valid": True},
+                                {"valid": True},
                             ],
                             "instances": [
+                                None,
                                 True,
                                 37,
                                 37.37,
@@ -2143,6 +1872,7 @@ class TestSmoke:
                                 {"foo": 37},
                             ],
                             "results": [
+                                {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
                                 {"valid": False},
