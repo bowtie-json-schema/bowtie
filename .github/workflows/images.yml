@@ -42,9 +42,6 @@ jobs:
 
       - name: Install Bowtie
         uses: ./
-        with:
-          installation-attempts: "5"
-          installation-wait-seconds: "10"
 
       - id: images-matrix
         run: |

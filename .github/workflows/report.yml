@@ -50,8 +50,6 @@ jobs:
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
-          installation-attempts: "5"
-          installation-wait-seconds: "10"
 
       - name: Generate a New Report
         run: |
@@ -83,8 +81,6 @@ jobs:
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
-          installation-attempts: "5"
-          installation-wait-seconds: "10"
 
       - name: Generate implementations.json file
         run: |
@@ -107,8 +103,6 @@ jobs:
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
-          installation-attempts: "5"
-          installation-wait-seconds: "10"
 
       - name: Create our Site Structure
         run: mkdir site
