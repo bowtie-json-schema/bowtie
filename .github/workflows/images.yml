@@ -1,7 +1,14 @@
-name: Rebuild Bowtie Images
+name: Rebuild Bowtie Images (Latest or Versioned)
 
 on:
   workflow_dispatch:
+    inputs:
+      implementation:
+        description: >
+          An implementation name whose harness supports building images for its different versions;
+          if not, then the workflow builds image for its latest version by default.
+        required: false
+        type: string
   pull_request:
     paths:
       - "implementations/**"
@@ -35,7 +42,28 @@ jobs:
 
       - id: images-matrix
         run: |
-          echo "images=$(bowtie filter-implementations --format json | jq -c)" >> $GITHUB_OUTPUT
+          implementation=${{ inputs.implementation }}
+          matrix_versions_file="implementations/$implementation/matrix-versions.json"
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          MATRIX="[]"
+          if [ -n "$implementation" ]; then
+            if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
+              if [ -f "$matrix_versions_file" ]; then
+                versions=$(cat "$matrix_versions_file" | jq -c)
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+              else
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" '. + [{"image": $impl, "version": "latest"}]')
+              fi
+            else
+              echo "No such implementation found ('$implementation'). Please provide the correct implementation name."
+              exit 1
+            fi
+          else
+            for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
+              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+            done
+          fi
+          echo "images=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   build:
     needs: list
@@ -53,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.list.outputs.images) }}
+        include: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +92,7 @@ jobs:
           filters: |
             impl:
               - 'implementations/${{ matrix.image }}/**'
+        if: ${{ !inputs.implementation }}
 
       - name: Install qemu
         run: |
@@ -71,8 +100,9 @@ jobs:
           sudo apt-get install -y qemu-user-static
         if: |
           (
-            steps.changes.outputs.impl == 'true'
+            (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
           )
           && !startsWith(matrix.image, 'dotnet-')
         # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
@@ -85,9 +115,16 @@ jobs:
           containerfiles: |
             implementations/${{ matrix.image }}/Dockerfile
           image: ${{ matrix.image }}
-          tags: latest ${{ github.sha }}
+          tags: ${{ matrix.version }} ${{ github.sha }}
           archs: amd64, arm64
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+          build-args: |
+            ${{ inputs.implementation && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Set DOCKER_HOST so podman-built images are findable
         run: |
@@ -98,7 +135,12 @@ jobs:
 
       - name: Install Bowtie
         uses: ./
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Smoke Test
         run: |
@@ -109,7 +151,12 @@ jobs:
         # schemas using the `not` keyword.
         # See e.g. horejsek/python-fastjsonschema#181
         continue-on-error: ${{ matrix.image == 'python-fastjsonschema' }}
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Publish
         id: push
@@ -120,4 +167,8 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        if: |
+          (
+            (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
