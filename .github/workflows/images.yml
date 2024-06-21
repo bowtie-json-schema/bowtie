@@ -5,8 +5,14 @@ on:
     inputs:
       implementation:
         description: >
-          An implementation name whose harness supports building images for its different versions;
-          if not, then the workflow builds image for its latest version by default.
+          The name of an implementation.
+
+          If the implementation has historical version support (i.e. a
+          `matrix-versions.json` file) all of its versions will be built.
+          (A future improvement will allow building only specific subsets
+          of the supported versions.)
+
+          Otherwise, just the latest version is built.
         required: false
         type: string
   pull_request:
