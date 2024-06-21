@@ -5,7 +5,7 @@ on:
     inputs:
       implementation:
         description: >
-          An implementation name whose harness supports building images for its different versions; 
+          An implementation name whose harness supports building images for its different versions;
           if not, then the workflow builds image for its latest version by default.
         required: false
         type: string
