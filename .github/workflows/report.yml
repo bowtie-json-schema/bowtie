@@ -24,24 +24,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  previous-reports:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download the previous reports
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: report.yml
-          name: report-.*
-          name_is_regexp: true
-          path: previous
-          if_no_artifact_found: warn
-
-      - name: Store previous reports for inclusion
-        uses: actions/upload-artifact@v4
-        with:
-          name: previous-reports
-          path: previous
-
   dialects:
     runs-on: ubuntu-latest
     outputs:
@@ -116,7 +98,6 @@ jobs:
   site:
     needs:
       - regenerate-reports
-      - previous-reports
       - generate-implementation-metadata
 
     runs-on: ubuntu-latest
@@ -131,12 +112,6 @@ jobs:
 
       - name: Create our Site Structure
         run: mkdir site
-
-      - name: Include Previous Report
-        uses: actions/download-artifact@v4
-        with:
-          name: previous-reports
-          path: site/previous/
 
       - name: Include New Reports
         uses: actions/download-artifact@v4
