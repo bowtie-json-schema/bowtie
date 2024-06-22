@@ -280,6 +280,17 @@ with_versions = shellplementation(
     printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
+wrong_number_of_tests = shellplementation(
+    name="wrong_number_of_tests",
+    contents=r"""
+    read -r request
+    printf '{"implementation": {"name": "wrong-number-of-tests", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read -r request
+    printf '{"ok": true}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    """,  # noqa: E501
+)
 
 
 @pytest_asyncio.fixture
@@ -883,6 +894,34 @@ async def test_wrong_seq(wrong_seq):
         },
     ], stderr
     assert "mismatched seq " in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_wrong_number_of_tests(wrong_number_of_tests):
+    """
+    Sending the wrong number of responses for the number of tests in a test
+    case produces an error.
+    """
+    async with run(
+        "-i",
+        wrong_number_of_tests,
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+        exit_code=0,  # FIXME: It'd be nice if this was nonzero.
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            tag("wrong_number_of_tests"): ErroredTest.in_errored_case(),
+        },
+    ], stderr
+    assert "wrong number of responses " in stderr.lower(), stderr
 
 
 @pytest.mark.asyncio

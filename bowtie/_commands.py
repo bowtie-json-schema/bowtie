@@ -286,16 +286,16 @@ class AnyCaseResult(Protocol):
     def serializable(self) -> Message: ...
 
 
-def _case_result(seq: Seq, **data: Any) -> tuple[Seq, AnyCaseResult]:
-    # FIXME: Remove passing seq through which is mostly to support future
-    #        validation that the seq we got back is the right one
+def _case_result(seq: Seq, **data: Any) -> tuple[Seq, int, AnyCaseResult]:
+    # FIXME: If we can get our expected length here...
     match data:
         case {"errored": True, **data}:
-            return seq, CaseErrored(**data)
+            return seq, 0, CaseErrored(**data)
         case {"skipped": True, **skip}:
-            return seq, CaseSkipped(**skip)
-        case _:
-            return seq, CaseResult.from_results(**data)
+            return seq, 0, CaseSkipped(**skip)
+        case data:
+            result = CaseResult.from_results(**data)
+            return seq, len(result.results), result
 
 
 @frozen
@@ -324,7 +324,7 @@ class SeqResult:
         expected: list[bool | None],
         **data: dict[str, Any],
     ):
-        _, result = _case_result(seq=seq, **data)
+        _, _, result = _case_result(seq=seq, **data)
         return cls(
             seq=seq,
             implementation=implementation,

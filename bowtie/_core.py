@@ -537,18 +537,25 @@ class DialectRunner:
         expected: Sequence[bool | None],
     ) -> SeqResult:
         try:
-            response: tuple[Seq, AnyCaseResult] | None = (
+            response: tuple[Seq, int, AnyCaseResult] | None = (
                 await self._harness.request(run)  # type: ignore[reportArgumentType]
             )
             if response is None:
                 result = CaseErrored.uncaught()
             else:
-                seq, result = response
+                seq, length, result = response
                 if seq != run.seq:
                     result = CaseErrored.uncaught(
                         message="mismatched seq",
                         expected=run.seq,
                         got=seq,
+                        response=result,
+                    )
+                elif length and length != len(expected):
+                    result = CaseErrored.uncaught(
+                        message="wrong number of responses",
+                        expected=len(expected),
+                        got=length,
                         response=result,
                     )
         except GotStderr as error:
