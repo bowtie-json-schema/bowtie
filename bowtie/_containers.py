@@ -245,7 +245,8 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
         if err.status != 404:  # noqa: PLR2004
             raise
         try:
-            await docker.pull(from_image=image_name, tag="latest")  # type: ignore[reportUnknownMemberType]
+            tag = image_name.partition(":")[2] or "latest"
+            await docker.pull(from_image=image_name, tag=tag)  # type: ignore[reportUnknownMemberType]
         except aiodocker.exceptions.DockerError as err:
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
