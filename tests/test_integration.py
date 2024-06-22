@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -303,10 +303,7 @@ async def envsonschema_container(docker, envsonschema):
     container = await docker.containers.create(config=config)
     await container.start()
     yield f"container:{container.id}"
-
-    # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    await container.delete()
 
 
 @pytest_asyncio.fixture
@@ -319,10 +316,7 @@ async def lintsonschema_container(docker, lintsonschema):
     container = await docker.containers.create(config=config)
     await container.start()
     yield f"container:{container.id}"
-
-    # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    await container.delete()
 
 
 @asynccontextmanager
