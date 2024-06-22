@@ -95,16 +95,16 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
         assert process.returncode == exit_code, decoded
 
     if json:
-        if stdout:
-            try:
-                jsonout = _json.loads(stdout)
-            except _json.JSONDecodeError:
-                pytest.fail(
-                    f"stdout had invalid JSON: {stdout!r}\n\n"
-                    f"stderr had {stderr}",
-                )
-            return jsonout, stderr
-        pytest.fail(f"stdout was empty. stderr contained {stderr}")
+        if not stdout:
+            pytest.fail(f"stdout was empty. stderr contained {stderr}")
+        try:
+            jsonout = _json.loads(stdout)
+        except _json.JSONDecodeError:
+            pytest.fail(
+                f"stdout had invalid JSON: {stdout!r}\n\n"
+                f"stderr had {stderr}",
+            )
+        return jsonout, stderr
 
     return decoded
 
@@ -2109,14 +2109,14 @@ async def test_info_valid_markdown():
 @pytest.mark.asyncio
 @pytest.mark.json
 async def test_info_json():
-    stdout, stderr = await bowtie(
+    jsonout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
         miniatures.always_invalid,
+        json=True,
     )
-    jsonout = _json.loads(stdout)
 
     assert (await command_validator("info")).validated(jsonout) == {
         "name": "always_invalid",
