@@ -203,8 +203,9 @@ class Result:
                         ),
                     )
 
+            schema = case.syntax(ref_dialect)
             reason.add_row(
-                case.syntax(ref_dialect),
+                schema,
                 JSON(json.dumps(registry)),
                 instances,
             )
@@ -215,6 +216,40 @@ class Result:
                 padding=2,
             )
             epilog.add_row(panel)
+
+            test = {
+                "description": "basic referencing support",
+                "schema": json.loads(
+                            "".join(
+                                segment.text
+                                for segment in console.render(schema)
+                               ),
+                            ),
+                "registry": registry,
+                "tests": [
+                    {"description": "a test", "instance": 37, "valid": False},
+                ],
+            }
+            epilog.add_row(
+                Table(
+                    Column(""),
+                    caption=dedent(
+                        rf"""
+                        
+                        [blue]bowtie run -i {self.id} <(printf '
+                        {json.dumps(test)}
+                        ')
+
+                        [/]"""
+                        f"can be used to reproduce one of the " 
+                        f"referencing failures."
+                        """
+                        """),
+                    box=None,
+                    min_width=111,
+                    caption_justify="left",
+                ),
+            )
         else:
             title = f"{prefix} [/][b green]work!"
 
