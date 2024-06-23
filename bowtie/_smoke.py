@@ -235,13 +235,13 @@ class Result:
                     Column(""),
                     caption=dedent(
                         rf"""
-                        
+
                         [blue]bowtie run -i {self.id} <(printf '
                         {json.dumps(test)}
                         ')
 
                         [/]"""
-                        f"can be used to reproduce one of the " 
+                        f"can be used to reproduce one of the "
                         f"referencing failures."
                         """
                         """),
