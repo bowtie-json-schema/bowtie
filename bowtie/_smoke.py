@@ -220,11 +220,10 @@ class Result:
             test = {
                 "description": "basic referencing support",
                 "schema": json.loads(
-                            "".join(
-                                segment.text
-                                for segment in console.render(schema)
-                               ),
-                            ),
+                    "".join(
+                        segment.text for segment in console.render(schema)
+                    ),
+                ),
                 "registry": registry,
                 "tests": [
                     {"description": "a test", "instance": 37, "valid": False},
@@ -244,7 +243,8 @@ class Result:
                         f"can be used to reproduce one of the "
                         f"referencing failures."
                         """
-                        """),
+                        """
+                    ),
                     box=None,
                     min_width=111,
                     caption_justify="left",
