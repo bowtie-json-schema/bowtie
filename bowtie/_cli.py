@@ -16,7 +16,6 @@ import logging
 import os
 import sys
 
-from attrs import asdict
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
 from rich import box, console, panel
@@ -588,7 +587,7 @@ def summary(report: _report.Report, format: _F, show: str):
                 tuple[ConnectableId, ImplementationInfo, Unsuccessful],
             ],
         ):
-            return [(id, asdict(counts)) for id, _, counts in value]
+            return [(id, u.counts()) for id, _, u in value]
 
     else:
         results = report.cases_with_results()
@@ -681,9 +680,9 @@ def _failure_table(
                 ),
                 (f" ({each.language})", "dim"),
             ),
-            str(unsuccessful.skipped),
-            str(unsuccessful.errored),
-            str(unsuccessful.failed),
+            str(len(unsuccessful.skipped)),
+            str(len(unsuccessful.errored)),
+            str(len(unsuccessful.failed)),
         )
     return table
 
@@ -714,9 +713,9 @@ def _failure_table_in_markdown(
                     else ""
                 )
                 + f" ({each.language})",
-                str(unsuccessful.skipped),
-                str(unsuccessful.errored),
-                str(unsuccessful.failed),
+                str(len(unsuccessful.skipped)),
+                str(len(unsuccessful.errored)),
+                str(len(unsuccessful.failed)),
             ],
         )
 
@@ -1697,8 +1696,8 @@ async def _run(
                 unsucessful += result.unsuccessful()
                 if (
                     max_fail
-                    and unsucessful.failed >= max_fail
-                    or (max_error and unsucessful.errored >= max_error)
+                    and len(unsucessful.failed) >= max_fail
+                    or (max_error and len(unsucessful.errored) >= max_error)
                 ):
                     should_stop = True
 
