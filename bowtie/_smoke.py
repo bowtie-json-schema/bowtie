@@ -241,10 +241,11 @@ class Result:
                         ')
 
                         [/]"""
-                        f"can be used to reproduce one of the "
-                        f"referencing failures."
+                        "can be used to reproduce one of the "
+                        "referencing failures."
                         """
-                        """),
+                        """,
+                    ),
                     box=None,
                     min_width=111,
                     caption_justify="left",
