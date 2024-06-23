@@ -1,58 +1,72 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from statistics import geometric_mean
 from typing import TYPE_CHECKING, Any
 import asyncio
 import importlib
+import importlib.metadata
 import json
+import statistics
 import subprocess
 import tempfile
 
 from attrs import asdict, field, frozen
+from attrs.filters import exclude
+from rich import box
+from rich.console import Console
+from rich.table import Column, Table
 import pyperf  # type: ignore[reportMissingTypeStubs]
+import structlog.stdlib
 
 from bowtie import _connectables, _report
-from bowtie._core import Dialect, Example, Test
+from bowtie._core import Dialect, Example, ImplementationInfo, Test
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
     from bowtie._commands import (
         Message,
     )
+    from bowtie._connectables import ConnectableId
     from bowtie._registry import ValidatorRegistry
 
+Seq = int | str
 
-def _get_benchmarks_from_file(file, module="bowtie.benchmarks") -> BenchmarkGroup | None:
-    if file.suffix == ".py" and file.name != "__init__.py":
-        benchmark_module_name = "." + file.stem
-        data = importlib.import_module(
-            benchmark_module_name,
-            module,
-        ).get_benchmark()
-    elif file.suffix == ".json":
-        data = json.loads(file.read_text())
-    else:
-        return None
+Benchmark_Group_Name = str
+Benchmark_Criteria = str
 
-    if isinstance(data, dict):
-        benchmark = Benchmark.from_dict(
-            **data,
-        ).maybe_set_dialect_from_schema()
-        benchmark_group = BenchmarkGroup(name=benchmark.name, description=benchmark.description, benchmarks=[benchmark])
-        return benchmark_group
-    elif isinstance(data, list):
-        benchmarks = [
-            Benchmark.from_dict(
-                **benchmark,
+
+def _get_benchmark_groups_from_folder(folder, module="bowtie.benchmarks") -> Iterable[BenchmarkGroup]:
+    for file in folder.iterdir():
+        data = None
+        if file.suffix == ".py" and file.name != "__init__.py":
+            benchmark_module_name = "." + file.stem
+            data = importlib.import_module(
+                benchmark_module_name,
+                module,
+            ).get_benchmark()
+        elif file.suffix == ".json":
+            data = json.loads(file.read_text())
+
+        if isinstance(data, dict):
+            benchmark = Benchmark.from_dict(
+                **data,
             ).maybe_set_dialect_from_schema()
-            for benchmark in data
-        ]
-        benchmark_group = BenchmarkGroup(name="", description="", benchmarks=benchmarks)
-        return benchmark_group
-    else:
-        return None
+            benchmark_group = BenchmarkGroup(name=benchmark.name, description=benchmark.description,
+                                             benchmarks=[benchmark], path=file)
+            yield benchmark_group
+        elif isinstance(data, list):
+            benchmarks = [
+                Benchmark.from_dict(
+                    **benchmark,
+                ).maybe_set_dialect_from_schema()
+                for benchmark in data
+            ]
+            benchmark_group = BenchmarkGroup(name=benchmarks[0].name, description="", benchmarks=benchmarks, path=file)
+            yield benchmark_group
+        continue
 
 
 @frozen
@@ -65,10 +79,10 @@ class Benchmark:
 
     @classmethod
     def from_dict(
-            cls,
-            tests: Iterable[dict[str, Any]],
-            name: str,
-            **kwargs: Any,
+        cls,
+        tests: Iterable[dict[str, Any]],
+        name: str,
+        **kwargs: Any,
     ):
         return cls(
             tests=[Example.from_dict(**test) for test in tests],
@@ -104,21 +118,273 @@ class Benchmark:
 @frozen
 class BenchmarkGroup:
     name: str
-    description: str
     benchmarks: Sequence[Benchmark]
+    description: str
+    path: Path
 
 
 @frozen
-class BenchmarkReport:
-    pass
-    # metadata: RunMetadata
+class BenchmarkResult:
+    name: str
+    description: str
+    test_results: list[BenchmarkTestResult]
+
+
+@frozen
+class BenchmarkTestResult:
+    description: str
+    duration: float
+    values: list[float]
+
+
+@frozen
+class BenchmarkMetadata:
+    dialect: Dialect
+    implementations: Mapping[ConnectableId, ImplementationInfo] = field(
+        alias="implementations",
+    )
+    num_runs: int
+    num_values: int
+    num_warmups: int
+    num_loops: int
+    system_metadata: Mapping[str, Any] = field(factory=dict, repr=False)
+
+    bowtie_version: str = field(
+        default=importlib.metadata.version("bowtie-json-schema"),
+        eq=False,
+        repr=False,
+    )
+    started: datetime = field(
+        factory=lambda: datetime.now(UTC),
+        eq=False,
+        repr=False,
+    )
+
+    def serializable(self):
+        return asdict(
+            self,
+            filter=exclude("dialect", "implementations"),
+        )
+
+
+@frozen
+class BenchmarkReporter:
+    _metadata: BenchmarkMetadata = field(alias="metadata")
+
+    _log: structlog.stdlib.BoundLogger = field(
+        factory=structlog.stdlib.get_logger,
+    )
+    _quiet: bool = field(default=False)
+    _results: dict[
+        Benchmark_Group_Name,
+        dict[
+            str,
+            dict[ConnectableId, BenchmarkResult],
+        ],
+    ] = field(
+        alias="results",
+        default={},
+    )
+    _benchmark_group_path: dict[str, Path] = field(
+        default={},
+    )
+
+    def update_system_metadata_if_needed(self, system_metadata):
+        if not len(self._metadata.system_metadata):
+            self._metadata.system_metadata.update(system_metadata)
+
+    def started(self):
+        if not self._quiet:
+            print("Benchmarking Process Started\n")
+
+    def report_incompatible_connectables(self, incompatible_connectables: Sequence[ConnectableId], dialect):
+        for connectable in incompatible_connectables:
+            print(f"{connectable} does not supports dialect {dialect.serializable()}")
+        if len(incompatible_connectables):
+            print()
+
+    def running_benchmark_group(self, benchmark_group_name: str, path: Path):
+        self._results[benchmark_group_name] = {}
+        self._benchmark_group_path[benchmark_group_name] = path
+
+        def running_connectable(connectable: ConnectableId):
+            if not self._quiet:
+                print(connectable)
+                print()
+
+            def benchmark_started(benchmark):
+                if benchmark.name not in self._results[benchmark_group_name]:
+                    self._results[benchmark_group_name][benchmark.name] = {}
+
+                if not self._quiet:
+                    print(f"Running Benchmark - {benchmark.name}\n")
+
+                benchmark_test_results = []
+
+                def got_test_result(test, test_result):
+                    if not self._quiet:
+                        print(f"Ran Test - {test.tests[0].description}")
+
+                    benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownArgumentType]
+                    benchmark_test_result = BenchmarkTestResult(
+                        description=test.tests[0].description,
+                        duration=benchmark_result.get_total_duration(),
+                        values=benchmark_result.get_values(),
+                    )
+                    benchmark_test_results.append(benchmark_test_result)
+                    return benchmark_result
+
+                def benchmark_finished():
+                    benchmark_result = BenchmarkResult(
+                        name=benchmark.name,
+                        description=benchmark.description,
+                        test_results=benchmark_test_results,
+                    )
+                    self._results[benchmark_group_name][benchmark.name][connectable] = benchmark_result
+
+                return got_test_result, benchmark_finished
+
+            return benchmark_started
+
+        return running_connectable
+
+    def finished(self):
+        self._print_results_table()
+
+    def no_compatible_connectables(self):
+        print("Skipping Benchmark, No Connectables to run !")
+
+    def _sort_results_by_fastest_first(self):
+        for benchmark_group, benchmark_results in self._results.items():
+            for benchmark_name, implementation_results in benchmark_results.items():
+                implementation_names = sorted(
+                    implementation_results.keys(), key=(
+                        lambda implementation_name: (
+                            geometric_mean((
+                                statistics.mean(test_result.values)
+                                for test_result in implementation_results[implementation_name].test_results
+                            ))
+                        )
+                    )
+                )
+                benchmark_results[benchmark_name] = {
+                    implementation_name: implementation_results[implementation_name]
+                    for implementation_name in implementation_names
+                }
+            self._results[benchmark_group] = benchmark_results
+
+    def _print_results_table(self):
+
+        def _format_value(value):
+            if value < 1:
+                return f"{round(value * 1000)}ms"
+            return f"{round(value, 2)}s"
+
+        group = "groups" if len(self._results) != 1 else "group"
+        console = Console()
+        table_caption = (
+            f"Benchmark Metadata\n\n"
+            f"Runs: {self._metadata.num_runs}\n"
+            f"Values: {self._metadata.num_values}\n"
+            f"Warmups: {self._metadata.num_warmups}\n\n"
+            f"CPU Count: {self._metadata.system_metadata['cpu_count']}\n"
+            f"CPU Frequency: {self._metadata.system_metadata['cpu_freq']}\n"
+            f"CPU Model: {self._metadata.system_metadata['cpu_model_name']}\n\n"
+            f"Hostname: {self._metadata.system_metadata['hostname']}\n"
+        )
+
+        table = Table(
+            Column(header="Benchmark Group", vertical="middle", justify="center"),
+            Column(header="Results", justify="center"),
+            title="Benchmark",
+            caption=table_caption,
+        )
+
+        self._sort_results_by_fastest_first()
+
+        for benchmark_group, benchmark_results in self._results.items():
+            benchmark_group_path = self._benchmark_group_path[benchmark_group]
+            outer_table = Table(
+                box=box.SIMPLE_HEAD,
+                caption=str(benchmark_group_path),
+            )
+            for benchmark_name, implementation_results in benchmark_results.items():
+                inner_table = Table(
+                    benchmark_name,
+                    box=box.SIMPLE_HEAD,
+                    title=benchmark_name,
+                    min_width=100,
+                )
+                fastest_implementation_name = next(iter(implementation_results))
+                ref_row = ["Relative Comparison"]
+
+                for implementation_name, implementation_result in implementation_results.items():
+                    inner_table.add_column(
+                        implementation_name,
+                    )
+                    ref_row.append(
+                        geometric_mean((
+                            statistics.mean(test_result.values)
+                            for test_result in implementation_result.test_results
+                        ))
+                    )
+
+                benchmark_test_names = [
+                    test_result.description
+                    for test_result in next(
+                        iter(implementation_results.values())
+                    ).test_results
+                ]
+
+                num_benchmark_tests = len(benchmark_test_names)
+                fastest_implementation_results = next(iter(implementation_results.values())).test_results
+
+                for idx in range(num_benchmark_tests):
+                    row_elements = [
+                        benchmark_test_names[idx],
+                    ]
+                    for num, implementation_result in enumerate(implementation_results.values()):
+                        mean = statistics.mean(implementation_result.test_results[idx].values)
+                        std_dev = statistics.stdev(implementation_result.test_results[idx].values)
+
+                        fastest_implementation_mean = statistics.mean(fastest_implementation_results[idx].values)
+                        relative = mean / fastest_implementation_mean
+
+                        repr_string = f"{_format_value(mean)} +- {_format_value(std_dev)}"
+                        if num != 0:
+                            repr_string += f": {round(relative, 2)}x slower"
+
+                        row_elements.append(repr_string)
+
+                    inner_table.add_row(*row_elements)
+
+                for implementation_idx in range(2, len(ref_row)):
+                    ref_row[implementation_idx] = (
+                        f"{round(ref_row[implementation_idx] / ref_row[1], 2)}x slower"
+                    )
+
+                ref_row[1] = "Reference"
+                inner_table.add_section()
+                if len(implementation_results)>1:
+                    inner_table.add_row(*ref_row)
+                outer_table.add_row(inner_table)
+
+            table.add_row(
+                benchmark_group,
+                outer_table,
+            )
+
+        console.print()
+        console.print(table)
 
 
 @frozen
 class Benchmarker:
-    _benchmark_groups: Sequence[BenchmarkGroup] = field(alias="benchmark_groups")
-    _num_processes: int = field(
-        alias="processes",
+    _benchmark_groups: Iterable[BenchmarkGroup] = field(
+        alias="benchmark_groups",
+    )
+    _num_runs: int = field(
+        alias="runs",
     )
     _num_loops: int = field(
         alias="loops",
@@ -129,44 +395,34 @@ class Benchmarker:
     _num_values: int = field(
         alias="values",
     )
-    _quiet: bool = field(
-        alias="quiet",
-    )
-    _report: BenchmarkReport = field(
-        alias="report",
-        default=BenchmarkReport(),
-    )
 
     @classmethod
     def from_default_benchmarks(cls, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
-        benchmark_dir = bowtie_dir.joinpath("benchmarks").iterdir()
-        benchmark_groups = []
+        benchmark_dir = bowtie_dir.joinpath("benchmarks")
 
-        for file in benchmark_dir:
-            benchmark_group = _get_benchmarks_from_file(file)
-            if not benchmark_group:
-                continue
-            benchmark_groups.append(benchmark_group)
-
-        return cls(benchmark_groups=benchmark_groups, **kwargs)
+        return cls(
+            benchmark_groups=_get_benchmark_groups_from_folder(
+                benchmark_dir,
+            ),
+            **kwargs,
+        )
 
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
         keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
-        dialect_keyword_benchmarks = keywords_benchmark_dir.joinpath(dialect.short_name).iterdir()
+        dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(dialect.short_name)
 
         module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
-        benchmark_groups = []
 
-        for file in dialect_keyword_benchmarks:
-            benchmark_group = _get_benchmarks_from_file(file, module=module_name)
-            if not benchmark_group:
-                continue
-            benchmark_groups.append(benchmark_group)
-
-        return cls(benchmark_groups=benchmark_groups, **kwargs)
+        return cls(
+            benchmark_groups=_get_benchmark_groups_from_folder(
+                dialect_keyword_benchmarks_dir,
+                module=module_name,
+            ),
+            **kwargs,
+        )
 
     @classmethod
     def from_input(
@@ -188,18 +444,26 @@ class Benchmarker:
                 schema=schema,
             ),
         ]
-        benchmark_group = BenchmarkGroup(name=description, description=description, benchmarks=benchmarks)
+        benchmark_group = BenchmarkGroup(
+            name=description,
+            description=description,
+            benchmarks=benchmarks,
+            path=None
+        )
         return cls(benchmark_groups=[benchmark_group], **kwargs)
 
     async def start(
         self,
         connectables: Iterable[_connectables.Connectable],
         dialect: Dialect,
+        quiet: bool,
         registry: ValidatorRegistry[Any],
     ):
-        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite] = {}
-        for connectable in connectables:
+        acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
+        compatible_connectables = []
+        incompatible_connectables = []
 
+        for connectable in connectables:
             silent_reporter = _report.Reporter(
                 write=lambda **_: None,  # type: ignore[reportUnknownArgumentType]
             )
@@ -207,19 +471,40 @@ class Benchmarker:
                 reporter=silent_reporter,
                 registry=registry,
             ) as implementation:
-                supports_dialect = dialect in implementation.info.dialects
+                if dialect not in implementation.info.dialects:
+                    incompatible_connectables.append(connectable.to_terse())
+                    continue
 
-            if not supports_dialect:
-                print(f"{connectable.to_terse()} does not supports dialect {dialect.serializable()}")
-                continue
+                acknowledged[connectable.to_terse()] = implementation.info
+                compatible_connectables.append(connectable)
 
-            if not self._quiet:
-                print(connectable.to_terse())
-                print()
+        reporter = BenchmarkReporter(
+            metadata=BenchmarkMetadata(
+                implementations=acknowledged,
+                dialect=dialect,
+                num_runs=self._num_runs,
+                num_loops=self._num_loops,
+                num_values=self._num_values,
+                num_warmups=self._num_warmups,
+            ),
+            quiet=quiet,
+        )
+        reporter.started()
+        reporter.report_incompatible_connectables(incompatible_connectables, dialect)
 
-            benchmark_results: list[pyperf.Benchmark] = []
-            for benchmark_group in self._benchmark_groups:
+        if not compatible_connectables:
+            reporter.no_compatible_connectables()
+            return
+
+        for benchmark_group in self._benchmark_groups:
+            report_running_connectable = reporter.running_benchmark_group(
+                benchmark_group.name,
+                benchmark_group.path
+            )
+            for connectable in compatible_connectables:
+                report_running_benchmark = report_running_connectable(connectable.to_terse())
                 for benchmark in benchmark_group.benchmarks:
+                    report_got_test_result, report_benchmark_finished = report_running_benchmark(benchmark)
                     if benchmark.dialect and benchmark.dialect != dialect:
                         print(f"Skipping {benchmark.name} as it does not support dialect {dialect.serializable()}")
                         continue
@@ -228,49 +513,18 @@ class Benchmarker:
                         benchmark_case = benchmark.benchmark_with_diff_tests(
                             tests=[test],
                         )
-                        bench = await self._run_benchmark(
+                        output = await self._run_benchmark(
                             benchmark_case,
                             dialect,
                             connectable,
                         )
-                        if bench:
-                            benchmark_results.append(bench)
-            if len(benchmark_results):
-                benchmark_suite = pyperf.BenchmarkSuite(
-                    benchmarks=benchmark_results,
-                )
-                bench_suite_for_connectable[
-                    connectable.to_terse()
-                ] = benchmark_suite
+                        bench = report_got_test_result(benchmark_case, output)
+                        reporter.update_system_metadata_if_needed(bench.get_metadata())
 
-            if not self._quiet:
-                print()
+                    report_benchmark_finished()
 
-        bench_suite_for_connectable = self._sort_benchmark_suites(
-            bench_suite_for_connectable,
-        )
-        await self._compare_benchmark_suites(bench_suite_for_connectable)
+        reporter.finished()
 
-    async def _compare_benchmark_suites(
-        self,
-        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite],
-    ):
-        with tempfile.TemporaryDirectory(
-            delete=True,
-        ) as tmp_dir_path:
-            suite_dir = Path(tmp_dir_path)
-            benchmark_suite_filenames: list[str] = []
-            for (
-                    connectable_name,
-                    bench_suite,
-            ) in bench_suite_for_connectable.items():
-                bench_suite_tmp_filename = suite_dir.joinpath(
-                    f"{connectable_name}.json",
-                )
-                bench_suite.dump(str(bench_suite_tmp_filename))  # type: ignore[reportUnknownMemberType]
-                benchmark_suite_filenames.append(str(bench_suite_tmp_filename))
-
-            await self._pyperf_compare_command(*benchmark_suite_filenames)
 
     async def _run_benchmark(
         self,
@@ -302,13 +556,10 @@ class Benchmarker:
                 print("err")
                 return None
 
-        bench = pyperf.Benchmark.loads(output)  # type: ignore[reportUnknownArgumentType]
-        if not self._quiet:
-            print(f"Running Benchmark - {benchmark_name}")
-        return bench  # type: ignore[reportUnknownVariableType]
+        return output  # type: ignore[reportUnknownVariableType]
 
+    @staticmethod
     async def _run_subprocess(
-        self,
         *cmd: str,
     ):
         process = await asyncio.create_subprocess_exec(
@@ -328,7 +579,7 @@ class Benchmarker:
         output, err = await self._run_subprocess(
             "pyperf", "command",
             "--pipe", stdout_fd,
-            "--processes", str(self._num_processes),
+            "--processes", str(self._num_runs),
             "--values", str(self._num_values),
             "--warmups", str(self._num_warmups),
             "--loops", str(self._num_loops),
@@ -345,28 +596,3 @@ class Benchmarker:
                 print(err)
             raise Exception
         return output
-
-    async def _pyperf_compare_command(self, *benchmark_suite_filenames: str):
-        output, err = await self._run_subprocess(
-            "pyperf", "compare_to",
-            "--table",
-            "--table-format", "md",
-            *benchmark_suite_filenames,
-        )
-        if err:
-            print(err)
-        print(output.decode())
-
-    @staticmethod
-    def _sort_benchmark_suites(
-        bench_suite_for_connectable: dict[str, pyperf.BenchmarkSuite],
-    ) -> dict[str, pyperf.BenchmarkSuite]:
-
-        def _geometric_mean_of_bench_suite(bench_suite: pyperf.BenchmarkSuite):
-            means = [b.mean() for b in bench_suite.get_benchmarks()]  # type: ignore[reportUnknownVariableType]
-            return geometric_mean(means)  # type: ignore[reportUnknownArgumentType]
-
-        return dict(sorted(
-            bench_suite_for_connectable.items(),
-            key=lambda item: _geometric_mean_of_bench_suite(item[1]),
-        ))

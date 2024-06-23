@@ -180,6 +180,6 @@ from-first = true
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"bowtie/benchmarks/*" = ["E501", "D", "RUF012"]
+"bowtie/benchmarks/*" = ["E501", "D", "RUF012", "INP001"]
 "tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]

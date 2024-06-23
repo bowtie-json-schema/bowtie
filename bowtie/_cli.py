@@ -1259,25 +1259,25 @@ def validate(
 @VALIDATE
 @dialect_option()
 @click.option(
-    "--processes",
-    "-p",
-    "processes",
+    "--runs",
+    "-r",
+    "runs",
     type=int,
     default=3,
     show_default=True,
     help=(
-        "Number of processes used to run benchmarks."
+        "Number of runs used to run benchmarks."
     ),
 )
 @click.option(
     "--values",
     "-v",
     "values",
-    type=int,
+    type=click.IntRange(min=2),
     default=2,
     show_default=True,
     help=(
-        "Number of values per process."
+        "Number of values per run."
     ),
 )
 @click.option(
@@ -1340,19 +1340,20 @@ def perf(
     schema: Any,
     description: str,
     registry: ValidatorRegistry[Any],
+    quiet: bool,
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
-
     if keywords:
         benchmarker = _benchmarks.Benchmarker.for_keywords(
-            **kwargs
+            dialect,
+            **kwargs,
         )
     elif schema is None:
         benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
-            **kwargs
+            **kwargs,
         )
 
     else:
@@ -1365,7 +1366,7 @@ def perf(
             **kwargs,
         )
 
-    asyncio.run(benchmarker.start(connectables, dialect, registry))
+    asyncio.run(benchmarker.start(connectables, dialect, quiet, registry))
 
 
 LANGUAGE_ALIASES = {
