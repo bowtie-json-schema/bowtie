@@ -49,7 +49,7 @@ jobs:
               
               # Delete the Docker images for this implementation
               for version in $(jq -r '.[]' "$matrix_versions_file"); do
-                docker rmi "$impl:$version" || true
+                docker rmi "ghcr.io/bowtie-json-schema/$impl:$version" || true
               done
             fi
           done
@@ -82,5 +82,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: reports-${{ matrix.version }}
+          name: versioned-reports-${{ matrix.version }}
           path: versioned-*-${{ matrix.version }}.json
