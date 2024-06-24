@@ -203,9 +203,8 @@ class Result:
                         ),
                     )
 
-            schema = case.syntax(ref_dialect)
             reason.add_row(
-                schema,
+                case.syntax(ref_dialect),
                 JSON(json.dumps(registry)),
                 instances,
             )
@@ -218,16 +217,20 @@ class Result:
             epilog.add_row(panel)
 
             test = {
-                "description": "basic referencing support",
-                "schema": json.loads(
-                    "".join(
-                        segment.text for segment in console.render(schema)
-                    ),
-                ),
-                "registry": registry,
+                "description": case.description,
+                "schema": case.schema,
                 "tests": [
-                    {"description": "a test", "instance": 37, "valid": False},
+                    {
+                        "description": test.description,
+                        "instance": test.instance,
+                        "valid": test.expected(),
+                        "comment": test.comment,
+                    }
+                    for test in case.tests
+                    if isinstance(test, Test)
                 ],
+                "comment": case.comment,
+                "registry": registry,
             }
             epilog.add_row(
                 Table(
