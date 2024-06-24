@@ -62,7 +62,7 @@ jobs:
             if [ -f "$impl.json" ]; then
               bowtie summary --show failures "$impl.json" --format markdown >> $GITHUB_STEP_SUMMARY
             else
-              echo 'Warning: Report file "$impl.json" not found. Skipping.'
+              echo "Warning: Report file '$impl.json' not found. Skipping."
             fi
           done
 
