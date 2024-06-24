@@ -40,7 +40,7 @@ jobs:
             matrix_versions_file="implementations/$impl/matrix-versions.json"
             if [ -f $matrix_versions_file ]; then
               # Run bowtie suite
-              bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > versioned-$impl.json    
+              bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > $impl.json    
 
               # Delete the multiple fetched docker images for the current implementation
               # just so that we avoid running out of memory.
@@ -71,4 +71,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: versioned-report-${{ matrix.version }}
-          path: versioned-*.json
+          path: |
+            *.json
+            !.prettierrc.json
