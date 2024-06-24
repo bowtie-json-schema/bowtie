@@ -35,7 +35,6 @@ jobs:
         id: generate-new-versioned-report
         run: |
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
-          no_impl_started=false
           for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
             matrix_versions_file="implementations/$impl/matrix-versions.json"
             if [ -f $matrix_versions_file ]; then
