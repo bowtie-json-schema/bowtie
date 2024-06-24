@@ -39,6 +39,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.3",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-tsdoc": "^0.3.0",
     "jsdom": "^24.1.0",
     "react-test-renderer": "^18.3.1",
     "ts-loader": "^9.5.1",
@@ -59,8 +60,8 @@
       "plugin:react/recommended",
       "plugin:react/jsx-runtime",
       "plugin:react-hooks/recommended",
-      "plugin:@typescript-eslint/recommended-type-checked",
       "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended-type-checked",
       "plugin:@typescript-eslint/stylistic-type-checked"
     ],
     "parser": "@typescript-eslint/parser",
@@ -68,7 +69,8 @@
       "project": true
     },
     "plugins": [
-      "@typescript-eslint"
+      "@typescript-eslint",
+      "eslint-plugin-tsdoc"
     ],
     "settings": {
       "react": {
@@ -83,7 +85,8 @@
           "name": "react-bootstrap",
           "message": "Import react-bootstrap/<your-component> instead. See https://react-bootstrap.netlify.app/docs/getting-started/introduction/#importing-components."
         }
-      ]
+      ],
+      "tsdoc/syntax": "warn"
     }
   }
 }
