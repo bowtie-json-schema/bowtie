@@ -32,18 +32,37 @@ jobs:
         uses: ./
 
       - name: Generate a New Versioned Report
+        id: generate-new-versioned-report
         run: |
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          no_impl_started=false
           for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
             matrix_versions_file="implementations/$impl/matrix-versions.json"
             if [ -f $matrix_versions_file ]; then
-              # Run bowtie suite
-              bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > $impl.json
+              # Run bowtie suite and capture output
+              output=$(bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} 2>&1)
+              exit_code=$?
+              if echo "$output" | grep -q "No implementations started successfully!"; then
+                echo "No implementations started for $impl (${{ matrix.version }})"
+                no_impl_started=true
+              elif [ $exit_code -ne 0 ]; then
+                echo "Error running bowtie suite for $impl (${{ matrix.version }})"
+                echo "$output"
+                exit $exit_code
+              else
+                echo "$output" > $impl.json
+                echo "Report generated for $impl (${{ matrix.version }})"
+              fi     
 
-              # Delete the multiple fetched docker images for the current implementation
+              # Delete the multiple fetched Docker images for the current implementation
               docker rmi $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i ghcr.io/bowtie-json-schema/$impl:/") || true
             fi
           done
+          if $no_impl_started; then
+            echo "no_impl_started=true" >> $GITHUB_OUTPUT
+          else
+            echo "no_impl_started=false" >> $GITHUB_OUTPUT
+          fi
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
@@ -54,6 +73,7 @@ jobs:
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
       # Probably we should also atomically move files into place.
       - name: Check Reports are Valid
+        if: steps.generate-new-versioned-report.outputs.no_impl_started != 'true'
         run: |
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
           for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
@@ -72,7 +92,8 @@ jobs:
           done
 
       - uses: actions/upload-artifact@v4
+        if: steps.generate-new-versioned-report.outputs.no_impl_started != 'true'
         with:
           name: versioned-report-${{ matrix.version }}
           path: "*.json"
-          if-no-files-found: warn
+          if-no-files-found: error
