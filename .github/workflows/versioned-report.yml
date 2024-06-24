@@ -1,0 +1,86 @@
+# This workflow is a separate workflow from `report.yml` for regenerating the versioned report data needed for Bowtie's UI.
+# It retests all of Bowtie's supported implementations for all their multiple versions listed in `matrix-versions.json` file.
+name: Collect New Versioned Test Results
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dialects:
+    runs-on: ubuntu-latest
+    outputs:
+      dialects: ${{ steps.dialects-matrix.outputs.dialects }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect supported dialects
+        id: dialects-matrix
+        run: |
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+
+  regenerate-reports:
+    needs: dialects
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.dialects.outputs.dialects) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Generate a New Report
+        run: |
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
+            matrix_versions_file="implementations/$impl/matrix-versions.json"
+            if [ -f $matrix_versions_file ]; then
+              # Construct the bowtie command
+              cmd="bowtie suite"
+              for version in $(jq -r '.[]' "$matrix_versions_file"); do
+                cmd+=" -i image:$impl:$version"
+              done
+              cmd+=" https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > versioned-$impl-${{ matrix.version }}.json"
+              
+              # Run the command
+              eval $cmd
+              
+              # Delete the Docker images for this implementation
+              for version in $(jq -r '.[]' "$matrix_versions_file"); do
+                docker rmi "$impl:$version" || true
+              done
+            fi
+          done
+
+      # This is useful to debug whether Bowtie accidentally fetched some huge
+      # number of container images.
+      - name: Show what images we fetched
+        run: docker images
+        if: always()
+
+      # This unfortunately can go wrong if e.g. we ever run out of memory above.
+      # Probably we should also atomically move files into place.
+      - name: Check Reports are Valid
+        run: |
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
+            report_file="versioned-$impl-${{ matrix.version }}.json"
+            if [ -f "$report_file" ]; then
+              echo "Checking report for $impl (${{ matrix.version }}):"
+              if bowtie summary --show failures "$report_file" --format markdown >> $GITHUB_STEP_SUMMARY; then
+                echo "Report for $impl (${{ matrix.version }}) is valid."
+              else
+                echo "Error: Report for $impl (${{ matrix.version }}) is invalid."
+                exit 1
+              fi
+            else
+              echo "Warning: Report file $report_file not found. Skipping."
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.version }}
+          path: versioned-*-${{ matrix.version }}.json
