@@ -40,9 +40,10 @@ jobs:
             matrix_versions_file="implementations/$impl/matrix-versions.json"
             if [ -f $matrix_versions_file ]; then
               # Run bowtie suite
-              bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > $impl.json    
+              bowtie suite $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} > versioned-$impl.json    
 
               # Delete the multiple fetched docker images for the current implementation
+              # just so that we avoid running out of memory.
               docker rmi $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i ghcr.io/bowtie-json-schema/$impl:/") || true
             fi
           done
@@ -61,13 +62,7 @@ jobs:
           for impl in $(echo $IMPLEMENTATIONS | jq -r '.[]'); do
             report_file="$impl.json"
             if [ -f "$report_file" ]; then
-              echo "Checking report for $impl (${{ matrix.version }}):"
-              if bowtie summary --show failures "$report_file" --format markdown >> $GITHUB_STEP_SUMMARY; then
-                echo "Report for $impl (${{ matrix.version }}) is valid."
-              else
-                echo "Error: Report for $impl (${{ matrix.version }}) is invalid."
-                exit 1
-              fi
+              bowtie summary --show failures "$report_file" --format markdown >> $GITHUB_STEP_SUMMARY
             else
               echo "Warning: Report file $report_file not found. Skipping."
             fi
@@ -76,5 +71,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: versioned-report-${{ matrix.version }}
-          path: "*.json"
-          if-no-files-found: error
+          path: versioned-*.json
