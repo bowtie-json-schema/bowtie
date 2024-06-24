@@ -44,7 +44,7 @@ jobs:
 
               # Delete the multiple fetched docker images for the current implementation
               # just so that we avoid running out of memory.
-              docker rmi $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/-i ghcr.io/bowtie-json-schema/$impl:/") || true
+              docker rmi $(jq -r '.[]' "$matrix_versions_file" | sed "s/^/ghcr.io\/bowtie-json-schema\/$impl:/") || true
             fi
           done
 
