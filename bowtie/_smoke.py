@@ -220,10 +220,11 @@ class Result:
             test = {
                 "description": "basic referencing support",
                 "schema": json.loads(
-                    "".join(
-                        segment.text for segment in console.render(schema)
-                    ),
-                ),
+                            "".join(
+                                segment.text
+                                for segment in console.render(schema)
+                               ),
+                            ),
                 "registry": registry,
                 "tests": [
                     {"description": "a test", "instance": 37, "valid": False},
