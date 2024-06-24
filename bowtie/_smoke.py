@@ -237,7 +237,6 @@ class Result:
                     Column(""),
                     caption=dedent(
                         rf"""
-
                         [blue]bowtie run -i {self.id} <(printf '
                         {json.dumps(test)}
                         ')
