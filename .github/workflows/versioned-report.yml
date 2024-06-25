@@ -61,7 +61,7 @@ jobs:
 
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
       # Probably we should also atomically move files into place.
-      - name: Check all Generated Reports for ${{ matrix.implementation }} are Valid
+      - name: Check that All Generated Reports for ${{ matrix.implementation }} are Valid
         run: |
           DIALECT_SHORTNAMES=$(jq -r '.[].shortName' data/dialects.json)
           for dialect_shortname in $(echo $DIALECT_SHORTNAMES); do
