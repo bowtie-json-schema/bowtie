@@ -46,7 +46,7 @@ jobs:
         id: generate-new-versioned-report
         run: |
           impl=${{ matrix.implementation }}
-          SUPPORTED_DIALECT_URIS=$(bowtie info -i $impl --format json | jq -r '.dialects[]')
+          SUPPORTED_DIALECT_URIS=$(bowtie filter-dialects -i $impl)
           MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
           for dialect_uri in $(echo $SUPPORTED_DIALECT_URIS); do
             dialect_shortname=$(jq -r --arg uri "$dialect_uri" '.[] | select(.uri == $uri) | .shortName' data/dialects.json)
@@ -63,9 +63,8 @@ jobs:
       # Probably we should also atomically move files into place.
       - name: Check all Generated Reports for ${{ matrix.implementation }} are Valid
         run: |
-          DIALECT_URIS=$(bowtie filter-dialects)
-          for dialect_uri in $(echo $DIALECT_URIS); do
-            dialect_shortname=$(jq -r --arg uri "$dialect_uri" '.[] | select(.uri == $uri) | .shortName' data/dialects.json)
+          DIALECT_SHORTNAMES=$(jq -r '.[].shortName' data/dialects.json)
+          for dialect_shortname in $(echo $DIALECT_SHORTNAMES); do
             if [ -f "$dialect_shortname.json" ]; then
               bowtie summary --show failures "$dialect_shortname.json" --format markdown >> $GITHUB_STEP_SUMMARY
             fi
