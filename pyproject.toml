@@ -115,6 +115,7 @@ strict = ["**/*.py"]
 exclude = [
     "**/tests/__init__.py",
     "**/tests/test_*.py",
+    "**/bowtie/benchmarks/*",
 ]
 
 [tool.ruff]
