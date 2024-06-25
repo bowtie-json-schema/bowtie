@@ -16,7 +16,7 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - name: List all Bowtie supported implementations having a "matrix-versions.json" file
+      - name: List all Bowtie Supported Implementations having a "matrix-versions.json" File
         id: implementations-matrix
         run: |
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json | jq -r '.[]')
@@ -42,7 +42,7 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - name: Generate a New Versioned Report
+      - name: Generate a New Versioned Report for ${{ matrix.implementation }}
         id: generate-new-versioned-report
         run: |
           impl=${{ matrix.implementation }}
@@ -61,7 +61,7 @@ jobs:
 
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
       # Probably we should also atomically move files into place.
-      - name: Check Reports are Valid
+      - name: Check all Generated Reports for ${{ matrix.implementation }} are Valid
         run: |
           DIALECT_URIS=$(bowtie filter-dialects)
           for dialect_uri in $(echo $DIALECT_URIS); do
