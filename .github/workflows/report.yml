@@ -82,19 +82,30 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate implementations.json file
+      - name: Generate implementations.json (Private API) file
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
 
-      - name: Generate public-implementations.json file
+      - name: Generate public-implementations (Public API) file
         run: |
-          jq 'to_entries | map({
-              (.value.source): (
-                .value + {name: .key}
-                | del(.os, .os_version, .language_version, .source)
-              )
-            })
-            | add' implementations.json > public-implementations.json
+          bowtie filter-implementations | \
+            while read -r impl; do
+              bowtie info -i $impl --format json | \
+              jq --arg impl "$impl" '
+                {(.source): (
+                  . + {name: $impl}
+                  | del(
+                      .os,
+                      .os_version,
+                      .source
+                    )
+                )}
+              '
+            done | \
+          jq -s 'add' > public-implementations
+
+      - name: Validate public-implementations against a JSON Schema
+        run: bowtie validate -i python-jsonschema bowtie/schemas/public-implementations.json public-implementations
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,7 +115,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: public-implementations
-          path: public-implementations.json
+          path: public-implementations
 
   site:
     needs:
@@ -144,8 +155,8 @@ jobs:
           name: public-implementations
           path: site/v1/json-schema-org/
 
-      - name: Rename public-implementations.json to implementations.json
-        run: mv site/v1/json-schema-org/public-implementations.json site/v1/json-schema-org/implementations.json
+      - name: Rename "public-implementations" file to just "implementations"
+        run: mv site/v1/json-schema-org/public-implementations site/v1/json-schema-org/implementations
 
       - name: Generate Badges
         run: bowtie badges
