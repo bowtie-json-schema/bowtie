@@ -33,6 +33,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
+from bowtie._benchmarks import BenchmarkLoadError, BenchmarkError
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -1258,6 +1259,7 @@ def validate(
 @IMPLEMENTATION
 @VALIDATE
 @dialect_option()
+@format_option()
 @click.option(
     "--runs",
     "-r",
@@ -1336,6 +1338,7 @@ def perf(
     connectables: Iterable[_connectables.Connectable],
     dialect: Dialect,
     instances: Iterable[Any],
+    format: _F,
     keywords: bool,
     schema: Any,
     description: str,
@@ -1346,27 +1349,37 @@ def perf(
     """
     Perform performance measurements across supported implementations.
     """
-    if keywords:
-        benchmarker = _benchmarks.Benchmarker.for_keywords(
-            dialect,
-            **kwargs,
-        )
-    elif schema is None:
-        benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
-            **kwargs,
-        )
+    try:
+        if keywords:
+            benchmarker = _benchmarks.Benchmarker.for_keywords(
+                dialect,
+                **kwargs,
+            )
+        elif schema is None:
+            benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
+                **kwargs,
+            )
 
-    else:
-        if not instances:
-            return EX.NOINPUT
-        benchmarker = _benchmarks.Benchmarker.from_input(
-            schema=schema,
-            instances=instances,
-            description=description,
-            **kwargs,
-        )
+        else:
+            if not instances:
+                return EX.NOINPUT
+            benchmarker = _benchmarks.Benchmarker.from_input(
+                schema=schema,
+                instances=instances,
+                description=description,
+                **kwargs,
+            )
 
-    asyncio.run(benchmarker.start(connectables, dialect, quiet, registry))
+        asyncio.run(benchmarker.start(
+            connectables=connectables,
+            dialect=dialect,
+            quiet=quiet,
+            registry=registry,
+            format=format,
+        ))
+    except (BenchmarkLoadError, BenchmarkError) as err:
+        STDERR.print(err)
+
 
 
 LANGUAGE_ALIASES = {
