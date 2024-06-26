@@ -1,25 +1,30 @@
 def get_benchmark():
+    name = "maxItems"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the maxItems keyword."
+    )
+
     max_array_size = 1000000
-    array_size = 1000
-
+    array_size = 10000
     benchmarks = []
-
     tests = []
     testing_array_size = 10000
+
     while testing_array_size <= max_array_size:
         tests.append(
             dict(
-                description=f"Array Size {testing_array_size}",
-                instance=["random" for _ in range(testing_array_size)]
-            )
+                description=f"Testing Array Size - {testing_array_size}",
+                instance=["random" for _ in range(testing_array_size)],
+            ),
         )
         testing_array_size *= 10
 
     while array_size <= max_array_size:
         benchmarks.append(dict(
-            name=f"maxItems_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `maxItems` keyword."
+                f"Validating the `maxItems` keyword over array of size {array_size}."
             ),
             schema={
                 "maxItems": array_size,
@@ -28,4 +33,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

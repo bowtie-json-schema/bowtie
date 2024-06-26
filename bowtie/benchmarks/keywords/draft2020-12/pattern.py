@@ -1,19 +1,25 @@
-import string
 import random
+import string
+
 
 def get_benchmark():
+    name = "pattern"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the pattern keyword."
+    )
 
     max_string_size = 1000000
-    string_size = 1000
+    string_size = 10000
 
     benchmarks = []
     while string_size <= max_string_size:
         letters = string.ascii_letters
-        random_letter_string = ''.join(random.choice(letters) for _ in range(string_size))
+        random_letter_string = "".join(random.choice(letters) for _ in range(string_size))
         benchmarks.append(dict(
-            name=f"pattern_{string_size}",
+            name=f"String Size - {string_size}",
             description=(
-                "A benchmark for validation of the `pattern` keyword."
+                f"Validating the `pattern` keyword over string of size {string_size}."
             ),
             schema=dict(type="string", pattern="^[a-zA-Z]+$"),
             tests=[
@@ -28,4 +34,8 @@ def get_benchmark():
         ))
         string_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

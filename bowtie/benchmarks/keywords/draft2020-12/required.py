@@ -2,11 +2,15 @@ import uuid
 
 
 def get_benchmark():
-
+    name = "required"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the required keyword."
+    )
     max_array_size = 1000000
 
     benchmarks = []
-    array_size = 1000
+    array_size = 10000
 
     while array_size*2 <= max_array_size:
         num_required_properties = array_size//2
@@ -19,9 +23,9 @@ def get_benchmark():
         none_present = object_keys + object_keys
 
         benchmarks.append(dict(
-            name=f"required_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `required` keyword."
+                f"Validating the `required` keyword over array of size {array_size}."
             ),
             schema={
                 "type": "object",
@@ -29,26 +33,30 @@ def get_benchmark():
             },
             tests=[
                 dict(
-                    description=f"All required properties at beginning",
+                    description="All required properties at beginning",
                     instance=_generate_object_with_keys(all_at_beginning),
                 ),
                 dict(
-                    description=f"All required properties at middle",
+                    description="All required properties at middle",
                     instance=_generate_object_with_keys(all_at_middle),
                 ),
                 dict(
-                    description=f"All required properties at last",
+                    description="All required properties at last",
                     instance=_generate_object_with_keys(all_at_last),
                 ),
                 dict(
-                    description=f"None of the required properties present",
+                    description="None of the required properties present",
                     instance=_generate_object_with_keys(none_present),
                 ),
             ],
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )
 
 def _generate_object_with_keys(keys):
     return {

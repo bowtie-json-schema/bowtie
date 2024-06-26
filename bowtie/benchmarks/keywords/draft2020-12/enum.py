@@ -2,17 +2,22 @@ import uuid
 
 
 def get_benchmark():
+    name = "enum"
+    description = (
+        "A benchmark for measuring performance of the implementation "
+        "for the enum keyword."
+    )
 
     max_array_size = 1000000
-    array_size = 1000
+    array_size = 10000
 
     benchmarks = []
     while array_size <= max_array_size:
         array = [uuid.uuid4().hex for _ in range(array_size)]
         benchmarks.append(dict(
-            name=f"enum_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `enum` keyword."
+                f"Validating the `enum` keyword over array of size {array_size}."
             ),
             schema=dict(enum=array),
             tests=[
@@ -24,4 +29,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

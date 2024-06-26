@@ -2,9 +2,14 @@ import uuid
 
 
 def get_benchmark():
+    name = "items"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the items keyword."
+    )
 
     max_array_size = 1000000
-    array_size = 1000
+    array_size = 10000
 
     benchmarks = []
     while array_size <= max_array_size:
@@ -16,13 +21,13 @@ def get_benchmark():
         valid = array
 
         benchmarks.append(dict(
-            name=f"items_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `items` keyword."
+                f"Validating the `items` keyword over array of size {array_size}."
             ),
             schema={
                 "type": "array",
-                "items": {"type": "string"}
+                "items": {"type": "string"},
             },
             tests=[
                 dict(description="Invalid at First", instance=invalid_at_first),
@@ -33,4 +38,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

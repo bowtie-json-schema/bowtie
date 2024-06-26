@@ -1,14 +1,19 @@
-import string
 import random
+import string
 
 max_num = 100000
 
 
 def get_benchmark():
+    name = "patternProperties"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the patternProperties keyword."
+    )
     max_num_properties = 1000000
     benchmarks = []
 
-    num_properties = 1000
+    num_properties = 10000
 
     while num_properties <= max_num_properties:
         property_value_pairs = [(_random_string(), random.randint(0, max_num)) for _ in range(num_properties)]
@@ -21,16 +26,16 @@ def get_benchmark():
         valid = property_value_pairs
 
         benchmarks.append(dict(
-            name=f"patternProperties_{num_properties}",
+            name=f"No. of Properties - {num_properties}",
             description=(
-                "A benchmark for measuring performance of the "
-                "implementation for the patternProperties keyword."
+                "Validating the `patternProperties` keyword with "
+                f"no. of properties {num_properties}."
             ),
             schema=dict(
                 type="object",
                 patternProperties={
-                    "^[a-z]+$": {"type": "integer"}
-                }
+                    "^[a-z]+$": {"type": "integer"},
+                },
             ),
             tests=[
                 dict(description="Invalid Property at first", instance=_get_instance_object(invalid_at_first)),
@@ -42,7 +47,11 @@ def get_benchmark():
 
         num_properties *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )
 
 
 def _get_instance_object(property_value_pairs):
@@ -53,4 +62,4 @@ def _get_instance_object(property_value_pairs):
 
 def _random_string():
     string_size = 100
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(string_size))
+    return "".join(random.choice(string.ascii_lowercase) for _ in range(string_size))

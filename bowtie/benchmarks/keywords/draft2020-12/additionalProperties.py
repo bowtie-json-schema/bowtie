@@ -1,11 +1,13 @@
 import uuid
-import random
-
-max_num = 100000
 
 
 def get_benchmark():
-    max_array_size = 1000000
+    name = "additionalProperties"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the additionalProperties keyword."
+    )
+    max_array_size = 100000
     benchmarks = []
 
     array_size = 1000
@@ -20,10 +22,9 @@ def get_benchmark():
         valid = allowed_properties
 
         benchmarks.append(dict(
-            name=f"additionalProperties_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for measuring performance of the "
-                "implementation for the additionalProperties keyword."
+                f"Validating additionalProperties keyword over array of size {array_size}"
             ),
             schema=dict(
                 properties={
@@ -41,10 +42,14 @@ def get_benchmark():
 
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )
 
 
 def _format_properties_as_instance(properties):
     return {
-        key: random.randint(0, max_num) for key in properties
+        key: 1000 for key in properties
     }

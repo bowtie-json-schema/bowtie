@@ -2,9 +2,14 @@ import uuid
 
 
 def get_benchmark():
+    name = "maxContains"
+    description = (
+        "A benchmark for measuring performance of the implementation "
+        "for the maxContains keyword."
+    )
 
     max_array_size = 1000000
-    array_size = 1000
+    array_size = 10000
 
     benchmarks = []
     while array_size <= max_array_size:
@@ -16,16 +21,16 @@ def get_benchmark():
         valid = array[:-1] + [1]
 
         benchmarks.append(dict(
-            name=f"maxContains_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `maxContains` keyword."
+                f"Validating the `maxContains` keyword over array of size {array_size}."
             ),
             schema={
                 "type": "array",
                 "contains": {
-                    "type": "integer"
+                    "type": "integer",
                 },
-                "maxContains": 2
+                "maxContains": 2,
             },
             tests=[
                 dict(description="All at First", instance=all_at_first),
@@ -36,4 +41,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

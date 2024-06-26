@@ -1,20 +1,24 @@
 def get_benchmark():
+    name = "uniqueItems"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the uniqueItems keyword."
+    )
     max_array_size = 2000000
     benchmarks = []
 
-    array_size = 2000
+    array_size = 20000
     while array_size <= max_array_size:
 
         first_two_duplicate = [1, 1] + [i for i in range(2, array_size-2)]
-        middle_two_duplicate = [i for i in range(0, array_size // 2)] + [-1, -1] + [i for i in range(array_size // 2, array_size)]
+        middle_two_duplicate = [i for i in range(array_size // 2)] + [-1, -1] + [i for i in range(array_size // 2, array_size)]
         last_two_duplicate = [i for i in range(2, array_size-2)] + [1, 1]
         valid = [i for i in range(array_size)]
 
         benchmarks.append(dict(
-            name=f"uniqueItems_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for measuring performance of the "
-                "implementation for the uniqueItems keyword."
+                f"Validating the `uniqueItems` keyword over array of size {array_size}."
             ),
             schema=dict(
                 uniqueItems=True,
@@ -29,4 +33,8 @@ def get_benchmark():
 
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

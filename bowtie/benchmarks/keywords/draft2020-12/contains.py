@@ -1,7 +1,10 @@
 def get_benchmark():
 
+    name = "contains"
+    description = "A benchmark for validation of the `contains` keyword."
+
     max_array_size = 1000000
-    array_size = 1000
+    array_size = 10000
 
     benchmarks = []
     while array_size <= max_array_size:
@@ -12,15 +15,16 @@ def get_benchmark():
         invalid = [0] * array_size
 
         benchmarks.append(dict(
-            name=f"contains_{array_size}",
+            name=f"Array Size - {array_size}",
             description=(
-                "A benchmark for validation of the `contains` keyword."
+                f"Validating contains keyword over an array of size {array_size}"
             ),
             schema={
                 "type": "array",
                 "contains": {"const": 37},
             },
             tests=[
+                dict(description="Empty array", instance=[]),
                 dict(description="Beginning of array", instance=start),
                 dict(description="Middle of array", instance=middle),
                 dict(description="End of array", instance=end),
@@ -29,4 +33,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

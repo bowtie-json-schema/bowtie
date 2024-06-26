@@ -1,12 +1,16 @@
-import string
 import random
+import string
 
 
 def get_benchmark():
+    name = "minLength"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the minLength keyword."
+    )
 
     max_string_size = 1000000
-    string_size = 1000
-
+    string_size = 10000
     benchmarks = []
 
     tests = []
@@ -14,17 +18,17 @@ def get_benchmark():
     while testing_string_size <= max_string_size:
         tests.append(
             dict(
-                description=f"String Size {testing_string_size}",
-                instance=''.join(random.choice(string.ascii_letters) for _ in range(testing_string_size))
-            )
+                description=f"Testing String Size - {testing_string_size}",
+                instance="".join(random.choice(string.ascii_letters) for _ in range(testing_string_size)),
+            ),
         )
         testing_string_size *= 10
 
     while string_size <= max_string_size:
         benchmarks.append(dict(
-            name=f"minLength_{string_size}",
+            name=f"String Size - {string_size}",
             description=(
-                "A benchmark for validation of the `minLength` keyword."
+                f"Validating the `minLength` keyword over string of size {string_size}."
             ),
             schema={
                 "type": "string",
@@ -34,4 +38,8 @@ def get_benchmark():
         ))
         string_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )
