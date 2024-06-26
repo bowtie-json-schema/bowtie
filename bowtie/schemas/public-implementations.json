@@ -1,6 +1,6 @@
 {
   "title": "Public Implementations",
-  "description": "A Public API providing information on Bowtie Supported Implementations",
+  "description": "A Public API providing metadata about implementations of JSON Schema supported by Bowtie",
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -30,17 +30,6 @@
         "type": "array",
         "items": { "type": "string", "format": "uri" }
       },
-      "version": {
-        "description": "The implementation version",
-
-        "type": "string"
-      },
-      "documentation": {
-        "description": "A URL for the implementation's documentation",
-
-        "type": "string",
-        "format": "uri"
-      },
       "homepage": {
         "description": "A URL for the implementation's homepage",
 
@@ -49,6 +38,21 @@
       },
       "issues": {
         "description": "A URL for the implementation's bug tracker",
+
+        "type": "string",
+        "format": "uri"
+      },
+      "version": {
+        "description": "The implementation version",
+
+        "type": "string"
+      },
+      "language_version": {
+        "description": "Version of language used to run the implementation",
+        "type": "string"
+      },
+      "documentation": {
+        "description": "A URL for the implementation's documentation",
 
         "type": "string",
         "format": "uri"
@@ -66,12 +70,8 @@
           },
           "additionalProperties": false
         }
-      },
-      "language_version": {
-        "description": "Version of language used to run the implementation",
-        "type": "string"
-      },
-      "additionalProperties": false
-    }
+      }
+    },
+    "additionalProperties": false
   }
 }
