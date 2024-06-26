@@ -1,0 +1,77 @@
+# This workflow is a separate workflow from `report.yml` for regenerating the versioned report data needed for Bowtie's UI.
+# It retests all of Bowtie's supported implementations for all their multiple versions listed in `matrix-versions.json` file if one exists for them.
+name: Collect New Versioned Test Results
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-implementations:
+    runs-on: ubuntu-latest
+    outputs:
+      implementations: ${{ steps.implementations-matrix.outputs.implementations }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: List all Bowtie Supported Implementations having a "matrix-versions.json" file
+        id: implementations-matrix
+        run: |
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json | jq -r '.[]')
+          MATRIX="[]"
+          for impl in $(echo "$IMPLEMENTATIONS"); do
+            if [ -f "implementations/$impl/matrix-versions.json" ]; then
+              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
+            fi
+          done
+          echo "implementations=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
+
+  regenerate-versioned-reports:
+    needs: list-implementations
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: ${{ fromJson(needs.list-implementations.outputs.implementations) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Generate New Versioned Reports for all Supported Dialects of ${{ matrix.implementation }}
+        id: generate-new-versioned-report
+        run: |
+          impl=${{ matrix.implementation }}
+          SUPPORTED_DIALECTS=$(bowtie filter-dialects -i $impl | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
+          MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
+          for dialect in $(echo $SUPPORTED_DIALECTS); do
+            bowtie suite $(jq -r '.[]' "$MATRIX_VERSIONS_FILE" | sed "s/^/-i image:$impl:/") https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/$dialect > $dialect.json
+          done
+
+      # This is useful to debug whether Bowtie accidentally fetched some huge
+      # number of container images.
+      - name: Show what images we fetched
+        run: docker images
+        if: always()
+
+      # This unfortunately can go wrong if e.g. we ever run out of memory above.
+      # Probably we should also atomically move files into place.
+      - name: Check that all Generated Reports for ${{ matrix.implementation }} are Valid
+        run: |
+          DIALECTS=$(bowtie filter-dialects | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
+          for dialect in $(echo $DIALECTS); do
+            if [ -f "$dialect.json" ]; then
+              bowtie summary --show failures "$dialect.json" --format markdown >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.implementation }}
+          path: |
+            *.json
+            !.prettierrc.json
