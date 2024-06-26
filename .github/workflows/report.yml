@@ -82,14 +82,47 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate implementations.json file
+      - name: Generate implementations.json (Private API) file
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
+
+      - name: Generate public-implementations (Public API) file
+        run: |
+          bowtie filter-implementations | \
+            while read -r impl; do
+              bowtie info -i $impl --format json | \
+              jq --arg impl "$impl" '
+                {(.source): (
+                  . + {name: $impl}
+                  | del(
+                      .os,
+                      .os_version,
+                      .source
+                    )
+                )}
+              '
+            done | \
+          jq -s 'add' > public-implementations
+
+      - name: Validate public-implementations against its corresponding JSON Schema
+        run: |
+          VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/public-implementations.json public-implementations)
+          SUMMARY=$(echo "$VALIDATION" | bowtie summary --show failures --format json)
+          if [ $(echo "$SUMMARY" | \
+                 jq 'all(.[]; .[1].failed == 0 and .[1].errored == 0 and .[1].skipped == 0)') == false ]; then
+              echo "public-implementations file is invalid under its JSON Schema"
+              exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: implementations
           path: implementations.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-implementations
+          path: public-implementations
 
   site:
     needs:
@@ -114,11 +147,23 @@ jobs:
           path: site/
           merge-multiple: true
 
-      - name: Include Implementation Metadata
+      - name: Include Implementations Metadata (Private API)
         uses: actions/download-artifact@v4
         with:
           name: implementations
           path: site/
+
+      - name: Create a Public Directory Structure for JSON Schema Org
+        run: mkdir -p site/v1/json-schema-org
+
+      - name: Include Public Implementations Metadata (Public API)
+        uses: actions/download-artifact@v4
+        with:
+          name: public-implementations
+          path: site/v1/json-schema-org/
+
+      - name: Rename "public-implementations" file to just "implementations"
+        run: mv site/v1/json-schema-org/public-implementations site/v1/json-schema-org/implementations
 
       - name: Generate Badges
         run: bowtie badges
