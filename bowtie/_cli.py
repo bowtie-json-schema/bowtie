@@ -33,7 +33,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
-from bowtie._benchmarks import BenchmarkLoadError, BenchmarkError
+from bowtie._benchmarks import BenchmarkError, BenchmarkLoadError
 from bowtie._commands import SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from bowtie._commands import (
         Message,
     )
-    from bowtie._connectables import ConnectableId, Connectable
+    from bowtie._connectables import Connectable, ConnectableId
     from bowtie._registry import ValidatorRegistry
 
 Seq = int | str
@@ -43,7 +43,7 @@ STDERR = Console(stderr=True)
 
 @frozen
 class BenchmarkLoadError(Exception):
-    message: str | None = None
+    message: str
 
     def __rich__(self):
         return DiagnosticError(
@@ -78,7 +78,7 @@ class PyperfError(BenchmarkError):
             hint_stmt=(
                 "Make sure that pyperf is installed and "
                 "all the arguments are provided correctly."
-            )
+            ),
         )
 
 
@@ -98,8 +98,9 @@ class BowtieRunError(BenchmarkError):
             note_stmt=self.error_stack,
             causes=[],
             hint_stmt=(
-                "Some internal error has occured while running the Benchmark"
-                f"with {self.connectable_id}. (Probably some error with the harness)"
+                "Some internal error has occured while running the Benchmark "
+                f"with {self.connectable_id}. (Probably some error with "
+                "the harness)"
             ),
         )
 
@@ -123,8 +124,12 @@ def _get_benchmark_groups_from_folder(
             benchmark = Benchmark.from_dict(
                 **data,
             ).maybe_set_dialect_from_schema()
-            benchmark_group = BenchmarkGroup(name=benchmark.name, description=benchmark.description,
-                                             benchmarks=[benchmark], path=file)
+            benchmark_group = BenchmarkGroup(
+                name=benchmark.name,
+                description=benchmark.description,
+                benchmarks=[benchmark],
+                path=file,
+            )
             yield benchmark_group
         elif data:
             benchmarks = [
@@ -194,7 +199,7 @@ class BenchmarkGroup:
     name: str
     benchmarks: Sequence[Benchmark]
     description: str
-    path: Path
+    path: Path | None
 
 
 @frozen
@@ -220,7 +225,7 @@ class BenchmarkResult:
 @frozen
 class TestResult:
     description: str
-    connectable_results: Sequence[ConnectableResult | None]
+    connectable_results: Sequence[ConnectableResult]
 
     def serializable(self):
         return asdict(self)
@@ -281,14 +286,14 @@ class BenchmarkMetadata:
 class BenchmarkReport:
     metadata: BenchmarkMetadata
     results: dict[Benchmark_Group_Name, BenchmarkGroupResult] = field(
-        default={},
+        factory=dict,
     )
 
     def serializable(self):
-        as_dict = dict(metadata=self.metadata.serializable())
+        as_dict: dict[str, Any] = dict(metadata=self.metadata.serializable())
         as_dict["results"] = [
             benchmark_group_result.serializable()
-            for benchmark_group, benchmark_group_result in self.results.items()
+            for _, benchmark_group_result in self.results.items()
         ]
         return as_dict
 
@@ -297,10 +302,10 @@ class BenchmarkReport:
 class BenchmarkReporter:
     _report: BenchmarkReport = field(alias="report")
 
-    _quiet: bool = field(default=False)
-    _format: str = field(default="pretty")
-    _benchmark_group_path: dict[str, Path] = field(
-        default={},
+    _quiet: bool = field(alias="quiet", default=False)
+    _format: str = field(alias="format", default="pretty")
+    _benchmark_group_path: dict[str, Path | None] = field(
+        factory=dict,
     )
 
     def update_system_metadata(self, system_metadata: dict[str, Any]):
@@ -309,56 +314,66 @@ class BenchmarkReporter:
         self._report.metadata.system_metadata.update(system_metadata)
 
     def started(self):
+
         if not self._quiet:
             STDOUT.print("Benchmarking Process Started\n")
 
     @staticmethod
-    def report_incompatible_connectables(incompatible_connectables: Sequence[Connectable], dialect: Dialect):
+    def report_incompatible_connectables(
+            incompatible_connectables: Sequence[Connectable],
+            dialect: Dialect,
+    ):
         for connectable in incompatible_connectables:
-            STDERR.print(f"{connectable.to_terse()} does not supports dialect {dialect.serializable()}\n")
+            STDERR.print(
+                f"{connectable.to_terse()} does not supports "
+                f"dialect {dialect.serializable()}\n",
+            )
 
     def running_benchmark_group(
         self,
         benchmark_group_name: str,
         benchmark_group_description: str,
-        path: Path,
+        path: Path | None,
     ):
-        benchmark_results = []
+        benchmark_results: list[BenchmarkResult] = []
         self._benchmark_group_path[benchmark_group_name] = path
 
         if not self._quiet:
             STDOUT.print(f"Benchmark Group - {benchmark_group_name}\n")
 
         def benchmark_started(benchmark_name: str, benchmark_description: str):
-            test_results = []
+            test_results: list[TestResult] = []
             if not self._quiet:
                 STDOUT.print(f"Running Benchmark - {benchmark_name}\n")
 
-            def test_started(test_description):
+            def test_started(test_description: str):
                 if not self._quiet:
                     STDOUT.print(f"Test - {test_description}")
-                connectable_results = []
+                connectable_results: list[ConnectableResult] = []
 
                 def got_connectable_result(
                     connectable: ConnectableId,
-                    test_result,
+                    test_result: str,
                 ):
                     if not self._quiet:
-                        if not test_result:
-                            STDERR.print(f"Failed Test for - {connectable}")
-                            # connectable_results.append(None)
-                            # return
-                        else:
-                            STDOUT.print(f"Got Result for - {connectable}")
+                        STDOUT.print(f"Got Result for - {connectable}")
 
-                    benchmark_result = pyperf.Benchmark.loads(test_result)
+                    benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownVariableType]
+                    result_values: list[float] = [
+                        float(value) for value in benchmark_result.get_values()  # type: ignore[reportUnknownMemberType]
+                    ]
+                    result_duration: float = float(
+                        benchmark_result.get_total_duration()  # type: ignore[reportUnknownMemberType]
+                    )
                     connectable_result = ConnectableResult(
                         connectable_id=connectable,
-                        duration=benchmark_result.get_total_duration(),
-                        values=benchmark_result.get_values(),
+                        duration=result_duration,
+                        values=result_values,
                     )
                     if not len(self._report.metadata.system_metadata):
-                        self.update_system_metadata(benchmark_result.get_metadata())
+                        self.update_system_metadata(
+                            benchmark_result.get_metadata()  # type: ignore[reportUnknownMemberType]
+                        )
                     connectable_results.append(connectable_result)
 
                 def test_finished():
@@ -417,21 +432,35 @@ class BenchmarkReporter:
             f"Runs: {self._report.metadata.num_runs}\n"
             f"Values: {self._report.metadata.num_values}\n"
             f"Warmups: {self._report.metadata.num_warmups}\n\n"
-            f"{'CPU Count: '}{self._report.metadata.system_metadata.get('cpu_count', 'Not Available')}\n"
-            f"{'CPU Frequency: '}{self._report.metadata.system_metadata.get('cpu_freq', 'Not Available')}\n"
-            f"{'CPU Model: '}{self._report.metadata.system_metadata.get('cpu_model_name', 'Not Available')}\n\n"
-            f"Hostname: {self._report.metadata.system_metadata['hostname']}\n"
+            f"CPU Count: {self._report.metadata.system_metadata.get(
+                'cpu_count', 'Not Available'
+            )}\n"
+            f"CPU Frequency: {self._report.metadata.system_metadata.get(
+                'cpu_freq', 'Not Available'
+            )}\n"
+            f"CPU Model: {self._report.metadata.system_metadata.get(
+                'cpu_model_name', 'Not Available'
+            )}\n\n"
+            f"Hostname: {self._report.metadata.system_metadata['hostname']}"
         )
 
         table = Table(
-            Column(header="Benchmark Group", vertical="middle", justify="center"),
+            Column(
+                header="Benchmark Group",
+                vertical="middle",
+                justify="center",
+            ),
             Column(header="Results", justify="center"),
             title="Benchmark",
             caption=table_caption,
         )
 
-        for benchmark_group_name, benchmark_group_result in self._report.results.items():
-            benchmark_group_path = self._benchmark_group_path[benchmark_group_name]
+        for (
+            benchmark_group_name, benchmark_group_result,
+        ) in self._report.results.items():
+            benchmark_group_path = self._benchmark_group_path[
+                benchmark_group_name
+            ]
             outer_table = Table(
                 box=box.SIMPLE_HEAD,
                 caption='File "' +str(benchmark_group_path) + '"',
@@ -444,9 +473,9 @@ class BenchmarkReporter:
                     min_width=100,
                 )
 
-                ref_row = [""]
+                ref_row: list[str] = [""]
                 results_for_connectable: dict[
-                    ConnectableId, list[tuple[float, float]]
+                    ConnectableId, list[tuple[float, float]],
                 ] = {}
 
                 for idx, connectable_result in enumerate(
@@ -462,50 +491,65 @@ class BenchmarkReporter:
                             ),
                         ) for test_result in benchmark_result.test_results
                     ]
-                    results_for_connectable[connectable_result.connectable_id] = connectable_results
+                    results_for_connectable[
+                        connectable_result.connectable_id
+                    ] = connectable_results
 
                 sorted_connectables = sorted(
                     results_for_connectable.keys(), key=(
                         lambda connectable_id: (
                             geometric_mean((
                                 result_mean
-                                for result_mean, _ in results_for_connectable[connectable_id]
+                                for result_mean, _ in
+                                results_for_connectable[connectable_id]
                             ))
                         )
                     ),
                 )
                 results_for_connectable = {
-                    connectable: results_for_connectable[connectable] for connectable in sorted_connectables
+                    connectable: results_for_connectable[connectable]
+                    for connectable in sorted_connectables
                 }
 
-                for connectable_id, connectable_results in results_for_connectable.items():
+                for connectable_id, connectable_results \
+                        in results_for_connectable.items():
                     inner_table.add_column(
                         connectable_id,
                     )
                     ref_row.append(
-                        geometric_mean((
-                            result_mean for result_mean, _ in connectable_results
-                        )),
+                        str(geometric_mean((
+                            result_mean for result_mean, _
+                            in connectable_results
+                        ))),
                     )
 
-                fastest_connectable_results = next(iter(results_for_connectable.values()))
+                fastest_connectable_results = next(iter(
+                    results_for_connectable.values(),
+                ))
 
-                for idx, test_result in enumerate(benchmark_result.test_results):
+                for idx, test_result \
+                        in enumerate(benchmark_result.test_results):
                     row_elements = [
                         test_result.description,
                     ]
-                    for connectable_idx, results in enumerate(results_for_connectable.items()):
+                    for connectable_idx, results \
+                            in enumerate(results_for_connectable.items()):
                         _, connectable_results = results
                         _mean, std_dev = connectable_results[idx]
 
-                        fastest_implementation_mean, _ = fastest_connectable_results[idx]
+                        fastest_implementation_mean, _ = (
+                            fastest_connectable_results[idx]
+                        )
                         relative = _mean / fastest_implementation_mean
 
-                        repr_string = f"{_format_value(_mean)} +- {_format_value(std_dev)}"
+                        repr_string = (
+                            f"{_format_value(_mean)} +- "
+                            f"{_format_value(std_dev)}"
+                        )
                         if connectable_idx != 0 and relative > 1:
                             repr_string += f": {round(relative, 2)}x slower"
                         elif connectable_idx:
-                            repr_string += f": {round(1 / relative, 2)}x faster"
+                            repr_string += f": {round(1/relative, 2)}x faster"
 
                         row_elements.append(repr_string)
 
@@ -513,7 +557,12 @@ class BenchmarkReporter:
 
                 for implementation_idx in range(2, len(ref_row)):
                     ref_row[implementation_idx] = (
-                        f"{round(ref_row[implementation_idx] / ref_row[1], 2)}x slower"
+                        f"{
+                            round(
+                                float(ref_row[implementation_idx]) 
+                                / float(ref_row[1]), 2
+                            )
+                        }x slower"
                     )
 
                 ref_row[1] = "Reference"
@@ -567,16 +616,21 @@ class Benchmarker:
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
-        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
-        dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(dialect.short_name)
+        keywords_benchmark_dir = (
+            bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+        )
+        dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(
+            dialect.short_name,
+        )
 
         if not keywords_benchmark_dir.exists():
             raise BenchmarkLoadError("Keyword Benchmarks Folder not found.")
         if not dialect_keyword_benchmarks_dir.exists():
             raise BenchmarkLoadError(
                 message=(
-                    f"Keyword Specific Benchmarks not present for {dialect.serializable()}"
-                )
+                    "Keyword Specific Benchmarks not present "
+                    f"for {dialect.serializable()}"
+                ),
             )
 
         module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
@@ -640,7 +694,6 @@ class Benchmarker:
                 if dialect not in implementation.info.dialects:
                     incompatible_connectables.append(connectable)
                     continue
-
                 acknowledged[connectable.to_terse()] = implementation.info
                 compatible_connectables.append(connectable)
 
@@ -659,26 +712,39 @@ class Benchmarker:
             format=format,
         )
         reporter.started()
-        reporter.report_incompatible_connectables(incompatible_connectables, dialect)
+        reporter.report_incompatible_connectables(
+            incompatible_connectables,
+            dialect,
+        )
 
         if not compatible_connectables:
             reporter.no_compatible_connectables()
             return
 
         for benchmark_group in self._benchmark_groups:
-            benchmark_started, benchmark_group_finished = reporter.running_benchmark_group(
+            (
+                benchmark_started, benchmark_group_finished,
+            ) = reporter.running_benchmark_group(
                 benchmark_group.name,
                 benchmark_group.description,
                 benchmark_group.path,
             )
             for benchmark in benchmark_group.benchmarks:
-                test_started, benchmark_finished = benchmark_started(benchmark.name, benchmark.description)
+                test_started, benchmark_finished = benchmark_started(
+                    benchmark.name, benchmark.description,
+                )
                 if benchmark.dialect and benchmark.dialect != dialect:
-                    STDERR.print(f"Skipping {benchmark.name} as it does not support dialect {dialect.serializable()}")
+                    STDERR.print(
+                        f"Skipping {benchmark.name} as it does not support "
+                        f"dialect {dialect.serializable()}",
+                    )
                     continue
                 tests = benchmark.tests
                 for test in tests:
-                    got_connectable_result, test_finished = test_started(test.description)
+                    (
+                        got_connectable_result,
+                        test_finished,
+                    ) = test_started(test.description)
                     benchmark_case = benchmark.benchmark_with_diff_tests(
                         tests=[test],
                     )
@@ -722,15 +788,13 @@ class Benchmarker:
         ) as fp:
             path = Path(fp.name)
             path.write_text(json.dumps(benchmark_dict))
-            output = await self._pyperf_benchmark_command(
+            return await self._pyperf_benchmark_command(
                 "bowtie", "run", "-i", connectable.to_terse(),
                 "-D", dialect.serializable(),
                 fp.name,
                 connectable_id=connectable.to_terse(),
                 name=benchmark_name,
             )
-
-        return output
 
     @staticmethod
     async def _run_subprocess(
