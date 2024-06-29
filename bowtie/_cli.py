@@ -8,6 +8,7 @@ from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
+from time import perf_counter_ns
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -1181,6 +1182,14 @@ class JSON(click.File):
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
+@click.option(
+    "--output-time",
+    "-o",
+    "output_time",
+    type=str,
+    default=None,
+    help="For Internal Use Only.",
+)
 @click.argument(
     "input",
     default="-",
@@ -1190,6 +1199,7 @@ def run(
     input: Iterable[str],
     filter: CaseTransform,
     dialect: Dialect,
+    output_time: str,
     **kwargs: Any,
 ):
     """
@@ -1203,7 +1213,17 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
-    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
+
+    path = None
+    if output_time:
+        path = Path(output_time)
+        path.parent.mkdir(exist_ok=True, parents=True)
+
+    return asyncio.run(
+        _run(
+            **kwargs, cases=cases, dialect=dialect, time_measurement_path=path,
+        )
+    )
 
 
 @subcommand
@@ -1727,6 +1747,7 @@ async def _run(
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
+    time_measurement_path: Path | None = None,
     **kwargs: Any,
 ) -> int:
     exit_code = 0
@@ -1773,16 +1794,20 @@ async def _run(
         count = 0
         should_stop = False
         unsucessful = Unsuccessful()
+        # Just to complement bowtie perf (not for other purposes)
+        time_taken_by_implementations = 0
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
             got_result = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
+            st_time = perf_counter_ns()
 
             for each in asyncio.as_completed(responses):
                 result = await each
                 got_result(result=result)
                 unsucessful += result.unsuccessful()
+                time_taken_by_implementations += perf_counter_ns() - st_time
                 if (
                     max_fail
                     and unsucessful.failed >= max_fail
@@ -1802,6 +1827,11 @@ async def _run(
             STDERR.print("[bold red]No test cases ran.[/]")
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")
+
+        if time_measurement_path:
+            with time_measurement_path.open('a') as file:
+                file.write(f"{time_taken_by_implementations}\n")
+
     return exit_code
 
 
