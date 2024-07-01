@@ -1343,7 +1343,8 @@ def validate(
     default=False,
     show_default=True,
     help=(
-        "Benchmark all the keywords."
+        "Run keyword specific benchmarks to learn about how "
+        "various implementations implement the keyword."
     ),
 )
 @click.option(

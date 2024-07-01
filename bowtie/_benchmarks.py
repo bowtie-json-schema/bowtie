@@ -105,49 +105,6 @@ class BowtieRunError(BenchmarkError):
         )
 
 
-def _get_benchmark_groups_from_folder(
-    folder: Path,
-    module: str = "bowtie.benchmarks",
-) -> Iterable[BenchmarkGroup]:
-    for file in folder.iterdir():
-        data = None
-        if file.suffix == ".py" and file.name != "__init__.py":
-            benchmark_module_name = "." + file.stem
-            data = importlib.import_module(
-                benchmark_module_name,
-                module,
-            ).get_benchmark()
-        elif file.suffix == ".json":
-            data = json.loads(file.read_text())
-
-        if data and "benchmarks" not in data:
-            benchmark = Benchmark.from_dict(
-                **data,
-            ).maybe_set_dialect_from_schema()
-            benchmark_group = BenchmarkGroup(
-                name=benchmark.name,
-                description=benchmark.description,
-                benchmarks=[benchmark],
-                path=file,
-            )
-            yield benchmark_group
-        elif data:
-            benchmarks = [
-                Benchmark.from_dict(
-                    **benchmark,
-                ).maybe_set_dialect_from_schema()
-                for benchmark in data["benchmarks"]
-            ]
-            benchmark_group = BenchmarkGroup(
-                name=data["name"],
-                description=data["description"],
-                benchmarks=benchmarks,
-                path=file,
-            )
-            yield benchmark_group
-        continue
-
-
 @frozen
 class Benchmark:
     description: str
@@ -200,6 +157,50 @@ class BenchmarkGroup:
     benchmarks: Sequence[Benchmark]
     description: str
     path: Path | None
+
+    @classmethod
+    def get_benchmark_groups_from_folder(
+        cls,
+        folder: Path,
+        module: str = "bowtie.benchmarks",
+    ) -> Iterable[BenchmarkGroup]:
+        for file in folder.iterdir():
+            data = None
+            if file.suffix == ".py" and file.name != "__init__.py":
+                benchmark_module_name = "." + file.stem
+                data = importlib.import_module(
+                    benchmark_module_name,
+                    module,
+                ).get_benchmark()
+            elif file.suffix == ".json":
+                data = json.loads(file.read_text())
+
+            if data and "benchmarks" not in data:
+                benchmark = Benchmark.from_dict(
+                    **data,
+                ).maybe_set_dialect_from_schema()
+                benchmark_group = cls(
+                    name=benchmark.name,
+                    description=benchmark.description,
+                    benchmarks=[benchmark],
+                    path=file,
+                )
+                yield benchmark_group
+            elif data:
+                benchmarks = [
+                    Benchmark.from_dict(
+                        **benchmark,
+                    ).maybe_set_dialect_from_schema()
+                    for benchmark in data["benchmarks"]
+                ]
+                benchmark_group = cls(
+                    name=data["name"],
+                    description=data["description"],
+                    benchmarks=benchmarks,
+                    path=file,
+                )
+                yield benchmark_group
+            continue
 
 
 @frozen
@@ -273,7 +274,6 @@ class BenchmarkMetadata:
         as_dict.update(
             dialect=self.dialect.serializable(),
             started=as_dict.pop("started").isoformat(),
-            # FIXME: This transformation is to support the UI parsing
             implementations={
                 id: implementation.serializable()
                 for id, implementation in self.implementations.items()
@@ -320,8 +320,8 @@ class BenchmarkReporter:
 
     @staticmethod
     def report_incompatible_connectables(
-            incompatible_connectables: Sequence[Connectable],
-            dialect: Dialect,
+        incompatible_connectables: Sequence[Connectable],
+        dialect: Dialect,
     ):
         for connectable in incompatible_connectables:
             STDERR.print(
@@ -451,7 +451,7 @@ class BenchmarkReporter:
                 justify="center",
             ),
             Column(header="Results", justify="center"),
-            title="Benchmark",
+            title="Benchmark Summary",
             caption=table_caption,
         )
 
@@ -463,7 +463,7 @@ class BenchmarkReporter:
             ]
             outer_table = Table(
                 box=box.SIMPLE_HEAD,
-                caption='File "' +str(benchmark_group_path) + '"',
+                caption='File "' + str(benchmark_group_path) + '"',
             )
             for benchmark_result in benchmark_group_result.benchmark_results:
                 inner_table = Table(
@@ -512,7 +512,7 @@ class BenchmarkReporter:
                 }
 
                 for connectable_id, connectable_results \
-                        in results_for_connectable.items():
+                    in results_for_connectable.items():
                     inner_table.add_column(
                         connectable_id,
                     )
@@ -528,12 +528,12 @@ class BenchmarkReporter:
                 ))
 
                 for idx, test_result \
-                        in enumerate(benchmark_result.test_results):
+                    in enumerate(benchmark_result.test_results):
                     row_elements = [
                         test_result.description,
                     ]
                     for connectable_idx, results \
-                            in enumerate(results_for_connectable.items()):
+                        in enumerate(results_for_connectable.items()):
                         _, connectable_results = results
                         _mean, std_dev = connectable_results[idx]
 
@@ -549,7 +549,7 @@ class BenchmarkReporter:
                         if connectable_idx != 0 and relative > 1:
                             repr_string += f": {round(relative, 2)}x slower"
                         elif connectable_idx:
-                            repr_string += f": {round(1/relative, 2)}x faster"
+                            repr_string += f": {round(1 / relative, 2)}x faster"
 
                         row_elements.append(repr_string)
 
@@ -558,10 +558,10 @@ class BenchmarkReporter:
                 for implementation_idx in range(2, len(ref_row)):
                     ref_row[implementation_idx] = (
                         f"{
-                            round(
-                                float(ref_row[implementation_idx]) 
-                                / float(ref_row[1]), 2
-                            )
+                        round(
+                            float(ref_row[implementation_idx])
+                            / float(ref_row[1]), 2
+                        )
                         }x slower"
                     )
 
@@ -607,7 +607,7 @@ class Benchmarker:
             raise BenchmarkLoadError("Default Benchmarks not found.")
 
         return cls(
-            benchmark_groups=_get_benchmark_groups_from_folder(
+            benchmark_groups=BenchmarkGroup.get_benchmark_groups_from_folder(
                 benchmark_dir,
             ),
             **kwargs,
@@ -636,7 +636,7 @@ class Benchmarker:
         module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
 
         return cls(
-            benchmark_groups=_get_benchmark_groups_from_folder(
+            benchmark_groups=BenchmarkGroup.get_benchmark_groups_from_folder(
                 dialect_keyword_benchmarks_dir,
                 module=module_name,
             ),
