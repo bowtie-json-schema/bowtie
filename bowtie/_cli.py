@@ -1353,6 +1353,14 @@ def validate(
     default="bowtie perf",
     help="A (human-readable) description for this benchmark.",
 )
+@click.option(
+    "--test-suite",
+    "-t",
+    "test_suite",
+    type=_suite.ClickParam(),
+    default=None,
+    help="Run Benchmarks over the official JSON Schema Test Suite.",
+)
 @click.argument("schema", type=JSON(), required=False)
 @click.argument("instances", nargs=-1, type=JSON())
 def perf(
@@ -1365,6 +1373,7 @@ def perf(
     description: str,
     registry: ValidatorRegistry[Any],
     quiet: bool,
+    test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     **kwargs: Any,
 ):
     """
@@ -1376,6 +1385,13 @@ def perf(
                 dialect,
                 **kwargs,
             )
+        elif test_suite:
+            cases, enforced_dialect, _ = test_suite
+            benchmarker = _benchmarks.Benchmarker.from_test_cases(
+                cases,
+                **kwargs,
+            )
+            dialect = enforced_dialect
         elif schema is None:
             benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
                 **kwargs,

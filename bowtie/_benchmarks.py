@@ -614,6 +614,31 @@ class Benchmarker:
         )
 
     @classmethod
+    def from_test_cases(
+        cls, cases: Iterable[TestCase], **kwargs
+    ):
+        benchmark_groups = [
+            BenchmarkGroup(
+                name=case.description,
+                description=case.description,
+                benchmarks=[
+                    Benchmark(
+                        name=case.description,
+                        schema=case.schema,
+                        description=case.description,
+                        tests=case.tests
+                    )
+                ],
+                path=None
+            ) for case in cases
+        ]
+
+        return cls(
+            benchmark_groups=benchmark_groups,
+            **kwargs,
+        )
+
+    @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
         keywords_benchmark_dir = (
