@@ -1222,7 +1222,7 @@ def run(
     return asyncio.run(
         _run(
             **kwargs, cases=cases, dialect=dialect, time_measurement_path=path,
-        )
+        ),
     )
 
 
@@ -1846,7 +1846,7 @@ async def _run(
             STDERR.print(f"Ran [green]{count}[/] test cases.")
 
         if time_measurement_path:
-            with time_measurement_path.open('a') as file:
+            with time_measurement_path.open("a") as file:
                 file.write(f"{time_taken_by_implementations}\n")
 
     return exit_code

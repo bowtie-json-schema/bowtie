@@ -17,11 +17,12 @@ from attrs.filters import exclude
 from diagnostic import DiagnosticError
 from rich import box
 from rich.console import Console
+from rich.progress import Progress
 from rich.table import Column, Table
 import pyperf  # type: ignore[reportMissingTypeStubs]
 
 from bowtie import _connectables, _report
-from bowtie._core import Dialect, Example, ImplementationInfo, Test
+from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -38,7 +39,6 @@ Benchmark_Group_Name = str
 Benchmark_Criteria = str
 
 STDOUT = Console()
-STDERR = Console(stderr=True)
 
 
 @frozen
@@ -300,6 +300,7 @@ class BenchmarkReport:
 
 @frozen
 class BenchmarkReporter:
+    _progress_bar: Progress = field(alias="progress_bar")
     _report: BenchmarkReport = field(alias="report")
 
     _quiet: bool = field(alias="quiet", default=False)
@@ -314,9 +315,7 @@ class BenchmarkReporter:
         self._report.metadata.system_metadata.update(system_metadata)
 
     def started(self):
-
-        if not self._quiet:
-            STDOUT.print("Benchmarking Process Started\n")
+        pass
 
     @staticmethod
     def report_incompatible_connectables(
@@ -324,70 +323,116 @@ class BenchmarkReporter:
         dialect: Dialect,
     ):
         for connectable in incompatible_connectables:
-            STDERR.print(
+            STDOUT.log(
                 f"{connectable.to_terse()} does not supports "
                 f"dialect {dialect.serializable()}\n",
             )
 
+    @staticmethod
+    def _total_tests_in_benchmark_group(benchmark_group: BenchmarkGroup):
+        num = 0
+        for benchmark in benchmark_group.benchmarks:
+            num += len(benchmark.tests)
+        return num
+
     def running_benchmark_group(
         self,
-        benchmark_group_name: str,
-        benchmark_group_description: str,
-        path: Path | None,
+        benchmark_group: BenchmarkGroup,
     ):
-        benchmark_results: list[BenchmarkResult] = []
-        self._benchmark_group_path[benchmark_group_name] = path
-
+        progress_bar_task = None
         if not self._quiet:
-            STDOUT.print(f"Benchmark Group - {benchmark_group_name}\n")
+            progress_bar_task = self._progress_bar.add_task(
+                f"Running Benchmark Group: {benchmark_group.name}",
+                total=len(self._report.metadata.implementations) *
+                      self._total_tests_in_benchmark_group(benchmark_group),
+            )
+        benchmark_results: list[BenchmarkResult] = []
+        self._benchmark_group_path[benchmark_group.name] = benchmark_group.path
 
         def benchmark_started(benchmark_name: str, benchmark_description: str):
             test_results: list[TestResult] = []
-            if not self._quiet:
-                STDOUT.print(f"Running Benchmark - {benchmark_name}\n")
 
             def test_started(test_description: str):
-                if not self._quiet:
-                    STDOUT.print(f"Test - {test_description}")
-                connectable_results: list[ConnectableResult] = []
+                connectable_results: dict[
+                    ConnectableId,
+                    ConnectableResult,
+                ] = {}
 
                 def got_connectable_result(
                     connectable: ConnectableId,
                     test_result: str,
+                    retry_count: int,
+                    measured_time_values: list[float],
                 ):
-                    if not self._quiet:
-                        STDOUT.print(f"Got Result for - {connectable}")
-
                     benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownVariableType]
-                    result_values: list[float] = [
-                        float(value) for value in benchmark_result.get_values()  # type: ignore[reportUnknownMemberType]
+
+                    # Ignoring Warmup Values
+                    result_values = measured_time_values[
+                        self._report.metadata.num_warmups *
+                        self._report.metadata.num_runs:
                     ]
-                    result_duration: float = float(
-                        benchmark_result.get_total_duration()  # type: ignore[reportUnknownMemberType]
+
+                    benchmark_duration: float = float(
+                        benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
                     )
                     connectable_result = ConnectableResult(
                         connectable_id=connectable,
-                        duration=result_duration,
+                        duration=benchmark_duration,
                         values=result_values,
                     )
+                    retry_needed = False
+
+                    mean = statistics.mean(result_values)
+                    std_dev = statistics.stdev(result_values)
+                    if std_dev / mean > 0.10:
+                        retry_needed = True
+                        if retry_count == 0:
+                            STDOUT.log(
+                                f"WARNING!\n{benchmark_name}:{test_description}:"
+                                f"{connectable}\nBenchmark Might Be Unstable "
+                                f"(std_dev = {(std_dev / mean) * 100}%)",
+                            )
+
                     if not len(self._report.metadata.system_metadata):
                         self.update_system_metadata(
-                            benchmark_result.get_metadata()  # type: ignore[reportUnknownMemberType]
+                            benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
                         )
-                    connectable_results.append(connectable_result)
+                    if progress_bar_task:
+                        if benchmark_group.name == benchmark_name:
+                            self._progress_bar.update(
+                                progress_bar_task,
+                                description=(
+                                    f"Running Benchmark: {benchmark_name}\n"
+                                    f"Test: {test_description}\n"
+                                    f"Connectable: {connectable}"
+                                ),
+                                advance=1,
+                            )
+                        else:
+                            self._progress_bar.update(
+                                progress_bar_task,
+                                description=(
+                                    f"Running Benchmark Group: "
+                                    f"{benchmark_group.name}\n"
+                                    f"Benchmark: {benchmark_name}\n"
+                                    f"Test: {test_description}\n"
+                                    f"Connectable: {connectable}"
+                                ),
+                                advance=1,
+                            )
+                    connectable_results[connectable] = connectable_result
+                    return retry_needed
 
                 def test_finished():
                     test_result = TestResult(
                         description=test_description,
-                        connectable_results=connectable_results,
+                        connectable_results=list(connectable_results.values()),
                     )
                     test_results.append(test_result)
 
                 return got_connectable_result, test_finished
 
             def benchmark_finished():
-                if not self._quiet:
-                    STDOUT.print()
                 benchmark_result = BenchmarkResult(
                     name=benchmark_name,
                     description=benchmark_description,
@@ -398,14 +443,13 @@ class BenchmarkReporter:
             return test_started, benchmark_finished
 
         def benchmark_group_finished():
-            if not self._quiet:
-                STDOUT.print()
             benchmark_group_result = BenchmarkGroupResult(
-                name=benchmark_group_name,
-                description=benchmark_group_description,
+                name=benchmark_group.name,
+                description=benchmark_group.description,
                 benchmark_results=benchmark_results,
             )
-            self._report.results[benchmark_group_name] = benchmark_group_result
+            self._report.results[benchmark_group.name] = benchmark_group_result
+            self._progress_bar.update(progress_bar_task, visible=False)
 
         return benchmark_started, benchmark_group_finished
 
@@ -413,16 +457,18 @@ class BenchmarkReporter:
         if self._format == "pretty":
             self._print_results_table()
         else:
-            STDOUT.print(json.dumps(self._report.serializable(), indent=2))
+            STDOUT.log(json.dumps(self._report.serializable(), indent=2))
 
     @staticmethod
     def no_compatible_connectables():
-        STDERR.print("Skipping Benchmark, No Connectables to run !")
+        STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
     def _print_results_table(self):
 
         def _format_value(value: float) -> str:
-            if value < 1:
+            if value < 0.001:
+                return f"{round(value * 1000 * 1000)}us"
+            elif value < 1:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
 
@@ -440,7 +486,7 @@ class BenchmarkReporter:
             )}\n"
             f"CPU Model: {self._report.metadata.system_metadata.get(
                 'cpu_model_name', 'Not Available'
-            )}\n\n"
+            )}\n"
             f"Hostname: {self._report.metadata.system_metadata['hostname']}"
         )
 
@@ -549,7 +595,9 @@ class BenchmarkReporter:
                         if connectable_idx != 0 and relative > 1:
                             repr_string += f": {round(relative, 2)}x slower"
                         elif connectable_idx:
-                            repr_string += f": {round(1 / relative, 2)}x faster"
+                            repr_string += (
+                                f": {round(1 / relative, 2)}x faster"
+                            )
 
                         row_elements.append(repr_string)
 
@@ -558,10 +606,10 @@ class BenchmarkReporter:
                 for implementation_idx in range(2, len(ref_row)):
                     ref_row[implementation_idx] = (
                         f"{
-                        round(
-                            float(ref_row[implementation_idx])
-                            / float(ref_row[1]), 2
-                        )
+                            round(
+                                float(ref_row[implementation_idx])
+                                / float(ref_row[1]), 2
+                            )
                         }x slower"
                     )
 
@@ -597,6 +645,9 @@ class Benchmarker:
     _num_values: int = field(
         alias="values",
     )
+    _num_retries: int = field(
+        default=4,
+    )
 
     @classmethod
     def from_default_benchmarks(cls, **kwargs: Any):
@@ -615,7 +666,7 @@ class Benchmarker:
 
     @classmethod
     def from_test_cases(
-        cls, cases: Iterable[TestCase], **kwargs
+        cls, cases: Iterable[TestCase], **kwargs: Any,
     ):
         benchmark_groups = [
             BenchmarkGroup(
@@ -626,10 +677,10 @@ class Benchmarker:
                         name=case.description,
                         schema=case.schema,
                         description=case.description,
-                        tests=case.tests
-                    )
+                        tests=case.tests,
+                    ),
                 ],
-                path=None
+                path=None,
             ) for case in cases
         ]
 
@@ -722,83 +773,113 @@ class Benchmarker:
                 acknowledged[connectable.to_terse()] = implementation.info
                 compatible_connectables.append(connectable)
 
-        reporter = BenchmarkReporter(
-            report=BenchmarkReport(
-                metadata=BenchmarkMetadata(
-                    implementations=acknowledged,
-                    dialect=dialect,
-                    num_runs=self._num_runs,
-                    num_loops=self._num_loops,
-                    num_values=self._num_values,
-                    num_warmups=self._num_warmups,
+        with (Progress(console=STDOUT, transient=True) as progress):
+            reporter = BenchmarkReporter(
+                report=BenchmarkReport(
+                    metadata=BenchmarkMetadata(
+                        implementations=acknowledged,
+                        dialect=dialect,
+                        num_runs=self._num_runs,
+                        num_loops=self._num_loops,
+                        num_values=self._num_values,
+                        num_warmups=self._num_warmups,
+                    ),
                 ),
-            ),
-            quiet=quiet,
-            format=format,
-        )
-        reporter.started()
-        reporter.report_incompatible_connectables(
-            incompatible_connectables,
-            dialect,
-        )
-
-        if not compatible_connectables:
-            reporter.no_compatible_connectables()
-            return
-
-        for benchmark_group in self._benchmark_groups:
-            (
-                benchmark_started, benchmark_group_finished,
-            ) = reporter.running_benchmark_group(
-                benchmark_group.name,
-                benchmark_group.description,
-                benchmark_group.path,
+                quiet=quiet,
+                format=format,
+                progress_bar=progress,
             )
-            for benchmark in benchmark_group.benchmarks:
-                test_started, benchmark_finished = benchmark_started(
-                    benchmark.name, benchmark.description,
+            reporter.started()
+            reporter.report_incompatible_connectables(
+                incompatible_connectables,
+                dialect,
+            )
+
+            if not compatible_connectables:
+                reporter.no_compatible_connectables()
+                return
+
+            for benchmark_group in self._benchmark_groups:
+                (
+                    benchmark_started, benchmark_group_finished,
+                ) = reporter.running_benchmark_group(
+                    benchmark_group,
                 )
-                if benchmark.dialect and benchmark.dialect != dialect:
-                    STDERR.print(
-                        f"Skipping {benchmark.name} as it does not support "
-                        f"dialect {dialect.serializable()}",
+                for benchmark in benchmark_group.benchmarks:
+                    test_started, benchmark_finished = benchmark_started(
+                        benchmark.name, benchmark.description,
                     )
-                    continue
-                tests = benchmark.tests
-                for test in tests:
-                    (
-                        got_connectable_result,
-                        test_finished,
-                    ) = test_started(test.description)
-                    benchmark_case = benchmark.benchmark_with_diff_tests(
-                        tests=[test],
-                    )
-                    for connectable in compatible_connectables:
-                        try:
-                            output = await self._run_benchmark(
-                                benchmark_case,
-                                dialect,
-                                connectable,
+                    if benchmark.dialect and benchmark.dialect != dialect:
+                        STDOUT.log(
+                            f"Skipping {benchmark.name} as it does not support"
+                            f" dialect {dialect.serializable()}",
+                        )
+                        continue
+                    tests = benchmark.tests
+                    for test in tests:
+                        (
+                            got_connectable_result,
+                            test_finished,
+                        ) = test_started(test.description)
+                        benchmark_case = benchmark.benchmark_with_diff_tests(
+                            tests=[test],
+                        )
+                        for connectable in compatible_connectables:
+                            run_needed, retries_allowed = (
+                                True, self._num_retries,
                             )
-                        except (PyperfError, BowtieRunError) as err:
-                            STDERR.print(err)
-                            return
+                            while run_needed:
+                                with tempfile.NamedTemporaryFile(
+                                    delete=True,
+                                ) as fp:
+                                    try:
+                                        output = await self._run_benchmark(
+                                            benchmark_case,
+                                            dialect,
+                                            connectable,
+                                            fp.name,
+                                        )
+                                    except (
+                                        PyperfError, BowtieRunError,
+                                    ) as err:
+                                        STDOUT.log(err)
+                                        return
 
-                        got_connectable_result(connectable.to_terse(), output)
+                                    lines = Path(
+                                        fp.name,
+                                    ).read_text().splitlines()
 
-                    test_finished()
+                                    measured_time_values = [
+                                        float(line)/1e9 for line in lines
+                                    ]
 
-                benchmark_finished()
+                                    run_needed = got_connectable_result(
+                                        connectable.to_terse(),
+                                        output,
+                                        retries_allowed,
+                                        measured_time_values,
+                                    )
 
-            benchmark_group_finished()
+                                    if not retries_allowed:
+                                        run_needed = False
 
-        reporter.finished()
+                                    if run_needed:
+                                        retries_allowed -= 1
+
+                        test_finished()
+
+                    benchmark_finished()
+
+                benchmark_group_finished()
+
+            reporter.finished()
 
     async def _run_benchmark(
         self,
         benchmark: Benchmark,
         dialect: Dialect,
         connectable: _connectables.Connectable,
+        time_output_file: str,
     ) -> Any:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
@@ -816,6 +897,7 @@ class Benchmarker:
             return await self._pyperf_benchmark_command(
                 "bowtie", "run", "-i", connectable.to_terse(),
                 "-D", dialect.serializable(),
+                "--output-time", time_output_file,
                 fp.name,
                 connectable_id=connectable.to_terse(),
                 name=benchmark_name,
