@@ -639,12 +639,13 @@ class Example:
     @classmethod
     def from_dict(
         cls,
+        instance: Any = None,
         valid: bool | None = None,
         **data: Any,
     ) -> Example | Test:
         if valid is None:
-            return cls(**data)
-        return Test(**data, valid=valid)
+            return cls(**data, instance=instance)
+        return Test(**data, instance=instance, valid=valid)
 
 
 @frozen
