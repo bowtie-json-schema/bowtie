@@ -798,7 +798,7 @@ class Benchmarker:
             if not compatible_connectables:
                 reporter.no_compatible_connectables()
                 return
-
+            some_benchmark_ran = False
             for benchmark_group in self._benchmark_groups:
                 (
                     benchmark_started, benchmark_group_finished,
@@ -860,6 +860,8 @@ class Benchmarker:
                                         measured_time_values,
                                     )
 
+                                    some_benchmark_ran = True
+
                                     if not retries_allowed:
                                         run_needed = False
 
@@ -871,6 +873,9 @@ class Benchmarker:
                     benchmark_finished()
 
                 benchmark_group_finished()
+
+            if not some_benchmark_ran:
+                raise BenchmarkLoadError(message="No Benchmarks Found")
 
             reporter.finished()
 
