@@ -65,30 +65,39 @@ const cmds = {
     console.assert(started, "Not started!");
 
     const testCase = args.case;
-    const validator = new Validator(testCase.schema, DRAFTS[dialect]);
 
-    let results;
     try {
+      const validator = new Validator(testCase.schema, DRAFTS[dialect]);
       for (const id in testCase.registry) {
         validator.addSchema(testCase.registry[id], id);
       }
 
-      results = testCase.tests.map((test) => {
+      const results = testCase.tests.map((test) => {
         try {
           const result = validator.validate(test.instance);
           return { valid: result.valid };
         } catch (error) {
-          return { errored: true, context: { message: error.message } };
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
         }
       });
-    } catch (error) {
-      results = testCase.tests.map((_) => ({
-        errored: true,
-        context: { message: error.message },
-      }));
-    }
 
-    return { seq: args.seq, results: results };
+      return { seq: args.seq, results: results };
+    } catch (error) {
+      return {
+        errored: true,
+        seq: args.seq,
+        context: {
+          traceback: error.stack,
+          message: error.message,
+        },
+      };
+    }
   },
 
   stop: async (_) => {

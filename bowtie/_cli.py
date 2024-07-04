@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
@@ -16,15 +17,9 @@ import logging
 import os
 import sys
 
-from attrs import asdict
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
-from jsonschema_lexer import JSONSchemaLexer
-from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
-    JsonLexer,
-)
 from rich import box, console, panel
-from rich.syntax import Syntax
 from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
@@ -35,7 +30,7 @@ import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
 from bowtie._benchmarks import BenchmarkError, BenchmarkLoadError
-from bowtie._commands import SeqCase, Unsuccessful
+from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -63,7 +58,7 @@ if TYPE_CHECKING:
     from httpx import Response
     from referencing.jsonschema import SchemaResource
 
-    from bowtie._commands import AnyTestResult
+    from bowtie._commands import AnyTestResult, SeqResult
     from bowtie._connectables import Connectable, ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
@@ -79,12 +74,10 @@ EX = _EX()
 STDERR = console.Console(stderr=True)
 
 
-# Evade ewels/rich-click#201
-_PROG = "main" if sys.argv[0].endswith("__main__.py") else "bowtie"
-# rich-click's CommandGroupDict seems to be missing some covariance, as using a
-# regular dict here makes pyright complain.
+# rich-click's CommandGroupDict seems to be missing some covariance,
+# as using a regular dict here makes pyright complain.
 _COMMAND_GROUPS = {
-    _PROG: [
+    "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
             commands=["validate", "suite", "summary", "info"],
@@ -596,7 +589,7 @@ def summary(report: _report.Report, format: _F, show: str):
                 tuple[ConnectableId, ImplementationInfo, Unsuccessful],
             ],
         ):
-            return [(id, asdict(counts)) for id, _, counts in value]
+            return [(id, u.counts()) for id, _, u in value]
 
     else:
         results = report.cases_with_results()
@@ -674,12 +667,24 @@ def _failure_table(
         title="Bowtie",
         caption=f"{report.total_tests} {test} ran\n",
     )
+
+    implementation_counts = Counter(
+        each.id for each in report.implementations.values()
+    )
     for _, each, unsuccessful in results:
         table.add_row(
-            Text.assemble(each.name, (f" ({each.language})", "dim")),
-            str(unsuccessful.skipped),
-            str(unsuccessful.errored),
-            str(unsuccessful.failed),
+            Text.assemble(
+                each.name,
+                (
+                    (f" {each.version}", "dim")
+                    if implementation_counts[each.id] > 1
+                    else ("", "")
+                ),
+                (f" ({each.language})", "dim"),
+            ),
+            str(len(unsuccessful.skipped)),
+            str(len(unsuccessful.errored)),
+            str(len(unsuccessful.failed)),
         )
     return table
 
@@ -697,13 +702,22 @@ def _failure_table_in_markdown(
         "Failures",
     ]
 
+    implementation_counts = Counter(
+        each.id for each in report.implementations.values()
+    )
     for _, each, unsuccessful in results:
         rows.append(
             [
-                f"{each.name} ({each.language})",
-                str(unsuccessful.skipped),
-                str(unsuccessful.errored),
-                str(unsuccessful.failed),
+                f"{each.name}"
+                + (
+                    f" {each.version}"
+                    if implementation_counts[each.id] > 1
+                    else ""
+                )
+                + f" ({each.language})",
+                str(len(unsuccessful.skipped)),
+                str(len(unsuccessful.errored)),
+                str(len(unsuccessful.failed)),
             ],
         )
 
@@ -733,6 +747,9 @@ def _validation_results_table(
 
     # TODO: sort the columns by results?
     implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
 
     for case, test_results in results:
         subtable = Table("Instance", box=box.SIMPLE_HEAD)
@@ -740,30 +757,22 @@ def _validation_results_table(
             subtable.add_column(
                 Text.assemble(
                     implementation.name,
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
                     (f" ({implementation.language})", "dim"),
                 ),
             )
 
         for test, test_result in test_results:
             subtable.add_row(
-                Syntax(
-                    json.dumps(test.instance),
-                    lexer=JsonLexer(),
-                    background_color="default",
-                    word_wrap=True,
-                ),
+                test.syntax(),
                 *(Text(test_result[id].description) for id in implementations),
             )
 
-        table.add_row(
-            Syntax(
-                json.dumps(case.schema, indent=2),
-                lexer=JSONSchemaLexer(str(report.metadata.dialect.uri)),
-                background_color="default",
-                word_wrap=True,
-            ),
-            subtable,
-        )
+        table.add_row(case.syntax(report.metadata.dialect), subtable)
         table.add_section()
 
     return table
@@ -780,9 +789,18 @@ def _validation_results_table_in_markdown(
 
     inner_table_columns = ["Instance"]
     implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
     inner_table_columns.extend(
-        f"{id} ({implementation.language})"
-        for id, implementation in implementations.items()
+        f"{implementation.name}"
+        + (
+            f" {implementation.version}"
+            if implementation_counts[implementation.id] > 1
+            else ""
+        )
+        + f" ({implementation.language})"
+        for implementation in implementations.values()
     )
 
     for case, test_results in results:
@@ -1649,64 +1667,86 @@ async def info(
     help="Don't print any output, just exit with nonzero status on failure.",
 )
 @format_option()
-async def smoke(
-    start: Starter,
-    format: _F,
-    echo: Callable[..., None],
-) -> int:
+async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
     """
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
-    exit_code = 0
+    results = [
+        (implementation.id, implementation.info, await implementation.smoke())
+        async for _, implementation in start()
+    ]
 
-    async for _, implementation in start():
-        echo(f"Testing {implementation.id!r}...\n", file=sys.stderr)
-        serializable: list[dict[str, Any]] = []
-        implementation_exit_code = 0
+    match results, format:
+        case [(_, _, result)], "json":
+            echo(json.dumps(result.serializable(), indent=2))
+        case _, "json":
+            output = {id: result.serializable() for id, _, result in results}
+            echo(json.dumps(output, indent=2))
+        case [(_, _, result)], "pretty":
+            console.Console().print(result)
+        case _, "pretty":
+            out = console.Console()
+            for _, _, each in results:
+                out.print(each)
+        case _, "markdown":
+            for _, info, result in results:
+                echo(f"# {info.name} ({info.language})\n")
 
-        async for _, results in implementation.smoke():
-            async for case, result in results:
-                if result.unsuccessful():
-                    implementation_exit_code |= EX.DATAERR
+                if result.success:
+                    echo("Smoke test *succeeded!*")
+                else:
+                    echo("Smoke test **failed!**")
 
-                match format:
-                    case "json":
-                        serializable.append(
-                            dict(
-                                case=case.without_expected_results(),
-                                result=asdict(result.result),
-                            ),
+                epilog: Sequence[
+                    tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]
+                ] = []
+
+                echo("\n## Dialects\n")
+                for dialect, failures in result.for_each_dialect():
+                    if failures:
+                        epilog.append((dialect, failures))
+                        suffix = " **(failed)**"
+                    else:
+                        suffix = ""
+                    echo(f"* {dialect.pretty_name}{suffix}")
+
+                if epilog:
+                    echo("\n## Failures\n")
+
+                    for dialect, failures in epilog:
+                        output = dedent(
+                            f"""
+                            <details>
+                            <summary>{dialect.pretty_name}</summary>
+                            """,
                         )
+                        echo(output)
 
-                    case "pretty":
-                        echo(f"  · {case.description}: {result.dots()}")
+                        for case, each in failures:
+                            output = dedent(
+                                f"""
+                                ### Schema
 
-                    case "markdown":
-                        echo(f"* {case.description}: {result.dots()}")
+                                ```json
+                                {json.dumps(case.schema)}
+                                ```
 
-        match format:
-            case "json":
-                echo(json.dumps(serializable, indent=2))
+                                #### Instances
 
-            case "pretty":
-                message = (
-                    "❌ some failures"
-                    if implementation_exit_code
-                    else "✅ all passed"
-                )
-                echo(f"\n{message}", file=sys.stderr)
+                                """,
+                            )
+                            echo(output)
 
-            case "markdown":
-                message = (
-                    "**❌ some failures**"
-                    if implementation_exit_code
-                    else "**✅ all passed**"
-                )
-                echo(f"\n{message}", file=sys.stderr)
+                            # FIXME: This will be nicer if/when Unsuccessful
+                            #        contains the unsuccessful results.
+                            for i, test in enumerate(case.tests):
+                                result = each.result_for(i)
+                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                    echo(f"* `{test.instance}`")
 
-        exit_code |= implementation_exit_code
+                        echo("\n</details>")
 
-    return exit_code
+    return 0 if all(result.success for _, _, result in results) else EX.DATAERR
 
 
 @subcommand
@@ -1827,8 +1867,8 @@ async def _run(
                 time_taken_by_implementations += perf_counter_ns() - st_time
                 if (
                     max_fail
-                    and unsucessful.failed >= max_fail
-                    or (max_error and unsucessful.errored >= max_error)
+                    and len(unsucessful.failed) >= max_fail
+                    or (max_error and len(unsucessful.errored) >= max_error)
                 ):
                     should_stop = True
 

@@ -32,9 +32,9 @@ Message = dict[str, Any]
 
 @frozen
 class Unsuccessful:
-    failed: int = 0
-    errored: int = 0
-    skipped: int = 0
+    failed: list[TestResult] = field(factory=list)
+    errored: list[ErroredTest] = field(factory=list)
+    skipped: list[SkippedTest] = field(factory=list)
 
     def __add__(self, other: Unsuccessful):
         return Unsuccessful(
@@ -46,12 +46,15 @@ class Unsuccessful:
     def __bool__(self) -> bool:  # sigh, typing nonsense
         return bool(self.failed or self.errored or self.skipped)
 
+    def counts(self):
+        return {k: len(v) for k, v in asdict(self).items()}
+
     @property
     def total(self):
         """
         Any test which was not a successful result, including skips.
         """
-        return self.errored + self.failed + self.skipped
+        return len(self.errored) + len(self.failed) + len(self.skipped)
 
 
 @frozen
@@ -286,16 +289,16 @@ class AnyCaseResult(Protocol):
     def serializable(self) -> Message: ...
 
 
-def _case_result(seq: Seq, **data: Any) -> tuple[Seq, AnyCaseResult]:
-    # FIXME: Remove passing seq through which is mostly to support future
-    #        validation that the seq we got back is the right one
+def _case_result(seq: Seq, **data: Any) -> tuple[Seq, int, AnyCaseResult]:
+    # FIXME: If we can get our expected length here...
     match data:
         case {"errored": True, **data}:
-            return seq, CaseErrored(**data)
+            return seq, 0, CaseErrored(**data)
         case {"skipped": True, **skip}:
-            return seq, CaseSkipped(**skip)
-        case _:
-            return seq, CaseResult.from_results(**data)
+            return seq, 0, CaseSkipped(**skip)
+        case data:
+            result = CaseResult.from_results(**data)
+            return seq, len(result.results), result
 
 
 @frozen
@@ -324,30 +327,12 @@ class SeqResult:
         expected: list[bool | None],
         **data: dict[str, Any],
     ):
-        _, result = _case_result(seq=seq, **data)
+        _, _, result = _case_result(seq=seq, **data)
         return cls(
             seq=seq,
             implementation=implementation,
             expected=expected,
             result=result,
-        )
-
-    def dots(self):
-        """
-        Represent the result via dot glyphs.
-        """
-        results = self.result.results
-        if results is None:
-            return "".join("❗" for _ in self.expected)
-
-        return "".join(
-            (
-                "✓"
-                if got
-                == (got if expected is None else TestResult(valid=expected))
-                else "✗"
-            )
-            for got, expected in zip(results, self.expected)
         )
 
     def result_for(self, i: int) -> AnyTestResult:
@@ -385,15 +370,15 @@ class CaseResult:
         return self.results[i]
 
     def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
-        skipped = errored = failed = 0
-        for test, expecting in zip(self.results, expected):
-            if test.skipped:
-                skipped += 1
-            elif test.errored:
-                errored += 1
-            elif expecting is not None and test != TestResult(valid=expecting):
-                failed += 1
-        return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
+        skipped, errored, failed = [], [], []
+        for got, expecting in zip(self.results, expected):
+            if got.skipped:
+                skipped.append(got)  # type: ignore[reportArgumentType]
+            elif got.errored:
+                errored.append(got)  # type: ignore[reportArgumentType]
+            elif expecting is not None and got != TestResult(valid=expecting):
+                failed.append(got)  # type: ignore[reportArgumentType]
+        return Unsuccessful(skipped=skipped, failed=failed, errored=errored)  # type: ignore[reportUnknownArgumentType]
 
     def log(self, log: BoundLogger):
         for result in self.results:
@@ -425,7 +410,8 @@ class CaseErrored:
         return ErroredTest.in_errored_case()
 
     def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
-        return Unsuccessful(errored=len(expected))
+        errored = [ErroredTest.in_errored_case() for _ in expected]
+        return Unsuccessful(errored=errored)
 
     def log(self, log: BoundLogger):
         log.error(self.message, **self.context)
@@ -455,7 +441,8 @@ class CaseSkipped:
         return SkippedTest.in_skipped_case()
 
     def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
-        return Unsuccessful(skipped=len(expected))
+        skipped = [SkippedTest.in_skipped_case() for _ in expected]
+        return Unsuccessful(skipped=skipped)
 
     def log(self, log: BoundLogger):
         log.info(self.message or "skipped case")
@@ -476,7 +463,8 @@ class Empty:
         log.error("No response")
 
     def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
-        return Unsuccessful(errored=len(expected))
+        errored = [ErroredTest.in_errored_case() for _ in expected]
+        return Unsuccessful(errored=errored)
 
 
 @command(Response=_case_result)

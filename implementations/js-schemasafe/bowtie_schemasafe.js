@@ -69,7 +69,10 @@ const cmds = {
       return {
         seq: args.seq,
         errored: true,
-        context: { message: error.message },
+        context: {
+          traceback: error.stack,
+          message: error.message,
+        },
       };
     }
 
@@ -79,13 +82,22 @@ const cmds = {
         try {
           return { valid: validate(test.instance) };
         } catch (error) {
-          return { errored: true, context: { message: error.message } };
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
         }
       });
     } catch (error) {
       results = testCase.tests.map((_) => ({
         errored: true,
-        context: { message: error.message },
+        context: {
+          traceback: error.stack,
+          message: error.message,
+        },
       }));
     }
 

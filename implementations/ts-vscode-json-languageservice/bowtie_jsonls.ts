@@ -23,7 +23,6 @@ const schemaIds: { [id: string]: SchemaDraft } = {
   "http://json-schema.org/draft-07/schema#": SchemaDraft.v7,
   "http://json-schema.org/draft-06/schema#": SchemaDraft.v6,
   "http://json-schema.org/draft-04/schema#": SchemaDraft.v4,
-  "http://json-schema.org/draft-03/schema#": SchemaDraft.v3,
 };
 
 function send(data) {
@@ -55,7 +54,6 @@ const cmds = {
           "http://json-schema.org/draft-07/schema#",
           "http://json-schema.org/draft-06/schema#",
           "http://json-schema.org/draft-04/schema#",
-          "http://json-schema.org/draft-03/schema#",
         ],
         os: os.platform(),
         os_version: os.release(),
@@ -97,7 +95,13 @@ const cmds = {
           );
           return { valid: semanticErrors.length === 0 ? true : false };
         } catch (error) {
-          return { errored: true, context: { message: error.message } };
+          return {
+            errored: true,
+            context: {
+              traceback: error.stack,
+              message: error.message,
+            },
+          };
         }
       }),
     );

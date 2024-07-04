@@ -9,10 +9,9 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
 
-from attrs import asdict, evolve, field, frozen, mutable
+from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
-from referencing.jsonschema import EMPTY_REGISTRY, Schema, specification_with
-from rich.panel import Panel
+from referencing.jsonschema import EMPTY_REGISTRY, specification_with
 from rpds import HashTrieMap
 from url import URL
 import httpx
@@ -41,8 +40,13 @@ if TYPE_CHECKING:
     from typing import Self
 
     from referencing import Specification
-    from referencing.jsonschema import SchemaRegistry, SchemaResource
-    from rich.console import Console, ConsoleOptions, RenderResult
+    from referencing.jsonschema import Schema, SchemaRegistry
+    from rich.console import (
+        Console,
+        ConsoleOptions,
+        RenderableType,
+        RenderResult,
+    )
 
     from bowtie._commands import (
         AnyCaseResult,
@@ -71,6 +75,29 @@ class Dialect:
         repr=False,
     )
     has_boolean_schemas: bool = field(default=True, repr=False)
+
+    _top_schema: Schema | None = field(
+        default=Factory(
+            lambda self: {"$schema": str(self.uri)},
+            takes_self=True,
+        ),
+        hash=False,
+        repr=False,
+        alias="top_schema",
+    )
+    _bottom_schema: Schema | None = field(
+        default=Factory(
+            lambda self: (
+                None
+                if self._top_schema is None
+                else {"$schema": str(self.uri), "not": self.top_schema}
+            ),
+            takes_self=True,
+        ),
+        hash=False,
+        repr=False,
+        alias="bottom_schema",
+    )
 
     def __lt__(self, other: Any):
         if other.__class__ is not Dialect:
@@ -125,9 +152,14 @@ class Dialect:
         uri: str,
         aliases: Iterable[str] = (),
         hasBooleanSchemas: bool = True,
-        **_: Any,
+        **kwargs: Any,
     ) -> Self:
 
+        for each in "top", "bottom":
+            if each in kwargs:
+                kwargs[f"{each}_schema"] = kwargs.pop(each)
+
+        del kwargs["$schema"]
         return cls(
             uri=URL.parse(uri),
             pretty_name=prettyName,
@@ -135,6 +167,7 @@ class Dialect:
             first_publication_date=date.fromisoformat(firstPublicationDate),
             aliases=frozenset(aliases),
             has_boolean_schemas=hasBooleanSchemas,
+            **kwargs,
         )
 
     @classmethod
@@ -149,8 +182,60 @@ class Dialect:
     def serializable(self):
         return str(self.uri)
 
-    def specification(self, **kwargs: Any) -> Specification[SchemaResource]:
+    def specification(self, **kwargs: Any) -> Specification[Schema]:
         return specification_with(str(self.uri), **kwargs)
+
+    @property
+    def top_schema(self):
+        if self._top_schema is None:
+            raise ValueError(f"{self} has no top schema.")
+        return self._top_schema
+
+    @property
+    def bottom_schema(self):
+        if self._bottom_schema is None:
+            raise ValueError(f"{self} has no bottom schema.")
+        return self._bottom_schema
+
+    def top(self):
+        """
+        Create a validator in this dialect which allows all instances.
+        """
+        from bowtie._direct_connectable import Direct
+
+        validators = Direct.from_id("python-jsonschema").registry()
+        return validators.for_schema(self.top_schema)
+
+    def bottom(self):
+        """
+        Create a validator in this dialect which does not allow any instances.
+        """
+        from bowtie._direct_connectable import Direct
+
+        validators = Direct.from_id("python-jsonschema").registry()
+        return validators.for_schema(self.bottom_schema)
+
+    def top_test_case(
+        self,
+        examples: Iterable[Example],
+        description: str = "top allows everything",
+    ):
+        return TestCase(
+            description=description,
+            schema=self.top_schema,
+            tests=[example.expect(True) for example in examples],
+        )
+
+    def bottom_test_case(
+        self,
+        examples: Iterable[Example],
+        description: str = "bottom allows nothing",
+    ):
+        return TestCase(
+            description=description,
+            schema=self.bottom_schema,
+            tests=[example.expect(False) for example in examples],
+        )
 
 
 @frozen
@@ -248,6 +333,8 @@ class StartupFailed(Exception):
             hint_stmt=hint,
         )
         if self.stderr:
+            from rich.panel import Panel
+
             yield Panel(self.stderr, title="stderr")
 
 
@@ -450,18 +537,25 @@ class DialectRunner:
         expected: Sequence[bool | None],
     ) -> SeqResult:
         try:
-            response: tuple[Seq, AnyCaseResult] | None = (
+            response: tuple[Seq, int, AnyCaseResult] | None = (
                 await self._harness.request(run)  # type: ignore[reportArgumentType]
             )
             if response is None:
                 result = CaseErrored.uncaught()
             else:
-                seq, result = response
+                seq, length, result = response
                 if seq != run.seq:
                     result = CaseErrored.uncaught(
                         message="mismatched seq",
                         expected=run.seq,
                         got=seq,
+                        response=result,
+                    )
+                elif length and length != len(expected):
+                    result = CaseErrored.uncaught(
+                        message="wrong number of responses",
+                        expected=len(expected),
+                        got=length,
                         response=result,
                     )
         except GotStderr as error:
@@ -543,6 +637,17 @@ class Implementation:
             seq_case = SeqCase(seq=uuid4().hex, case=case)
             yield case, await seq_case.run(runner=runner)
 
+    async def failing(
+        self,
+        dialect: Dialect,
+        cases: Iterable[TestCase],
+    ) -> Sequence[tuple[TestCase, SeqResult]]:
+        """
+        Run the given cases and yield ones which the implementation fails.
+        """
+        results = self.validate(dialect=dialect, cases=cases)
+        return [each async for each in results if each[1].unsuccessful()]
+
     async def start_speaking(self, dialect: Dialect) -> DialectRunner:
         if not self.supports(dialect):
             raise UnsupportedDialect(implementation=self, dialect=dialect)
@@ -562,56 +667,13 @@ class Implementation:
                 stderr=error.stderr,
             ) from error
 
-    async def smoke(
-        self,
-    ) -> AsyncIterator[
-        tuple[Dialect, AsyncIterator[tuple[TestCase, SeqResult]]]
-    ]:
+    def smoke(self):
         """
         Smoke test this implementation.
         """
-        instances = [
-            # FIXME: When horejsek/python-fastjsonschema#181 is merged
-            #        and/or we special-case fastjsonschema...
-            # ("nulll", None),  # noqa: ERA001
-            ("boolean", True),
-            ("integer", 37),
-            ("number", 37.37),
-            ("string", "37"),
-            ("array", [37]),
-            ("object", {"foo": 37}),
-        ]
+        from bowtie import _smoke
 
-        # FIXME: All dialects
-        for dialect in [max(self.info.dialects)]:
-            cases = [
-                TestCase(
-                    description="allow-everything",
-                    schema={},
-                    tests=[
-                        Test(
-                            description=json_type,
-                            instance=instance,
-                            valid=True,
-                        )
-                        for json_type, instance in instances
-                    ],
-                ).with_explicit_dialect(dialect),
-                TestCase(
-                    description="allow-nothing",
-                    schema={"not": {}},
-                    tests=[
-                        Test(
-                            description=json_type,
-                            instance=instance,
-                            valid=False,
-                        )
-                        for json_type, instance in instances
-                    ],
-                ).with_explicit_dialect(dialect),
-            ]
-
-            yield dialect, self.validate(dialect=dialect, cases=cases)
+        return _smoke.test(self)
 
 
 @frozen
@@ -635,6 +697,19 @@ class Example:
         Decide we really do expect some specific result.
         """
         return Test(**asdict(self), valid=valid)
+
+    def syntax(self) -> RenderableType:
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+            JsonLexer,
+        )
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.instance),
+            lexer=JsonLexer(),
+            background_color="default",
+            word_wrap=True,
+        )
 
     @classmethod
     def from_dict(
@@ -664,6 +739,19 @@ class Test:
         Expect our expected validity result.
         """
         return self.valid
+
+    def syntax(self) -> RenderableType:
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+            JsonLexer,
+        )
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.instance),
+            lexer=JsonLexer(),
+            background_color="default",
+            word_wrap=True,
+        )
 
 
 @frozen
@@ -730,6 +818,17 @@ class TestCase:
                 k: v.contents for k, v in self.registry.items()
             }
         return as_dict
+
+    def syntax(self, dialect: Dialect) -> RenderableType:
+        from jsonschema_lexer import JSONSchemaLexer
+        from rich.syntax import Syntax
+
+        return Syntax(
+            json.dumps(self.schema, indent=2),
+            lexer=JSONSchemaLexer(str(dialect.uri)),
+            background_color="default",
+            word_wrap=True,
+        )
 
     def uniq(self) -> str:
         """

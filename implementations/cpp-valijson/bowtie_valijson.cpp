@@ -23,7 +23,6 @@ using valijson::adapters::RapidJsonAdapter;
 const unordered_map<string, SchemaParser::Version> DIALECTS{
     {"http://json-schema.org/draft-07/schema#", SchemaParser::kDraft7},
     {"http://json-schema.org/draft-04/schema#", SchemaParser::kDraft4},
-    {"http://json-schema.org/draft-03/schema#", SchemaParser::kDraft3},
 };
 
 class Registry {
@@ -106,7 +105,6 @@ int main() {
       Value dialects(kArrayType);
       dialects.PushBack("http://json-schema.org/draft-07/schema#", allocator);
       dialects.PushBack("http://json-schema.org/draft-04/schema#", allocator);
-      dialects.PushBack("http://json-schema.org/draft-03/schema#", allocator);
       implementation.AddMember("dialects", dialects, allocator);
 
       Value os(os_info["sysname"].c_str(), allocator);

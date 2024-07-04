@@ -108,11 +108,11 @@ class Stream:
             if not info["State"]["Running"]:
                 raise _ClosedStream(self._container)
 
-        if message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
+        if message.stream == 2:  # noqa: PLR2004
             data: list[bytes] = []
 
-            while message.stream == 2:  # type: ignore[reportUnknownMemberType]  # noqa: PLR2004
-                data.append(message.data)  # type: ignore[reportUnknownMemberType]
+            while message.stream == 2:  # noqa: PLR2004
+                data.append(message.data)
                 try:
                     message = await self._read_with_timeout()
                 except asyncio.exceptions.TimeoutError:
@@ -123,16 +123,16 @@ class Stream:
         line: bytes
         rest: list[bytes]
         while True:
-            line, *rest = message.data.split(b"\n")  # type: ignore[reportUnknownMemberType]
+            line, *rest = message.data.split(b"\n")
             if rest:
-                line, self._last = self._last + line, rest.pop()  # type: ignore[reportUnknownVariableType]
+                line, self._last = self._last + line, rest.pop()
                 self._buffer.extend(rest)
-                return line.decode()  # type: ignore[reportUnknownVariableType]
+                return line.decode()
 
             message = None
             while message is None:
                 message = await self._read_with_timeout()
-            self._last += line  # type: ignore[reportUnknownMemberType]
+            self._last += line
 
 
 @mutable
@@ -182,7 +182,7 @@ class Connection:
             except _ClosedStream as err:
                 stderr: list[str] = await err.container.log(stderr=True)  # type: ignore[reportUnknownVariableType]
                 if stderr:
-                    raise GotStderr("".join(stderr).encode())  # type: ignore[reportUnknownVariableType]
+                    raise GotStderr("".join(stderr).encode())
                 return
 
             try:
@@ -245,7 +245,8 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
         if err.status != 404:  # noqa: PLR2004
             raise
         try:
-            await docker.pull(from_image=image_name, tag="latest")  # type: ignore[reportUnknownMemberType]
+            tag = image_name.partition(":")[2] or "latest"
+            await docker.pull(from_image=image_name, tag=tag)
         except aiodocker.exceptions.DockerError as err:
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
@@ -293,7 +294,7 @@ async def start_container(docker: Docker, image_name: str):
         OpenStdin=True,
         HostConfig=dict(NetworkMode="none"),
     )
-    container = await docker.containers.create(config=config)  # type: ignore[reportUnknownMemberType]
+    container = await docker.containers.create(config=config)
     await container.start()  # type: ignore[reportUnknownMemberType]
     return container
 

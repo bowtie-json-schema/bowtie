@@ -25,6 +25,10 @@ class Invalid(ExceptionGroup[E_co]):
     An instance is not valid under a schema.
     """
 
+    # TODO: Don't require a message? Or what should the general message be?
+    #       What about lazy error production? Can we delay asking for all
+    #           errors here?
+
 
 class UnexpectedlyValid(Exception):
     """

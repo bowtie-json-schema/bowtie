@@ -24,6 +24,8 @@
       "description": "A shorter, slug-like name for the dialect (with no punctuation or spaces) but which still should be unique",
       "readOnly": true,
 
+      "$id": "tag:bowtie.report,2024:models:dialect:shortName",
+
       "type": "string",
       "pattern": "[a-z]+[a-z0-9-]*"
     },
@@ -40,6 +42,14 @@
 
       "type": "boolean",
       "default": true
+    },
+    "top": {
+      "description": "A 'universal' schema in this dialect, meaning one which allows (validates true against) all instances. Clearly this schema should be valid in the dialect. When unprovided, the dialect is assumed to have a $schema keyword, and a schema with no other keywords is presumed to be top. Setting this to null signals the dialect has no top.",
+      "readOnly": true
+    },
+    "bottom": {
+      "description": "An 'empty' schema in this dialect, meaning one which does not allow *any* instances (i.e. which validates false against everything). Clearly this schema should be valid in the dialect. When unprovided, the dialect is assumed to have a `not` keyword, which is used to invert the `top` schema. Setting this to null signals the dialect has no bottom.",
+      "readOnly": true
     },
     "aliases": {
       "description": "Other names by which someone may refer to this dialect, officially or otherwise. Such aliases should unambiguously refer to this dialect and no other, so they should be unique not just in the array but also globally, though they may be so short so as to never be used in practice other than when it is clear that dialects are being referred to. For instance simply the number '7' is so short that no one would likely use it in conversation, but would unambiguously refer to the Draft 7 dialect. The dialect's short name is implicitly considered an alias, so it need not appear in this list but should generally be included when using these aliases.",

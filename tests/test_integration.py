@@ -92,19 +92,19 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
     if exit_code == -1:
         assert process.returncode != 0, decoded
     else:
-        assert process.returncode == exit_code, stderr
+        assert process.returncode == exit_code, decoded
 
     if json:
-        if stdout:
-            try:
-                jsonout = _json.loads(stdout)
-            except _json.JSONDecodeError:
-                pytest.fail(
-                    f"stdout had invalid JSON: {stdout!r}\n\n"
-                    f"stderr had {stderr}",
-                )
-            return jsonout, stderr
-        pytest.fail(f"stdout was empty. stderr contained {stderr}")
+        if not stdout:
+            pytest.fail(f"stdout was empty. stderr contained {stderr}")
+        try:
+            jsonout = _json.loads(stdout)
+        except _json.JSONDecodeError:
+            pytest.fail(
+                f"stdout had invalid JSON: {stdout!r}\n\n"
+                f"stderr had {stderr}",
+            )
+        return jsonout, stderr
 
     return decoded
 
@@ -212,7 +212,7 @@ fail_on_run = shellplementation(
     read -r request
     printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -223,7 +223,7 @@ nonjson_on_run = shellplementation(
     read -r request
     printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf 'BOOM!\n'
     """,  # noqa: E501
@@ -234,7 +234,7 @@ wrong_seq = shellplementation(
     read -r request
     printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read -r request
-    printf '{"ok": "true"}\n'
+    printf '{"ok": true}\n'
     read -r request
     printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
@@ -278,6 +278,17 @@ with_versions = shellplementation(
     printf '{"ok": true}\n'
     read -r request
     printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    """,  # noqa: E501
+)
+wrong_number_of_tests = shellplementation(
+    name="wrong_number_of_tests",
+    contents=r"""
+    read -r request
+    printf '{"implementation": {"name": "wrong-number-of-tests", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read -r request
+    printf '{"ok": true}\n'
+    read -r request
+    printf '{"seq": %s, "results": [{"valid": true}, {"valid": true}, {"valid": true}, {"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
     """,  # noqa: E501
 )
 
@@ -886,6 +897,34 @@ async def test_wrong_seq(wrong_seq):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
+async def test_wrong_number_of_tests(wrong_number_of_tests):
+    """
+    Sending the wrong number of responses for the number of tests in a test
+    case produces an error.
+    """
+    async with run(
+        "-i",
+        wrong_number_of_tests,
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+        exit_code=0,  # FIXME: It'd be nice if this was nonzero.
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            tag("wrong_number_of_tests"): ErroredTest.in_errored_case(),
+        },
+    ], stderr
+    assert "wrong number of responses " in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
 async def test_fail_fast():
     async with run("-i", "direct:null", "-x") as send:
         results, stderr = await send(
@@ -986,6 +1025,573 @@ async def test_filter():
 
 class TestSmoke:
     @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_full_failure(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.always_wrong,
+            json=True,
+            exit_code=EX.DATAERR,
+        )
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            "success": False,
+            "dialects": {
+                "draft2020-12": [
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "not": {
+                                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+                "draft2019-09": [
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2019-09/schema",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            "not": {
+                                "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+                "draft7": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+                "draft6": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-06/schema#",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-06/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-06/schema#",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+                "draft4": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-04/schema#",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-04/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+                "draft3": [
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-03/schema#",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-03/schema#",
+                            "disallow": [
+                                {},
+                            ],
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
+            },
+        }, stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_single_dialect_failure(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.incorrectly_claims_draft7,
+            json=True,
+            exit_code=EX.DATAERR,
+        )
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            "success": False,
+            "dialects": {
+                "draft2019-09": [],
+                "draft2020-12": [],
+                "draft3": [],
+                "draft4": [],
+                "draft6": [],
+                "draft7": [
+                    {
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                        },
+                    },
+                    {
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "not": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
+                    },
+                ],
+            },
+        }, stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_no_registry_support(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.no_registry_support,
+            json=True,
+        )
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            "success": True,
+            "registry": False,
+            "dialects": [
+                dialect.short_name
+                for dialect in sorted(Dialect.known(), reverse=True)
+            ],
+        }, stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_pass(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.passes_smoke,
+            json=True,
+        )
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            "success": True,
+            "dialects": [
+                dialect.short_name
+                for dialect in sorted(Dialect.known(), reverse=True)
+            ],
+        }, stderr
+
+    @pytest.mark.asyncio
     async def test_pretty(self):
         stdout, stderr = await bowtie(
             "smoke",
@@ -995,12 +1601,9 @@ class TestSmoke:
             miniatures.always_invalid,
             exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
-        assert dedent(stdout) == dedent(
-            """\
-            · allow-everything: ✗✗✗✗✗✗
-            · allow-nothing: ✓✓✓✓✓✓
-            """,
-        ), stderr
+
+        # FIXME: We don't assert against the exact output yet, as it's a WIP
+        assert dedent(stdout), stderr
 
     @pytest.mark.asyncio
     async def test_markdown(self):
@@ -1009,114 +1612,321 @@ class TestSmoke:
             "--format",
             "markdown",
             "-i",
-            miniatures.always_invalid,
-            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+            miniatures.incorrectly_claims_draft7,
+            exit_code=EX.DATAERR,  # because indeed it isn't always right
         )
         assert dedent(stdout) == dedent(
             """\
-            * allow-everything: ✗✗✗✗✗✗
-            * allow-nothing: ✓✓✓✓✓✓
-            """,
+            # incorrectly_claims_draft7 (python)
+
+            Smoke test **failed!**
+
+            ## Dialects
+
+            * Draft 2020-12
+            * Draft 2019-09
+            * Draft 7 **(failed)**
+            * Draft 6
+            * Draft 4
+            * Draft 3
+
+            ## Failures
+
+
+            <details>
+            <summary>Draft 7</summary>
+
+
+            ### Schema
+
+            ```json
+            {"$schema": "http://json-schema.org/draft-07/schema#"}
+            ```
+
+            #### Instances
+
+
+            * `None`
+            * `True`
+            * `37`
+            * `37.37`
+            * `37`
+            * `[37]`
+            * `{'foo': 37}`
+
+            ### Schema
+
+            ```json
+            {"$schema": "http://json-schema.org/draft-07/schema#", "not": {"$schema": "http://json-schema.org/draft-07/schema#"}}
+            ```
+
+            #### Instances
+
+
+            * `None`
+            * `True`
+            * `37`
+            * `37.37`
+            * `37`
+            * `[37]`
+            * `{'foo': 37}`
+
+            </details>
+            """,  # noqa: E501
         ), stderr
 
+        # Markdown is very permissive, but let's try parsing it anyhow.
+        parsed = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+        tokens = SyntaxTreeNode(parsed).pretty(indent=2)
+        assert tokens, tokens
+
     @pytest.mark.asyncio
-    async def test_markdown_is_valid(self):
+    async def test_pretty_multiple(self):
         stdout, stderr = await bowtie(
             "smoke",
             "--format",
-            "markdown",
+            "pretty",
             "-i",
             miniatures.always_invalid,
+            "-i",
+            miniatures.passes_smoke,
             exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
-        parsed = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
-        tokens = SyntaxTreeNode(parsed).pretty(indent=2)
-        assert (
-            tokens
-            == dedent(
-                """\
-            <root>
-              <bullet_list>
-                <list_item>
-                  <paragraph>
-                    <inline>
-                      <text>
-                <list_item>
-                  <paragraph>
-                    <inline>
-                      <text>
-            """,
-            ).rstrip("\n")
-        ), stderr
+
+        # FIXME: We don't assert against the exact output yet, as it's a WIP
+        assert dedent(stdout), stdout
 
     @pytest.mark.asyncio
-    @pytest.mark.json
-    async def test_json(self):
+    async def test_json_multiple(self):
         jsonout, stderr = await bowtie(
             "smoke",
             "--format",
             "json",
             "-i",
             miniatures.always_invalid,
+            "-i",
+            miniatures.passes_smoke,
             json=True,
             exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
-
-        assert (await command_validator("smoke")).validated(jsonout) == [
-            {
-                "case": {
-                    "description": "allow-everything",
-                    "schema": {
-                        "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    },
-                    "tests": [
-                        {"description": "boolean", "instance": True},
-                        {"description": "integer", "instance": 37},
-                        {"description": "number", "instance": 37.37},
-                        {"description": "string", "instance": "37"},
-                        {"description": "array", "instance": [37]},
-                        {"description": "object", "instance": {"foo": 37}},
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            miniatures.passes_smoke: {
+                "success": True,
+                "dialects": [
+                    dialect.short_name
+                    for dialect in sorted(Dialect.known(), reverse=True)
+                ],
+            },
+            miniatures.always_invalid: {
+                "success": False,
+                "dialects": {
+                    "draft2019-09": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            },
+                        },
                     ],
-                },
-                "result": {
-                    "results": [
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
+                    "draft2020-12": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            },
+                        },
+                    ],
+                    "draft3": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-03/schema#",
+                            },
+                        },
+                    ],
+                    "draft4": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                            },
+                        },
+                    ],
+                    "draft6": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-06/schema#",
+                            },
+                        },
+                    ],
+                    "draft7": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                        },
                     ],
                 },
             },
-            {
-                "case": {
-                    "description": "allow-nothing",
-                    "schema": {
-                        "$schema": "https://json-schema.org/draft/2020-12/schema",
-                        "not": {},
-                    },
-                    "tests": [
-                        {"description": "boolean", "instance": True},
-                        {"description": "integer", "instance": 37},
-                        {"description": "number", "instance": 37.37},
-                        {"description": "string", "instance": "37"},
-                        {"description": "array", "instance": [37]},
-                        {"description": "object", "instance": {"foo": 37}},
-                    ],
-                },
-                "result": {
-                    "results": [
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                        {"valid": False},
-                    ],
-                },
-            },
-        ], stderr
+        }, stderr
 
     @pytest.mark.asyncio
     async def test_quiet(self):
@@ -1130,45 +1940,17 @@ class TestSmoke:
         assert stdout == "", stderr
 
     @pytest.mark.asyncio
-    async def test_smoke_multiple(self):
+    async def test_quiet_multiple(self):
         stdout, stderr = await bowtie(
             "smoke",
-            "--format",
-            "pretty",
-            "-i",
-            miniatures.always_invalid,
+            "--quiet",
             "-i",
             miniatures.passes_smoke,
-            exit_code=EX.DATAERR,  # because indeed invalid isn't always right
+            "-i",
+            miniatures.always_invalid,
+            exit_code=EX.DATAERR,  # one failing implementation fails all
         )
-        assert (
-            dedent(stderr)
-            == dedent(
-                f"""\
-                Testing '{miniatures.passes_smoke}'...
-
-
-                ✅ all passed
-                Testing '{miniatures.always_invalid}'...
-
-
-                ❌ some failures
-                """,
-            )
-            or dedent(stderr)
-            == dedent(
-                f"""\
-                Testing '{miniatures.always_invalid}'...
-
-
-                ❌ some failures
-                Testing '{miniatures.passes_smoke}'...
-
-
-                ✅ all passed
-                """,
-            )
-        ), stdout
+        assert stdout == "", stderr
 
 
 @pytest.mark.asyncio
@@ -1327,14 +2109,14 @@ async def test_info_valid_markdown():
 @pytest.mark.asyncio
 @pytest.mark.json
 async def test_info_json():
-    stdout, stderr = await bowtie(
+    jsonout, stderr = await bowtie(
         "info",
         "--format",
         "json",
         "-i",
         miniatures.always_invalid,
+        json=True,
     )
-    jsonout = _json.loads(stdout)
 
     assert (await command_validator("info")).validated(jsonout) == {
         "name": "always_invalid",
@@ -1795,6 +2577,66 @@ async def test_summary_show_failures_markdown(tmp_path):
         **2 tests ran**
         """,
     )
+
+
+@pytest.mark.asyncio
+async def test_summary_show_failures_markdown_different_versions(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    validate_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.version_1,
+        "-i",
+        miniatures.version_2,
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    stdout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "markdown",
+        "--show",
+        "failures",
+        stdin=validate_stdout,
+    )
+    assert stderr == ""
+    assert stdout in {
+        dedent(
+            """\
+            # Bowtie Failures Summary
+
+            | Implementation | Skips | Errors | Failures |
+            |:----------------------:|:-:|:-:|:-:|
+            |     null (python)      | 0 | 0 | 0 |
+            | versioned 2.0 (python) | 0 | 0 | 0 |
+            | versioned 1.0 (python) | 0 | 0 | 0 |
+
+            **2 tests ran**
+            """,
+        ),
+        dedent(
+            """\
+            # Bowtie Failures Summary
+
+            | Implementation | Skips | Errors | Failures |
+            |:----------------------:|:-:|:-:|:-:|
+            |     null (python)      | 0 | 0 | 0 |
+            | versioned 1.0 (python) | 0 | 0 | 0 |
+            | versioned 2.0 (python) | 0 | 0 | 0 |
+
+            **2 tests ran**
+            """,
+        ),
+    }
 
 
 @pytest.mark.asyncio

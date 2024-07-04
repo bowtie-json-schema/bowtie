@@ -38,6 +38,16 @@ def always_invalid(dialect: Dialect):
     return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
 
+@fake()
+def always_wrong(dialect: Dialect):
+    """
+    Tries (naively) to always get the absolute wrong answer.
+    """
+    return lambda schema, registry: lambda instance: (
+        naively_incorrect(schema, registry, instance)
+    )
+
+
 @fake(dialects=frozenset([Dialect.by_short_name()["draft3"]]))
 def only_draft3(dialect: Dialect):
     """
@@ -46,6 +56,22 @@ def only_draft3(dialect: Dialect):
     The validity result of instances should not be relied on.
     """
     return lambda schema, registry: lambda instance: None
+
+
+@fake()
+def incorrectly_claims_draft7(dialect: Dialect):
+    """
+    Claims to support Draft 7 but returns all wrong results for it.
+
+    Otherwise attempts to crudely pass the smoke test.
+    """
+    if dialect == dialect.by_short_name()["draft7"]:
+        return lambda schema, registry: lambda instance: (
+            naively_correct(schema, registry)(instance)
+            if registry
+            else naively_incorrect(schema, registry, instance)
+        )
+    return naively_correct
 
 
 @fake(language="javascript")
@@ -63,15 +89,25 @@ def passes_smoke(dialect: Dialect):
     """
     An implementation which crudely passes `bowtie smoke`.
     """
-    return lambda schema, registry: lambda instance: (  # naively...
-        None if "not" not in schema else ARBITRARILY_INVALID
+    return naively_correct
+
+
+@fake()
+def no_registry_support(dialect: Dialect):
+    """
+    An implementation which tries really hard but fails at referecing.
+    """
+    return lambda schema, registry: (
+        naively_correct(schema, registry)
+        if not registry
+        else lambda instance: None
     )
 
 
 @fake(implicit_dialect_response=StartedDialect(ok=False))
 def no_implicit_dialect_support(dialect: Dialect):
     """
-    An implementation which crudely passes `bowtie smoke`.
+    An implementation which does not support implicit dialects in schemas.
 
     The validity result of instances should not be relied on.
     """
@@ -95,3 +131,50 @@ def links(dialect: Dialect):
     The validity result of instances should not be relied on.
     """
     return lambda schema, registry: lambda instance: None
+
+
+@fake(name="versioned", version="1.0")
+def version_1(dialect: Dialect):
+    """
+    An implementation which claims to be in version 1.0.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: None
+
+
+@fake(name="versioned", version="2.0")
+def version_2(dialect: Dialect):
+    """
+    An implementation which claims to be in version 2.0.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: None
+
+
+def naively_correct(schema, registry):
+    """
+    The naivest implementation which tries to pass a smoke test.
+    """
+    ref = schema.get("$ref")
+    if ref is not None:
+        schema = registry.contents(ref)
+
+    def validate(instance):
+        if "not" in schema or "disallow" in schema:
+            return ARBITRARILY_INVALID
+
+        pytype = dict(string=str).get(schema.get("type"))
+        if pytype is not None and not isinstance(instance, pytype):
+            return ARBITRARILY_INVALID
+
+    return validate
+
+
+def naively_incorrect(schema, registry, instance):
+    """
+    Naively returns the wrong answer.
+    """
+    result = naively_correct(schema, registry)(instance)
+    return ARBITRARILY_INVALID if result is None else None

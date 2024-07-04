@@ -2,6 +2,19 @@ name: Rebuild Bowtie Images
 
 on:
   workflow_dispatch:
+    inputs:
+      implementation:
+        description: >
+          The name of an implementation.
+
+          If the implementation has historical version support (i.e. a
+          `matrix-versions.json` file) all of its versions will be built.
+          (A future improvement will allow building only specific subsets
+          of the supported versions.)
+
+          Otherwise, just the latest version is built.
+        required: false
+        type: string
   pull_request:
     paths:
       - "implementations/**"
@@ -26,18 +39,34 @@ jobs:
       images: ${{ steps.images-matrix.outputs.images }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
       - id: images-matrix
         run: |
-          python3 -c '
-          from pathlib import Path
-          import json
-          paths = [
-              str(path.name)
-              for path in Path("implementations").iterdir()
-              if path.is_dir()
-          ]
-          print(f"images={json.dumps(paths)}")
-          ' >> $GITHUB_OUTPUT
+          implementation=${{ inputs.implementation }}
+          matrix_versions_file="implementations/$implementation/matrix-versions.json"
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          MATRIX="[]"
+          if [ -n "$implementation" ]; then
+            if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
+              if [ -f "$matrix_versions_file" ]; then
+                versions=$(cat "$matrix_versions_file" | jq -c)
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+              else
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" '. + [{"image": $impl, "version": "latest"}]')
+              fi
+            else
+              echo "No such implementation found ('$implementation'). Please provide the correct implementation name."
+              exit 1
+            fi
+          else
+            for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
+              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+            done
+          fi
+          echo "images=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   build:
     needs: list
@@ -55,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.list.outputs.images) }}
+        include: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -66,6 +95,7 @@ jobs:
           filters: |
             impl:
               - 'implementations/${{ matrix.image }}/**'
+        if: ${{ !inputs.implementation }}
 
       - name: Install qemu
         run: |
@@ -73,8 +103,9 @@ jobs:
           sudo apt-get install -y qemu-user-static
         if: |
           (
-            steps.changes.outputs.impl == 'true'
+            (steps.changes.outputs.impl == 'true')
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
           )
           && !startsWith(matrix.image, 'dotnet-')
         # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
@@ -87,9 +118,16 @@ jobs:
           containerfiles: |
             implementations/${{ matrix.image }}/Dockerfile
           image: ${{ matrix.image }}
-          tags: latest ${{ github.sha }}
+          tags: ${{ matrix.version }} ${{ github.sha }}
           archs: amd64, arm64
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+          build-args: |
+            ${{ inputs.implementation && format('IMPLEMENTATION_VERSION={0}', matrix.version) || '' }}
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Set DOCKER_HOST so podman-built images are findable
         run: |
@@ -100,13 +138,28 @@ jobs:
 
       - name: Install Bowtie
         uses: ./
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Smoke Test
         run: |
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
           bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
-        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+        # We special case python-fastjsonschema, which unfortunately does not
+        # pass the smoke test, as it has multiple issues handling simple
+        # schemas using the `not` keyword.
+        # See e.g. horejsek/python-fastjsonschema#181
+        continue-on-error: ${{ matrix.image == 'python-fastjsonschema' }}
+        if: |
+          (
+            (steps.changes.outputs.impl == 'true')
+            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )
 
       - name: Publish
         id: push
@@ -117,4 +170,8 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        if: |
+          (
+            (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+            || (inputs.implementation)
+          )

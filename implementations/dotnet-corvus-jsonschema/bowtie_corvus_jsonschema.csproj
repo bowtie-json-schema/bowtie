@@ -25,7 +25,7 @@
     <PackageReference Include="Corvus.Json.CodeGeneration.7" Version="3.0.27" />
     <PackageReference Include="Corvus.Json.ExtendedTypes" Version="3.0.27" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
 
   </ItemGroup>
