@@ -397,7 +397,7 @@ class BenchmarkReporter:
                         self.update_system_metadata(
                             benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
                         )
-                    if progress_bar_task:
+                    if progress_bar_task is not None:
                         if benchmark_group.name == benchmark_name:
                             self._progress_bar.update(
                                 progress_bar_task,
