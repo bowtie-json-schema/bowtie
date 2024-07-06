@@ -18,7 +18,7 @@ const ReportDataHandler = () => {
 
   useEffect(
     () => setVersion!(loaderData.reportData.runMetadata.bowtieVersion),
-    [setVersion, loaderData.reportData.runMetadata.bowtieVersion]
+    [setVersion, loaderData.reportData.runMetadata.bowtieVersion],
   );
 
   return (

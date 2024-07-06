@@ -50,14 +50,14 @@ export default class Implementation
 
   constructor(
     implementationId: string,
-    rawImplementationData: RawImplementationData
+    rawImplementationData: RawImplementationData,
   ) {
     this.id = implementationId;
     this.language = rawImplementationData.language;
     this.name = rawImplementationData.name;
     this.version = rawImplementationData.version;
     this.dialects = rawImplementationData.dialects.map((uri) =>
-      Dialect.forURI(uri)
+      Dialect.forURI(uri),
     );
     this.homepage = rawImplementationData.homepage;
     this.documentation = rawImplementationData.documentation;
@@ -86,7 +86,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.idSegment().clone().segment("supported_versions").suffix("json")
+      this.idSegment().clone().segment("supported_versions").suffix("json"),
     );
   }
 
@@ -96,7 +96,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json")
+        .suffix("json"),
     );
   }
 

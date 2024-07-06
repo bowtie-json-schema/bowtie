@@ -50,10 +50,10 @@ export const DetailsButtonModal = ({
             instance={caseData.tests[i].instance}
             message={message}
             borderClass={borderClass}
-          />
+          />,
         );
       }
-    }
+    },
   );
   return (
     <Modal show={show} onHide={handleClose} fullscreen={true}>

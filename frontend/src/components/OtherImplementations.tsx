@@ -20,7 +20,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
   const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData
+    otherImplementationsData,
   );
   return (
     <div
@@ -74,7 +74,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                             </span>
                           </Col>
                         );
-                      }
+                      },
                     )}
                   </Row>
                 </Container>
@@ -96,6 +96,6 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
 
 const getLatestSupportedDialect = (implementation: Implementation): Dialect => {
   return implementation.dialects.reduce((acc, curr) =>
-    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
   );
 };

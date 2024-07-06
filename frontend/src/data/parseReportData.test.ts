@@ -145,7 +145,7 @@ describe("parseReportData", () => {
               name: "envsonschema",
               language: "python",
               dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri
+                (dialect) => dialect.uri,
               ),
               homepage: implementationMetadata.homepage,
               issues: implementationMetadata.issues,
@@ -156,7 +156,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -196,7 +196,7 @@ describe("parseReportData", () => {
 
     const lines = bowtie(
       ["run", "-i", implementationId, "-D", "7"],
-      cases.join("\n") + "\n"
+      cases.join("\n") + "\n",
     );
 
     const report = fromSerialized(lines);
@@ -214,7 +214,7 @@ describe("parseReportData", () => {
               name: "envsonschema",
               language: "python",
               dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri
+                (dialect) => dialect.uri,
               ),
               homepage: implementationMetadata.homepage,
               issues: implementationMetadata.issues,
@@ -225,7 +225,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -301,7 +301,7 @@ describe("parseReportData", () => {
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
         ["run", "-i", implementationId, "-D", dialect.shortName],
-        cases.join("\n") + "\n"
+        cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
@@ -309,7 +309,7 @@ describe("parseReportData", () => {
 
     const implementationReport = prepareImplementationReport(
       implementationId,
-      allReportsData
+      allReportsData,
     );
 
     const implementationMetadata = implementationReport!.implementation;
