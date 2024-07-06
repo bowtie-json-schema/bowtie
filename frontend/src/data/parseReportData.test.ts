@@ -144,7 +144,9 @@ describe("parseReportData", () => {
             new Implementation(implementationId, {
               name: "envsonschema",
               language: "python",
-              dialects: ["https://json-schema.org/draft/2020-12/schema"],
+              dialects: Array.from(Dialect.known()).map(
+                (dialect) => dialect.uri
+              ),
               homepage: implementationMetadata.homepage,
               issues: implementationMetadata.issues,
               source: implementationMetadata.source,
@@ -210,7 +212,9 @@ describe("parseReportData", () => {
             new Implementation(implementationId, {
               name: "envsonschema",
               language: "python",
-              dialects: ["http://json-schema.org/draft-07/schema#"],
+              dialects: Array.from(Dialect.known()).map(
+                (dialect) => dialect.uri
+              ),
               homepage: implementationMetadata.homepage,
               issues: implementationMetadata.issues,
               source: implementationMetadata.source,
