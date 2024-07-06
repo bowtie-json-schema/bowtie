@@ -2,6 +2,7 @@ import Dialect from "./Dialect";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import Implementation, { RawImplementationData } from "./Implementation";
 
 dayjs.extend(relativeTime);
 
@@ -11,7 +12,7 @@ dayjs.extend(relativeTime);
 export const fromSerialized = (jsonl: string): ReportData => {
   const lines = jsonl.trim().split(/\r?\n/);
   return parseReportData(
-    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
+    lines.map((line) => JSON.parse(line) as Record<string, unknown>)
   );
 };
 
@@ -30,7 +31,7 @@ export class RunMetadata {
     implementations: Map<string, Implementation>,
     bowtieVersion: string,
     started: Date,
-    metadata: Record<string, unknown>,
+    metadata: Record<string, unknown>
   ) {
     this.dialect = dialect;
     this.implementations = implementations;
@@ -45,17 +46,19 @@ export class RunMetadata {
 
   static fromRecord(record: Header): RunMetadata {
     const implementations = new Map<string, Implementation>(
-      Object.entries(record.implementations).map(([id, info]) => [
-        id,
-        implementationFromData(info),
-      ]),
+      Object.entries(record.implementations).map(
+        ([implementationId, rawImplementationData]) => [
+          implementationId,
+          Implementation.fromRecord(implementationId, rawImplementationData),
+        ]
+      )
     );
     return new RunMetadata(
       Dialect.forURI(record.dialect),
       implementations,
       record.bowtie_version,
       new Date(record.started),
-      record.metadata,
+      record.metadata
     );
   }
 }
@@ -64,13 +67,13 @@ export class RunMetadata {
  * Parse a report from some deserialized JSON objects.
  */
 export const parseReportData = (
-  lines: Record<string, unknown>[],
+  lines: Record<string, unknown>[]
 ): ReportData => {
   const runMetadata = RunMetadata.fromRecord(lines[0] as unknown as Header);
 
   const implementationsResultsMap = new Map<string, ImplementationResults>();
-  for (const id of runMetadata.implementations.keys()) {
-    implementationsResultsMap.set(id, {
+  for (const implementationId of runMetadata.implementations.keys()) {
+    implementationsResultsMap.set(implementationId, {
       caseResults: new Map(),
       totals: {
         skippedTests: 0,
@@ -88,7 +91,7 @@ export const parseReportData = (
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
       const implementationResults = implementationsResultsMap.get(
-        line.implementation as string,
+        line.implementation as string
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
@@ -100,7 +103,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          }),
+          })
         );
       } else if (line.skipped) {
         implementationResults.totals.skippedTests! += caseData.tests.length;
@@ -109,7 +112,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
             message: line.message as string,
-          }),
+          })
         );
       } else if (line.implementation) {
         const caseResults: CaseResult[] = (
@@ -161,26 +164,13 @@ export const parseReportData = (
 };
 
 /**
- * Turn raw implementation data into an Implementation.
- *
- * If/when Implementation is a class, this will be its fromRecord.
- */
-export const implementationFromData = (
-  data: ImplementationData,
-): Implementation =>
-  ({
-    ...data,
-    dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
-  }) as Implementation;
-
-/**
- * Prepare a summarized implementation report using the
+ * Prepare a summarized report for an implementation using the
  * passed implementation id and all the dialect reports data
  * that was fetched.
  */
 export const prepareImplementationReport = (
-  allReportsData: Map<Dialect, ReportData>,
   implementationId: string,
+  allReportsData: Map<Dialect, ReportData>
 ) => {
   let implementationReport: ImplementationReport | null = null;
   const dialectCompliance = new Map<Dialect, Partial<Totals>>();
@@ -198,26 +188,13 @@ export const prepareImplementationReport = (
         failedTests: implementationResults.totals.failedTests,
       });
 
-      const implementation = runMetadata.implementations.get(implementationId)!;
-
       if (!implementationReport) {
+        const implementation =
+          runMetadata.implementations.get(implementationId)!;
+
         implementationReport = {
-          implementationId,
           implementation,
           dialectCompliance,
-        };
-      } else {
-        implementationReport = {
-          implementationId,
-          implementation: Object.assign(
-            {},
-            implementationReport.implementation,
-            implementation,
-          ),
-          dialectCompliance: new Map([
-            ...implementationReport.dialectCompliance,
-            ...dialectCompliance,
-          ]),
         };
       }
     }
@@ -229,7 +206,7 @@ export const prepareImplementationReport = (
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0,
+    0
   );
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
@@ -243,19 +220,15 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    },
+    }
   );
 };
-
-export interface ImplementationData extends Omit<Implementation, "dialects"> {
-  dialects: string[];
-}
 
 interface Header {
   dialect: string;
   bowtie_version: string;
   metadata: Record<string, unknown>;
-  implementations: Record<string, ImplementationData>;
+  implementations: Record<string, RawImplementationData>;
   started: number;
 }
 
@@ -284,29 +257,7 @@ export interface CaseResult {
   message?: string;
 }
 
-export interface Implementation {
-  language: string;
-  name: string;
-  version?: string;
-  dialects: Dialect[];
-  homepage: string;
-  documentation?: string;
-  issues: string;
-  source: string;
-  links?: {
-    description?: string;
-    url?: string;
-    [k: string]: unknown;
-  }[];
-  os?: string;
-  os_version?: string;
-  language_version?: string;
-
-  [k: string]: unknown;
-}
-
 export interface ImplementationReport {
-  implementationId: string;
   implementation: Implementation;
   dialectCompliance: Map<Dialect, Partial<Totals>>;
 }

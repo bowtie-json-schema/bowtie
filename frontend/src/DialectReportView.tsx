@@ -1,23 +1,21 @@
+import { useMemo } from "react";
+
 import CasesSection from "./components/Cases/CasesSection";
 import RunInfoSection from "./components/RunInfo/RunInfoSection";
 import SummarySection from "./components/Summary/SummarySection";
-import { useMemo } from "react";
-import {
-  Implementation,
-  ImplementationResults,
-  ReportData,
-} from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
+import { ImplementationResults, ReportData } from "./data/parseReportData.ts";
+import Implementation from "./data/Implementation.ts";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
 
 export const DialectReportView = ({
   reportData,
   topPageInfoSection,
-  allImplementationsData,
+  allImplementationsMetadata,
 }: {
   reportData: ReportData;
   topPageInfoSection?: React.ReactElement;
-  allImplementationsData: Record<string, Implementation>;
+  allImplementationsMetadata: Record<string, Implementation>;
 }) => {
   const params = useSearchParams();
   const languages = useMemo(() => {
@@ -34,11 +32,11 @@ export const DialectReportView = ({
 
     if (selectedLanguages.length > 0) {
       const filteredReportArray = Array.from(
-        reportData.implementationsResults.entries(),
+        reportData.implementationsResults.entries()
       ).filter(([id]) =>
         selectedLanguages.includes(
-          reportData.runMetadata.implementations.get(id)!.language,
-        ),
+          reportData.runMetadata.implementations.get(id)!.language
+        )
       );
       filteredData.implementationsResults = new Map(filteredReportArray);
     }
@@ -52,13 +50,13 @@ export const DialectReportView = ({
       selectedLanguages.length > 0 ? selectedLanguages : languages;
 
     return filterOtherImplementations(
-      allImplementationsData,
+      allImplementationsMetadata,
       availableLanguages,
-      filteredReportData.implementationsResults,
+      filteredReportData.implementationsResults
     );
   }, [
     params,
-    allImplementationsData,
+    allImplementationsMetadata,
     languages,
     filteredReportData.implementationsResults,
   ]);
@@ -80,12 +78,12 @@ export const DialectReportView = ({
 };
 
 const filterOtherImplementations = (
-  allImplementationsData: Record<string, Implementation>,
+  allImplementationsMetadata: Record<string, Implementation>,
   langs: string[],
-  filteredReportImplementationsMap: Map<string, ImplementationResults>,
+  filteredReportImplementationsMap: Map<string, ImplementationResults>
 ): Record<string, Implementation> => {
   const filteredOtherImplementationsArray = Object.entries(
-    allImplementationsData,
+    allImplementationsMetadata
   )
     .filter(([, impl]) => langs.includes(impl.language))
     .filter(([key]) => !filteredReportImplementationsMap.has(key));

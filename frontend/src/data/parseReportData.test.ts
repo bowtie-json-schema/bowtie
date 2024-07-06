@@ -2,7 +2,6 @@ import { join } from "node:path";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-
 import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
@@ -12,6 +11,7 @@ import {
   fromSerialized,
   prepareImplementationReport,
 } from "./parseReportData";
+import Implementation from "./Implementation";
 
 function tag(image: string) {
   // Should match what's used in our `noxfile`, certainly until we handle image
@@ -113,6 +113,7 @@ const testCases = {
 describe("parseReportData", () => {
   test("parses reports", async () => {
     let lines: string;
+    const implementationId = tag("envsonschema");
 
     const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
@@ -123,16 +124,15 @@ describe("parseReportData", () => {
       const instance = join(tempdir, "instance.json");
       await writeFile(instance, "37");
 
-      lines = bowtie(["validate", "-i", tag("envsonschema"), schema, instance]);
+      lines = bowtie(["validate", "-i", implementationId, schema, instance]);
     } finally {
       await rm(tempdir, { recursive: true });
     }
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
-    )!;
+    const implementationMetadata =
+      report.runMetadata.implementations.get(implementationId)!;
     const testCase = report.cases.get(1);
 
     expect(report).toStrictEqual({
@@ -140,25 +140,24 @@ describe("parseReportData", () => {
         Dialect.withName("draft2020-12"),
         new Map([
           [
-            tag("envsonschema"),
-            {
+            implementationId,
+            new Implementation(implementationId, {
               name: "envsonschema",
               language: "python",
-              dialects: metadata.dialects,
-              homepage: metadata.homepage,
-              issues: metadata.issues,
-              source: metadata.source,
-              links: metadata.links,
-            },
+              dialects: ["https://json-schema.org/draft/2020-12/schema"],
+              homepage: implementationMetadata.homepage,
+              issues: implementationMetadata.issues,
+              source: implementationMetadata.source,
+            }),
           ],
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
-          tag("envsonschema"),
+          implementationId,
           {
             totals: {
               erroredTests: 0,
@@ -190,42 +189,41 @@ describe("parseReportData", () => {
 
   test("parses reports with multiple test cases", () => {
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
+    const implementationId = tag("envsonschema");
 
     const lines = bowtie(
-      ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
+      ["run", "-i", implementationId, "-D", "7"],
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
-    )!;
+    const implementationMetadata =
+      report.runMetadata.implementations.get(implementationId)!;
 
     expect(report).toStrictEqual({
       runMetadata: new RunMetadata(
         Dialect.withName("draft7"),
         new Map([
           [
-            tag("envsonschema"),
-            {
+            implementationId,
+            new Implementation(implementationId, {
               name: "envsonschema",
               language: "python",
-              dialects: metadata.dialects,
-              homepage: metadata.homepage,
-              issues: metadata.issues,
-              source: metadata.source,
-              links: metadata.links,
-            },
+              dialects: ["http://json-schema.org/draft-07/schema#"],
+              homepage: implementationMetadata.homepage,
+              issues: implementationMetadata.issues,
+              source: implementationMetadata.source,
+            }),
           ],
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
-          tag("envsonschema"),
+          implementationId,
           {
             totals: {
               erroredTests: 0,
@@ -292,35 +290,34 @@ describe("parseReportData", () => {
   test("prepares a summarized implementation report using all the dialect reports", () => {
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
     const allReportsData = new Map<Dialect, ReportData>();
-    const fakeImplementationId = tag("envsonschema");
+    const implementationId = tag("envsonschema");
 
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
-        ["run", "-i", fakeImplementationId, "-D", dialect.shortName],
-        cases.join("\n") + "\n",
+        ["run", "-i", implementationId, "-D", dialect.shortName],
+        cases.join("\n") + "\n"
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
     }
 
     const implementationReport = prepareImplementationReport(
-      allReportsData,
-      fakeImplementationId,
+      implementationId,
+      allReportsData
     );
 
-    const metadata = implementationReport!.implementation;
+    const implementationMetadata = implementationReport!.implementation;
 
     expect(implementationReport).toStrictEqual({
-      implementationId: fakeImplementationId,
-      implementation: {
+      implementation: new Implementation(implementationId, {
         name: "envsonschema",
         language: "python",
-        homepage: metadata.homepage,
-        issues: metadata.issues,
-        source: metadata.source,
-        dialects: metadata.dialects,
-        links: metadata.links,
-      },
+        homepage: implementationMetadata.homepage,
+        issues: implementationMetadata.issues,
+        source: implementationMetadata.source,
+        dialects: Array.from(Dialect.known()).map((dialect) => dialect.uri),
+        links: implementationMetadata.links,
+      }),
       dialectCompliance: new Map([
         [
           Dialect.withName("draft2020-12"),

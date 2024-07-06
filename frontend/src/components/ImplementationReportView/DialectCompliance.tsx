@@ -4,7 +4,6 @@ import Card from "react-bootstrap/Card";
 import Image from "react-bootstrap/Image";
 import Table from "react-bootstrap/Table";
 
-import { complianceBadgeFor } from "../../data/Badge";
 import { ImplementationReport } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
@@ -45,7 +44,7 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
               .map(([dialect, result], index) => {
                 return (
@@ -57,10 +56,9 @@ const DialectCompliance: React.FC<{
                     <td>
                       <Link className="mx-1" to={dialect.routePath}>
                         <Image
-                          src={complianceBadgeFor(
-                            implementation,
-                            dialect,
-                          ).href()}
+                          src={implementation
+                            .complianceBadgeFor(dialect)
+                            .href()}
                           alt={dialect.prettyName}
                           className="float-end"
                         />
