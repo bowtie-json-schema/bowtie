@@ -1,10 +1,9 @@
-import Dialect from "./Dialect";
-
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Implementation, { RawImplementationData } from "./Implementation";
-
 dayjs.extend(relativeTime);
+
+import Dialect from "./Dialect";
+import Implementation, { RawImplementationData } from "./Implementation";
 
 /**
  * Parse a report from some JSONL data.

@@ -1,7 +1,4 @@
 import Accordion from "react-bootstrap/Accordion";
-
-import CaseResultSvg from "./CaseResultSvg";
-import SchemaDisplay from "./SchemaDisplay";
 import {
   SetStateAction,
   useEffect,
@@ -10,13 +7,16 @@ import {
   useRef,
   RefObject,
 } from "react";
+
+import CaseResultSvg from "./CaseResultSvg";
+import SchemaDisplay from "./SchemaDisplay";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
   Case,
   CaseResult,
-  Implementation,
   ImplementationResults,
 } from "../../data/parseReportData";
+import Implementation from "../../data/Implementation";
 
 interface CaseProps {
   seq: number;
@@ -34,7 +34,7 @@ const CaseContent = ({
   implementationsResults,
 }: CaseProps) => {
   const [instance, setInstance] = useState<SetStateAction<unknown>>(
-    caseData.tests[0].instance,
+    caseData.tests[0].instance
   );
   const [activeRow, setActiveRow] = useState<SetStateAction<unknown>>(0);
 
@@ -119,8 +119,8 @@ const CaseItem = ({
           implementations={implementations}
           implementationsResults={implementationsResults}
           schemaDisplayRef={schemaDisplayRef}
-        />,
-      ),
+        />
+      )
     );
   }, [seq, caseData, implementations, implementationsResults]);
   return (
