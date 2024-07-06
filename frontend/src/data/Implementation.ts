@@ -80,16 +80,6 @@ export default class Implementation
     return (await response.json()) as Record<string, RawImplementationData>;
   }
 
-  /**
-   * Turn raw implementation data into an Implementation.
-   */
-  static fromRecord(
-    implementationId: string,
-    rawImplementationData: RawImplementationData
-  ): Implementation {
-    return new Implementation(implementationId, rawImplementationData);
-  }
-
   private idSegment(): URI {
     return BADGES.clone().segment(this.id);
   }

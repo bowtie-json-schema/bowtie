@@ -42,7 +42,7 @@ const fetchAllImplementationsMetadata = async () => {
     Object.entries(rawImplementationsData).map(
       ([implementationId, rawImplementationData]) => [
         implementationId,
-        Implementation.fromRecord(implementationId, rawImplementationData),
+        new Implementation(implementationId, rawImplementationData),
       ]
     )
   );

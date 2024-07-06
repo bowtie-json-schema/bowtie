@@ -48,7 +48,7 @@ export class RunMetadata {
       Object.entries(record.implementations).map(
         ([implementationId, rawImplementationData]) => [
           implementationId,
-          Implementation.fromRecord(implementationId, rawImplementationData),
+          new Implementation(implementationId, rawImplementationData),
         ]
       )
     );
