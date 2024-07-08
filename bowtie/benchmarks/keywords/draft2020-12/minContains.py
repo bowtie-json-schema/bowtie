@@ -3,6 +3,12 @@ import uuid
 
 def get_benchmark():
 
+    name = "minContains"
+    description = (
+        "A benchmark for measuring performance of the implementation "
+        "for the minContains keyword."
+    )
+
     max_array_size = 1000000
     array_size = 1000
 
@@ -36,4 +42,8 @@ def get_benchmark():
         ))
         array_size *= 10
 
-    return benchmarks
+    return dict(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+    )

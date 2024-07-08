@@ -11,6 +11,7 @@ import json
 import statistics
 import subprocess
 import tempfile
+import os
 
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
@@ -165,42 +166,52 @@ class BenchmarkGroup:
         module: str = "bowtie.benchmarks",
     ) -> Iterable[BenchmarkGroup]:
         for file in folder.iterdir():
-            data = None
-            if file.suffix == ".py" and file.name != "__init__.py":
-                benchmark_module_name = "." + file.stem
-                data = importlib.import_module(
-                    benchmark_module_name,
-                    module,
-                ).get_benchmark()
-            elif file.suffix == ".json":
-                data = json.loads(file.read_text())
+            benchmark_group = cls.from_file(file, module)
+            if not benchmark_group:
+                continue
+            yield benchmark_group
 
-            if data and "benchmarks" not in data:
-                benchmark = Benchmark.from_dict(
-                    **data,
+    @classmethod
+    def from_file(
+        cls, file: Path, module: str = "bowtie.benchmarks"
+    ) -> BenchmarkGroup | None:
+        data = None
+        if file.suffix == ".py" and file.name != "__init__.py":
+            benchmark_module_name = "." + file.stem
+            data = importlib.import_module(
+                benchmark_module_name,
+                module,
+            ).get_benchmark()
+        elif file.suffix == ".json":
+            data = json.loads(file.read_text())
+
+        if data and "benchmarks" not in data:
+            benchmark = Benchmark.from_dict(
+                **data,
+            ).maybe_set_dialect_from_schema()
+            benchmark_group = cls(
+                name=benchmark.name,
+                description=benchmark.description,
+                benchmarks=[benchmark],
+                path=file,
+            )
+            return benchmark_group
+        elif data:
+            benchmarks = [
+                Benchmark.from_dict(
+                    **benchmark,
                 ).maybe_set_dialect_from_schema()
-                benchmark_group = cls(
-                    name=benchmark.name,
-                    description=benchmark.description,
-                    benchmarks=[benchmark],
-                    path=file,
-                )
-                yield benchmark_group
-            elif data:
-                benchmarks = [
-                    Benchmark.from_dict(
-                        **benchmark,
-                    ).maybe_set_dialect_from_schema()
-                    for benchmark in data["benchmarks"]
-                ]
-                benchmark_group = cls(
-                    name=data["name"],
-                    description=data["description"],
-                    benchmarks=benchmarks,
-                    path=file,
-                )
-                yield benchmark_group
-            continue
+                for benchmark in data["benchmarks"]
+            ]
+            benchmark_group = cls(
+                name=data["name"],
+                description=data["description"],
+                benchmarks=benchmarks,
+                path=file,
+            )
+            return benchmark_group
+
+        return None
 
 
 @frozen
@@ -449,7 +460,8 @@ class BenchmarkReporter:
                 benchmark_results=benchmark_results,
             )
             self._report.results[benchmark_group.name] = benchmark_group_result
-            self._progress_bar.update(progress_bar_task, visible=False)
+            if progress_bar_task is not None:
+                self._progress_bar.update(progress_bar_task, visible=False)
 
         return benchmark_started, benchmark_group_finished
 
@@ -457,7 +469,7 @@ class BenchmarkReporter:
         if self._format == "pretty":
             self._print_results_table()
         else:
-            STDOUT.log(json.dumps(self._report.serializable(), indent=2))
+            STDOUT.print(json.dumps(self._report.serializable(), indent=2))
 
     @staticmethod
     def no_compatible_connectables():
@@ -472,7 +484,6 @@ class BenchmarkReporter:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
 
-        console = Console()
         table_caption = (
             f"Benchmark Metadata\n\n"
             f"Runs: {self._report.metadata.num_runs}\n"
@@ -624,8 +635,8 @@ class BenchmarkReporter:
                     outer_table,
                 )
 
-        console.print()
-        console.print(table)
+        STDOUT.print()
+        STDOUT.print(table)
 
 
 @frozen
@@ -716,6 +727,27 @@ class Benchmarker:
                 dialect_keyword_benchmarks_dir,
                 module=module_name,
             ),
+            **kwargs,
+        )
+
+    @classmethod
+    def for_benchmark(cls, benchmark_filename: str, **kwargs: Any):
+        benchmark_file = Path(benchmark_filename).absolute()
+        bowtie_parent_dir = Path(__file__).parent.parent
+
+        benchmark_folder = benchmark_file.parent
+        relative_path = benchmark_folder.relative_to(bowtie_parent_dir)
+
+        if not benchmark_file.exists():
+            raise BenchmarkLoadError("Benchmark File not found !!")
+
+        module_name = str(relative_path).replace(os.sep, '.')
+
+        return cls(
+            benchmark_groups=[BenchmarkGroup.from_file(
+                benchmark_file,
+                module=module_name,
+            )],
             **kwargs,
         )
 

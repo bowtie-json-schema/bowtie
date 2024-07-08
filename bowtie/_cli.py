@@ -1372,6 +1372,12 @@ def validate(
     help="A (human-readable) description for this benchmark.",
 )
 @click.option(
+    "-b",
+    "--benchmark-file",
+    default="bowtie perf",
+    help="A (human-readable) description for this benchmark.",
+)
+@click.option(
     "--test-suite",
     "-t",
     "test_suite",
@@ -1392,13 +1398,19 @@ def perf(
     registry: ValidatorRegistry[Any],
     quiet: bool,
     test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    benchmark_file: str,
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
     try:
-        if keywords:
+        if benchmark_file:
+            benchmarker = _benchmarks.Benchmarker.for_benchmark(
+                benchmark_file,
+                **kwargs,
+            )
+        elif keywords:
             benchmarker = _benchmarks.Benchmarker.for_keywords(
                 dialect,
                 **kwargs,
