@@ -5,8 +5,8 @@ def get_benchmark():
         "implementation for the maxItems keyword."
     )
 
-    max_array_size = 1000000
-    array_size = 10000
+    max_array_size = 100000
+    array_size = 1000
     benchmarks = []
     tests = []
     testing_array_size = 10000

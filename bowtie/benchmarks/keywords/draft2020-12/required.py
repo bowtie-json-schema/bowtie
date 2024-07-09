@@ -7,10 +7,10 @@ def get_benchmark():
         "A benchmark for measuring performance of the "
         "implementation for the required keyword."
     )
-    max_array_size = 1000000
+    max_array_size = 100000
 
     benchmarks = []
-    array_size = 10000
+    array_size = 1000
 
     while array_size*2 <= max_array_size:
         num_required_properties = array_size//2

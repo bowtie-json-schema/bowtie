@@ -10,8 +10,8 @@ def get_benchmark():
         "implementation for the propertyNames keyword."
     )
 
-    max_object_size = 1000000
-    object_size = 10000
+    max_object_size = 100000
+    object_size = 1000
 
     benchmarks = []
     while object_size <= max_object_size:

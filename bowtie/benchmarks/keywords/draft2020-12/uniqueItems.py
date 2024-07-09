@@ -4,10 +4,10 @@ def get_benchmark():
         "A benchmark for measuring performance of the "
         "implementation for the uniqueItems keyword."
     )
-    max_array_size = 2000000
+    max_array_size = 200000
     benchmarks = []
 
-    array_size = 20000
+    array_size = 2000
     while array_size <= max_array_size:
 
         first_two_duplicate = [1, 1] + [i for i in range(2, array_size-2)]

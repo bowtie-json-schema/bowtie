@@ -8,8 +8,8 @@ def get_benchmark():
         "for the maxContains keyword."
     )
 
-    max_array_size = 1000000
-    array_size = 10000
+    max_array_size = 100000
+    array_size = 1000
 
     benchmarks = []
     while array_size <= max_array_size:

@@ -9,7 +9,7 @@ def get_benchmark():
         "for the minContains keyword."
     )
 
-    max_array_size = 1000000
+    max_array_size = 100000
     array_size = 1000
 
     benchmarks = []

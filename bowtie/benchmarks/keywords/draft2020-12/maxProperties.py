@@ -8,8 +8,8 @@ def get_benchmark():
         "for the maxProperties keyword."
     )
 
-    max_num_properties = 1000000
-    num_properties = 10000
+    max_num_properties = 100000
+    num_properties = 1000
 
     benchmarks = []
     while num_properties <= max_num_properties:

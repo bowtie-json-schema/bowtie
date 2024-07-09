@@ -10,10 +10,10 @@ def get_benchmark():
         "A benchmark for measuring performance of the "
         "implementation for the patternProperties keyword."
     )
-    max_num_properties = 1000000
+    max_num_properties = 100000
     benchmarks = []
 
-    num_properties = 10000
+    num_properties = 1000
 
     while num_properties <= max_num_properties:
         property_value_pairs = [(_random_string(), random.randint(0, max_num)) for _ in range(num_properties)]

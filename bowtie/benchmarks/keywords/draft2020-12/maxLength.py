@@ -9,8 +9,8 @@ def get_benchmark():
         "implementation for the maxLength keyword."
     )
 
-    max_string_size = 1000000
-    string_size = 10000
+    max_string_size = 100000
+    string_size = 1000
     benchmarks = []
 
     tests = []
