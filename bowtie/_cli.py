@@ -1374,8 +1374,10 @@ def validate(
 @click.option(
     "-b",
     "--benchmark-file",
-    default="bowtie perf",
-    help="A (human-readable) description for this benchmark.",
+    help=(
+         "Allows running benchmark from a file. "
+         "Specify the path of the benchmark file"
+    )
 )
 @click.option(
     "--test-suite",
@@ -1444,9 +1446,41 @@ def perf(
             registry=registry,
             format=format,
         ))
-    except (BenchmarkLoadError, BenchmarkError) as err:
+    except (BenchmarkError) as err:
         STDERR.print(err)
 
+
+@subcommand
+@dialect_option()
+@click.option(
+    "-t",
+    "--benchmark-type",
+    type=click.Choice(['default', 'keyword']),
+    default="default",
+    show_default=True,
+    help=(
+         "Specify the type of benchmark to filter."
+    )
+)
+@click.option(
+    "-n",
+    "--name",
+    "benchmark_names",
+    type=str,
+    multiple=True,
+    help=(
+         "Filter the benchmarks with given name. "
+         "Use the option multiple times to filter multiple benchmarks."
+    )
+)
+def filter_benchmarks(
+    dialect: Dialect,
+    benchmark_type: str,
+    benchmark_names: Iterable[str],
+):
+    _benchmarks.get_benchmark_filenames(
+        benchmark_type, benchmarks=benchmark_names, dialect=dialect
+    )
 
 
 LANGUAGE_ALIASES = {

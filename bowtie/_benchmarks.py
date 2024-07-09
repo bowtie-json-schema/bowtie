@@ -42,6 +42,60 @@ Benchmark_Criteria = str
 STDOUT = Console()
 
 
+def get_benchmark_filenames(
+    benchmark_type: str,
+    benchmarks: Iterable[str],
+    dialect: Dialect,
+):
+    bowtie_dir = Path(__file__).parent
+    search_dir: Path | None = None
+    files = []
+
+    if benchmark_type == "keyword":
+        keywords_benchmark_dir = (
+            bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+        )
+        search_dir = keywords_benchmark_dir.joinpath(
+            dialect.short_name,
+        )
+    elif benchmark_type == "default":
+        search_dir = bowtie_dir.joinpath("benchmarks")
+
+    if search_dir:
+        files = [
+            str(file) for file in search_dir.iterdir()
+            if file.suffix in (".json", ".py") and file.name != "__init__.py"
+        ]
+
+    if benchmarks:
+        files = [
+            matched_file
+            for benchmark in benchmarks
+            if (matched_file := next(
+                (file for file in files if benchmark in file),
+                None))
+        ]
+
+    for file in files:
+        STDOUT.print(file)
+
+
+def _load_benchmark_data_from_file(
+    file: Path,
+    module: str,
+):
+    data = None
+    if file.suffix == ".py" and file.name != "__init__.py":
+        benchmark_module_name = "." + file.stem
+        data = importlib.import_module(
+            benchmark_module_name,
+            module,
+        ).get_benchmark()
+    elif file.suffix == ".json":
+        data = json.loads(file.read_text())
+    return data
+
+
 @frozen
 class BenchmarkLoadError(Exception):
     message: str
@@ -175,15 +229,10 @@ class BenchmarkGroup:
     def from_file(
         cls, file: Path, module: str = "bowtie.benchmarks"
     ) -> BenchmarkGroup | None:
-        data = None
-        if file.suffix == ".py" and file.name != "__init__.py":
-            benchmark_module_name = "." + file.stem
-            data = importlib.import_module(
-                benchmark_module_name,
-                module,
-            ).get_benchmark()
-        elif file.suffix == ".json":
-            data = json.loads(file.read_text())
+        data = _load_benchmark_data_from_file(
+            file,
+            module
+        )
 
         if data and "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
