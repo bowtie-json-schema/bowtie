@@ -61,7 +61,7 @@ def get_benchmark_filenames(
     elif benchmark_type == "default":
         search_dir = bowtie_dir.joinpath("benchmarks")
 
-    if search_dir:
+    if search_dir.exists():
         files = [
             str(file) for file in search_dir.iterdir()
             if file.suffix in (".json", ".py") and file.name != "__init__.py"
@@ -77,7 +77,8 @@ def get_benchmark_filenames(
         ]
 
     for file in files:
-        STDOUT.print(file)
+        STDOUT.file.write(file)
+        STDOUT.file.write("\n")
 
 
 def _load_benchmark_data_from_file(
