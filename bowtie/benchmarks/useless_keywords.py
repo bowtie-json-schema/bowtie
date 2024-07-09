@@ -1,5 +1,5 @@
 def get_benchmark():
-    num_useless_keywords = 3000
+    num_useless_keywords = 300000
 
     return dict(
         name="useless_keywords",
