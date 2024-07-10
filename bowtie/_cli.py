@@ -96,6 +96,10 @@ _COMMAND_GROUPS = {
             name="Plumbing Commands",
             commands=["badges", "smoke"],
         ),
+        CommandGroupDict(
+            name="Benchmarking Commands",
+            commands=["perf", "filter-benchmarks"],
+        ),
     ],
 }
 _OPTION_GROUPS = {
@@ -1478,6 +1482,9 @@ def filter_benchmarks(
     benchmark_type: str,
     benchmark_names: Iterable[str],
 ):
+    """
+    Output benchmarks matching the specified criteria.
+    """
     _benchmarks.get_benchmark_filenames(
         benchmark_type, benchmarks=benchmark_names, dialect=dialect
     )
