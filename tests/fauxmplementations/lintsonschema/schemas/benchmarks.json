@@ -2,22 +2,75 @@
   "title": "Bowtie Benchmarks",
   "description": "A collection of benchmarks used to compare the performance between various JSON Schema Implementations.",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "$id": "tag:bowtie.report,2024:benchmarks",
-
   "type": "object",
-  "required": ["name","description", "schema", "tests"],
-  "properties": {
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "schema": { "type": "object" },
-    "tests": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["description", "instance"],
-        "properties": {
-          "description": { "type": "string" }
+  "oneOf": [
+    {
+      "$ref": "#benchmark"
+    },
+    {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "benchmarks"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "benchmarks": {
+          "type": "array",
+          "items": {
+            "$ref": "#benchmark"
+          }
+        }
+      }
+      }
+  ],
+  "$defs": {
+    "benchmark": {
+      "$anchor": "benchmark",
+      "required": [
+        "name",
+        "description",
+        "schema",
+        "tests"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "schema": {
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "description",
+              "instance"
+            ],
+            "properties": {
+              "description": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     }
