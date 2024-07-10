@@ -40,6 +40,7 @@ Benchmark_Group_Name = str
 Benchmark_Criteria = str
 
 STDOUT = Console()
+STDERR = Console(stderr=True)
 
 
 def get_benchmark_filenames(
@@ -83,7 +84,7 @@ def get_benchmark_filenames(
 
 def _load_benchmark_data_from_file(
     file: Path,
-    module: str,
+    module: str = None,
 ):
     data = None
     if file.suffix == ".py" and file.name != "__init__.py":
@@ -215,7 +216,7 @@ class BenchmarkGroup:
     path: Path | None
 
     @classmethod
-    def get_benchmark_groups_from_folder(
+    def from_folder(
         cls,
         folder: Path,
         module: str = "bowtie.benchmarks",
@@ -235,7 +236,14 @@ class BenchmarkGroup:
             module
         )
 
-        if data and "benchmarks" not in data:
+        if data:
+            return cls.from_dict(data)
+
+        return None
+
+    @classmethod
+    def from_dict(cls, data, file=None):
+        if "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
                 **data,
             ).maybe_set_dialect_from_schema()
@@ -246,22 +254,26 @@ class BenchmarkGroup:
                 path=file,
             )
             return benchmark_group
-        elif data:
-            benchmarks = [
-                Benchmark.from_dict(
-                    **benchmark,
-                ).maybe_set_dialect_from_schema()
-                for benchmark in data["benchmarks"]
-            ]
-            benchmark_group = cls(
-                name=data["name"],
-                description=data["description"],
-                benchmarks=benchmarks,
-                path=file,
-            )
-            return benchmark_group
 
-        return None
+        benchmarks = [
+            Benchmark.from_dict(
+                **benchmark,
+            ).maybe_set_dialect_from_schema()
+            for benchmark in data["benchmarks"]
+        ]
+        benchmark_group = cls(
+            name=data["name"],
+            description=data["description"],
+            benchmarks=benchmarks,
+            path=file,
+        )
+        return benchmark_group
+
+    def serializable(self) -> Message:
+        return asdict(
+            self,
+            filter=lambda _, v: v is not None,
+        )
 
 
 @frozen
@@ -378,16 +390,17 @@ class BenchmarkReporter:
     def started(self):
         pass
 
-    @staticmethod
     def report_incompatible_connectables(
+        self,
         incompatible_connectables: Sequence[Connectable],
         dialect: Dialect,
     ):
         for connectable in incompatible_connectables:
-            STDOUT.log(
-                f"{connectable.to_terse()} does not supports "
-                f"dialect {dialect.serializable()}\n",
-            )
+            if not self._quiet:
+                STDOUT.log(
+                    f"{connectable.to_terse()} does not supports "
+                    f"dialect {dialect.serializable()}\n",
+                )
 
     @staticmethod
     def _total_tests_in_benchmark_group(benchmark_group: BenchmarkGroup):
@@ -445,7 +458,7 @@ class BenchmarkReporter:
 
                     mean = statistics.mean(result_values)
                     std_dev = statistics.stdev(result_values)
-                    if std_dev / mean > 0.10:
+                    if std_dev / mean > 0.10 and not self._quiet:
                         retry_needed = True
                         if retry_count == 0:
                             STDOUT.log(
@@ -519,11 +532,11 @@ class BenchmarkReporter:
         if self._format == "pretty":
             self._print_results_table()
         else:
-            STDOUT.print(json.dumps(self._report.serializable(), indent=2))
+            STDOUT.print_json(data=self._report.serializable())
 
-    @staticmethod
-    def no_compatible_connectables():
-        STDOUT.log("Skipping Benchmark, No Connectables to run !")
+    def no_compatible_connectables(self):
+        if not self._quiet:
+            STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
     def _print_results_table(self):
 
@@ -719,7 +732,7 @@ class Benchmarker:
             raise BenchmarkLoadError("Default Benchmarks not found.")
 
         return cls(
-            benchmark_groups=BenchmarkGroup.get_benchmark_groups_from_folder(
+            benchmark_groups=BenchmarkGroup.from_folder(
                 benchmark_dir,
             ),
             **kwargs,
@@ -773,7 +786,7 @@ class Benchmarker:
         module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
 
         return cls(
-            benchmark_groups=BenchmarkGroup.get_benchmark_groups_from_folder(
+            benchmark_groups=BenchmarkGroup.from_folder(
                 dialect_keyword_benchmarks_dir,
                 module=module_name,
             ),
@@ -855,7 +868,7 @@ class Benchmarker:
                 acknowledged[connectable.to_terse()] = implementation.info
                 compatible_connectables.append(connectable)
 
-        with (Progress(console=STDOUT, transient=True) as progress):
+        with (Progress(console=STDOUT, transient=True, disable=quiet) as progress):
             reporter = BenchmarkReporter(
                 report=BenchmarkReport(
                     metadata=BenchmarkMetadata(
@@ -891,7 +904,7 @@ class Benchmarker:
                     test_started, benchmark_finished = benchmark_started(
                         benchmark.name, benchmark.description,
                     )
-                    if benchmark.dialect and benchmark.dialect != dialect:
+                    if benchmark.dialect and benchmark.dialect != dialect and not quiet:
                         STDOUT.log(
                             f"Skipping {benchmark.name} as it does not support"
                             f" dialect {dialect.serializable()}",
@@ -924,7 +937,7 @@ class Benchmarker:
                                     except (
                                         PyperfError, BowtieRunError,
                                     ) as err:
-                                        STDOUT.log(err)
+                                        STDERR.log(err)
                                         return
 
                                     lines = Path(
