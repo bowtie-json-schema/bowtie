@@ -24,6 +24,7 @@ import pyperf  # type: ignore[reportMissingTypeStubs]
 
 from bowtie import _connectables, _report
 from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
+from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -32,7 +33,6 @@ if TYPE_CHECKING:
         Message,
     )
     from bowtie._connectables import Connectable, ConnectableId
-    from bowtie._registry import ValidatorRegistry
 
 Seq = int | str
 
@@ -847,7 +847,6 @@ class Benchmarker:
         connectables: Iterable[_connectables.Connectable],
         dialect: Dialect,
         quiet: bool,
-        registry: ValidatorRegistry[Any],
         format: str,
     ):
         acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
@@ -860,7 +859,7 @@ class Benchmarker:
             )
             async with connectable.connect(
                 reporter=silent_reporter,
-                registry=registry,
+                registry=Direct.from_id("null").registry(),
             ) as implementation:
                 if dialect not in implementation.info.dialects:
                     incompatible_connectables.append(connectable)
@@ -937,7 +936,7 @@ class Benchmarker:
                                     except (
                                         PyperfError, BowtieRunError,
                                     ) as err:
-                                        STDERR.log(err)
+                                        STDERR.print(err)
                                         return
 
                                     lines = Path(

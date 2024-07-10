@@ -1299,7 +1299,6 @@ def validate(
 
 @subcommand
 @IMPLEMENTATION
-@VALIDATE
 @dialect_option()
 @format_option()
 @click.option(
@@ -1401,7 +1400,6 @@ def perf(
     keywords: bool,
     schema: Any,
     description: str,
-    registry: ValidatorRegistry[Any],
     quiet: bool,
     test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     benchmark_file: str,
@@ -1447,7 +1445,6 @@ def perf(
             connectables=connectables,
             dialect=dialect,
             quiet=quiet,
-            registry=registry,
             format=format,
         ))
     except (BenchmarkError) as err:
