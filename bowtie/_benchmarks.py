@@ -720,7 +720,7 @@ class Benchmarker:
         alias="values",
     )
     _num_retries: int = field(
-        default=4,
+        default=8,
     )
 
     @classmethod
