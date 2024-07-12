@@ -1447,7 +1447,7 @@ def perf(
             quiet=quiet,
             format=format,
         ))
-    except (BenchmarkError) as err:
+    except (BenchmarkError, BenchmarkLoadError) as err:
         STDERR.print(err)
 
 

@@ -62,7 +62,7 @@ def get_benchmark_filenames(
     elif benchmark_type == "default":
         search_dir = bowtie_dir.joinpath("benchmarks")
 
-    if search_dir.exists():
+    if search_dir and search_dir.exists():
         files = [
             str(file) for file in search_dir.iterdir()
             if file.suffix in (".json", ".py") and file.name != "__init__.py"
@@ -84,7 +84,7 @@ def get_benchmark_filenames(
 
 def _load_benchmark_data_from_file(
     file: Path,
-    module: str = None,
+    module: str | None = None,
 ):
     data = None
     if file.suffix == ".py" and file.name != "__init__.py":
@@ -242,7 +242,7 @@ class BenchmarkGroup:
         return None
 
     @classmethod
-    def from_dict(cls, data, file=None):
+    def from_dict(cls, data: dict[str, Any], file: Path | None = None) -> BenchmarkGroup:
         if "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
                 **data,
@@ -310,9 +310,10 @@ class ConnectableResult:
     connectable_id: ConnectableId
     duration: float
     values: list[float]
+    errored: bool = False
 
     def serializable(self):
-        return asdict(self)
+        return asdict(self, filter=lambda _, v: v is not None)
 
 
 @frozen
@@ -437,40 +438,61 @@ class BenchmarkReporter:
                     test_result: str,
                     retry_count: int,
                     measured_time_values: list[float],
+                    errored: bool = False,
                 ):
-                    benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownVariableType]
-
-                    # Ignoring Warmup Values
-                    result_values = measured_time_values[
-                        self._report.metadata.num_warmups *
-                        self._report.metadata.num_runs:
-                    ]
-
-                    benchmark_duration: float = float(
-                        benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
-                    )
-                    connectable_result = ConnectableResult(
-                        connectable_id=connectable,
-                        duration=benchmark_duration,
-                        values=result_values,
-                    )
                     retry_needed = False
 
-                    mean = statistics.mean(result_values)
-                    std_dev = statistics.stdev(result_values)
-                    if std_dev / mean > 0.10 and not self._quiet:
-                        retry_needed = True
-                        if retry_count == 0:
+                    if errored:
+                        if not self._quiet:
                             STDOUT.log(
-                                f"WARNING!\n{benchmark_name}:{test_description}:"
-                                f"{connectable}\nBenchmark Might Be Unstable "
-                                f"(std_dev = {(std_dev / mean) * 100}%)",
+                                f"WARNING!\n{benchmark_group.name}:"
+                                f"{benchmark_name}:{test_description}\n"
+                                f"Some Error was encountered while running"
+                                f"test for {connectable}\n ",
                             )
-
-                    if not len(self._report.metadata.system_metadata):
-                        self.update_system_metadata(
-                            benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
+                        connectable_result = ConnectableResult(
+                            connectable_id=connectable,
+                            duration=0,
+                            values=[1e9, 1e9],
+                            errored=True
                         )
+                        connectable_results[connectable] = connectable_result
+
+                    else:
+                        benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownVariableType]
+
+                        # Ignoring Warmup Values
+                        result_values = measured_time_values[
+                            self._report.metadata.num_warmups *
+                            self._report.metadata.num_runs:
+                        ]
+
+                        benchmark_duration: float = float(
+                            benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
+                        )
+                        connectable_result = ConnectableResult(
+                            connectable_id=connectable,
+                            duration=benchmark_duration,
+                            values=result_values,
+                        )
+
+                        mean = statistics.mean(result_values)
+                        std_dev = statistics.stdev(result_values)
+                        if std_dev / mean > 0.10 and not self._quiet:
+                            retry_needed = True
+                            if retry_count == 0:
+                                STDOUT.log(
+                                    f"WARNING!\n{benchmark_name}:{test_description}:"
+                                    f"{connectable}\nBenchmark Might Be Unstable "
+                                    f"(std_dev = {(std_dev / mean) * 100}%)",
+                                )
+
+                        if not len(self._report.metadata.system_metadata):
+                            self.update_system_metadata(
+                                benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
+                            )
+                        connectable_results[connectable] = connectable_result
+
                     if progress_bar_task is not None:
                         if benchmark_group.name == benchmark_name:
                             self._progress_bar.update(
@@ -494,7 +516,7 @@ class BenchmarkReporter:
                                 ),
                                 advance=1,
                             )
-                    connectable_results[connectable] = connectable_result
+
                     return retry_needed
 
                 def test_finished():
@@ -561,7 +583,9 @@ class BenchmarkReporter:
             f"CPU Model: {self._report.metadata.system_metadata.get(
                 'cpu_model_name', 'Not Available'
             )}\n"
-            f"Hostname: {self._report.metadata.system_metadata['hostname']}"
+            f"Hostname: {self._report.metadata.system_metadata.get(
+                'hostname', 'Not Available'
+            )}"
         )
 
         table = Table(
@@ -595,7 +619,7 @@ class BenchmarkReporter:
 
                 ref_row: list[str] = [""]
                 results_for_connectable: dict[
-                    ConnectableId, list[tuple[float, float]],
+                    ConnectableId, list[tuple[float, float, bool]],
                 ] = {}
 
                 for idx, connectable_result in enumerate(
@@ -609,7 +633,9 @@ class BenchmarkReporter:
                             statistics.stdev(
                                 test_result.connectable_results[idx].values,
                             ),
-                        ) for test_result in benchmark_result.test_results
+                            test_result.connectable_results[idx].errored
+                        )
+                        for test_result in benchmark_result.test_results
                     ]
                     results_for_connectable[
                         connectable_result.connectable_id
@@ -618,11 +644,14 @@ class BenchmarkReporter:
                 sorted_connectables = sorted(
                     results_for_connectable.keys(), key=(
                         lambda connectable_id: (
-                            geometric_mean((
-                                result_mean
-                                for result_mean, _ in
-                                results_for_connectable[connectable_id]
-                            ))
+                            geometric_mean(
+                                [
+                                    result_mean
+                                    for result_mean, _, errored in
+                                    results_for_connectable[connectable_id]
+                                    if not errored
+                                ] or [1e9]
+                            )
                         )
                     ),
                 )
@@ -636,12 +665,19 @@ class BenchmarkReporter:
                     inner_table.add_column(
                         connectable_id,
                     )
-                    ref_row.append(
-                        str(geometric_mean((
-                            result_mean for result_mean, _
+                    g_mean = geometric_mean(
+                        [
+                            result_mean for result_mean, _, errored
                             in connectable_results
-                        ))),
+                            if not errored
+                        ] or [1e9]
                     )
+                    if g_mean == geometric_mean([1e9]):
+                        ref_row.append("Errored")
+                    else:
+                        ref_row.append(
+                            str(g_mean),
+                        )
 
                 fastest_connectable_results = next(iter(
                     results_for_connectable.values(),
@@ -655,29 +691,36 @@ class BenchmarkReporter:
                     for connectable_idx, results \
                         in enumerate(results_for_connectable.items()):
                         _, connectable_results = results
-                        _mean, std_dev = connectable_results[idx]
+                        _mean, std_dev, errored = connectable_results[idx]
 
-                        fastest_implementation_mean, _ = (
+                        fastest_implementation_mean, _, __ = (
                             fastest_connectable_results[idx]
                         )
                         relative = _mean / fastest_implementation_mean
 
-                        repr_string = (
-                            f"{_format_value(_mean)} +- "
-                            f"{_format_value(std_dev)}"
-                        )
-                        if connectable_idx != 0 and relative > 1:
-                            repr_string += f": {round(relative, 2)}x slower"
-                        elif connectable_idx:
-                            repr_string += (
-                                f": {round(1 / relative, 2)}x faster"
+                        if errored:
+                            repr_string = "Errored"
+                        else:
+                            repr_string = (
+                                f"{_format_value(_mean)} +- "
+                                f"{_format_value(std_dev)}"
                             )
+                            if connectable_idx != 0 and relative > 1:
+                                repr_string += (
+                                    f": {round(relative, 2)}x slower"
+                                )
+                            elif connectable_idx:
+                                repr_string += (
+                                    f": {round(1 / relative, 2)}x faster"
+                                )
 
                         row_elements.append(repr_string)
 
                     inner_table.add_row(*row_elements)
 
                 for implementation_idx in range(2, len(ref_row)):
+                    if ref_row[implementation_idx] == "Errored":
+                        continue
                     ref_row[implementation_idx] = (
                         f"{
                             round(
@@ -849,6 +892,7 @@ class Benchmarker:
         quiet: bool,
         format: str,
     ):
+
         acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
         compatible_connectables: list[Connectable] = []
         incompatible_connectables: list[Connectable] = []
@@ -867,7 +911,9 @@ class Benchmarker:
                 acknowledged[connectable.to_terse()] = implementation.info
                 compatible_connectables.append(connectable)
 
-        with (Progress(console=STDOUT, transient=True, disable=quiet) as progress):
+        with (
+            Progress(console=STDOUT, transient=True, disable=quiet) as progress
+        ):
             reporter = BenchmarkReporter(
                 report=BenchmarkReport(
                     metadata=BenchmarkMetadata(
@@ -900,15 +946,15 @@ class Benchmarker:
                     benchmark_group,
                 )
                 for benchmark in benchmark_group.benchmarks:
-                    test_started, benchmark_finished = benchmark_started(
-                        benchmark.name, benchmark.description,
-                    )
                     if benchmark.dialect and benchmark.dialect != dialect and not quiet:
                         STDOUT.log(
                             f"Skipping {benchmark.name} as it does not support"
                             f" dialect {dialect.serializable()}",
                         )
                         continue
+                    test_started, benchmark_finished = benchmark_started(
+                        benchmark.name, benchmark.description,
+                    )
                     tests = benchmark.tests
                     for test in tests:
                         (
@@ -934,33 +980,45 @@ class Benchmarker:
                                             fp.name,
                                         )
                                     except (
-                                        PyperfError, BowtieRunError,
+                                        BowtieRunError,
                                     ) as err:
-                                        STDERR.print(err)
-                                        return
+                                        got_connectable_result(
+                                            connectable.to_terse(),
+                                            "Errored",
+                                            0,
+                                            [1e9] * self._num_runs
+                                            * self._num_values,
+                                            errored=True,
+                                        )
+                                        if not quiet:
+                                            STDOUT.log(err)
 
-                                    lines = Path(
-                                        fp.name,
-                                    ).read_text().splitlines()
-
-                                    measured_time_values = [
-                                        float(line)/1e9 for line in lines
-                                    ]
-
-                                    run_needed = got_connectable_result(
-                                        connectable.to_terse(),
-                                        output,
-                                        retries_allowed,
-                                        measured_time_values,
-                                    )
-
-                                    some_benchmark_ran = True
-
-                                    if not retries_allowed:
                                         run_needed = False
+                                        some_benchmark_ran = True
 
                                     if run_needed:
-                                        retries_allowed -= 1
+                                        lines = Path(
+                                            fp.name,
+                                        ).read_text().splitlines()
+
+                                        measured_time_values = [
+                                            float(line)/1e9 for line in lines
+                                        ]
+
+                                        run_needed = got_connectable_result(
+                                            connectable.to_terse(),
+                                            output,
+                                            retries_allowed,
+                                            measured_time_values,
+                                        )
+
+                                        some_benchmark_ran = True
+
+                                        if not retries_allowed:
+                                            run_needed = False
+
+                                        if run_needed:
+                                            retries_allowed -= 1
 
                         test_finished()
 
@@ -983,7 +1041,8 @@ class Benchmarker:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
         benchmark_dict = benchmark.serializable()
-        benchmark_dict.pop("name")
+        if "name" in benchmark_dict:
+            benchmark_dict.pop("name")
 
         if "dialect" in benchmark_dict:
             benchmark_dict.pop("dialect")
