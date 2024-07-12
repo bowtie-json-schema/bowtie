@@ -187,7 +187,7 @@
             "type": "string"
           },
           "duration": {
-            "description": "Benchmark Duration for the connectable for a particular test.",
+            "description": "Time taken for the benchmark to complete.",
             "type": "number"
           },
           "values": {
@@ -196,6 +196,9 @@
             "items": {
               "type": "number"
             }
+          },
+          "errored": {
+            "type": "boolean"
           }
         }
     }
