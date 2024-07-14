@@ -1376,7 +1376,7 @@ def validate(
     help=(
          "Allows running benchmark from a file. "
          "Specify the path of the benchmark file"
-    )
+    ),
 )
 @click.option(
     "--test-suite",
@@ -1392,7 +1392,7 @@ def perf(
     dialect: Dialect,
     format: _F,
     keywords: bool,
-    benchmark: dict[str, Any],
+    benchmark: dict[str, Any] | None,
     quiet: bool,
     test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     benchmark_files: Iterable[str],
@@ -1401,7 +1401,6 @@ def perf(
     """
     Perform performance measurements across supported implementations.
     """
-    error_code = 0
     try:
         if benchmark_files:
             benchmarker = _benchmarks.Benchmarker.for_benchmark_files(
@@ -1448,12 +1447,12 @@ def perf(
 @click.option(
     "-t",
     "--benchmark-type",
-    type=click.Choice(['default', 'keyword']),
+    type=click.Choice(["default", "keyword"]),
     default="default",
     show_default=True,
     help=(
          "Specify the type of benchmark to filter."
-    )
+    ),
 )
 @click.option(
     "-n",
@@ -1464,7 +1463,7 @@ def perf(
     help=(
          "Filter the benchmarks with given name. "
          "Use the option multiple times to filter multiple benchmarks."
-    )
+    ),
 )
 def filter_benchmarks(
     dialect: Dialect,
@@ -1475,7 +1474,7 @@ def filter_benchmarks(
     Output benchmarks matching the specified criteria.
     """
     _benchmarks.get_benchmark_filenames(
-        benchmark_type, benchmarks=benchmark_names, dialect=dialect
+        benchmark_type, benchmarks=benchmark_names, dialect=dialect,
     )
 
 

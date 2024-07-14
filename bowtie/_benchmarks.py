@@ -3,15 +3,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 from statistics import geometric_mean
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 import asyncio
 import importlib
 import importlib.metadata
 import json
+import os
 import statistics
 import subprocess
 import tempfile
-import os
 
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
@@ -20,14 +20,16 @@ from rich import box
 from rich.console import Console
 from rich.progress import Progress
 from rich.table import Column, Table
+from url import URL
 import pyperf  # type: ignore[reportMissingTypeStubs]
 
-from bowtie import _connectables, _report, _registry
+from bowtie import _registry, _report
 from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
 from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
+    from typing import Any, List
 
     from bowtie._commands import (
         Message,
@@ -43,12 +45,13 @@ STDOUT = Console()
 STDERR = Console(stderr=True)
 
 benchmark_validator = Direct.from_id("python-jsonschema").registry().for_uri(
-    "tag:bowtie.report,2024:benchmarks"
+    URL.parse("tag:bowtie.report,2024:benchmarks"),
 )
 benchmark_validated, benchmark_invalidated = (
     benchmark_validator.validated,
-    benchmark_validator.invalidated
+    benchmark_validator.invalidated,
 )
+
 
 def get_benchmark_filenames(
     benchmark_type: str,
@@ -202,7 +205,7 @@ class Benchmark:
         return Benchmark(**benchmark)
 
     def maybe_set_dialect_from_schema(self):
-        dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
+        dialect_from_schema: str | None = ( # type: ignore[reportUnknownVariableType]
             self.schema.get("$schema")  # type: ignore[reportUnknownMemberType]
             if isinstance(self.schema, dict)
             else None
@@ -211,7 +214,8 @@ class Benchmark:
             return self
 
         benchmark = self.serializable()
-        benchmark["dialect"] = Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
+        benchmark["dialect"] = Dialect.from_str(
+            dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
         return Benchmark.from_dict(**benchmark)
 
 
@@ -236,11 +240,11 @@ class BenchmarkGroup:
 
     @classmethod
     def from_file(
-        cls, file: Path, module: str = "bowtie.benchmarks"
+        cls, file: Path, module: str = "bowtie.benchmarks",
     ) -> BenchmarkGroup | None:
         data = _load_benchmark_data_from_file(
             file,
-            module
+            module,
         )
 
         if data:
@@ -249,18 +253,21 @@ class BenchmarkGroup:
         return None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any], file: Path | None = None) -> BenchmarkGroup:
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        file: Path | None = None,
+    ) -> BenchmarkGroup:
         if "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
                 **data,
             ).maybe_set_dialect_from_schema()
-            benchmark_group = cls(
+            return cls(
                 name=benchmark.name,
                 description=benchmark.description,
                 benchmarks=[benchmark],
                 path=file,
             )
-            return benchmark_group
 
         benchmarks = [
             Benchmark.from_dict(
@@ -268,13 +275,12 @@ class BenchmarkGroup:
             ).maybe_set_dialect_from_schema()
             for benchmark in data["benchmarks"]
         ]
-        benchmark_group = cls(
+        return cls(
             name=data["name"],
             description=data["description"],
             benchmarks=benchmarks,
             path=file,
         )
-        return benchmark_group
 
     def serializable(self) -> Message:
         return asdict(
@@ -389,6 +395,7 @@ class BenchmarkReporter:
     _benchmark_group_path: dict[str, Path | None] = field(
         factory=dict,
     )
+    _mean_threshold: float = field(alias="mean_threshold", default=0.10)
 
     def update_system_metadata(self, system_metadata: dict[str, Any]):
         system_metadata.pop("command")
@@ -461,7 +468,7 @@ class BenchmarkReporter:
                             connectable_id=connectable,
                             duration=0,
                             values=[1e9, 1e9],
-                            errored=True
+                            errored=True,
                         )
                         connectable_results[connectable] = connectable_result
 
@@ -470,12 +477,12 @@ class BenchmarkReporter:
 
                         # Ignoring Warmup Values
                         result_values = measured_time_values[
-                            self._report.metadata.num_warmups *
-                            self._report.metadata.num_runs:
-                        ]
+                                        self._report.metadata.num_warmups *
+                                        self._report.metadata.num_runs:
+                                        ]
 
                         benchmark_duration: float = float(
-                            benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
+                            benchmark_result.get_total_duration(), # type: ignore[reportUnknownMemberType]
                         )
                         connectable_result = ConnectableResult(
                             connectable_id=connectable,
@@ -485,18 +492,22 @@ class BenchmarkReporter:
 
                         mean = statistics.mean(result_values)
                         std_dev = statistics.stdev(result_values)
-                        if std_dev / mean > 0.10 and not self._quiet:
+                        if (
+                            std_dev / mean > self._mean_threshold
+                            and not self._quiet
+                        ):
                             retry_needed = True
                             if retry_count == 0:
                                 STDOUT.log(
-                                    f"WARNING!\n{benchmark_name}:{test_description}:"
-                                    f"{connectable}\nBenchmark Might Be Unstable "
+                                    f"WARNING!\n{benchmark_name}:"
+                                    f"{test_description}:{connectable}\n"
+                                    f"Benchmark Might Be Unstable "
                                     f"(std_dev = {(std_dev / mean) * 100}%)",
                                 )
 
                         if not len(self._report.metadata.system_metadata):
                             self.update_system_metadata(
-                                benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
+                                benchmark_result.get_metadata(), # type: ignore[reportUnknownMemberType]
                             )
                         connectable_results[connectable] = connectable_result
 
@@ -570,7 +581,8 @@ class BenchmarkReporter:
     def _print_results_table(self):
 
         def _format_value(value: float) -> str:
-            if value < 0.001:
+
+            if value * 1000 < 1:
                 return f"{round(value * 1000 * 1000)}us"
             elif value < 1:
                 return f"{round(value * 1000)}ms"
@@ -640,7 +652,7 @@ class BenchmarkReporter:
                             statistics.stdev(
                                 test_result.connectable_results[idx].values,
                             ),
-                            test_result.connectable_results[idx].errored
+                            test_result.connectable_results[idx].errored,
                         )
                         for test_result in benchmark_result.test_results
                     ]
@@ -657,7 +669,7 @@ class BenchmarkReporter:
                                     for result_mean, _, errored in
                                     results_for_connectable[connectable_id]
                                     if not errored
-                                ] or [1e9]
+                                ] or [1e9],
                             )
                         )
                     ),
@@ -677,7 +689,7 @@ class BenchmarkReporter:
                             result_mean for result_mean, _, errored
                             in connectable_results
                             if not errored
-                        ] or [1e9]
+                        ] or [1e9],
                     )
                     if g_mean == geometric_mean([1e9]):
                         ref_row.append("Errored")
@@ -730,10 +742,10 @@ class BenchmarkReporter:
                         continue
                     ref_row[implementation_idx] = (
                         f"{
-                            round(
-                                float(ref_row[implementation_idx])
-                                / float(ref_row[1]), 2
-                            )
+                        round(
+                            float(ref_row[implementation_idx])
+                            / float(ref_row[1]), 2
+                        )
                         }x slower"
                     )
 
@@ -844,8 +856,9 @@ class Benchmarker:
         )
 
     @classmethod
-    def for_benchmark_files(cls, benchmark_files: Iterable[str], **kwargs: Any):
-        benchmark_groups = []
+    def for_benchmark_files(cls, benchmark_files: Iterable[str],
+                            **kwargs: Any):
+        benchmark_groups: List[BenchmarkGroup] = []
         for benchmark_filename in benchmark_files:
             benchmark_file = Path(benchmark_filename).absolute()
             bowtie_parent_dir = Path(__file__).parent.parent
@@ -856,11 +869,14 @@ class Benchmarker:
             if not benchmark_file.exists():
                 raise BenchmarkLoadError("Benchmark File not found !!")
 
-            module_name = str(relative_path).replace(os.sep, '.')
-            benchmark_groups.append(BenchmarkGroup.from_file(
+            module_name = str(relative_path).replace(os.sep, ".")
+
+            benchmark_group = BenchmarkGroup.from_file(
                 benchmark_file,
                 module=module_name,
-            ))
+            )
+            if benchmark_group:
+                benchmark_groups.append(benchmark_group)
 
         return cls(
             benchmark_groups=benchmark_groups,
@@ -875,7 +891,7 @@ class Benchmarker:
     ):
         try:
             benchmark_validated(benchmark)
-        except _registry.Invalid as e:
+        except _registry.Invalid:
             raise BenchmarkLoadError("Invalid Benchmark Format !")
 
         benchmark_group = BenchmarkGroup.from_dict(benchmark, Path("stdin"))
@@ -883,7 +899,7 @@ class Benchmarker:
 
     async def start(
         self,
-        connectables: Iterable[_connectables.Connectable],
+        connectables: Iterable[Connectable],
         dialect: Dialect,
         quiet: bool,
         format: str,
@@ -895,7 +911,7 @@ class Benchmarker:
 
         for connectable in connectables:
             silent_reporter = _report.Reporter(
-                write=lambda **_: None,  # type: ignore[reportUnknownArgumentType]
+                write=lambda **_: None, # type: ignore[reportUnknownArgumentType]
             )
             async with connectable.connect(
                 reporter=silent_reporter,
@@ -942,7 +958,11 @@ class Benchmarker:
                     benchmark_group,
                 )
                 for benchmark in benchmark_group.benchmarks:
-                    if benchmark.dialect and benchmark.dialect != dialect and not quiet:
+                    if (
+                        benchmark.dialect
+                        and benchmark.dialect != dialect
+                        and not quiet
+                    ):
                         STDOUT.log(
                             f"Skipping {benchmark.name} as it does not support"
                             f" dialect {dialect.serializable()}",
@@ -964,6 +984,7 @@ class Benchmarker:
                             run_needed, retries_allowed = (
                                 True, self._num_retries,
                             )
+                            output = ""
                             while run_needed:
                                 with tempfile.NamedTemporaryFile(
                                     delete=True,
@@ -975,9 +996,7 @@ class Benchmarker:
                                             connectable,
                                             fp.name,
                                         )
-                                    except (
-                                        BowtieRunError,
-                                    ) as err:
+                                    except BowtieRunError as err:
                                         got_connectable_result(
                                             connectable.to_terse(),
                                             "Errored",
@@ -998,7 +1017,7 @@ class Benchmarker:
                                         ).read_text().splitlines()
 
                                         measured_time_values = [
-                                            float(line)/1e9 for line in lines
+                                            float(line) / 1e9 for line in lines
                                         ]
 
                                         run_needed = got_connectable_result(
@@ -1031,7 +1050,7 @@ class Benchmarker:
         self,
         benchmark: Benchmark,
         dialect: Dialect,
-        connectable: _connectables.Connectable,
+        connectable: Connectable,
         time_output_file: str,
     ) -> Any:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
