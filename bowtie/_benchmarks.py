@@ -22,7 +22,7 @@ from rich.progress import Progress
 from rich.table import Column, Table
 import pyperf  # type: ignore[reportMissingTypeStubs]
 
-from bowtie import _connectables, _report
+from bowtie import _connectables, _report, _registry
 from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
 from bowtie._direct_connectable import Direct
 
@@ -42,6 +42,13 @@ Benchmark_Criteria = str
 STDOUT = Console()
 STDERR = Console(stderr=True)
 
+benchmark_validator = Direct.from_id("python-jsonschema").registry().for_uri(
+    "tag:bowtie.report,2024:benchmarks"
+)
+benchmark_validated, benchmark_invalidated = (
+    benchmark_validator.validated,
+    benchmark_validator.invalidated
+)
 
 def get_benchmark_filenames(
     benchmark_type: str,
@@ -109,7 +116,7 @@ class BenchmarkLoadError(Exception):
             causes=[],
             hint_stmt=(
                 "Make sure that the benchmarks are present "
-                "in the appropriate folder."
+                "in the appropriate folder and follow the specified schema."
             ),
         )
 
@@ -837,52 +844,41 @@ class Benchmarker:
         )
 
     @classmethod
-    def for_benchmark(cls, benchmark_filename: str, **kwargs: Any):
-        benchmark_file = Path(benchmark_filename).absolute()
-        bowtie_parent_dir = Path(__file__).parent.parent
+    def for_benchmark_files(cls, benchmark_files: Iterable[str], **kwargs: Any):
+        benchmark_groups = []
+        for benchmark_filename in benchmark_files:
+            benchmark_file = Path(benchmark_filename).absolute()
+            bowtie_parent_dir = Path(__file__).parent.parent
 
-        benchmark_folder = benchmark_file.parent
-        relative_path = benchmark_folder.relative_to(bowtie_parent_dir)
+            benchmark_folder = benchmark_file.parent
+            relative_path = benchmark_folder.relative_to(bowtie_parent_dir)
 
-        if not benchmark_file.exists():
-            raise BenchmarkLoadError("Benchmark File not found !!")
+            if not benchmark_file.exists():
+                raise BenchmarkLoadError("Benchmark File not found !!")
 
-        module_name = str(relative_path).replace(os.sep, '.')
-
-        return cls(
-            benchmark_groups=[BenchmarkGroup.from_file(
+            module_name = str(relative_path).replace(os.sep, '.')
+            benchmark_groups.append(BenchmarkGroup.from_file(
                 benchmark_file,
                 module=module_name,
-            )],
+            ))
+
+        return cls(
+            benchmark_groups=benchmark_groups,
             **kwargs,
         )
 
     @classmethod
     def from_input(
         cls,
-        schema: Any,
-        instances: Iterable[Any],
-        description: str,
+        benchmark: dict[str, Any],
         **kwargs: Any,
     ):
-        tests = [
-            Example(description=str(idx), instance=each)
-            for idx, each in enumerate(instances)
-        ]
-        benchmarks = [
-            Benchmark(
-                name=description,
-                description=description,
-                tests=tests,
-                schema=schema,
-            ),
-        ]
-        benchmark_group = BenchmarkGroup(
-            name=description,
-            description=description,
-            benchmarks=benchmarks,
-            path=None,
-        )
+        try:
+            benchmark_validated(benchmark)
+        except _registry.Invalid as e:
+            raise BenchmarkLoadError("Invalid Benchmark Format !")
+
+        benchmark_group = BenchmarkGroup.from_dict(benchmark, Path("stdin"))
         return cls(benchmark_groups=[benchmark_group], **kwargs)
 
     async def start(

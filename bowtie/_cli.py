@@ -1369,14 +1369,10 @@ def validate(
     ),
 )
 @click.option(
-    "-d",
-    "--description",
-    default="bowtie perf",
-    help="A (human-readable) description for this benchmark.",
-)
-@click.option(
     "-b",
     "--benchmark-file",
+    "benchmark_files",
+    multiple=True,
     help=(
          "Allows running benchmark from a file. "
          "Specify the path of the benchmark file"
@@ -1390,28 +1386,26 @@ def validate(
     default=None,
     help="Run Benchmarks over the official JSON Schema Test Suite.",
 )
-@click.argument("schema", type=JSON(), required=False)
-@click.argument("instances", nargs=-1, type=JSON())
+@click.argument("benchmark", type=JSON(), required=False)
 def perf(
     connectables: Iterable[_connectables.Connectable],
     dialect: Dialect,
-    instances: Iterable[Any],
     format: _F,
     keywords: bool,
-    schema: Any,
-    description: str,
+    benchmark: dict[str, Any],
     quiet: bool,
     test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    benchmark_file: str,
+    benchmark_files: Iterable[str],
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
+    error_code = 0
     try:
-        if benchmark_file:
-            benchmarker = _benchmarks.Benchmarker.for_benchmark(
-                benchmark_file,
+        if benchmark_files:
+            benchmarker = _benchmarks.Benchmarker.for_benchmark_files(
+                benchmark_files,
                 **kwargs,
             )
         elif keywords:
@@ -1426,18 +1420,13 @@ def perf(
                 **kwargs,
             )
             dialect = enforced_dialect
-        elif schema is None:
+        elif benchmark is None:
             benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
                 **kwargs,
             )
-
         else:
-            if not instances:
-                return EX.NOINPUT
             benchmarker = _benchmarks.Benchmarker.from_input(
-                schema=schema,
-                instances=instances,
-                description=description,
+                benchmark=benchmark,
                 **kwargs,
             )
 
@@ -1449,6 +1438,9 @@ def perf(
         ))
     except (BenchmarkError, BenchmarkLoadError) as err:
         STDERR.print(err)
+        return EX.DATAERR
+
+    return 0
 
 
 @subcommand
