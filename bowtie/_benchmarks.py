@@ -24,12 +24,19 @@ from url import URL
 import pyperf  # type: ignore[reportMissingTypeStubs]
 
 from bowtie import _registry, _report
-from bowtie._core import Dialect, Example, ImplementationInfo, Test, TestCase
+from bowtie._core import (
+    Dialect,
+    Example,
+    ImplementationInfo,
+    Test,
+    TestCase,
+    _convert_table_to_markdown,
+)
 from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
-    from typing import Any, List
+    from typing import Any
 
     from bowtie._commands import (
         Message,
@@ -569,8 +576,8 @@ class BenchmarkReporter:
         return benchmark_started, benchmark_group_finished
 
     def finished(self):
-        if self._format == "pretty":
-            self._print_results_table()
+        if self._format in ("pretty", "markdown"):
+            self._print_results_table_markdown()
         else:
             STDOUT.print_json(data=self._report.serializable())
 
@@ -578,7 +585,7 @@ class BenchmarkReporter:
         if not self._quiet:
             STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
-    def _print_results_table(self):
+    def _print_results_table_markdown(self):
 
         def _format_value(value: float) -> str:
 
@@ -588,7 +595,7 @@ class BenchmarkReporter:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
 
-        table_caption = (
+        benchmark_metadata = (
             f"Benchmark Metadata\n\n"
             f"Runs: {self._report.metadata.num_runs}\n"
             f"Values: {self._report.metadata.num_values}\n"
@@ -607,6 +614,7 @@ class BenchmarkReporter:
             )}"
         )
 
+        markdown_content = "# Benchmark Summary\n"
         table = Table(
             Column(
                 header="Benchmark Group",
@@ -615,7 +623,7 @@ class BenchmarkReporter:
             ),
             Column(header="Results", justify="center"),
             title="Benchmark Summary",
-            caption=table_caption,
+            caption=benchmark_metadata,
         )
 
         for (
@@ -624,18 +632,21 @@ class BenchmarkReporter:
             benchmark_group_path = self._benchmark_group_path[
                 benchmark_group_name
             ]
+
+            markdown_content += f"## Benchmark Group: {benchmark_group_name}\n"
+            markdown_content += f"Benchmark File: {benchmark_group_path}\n"
             outer_table = Table(
                 box=box.SIMPLE_HEAD,
                 caption='File "' + str(benchmark_group_path) + '"',
             )
             for benchmark_result in benchmark_group_result.benchmark_results:
+                markdown_content += f"Benchmark: {benchmark_result.name}\n"
                 inner_table = Table(
                     "Test Name",
                     box=box.SIMPLE_HEAD,
                     title=benchmark_result.name,
                     min_width=100,
                 )
-
                 ref_row: list[str] = [""]
                 results_for_connectable: dict[
                     ConnectableId, list[tuple[float, float, bool]],
@@ -678,9 +689,13 @@ class BenchmarkReporter:
                     connectable: results_for_connectable[connectable]
                     for connectable in sorted_connectables
                 }
-
+                columns = ["Test Name"]
+                rows = []
                 for connectable_id, connectable_results \
                     in results_for_connectable.items():
+                    columns.append(
+                        connectable_id,
+                    )
                     inner_table.add_column(
                         connectable_id,
                     )
@@ -735,6 +750,7 @@ class BenchmarkReporter:
 
                         row_elements.append(repr_string)
 
+                    rows.append(row_elements)
                     inner_table.add_row(*row_elements)
 
                 for implementation_idx in range(2, len(ref_row)):
@@ -742,26 +758,36 @@ class BenchmarkReporter:
                         continue
                     ref_row[implementation_idx] = (
                         f"{
-                        round(
-                            float(ref_row[implementation_idx])
-                            / float(ref_row[1]), 2
-                        )
+                            round(
+                                float(ref_row[implementation_idx])
+                                / float(ref_row[1]), 2
+                            )
                         }x slower"
                     )
 
                 ref_row[1] = "Reference"
                 inner_table.add_section()
+
                 if len(results_for_connectable) > 1:
+                    rows.append(ref_row)
                     inner_table.add_row(*ref_row)
+
+                markdown_content += _convert_table_to_markdown(columns, rows)
+                markdown_content += "\n\n"
                 outer_table.add_row(inner_table)
+
             if len(benchmark_group_result.benchmark_results) > 0:
                 table.add_row(
                     benchmark_group_name,
                     outer_table,
                 )
 
-        STDOUT.print()
-        STDOUT.print(table)
+        markdown_content += "## " + benchmark_metadata
+
+        if self._format == "markdown":
+            STDOUT.print(markdown_content)
+        elif self._format == "pretty":
+            STDOUT.print(table)
 
 
 @frozen
@@ -856,9 +882,10 @@ class Benchmarker:
         )
 
     @classmethod
-    def for_benchmark_files(cls, benchmark_files: Iterable[str],
-                            **kwargs: Any):
-        benchmark_groups: List[BenchmarkGroup] = []
+    def for_benchmark_files(
+        cls, benchmark_files: Iterable[str], **kwargs: Any
+    ):
+        benchmark_groups: list[BenchmarkGroup] = []
         for benchmark_filename in benchmark_files:
             benchmark_file = Path(benchmark_filename).absolute()
             bowtie_parent_dir = Path(__file__).parent.parent

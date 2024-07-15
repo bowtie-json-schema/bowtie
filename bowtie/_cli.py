@@ -176,7 +176,7 @@ _OPTION_GROUPS = {
                 (
                     "Benchmark Configuration Options",
                     ["benchmark-file", "dialect", "keywords", "loops",
-                     "runs", "test-suite", "values", "warmups"]
+                     "runs", "test-suite", "values", "warmups"],
                 ),
                 (
                     "Basic Options",
