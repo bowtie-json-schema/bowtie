@@ -39,6 +39,7 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
+    _convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
 from bowtie.exceptions import DialectError, UnsupportedDialect
@@ -165,6 +166,21 @@ _OPTION_GROUPS = {
                 (
                     "Test Run Options",
                     ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+            ],
+        ),
+        (
+            "perf",
+            [
+                ("Required", ["implementation"]),
+                (
+                    "Benchmark Configuration Options",
+                    ["benchmark-file", "dialect", "keywords", "loops",
+                     "runs", "test-suite", "values", "warmups"]
+                ),
+                (
+                    "Basic Options",
+                    ["format", "max-fail", "quiet"],
                 ),
             ],
         ),
@@ -631,31 +647,6 @@ def summary(report: _report.Report, format: _F, show: str):
         case "markdown":
             table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
-
-
-def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
-    widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
-    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
-
-    header = "| " + " | ".join(columns) + " |"
-    border_left = "|:"
-    border_center = ":|:"
-    border_right = ":|"
-
-    separator = (
-        border_left
-        + border_center.join(["-" * w for w in widths])
-        + border_right
-    )
-
-    # body of the table
-    body = [""] * len(rows)  # empty string list that we fill after
-    for idx, line in enumerate(rows):
-        # for each line, change the body at the correct index
-        body[idx] = "| " + " | ".join(line) + " |"
-    body = "\n".join(body)
-
-    return f"\n{header}\n{separator}\n{body}"
 
 
 def _failure_table(
