@@ -36,8 +36,8 @@
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.34.3",
+    "eslint": "^9.7.0",
+    "eslint-plugin-react": "^7.34.4",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-tsdoc": "^0.3.0",
     "jsdom": "^24.1.0",
@@ -47,7 +47,7 @@
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^1.6.0"
+    "vitest": "^2.0.2"
   },
   "eslintConfig": {
     "env": {
