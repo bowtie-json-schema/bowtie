@@ -1,32 +1,47 @@
-import { describe, expect, test } from "vitest";
-import Dialect from "./Dialect";
-import { complianceBadgeFor, versionsBadgeFor } from "./Badge";
-import { Implementation } from "./parseReportData";
+import { describe, expect, test, vi } from "vitest";
+import URI from "urijs";
 
-const mockImplementation: Implementation = {
+// Mock the siteURI
+vi.mock("./Site", () => ({
+  default: new URI("https://example.com"),
+}));
+import { badgeFor, BADGES } from "./Badge";
+import Implementation from "./Implementation";
+import Dialect from "./Dialect";
+
+const mockImplementation = new Implementation("fake-javascript", {
+  name: "fake",
   language: "javascript",
-  name: "node",
   homepage: "",
   issues: "",
   source: "",
   dialects: [],
-};
+});
 
 describe("Badge", () => {
-  test("versionsBadgeFor should return the correct URL", () => {
-    const badgeUrl = versionsBadgeFor(mockImplementation);
-    expect(badgeUrl.href()).toEqual(
-      "https://img.shields.io/endpoint?url=http%3A%2F%2Flocalhost%3A3000%2Fbadges%2Fjavascript-node%2Fsupported_versions.json",
+  test("BADGES URI", () => {
+    expect(BADGES.href()).toEqual("https://example.com/badges");
+  });
+
+  test("badgeFor URI", () => {
+    expect(badgeFor(BADGES).href()).toEqual(
+      "https://img.shields.io/endpoint?url=https%3A%2F%2Fexample.com%2Fbadges",
+    );
+  });
+});
+
+describe("Implementation Badge", () => {
+  test("versionsBadge function on the implementation should return the correct URL", () => {
+    expect(mockImplementation.versionsBadge().href()).toEqual(
+      "https://img.shields.io/endpoint?url=https%3A%2F%2Fexample.com%2Fbadges%2Ffake-javascript%2Fsupported_versions.json",
     );
   });
 
-  test("complianceBadgeFor should return the correct URL", () => {
-    const badgeURL = complianceBadgeFor(
-      mockImplementation,
-      Dialect.withName("draft7"),
-    );
-    expect(badgeURL.href()).toEqual(
-      "https://img.shields.io/endpoint?url=http%3A%2F%2Flocalhost%3A3000%2Fbadges%2Fjavascript-node%2Fcompliance%2Fdraft7.json",
+  test("complianceBadgeFor function on the implementation should return the correct URL for the passed dialect", () => {
+    expect(
+      mockImplementation.complianceBadgeFor(Dialect.withName("draft7")).href(),
+    ).toEqual(
+      "https://img.shields.io/endpoint?url=https%3A%2F%2Fexample.com%2Fbadges%2Ffake-javascript%2Fcompliance%2Fdraft7.json",
     );
   });
 });

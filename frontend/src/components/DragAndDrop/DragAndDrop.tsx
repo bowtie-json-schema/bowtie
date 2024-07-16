@@ -81,7 +81,9 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <DialectReportView reportData={lines} allImplementationsData={{}} />;
+    return (
+      <DialectReportView reportData={lines} allImplementationsMetadata={{}} />
+    );
   }
 
   return (

@@ -7,9 +7,9 @@ import Row from "react-bootstrap/Row";
 import { InfoCircle } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
 
-import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
 import Dialect from "../data/Dialect";
+import Implementation from "../data/Implementation";
 
 interface Props {
   otherImplementationsData: Record<string, Implementation>;
@@ -48,31 +48,34 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
               <Popover.Body>
                 <Container className="p-0">
                   <Row className="d-grid gap-2">
-                    {otherImplementationsDataArray.map(([id, impl]) => {
-                      const latest = getLatestSupportedDialect(impl);
-                      return (
-                        <Col key={id}>
-                          <div>
-                            <NavLink
-                              style={{ fontSize: "1rem", fontWeight: "bold" }}
-                              to={`/implementations/${id}`}
-                            >
-                              {impl.name}
-                            </NavLink>
-                            <span className="ps-1 text-body-secondary fw-bold">
-                              {mapLanguage(impl.language)}
+                    {otherImplementationsDataArray.map(
+                      ([implementationId, implementation]) => {
+                        const latest =
+                          getLatestSupportedDialect(implementation);
+                        return (
+                          <Col key={implementationId}>
+                            <div>
+                              <NavLink
+                                style={{ fontSize: "1rem", fontWeight: "bold" }}
+                                to={implementation.routePath}
+                              >
+                                {implementation.name}
+                              </NavLink>
+                              <span className="ps-1 text-body-secondary fw-bold">
+                                {mapLanguage(implementation.language)}
+                              </span>
+                            </div>
+                            <span className="text-body-secondary text-nowrap">
+                              (latest supported dialect:{" "}
+                              <NavLink to={latest.routePath}>
+                                {latest.prettyName}
+                              </NavLink>
+                              )
                             </span>
-                          </div>
-                          <span className="text-body-secondary text-nowrap">
-                            (latest supported dialect:{" "}
-                            <NavLink to={latest.routePath}>
-                              {latest.prettyName}
-                            </NavLink>
-                            )
-                          </span>
-                        </Col>
-                      );
-                    })}
+                          </Col>
+                        );
+                      },
+                    )}
                   </Row>
                 </Container>
               </Popover.Body>
@@ -91,8 +94,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   );
 };
 
-const getLatestSupportedDialect = (impl: Implementation): Dialect => {
-  return impl.dialects.reduce((acc, curr) =>
+const getLatestSupportedDialect = (implementation: Implementation): Dialect => {
+  return implementation.dialects.reduce((acc, curr) =>
     curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
   );
 };

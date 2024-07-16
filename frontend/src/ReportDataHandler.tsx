@@ -1,13 +1,15 @@
-import { useLoaderData } from "react-router-dom";
-import { DialectReportView } from "./DialectReportView";
 import { useContext, useEffect } from "react";
+import { useLoaderData } from "react-router-dom";
+
 import { BowtieVersionContext } from "./context/BowtieVersionContext";
-import { Implementation, ReportData } from "./data/parseReportData";
 import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
+import { ReportData } from "./data/parseReportData";
+import Implementation from "./data/Implementation";
+import { DialectReportView } from "./DialectReportView";
 
 interface LoaderData {
   reportData: ReportData;
-  allImplementationsData: Record<string, Implementation>;
+  allImplementationsMetadata: Record<string, Implementation>;
 }
 
 const ReportDataHandler = () => {
@@ -23,7 +25,7 @@ const ReportDataHandler = () => {
     <DialectReportView
       reportData={loaderData.reportData}
       topPageInfoSection={<BowtieInfoSection />}
-      allImplementationsData={loaderData.allImplementationsData}
+      allImplementationsMetadata={loaderData.allImplementationsMetadata}
     />
   );
 };

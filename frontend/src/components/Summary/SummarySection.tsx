@@ -2,7 +2,8 @@ import Alert from "react-bootstrap/Alert";
 import Card from "react-bootstrap/Card";
 
 import SummaryTable from "./SummaryTable";
-import { Implementation, ReportData } from "../../data/parseReportData.ts";
+import Implementation from "../../data/Implementation.ts";
+import { ReportData } from "../../data/parseReportData.ts";
 import { OtherImplementations } from "../OtherImplementations.tsx";
 
 const SummarySection = ({

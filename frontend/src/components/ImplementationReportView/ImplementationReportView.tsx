@@ -10,16 +10,11 @@ import Card from "react-bootstrap/Card";
 import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
 
+import { EmbedBadgesContextType } from "./EmbedBadges";
 import DialectCompliance from "./DialectCompliance";
 import LoadingAnimation from "../LoadingAnimation";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
-import { versionsBadgeFor } from "../../data/Badge";
-
-export type EmbedBadgesContextType = Pick<
-  ImplementationReport,
-  "implementationId" | "implementation"
->;
 
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
@@ -38,7 +33,7 @@ const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementationId, implementation } = implementationReport;
+  const { implementation } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -53,14 +48,7 @@ const ReportComponent: React.FC<{
           <Button variant="info" size="sm" onClick={() => navigate("badges")}>
             Badges
           </Button>
-          <Outlet
-            context={
-              {
-                implementation,
-                implementationId,
-              } satisfies EmbedBadgesContextType
-            }
-          />
+          <Outlet context={implementation satisfies EmbedBadgesContextType} />
         </Card.Header>
 
         <Card.Body className="overflow-x-auto">
@@ -133,7 +121,7 @@ const ReportComponent: React.FC<{
                   <img
                     alt={implementation.name}
                     className="my-1"
-                    src={versionsBadgeFor(implementation).href()}
+                    src={implementation.versionsBadge().href()}
                     style={{ maxWidth: "100%" }}
                   />
                 </td>

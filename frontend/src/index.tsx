@@ -10,22 +10,20 @@ import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import { MainContainer } from "./MainContainer";
-import { implementationMetadataURI } from "./data/Site";
 import {
-  ImplementationData,
   ReportData,
-  implementationFromData,
   prepareImplementationReport,
 } from "./data/parseReportData";
 import EmbedBadges from "./components/ImplementationReportView/EmbedBadges";
+import Implementation from "./data/Implementation";
 
 const fetchReportData = async (dialect: Dialect) => {
   document.title = `Bowtie - ${dialect.prettyName}`;
   return dialect.fetchReport();
 };
 
-const fetchAllReportsData = async (langImplementation: string) => {
-  document.title = `Bowtie - ${langImplementation}`;
+const fetchImplementationReportViewData = async (implementationId: string) => {
+  document.title = `Bowtie - ${implementationId}`;
   const allReportsData = new Map<Dialect, ReportData>();
   const promises = [];
   for (const dialect of Dialect.known()) {
@@ -34,30 +32,29 @@ const fetchAllReportsData = async (langImplementation: string) => {
     );
   }
   await Promise.all(promises);
-  return prepareImplementationReport(allReportsData, langImplementation);
+  return prepareImplementationReport(implementationId, allReportsData);
 };
 
-const fetchImplementationMetadata = async () => {
-  const response = await fetch(implementationMetadataURI);
-  const implementations = (await response.json()) as Record<
-    string,
-    ImplementationData
-  >;
+const fetchAllImplementationsMetadata = async () => {
+  const rawImplementationsData =
+    await Implementation.fetchAllImplementationsMetadata();
   return Object.fromEntries(
-    Object.entries(implementations).map(([id, data]) => [
-      id,
-      implementationFromData(data),
-    ]),
+    Object.entries(rawImplementationsData).map(
+      ([implementationId, rawImplementationData]) => [
+        implementationId,
+        new Implementation(implementationId, rawImplementationData),
+      ],
+    ),
   );
 };
 
 const reportDataLoader = async ({ params }: { params: Params<string> }) => {
   const draftName = params?.draftName ?? "draft2020-12";
-  const [reportData, allImplementationsData] = await Promise.all([
+  const [reportData, allImplementationsMetadata] = await Promise.all([
     fetchReportData(Dialect.withName(draftName)),
-    fetchImplementationMetadata(),
+    fetchAllImplementationsMetadata(),
   ]);
-  return { reportData, allImplementationsData };
+  return { reportData, allImplementationsMetadata };
 };
 
 const router = createHashRouter([
@@ -81,10 +78,10 @@ const router = createHashRouter([
         Component: DragAndDrop,
       },
       {
-        path: "/implementations/:langImplementation",
+        path: "/implementations/:implementationId",
         Component: ImplementationReportView,
         loader: async ({ params }) =>
-          fetchAllReportsData(params.langImplementation!),
+          fetchImplementationReportViewData(params.implementationId!),
         children: [
           {
             path: "badges",

@@ -64,13 +64,13 @@ export default class Dialect {
   }
 
   static forURI(uri: string): Dialect {
-    const dialect = Array.from(Dialect.all.entries()).find(
-      ([, dialect]) => dialect.uri === uri,
+    const dialect = Array.from(Dialect.all.values()).find(
+      (dialect) => dialect.uri === uri,
     );
     if (!dialect) {
       throw new DialectError(`A ${uri} dialect does not exist.`);
     }
-    return dialect[1];
+    return dialect;
   }
 }
 
