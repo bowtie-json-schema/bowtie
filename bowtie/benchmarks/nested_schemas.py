@@ -28,7 +28,8 @@ def get_benchmark():
             dict(
                 description=f"No of Levels {levels}",
                 instance=nested_object(levels=levels),
-            ) for levels in range(1, 11, 3)
+            )
+            for levels in range(1, 11, 3)
         ],
     )
 

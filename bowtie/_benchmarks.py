@@ -51,8 +51,12 @@ Benchmark_Criteria = str
 STDOUT = Console()
 STDERR = Console(stderr=True)
 
-benchmark_validator = Direct.from_id("python-jsonschema").registry().for_uri(
-    URL.parse("tag:bowtie.report,2024:benchmarks"),
+benchmark_validator = (
+    Direct.from_id("python-jsonschema")
+    .registry()
+    .for_uri(
+        URL.parse("tag:bowtie.report,2024:benchmarks"),
+    )
 )
 benchmark_validated, benchmark_invalidated = (
     benchmark_validator.validated,
@@ -70,8 +74,8 @@ def get_benchmark_filenames(
     files = []
 
     if benchmark_type == "keyword":
-        keywords_benchmark_dir = (
-            bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
+            "keywords"
         )
         search_dir = keywords_benchmark_dir.joinpath(
             dialect.short_name,
@@ -81,7 +85,8 @@ def get_benchmark_filenames(
 
     if search_dir and search_dir.exists():
         files = [
-            str(file) for file in search_dir.iterdir()
+            str(file)
+            for file in search_dir.iterdir()
             if file.suffix in (".json", ".py") and file.name != "__init__.py"
         ]
 
@@ -89,9 +94,11 @@ def get_benchmark_filenames(
         files = [
             matched_file
             for benchmark in benchmarks
-            if (matched_file := next(
-                (file for file in files if benchmark in file),
-                None))
+            if (
+                matched_file := next(
+                    (file for file in files if benchmark in file), None
+                )
+            )
         ]
 
     for file in files:
@@ -212,7 +219,7 @@ class Benchmark:
         return Benchmark(**benchmark)
 
     def maybe_set_dialect_from_schema(self):
-        dialect_from_schema: str | None = ( # type: ignore[reportUnknownVariableType]
+        dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
             self.schema.get("$schema")  # type: ignore[reportUnknownMemberType]
             if isinstance(self.schema, dict)
             else None
@@ -222,7 +229,8 @@ class Benchmark:
 
         benchmark = self.serializable()
         benchmark["dialect"] = Dialect.from_str(
-            dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
+            dialect_from_schema
+        )  # type: ignore[reportUnknownArgumentType]
         return Benchmark.from_dict(**benchmark)
 
 
@@ -247,7 +255,9 @@ class BenchmarkGroup:
 
     @classmethod
     def from_file(
-        cls, file: Path, module: str = "bowtie.benchmarks",
+        cls,
+        file: Path,
+        module: str = "bowtie.benchmarks",
     ) -> BenchmarkGroup | None:
         data = _load_benchmark_data_from_file(
             file,
@@ -439,8 +449,8 @@ class BenchmarkReporter:
         if not self._quiet:
             progress_bar_task = self._progress_bar.add_task(
                 f"Running Benchmark Group: {benchmark_group.name}",
-                total=len(self._report.metadata.implementations) *
-                      self._total_tests_in_benchmark_group(benchmark_group),
+                total=len(self._report.metadata.implementations)
+                * self._total_tests_in_benchmark_group(benchmark_group),
             )
         benchmark_results: list[BenchmarkResult] = []
         self._benchmark_group_path[benchmark_group.name] = benchmark_group.path
@@ -484,12 +494,12 @@ class BenchmarkReporter:
 
                         # Ignoring Warmup Values
                         result_values = measured_time_values[
-                                        self._report.metadata.num_warmups *
-                                        self._report.metadata.num_runs:
-                                        ]
+                            self._report.metadata.num_warmups
+                            * self._report.metadata.num_runs :
+                        ]
 
                         benchmark_duration: float = float(
-                            benchmark_result.get_total_duration(), # type: ignore[reportUnknownMemberType]
+                            benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
                         )
                         connectable_result = ConnectableResult(
                             connectable_id=connectable,
@@ -514,7 +524,7 @@ class BenchmarkReporter:
 
                         if not len(self._report.metadata.system_metadata):
                             self.update_system_metadata(
-                                benchmark_result.get_metadata(), # type: ignore[reportUnknownMemberType]
+                                benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
                             )
                         connectable_results[connectable] = connectable_result
 
@@ -627,7 +637,8 @@ class BenchmarkReporter:
         )
 
         for (
-            benchmark_group_name, benchmark_group_result,
+            benchmark_group_name,
+            benchmark_group_result,
         ) in self._report.results.items():
             benchmark_group_path = self._benchmark_group_path[
                 benchmark_group_name
@@ -649,7 +660,8 @@ class BenchmarkReporter:
                 )
                 ref_row: list[str] = [""]
                 results_for_connectable: dict[
-                    ConnectableId, list[tuple[float, float, bool]],
+                    ConnectableId,
+                    list[tuple[float, float, bool]],
                 ] = {}
 
                 for idx, connectable_result in enumerate(
@@ -672,15 +684,18 @@ class BenchmarkReporter:
                     ] = connectable_results
 
                 sorted_connectables = sorted(
-                    results_for_connectable.keys(), key=(
+                    results_for_connectable.keys(),
+                    key=(
                         lambda connectable_id: (
                             geometric_mean(
                                 [
                                     result_mean
-                                    for result_mean, _, errored in
-                                    results_for_connectable[connectable_id]
+                                    for result_mean, _, errored in results_for_connectable[
+                                        connectable_id
+                                    ]
                                     if not errored
-                                ] or [1e9],
+                                ]
+                                or [1e9],
                             )
                         )
                     ),
@@ -691,8 +706,10 @@ class BenchmarkReporter:
                 }
                 columns = ["Test Name"]
                 rows = []
-                for connectable_id, connectable_results \
-                    in results_for_connectable.items():
+                for (
+                    connectable_id,
+                    connectable_results,
+                ) in results_for_connectable.items():
                     columns.append(
                         connectable_id,
                     )
@@ -701,10 +718,11 @@ class BenchmarkReporter:
                     )
                     g_mean = geometric_mean(
                         [
-                            result_mean for result_mean, _, errored
-                            in connectable_results
+                            result_mean
+                            for result_mean, _, errored in connectable_results
                             if not errored
-                        ] or [1e9],
+                        ]
+                        or [1e9],
                     )
                     if g_mean == geometric_mean([1e9]):
                         ref_row.append("Errored")
@@ -713,17 +731,21 @@ class BenchmarkReporter:
                             str(g_mean),
                         )
 
-                fastest_connectable_results = next(iter(
-                    results_for_connectable.values(),
-                ))
+                fastest_connectable_results = next(
+                    iter(
+                        results_for_connectable.values(),
+                    )
+                )
 
-                for idx, test_result \
-                    in enumerate(benchmark_result.test_results):
+                for idx, test_result in enumerate(
+                    benchmark_result.test_results
+                ):
                     row_elements = [
                         test_result.description,
                     ]
-                    for connectable_idx, results \
-                        in enumerate(results_for_connectable.items()):
+                    for connectable_idx, results in enumerate(
+                        results_for_connectable.items()
+                    ):
                         _, connectable_results = results
                         _mean, std_dev, errored = connectable_results[idx]
 
@@ -828,7 +850,9 @@ class Benchmarker:
 
     @classmethod
     def from_test_cases(
-        cls, cases: Iterable[TestCase], **kwargs: Any,
+        cls,
+        cases: Iterable[TestCase],
+        **kwargs: Any,
     ):
         benchmark_groups = [
             BenchmarkGroup(
@@ -843,7 +867,8 @@ class Benchmarker:
                     ),
                 ],
                 path=None,
-            ) for case in cases
+            )
+            for case in cases
         ]
 
         return cls(
@@ -854,8 +879,8 @@ class Benchmarker:
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
-        keywords_benchmark_dir = (
-            bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
+            "keywords"
         )
         dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(
             dialect.short_name,
@@ -883,7 +908,9 @@ class Benchmarker:
 
     @classmethod
     def for_benchmark_files(
-        cls, benchmark_files: Iterable[str], **kwargs: Any
+        cls,
+        benchmark_files: Iterable[str],
+        **kwargs: Any,
     ):
         benchmark_groups: list[BenchmarkGroup] = []
         for benchmark_filename in benchmark_files:
@@ -938,7 +965,7 @@ class Benchmarker:
 
         for connectable in connectables:
             silent_reporter = _report.Reporter(
-                write=lambda **_: None, # type: ignore[reportUnknownArgumentType]
+                write=lambda **_: None,  # type: ignore[reportUnknownArgumentType]
             )
             async with connectable.connect(
                 reporter=silent_reporter,
@@ -950,9 +977,9 @@ class Benchmarker:
                 acknowledged[connectable.to_terse()] = implementation.info
                 compatible_connectables.append(connectable)
 
-        with (
-            Progress(console=STDOUT, transient=True, disable=quiet) as progress
-        ):
+        with Progress(
+            console=STDOUT, transient=True, disable=quiet
+        ) as progress:
             reporter = BenchmarkReporter(
                 report=BenchmarkReport(
                     metadata=BenchmarkMetadata(
@@ -980,7 +1007,8 @@ class Benchmarker:
             some_benchmark_ran = False
             for benchmark_group in self._benchmark_groups:
                 (
-                    benchmark_started, benchmark_group_finished,
+                    benchmark_started,
+                    benchmark_group_finished,
                 ) = reporter.running_benchmark_group(
                     benchmark_group,
                 )
@@ -996,7 +1024,8 @@ class Benchmarker:
                         )
                         continue
                     test_started, benchmark_finished = benchmark_started(
-                        benchmark.name, benchmark.description,
+                        benchmark.name,
+                        benchmark.description,
                     )
                     tests = benchmark.tests
                     for test in tests:
@@ -1009,7 +1038,8 @@ class Benchmarker:
                         )
                         for connectable in compatible_connectables:
                             run_needed, retries_allowed = (
-                                True, self._num_retries,
+                                True,
+                                self._num_retries,
                             )
                             output = ""
                             while run_needed:
@@ -1028,7 +1058,8 @@ class Benchmarker:
                                             connectable.to_terse(),
                                             "Errored",
                                             0,
-                                            [1e9] * self._num_runs
+                                            [1e9]
+                                            * self._num_runs
                                             * self._num_values,
                                             errored=True,
                                         )
@@ -1039,9 +1070,13 @@ class Benchmarker:
                                         some_benchmark_ran = True
 
                                     if run_needed:
-                                        lines = Path(
-                                            fp.name,
-                                        ).read_text().splitlines()
+                                        lines = (
+                                            Path(
+                                                fp.name,
+                                            )
+                                            .read_text()
+                                            .splitlines()
+                                        )
 
                                         measured_time_values = [
                                             float(line) / 1e9 for line in lines
@@ -1095,9 +1130,14 @@ class Benchmarker:
             path = Path(fp.name)
             path.write_text(json.dumps(benchmark_dict))
             return await self._pyperf_benchmark_command(
-                "bowtie", "run", "-i", connectable.to_terse(),
-                "-D", dialect.serializable(),
-                "--output-time", time_output_file,
+                "bowtie",
+                "run",
+                "-i",
+                connectable.to_terse(),
+                "-D",
+                dialect.serializable(),
+                "--output-time",
+                time_output_file,
                 fp.name,
                 connectable_id=connectable.to_terse(),
                 name=benchmark_name,
@@ -1124,13 +1164,20 @@ class Benchmarker:
         stdout_fd = "1"
 
         output, err = await self._run_subprocess(
-            "pyperf", "command",
-            "--pipe", stdout_fd,
-            "--processes", str(self._num_runs),
-            "--values", str(self._num_values),
-            "--warmups", str(self._num_warmups),
-            "--loops", str(self._num_loops),
-            "--name", name,
+            "pyperf",
+            "command",
+            "--pipe",
+            stdout_fd,
+            "--processes",
+            str(self._num_runs),
+            "--values",
+            str(self._num_values),
+            "--warmups",
+            str(self._num_warmups),
+            "--loops",
+            str(self._num_loops),
+            "--name",
+            name,
             *benchmark_cmd,
         )
         if err:

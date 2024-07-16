@@ -4,10 +4,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tag:bowtie.report,2024:benchmark_report",
   "type": "object",
-  "required": [
-    "metadata",
-    "results"
-  ],
+  "required": ["metadata", "results"],
   "properties": {
     "metadata": {
       "title": "Benchmark Metadata",
@@ -117,90 +114,90 @@
       "type": "object",
       "title": "Benchmark Group Result",
       "required": ["name", "description", "benchmark_results"],
-        "properties": {
-          "name": {
-            "description": "Benchmark Group's Name.",
-            "type": "string"
-          },
-          "description": {
-            "description": "Benchmark Group's Description.",
-            "type": "string"
-          },
-          "benchmark_results": {
-            "description": "Results of All Benchmarks within the Benchmark Group.",
-            "type": "array",
-            "items": {
-              "$ref": "#benchmark_result"
-            }
+      "properties": {
+        "name": {
+          "description": "Benchmark Group's Name.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Benchmark Group's Description.",
+          "type": "string"
+        },
+        "benchmark_results": {
+          "description": "Results of All Benchmarks within the Benchmark Group.",
+          "type": "array",
+          "items": {
+            "$ref": "#benchmark_result"
           }
         }
+      }
     },
     "benchmark_result": {
       "$anchor": "benchmark_result",
       "description": "Result of a Benchmark within a Benchmark Group.",
       "type": "object",
       "required": ["name", "description", "test_results"],
-        "properties": {
-          "name": {
-            "description": "Benchmark's Name.",
-            "type": "string"
-          },
-          "description": {
-            "description": "Benchmark's Description.",
-            "type": "string"
-          },
-          "test_results": {
-            "description": "Results of all tests within the Benchmark.",
-            "type": "array",
-            "items": {
-              "$ref": "#test_result"
-            }
+      "properties": {
+        "name": {
+          "description": "Benchmark's Name.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Benchmark's Description.",
+          "type": "string"
+        },
+        "test_results": {
+          "description": "Results of all tests within the Benchmark.",
+          "type": "array",
+          "items": {
+            "$ref": "#test_result"
           }
         }
+      }
     },
     "test_result": {
       "$anchor": "test_result",
       "description": "Result of a test within a Benchmark.",
       "type": "object",
       "required": ["description", "connectable_results"],
-        "properties": {
-          "description": {
-            "description": "Test's Description.",
-            "type": "string"
-          },
-          "connectable_results": {
-            "description": "Test Results for all Connectables.",
-            "type": "array",
-            "items": {
-              "$ref": "#connectable_result"
-            }
+      "properties": {
+        "description": {
+          "description": "Test's Description.",
+          "type": "string"
+        },
+        "connectable_results": {
+          "description": "Test Results for all Connectables.",
+          "type": "array",
+          "items": {
+            "$ref": "#connectable_result"
           }
         }
+      }
     },
     "connectable_result": {
       "$anchor": "connectable_result",
       "description": "Benchmark Result of a connectable for a test.",
       "type": "object",
       "required": ["connectable_id", "duration", "values"],
-        "properties": {
-          "connectable_id": {
-            "type": "string"
-          },
-          "duration": {
-            "description": "Time taken for the benchmark to complete.",
+      "properties": {
+        "connectable_id": {
+          "type": "string"
+        },
+        "duration": {
+          "description": "Time taken for the benchmark to complete.",
+          "type": "number"
+        },
+        "values": {
+          "description": "Time Taken for Each Run",
+          "type": "array",
+          "items": {
             "type": "number"
-          },
-          "values": {
-            "description": "Time Taken for Each Run",
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "errored": {
-            "type": "boolean"
           }
+        },
+        "errored": {
+          "type": "boolean"
         }
+      }
     }
   }
 }

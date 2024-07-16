@@ -6,9 +6,7 @@ def get_benchmark():
     invalid = [0] * array_size
     return dict(
         name="contains",
-        description=(
-            "A benchmark for validation of the `contains` keyword."
-        ),
+        description=("A benchmark for validation of the `contains` keyword."),
         schema={
             "type": "array",
             "contains": {"const": 37},

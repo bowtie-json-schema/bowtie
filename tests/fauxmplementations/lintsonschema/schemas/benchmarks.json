@@ -10,11 +10,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "name",
-        "description",
-        "benchmarks"
-      ],
+      "required": ["name", "description", "benchmarks"],
       "properties": {
         "name": {
           "type": "string"
@@ -29,17 +25,12 @@
           }
         }
       }
-      }
+    }
   ],
   "$defs": {
     "benchmark": {
       "$anchor": "benchmark",
-      "required": [
-        "name",
-        "description",
-        "schema",
-        "tests"
-      ],
+      "required": ["name", "description", "schema", "tests"],
       "properties": {
         "name": {
           "type": "string"
@@ -61,10 +52,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "description",
-              "instance"
-            ],
+            "required": ["description", "instance"],
             "properties": {
               "description": {
                 "type": "string"

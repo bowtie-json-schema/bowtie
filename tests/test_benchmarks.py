@@ -8,7 +8,7 @@ import pytest
 from bowtie import _benchmarks
 from bowtie._benchmarks import BenchmarkGroup
 from bowtie._cli import EX
-from bowtie._core import Dialect, TestCase, Example
+from bowtie._core import Dialect, Example, TestCase
 from bowtie._direct_connectable import Direct
 from tests.test_integration import ARBITRARY, bowtie
 
@@ -103,8 +103,8 @@ keyword_benchmark_files = (
     )
     for dialect in Dialect.known()
     for benchmark_file in _iterate_over_benchmark_dir(
-    bowtie_dir.joinpath("benchmarks", "keywords", dialect.short_name),
-)
+        bowtie_dir.joinpath("benchmarks", "keywords", dialect.short_name),
+    )
 )
 
 
@@ -131,7 +131,9 @@ class TestBenchmarkFormat:
         ids=lambda param: str(param),
     )
     def test_validate_keyword_benchmark_format(
-        self, dialect, benchmark_file,
+        self,
+        dialect,
+        benchmark_file,
     ):
         benchmark_module = f"bowtie.benchmarks.keywords.{dialect}"
         _validate_benchmark_file(benchmark_file, benchmark_module)
@@ -144,9 +146,9 @@ class TestLoadBenchmark:
         assert benchmark.serializable() == valid_single_benchmark
 
     def test_load_benchmark_set_dialect(self, valid_single_benchmark):
-        valid_single_benchmark["schema"]["$schema"] = (
-            Dialect.latest().serializable()
-        )
+        valid_single_benchmark["schema"][
+            "$schema"
+        ] = Dialect.latest().serializable()
         benchmark = _benchmarks.Benchmark.from_dict(
             **valid_single_benchmark,
         ).maybe_set_dialect_from_schema()
@@ -160,7 +162,9 @@ class TestLoadBenchmark:
         )
         assert benchmark_validated(benchmark.serializable())
 
-    def test_load_single_benchmark_group_from_dict(self, valid_single_benchmark):
+    def test_load_single_benchmark_group_from_dict(
+        self, valid_single_benchmark
+    ):
         benchmark = valid_single_benchmark
         benchmark_group = BenchmarkGroup.from_dict(benchmark)
 
@@ -186,7 +190,9 @@ class TestLoadBenchmark:
 
         assert benchmark_validated(benchmark_group.serializable())
 
-    def test_load_benchmark_group_from_json(self, tmp_path, valid_grouped_benchmark):
+    def test_load_benchmark_group_from_json(
+        self, tmp_path, valid_grouped_benchmark
+    ):
         tmp_path = tmp_path / "test_file.json"
         tmp_path.write_text(json.dumps(valid_grouped_benchmark))
         benchmark_group = BenchmarkGroup.from_file(tmp_path)
@@ -224,26 +230,33 @@ class TestBenchmarker:
             return
 
         _benchmarks.Benchmarker.for_keywords(
-            dialect, **benchmarker_run_args,
+            dialect,
+            **benchmarker_run_args,
         )
 
-    def test_test_cases_benchmarker(self, valid_single_benchmark, benchmarker_run_args):
+    def test_test_cases_benchmarker(
+        self, valid_single_benchmark, benchmarker_run_args
+    ):
         test_case = TestCase(
             description=valid_single_benchmark["description"],
             schema=valid_single_benchmark["schema"],
             tests=[
                 Example.from_dict(**test)
                 for test in valid_single_benchmark["tests"]
-            ]
+            ],
         )
 
         _benchmarks.Benchmarker.from_test_cases(
-            [test_case], **benchmarker_run_args,
+            [test_case],
+            **benchmarker_run_args,
         )
 
-    def test_input_benchmarker(self, valid_single_benchmark, benchmarker_run_args):
+    def test_input_benchmarker(
+        self, valid_single_benchmark, benchmarker_run_args
+    ):
         _benchmarks.Benchmarker.from_input(
-            valid_single_benchmark, **benchmarker_run_args,
+            valid_single_benchmark,
+            **benchmarker_run_args,
         )
 
 
@@ -263,25 +276,41 @@ class TestBenchmarkRun:
         assert "Benchmark File not found" in stderr
 
     @pytest.mark.asyncio
-    async def test_benchmark_run_json_output(self, valid_single_benchmark,
-                                             tmp_path):
+    async def test_benchmark_run_json_output(
+        self, valid_single_benchmark, tmp_path
+    ):
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(valid_single_benchmark),
         )
         stdout, stderr = await bowtie(
-            "perf", "-i", ARBITRARY, "-q", "--format", "json",
-            tmp_path / "benchmark.json", exit_code=0, json=True,
+            "perf",
+            "-i",
+            ARBITRARY,
+            "-q",
+            "--format",
+            "json",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+            json=True,
         )
         benchmark_report_validated(stdout)
 
     @pytest.mark.asyncio
-    async def test_benchmark_run_pretty_output(self, valid_single_benchmark, tmp_path):
+    async def test_benchmark_run_pretty_output(
+        self, valid_single_benchmark, tmp_path
+    ):
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(valid_single_benchmark),
         )
         stdout, stderr = await bowtie(
-            "perf", "-i", ARBITRARY, "-q", "--format", "pretty",
-            tmp_path / "benchmark.json", exit_code=0,
+            "perf",
+            "-i",
+            ARBITRARY,
+            "-q",
+            "--format",
+            "pretty",
+            tmp_path / "benchmark.json",
+            exit_code=0,
         )
 
         # FIXME: We don't assert against the exact output yet, as it's a WIP
@@ -289,14 +318,22 @@ class TestBenchmarkRun:
 
     @pytest.mark.asyncio
     async def test_benchmark_run_markdown_output(
-        self, valid_single_benchmark, tmp_path
+        self,
+        valid_single_benchmark,
+        tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(valid_single_benchmark),
         )
         stdout, stderr = await bowtie(
-            "perf", "-i", ARBITRARY, "-q", "--format", "markdown",
-            tmp_path / "benchmark.json", exit_code=0,
+            "perf",
+            "-i",
+            ARBITRARY,
+            "-q",
+            "--format",
+            "markdown",
+            tmp_path / "benchmark.json",
+            exit_code=0,
         )
 
         expected_data1 = """
@@ -326,8 +363,14 @@ Warmups: 1
             json.dumps(invalid_benchmark),
         )
         _, stderr = await bowtie(
-            "perf", "-i", ARBITRARY, "-q", "--format", "json",
-            tmp_path / "benchmark.json", exit_code=EX.DATAERR,
+            "perf",
+            "-i",
+            ARBITRARY,
+            "-q",
+            "--format",
+            "json",
+            tmp_path / "benchmark.json",
+            exit_code=EX.DATAERR,
         )
         assert "benchmark-load-error" in stderr
 
@@ -342,7 +385,10 @@ class TestFilterBenchmarks:
     @pytest.mark.asyncio
     async def test_default_benchmarks(self, dialect):
         stdout, stderr = await bowtie(
-            "filter-benchmarks", "-D", dialect.short_name, exit_code=0
+            "filter-benchmarks",
+            "-D",
+            dialect.short_name,
+            exit_code=0,
         )
         assert stderr == ""
 
@@ -354,15 +400,23 @@ class TestFilterBenchmarks:
     @pytest.mark.asyncio
     async def test_keyword_benchmarks(self, dialect):
         stdout, stderr = await bowtie(
-            "filter-benchmarks", "-D", dialect.short_name, "-t", "keyword", exit_code=0
+            "filter-benchmarks",
+            "-D",
+            dialect.short_name,
+            "-t",
+            "keyword",
+            exit_code=0,
         )
         assert stderr == ""
 
     @pytest.mark.asyncio
     async def test_filtering_by_name(self):
         stdout, stderr = await bowtie(
-            "filter-benchmarks", "-t", "keyword",
-            "-n", uuid.uuid4().hex,
-            exit_code=0
+            "filter-benchmarks",
+            "-t",
+            "keyword",
+            "-n",
+            uuid.uuid4().hex,
+            exit_code=0,
         )
         assert stdout == "", stderr == ""

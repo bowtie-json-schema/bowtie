@@ -16,29 +16,35 @@ def get_benchmark():
         array = [uuid.uuid4().hex for _ in range(array_size)]
 
         all_at_first = [1, 1, 1] + array[:-3]
-        all_at_middle = array[2:array_size//2] + [1, 1, 1] + array[array_size//2:-1]
+        all_at_middle = (
+            array[2 : array_size // 2]
+            + [1, 1, 1]
+            + array[array_size // 2 : -1]
+        )
         all_at_last = array[:-3] + [1, 1, 1]
         valid = array[:-1] + [1]
 
-        benchmarks.append(dict(
-            name=f"Array Size - {array_size}",
-            description=(
-                f"Validating the `maxContains` keyword over array of size {array_size}."
-            ),
-            schema={
-                "type": "array",
-                "contains": {
-                    "type": "integer",
+        benchmarks.append(
+            dict(
+                name=f"Array Size - {array_size}",
+                description=(
+                    f"Validating the `maxContains` keyword over array of size {array_size}."
+                ),
+                schema={
+                    "type": "array",
+                    "contains": {
+                        "type": "integer",
+                    },
+                    "maxContains": 2,
                 },
-                "maxContains": 2,
-            },
-            tests=[
-                dict(description="All at First", instance=all_at_first),
-                dict(description="All at Middle", instance=all_at_middle),
-                dict(description="All at Last", instance=all_at_last),
-                dict(description="Valid", instance=valid),
-            ],
-        ))
+                tests=[
+                    dict(description="All at First", instance=all_at_first),
+                    dict(description="All at Middle", instance=all_at_middle),
+                    dict(description="All at Last", instance=all_at_last),
+                    dict(description="Valid", instance=valid),
+                ],
+            )
+        )
         array_size *= 10
 
     return dict(

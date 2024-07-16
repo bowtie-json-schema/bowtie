@@ -19,23 +19,28 @@ def get_benchmark():
         tests.append(
             dict(
                 description=f"Testing String Size - {testing_string_size}",
-                instance="".join(random.choice(string.ascii_letters) for _ in range(testing_string_size)),
+                instance="".join(
+                    random.choice(string.ascii_letters)
+                    for _ in range(testing_string_size)
+                ),
             ),
         )
         testing_string_size *= 10
 
     while string_size <= max_string_size:
-        benchmarks.append(dict(
-            name=f"String Size - {string_size}",
-            description=(
-                f"Validating the `minLength` keyword over string of size {string_size}."
-            ),
-            schema={
-                "type": "string",
-                "minLength": string_size,
-            },
-            tests=tests,
-        ))
+        benchmarks.append(
+            dict(
+                name=f"String Size - {string_size}",
+                description=(
+                    f"Validating the `minLength` keyword over string of size {string_size}."
+                ),
+                schema={
+                    "type": "string",
+                    "minLength": string_size,
+                },
+                tests=tests,
+            )
+        )
         string_size *= 10
 
     return dict(

@@ -14,23 +14,25 @@ def get_benchmark():
         end = [0] * (array_size - 1) + [37]
         invalid = [0] * array_size
 
-        benchmarks.append(dict(
-            name=f"Array Size - {array_size}",
-            description=(
-                f"Validating contains keyword over an array of size {array_size}"
-            ),
-            schema={
-                "type": "array",
-                "contains": {"const": 37},
-            },
-            tests=[
-                dict(description="Empty array", instance=[]),
-                dict(description="Beginning of array", instance=start),
-                dict(description="Middle of array", instance=middle),
-                dict(description="End of array", instance=end),
-                dict(description="Invalid array", instance=invalid),
-            ],
-        ))
+        benchmarks.append(
+            dict(
+                name=f"Array Size - {array_size}",
+                description=(
+                    f"Validating contains keyword over an array of size {array_size}"
+                ),
+                schema={
+                    "type": "array",
+                    "contains": {"const": 37},
+                },
+                tests=[
+                    dict(description="Empty array", instance=[]),
+                    dict(description="Beginning of array", instance=start),
+                    dict(description="Middle of array", instance=middle),
+                    dict(description="End of array", instance=end),
+                    dict(description="Invalid array", instance=invalid),
+                ],
+            )
+        )
         array_size *= 10
 
     return dict(

@@ -175,8 +175,16 @@ _OPTION_GROUPS = {
                 ("Required", ["implementation"]),
                 (
                     "Benchmark Configuration Options",
-                    ["benchmark-file", "dialect", "keywords", "loops",
-                     "runs", "test-suite", "values", "warmups"],
+                    [
+                        "benchmark-file",
+                        "dialect",
+                        "keywords",
+                        "loops",
+                        "runs",
+                        "test-suite",
+                        "values",
+                        "warmups",
+                    ],
                 ),
                 (
                     "Basic Options",
@@ -1234,7 +1242,10 @@ def run(
 
     return asyncio.run(
         _run(
-            **kwargs, cases=cases, dialect=dialect, time_measurement_path=path,
+            **kwargs,
+            cases=cases,
+            dialect=dialect,
+            time_measurement_path=path,
         ),
     )
 
@@ -1287,7 +1298,6 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
-
 @subcommand
 @IMPLEMENTATION
 @dialect_option()
@@ -1299,9 +1309,7 @@ def validate(
     type=int,
     default=3,
     show_default=True,
-    help=(
-        "Number of runs used to run benchmarks."
-    ),
+    help=("Number of runs used to run benchmarks."),
 )
 @click.option(
     "--values",
@@ -1310,9 +1318,7 @@ def validate(
     type=click.IntRange(min=2),
     default=2,
     show_default=True,
-    help=(
-        "Number of values per run."
-    ),
+    help=("Number of values per run."),
 )
 @click.option(
     "--warmups",
@@ -1321,9 +1327,7 @@ def validate(
     type=int,
     default=1,
     show_default=True,
-    help=(
-        "Number of skipped values per run used to warmup the benchmark."
-    ),
+    help=("Number of skipped values per run used to warmup the benchmark."),
 )
 @click.option(
     "--loops",
@@ -1332,9 +1336,7 @@ def validate(
     type=int,
     default=1,
     show_default=True,
-    help=(
-        "Number of loops per value."
-    ),
+    help=("Number of loops per value."),
 )
 @click.option(
     "--quiet",
@@ -1343,9 +1345,7 @@ def validate(
     is_flag=True,
     default=False,
     show_default=True,
-    help=(
-        "Enable quiet mode (Only output the final result)."
-    ),
+    help=("Enable quiet mode (Only output the final result)."),
 )
 @click.option(
     "--keywords",
@@ -1365,8 +1365,8 @@ def validate(
     "benchmark_files",
     multiple=True,
     help=(
-         "Allows running benchmark from a file. "
-         "Specify the path of the benchmark file"
+        "Allows running benchmark from a file. "
+        "Specify the path of the benchmark file"
     ),
 )
 @click.option(
@@ -1420,12 +1420,14 @@ def perf(
                 **kwargs,
             )
 
-        asyncio.run(benchmarker.start(
-            connectables=connectables,
-            dialect=dialect,
-            quiet=quiet,
-            format=format,
-        ))
+        asyncio.run(
+            benchmarker.start(
+                connectables=connectables,
+                dialect=dialect,
+                quiet=quiet,
+                format=format,
+            )
+        )
     except (BenchmarkError, BenchmarkLoadError) as err:
         STDERR.print(err)
         return EX.DATAERR
@@ -1441,9 +1443,7 @@ def perf(
     type=click.Choice(["default", "keyword"]),
     default="default",
     show_default=True,
-    help=(
-         "Specify the type of benchmark to filter."
-    ),
+    help=("Specify the type of benchmark to filter."),
 )
 @click.option(
     "-n",
@@ -1452,8 +1452,8 @@ def perf(
     type=str,
     multiple=True,
     help=(
-         "Filter the benchmarks with given name. "
-         "Use the option multiple times to filter multiple benchmarks."
+        "Filter the benchmarks with given name. "
+        "Use the option multiple times to filter multiple benchmarks."
     ),
 )
 def filter_benchmarks(
@@ -1465,7 +1465,9 @@ def filter_benchmarks(
     Output benchmarks matching the specified criteria.
     """
     _benchmarks.get_benchmark_filenames(
-        benchmark_type, benchmarks=benchmark_names, dialect=dialect,
+        benchmark_type,
+        benchmarks=benchmark_names,
+        dialect=dialect,
     )
 
 

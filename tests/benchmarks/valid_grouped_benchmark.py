@@ -8,7 +8,7 @@ def get_benchmark():
         tests=[
             {
                 "description": "test",
-                "instance": {}
-            }
-        ]
+                "instance": {},
+            },
+        ],
     )

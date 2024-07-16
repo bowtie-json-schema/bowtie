@@ -21,16 +21,18 @@ def get_benchmark():
         testing_array_size *= 10
 
     while array_size <= max_array_size:
-        benchmarks.append(dict(
-            name=f"Array Size - {array_size}",
-            description=(
-                f"Validating the `minItems` keyword over array of size {array_size}."
-            ),
-            schema={
-                "minItems": array_size,
-            },
-            tests=tests,
-        ))
+        benchmarks.append(
+            dict(
+                name=f"Array Size - {array_size}",
+                description=(
+                    f"Validating the `minItems` keyword over array of size {array_size}."
+                ),
+                schema={
+                    "minItems": array_size,
+                },
+                tests=tests,
+            )
+        )
         array_size *= 10
 
     return dict(
