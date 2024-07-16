@@ -39,7 +39,7 @@ from bowtie._core import (
     StartupFailed,
     Test,
     TestCase,
-    _convert_table_to_markdown,
+    convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
 from bowtie.exceptions import DialectError, UnsupportedDialect
@@ -727,7 +727,7 @@ def _failure_table_in_markdown(
     return "\n".join(
         [
             "# Bowtie Failures Summary",
-            _convert_table_to_markdown(columns, rows),
+            convert_table_to_markdown(columns, rows),
             "",
             f"**{report.total_tests} {test} ran**",
         ],
@@ -815,7 +815,7 @@ def _validation_results_table_in_markdown(
                     *(test_result[id].description for id in implementations),
                 ],
             )
-        inner_markdown_table = _convert_table_to_markdown(
+        inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
             inner_table_rows,
         )
@@ -906,7 +906,7 @@ def statistics(
                 f"## Dialect: {dialect.pretty_name}\n\n"
                 f"### Ran on: {ran_on_date.strftime('%x %X %Z')}\n"
             )
-            markdown = _convert_table_to_markdown(
+            markdown = convert_table_to_markdown(
                 columns=["Metric", "Value"],
                 rows=[[k, str(v)] for k, v in statistics.items()],
             )
@@ -1426,7 +1426,7 @@ def perf(
                 dialect=dialect,
                 quiet=quiet,
                 format=format,
-            )
+            ),
         )
     except (BenchmarkError, BenchmarkLoadError) as err:
         STDERR.print(err)

@@ -862,7 +862,7 @@ def registry():
     return EMPTY_REGISTRY.with_resources(resources).crawl()
 
 
-def _convert_table_to_markdown(
+def convert_table_to_markdown(
     columns: list[str],
     rows: list[list[str]],
 ):

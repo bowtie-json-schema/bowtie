@@ -30,7 +30,7 @@ from bowtie._core import (
     ImplementationInfo,
     Test,
     TestCase,
-    _convert_table_to_markdown,
+    convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
 
@@ -75,7 +75,7 @@ def get_benchmark_filenames(
 
     if benchmark_type == "keyword":
         keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
-            "keywords"
+            "keywords",
         )
         search_dir = keywords_benchmark_dir.joinpath(
             dialect.short_name,
@@ -96,7 +96,7 @@ def get_benchmark_filenames(
             for benchmark in benchmarks
             if (
                 matched_file := next(
-                    (file for file in files if benchmark in file), None
+                    (file for file in files if benchmark in file), None,
                 )
             )
         ]
@@ -229,8 +229,8 @@ class Benchmark:
 
         benchmark = self.serializable()
         benchmark["dialect"] = Dialect.from_str(
-            dialect_from_schema
-        )  # type: ignore[reportUnknownArgumentType]
+            dialect_from_schema, # type: ignore[reportUnknownArgumentType]
+        )
         return Benchmark.from_dict(**benchmark)
 
 
@@ -605,23 +605,28 @@ class BenchmarkReporter:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
 
+        cpu_count = self._report.metadata.system_metadata.get(
+            'cpu_count', 'Not Available'
+        )
+        cpu_freq = self._report.metadata.system_metadata.get(
+            'cpu_freq', 'Not Available'
+        )
+        cpu_model = self._report.metadata.system_metadata.get(
+            'cpu_model_name', 'Not Available'
+        )
+        hostname = self._report.metadata.system_metadata.get(
+            'hostname', 'Not Available'
+        )
+
         benchmark_metadata = (
             f"Benchmark Metadata\n\n"
             f"Runs: {self._report.metadata.num_runs}\n"
             f"Values: {self._report.metadata.num_values}\n"
             f"Warmups: {self._report.metadata.num_warmups}\n\n"
-            f"CPU Count: {self._report.metadata.system_metadata.get(
-                'cpu_count', 'Not Available'
-            )}\n"
-            f"CPU Frequency: {self._report.metadata.system_metadata.get(
-                'cpu_freq', 'Not Available'
-            )}\n"
-            f"CPU Model: {self._report.metadata.system_metadata.get(
-                'cpu_model_name', 'Not Available'
-            )}\n"
-            f"Hostname: {self._report.metadata.system_metadata.get(
-                'hostname', 'Not Available'
-            )}"
+            f"CPU Count: {cpu_count}\n"
+            f"CPU Frequency: {cpu_freq}\n"
+            f"CPU Model: {cpu_model}\n"
+            f"Hostname: {hostname}"
         )
 
         markdown_content = "# Benchmark Summary\n"
@@ -690,7 +695,9 @@ class BenchmarkReporter:
                             geometric_mean(
                                 [
                                     result_mean
-                                    for result_mean, _, errored in results_for_connectable[
+                                    for (
+                                        result_mean, _, errored,
+                                    ) in results_for_connectable[
                                         connectable_id
                                     ]
                                     if not errored
@@ -705,7 +712,7 @@ class BenchmarkReporter:
                     for connectable in sorted_connectables
                 }
                 columns = ["Test Name"]
-                rows = []
+                rows: list[list[str]] = []
                 for (
                     connectable_id,
                     connectable_results,
@@ -734,17 +741,17 @@ class BenchmarkReporter:
                 fastest_connectable_results = next(
                     iter(
                         results_for_connectable.values(),
-                    )
+                    ),
                 )
 
                 for idx, test_result in enumerate(
-                    benchmark_result.test_results
+                    benchmark_result.test_results,
                 ):
                     row_elements = [
                         test_result.description,
                     ]
                     for connectable_idx, results in enumerate(
-                        results_for_connectable.items()
+                        results_for_connectable.items(),
                     ):
                         _, connectable_results = results
                         _mean, std_dev, errored = connectable_results[idx]
@@ -794,7 +801,7 @@ class BenchmarkReporter:
                     rows.append(ref_row)
                     inner_table.add_row(*ref_row)
 
-                markdown_content += _convert_table_to_markdown(columns, rows)
+                markdown_content += convert_table_to_markdown(columns, rows)
                 markdown_content += "\n\n"
                 outer_table.add_row(inner_table)
 
@@ -880,7 +887,7 @@ class Benchmarker:
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
         keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
-            "keywords"
+            "keywords",
         )
         dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(
             dialect.short_name,
@@ -978,7 +985,7 @@ class Benchmarker:
                 compatible_connectables.append(connectable)
 
         with Progress(
-            console=STDOUT, transient=True, disable=quiet
+            console=STDOUT, transient=True, disable=quiet,
         ) as progress:
             reporter = BenchmarkReporter(
                 report=BenchmarkReport(
