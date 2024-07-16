@@ -116,12 +116,14 @@ exclude = [
     "**/tests/__init__.py",
     "**/tests/test_*.py",
     "**/bowtie/benchmarks/*",
+    "**/tests/benchmarks/*"
 ]
 
 [tool.ruff]
 line-length = 79
 exclude = [
     "**/bowtie/benchmarks/*",
+    "**/tests/benchmarks/*",
 ]
 
 [tool.ruff.lint]
