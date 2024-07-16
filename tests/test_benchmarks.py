@@ -1,237 +1,368 @@
+from pathlib import Path
+import importlib
+import json
+import uuid
+
 import pytest
 
-from bowtie._connectables import Connectable, UnknownConnector
-from bowtie._containers import (
-    IMAGE_REPOSITORY,
-    ConnectableContainer,
-    ConnectableImage,
-)
-from bowtie._direct_connectable import Direct, NoDirectConnection
+from bowtie import _benchmarks
+from bowtie._benchmarks import BenchmarkGroup
+from bowtie._cli import EX
+from bowtie._core import Dialect, TestCase, Example
+from bowtie._direct_connectable import Direct
+from tests.test_integration import ARBITRARY, bowtie
 
 validators = Direct.from_id("python-jsonschema").registry()
-validator = validators.for_uri("tag:bowtie.report,2024:benchmark_report")
-validated, invalidated = validator.validated, validator.invalidated
+
+benchmark_report_validator = validators.for_uri(
+    "tag:bowtie.report,2024:benchmark_report",
+)
+benchmark_report_validated, benchmark_report_invalidated = (
+    benchmark_report_validator.validated,
+    benchmark_report_validator.invalidated,
+)
+
+benchmark_validator = validators.for_uri(
+    "tag:bowtie.report,2024:benchmarks",
+)
+benchmark_validated, benchmark_invalidated = (
+    benchmark_validator.validated,
+    benchmark_validator.invalidated,
+)
+
+bowtie_dir = Path(__file__).parent.parent.joinpath("bowtie")
+default_benchmarks_dir = bowtie_dir.joinpath("benchmarks")
+keyword_benchmarks_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
 
 
-# validator = validator_registry().for_uri(
-#     "tag:bowtie.report,2024:benchmarks",
-# )
-# benchmark_report_validator = validator_registry().for_uri(
-#     "tag:bowtie.report,2024:benchmark_report",
-# )
+@pytest.fixture()
+def valid_single_benchmark():
+    module_name = "tests.benchmarks"
+    benchmark_module_name = ".valid_single_benchmark"
+    data = importlib.import_module(
+        benchmark_module_name,
+        module_name,
+    ).get_benchmark()
+    return data
 
 
-#
-#
-# def test_valid_benchmark_files():
-#     bowtie_dir = Path(__file__).parent.parent.joinpath("bowtie")
-#     benchmark_dir = bowtie_dir.joinpath("benchmarks").iterdir()
-#
-#     desired_extensions = {".json", ".py"}
-#     other_files = (
-#         file
-#         for file in benchmark_dir
-#         if file.is_file() and file.suffix not in desired_extensions and file.name != "__pycache__"
-#     )
-#
-#     assert not any(other_files)
-#
-#
-# def test_validate_benchmarks():
-#     default_benchmarks = get_default_benchmarks()
-#     for benchmark in default_benchmarks:
-#         validator.validate(benchmark)
-
-def test_validate_benchmark_report():
-    report = {
-  "metadata": {
-    "implementations": {
-      "python-jsonschema": {
-        "name": "jsonschema",
-        "language": "python",
-        "homepage": "https://python-jsonschema.readthedocs.io/",
-        "issues": "https://github.com/python-jsonschema/jsonschema/issues",
-        "source": "https://github.com/python-jsonschema/jsonschema",
-        "dialects": [
-          "https://json-schema.org/draft/2020-12/schema",
-          "https://json-schema.org/draft/2019-09/schema",
-          "http://json-schema.org/draft-07/schema#",
-          "http://json-schema.org/draft-06/schema#",
-          "http://json-schema.org/draft-04/schema#",
-          "http://json-schema.org/draft-03/schema#"
+@pytest.fixture()
+def valid_grouped_benchmark(valid_single_benchmark):
+    return {
+        "name": "benchmark_group",
+        "description": "benchmark_group",
+        "benchmarks": [
+            valid_single_benchmark,
+            valid_single_benchmark,
         ],
-        "version": "4.22.0",
-        "language_version": "3.12.1",
-        "os": "Darwin",
-        "os_version": "23.1.0",
-        "documentation": "https://python-jsonschema.readthedocs.io/",
-        "links": []
-      }
-    },
-    "num_runs": 1,
-    "num_values": 2,
-    "num_warmups": 1,
-    "num_loops": 1,
-    "system_metadata": {
-      "boot_time": "2024-06-18 21:27:52",
-      "command_max_rss": 52740096,
-      "cpu_count": 8,
-      "date": "2024-06-25 13:39:33.801948",
-      "duration": 0.909597791993292,
-      "hostname": "Jarviss-MacBook-Air.local",
-      "load_avg_1min": 3.65234375,
-      "loops": 1,
-      "perf_version": "2.7.0",
-      "platform": "macOS-14.1.2-arm64-arm-64bit",
-      "unit": "second",
-      "uptime": 576701.8089289665
-    },
-    "bowtie_version": "0.1.dev4796+g397733e.d20240623",
-    "dialect": "https://json-schema.org/draft/2020-12/schema",
-    "started": "2024-06-25T08:09:32.820116+00:00"
-  },
-  "results": [
-    {
-      "name": "contains",
-      "description": "A benchmark for validation of the `contains` keyword.",
-      "benchmark_results": [
-        {
-          "name": "Array Size - 1000",
-          "description": "Validating contains keyword over an array of size 1000",
-          "test_results": [
-            {
-              "description": "Empty array",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.909597791993292,
-                  "values": [
-                    0.3537296669965144,
-                    0.24272454201127402
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Beginning of array",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7289082090137526,
-                  "values": [
-                    0.2146655840042513,
-                    0.22045312498812564
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Middle of array",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7137991659983527,
-                  "values": [
-                    0.20859033399028704,
-                    0.21103683300316334
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "End of array",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7049916250107344,
-                  "values": [
-                    0.2090633329935372,
-                    0.20787358298548497
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Invalid array",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7158431250136346,
-                  "values": [
-                    0.21100904198829085,
-                    0.21038779101218097
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "additionalProperties",
-      "description": "A benchmark for measuring performance of the implementation for the additionalProperties keyword.",
-      "benchmark_results": [
-        {
-          "name": "Array Size - 1000",
-          "description": "Validating additionalProperties keyword over array of size 1000",
-          "test_results": [
-            {
-              "description": "Invalid at first",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7399219170038123,
-                  "values": [
-                    0.21695162501418963,
-                    0.21826429100474343
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Invalid at middle",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7381954579905141,
-                  "values": [
-                    0.219998000015039,
-                    0.2151722080016043
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Invalid at last",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7335538750048727,
-                  "values": [
-                    0.2154197500203736,
-                    0.21393262498895638
-                  ]
-                }
-              ]
-            },
-            {
-              "description": "Valid",
-              "connectable_results": [
-                {
-                  "connectable_id": "python-jsonschema",
-                  "duration": 0.7229475410131272,
-                  "values": [
-                    0.21429562498815358,
-                    0.21369266699184664
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
-  ]
-}
-    validated(report)
+
+
+@pytest.fixture()
+def invalid_benchmark():
+    module_name = "tests.benchmarks"
+    benchmark_module_name = ".invalid_benchmark"
+    data = importlib.import_module(
+        benchmark_module_name,
+        module_name,
+    ).get_benchmark()
+    return data
+
+
+@pytest.fixture()
+def benchmarker_run_args():
+    return {
+        "runs": 1,
+        "loops": 1,
+        "warmups": 1,
+        "values": 2,
+    }
+
+
+def _iterate_over_benchmark_dir(directory):
+    if not directory.exists():
+        return
+    for file in directory.iterdir():
+        if file.suffix in (".json", ".py") and file.name != "__init__.py":
+            yield file
+
+
+def _validate_benchmark_file(file, module):
+    data = _benchmarks._load_benchmark_data_from_file(
+        file,
+        module,
+    )
+    if data:
+        benchmark_validated(data)
+
+
+keyword_benchmark_files = (
+    (
+        dialect.short_name,
+        benchmark_file,
+    )
+    for dialect in Dialect.known()
+    for benchmark_file in _iterate_over_benchmark_dir(
+    bowtie_dir.joinpath("benchmarks", "keywords", dialect.short_name),
+)
+)
+
+
+class TestBenchmarkFormat:
+
+    def test_validate_single_benchmark(self, valid_single_benchmark):
+        assert benchmark_validated(valid_single_benchmark)
+
+    def test_validate_grouped_benchmark(self, valid_grouped_benchmark):
+        assert benchmark_validated(valid_grouped_benchmark)
+
+    @pytest.mark.parametrize(
+        "benchmark_file",
+        _iterate_over_benchmark_dir(default_benchmarks_dir),
+        ids=lambda f: f.stem,
+    )
+    def test_validate_default_benchmark_format(self, benchmark_file):
+        benchmark_module = "bowtie.benchmarks"
+        _validate_benchmark_file(benchmark_file, benchmark_module)
+
+    @pytest.mark.parametrize(
+        "dialect,benchmark_file",
+        keyword_benchmark_files,
+        ids=lambda param: str(param),
+    )
+    def test_validate_keyword_benchmark_format(
+        self, dialect, benchmark_file,
+    ):
+        benchmark_module = f"bowtie.benchmarks.keywords.{dialect}"
+        _validate_benchmark_file(benchmark_file, benchmark_module)
+
+
+class TestLoadBenchmark:
+
+    def test_load_benchmark(self, valid_single_benchmark):
+        benchmark = _benchmarks.Benchmark.from_dict(**valid_single_benchmark)
+        assert benchmark.serializable() == valid_single_benchmark
+
+    def test_load_benchmark_set_dialect(self, valid_single_benchmark):
+        valid_single_benchmark["schema"]["$schema"] = (
+            Dialect.latest().serializable()
+        )
+        benchmark = _benchmarks.Benchmark.from_dict(
+            **valid_single_benchmark,
+        ).maybe_set_dialect_from_schema()
+        assert benchmark.dialect == Dialect.latest()
+
+    def test_load_benchmark_with_diff_tests(self, valid_single_benchmark):
+        benchmark = _benchmarks.Benchmark.from_dict(
+            **valid_single_benchmark,
+        ).benchmark_with_diff_tests(
+            tests=valid_single_benchmark["tests"] * 10,
+        )
+        assert benchmark_validated(benchmark.serializable())
+
+    def test_load_single_benchmark_group_from_dict(self, valid_single_benchmark):
+        benchmark = valid_single_benchmark
+        benchmark_group = BenchmarkGroup.from_dict(benchmark)
+
+        assert benchmark_validated(benchmark_group.serializable())
+
+    def test_load_benchmark_group_from_dict(self, valid_grouped_benchmark):
+        benchmark = valid_grouped_benchmark
+        benchmark_group = BenchmarkGroup.from_dict(benchmark)
+
+        serializable = benchmark_group.serializable()
+
+        assert benchmark == serializable
+        assert benchmark_validated(serializable)
+
+    def test_load_single_benchmark_group_from_json(
+        self,
+        tmp_path,
+        valid_single_benchmark,
+    ):
+        tmp_path = tmp_path / "test_file.json"
+        tmp_path.write_text(json.dumps(valid_single_benchmark))
+        benchmark_group = BenchmarkGroup.from_file(tmp_path)
+
+        assert benchmark_validated(benchmark_group.serializable())
+
+    def test_load_benchmark_group_from_json(self, tmp_path, valid_grouped_benchmark):
+        tmp_path = tmp_path / "test_file.json"
+        tmp_path.write_text(json.dumps(valid_grouped_benchmark))
+        benchmark_group = BenchmarkGroup.from_file(tmp_path)
+
+        serializable = benchmark_group.serializable()
+
+        assert serializable == valid_grouped_benchmark
+        assert benchmark_validated(serializable)
+
+    def test_load_benchmark_groups_from_folder(self):
+        benchmark_groups = BenchmarkGroup.from_folder(
+            default_benchmarks_dir,
+            module="bowtie.benchmarks",
+        )
+        for benchmark_group in benchmark_groups:
+            assert benchmark_validated(benchmark_group.serializable())
+
+
+class TestBenchmarker:
+
+    def test_default_benchmarker(self, benchmarker_run_args):
+        _benchmarks.Benchmarker.from_default_benchmarks(**benchmarker_run_args)
+
+    @pytest.mark.parametrize(
+        "dialect",
+        Dialect.known(),
+        ids=lambda param: param.short_name,
+    )
+    def test_keywords_benchmarker(self, dialect, benchmarker_run_args):
+        dialect_keyword_benchmarks_dir = keyword_benchmarks_dir.joinpath(
+            dialect.short_name,
+        )
+
+        if not dialect_keyword_benchmarks_dir.exists():
+            return
+
+        _benchmarks.Benchmarker.for_keywords(
+            dialect, **benchmarker_run_args,
+        )
+
+    def test_test_cases_benchmarker(self, valid_single_benchmark, benchmarker_run_args):
+        test_case = TestCase(
+            description=valid_single_benchmark["description"],
+            schema=valid_single_benchmark["schema"],
+            tests=[
+                Example.from_dict(**test)
+                for test in valid_single_benchmark["tests"]
+            ]
+        )
+
+        _benchmarks.Benchmarker.from_test_cases(
+            [test_case], **benchmarker_run_args,
+        )
+
+    def test_input_benchmarker(self, valid_single_benchmark, benchmarker_run_args):
+        _benchmarks.Benchmarker.from_input(
+            valid_single_benchmark, **benchmarker_run_args,
+        )
+
+
+class TestBenchmarkRun:
+
+    @pytest.mark.asyncio
+    async def test_nonexistent_benchmark_run(self):
+        random_name = uuid.uuid4().hex
+        _, stderr = await bowtie(
+            "perf",
+            "-i",
+            ARBITRARY,
+            "-b",
+            random_name,
+            exit_code=EX.DATAERR,
+        )
+        assert "Benchmark File not found" in stderr
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_json_output(self, valid_single_benchmark,
+                                             tmp_path):
+        tmp_path.joinpath("benchmark.json").write_text(
+            json.dumps(valid_single_benchmark),
+        )
+        stdout, stderr = await bowtie(
+            "perf", "-i", ARBITRARY, "-q", "--format", "json",
+            tmp_path / "benchmark.json", exit_code=0, json=True,
+        )
+        benchmark_report_validated(stdout)
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_pretty_output(self, valid_single_benchmark, tmp_path):
+        tmp_path.joinpath("benchmark.json").write_text(
+            json.dumps(valid_single_benchmark),
+        )
+        stdout, stderr = await bowtie(
+            "perf", "-i", ARBITRARY, "-q", "--format", "pretty",
+            tmp_path / "benchmark.json", exit_code=0,
+        )
+
+        # FIXME: We don't assert against the exact output yet, as it's a WIP
+        assert stdout, stderr
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_markdown_output(
+        self, valid_single_benchmark, tmp_path
+    ):
+        tmp_path.joinpath("benchmark.json").write_text(
+            json.dumps(valid_single_benchmark),
+        )
+        stdout, stderr = await bowtie(
+            "perf", "-i", ARBITRARY, "-q", "--format", "markdown",
+            tmp_path / "benchmark.json", exit_code=0,
+        )
+
+        expected_data1 = """
+# Benchmark Summary
+## Benchmark Group: benchmark
+Benchmark File: stdin
+Benchmark: benchmark
+
+| Test Name | direct:tests.fauxmplementations.miniatures:always_invalid |
+        """.strip()
+
+        expected_data2 = """
+## Benchmark Metadata
+
+Runs: 3
+Values: 2
+Warmups: 1
+        """.strip()
+
+        # Cant verify the whole output as it would be dynamic with differing values
+        assert expected_data1 in stdout
+        assert expected_data2 in stdout
+
+    @pytest.mark.asyncio
+    async def test_invalid_benchmark_run(self, invalid_benchmark, tmp_path):
+        tmp_path.joinpath("benchmark.json").write_text(
+            json.dumps(invalid_benchmark),
+        )
+        _, stderr = await bowtie(
+            "perf", "-i", ARBITRARY, "-q", "--format", "json",
+            tmp_path / "benchmark.json", exit_code=EX.DATAERR,
+        )
+        assert "benchmark-load-error" in stderr
+
+
+class TestFilterBenchmarks:
+
+    @pytest.mark.parametrize(
+        "dialect",
+        Dialect.known(),
+        ids=lambda param: param.short_name,
+    )
+    @pytest.mark.asyncio
+    async def test_default_benchmarks(self, dialect):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks", "-D", dialect.short_name, exit_code=0
+        )
+        assert stderr == ""
+
+    @pytest.mark.parametrize(
+        "dialect",
+        Dialect.known(),
+        ids=lambda param: param.short_name,
+    )
+    @pytest.mark.asyncio
+    async def test_keyword_benchmarks(self, dialect):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks", "-D", dialect.short_name, "-t", "keyword", exit_code=0
+        )
+        assert stderr == ""
+
+    @pytest.mark.asyncio
+    async def test_filtering_by_name(self):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks", "-t", "keyword",
+            "-n", uuid.uuid4().hex,
+            exit_code=0
+        )
+        assert stdout == "", stderr == ""
