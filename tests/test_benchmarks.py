@@ -39,11 +39,10 @@ keyword_benchmarks_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
 def valid_single_benchmark():
     module_name = "tests.benchmarks"
     benchmark_module_name = ".valid_single_benchmark"
-    data = importlib.import_module(
+    return importlib.import_module(
         benchmark_module_name,
         module_name,
     ).get_benchmark()
-    return data
 
 
 @pytest.fixture()
@@ -62,11 +61,10 @@ def valid_grouped_benchmark(valid_single_benchmark):
 def invalid_benchmark():
     module_name = "tests.benchmarks"
     benchmark_module_name = ".invalid_benchmark"
-    data = importlib.import_module(
+    return importlib.import_module(
         benchmark_module_name,
         module_name,
     ).get_benchmark()
-    return data
 
 
 @pytest.fixture()
@@ -364,7 +362,8 @@ Values: 2
 Warmups: 1
         """.strip()
 
-        # Cant verify the whole output as it would be dynamic with differing values
+        # Cant verify the whole output as it would be dynamic
+        # with differing values
         assert expected_data1 in stdout
         assert expected_data2 in stdout
 

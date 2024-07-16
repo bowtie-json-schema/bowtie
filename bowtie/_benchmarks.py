@@ -792,13 +792,14 @@ class BenchmarkReporter:
                 for implementation_idx in range(2, len(ref_row)):
                     if ref_row[implementation_idx] == "Errored":
                         continue
+                    rounded_off_val = {
+                        round(
+                            float(ref_row[implementation_idx])
+                            / float(ref_row[1]), 2
+                        )
+                    }
                     ref_row[implementation_idx] = (
-                        f"{
-                            round(
-                                float(ref_row[implementation_idx])
-                                / float(ref_row[1]), 2
-                            )
-                        }x slower"
+                        f"{rounded_off_val}x slower"
                     )
 
                 ref_row[1] = "Reference"
