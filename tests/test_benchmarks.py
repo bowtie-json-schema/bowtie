@@ -163,7 +163,8 @@ class TestLoadBenchmark:
         assert benchmark_validated(benchmark.serializable())
 
     def test_load_single_benchmark_group_from_dict(
-        self, valid_single_benchmark
+        self,
+        valid_single_benchmark,
     ):
         benchmark = valid_single_benchmark
         benchmark_group = BenchmarkGroup.from_dict(benchmark)
@@ -191,7 +192,9 @@ class TestLoadBenchmark:
         assert benchmark_validated(benchmark_group.serializable())
 
     def test_load_benchmark_group_from_json(
-        self, tmp_path, valid_grouped_benchmark
+        self,
+        tmp_path,
+        valid_grouped_benchmark,
     ):
         tmp_path = tmp_path / "test_file.json"
         tmp_path.write_text(json.dumps(valid_grouped_benchmark))
@@ -235,7 +238,9 @@ class TestBenchmarker:
         )
 
     def test_test_cases_benchmarker(
-        self, valid_single_benchmark, benchmarker_run_args
+        self,
+        valid_single_benchmark,
+        benchmarker_run_args,
     ):
         test_case = TestCase(
             description=valid_single_benchmark["description"],
@@ -252,7 +257,9 @@ class TestBenchmarker:
         )
 
     def test_input_benchmarker(
-        self, valid_single_benchmark, benchmarker_run_args
+        self,
+        valid_single_benchmark,
+        benchmarker_run_args,
     ):
         _benchmarks.Benchmarker.from_input(
             valid_single_benchmark,
@@ -277,7 +284,9 @@ class TestBenchmarkRun:
 
     @pytest.mark.asyncio
     async def test_benchmark_run_json_output(
-        self, valid_single_benchmark, tmp_path
+        self,
+        valid_single_benchmark,
+        tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(valid_single_benchmark),
@@ -297,7 +306,9 @@ class TestBenchmarkRun:
 
     @pytest.mark.asyncio
     async def test_benchmark_run_pretty_output(
-        self, valid_single_benchmark, tmp_path
+        self,
+        valid_single_benchmark,
+        tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(valid_single_benchmark),

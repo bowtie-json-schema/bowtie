@@ -96,7 +96,8 @@ def get_benchmark_filenames(
             for benchmark in benchmarks
             if (
                 matched_file := next(
-                    (file for file in files if benchmark in file), None,
+                    (file for file in files if benchmark in file),
+                    None,
                 )
             )
         ]
@@ -229,7 +230,7 @@ class Benchmark:
 
         benchmark = self.serializable()
         benchmark["dialect"] = Dialect.from_str(
-            dialect_from_schema, # type: ignore[reportUnknownArgumentType]
+            dialect_from_schema,  # type: ignore[reportUnknownArgumentType]
         )
         return Benchmark.from_dict(**benchmark)
 
@@ -606,16 +607,20 @@ class BenchmarkReporter:
             return f"{round(value, 2)}s"
 
         cpu_count = self._report.metadata.system_metadata.get(
-            'cpu_count', 'Not Available'
+            "cpu_count",
+            "Not Available",
         )
         cpu_freq = self._report.metadata.system_metadata.get(
-            'cpu_freq', 'Not Available'
+            "cpu_freq",
+            "Not Available",
         )
         cpu_model = self._report.metadata.system_metadata.get(
-            'cpu_model_name', 'Not Available'
+            "cpu_model_name",
+            "Not Available",
         )
         hostname = self._report.metadata.system_metadata.get(
-            'hostname', 'Not Available'
+            "hostname",
+            "Not Available",
         )
 
         benchmark_metadata = (
@@ -696,7 +701,9 @@ class BenchmarkReporter:
                                 [
                                     result_mean
                                     for (
-                                        result_mean, _, errored,
+                                        result_mean,
+                                        _,
+                                        errored,
                                     ) in results_for_connectable[
                                         connectable_id
                                     ]
@@ -985,7 +992,9 @@ class Benchmarker:
                 compatible_connectables.append(connectable)
 
         with Progress(
-            console=STDOUT, transient=True, disable=quiet,
+            console=STDOUT,
+            transient=True,
+            disable=quiet,
         ) as progress:
             reporter = BenchmarkReporter(
                 report=BenchmarkReport(
