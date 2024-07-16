@@ -795,12 +795,11 @@ class BenchmarkReporter:
                     rounded_off_val = {
                         round(
                             float(ref_row[implementation_idx])
-                            / float(ref_row[1]), 2
-                        )
+                            / float(ref_row[1]),
+                            2,
+                        ),
                     }
-                    ref_row[implementation_idx] = (
-                        f"{rounded_off_val}x slower"
-                    )
+                    ref_row[implementation_idx] = f"{rounded_off_val}x slower"
 
                 ref_row[1] = "Reference"
                 inner_table.add_section()
