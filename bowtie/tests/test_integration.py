@@ -32,7 +32,7 @@ from bowtie._core import (
 )
 from bowtie._direct_connectable import IMPLEMENTATIONS as KNOWN_DIRECT, Direct
 from bowtie._report import EmptyReport, InvalidReport, Report
-import tests.fauxmplementations.miniatures
+import bowtie.tests.fauxmplementations.miniatures as _miniatures
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
     False  # frigging py.test
@@ -49,8 +49,8 @@ WIDE_TERMINAL_ENV.pop("CI", None)  # Run subprocesses as if they're not in CI
 
 class _Miniatures:
     def __getattr__(self, name: str):
-        getattr(tests.fauxmplementations.miniatures, name)  # check for typos
-        return f"direct:{tests.fauxmplementations.miniatures.__name__}:{name}"
+        getattr(_miniatures, name)  # check for typos
+        return f"direct:{_miniatures.__name__}:{name}"
 
 
 miniatures = _Miniatures()

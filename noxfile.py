@@ -16,7 +16,6 @@ DOCS = ROOT / "docs"
 BOWTIE = ROOT / "bowtie"
 SCHEMAS = BOWTIE / "schemas"
 IMPLEMENTATIONS = ROOT / "implementations"
-TESTS = ROOT / "tests"
 
 UI = ROOT / "frontend"
 UI_NEEDS_INSTALL = not UI.joinpath("node_modules").is_dir()
@@ -106,7 +105,7 @@ def tests(session):
                 "run",
                 "-m",
                 "pytest",
-                TESTS,
+                BOWTIE,
                 env=env,
             )
             session.run("coverage", "combine", env=env)
@@ -124,7 +123,7 @@ def tests(session):
                         env=env,
                     )
     else:
-        session.run("pytest", *session.posargs, TESTS)
+        session.run("pytest", *session.posargs, BOWTIE)
 
 
 @session(python=SUPPORTED)
@@ -193,7 +192,7 @@ def style(session):
     Lint for style on Bowtie's Python codebase.
     """
     session.install("ruff")
-    session.run("ruff", "check", BOWTIE, TESTS, *ROOT.glob("*.py"))
+    session.run("ruff", "check", BOWTIE, *ROOT.glob("*.py"))
 
 
 @session()
@@ -443,7 +442,7 @@ def ui_tests(session):
         "build",
         "--quiet",
         "-f",
-        TESTS / "fauxmplementations/envsonschema/Dockerfile",
+        BOWTIE / "tests/fauxmplementations/envsonschema/Dockerfile",
         "-t",
         "bowtie-ui-tests/envsonschema",
         external=True,
