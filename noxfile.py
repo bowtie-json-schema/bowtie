@@ -436,29 +436,7 @@ def ui_tests(session):
     Run the UI tests.
     """
     session.install("-r", REQUIREMENTS["main"], ROOT)
-    podman = os.environ.get("CONTAINER_BUILDER", "podman")
-    image_id = session.run_always(  # TODO: do this from the TS test suite
-        podman,
-        "build",
-        "--quiet",
-        "-f",
-        BOWTIE / "tests/fauxmplementations/envsonschema/Dockerfile",
-        "-t",
-        "bowtie-ui-tests/envsonschema",
-        external=True,
-        silent=True,
-    )
-    try:
-        pnpm(session.run, "install-test", "--frozen-lockfile")
-    finally:
-        if image_id is not None:
-            session.run_always(
-                podman,
-                "rmi",
-                "--force",
-                image_id.strip(),
-                external=True,
-            )
+    pnpm(session.run, "install-test", "--frozen-lockfile")
 
 
 def pnpm(run, *args):
