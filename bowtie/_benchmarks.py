@@ -171,7 +171,7 @@ class BowtieRunError(BenchmarkError):
     """
 
     error_stack: str
-    connectable_id: ConnectableId
+    connectable_id: ConnectableId | None
 
     def __rich__(self):
         return DiagnosticError(
@@ -1021,6 +1021,7 @@ class Benchmarker:
                 reporter.no_compatible_connectables()
                 return
             some_benchmark_ran = False
+            some_benchmark_ran_succesfully = False
             for benchmark_group in self._benchmark_groups:
                 (
                     benchmark_started,
@@ -1106,6 +1107,7 @@ class Benchmarker:
                                         )
 
                                         some_benchmark_ran = True
+                                        some_benchmark_ran_succesfully = True
 
                                         if not retries_allowed:
                                             run_needed = False
@@ -1121,6 +1123,9 @@ class Benchmarker:
 
             if not some_benchmark_ran:
                 raise BenchmarkLoadError(message="No Benchmarks Found")
+
+            if not some_benchmark_ran_succesfully:
+                raise BowtieRunError("No Benchmark Ran Successfully!", None)
 
             reporter.finished()
 
