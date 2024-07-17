@@ -10,7 +10,7 @@ from bowtie._benchmarks import BenchmarkGroup
 from bowtie._cli import EX
 from bowtie._core import Dialect, Example, TestCase
 from bowtie._direct_connectable import Direct
-from tests.test_integration import ARBITRARY, bowtie
+from tests.test_integration import bowtie
 
 validators = Direct.from_id("python-jsonschema").registry()
 
@@ -34,6 +34,7 @@ bowtie_dir = Path(__file__).parent.parent.joinpath("bowtie")
 default_benchmarks_dir = bowtie_dir.joinpath("benchmarks")
 keyword_benchmarks_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
 
+DIRECT_CONNECTABLE = "python-jsonschema"
 
 @pytest.fixture()
 def valid_single_benchmark():
@@ -186,7 +187,6 @@ class TestLoadBenchmark:
         tmp_path = tmp_path / "test_file.json"
         tmp_path.write_text(json.dumps(valid_single_benchmark))
         benchmark_group = BenchmarkGroup.from_file(tmp_path)
-
         assert benchmark_validated(benchmark_group.serializable())
 
     def test_load_benchmark_group_from_json(
@@ -273,7 +273,7 @@ class TestBenchmarkRun:
         _, stderr = await bowtie(
             "perf",
             "-i",
-            ARBITRARY,
+            DIRECT_CONNECTABLE,
             "-b",
             random_name,
             exit_code=EX.DATAERR,
@@ -292,7 +292,7 @@ class TestBenchmarkRun:
         stdout, stderr = await bowtie(
             "perf",
             "-i",
-            ARBITRARY,
+            DIRECT_CONNECTABLE,
             "-q",
             "--format",
             "json",
@@ -314,7 +314,7 @@ class TestBenchmarkRun:
         stdout, stderr = await bowtie(
             "perf",
             "-i",
-            ARBITRARY,
+            DIRECT_CONNECTABLE,
             "-q",
             "--format",
             "pretty",
@@ -337,7 +337,7 @@ class TestBenchmarkRun:
         stdout, stderr = await bowtie(
             "perf",
             "-i",
-            ARBITRARY,
+            DIRECT_CONNECTABLE,
             "-q",
             "--format",
             "markdown",
@@ -351,7 +351,7 @@ class TestBenchmarkRun:
 Benchmark File: stdin
 Benchmark: benchmark
 
-| Test Name | direct:tests.fauxmplementations.miniatures:always_invalid |
+| Test Name | python-jsonschema |
         """.strip()
 
         expected_data2 = """
@@ -375,7 +375,7 @@ Warmups: 1
         _, stderr = await bowtie(
             "perf",
             "-i",
-            ARBITRARY,
+            DIRECT_CONNECTABLE,
             "-q",
             "--format",
             "json",
