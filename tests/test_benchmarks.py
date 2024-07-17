@@ -36,6 +36,7 @@ keyword_benchmarks_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
 
 DIRECT_CONNECTABLE = "python-jsonschema"
 
+
 @pytest.fixture()
 def valid_single_benchmark():
     module_name = "tests.benchmarks"
