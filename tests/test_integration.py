@@ -8,6 +8,7 @@ import asyncio
 import json as _json
 import os
 import platform
+import re
 import sys
 import tarfile
 
@@ -565,7 +566,7 @@ async def test_unsupported_known_dialect():
         results, stderr = await send("")
 
     assert results == []
-    assert "does not support" in stderr, stderr
+    assert re.search(r"does\s+not\s+support", stderr), stderr
 
 
 @pytest.mark.asyncio
