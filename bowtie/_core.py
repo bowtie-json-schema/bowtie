@@ -176,7 +176,7 @@ class Dialect:
 
     async def latest_report(self):
         url = HOMEPAGE / f"{self.short_name}.json"
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             return await client.get(str(url))
 
     def serializable(self):
