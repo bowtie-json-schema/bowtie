@@ -113,6 +113,8 @@ reportUnnecessaryTypeIgnoreComment = true
 strict = ["**/*.py"]
 exclude = [
     "**/tests/__init__.py",
+    "**/tests/conftest.py",
+    "**/tests/fauxmplementations/miniatures.py",
     "**/tests/test_*.py",
 ]
 
