@@ -1,4 +1,4 @@
-# This workflow is a separate workflow from `report.yml` for regenerating the versioned report data needed for Bowtie's UI.
+# This workflow is a separate workflow from `report.yml` for regenerating the versioned report data needed for Bowtie's UI and `bowtie trend`.
 # It retests all of Bowtie's supported implementations for all their multiple versions listed in `matrix-versions.json` file if one exists for them.
 name: Collect New Versioned Test Results
 
