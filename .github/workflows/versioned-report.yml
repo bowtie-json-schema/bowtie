@@ -60,7 +60,7 @@ jobs:
           for version in $MATRIX_VERSIONS; do
             SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
             if [ -n "$SUPPORTED_DIALECTS" ]; then
-              mkdir "$impl/$version"
+              mkdir "$impl/v$version"
               for dialect in $SUPPORTED_DIALECTS; do
                 bowtie suite -i image:$impl:$version ./json-schema-test-suite/tests/$dialect > "$impl/v$version/$dialect.json"
               done
