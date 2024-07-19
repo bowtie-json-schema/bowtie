@@ -75,7 +75,7 @@ jobs:
 
       # This unfortunately can go wrong if e.g. we ever run out of memory above.
       # Probably we should also atomically move files into place.
-      - name: Check that all Generated Reports for ${{ matrix.implementation }} are Valid
+      - name: Check that all Generated Versioned Reports of ${{ matrix.implementation }} are Valid
         run: |
           impl=${{ matrix.implementation }}
           MATRIX_VERSIONS=$(jq -r '.[]' "implementations/$impl/matrix-versions.json")
