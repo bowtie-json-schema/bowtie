@@ -39,6 +39,7 @@ DIRECT_CONNECTABLE = "python-jsonschema"
 @pytest.fixture()
 def valid_single_benchmark():
     from tests.benchmarks import valid_single_benchmark
+
     return valid_single_benchmark.get_benchmark()
 
 
@@ -57,6 +58,7 @@ def valid_grouped_benchmark(valid_single_benchmark):
 @pytest.fixture()
 def invalid_benchmark():
     from tests.benchmarks import invalid_benchmark
+
     return invalid_benchmark.get_benchmark()
 
 

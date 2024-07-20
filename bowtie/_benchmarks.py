@@ -501,7 +501,8 @@ class BenchmarkReporter:
 
                         if not len(result_values):
                             raise BowtieRunError(
-                                "No results were returned", connectable,
+                                "No results were returned",
+                                connectable,
                             )
 
                         benchmark_duration: float = float(
