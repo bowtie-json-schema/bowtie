@@ -499,6 +499,11 @@ class BenchmarkReporter:
                             * self._report.metadata.num_runs :
                         ]
 
+                        if not len(result_values):
+                            raise BowtieRunError(
+                                "No results were returned", connectable,
+                            )
+
                         benchmark_duration: float = float(
                             benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
                         )
@@ -1021,7 +1026,7 @@ class Benchmarker:
                 reporter.no_compatible_connectables()
                 return
             some_benchmark_ran = False
-            some_benchmark_ran_succesfully = False
+            some_benchmark_ran_successfully = False
             for benchmark_group in self._benchmark_groups:
                 (
                     benchmark_started,
@@ -1107,7 +1112,7 @@ class Benchmarker:
                                         )
 
                                         some_benchmark_ran = True
-                                        some_benchmark_ran_succesfully = True
+                                        some_benchmark_ran_successfully = True
 
                                         if not retries_allowed:
                                             run_needed = False
@@ -1121,10 +1126,10 @@ class Benchmarker:
 
                 benchmark_group_finished()
 
-            if not some_benchmark_ran:
-                raise BenchmarkLoadError(message="No Benchmarks Found")
+            if not some_benchmark_ran and not quiet:
+                STDOUT.log("No Benchmark ran.")
 
-            if not some_benchmark_ran_succesfully:
+            if not some_benchmark_ran_successfully:
                 raise BowtieRunError("No Benchmark Ran Successfully!", None)
 
             reporter.finished()

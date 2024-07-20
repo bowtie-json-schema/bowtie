@@ -1309,7 +1309,7 @@ def validate(
     type=int,
     default=3,
     show_default=True,
-    help=("Number of runs used to run benchmarks."),
+    help="Number of runs used to run benchmarks.",
 )
 @click.option(
     "--values",
@@ -1318,7 +1318,7 @@ def validate(
     type=click.IntRange(min=2),
     default=2,
     show_default=True,
-    help=("Number of values per run."),
+    help="Number of values per run.",
 )
 @click.option(
     "--warmups",
@@ -1327,7 +1327,7 @@ def validate(
     type=int,
     default=1,
     show_default=True,
-    help=("Number of skipped values per run used to warmup the benchmark."),
+    help="Number of skipped values per run used to warmup the benchmark.",
 )
 @click.option(
     "--loops",
@@ -1336,7 +1336,7 @@ def validate(
     type=int,
     default=1,
     show_default=True,
-    help=("Number of loops per value."),
+    help="Number of loops per value.",
 )
 @click.option(
     "--quiet",
@@ -1345,7 +1345,7 @@ def validate(
     is_flag=True,
     default=False,
     show_default=True,
-    help=("Enable quiet mode (Only output the final result)."),
+    help="Enable quiet mode (Only output the final result).",
 )
 @click.option(
     "--keywords",

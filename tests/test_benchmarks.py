@@ -1,5 +1,4 @@
 from pathlib import Path
-import importlib
 import json
 import uuid
 
@@ -39,12 +38,8 @@ DIRECT_CONNECTABLE = "python-jsonschema"
 
 @pytest.fixture()
 def valid_single_benchmark():
-    module_name = "tests.benchmarks"
-    benchmark_module_name = ".valid_single_benchmark"
-    return importlib.import_module(
-        benchmark_module_name,
-        module_name,
-    ).get_benchmark()
+    from tests.benchmarks import valid_single_benchmark
+    return valid_single_benchmark.get_benchmark()
 
 
 @pytest.fixture()
@@ -61,12 +56,8 @@ def valid_grouped_benchmark(valid_single_benchmark):
 
 @pytest.fixture()
 def invalid_benchmark():
-    module_name = "tests.benchmarks"
-    benchmark_module_name = ".invalid_benchmark"
-    return importlib.import_module(
-        benchmark_module_name,
-        module_name,
-    ).get_benchmark()
+    from tests.benchmarks import invalid_benchmark
+    return invalid_benchmark.get_benchmark()
 
 
 @pytest.fixture()
@@ -430,4 +421,5 @@ class TestFilterBenchmarks:
             uuid.uuid4().hex,
             exit_code=0,
         )
-        assert stdout == "", stderr == ""
+        assert stdout == ""
+        assert stderr == ""
