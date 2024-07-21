@@ -1036,10 +1036,7 @@ class Benchmarker:
                     benchmark_group,
                 )
                 for benchmark in benchmark_group.benchmarks:
-                    if (
-                        benchmark.dialect
-                        and benchmark.dialect != dialect
-                    ):
+                    if benchmark.dialect and benchmark.dialect != dialect:
                         if not quiet:
                             STDOUT.log(
                                 f"Skipping {benchmark.name} as it does not support"
