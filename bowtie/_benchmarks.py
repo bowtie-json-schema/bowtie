@@ -1039,12 +1039,12 @@ class Benchmarker:
                     if (
                         benchmark.dialect
                         and benchmark.dialect != dialect
-                        and not quiet
                     ):
-                        STDOUT.log(
-                            f"Skipping {benchmark.name} as it does not support"
-                            f" dialect {dialect.serializable()}",
-                        )
+                        if not quiet:
+                            STDOUT.log(
+                                f"Skipping {benchmark.name} as it does not support"
+                                f" dialect {dialect.serializable()}",
+                            )
                         continue
                     test_started, benchmark_finished = benchmark_started(
                         benchmark.name,
