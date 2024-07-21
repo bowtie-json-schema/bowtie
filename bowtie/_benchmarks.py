@@ -594,7 +594,7 @@ class BenchmarkReporter:
 
     def finished(self):
         if self._format in ("pretty", "markdown"):
-            self._print_results_table_markdown()
+            self._print_results_table()
         else:
             STDOUT.print_json(data=self._report.serializable())
 
@@ -602,7 +602,7 @@ class BenchmarkReporter:
         if not self._quiet:
             STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
-    def _print_results_table_markdown(self):
+    def _print_results_table(self):
 
         def _format_value(value: float) -> str:
 
