@@ -1,11 +1,12 @@
 from pathlib import Path
 import importlib.metadata
+import os
 import re
 
-from bowtie import GITHUB, HOMEPAGE, ORG, REPO
+from bowtie import DOCS, GITHUB, HOMEPAGE, ORG, REPO
 
-DOCS = Path(__file__).parent
-STATIC = DOCS / "_static"
+SOURCE = Path(__file__).parent
+STATIC = SOURCE / "_static"
 
 IMPLEMENTATIONS = Path(__file__).parent.parent / "implementations"
 IMPLEMENTATION_COUNT = sum(
@@ -42,6 +43,13 @@ extensions = [
 
 pygments_style = "lovelace"
 pygments_dark_style = "one-dark"
+
+# Trust RTD when present, since this base URL is different e.g. for PRs...
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", str(DOCS))
+html_context = {}
+
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
 
 html_theme = "furo"
 html_logo = str(STATIC / "logo.svg")

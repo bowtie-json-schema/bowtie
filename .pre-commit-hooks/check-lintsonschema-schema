@@ -9,8 +9,9 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).absolute().parent.parent
-CANONICAL_PATH = ROOT / "bowtie/schemas"
-LINTSONSCHEMA_PATH = ROOT / "tests/fauxmplementations/lintsonschema/schemas"
+PACKAGE = ROOT / "bowtie"
+CANONICAL_PATH = PACKAGE / "schemas"
+LINTSONSCHEMA_PATH = PACKAGE / "tests/fauxmplementations/lintsonschema/schemas"
 
 if not CANONICAL_PATH.is_dir():
     sys.exit("Didn't find any schemas to check. Something seems wrong!")
