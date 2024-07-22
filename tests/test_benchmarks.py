@@ -81,10 +81,10 @@ def _iterate_over_benchmark_dir(directory):
 
 
 def _validate_benchmark_file(file, module):
-    data = _benchmarks._load_benchmark_data_from_file(
+    data = _benchmarks._load_benchmark_group_from_file(
         file,
         module,
-    )
+    ).serializable()
     if data:
         benchmark_validated(data)
 
