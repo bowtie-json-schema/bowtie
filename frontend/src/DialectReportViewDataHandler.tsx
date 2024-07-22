@@ -1,22 +1,24 @@
-import { useLoaderData } from "react-router-dom";
-import { DialectReportView } from "./DialectReportView";
 import { useContext, useEffect } from "react";
-import { BowtieVersionContext } from "./context/BowtieVersionContext";
-import { Implementation, ReportData } from "./data/parseReportData";
+import { useLoaderData } from "react-router-dom";
+
 import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
+import Implementation from "./data/Implementation";
+import { ReportData } from "./data/parseReportData";
+import { BowtieVersionContext } from "./context/BowtieVersionContext";
+import { DialectReportView } from "./DialectReportView";
 
 interface LoaderData {
   reportData: ReportData;
-  allImplementationsData: Record<string, Implementation>;
+  allImplementationsData: Map<string, Implementation>;
 }
 
-const ReportDataHandler = () => {
+const DialectReportViewDataHandler = () => {
   const { setVersion } = useContext(BowtieVersionContext);
   const loaderData: LoaderData = useLoaderData() as LoaderData;
 
   useEffect(
     () => setVersion!(loaderData.reportData.runMetadata.bowtieVersion),
-    [setVersion, loaderData.reportData.runMetadata.bowtieVersion],
+    [setVersion, loaderData.reportData.runMetadata.bowtieVersion]
   );
 
   return (
@@ -28,4 +30,4 @@ const ReportDataHandler = () => {
   );
 };
 
-export default ReportDataHandler;
+export default DialectReportViewDataHandler;

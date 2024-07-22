@@ -1,63 +1,51 @@
 import "bootstrap/dist/css/bootstrap.min.css";
-import { createHashRouter, Params, RouterProvider } from "react-router-dom";
-import { createRoot } from "react-dom/client";
-
 import "./global.css";
+import { createRoot } from "react-dom/client";
+import { createHashRouter, Params, RouterProvider } from "react-router-dom";
+
 import Dialect from "./data/Dialect";
-import ReportDataHandler from "./ReportDataHandler";
+import DialectReportViewDataHandler from "./DialectReportViewDataHandler";
 import ThemeContextProvider from "./context/ThemeContext";
+import Implementation from "./data/Implementation";
+import EmbedBadges from "./components/ImplementationReportView/EmbedBadges";
 import { BowtieVersionContextProvider } from "./context/BowtieVersionContext";
 import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import { MainContainer } from "./MainContainer";
-import { implementationMetadataURI } from "./data/Site";
 import {
-  ImplementationData,
   ReportData,
-  implementationFromData,
   prepareImplementationReport,
 } from "./data/parseReportData";
-import EmbedBadges from "./components/ImplementationReportView/EmbedBadges";
 
-const fetchReportData = async (dialect: Dialect) => {
-  document.title = `Bowtie - ${dialect.prettyName}`;
-  return dialect.fetchReport();
-};
-
-const fetchAllReportsData = async (langImplementation: string) => {
+const implementationReportViewDataLoader = async (
+  langImplementation: string
+) => {
   document.title = `Bowtie - ${langImplementation}`;
   const allReportsData = new Map<Dialect, ReportData>();
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
+      dialect.fetchReport().then((data) => allReportsData.set(dialect, data))
     );
   }
   await Promise.all(promises);
-  return prepareImplementationReport(allReportsData, langImplementation);
+  return prepareImplementationReport(langImplementation, allReportsData);
 };
 
-const fetchImplementationMetadata = async () => {
-  const response = await fetch(implementationMetadataURI);
-  const implementations = (await response.json()) as Record<
-    string,
-    ImplementationData
-  >;
-  return Object.fromEntries(
-    Object.entries(implementations).map(([id, data]) => [
-      id,
-      implementationFromData(data),
-    ]),
-  );
-};
-
-const reportDataLoader = async ({ params }: { params: Params<string> }) => {
+const dialectReportViewDataLoader = async ({
+  params,
+}: {
+  params: Params<string>;
+}) => {
   const draftName = params?.draftName ?? "draft2020-12";
-  const [reportData, allImplementationsData] = await Promise.all([
-    fetchReportData(Dialect.withName(draftName)),
-    fetchImplementationMetadata(),
+  const dialect = Dialect.withName(draftName);
+  document.title = `Bowtie - ${dialect.prettyName}`;
+
+  const [allImplementationsData, reportData] = await Promise.all([
+    Implementation.fetchAllImplementationsData(),
+    dialect.fetchReport(),
   ]);
-  return { reportData, allImplementationsData };
+  return { allImplementationsData, reportData };
 };
 
 const router = createHashRouter([
@@ -68,13 +56,13 @@ const router = createHashRouter([
     children: [
       {
         index: true,
-        Component: ReportDataHandler,
-        loader: reportDataLoader,
+        Component: DialectReportViewDataHandler,
+        loader: dialectReportViewDataLoader,
       },
       {
         path: "/dialects/:draftName",
-        Component: ReportDataHandler,
-        loader: reportDataLoader,
+        Component: DialectReportViewDataHandler,
+        loader: dialectReportViewDataLoader,
       },
       {
         path: "/local-report",
@@ -84,7 +72,7 @@ const router = createHashRouter([
         path: "/implementations/:langImplementation",
         Component: ImplementationReportView,
         loader: async ({ params }) =>
-          fetchAllReportsData(params.langImplementation!),
+          implementationReportViewDataLoader(params.langImplementation!),
         children: [
           {
             path: "badges",
@@ -103,6 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

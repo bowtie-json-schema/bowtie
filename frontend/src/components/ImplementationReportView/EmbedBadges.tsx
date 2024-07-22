@@ -12,17 +12,18 @@ import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-import CopyToClipboard from "../CopyToClipboard";
-import { EmbedBadgesContextType } from "./ImplementationReportView";
-import { Badge, badgesFor } from "../../data/Badge";
-import { ThemeContext } from "../../context/ThemeContext";
 import styles from "./EmbedBadges.module.css";
+import CopyToClipboard from "../CopyToClipboard";
+import Implementation from "../../data/Implementation";
+import { Badge } from "../../data/Badge";
+import { ThemeContext } from "../../context/ThemeContext";
+
+export type EmbedBadgesContextType = Implementation;
 
 const EmbedBadges = () => {
   const navigate = useNavigate();
-  const { implementationId, implementation } =
-    useOutletContext<EmbedBadgesContextType>();
-  const allBadges = badgesFor(implementation);
+  const implementation = useOutletContext<EmbedBadgesContextType>();
+  const allBadges = implementation.badges();
   const { isDarkMode } = useContext(ThemeContext);
 
   const [activeFormat, setActiveFormat] = useState(supportedFormats[1]);
@@ -37,7 +38,7 @@ const EmbedBadges = () => {
       dialogClassName={styles["modal-width"]}
       show={show}
       onHide={() => setShow(false)}
-      onExited={() => navigate(`/implementations/${implementationId}`)}
+      onExited={() => navigate(implementation.routePath)}
     >
       <Modal.Header closeButton className="border-0 mt-4">
         <Modal.Title className="fs-5 ms-3">Badges</Modal.Title>

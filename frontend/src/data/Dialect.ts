@@ -1,8 +1,8 @@
-import data from "../../../data/dialects.json";
 import URI from "urijs";
 
-import { fromSerialized } from "./parseReportData";
 import siteURI from "./Site";
+import data from "../../../data/dialects.json";
+import { fromSerialized } from "./parseReportData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -20,7 +20,7 @@ export default class Dialect {
     shortName: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: Date,
+    firstPublicationDate: Date
   ) {
     if (Dialect.all.has(shortName)) {
       throw new DialectError(`A "${shortName}" dialect already exists.`);
@@ -64,13 +64,13 @@ export default class Dialect {
   }
 
   static forURI(uri: string): Dialect {
-    const dialect = Array.from(Dialect.all.entries()).find(
-      ([, dialect]) => dialect.uri === uri,
+    const dialect = Array.from(Dialect.all.values()).find(
+      (dialect) => dialect.uri === uri
     );
     if (!dialect) {
       throw new DialectError(`A ${uri} dialect does not exist.`);
     }
-    return dialect[1];
+    return dialect;
   }
 }
 
@@ -91,6 +91,6 @@ for (const each of data) {
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(each.firstPublicationDate)
   );
 }
