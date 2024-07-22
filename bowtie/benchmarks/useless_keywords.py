@@ -1,6 +1,7 @@
 from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
+
 def get_benchmark():
     num_useless_keywords = 300000
 
@@ -22,8 +23,9 @@ def get_benchmark():
                         ("type", "integer"),
                         *(
                             (str(i), i)
-                            for i in
-                        range(num_useless_keywords, num_useless_keywords)
+                            for i in range(
+                                num_useless_keywords, num_useless_keywords
+                            )
                         ),
                         ("minimum", 37),
                     ],
@@ -33,7 +35,7 @@ def get_benchmark():
                     dict(description="Middle of schema", instance="foo"),
                     dict(description="End of schema", instance=12),
                     dict(description="Valid", instance=3737),
-                ]
+                ],
             )
         ],
         path=Path(__file__),

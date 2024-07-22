@@ -21,7 +21,8 @@ def get_benchmark():
                     dict(
                         description=f"Validating metaschema against metaschema",
                         instance=SPECIFICATIONS.contents(
-                            DRAFT202012_DIALECT_URI),
+                            DRAFT202012_DIALECT_URI
+                        ),
                     )
                 ],
             )

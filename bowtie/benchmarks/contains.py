@@ -10,7 +10,7 @@ def get_benchmark():
     invalid = [0] * array_size
 
     return BenchmarkGroup(
-        name='contains',
+        name="contains",
         description="A benchmark for validation of the `contains` keyword.",
         benchmarks=[
             Benchmark.from_dict(
@@ -26,7 +26,7 @@ def get_benchmark():
                     dict(description="Middle of array", instance=middle),
                     dict(description="End of array", instance=end),
                     dict(description="Invalid array", instance=invalid),
-                ]
+                ],
             )
         ],
         path=Path(__file__),

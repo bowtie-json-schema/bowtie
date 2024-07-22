@@ -51,7 +51,7 @@ def get_benchmark():
         name=name,
         description=description,
         benchmarks=benchmarks,
-        path=Path(__file__)
+        path=Path(__file__),
     )
 
 
