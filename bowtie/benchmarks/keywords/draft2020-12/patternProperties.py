@@ -1,6 +1,9 @@
 import random
 import string
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 max_num = 100000
 
 
@@ -35,7 +38,7 @@ def get_benchmark():
         valid = property_value_pairs
 
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"No. of Properties - {num_properties}",
                 description=(
                     "Validating the `patternProperties` keyword with "
@@ -70,10 +73,11 @@ def get_benchmark():
 
         num_properties *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )
 
 

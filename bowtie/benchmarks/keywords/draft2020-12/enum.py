@@ -1,5 +1,8 @@
 import uuid
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "enum"
@@ -15,7 +18,7 @@ def get_benchmark():
     while array_size <= max_array_size:
         array = [uuid.uuid4().hex for _ in range(array_size)]
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
                 description=(
                     f"Validating the `enum` keyword over array of size {array_size}."
@@ -34,8 +37,9 @@ def get_benchmark():
         )
         array_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )

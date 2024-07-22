@@ -38,21 +38,27 @@ DIRECT_CONNECTABLE = "python-jsonschema"
 
 @pytest.fixture()
 def valid_single_benchmark():
-    from tests.benchmarks import valid_single_benchmark
-
-    return valid_single_benchmark.get_benchmark()
+    return dict(
+        name="benchmark",
+        schema={
+            "type": "object",
+        },
+        description="benchmark",
+        tests=[
+            {
+                "description": "test",
+                "instance": {
+                    "a": "b",
+                },
+            },
+        ],
+    )
 
 
 @pytest.fixture()
-def valid_grouped_benchmark(valid_single_benchmark):
-    return {
-        "name": "benchmark_group",
-        "description": "benchmark_group",
-        "benchmarks": [
-            valid_single_benchmark,
-            valid_single_benchmark,
-        ],
-    }
+def valid_benchmark_group(valid_single_benchmark):
+    from tests.benchmarks import valid_benchmark_group
+    return valid_benchmark_group.get_benchmark().serializable()
 
 
 @pytest.fixture()
@@ -106,8 +112,8 @@ class TestBenchmarkFormat:
     def test_validate_single_benchmark(self, valid_single_benchmark):
         assert benchmark_validated(valid_single_benchmark)
 
-    def test_validate_grouped_benchmark(self, valid_grouped_benchmark):
-        assert benchmark_validated(valid_grouped_benchmark)
+    def test_validate_grouped_benchmark(self, valid_benchmark_group):
+        assert benchmark_validated(valid_benchmark_group)
 
     @pytest.mark.parametrize(
         "benchmark_file",
@@ -164,9 +170,9 @@ class TestLoadBenchmark:
 
         assert benchmark_validated(benchmark_group.serializable())
 
-    def test_load_benchmark_group_from_dict(self, valid_grouped_benchmark):
-        benchmark = valid_grouped_benchmark
-        benchmark_group = BenchmarkGroup.from_dict(benchmark)
+    def test_load_benchmark_group_from_dict(self, valid_benchmark_group):
+        benchmark = valid_benchmark_group
+        benchmark_group = BenchmarkGroup.from_dict(benchmark, file=benchmark['path'])
 
         serializable = benchmark_group.serializable()
 
@@ -186,15 +192,17 @@ class TestLoadBenchmark:
     def test_load_benchmark_group_from_json(
         self,
         tmp_path,
-        valid_grouped_benchmark,
+        valid_benchmark_group,
     ):
         tmp_path = tmp_path / "test_file.json"
-        tmp_path.write_text(json.dumps(valid_grouped_benchmark))
+        tmp_path.write_text(json.dumps(valid_benchmark_group))
         benchmark_group = BenchmarkGroup.from_file(tmp_path)
 
         serializable = benchmark_group.serializable()
+        serializable.pop("path")
+        valid_benchmark_group.pop("path")
 
-        assert serializable == valid_grouped_benchmark
+        assert serializable == valid_benchmark_group
         assert benchmark_validated(serializable)
 
     def test_load_benchmark_groups_from_folder(self):

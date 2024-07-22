@@ -299,10 +299,13 @@ class BenchmarkGroup:
         )
 
     def serializable(self) -> Message:
-        return asdict(
+        serialized_dict = asdict(
             self,
             filter=lambda _, v: v is not None,
         )
+        if "path" in serialized_dict:
+            serialized_dict["path"] = str(serialized_dict["path"])
+        return serialized_dict
 
 
 @frozen

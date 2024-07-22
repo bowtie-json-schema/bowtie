@@ -1,3 +1,7 @@
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
+
 def get_benchmark():
 
     name = "contains"
@@ -15,7 +19,7 @@ def get_benchmark():
         invalid = [0] * array_size
 
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
                 description=(
                     f"Validating contains keyword over an array of size {array_size}"
@@ -35,8 +39,9 @@ def get_benchmark():
         )
         array_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )

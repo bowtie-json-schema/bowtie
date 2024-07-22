@@ -2,6 +2,9 @@ import string
 import uuid
 import random
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "propertyNames"
@@ -40,7 +43,7 @@ def get_benchmark():
         }
 
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Num of Properties - {object_size}",
                 description=(
                     f"Validating the `propertyNames` keyword over object of size {object_size}."
@@ -64,8 +67,9 @@ def get_benchmark():
         )
         object_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )

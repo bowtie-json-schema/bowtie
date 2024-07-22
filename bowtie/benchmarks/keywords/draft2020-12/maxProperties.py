@@ -1,5 +1,8 @@
 import uuid
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "maxProperties"
@@ -21,7 +24,7 @@ def get_benchmark():
         )
         valid_object_with_one_property = _create_object_with_num_properties(1)
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Maximum Required Properties - {num_properties}",
                 description=(
                     f"Validating the `maxProperties` keyword for maxProperties - {num_properties}."
@@ -44,10 +47,11 @@ def get_benchmark():
         )
         num_properties *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )
 
 

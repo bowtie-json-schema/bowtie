@@ -1,5 +1,8 @@
 import uuid
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
 
@@ -24,7 +27,7 @@ def get_benchmark():
         invalid = array
 
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"minContains_{array_size}",
                 description=(
                     "A benchmark for validation of the `minContains` keyword."
@@ -46,8 +49,9 @@ def get_benchmark():
         )
         array_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )

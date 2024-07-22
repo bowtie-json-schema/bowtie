@@ -1,5 +1,8 @@
 import uuid
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "minProperties"
@@ -21,7 +24,7 @@ def get_benchmark():
             1
         )
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Minimum Required Properties - {num_properties}",
                 description=(
                     f"Validating the `minProperties` keyword for minProperties - {num_properties}."
@@ -42,10 +45,11 @@ def get_benchmark():
         )
         num_properties *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )
 
 

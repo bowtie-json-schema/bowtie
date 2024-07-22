@@ -1,5 +1,8 @@
 import uuid
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "additionalProperties"
@@ -8,7 +11,7 @@ def get_benchmark():
         "implementation for the additionalProperties keyword."
     )
     max_array_size = 100000
-    benchmarks = []
+    benchmarks: list[Benchmark] = []
 
     array_size = 1000
 
@@ -28,7 +31,7 @@ def get_benchmark():
         valid = allowed_properties
 
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
                 description=(
                     f"Validating additionalProperties keyword over array of size {array_size}"
@@ -66,10 +69,11 @@ def get_benchmark():
 
         array_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )
 
 

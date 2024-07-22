@@ -1,6 +1,9 @@
 import random
 import string
 
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
 
 def get_benchmark():
     name = "pattern"
@@ -19,7 +22,7 @@ def get_benchmark():
             random.choice(letters) for _ in range(string_size)
         )
         benchmarks.append(
-            dict(
+            Benchmark.from_dict(
                 name=f"String Size - {string_size}",
                 description=(
                     f"Validating the `pattern` keyword over string of size {string_size}."
@@ -52,8 +55,9 @@ def get_benchmark():
         )
         string_size *= 10
 
-    return dict(
+    return BenchmarkGroup(
         name=name,
         description=description,
         benchmarks=benchmarks,
+        path=Path(__file__)
     )
