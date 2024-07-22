@@ -32,11 +32,11 @@ export const DialectReportView = ({
 
     if (selectedLanguages.length > 0) {
       const filteredReportArray = Array.from(
-        reportData.implementationsResults.entries()
+        reportData.implementationsResults.entries(),
       ).filter(([id]) =>
         selectedLanguages.includes(
-          reportData.runMetadata.implementations.get(id)!.language
-        )
+          reportData.runMetadata.implementations.get(id)!.language,
+        ),
       );
       filteredData.implementationsResults = new Map(filteredReportArray);
     }
@@ -52,7 +52,7 @@ export const DialectReportView = ({
     return new Map(
       Array.from(allImplementationsData)
         .filter(([, impl]) => availableLanguages.includes(impl.language))
-        .filter(([key]) => !filteredReportData.implementationsResults.has(key))
+        .filter(([key]) => !filteredReportData.implementationsResults.has(key)),
     );
   }, [params, allImplementationsData, languages, filteredReportData]);
 

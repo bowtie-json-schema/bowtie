@@ -90,7 +90,7 @@ export default class Implementation
       Object.entries(rawImplementations).map(([id, rawData]) => [
         id,
         new Implementation(id, rawData),
-      ])
+      ]),
     );
   }
 
@@ -100,7 +100,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
     );
   }
 
@@ -110,7 +110,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json")
+        .suffix("json"),
     );
   }
 

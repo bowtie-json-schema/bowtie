@@ -143,7 +143,7 @@ describe("parseReportData", () => {
               name: "always_invalid",
               version: metadata.version,
               dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri
+                (dialect) => dialect.uri,
               ),
               homepage: metadata.homepage,
               issues: metadata.issues,
@@ -158,7 +158,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -212,7 +212,7 @@ describe("parseReportData", () => {
               name: "always_invalid",
               version: metadata.version,
               dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri
+                (dialect) => dialect.uri,
               ),
               homepage: metadata.homepage,
               issues: metadata.issues,
@@ -227,7 +227,7 @@ describe("parseReportData", () => {
         ]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {}
+        {},
       ),
       implementationsResults: new Map([
         [
@@ -303,7 +303,7 @@ describe("parseReportData", () => {
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
         ["run", "-i", id, "-D", dialect.shortName],
-        cases.join("\n") + "\n"
+        cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
@@ -311,7 +311,7 @@ describe("parseReportData", () => {
 
     const implementationReport = prepareImplementationReport(
       id,
-      allReportsData
+      allReportsData,
     );
 
     const metadata = implementationReport!.implementation;

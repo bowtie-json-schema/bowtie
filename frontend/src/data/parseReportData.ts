@@ -12,7 +12,7 @@ dayjs.extend(relativeTime);
 export const fromSerialized = (jsonl: string): ReportData => {
   const lines = jsonl.trim().split(/\r?\n/);
   return parseReportData(
-    lines.map((line) => JSON.parse(line) as Record<string, unknown>)
+    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
   );
 };
 
@@ -31,7 +31,7 @@ export class RunMetadata {
     implementations: Map<string, Implementation>,
     bowtieVersion: string,
     started: Date,
-    metadata: Record<string, unknown>
+    metadata: Record<string, unknown>,
   ) {
     this.dialect = dialect;
     this.implementations = implementations;
@@ -49,7 +49,7 @@ export class RunMetadata {
       Object.entries(record.implementations).map(([id, info]) => [
         id,
         new Implementation(id, info),
-      ])
+      ]),
     );
 
     return new RunMetadata(
@@ -57,7 +57,7 @@ export class RunMetadata {
       implementations,
       record.bowtie_version,
       new Date(record.started),
-      record.metadata
+      record.metadata,
     );
   }
 }
@@ -66,7 +66,7 @@ export class RunMetadata {
  * Parse a report from some deserialized JSON objects.
  */
 export const parseReportData = (
-  lines: Record<string, unknown>[]
+  lines: Record<string, unknown>[],
 ): ReportData => {
   const runMetadata = RunMetadata.fromRecord(lines[0] as unknown as Header);
 
@@ -90,7 +90,7 @@ export const parseReportData = (
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
       const implementationResults = implementationsResultsMap.get(
-        line.implementation as string
+        line.implementation as string,
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
@@ -102,7 +102,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          })
+          }),
         );
       } else if (line.skipped) {
         implementationResults.totals.skippedTests! += caseData.tests.length;
@@ -111,7 +111,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
             message: line.message as string,
-          })
+          }),
         );
       } else if (line.implementation) {
         const caseResults: CaseResult[] = (
@@ -169,7 +169,7 @@ export const parseReportData = (
  */
 export const prepareImplementationReport = (
   implementationId: string,
-  allReportsData: Map<Dialect, ReportData>
+  allReportsData: Map<Dialect, ReportData>,
 ) => {
   let implementationReport: ImplementationReport | null = null;
   const dialectCompliance = new Map<Dialect, Partial<Totals>>();
@@ -205,7 +205,7 @@ export const prepareImplementationReport = (
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0
+    0,
   );
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
@@ -219,7 +219,7 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    }
+    },
   );
 };
 
