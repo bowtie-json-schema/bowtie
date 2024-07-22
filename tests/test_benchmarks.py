@@ -58,6 +58,7 @@ def valid_single_benchmark():
 @pytest.fixture()
 def valid_benchmark_group(valid_single_benchmark):
     from tests.benchmarks import valid_benchmark_group
+
     return valid_benchmark_group.get_benchmark().serializable()
 
 
@@ -172,7 +173,9 @@ class TestLoadBenchmark:
 
     def test_load_benchmark_group_from_dict(self, valid_benchmark_group):
         benchmark = valid_benchmark_group
-        benchmark_group = BenchmarkGroup.from_dict(benchmark, file=benchmark['path'])
+        benchmark_group = BenchmarkGroup.from_dict(
+            benchmark, file=benchmark["path"]
+        )
 
         serializable = benchmark_group.serializable()
 

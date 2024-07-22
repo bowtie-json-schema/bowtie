@@ -21,8 +21,8 @@ def get_benchmark():
                     {
                         "description": "test",
                         "instance": {},
-                    }
-                ]
+                    },
+                ],
             )
         ],
         path=Path(__file__),
