@@ -107,20 +107,23 @@ def get_benchmark_filenames(
         STDOUT.file.write("\n")
 
 
-def _load_benchmark_data_from_file(
+def _load_benchmark_group_from_file(
     file: Path,
     module: str | None = None,
 ):
-    data = None
+    benchmark_group = None
     if file.suffix == ".py" and file.name != "__init__.py":
         benchmark_module_name = "." + file.stem
-        data = importlib.import_module(
+        benchmark_group = importlib.import_module(
             benchmark_module_name,
             module,
         ).get_benchmark()
+
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
-    return data
+        benchmark_group = BenchmarkGroup.from_dict(**data, file=file)
+
+    return benchmark_group
 
 
 @frozen
@@ -260,15 +263,10 @@ class BenchmarkGroup:
         file: Path,
         module: str = "bowtie.benchmarks",
     ) -> BenchmarkGroup | None:
-        data = _load_benchmark_data_from_file(
+        return _load_benchmark_group_from_file(
             file,
             module,
         )
-
-        if data:
-            return cls.from_dict(data)
-
-        return None
 
     @classmethod
     def from_dict(
