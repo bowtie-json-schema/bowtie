@@ -4,10 +4,31 @@ import { badgeFor, BADGES } from "./Badge";
 import Dialect from "./Dialect";
 import siteURI from "./Site";
 
+export interface RawImplementationData {
+  language: string;
+  name: string;
+  version?: string;
+  dialects: string[];
+  homepage: string;
+  documentation?: string;
+  issues: string;
+  source: string;
+  links?: {
+    description?: string;
+    url?: string;
+    [k: string]: unknown;
+  }[];
+  os?: string;
+  os_version?: string;
+  language_version?: string;
+}
+
 /**
  * An individual implementation of JSON Schema supported by Bowtie.
  */
-export default class Implementation {
+export default class Implementation
+  implements Omit<RawImplementationData, "dialects">
+{
   readonly language!: string;
   readonly name!: string;
   readonly version?: string;
@@ -112,9 +133,4 @@ export default class Implementation {
       }),
     };
   }
-}
-
-export interface RawImplementationData
-  extends Omit<Implementation, "dialects"> {
-  dialects: string[];
 }

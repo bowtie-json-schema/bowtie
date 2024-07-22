@@ -6,13 +6,10 @@ import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Popover from "react-bootstrap/Popover";
 import Row from "react-bootstrap/Row";
 
+import Implementation from "../../data/Implementation";
 import { DetailsButtonModal } from "../Modals/DetailsButtonModal";
 import { mapLanguage } from "../../data/mapLanguage";
-import {
-  Case,
-  Implementation,
-  ImplementationResults,
-} from "../../data/parseReportData";
+import { Case, ImplementationResults } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
 const ImplementationRow = ({
