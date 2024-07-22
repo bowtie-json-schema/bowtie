@@ -1,0 +1,47 @@
+from pathlib import Path
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
+
+
+def get_benchmark():
+    name = "minItems"
+    description = (
+        "A benchmark for measuring performance of the "
+        "implementation for the minItems keyword."
+    )
+
+    max_array_size = 100000
+    array_size = 1000
+    benchmarks = []
+
+    tests = []
+    testing_array_size = 10000
+    while testing_array_size <= max_array_size:
+        tests.append(
+            dict(
+                description=f"Testing Array Size - {testing_array_size}",
+                instance=["random" for _ in range(testing_array_size)],
+            ),
+        )
+        testing_array_size *= 10
+
+    while array_size <= max_array_size:
+        benchmarks.append(
+            Benchmark.from_dict(
+                name=f"Array Size - {array_size}",
+                description=(
+                    f"Validating the `minItems` keyword over array of size {array_size}."
+                ),
+                schema={
+                    "minItems": array_size,
+                },
+                tests=tests,
+            )
+        )
+        array_size *= 10
+
+    return BenchmarkGroup(
+        name=name,
+        description=description,
+        benchmarks=benchmarks,
+        path=Path(__file__)
+    )
