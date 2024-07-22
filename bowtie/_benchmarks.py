@@ -1171,7 +1171,7 @@ class Benchmarker:
         *cmd: str,
         env: dict[str, Any] = {},
     ):
-        env={**os.environ, **env}
+        env = {**os.environ, **env}
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=subprocess.PIPE,

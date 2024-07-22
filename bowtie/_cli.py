@@ -1868,7 +1868,8 @@ async def _run(
         time_taken_by_implementations = 0
         time_output_file = (
             Path(os.environ["TIME_OUTPUT_FILE"])
-            if "TIME_OUTPUT_FILE" in os.environ else None
+            if "TIME_OUTPUT_FILE" in os.environ
+            else None
         )
 
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
