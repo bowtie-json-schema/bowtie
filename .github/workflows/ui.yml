@@ -77,6 +77,14 @@ jobs:
           name: site
           path: _site
 
+      - name: Download latest versioned test reports
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: versioned-report.yml
+          branch: main
+          name: implementations
+          path: _site/implementations
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
