@@ -121,7 +121,7 @@ def _load_benchmark_group_from_file(
 
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
-        benchmark_group = BenchmarkGroup.from_dict(**data, file=file)
+        benchmark_group = BenchmarkGroup.from_dict(data, file=file)
 
     return benchmark_group
 
