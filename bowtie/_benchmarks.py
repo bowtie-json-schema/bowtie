@@ -1039,8 +1039,8 @@ class Benchmarker:
                     if benchmark.dialect and benchmark.dialect != dialect:
                         if not quiet:
                             STDOUT.log(
-                                f"Skipping {benchmark.name} as it does not support"
-                                f" dialect {dialect.serializable()}",
+                                f"Skipping {benchmark.name} as it does not "
+                                f"support dialect {dialect.serializable()}",
                             )
                         continue
                     test_started, benchmark_finished = benchmark_started(
@@ -1160,9 +1160,8 @@ class Benchmarker:
                 connectable.to_terse(),
                 "-D",
                 dialect.serializable(),
-                "--output-time",
-                time_output_file,
                 fp.name,
+                time_output_file=time_output_file,
                 connectable_id=connectable.to_terse(),
                 name=benchmark_name,
             )
@@ -1170,11 +1169,14 @@ class Benchmarker:
     @staticmethod
     async def _run_subprocess(
         *cmd: str,
+        env: dict[str, Any] = {},
     ):
+        env={**os.environ, **env}
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            env=env,
         )
         stdout, stderr = await process.communicate()
         return stdout, stderr
@@ -1182,6 +1184,7 @@ class Benchmarker:
     async def _pyperf_benchmark_command(
         self,
         *benchmark_cmd: str,
+        time_output_file: str,
         connectable_id: ConnectableId,
         name: str,
     ):
@@ -1192,6 +1195,7 @@ class Benchmarker:
             "command",
             "--pipe",
             stdout_fd,
+            "--copy-env",
             "--processes",
             str(self._num_runs),
             "--values",
@@ -1203,6 +1207,9 @@ class Benchmarker:
             "--name",
             name,
             *benchmark_cmd,
+            env={
+                "TIME_OUTPUT_FILE": time_output_file,
+            },
         )
         if err:
             _, inner_err = await self._run_subprocess(

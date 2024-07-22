@@ -1203,14 +1203,6 @@ class JSON(click.File):
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@click.option(
-    "--output-time",
-    "-o",
-    "output_time",
-    type=str,
-    default=None,
-    help="For Internal Use Only.",
-)
 @click.argument(
     "input",
     default="-",
@@ -1220,7 +1212,6 @@ def run(
     input: Iterable[str],
     filter: CaseTransform,
     dialect: Dialect,
-    output_time: str,
     **kwargs: Any,
 ):
     """
@@ -1235,19 +1226,7 @@ def run(
         for line in input
     )
 
-    path = None
-    if output_time:
-        path = Path(output_time)
-        path.parent.mkdir(exist_ok=True, parents=True)
-
-    return asyncio.run(
-        _run(
-            **kwargs,
-            cases=cases,
-            dialect=dialect,
-            time_measurement_path=path,
-        ),
-    )
+    return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
 @subcommand
@@ -1838,7 +1817,6 @@ async def _run(
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     reporter: _report.Reporter = _report.Reporter(),
-    time_measurement_path: Path | None = None,
     **kwargs: Any,
 ) -> int:
     exit_code = 0
@@ -1885,8 +1863,14 @@ async def _run(
         count = 0
         should_stop = False
         unsucessful = Unsuccessful()
+
         # Just to complement bowtie perf (not for other purposes)
         time_taken_by_implementations = 0
+        time_output_file = (
+            Path(os.environ["TIME_OUTPUT_FILE"])
+            if "TIME_OUTPUT_FILE" in os.environ else None
+        )
+
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
             got_result = reporter.case_started(seq_case, dialect)
@@ -1919,8 +1903,8 @@ async def _run(
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")
 
-        if time_measurement_path:
-            with time_measurement_path.open("a") as file:
+        if time_output_file:
+            with time_output_file.open("a") as file:
                 file.write(f"{time_taken_by_implementations}\n")
 
     return exit_code
