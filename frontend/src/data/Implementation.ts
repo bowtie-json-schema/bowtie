@@ -86,12 +86,11 @@ export default class Implementation
       RawImplementationData
     >;
 
-    return new Map<string, Implementation>(
-      Object.entries(rawImplementations).map(([id, rawData]) => [
-        id,
-        new Implementation(id, rawData),
-      ]),
+    Object.entries(rawImplementations).forEach(
+      ([id, rawData]) => new Implementation(id, rawData)
     );
+
+    return this.all;
   }
 
   private get badgesIdSegment(): URI {
@@ -100,7 +99,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
     );
   }
 
@@ -110,7 +109,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json"),
+        .suffix("json")
     );
   }
 

@@ -18,14 +18,14 @@ import {
 } from "./data/parseReportData";
 
 const implementationReportViewDataLoader = async (
-  langImplementation: string,
+  langImplementation: string
 ) => {
   document.title = `Bowtie - ${langImplementation}`;
   const allReportsData = new Map<Dialect, ReportData>();
   const promises = [];
   for (const dialect of Dialect.known()) {
     promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
+      dialect.fetchReport().then((data) => allReportsData.set(dialect, data))
     );
   }
   await Promise.all(promises);
@@ -41,11 +41,11 @@ const dialectReportViewDataLoader = async ({
   const dialect = Dialect.withName(draftName);
   document.title = `Bowtie - ${dialect.prettyName}`;
 
-  const [allImplementationsData, reportData] = await Promise.all([
-    Implementation.fetchAllImplementationsData(),
+  const [reportData, allImplementationsData] = await Promise.all([
     dialect.fetchReport(),
+    Implementation.fetchAllImplementationsData(),
   ]);
-  return { allImplementationsData, reportData };
+  return { reportData, allImplementationsData };
 };
 
 const router = createHashRouter([
@@ -91,6 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });
