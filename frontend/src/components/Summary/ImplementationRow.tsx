@@ -14,12 +14,10 @@ import { ThemeContext } from "../../context/ThemeContext";
 
 const ImplementationRow = ({
   cases,
-  id,
   implementation,
   implementationResults,
 }: {
   cases: Map<number, Case>;
-  id: string;
   implementation: Implementation;
   implementationResults: ImplementationResults;
   key: number;
@@ -35,7 +33,7 @@ const ImplementationRow = ({
         scope="row"
         style={{ cursor: "pointer" }}
         className="align-middle p-0"
-        onClick={() => navigate(`/implementations/${id}`)}
+        onClick={() => navigate(implementation.routePath)}
       >
         <span
           className={`text-decoration-underline ${

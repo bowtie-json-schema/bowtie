@@ -84,12 +84,11 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               a.totals.skippedTests! -
               b.totals.failedTests! -
               b.totals.erroredTests! -
-              b.totals.skippedTests!,
+              b.totals.skippedTests!
           )
           .map(([id, implResults], index) => (
             <ImplementationRow
               cases={reportData.cases}
-              id={id}
               implementation={reportData.runMetadata.implementations.get(id)!}
               implementationResults={implResults}
               key={index}
