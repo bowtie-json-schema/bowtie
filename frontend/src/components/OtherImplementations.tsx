@@ -91,6 +91,6 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   return impl.dialects.reduce((acc, curr) =>
-    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
   );
 };
