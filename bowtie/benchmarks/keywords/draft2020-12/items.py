@@ -45,7 +45,8 @@ def get_benchmark():
                         instance=invalid_at_middle,
                     ),
                     dict(
-                        description="Invalid at Last", instance=invalid_at_last,
+                        description="Invalid at Last",
+                        instance=invalid_at_last,
                     ),
                     dict(description="Valid", instance=valid),
                 ],

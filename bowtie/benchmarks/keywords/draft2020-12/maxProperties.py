@@ -40,7 +40,8 @@ def get_benchmark():
                         instance=valid_object_with_one_less,
                     ),
                     dict(
-                        description="Invalid Object", instance=invalid_object,
+                        description="Invalid Object",
+                        instance=invalid_object,
                     ),
                 ],
             ),

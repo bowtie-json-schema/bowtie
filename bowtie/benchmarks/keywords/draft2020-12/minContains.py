@@ -40,7 +40,8 @@ def get_benchmark():
                 tests=[
                     dict(description="Both at First", instance=both_at_first),
                     dict(
-                        description="Both at Middle", instance=both_at_middle,
+                        description="Both at Middle",
+                        instance=both_at_middle,
                     ),
                     dict(description="Both at Last", instance=both_at_last),
                     dict(description="Invalid", instance=invalid),
