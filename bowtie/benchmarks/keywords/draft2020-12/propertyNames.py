@@ -1,8 +1,8 @@
+from pathlib import Path
+import random
 import string
 import uuid
-import random
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -31,7 +31,7 @@ def get_benchmark():
         }
         invalid_at_middle.update({invalid_property: 10})
         invalid_at_middle.update(
-            {uuid.uuid4().hex: 10 for _ in range(object_size // 2)}
+            {uuid.uuid4().hex: 10 for _ in range(object_size // 2)},
         )
 
         invalid_at_last = object.copy()
@@ -59,11 +59,11 @@ def get_benchmark():
                         instance=invalid_at_middle,
                     ),
                     dict(
-                        description="Invalid at Last", instance=invalid_at_last
+                        description="Invalid at Last", instance=invalid_at_last,
                     ),
                     dict(description="Valid", instance=valid),
                 ],
-            )
+            ),
         )
         object_size *= 10
 

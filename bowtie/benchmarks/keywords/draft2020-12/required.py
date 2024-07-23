@@ -1,6 +1,6 @@
+from pathlib import Path
 import uuid
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -59,7 +59,7 @@ def get_benchmark():
                         instance=_generate_object_with_keys(none_present),
                     ),
                 ],
-            )
+            ),
         )
         array_size *= 10
 

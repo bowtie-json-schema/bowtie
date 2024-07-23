@@ -1,5 +1,6 @@
 from itertools import cycle
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -37,7 +38,7 @@ def get_benchmark():
                     )
                     for levels in range(1, 11, 3)
                 ],
-            )
+            ),
         ],
         path=Path(__file__),
     )

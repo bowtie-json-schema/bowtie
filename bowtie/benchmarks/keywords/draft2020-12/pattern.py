@@ -1,7 +1,7 @@
+from pathlib import Path
 import random
 import string
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -51,7 +51,7 @@ def get_benchmark():
                         instance=random_letter_string,
                     ),
                 ],
-            )
+            ),
         )
         string_size *= 10
 

@@ -1,7 +1,7 @@
+from pathlib import Path
 import random
 import string
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 max_num = 100000
@@ -25,7 +25,7 @@ def get_benchmark():
         ]
 
         invalid_at_first = [
-            (_random_string(), "string")
+            (_random_string(), "string"),
         ] + property_value_pairs[1:]
         invalid_at_middle = (
             property_value_pairs[: num_properties // 2]
@@ -33,7 +33,7 @@ def get_benchmark():
             + property_value_pairs[num_properties // 2 : -1]
         )
         invalid_at_last = property_value_pairs[1:] + [
-            (_random_string(), "string")
+            (_random_string(), "string"),
         ]
         valid = property_value_pairs
 
@@ -68,7 +68,7 @@ def get_benchmark():
                         instance=_get_instance_object(valid),
                     ),
                 ],
-            )
+            ),
         )
 
         num_properties *= 10
@@ -82,7 +82,7 @@ def get_benchmark():
 
 
 def _get_instance_object(property_value_pairs):
-    return {key: value for key, value in property_value_pairs}
+    return dict(property_value_pairs)
 
 
 def _random_string():

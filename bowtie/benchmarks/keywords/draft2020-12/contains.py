@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -22,7 +23,8 @@ def get_benchmark():
             Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
                 description=(
-                    f"Validating contains keyword over an array of size {array_size}"
+                    "Validating contains keyword over an array "
+                    f"of size {array_size}"
                 ),
                 schema={
                     "type": "array",
@@ -35,7 +37,7 @@ def get_benchmark():
                     dict(description="End of array", instance=end),
                     dict(description="Invalid array", instance=invalid),
                 ],
-            )
+            ),
         )
         array_size *= 10
 

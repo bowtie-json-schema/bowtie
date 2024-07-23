@@ -1,6 +1,6 @@
+from pathlib import Path
 import uuid
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -46,7 +46,7 @@ def get_benchmark():
                     dict(description="All at Last", instance=all_at_last),
                     dict(description="Valid", instance=valid),
                 ],
-            )
+            ),
         )
         array_size *= 10
 

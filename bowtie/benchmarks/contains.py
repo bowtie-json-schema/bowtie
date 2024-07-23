@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -27,7 +28,7 @@ def get_benchmark():
                     dict(description="End of array", instance=end),
                     dict(description="Invalid array", instance=invalid),
                 ],
-            )
+            ),
         ],
         path=Path(__file__),
     )

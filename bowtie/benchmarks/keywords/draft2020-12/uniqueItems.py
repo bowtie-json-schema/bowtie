@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -13,15 +14,15 @@ def get_benchmark():
 
     array_size = 2000
     while array_size <= max_array_size:
-
-        first_two_duplicate = [1, 1] + [i for i in range(2, array_size - 2)]
-        middle_two_duplicate = (
-            [i for i in range(array_size // 2)]
-            + [-1, -1]
-            + [i for i in range(array_size // 2, array_size)]
-        )
-        last_two_duplicate = [i for i in range(2, array_size - 2)] + [1, 1]
-        valid = [i for i in range(array_size)]
+        first_two_duplicate = [1, 1, *list(range(2, array_size - 2))]
+        middle_two_duplicate = [
+            *list(range(array_size // 2)),
+            -1,
+            -1,
+            *list(range(array_size // 2, array_size)),
+        ]
+        last_two_duplicate = [*list(range(2, array_size - 2)), 1, 1]
+        valid = list(range(array_size))
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -47,7 +48,7 @@ def get_benchmark():
                     ),
                     dict(description="Valid", instance=valid),
                 ],
-            )
+            ),
         )
 
         array_size *= 10

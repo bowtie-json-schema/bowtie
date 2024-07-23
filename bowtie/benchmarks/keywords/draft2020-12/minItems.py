@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -35,7 +36,7 @@ def get_benchmark():
                     "minItems": array_size,
                 },
                 tests=tests,
-            )
+            ),
         )
         array_size *= 10
 

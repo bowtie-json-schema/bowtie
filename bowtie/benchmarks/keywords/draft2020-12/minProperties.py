@@ -1,6 +1,6 @@
+from pathlib import Path
 import uuid
 
-from pathlib import Path
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -18,10 +18,10 @@ def get_benchmark():
     while num_properties <= max_num_properties:
         valid_object = _create_object_with_num_properties(num_properties)
         invalid_object_with_one_less = _create_object_with_num_properties(
-            num_properties - 1
+            num_properties - 1,
         )
         invalid_object_with_one_property = _create_object_with_num_properties(
-            1
+            1,
         )
         benchmarks.append(
             Benchmark.from_dict(
@@ -41,7 +41,7 @@ def get_benchmark():
                     ),
                     dict(description="Valid Object", instance=valid_object),
                 ],
-            )
+            ),
         )
         num_properties *= 10
 
