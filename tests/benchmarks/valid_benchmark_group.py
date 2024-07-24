@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -23,7 +24,7 @@ def get_benchmark():
                         "instance": {},
                     },
                 ],
-            )
+            ),
         ],
         path=Path(__file__),
     )
