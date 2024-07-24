@@ -174,7 +174,8 @@ class TestLoadBenchmark:
     def test_load_benchmark_group_from_dict(self, valid_benchmark_group):
         benchmark = valid_benchmark_group
         benchmark_group = BenchmarkGroup.from_dict(
-            benchmark, file=benchmark["path"]
+            benchmark,
+            file=benchmark["path"],
         )
 
         serializable = benchmark_group.serializable()
