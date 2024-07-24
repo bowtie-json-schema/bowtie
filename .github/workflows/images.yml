@@ -77,9 +77,14 @@ jobs:
               exit 1
             fi
           else
-            for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
-              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
-            done
+            if [ -n "$version" ]; then
+              echo "Please also input an implementation name along with the version that you've provided."
+              exit 1
+            else
+              for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
+                MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+              done
+            fi
           fi
           echo "images=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
