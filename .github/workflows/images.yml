@@ -11,9 +11,9 @@ on:
         description: >
           A specific version of the implementation you want to build.
 
-          If the implementation has historical version support (i.e. a `matrix-versions.json` file) 
+          If the implementation has historical version support (i.e. a `matrix-versions.json` file)
           and your specified version is included in that file then only that version of the implementation
-          will be built and if you don't specify any version over here then all of its versions from that 
+          will be built and if you don't specify any version over here then all of its versions from that
           file will be built.
 
           If no file is found then just the latest version of the implementation will be built.
