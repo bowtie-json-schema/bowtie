@@ -56,8 +56,9 @@ jobs:
         id: generate-new-versioned-report
         run: |
           impl=${{ matrix.implementation }}
-          MATRIX_VERSIONS=$(jq -r '.[]' "implementations/$impl/matrix-versions.json")
-          for version in $MATRIX_VERSIONS; do
+          MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
+          cp $MATRIX_VERSIONS_FILE $impl
+          for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
             SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
             if [ -n "$SUPPORTED_DIALECTS" ]; then
               mkdir "$impl/v$version"
