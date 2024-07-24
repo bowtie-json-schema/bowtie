@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+
 import Dialect from "./Dialect";
 
 describe("Dialect", () => {

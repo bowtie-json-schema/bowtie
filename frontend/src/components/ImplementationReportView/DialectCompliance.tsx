@@ -4,7 +4,6 @@ import Card from "react-bootstrap/Card";
 import Image from "react-bootstrap/Image";
 import Table from "react-bootstrap/Table";
 
-import { complianceBadgeFor } from "../../data/Badge";
 import { ImplementationReport } from "../../data/parseReportData";
 
 const DialectCompliance: React.FC<{
@@ -57,10 +56,9 @@ const DialectCompliance: React.FC<{
                     <td>
                       <Link className="mx-1" to={dialect.routePath}>
                         <Image
-                          src={complianceBadgeFor(
-                            implementation,
-                            dialect,
-                          ).href()}
+                          src={implementation
+                            .complianceBadgeFor(dialect)
+                            .href()}
                           alt={dialect.prettyName}
                           className="float-end"
                         />

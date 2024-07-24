@@ -1,7 +1,8 @@
-import Dialect from "./Dialect";
-
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+
+import Dialect from "./Dialect";
+import Implementation, { RawImplementationData } from "./Implementation";
 
 dayjs.extend(relativeTime);
 
@@ -47,9 +48,10 @@ export class RunMetadata {
     const implementations = new Map<string, Implementation>(
       Object.entries(record.implementations).map(([id, info]) => [
         id,
-        implementationFromData(info),
+        new Implementation(id, info),
       ]),
     );
+
     return new RunMetadata(
       Dialect.forURI(record.dialect),
       implementations,
@@ -161,26 +163,13 @@ export const parseReportData = (
 };
 
 /**
- * Turn raw implementation data into an Implementation.
- *
- * If/when Implementation is a class, this will be its fromRecord.
- */
-export const implementationFromData = (
-  data: ImplementationData,
-): Implementation =>
-  ({
-    ...data,
-    dialects: data.dialects.map((uri) => Dialect.forURI(uri)),
-  }) as Implementation;
-
-/**
  * Prepare a summarized implementation report using the
  * passed implementation id and all the dialect reports data
  * that was fetched.
  */
 export const prepareImplementationReport = (
-  allReportsData: Map<Dialect, ReportData>,
   implementationId: string,
+  allReportsData: Map<Dialect, ReportData>,
 ) => {
   let implementationReport: ImplementationReport | null = null;
   const dialectCompliance = new Map<Dialect, Partial<Totals>>();
@@ -198,26 +187,13 @@ export const prepareImplementationReport = (
         failedTests: implementationResults.totals.failedTests,
       });
 
-      const implementation = runMetadata.implementations.get(implementationId)!;
-
       if (!implementationReport) {
+        const implementation =
+          runMetadata.implementations.get(implementationId)!;
+
         implementationReport = {
-          implementationId,
           implementation,
           dialectCompliance,
-        };
-      } else {
-        implementationReport = {
-          implementationId,
-          implementation: Object.assign(
-            {},
-            implementationReport.implementation,
-            implementation,
-          ),
-          dialectCompliance: new Map([
-            ...implementationReport.dialectCompliance,
-            ...dialectCompliance,
-          ]),
         };
       }
     }
@@ -247,15 +223,11 @@ export const calculateTotals = (data: ReportData): Totals => {
   );
 };
 
-export interface ImplementationData extends Omit<Implementation, "dialects"> {
-  dialects: string[];
-}
-
 interface Header {
   dialect: string;
   bowtie_version: string;
   metadata: Record<string, unknown>;
-  implementations: Record<string, ImplementationData>;
+  implementations: Record<string, RawImplementationData>;
   started: number;
 }
 
@@ -284,29 +256,7 @@ export interface CaseResult {
   message?: string;
 }
 
-export interface Implementation {
-  language: string;
-  name: string;
-  version?: string;
-  dialects: Dialect[];
-  homepage: string;
-  documentation?: string;
-  issues: string;
-  source: string;
-  links?: {
-    description?: string;
-    url?: string;
-    [k: string]: unknown;
-  }[];
-  os?: string;
-  os_version?: string;
-  language_version?: string;
-
-  [k: string]: unknown;
-}
-
 export interface ImplementationReport {
-  implementationId: string;
   implementation: Implementation;
   dialectCompliance: Map<Dialect, Partial<Totals>>;
 }
