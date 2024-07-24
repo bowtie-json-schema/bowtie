@@ -4,15 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       implementation:
+        description: The name of an implementation.
+        required: false
+        type: string
+      version:
         description: >
-          The name of an implementation.
+          A specific version of the implementation you want to build.
 
-          If the implementation has historical version support (i.e. a
-          `matrix-versions.json` file) all of its versions will be built.
-          (A future improvement will allow building only specific subsets
-          of the supported versions.)
+          If the implementation has historical version support (i.e. a `matrix-versions.json` file) 
+          and your specified version is included in that file then only that version of the implementation
+          will be built and if you don't specify any version over here then all of its versions from that 
+          file will be built.
 
-          Otherwise, just the latest version is built.
+          If no file is found then just the latest version of the implementation will be built.
         required: false
         type: string
   pull_request:
@@ -46,6 +50,7 @@ jobs:
       - id: images-matrix
         run: |
           implementation=${{ inputs.implementation }}
+          version=${{ inputs.version }}
           matrix_versions_file="implementations/$implementation/matrix-versions.json"
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
           MATRIX="[]"
@@ -53,12 +58,22 @@ jobs:
             if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
               if [ -f "$matrix_versions_file" ]; then
                 versions=$(cat "$matrix_versions_file" | jq -c)
-                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+                if [ -n "$version" ]; then
+                  if echo "$versions" | jq -e --arg version "$version" 'index($version) != null' > /dev/null; then
+                    MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --arg ver "$version" '. + [{"image": $impl, "version": $ver}]')
+                  else
+                    echo "No such version ('$version') found in the \`matrix-versions.json\` file of $implementation. Please provide a correct version."
+                    exit 1
+                  fi
+                else
+                  MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" --argjson vers "$versions" '. + [{"image": $impl, "version": $vers[]}]')
+                fi
               else
                 MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" '. + [{"image": $impl, "version": "latest"}]')
               fi
             else
-              echo "No such implementation found ('$implementation'). Please provide the correct implementation name."
+              echo "No such implementation ('$implementation') found. Please provide a correct implementation name."
+              echo "To see a list of all Bowtie supported implementations, run \`bowtie filter-implementations\`."
               exit 1
             fi
           else
