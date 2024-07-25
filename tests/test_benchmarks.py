@@ -38,21 +38,9 @@ DIRECT_CONNECTABLE = "python-jsonschema"
 
 @pytest.fixture()
 def valid_single_benchmark():
-    return Benchmark.from_dict(
-        name="benchmark",
-        schema={
-            "type": "object",
-        },
-        description="benchmark",
-        tests=[
-            {
-                "description": "test",
-                "instance": {
-                    "a": "b",
-                },
-            },
-        ],
-    )
+    from tests.benchmarks import valid_single_benchmark
+
+    return valid_single_benchmark.get_benchmark()
 
 
 @pytest.fixture()

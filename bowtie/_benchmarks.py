@@ -114,10 +114,16 @@ def _load_benchmark_group_from_file(
     benchmark_group = None
     if file.suffix == ".py" and file.name != "__init__.py":
         benchmark_module_name = "." + file.stem
-        benchmark_group = importlib.import_module(
+        loaded_class = importlib.import_module(
             benchmark_module_name,
             module,
         ).get_benchmark()
+        if isinstance(loaded_class, Benchmark):
+            benchmark_group = BenchmarkGroup.from_dict(
+                loaded_class.serializable(), file=file,
+            )
+        elif isinstance(loaded_class, BenchmarkGroup):
+            benchmark_group = loaded_class
 
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
