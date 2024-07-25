@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from bowtie import _benchmarks
-from bowtie._benchmarks import Benchmark, BenchmarkGroup
+from bowtie._benchmarks import BenchmarkGroup
 from bowtie._cli import EX
 from bowtie._core import Dialect, TestCase
 from bowtie._direct_connectable import Direct

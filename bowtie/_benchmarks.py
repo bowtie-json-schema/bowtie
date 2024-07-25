@@ -120,7 +120,8 @@ def _load_benchmark_group_from_file(
         ).get_benchmark()
         if isinstance(loaded_class, Benchmark):
             benchmark_group = BenchmarkGroup.from_dict(
-                loaded_class.serializable(), file=file,
+                loaded_class.serializable(),
+                file=file,
             )
         elif isinstance(loaded_class, BenchmarkGroup):
             benchmark_group = loaded_class
