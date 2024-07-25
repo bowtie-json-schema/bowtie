@@ -24,19 +24,23 @@ def get_benchmark():
             1,
         )
 
-        tests = [
-            dict(
-                description="Invalid Object with One",
-                instance=invalid_object_with_one_property,
-            ),
-            dict(
-                description="Invalid Object with One Less",
-                instance=invalid_object_with_one_less,
-            ),
-            dict(description="Valid Object", instance=valid_object),
-        ] if num_properties == max_num_properties else [
-            dict(description="Valid Object", instance=valid_object)
-        ]
+        tests = (
+            [
+                dict(
+                    description="Invalid Object with One",
+                    instance=invalid_object_with_one_property,
+                ),
+                dict(
+                    description="Invalid Object with One Less",
+                    instance=invalid_object_with_one_less,
+                ),
+                dict(description="Valid Object", instance=valid_object),
+            ]
+            if num_properties == max_num_properties
+            else [
+                dict(description="Valid Object", instance=valid_object),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(

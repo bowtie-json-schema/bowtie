@@ -24,23 +24,29 @@ def get_benchmark():
         )
         valid_object_with_one_property = _create_object_with_num_properties(1)
 
-        tests = [
-            dict(
-                description="Valid Object with One",
-                instance=valid_object_with_one_property,
-            ),
-            dict(
-                description="Valid Object with One Less",
-                instance=valid_object_with_one_less,
-            ),
-            dict(
-                description="Invalid Object", instance=invalid_object
-            ),
-        ] if num_properties == max_num_properties else [
-            dict(
-                description="Invalid Object", instance=invalid_object
-            )
-        ]
+        tests = (
+            [
+                dict(
+                    description="Valid Object with One",
+                    instance=valid_object_with_one_property,
+                ),
+                dict(
+                    description="Valid Object with One Less",
+                    instance=valid_object_with_one_less,
+                ),
+                dict(
+                    description="Invalid Object",
+                    instance=invalid_object,
+                ),
+            ]
+            if num_properties == max_num_properties
+            else [
+                dict(
+                    description="Invalid Object",
+                    instance=invalid_object,
+                ),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -50,7 +56,7 @@ def get_benchmark():
                 ),
                 schema=dict(maxProperties=num_properties),
                 tests=tests,
-            )
+            ),
         )
         num_properties *= 10
 

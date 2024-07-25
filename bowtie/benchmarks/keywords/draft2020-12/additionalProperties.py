@@ -30,35 +30,39 @@ def get_benchmark():
         invalid_at_last = [*allowed_properties, uuid.uuid4().hex]
         valid = allowed_properties
 
-        tests = [
-            dict(
-                description="Invalid at first",
-                instance=_format_properties_as_instance(
-                    invalid_at_first
+        tests = (
+            [
+                dict(
+                    description="Invalid at first",
+                    instance=_format_properties_as_instance(
+                        invalid_at_first,
+                    ),
                 ),
-            ),
-            dict(
-                description="Invalid at middle",
-                instance=_format_properties_as_instance(
-                    invalid_at_middle
+                dict(
+                    description="Invalid at middle",
+                    instance=_format_properties_as_instance(
+                        invalid_at_middle,
+                    ),
                 ),
-            ),
-            dict(
-                description="Invalid at last",
-                instance=_format_properties_as_instance(
-                    invalid_at_last
+                dict(
+                    description="Invalid at last",
+                    instance=_format_properties_as_instance(
+                        invalid_at_last,
+                    ),
                 ),
-            ),
-            dict(
-                description="Valid",
-                instance=_format_properties_as_instance(valid),
-            ),
-        ] if array_size == max_array_size else [
-            dict(
-                description="Valid",
-                instance=_format_properties_as_instance(valid),
-            )
-        ]
+                dict(
+                    description="Valid",
+                    instance=_format_properties_as_instance(valid),
+                ),
+            ]
+            if array_size == max_array_size
+            else [
+                dict(
+                    description="Valid",
+                    instance=_format_properties_as_instance(valid),
+                ),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -71,7 +75,7 @@ def get_benchmark():
                     additionalProperties=False,
                 ),
                 tests=tests,
-            )
+            ),
         )
 
         array_size *= 10

@@ -18,17 +18,21 @@ def get_benchmark():
     while array_size <= max_array_size:
         array = [uuid.uuid4().hex for _ in range(array_size)]
 
-        tests = [
-            dict(description="Valid First", instance=array[0]),
-            dict(
-                description="Valid Middle",
-                instance=array[array_size // 2],
-            ),
-            dict(description="Valid Last", instance=array[-1]),
-            dict(description="Invalid", instance=uuid.uuid4().hex),
-        ] if array_size == max_array_size else [
-            dict(description="Invalid", instance=uuid.uuid4().hex)
-        ]
+        tests = (
+            [
+                dict(description="Valid First", instance=array[0]),
+                dict(
+                    description="Valid Middle",
+                    instance=array[array_size // 2],
+                ),
+                dict(description="Valid Last", instance=array[-1]),
+                dict(description="Invalid", instance=uuid.uuid4().hex),
+            ]
+            if array_size == max_array_size
+            else [
+                dict(description="Invalid", instance=uuid.uuid4().hex),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -38,7 +42,7 @@ def get_benchmark():
                 ),
                 schema=dict(enum=array),
                 tests=tests,
-            )
+            ),
         )
         array_size *= 10
 

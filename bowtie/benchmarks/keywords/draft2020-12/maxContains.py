@@ -27,14 +27,18 @@ def get_benchmark():
         all_at_last = array[:-3] + [1, 1, 1]
         valid = array[:-1] + [1]
 
-        tests = [
-            dict(description="All at First", instance=all_at_first),
-            dict(description="All at Middle", instance=all_at_middle),
-            dict(description="All at Last", instance=all_at_last),
-            dict(description="Valid", instance=valid),
-        ] if array_size == max_array_size else [
-            dict(description="Valid", instance=valid),
-        ]
+        tests = (
+            [
+                dict(description="All at First", instance=all_at_first),
+                dict(description="All at Middle", instance=all_at_middle),
+                dict(description="All at Last", instance=all_at_last),
+                dict(description="Valid", instance=valid),
+            ]
+            if array_size == max_array_size
+            else [
+                dict(description="Valid", instance=valid),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -50,7 +54,7 @@ def get_benchmark():
                     "maxContains": 2,
                 },
                 tests=tests,
-            )
+            ),
         )
         array_size *= 10
 

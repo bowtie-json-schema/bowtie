@@ -26,18 +26,24 @@ def get_benchmark():
         both_at_last = array[:-2] + [1, 1]
         invalid = array
 
-        tests = [
-            dict(description="Both at First", instance=both_at_first),
-            dict(
-                description="Both at Middle", instance=both_at_middle
-            ),
-            dict(description="Both at Last", instance=both_at_last),
-            dict(description="Invalid", instance=invalid),
-        ] if array_size == max_array_size else [
-            dict(
-                description="Both at Middle", instance=both_at_middle
-            )
-        ]
+        tests = (
+            [
+                dict(description="Both at First", instance=both_at_first),
+                dict(
+                    description="Both at Middle",
+                    instance=both_at_middle,
+                ),
+                dict(description="Both at Last", instance=both_at_last),
+                dict(description="Invalid", instance=invalid),
+            ]
+            if array_size == max_array_size
+            else [
+                dict(
+                    description="Both at Middle",
+                    instance=both_at_middle,
+                ),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
@@ -51,7 +57,7 @@ def get_benchmark():
                     "minContains": 2,
                 },
                 tests=tests,
-            )
+            ),
         )
         array_size *= 10
 

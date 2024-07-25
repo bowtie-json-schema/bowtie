@@ -24,23 +24,27 @@ def get_benchmark():
         last_two_duplicate = [*list(range(2, array_size - 2)), 1, 1]
         valid = list(range(array_size))
 
-        tests = [
-            dict(
-                description="First Two Duplicate",
-                instance=first_two_duplicate,
-            ),
-            dict(
-                description="Middle Two Duplicate",
-                instance=middle_two_duplicate,
-            ),
-            dict(
-                description="Last Two Duplicate",
-                instance=last_two_duplicate,
-            ),
-            dict(description="Valid", instance=valid),
-        ] if array_size == max_array_size else [
-            dict(description="Valid", instance=valid)
-        ]
+        tests = (
+            [
+                dict(
+                    description="First Two Duplicate",
+                    instance=first_two_duplicate,
+                ),
+                dict(
+                    description="Middle Two Duplicate",
+                    instance=middle_two_duplicate,
+                ),
+                dict(
+                    description="Last Two Duplicate",
+                    instance=last_two_duplicate,
+                ),
+                dict(description="Valid", instance=valid),
+            ]
+            if array_size == max_array_size
+            else [
+                dict(description="Valid", instance=valid),
+            ]
+        )
 
         benchmarks.append(
             Benchmark.from_dict(
