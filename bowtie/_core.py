@@ -647,7 +647,7 @@ class Implementation:
                     SpinnerColumn(finished_text=""),
                     BarColumn(bar_width=None),
                     TextColumn(
-                        "[progress.percentage]{task.percentage:>3.0f}%"
+                        "[progress.percentage]{task.percentage:>3.0f}%",
                     ),
                     "•",
                     DownloadColumn(),

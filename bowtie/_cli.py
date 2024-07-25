@@ -1531,13 +1531,11 @@ async def parse_versioned_reports_for(
 
         for version, dialect, response in downloaded:
             reports.append(
-                _report.Report.from_serialized(response.iter_lines())
+                _report.Report.from_serialized(response.iter_lines()),
             )
             progress.update(
                 parsing_report_progress_task,
-                description=(
-                    f"Parsing: " f"v{version}/{dialect.short_name}.json"
-                ),
+                description=(f"Parsing: v{version}/{dialect.short_name}.json"),
                 advance=1,
             )
 
