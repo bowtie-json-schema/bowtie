@@ -910,7 +910,6 @@ class Benchmarker:
             keywords_benchmark_dir / dialect.short_name
         )
 
-
         if not keywords_benchmark_dir.exists():
             raise BenchmarkLoadError("Keyword Benchmarks Folder not found.")
         if not dialect_keyword_benchmarks_dir.exists():

@@ -91,7 +91,7 @@ keyword_benchmark_files = (
     )
     for dialect in Dialect.known()
     for benchmark_file in _iterate_over_benchmark_dir(
-        bowtie_dir / "benchmarks/keywords" / dialect.short_name
+        bowtie_dir / "benchmarks/keywords" / dialect.short_name,
     )
 )
 
