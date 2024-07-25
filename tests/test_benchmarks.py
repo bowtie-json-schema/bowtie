@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from bowtie import _benchmarks
-from bowtie._benchmarks import BenchmarkGroup
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
 from bowtie._cli import EX
 from bowtie._core import Dialect, Example, TestCase
 from bowtie._direct_connectable import Direct
@@ -29,16 +29,16 @@ benchmark_validated, benchmark_invalidated = (
     benchmark_validator.invalidated,
 )
 
-bowtie_dir = Path(__file__).parent.parent.joinpath("bowtie")
-default_benchmarks_dir = bowtie_dir.joinpath("benchmarks")
-keyword_benchmarks_dir = bowtie_dir.joinpath("benchmarks").joinpath("keywords")
+bowtie_dir = Path(__file__).parent.parent / "bowtie"
+default_benchmarks_dir = bowtie_dir / "benchmarks"
+keyword_benchmarks_dir = bowtie_dir / "benchmarks/keywords"
 
 DIRECT_CONNECTABLE = "python-jsonschema"
 
 
 @pytest.fixture()
 def valid_single_benchmark():
-    return dict(
+    return Benchmark.from_dict(
         name="benchmark",
         schema={
             "type": "object",
@@ -59,7 +59,7 @@ def valid_single_benchmark():
 def valid_benchmark_group(valid_single_benchmark):
     from tests.benchmarks import valid_benchmark_group
 
-    return valid_benchmark_group.get_benchmark().serializable()
+    return valid_benchmark_group.get_benchmark()
 
 
 @pytest.fixture()
@@ -111,10 +111,10 @@ keyword_benchmark_files = (
 class TestBenchmarkFormat:
 
     def test_validate_single_benchmark(self, valid_single_benchmark):
-        assert benchmark_validated(valid_single_benchmark)
+        assert benchmark_validated(valid_single_benchmark.serializable())
 
-    def test_validate_grouped_benchmark(self, valid_benchmark_group):
-        assert benchmark_validated(valid_benchmark_group)
+    def test_validate_benchmark_group(self, valid_benchmark_group):
+        assert benchmark_validated(valid_benchmark_group.serializable())
 
     @pytest.mark.parametrize(
         "benchmark_file",
@@ -141,24 +141,19 @@ class TestBenchmarkFormat:
 
 class TestLoadBenchmark:
 
-    def test_load_benchmark(self, valid_single_benchmark):
-        benchmark = _benchmarks.Benchmark.from_dict(**valid_single_benchmark)
-        assert benchmark.serializable() == valid_single_benchmark
-
-    def test_load_benchmark_set_dialect(self, valid_single_benchmark):
-        valid_single_benchmark["schema"][
+    def test_benchmark_set_dialect(self, valid_single_benchmark):
+        benchmark_json = valid_single_benchmark.serializable()
+        benchmark_json["schema"][
             "$schema"
         ] = Dialect.latest().serializable()
-        benchmark = _benchmarks.Benchmark.from_dict(
-            **valid_single_benchmark,
+        benchmark_with_explicit_dialect = _benchmarks.Benchmark.from_dict(
+            **benchmark_json,
         ).maybe_set_dialect_from_schema()
-        assert benchmark.dialect == Dialect.latest()
+        assert benchmark_with_explicit_dialect.dialect == Dialect.latest()
 
     def test_load_benchmark_with_diff_tests(self, valid_single_benchmark):
-        benchmark = _benchmarks.Benchmark.from_dict(
-            **valid_single_benchmark,
-        ).benchmark_with_diff_tests(
-            tests=valid_single_benchmark["tests"] * 10,
+        benchmark = valid_single_benchmark.benchmark_with_diff_tests(
+            tests=valid_single_benchmark.tests * 10,
         )
         assert benchmark_validated(benchmark.serializable())
 
@@ -166,21 +161,21 @@ class TestLoadBenchmark:
         self,
         valid_single_benchmark,
     ):
-        benchmark = valid_single_benchmark
+        benchmark = valid_single_benchmark.serializable()
         benchmark_group = BenchmarkGroup.from_dict(benchmark)
 
         assert benchmark_validated(benchmark_group.serializable())
 
     def test_load_benchmark_group_from_dict(self, valid_benchmark_group):
-        benchmark = valid_benchmark_group
+        benchmark_json = valid_benchmark_group.serializable()
         benchmark_group = BenchmarkGroup.from_dict(
-            benchmark,
-            file=benchmark["path"],
+            benchmark_json,
+            file=valid_benchmark_group.path,
         )
 
         serializable = benchmark_group.serializable()
 
-        assert benchmark == serializable
+        assert benchmark_json == serializable
         assert benchmark_validated(serializable)
 
     def test_load_single_benchmark_group_from_json(
@@ -189,7 +184,7 @@ class TestLoadBenchmark:
         valid_single_benchmark,
     ):
         tmp_path = tmp_path / "test_file.json"
-        tmp_path.write_text(json.dumps(valid_single_benchmark))
+        tmp_path.write_text(json.dumps(valid_single_benchmark.serializable()))
         benchmark_group = BenchmarkGroup.from_file(tmp_path)
         assert benchmark_validated(benchmark_group.serializable())
 
@@ -199,15 +194,15 @@ class TestLoadBenchmark:
         valid_benchmark_group,
     ):
         tmp_path = tmp_path / "test_file.json"
-        tmp_path.write_text(json.dumps(valid_benchmark_group))
-        benchmark_group = BenchmarkGroup.from_file(tmp_path)
 
-        serializable = benchmark_group.serializable()
-        serializable.pop("path")
-        valid_benchmark_group.pop("path")
+        benchmark_group_json = valid_benchmark_group.serializable()
+        benchmark_group_json["path"] = str(tmp_path)
+        tmp_path.write_text(json.dumps(benchmark_group_json))
 
-        assert serializable == valid_benchmark_group
-        assert benchmark_validated(serializable)
+        loaded_benchmark_group = BenchmarkGroup.from_file(tmp_path)
+
+        assert loaded_benchmark_group.serializable() == benchmark_group_json
+        assert benchmark_validated(loaded_benchmark_group.serializable())
 
     def test_load_benchmark_groups_from_folder(self):
         benchmark_groups = BenchmarkGroup.from_folder(
@@ -247,12 +242,9 @@ class TestBenchmarker:
         benchmarker_run_args,
     ):
         test_case = TestCase(
-            description=valid_single_benchmark["description"],
-            schema=valid_single_benchmark["schema"],
-            tests=[
-                Example.from_dict(**test)
-                for test in valid_single_benchmark["tests"]
-            ],
+            description=valid_single_benchmark.description,
+            schema=valid_single_benchmark.schema,
+            tests=valid_single_benchmark.tests,
         )
 
         _benchmarks.Benchmarker.from_test_cases(
@@ -266,7 +258,7 @@ class TestBenchmarker:
         benchmarker_run_args,
     ):
         _benchmarks.Benchmarker.from_input(
-            valid_single_benchmark,
+            valid_single_benchmark.serializable(),
             **benchmarker_run_args,
         )
 
@@ -293,7 +285,7 @@ class TestBenchmarkRun:
         tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
-            json.dumps(valid_single_benchmark),
+            json.dumps(valid_single_benchmark.serializable()),
         )
         stdout, stderr = await bowtie(
             "perf",
@@ -315,7 +307,7 @@ class TestBenchmarkRun:
         tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
-            json.dumps(valid_single_benchmark),
+            json.dumps(valid_single_benchmark.serializable()),
         )
         stdout, stderr = await bowtie(
             "perf",
@@ -338,7 +330,7 @@ class TestBenchmarkRun:
         tmp_path,
     ):
         tmp_path.joinpath("benchmark.json").write_text(
-            json.dumps(valid_single_benchmark),
+            json.dumps(valid_single_benchmark.serializable()),
         )
         stdout, stderr = await bowtie(
             "perf",
