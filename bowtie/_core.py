@@ -646,7 +646,9 @@ class Implementation:
                     TextColumn("[bold blue]{task.description}"),
                     SpinnerColumn(finished_text=""),
                     BarColumn(bar_width=None),
-                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    TextColumn(
+                        "[progress.percentage]{task.percentage:>3.0f}%"
+                    ),
                     "•",
                     DownloadColumn(),
                     "•",
@@ -712,14 +714,20 @@ class Implementation:
         )
 
         async with httpx.AsyncClient(timeout=10) as client:
+
             async def fetch_report(
                 version: str,
                 dialect: Dialect,
                 taskID: TaskID,
             ):
                 try:
-                    url =  HOMEPAGE / "implementations" / id \
-                            / f"v{version}" / f"{dialect.short_name}.json"
+                    url = (
+                        HOMEPAGE
+                        / "implementations"
+                        / id
+                        / f"v{version}"
+                        / f"{dialect.short_name}.json"
+                    )
 
                     response = await client.get(str(url))
                     response.raise_for_status()

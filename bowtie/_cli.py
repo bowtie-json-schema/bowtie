@@ -1496,6 +1496,7 @@ async def info(
             output = serializable
         click.echo(json.dumps(output, indent=2))
 
+
 async def parse_versioned_reports_for(
     id: ConnectableId,
     downloaded: Iterable[tuple[str, Dialect, Response | None]],
@@ -1529,12 +1530,13 @@ async def parse_versioned_reports_for(
         )
 
         for version, dialect, response in downloaded:
-            reports.append(_report.Report.from_serialized(response.iter_lines()))
+            reports.append(
+                _report.Report.from_serialized(response.iter_lines())
+            )
             progress.update(
                 parsing_report_progress_task,
                 description=(
-                    f"Parsing: "
-                    f"v{version}/{dialect.short_name}.json"
+                    f"Parsing: " f"v{version}/{dialect.short_name}.json"
                 ),
                 advance=1,
             )
@@ -1551,6 +1553,7 @@ async def parse_versioned_reports_for(
         await asyncio.sleep(2)
 
         return reports
+
 
 def _trend_table_for(
     id: ConnectableId,
@@ -1589,6 +1592,7 @@ def _trend_table_for(
         main_table.add_row(dialect.pretty_name, sub_table)
 
     return main_table
+
 
 def _trend_table_in_markdown_for(
     id: ConnectableId,
@@ -1629,6 +1633,7 @@ def _trend_table_in_markdown_for(
 
     return final_content
 
+
 @subcommand
 @click.option(
     "--implementation",
@@ -1639,8 +1644,8 @@ def _trend_table_in_markdown_for(
     default=None,
     type=click.Choice(list(Implementation.known())),
     metavar="IMPLEMENTATION",
-    callback=lambda _, __, id: ( # type: ignore[reportUnknownLambdaType]
-        (id, asyncio.run(Implementation.download_versions_of(id))) # type: ignore[reportUnknownArgumentType]
+    callback=lambda _, __, id: (  # type: ignore[reportUnknownLambdaType]
+        (id, asyncio.run(Implementation.download_versions_of(id)))  # type: ignore[reportUnknownArgumentType]
     ),
 )
 @click.option(
@@ -1669,10 +1674,7 @@ def trend(
             Implementation.download_reports_for(id, versions, dialects),
         )
 
-        if all(
-            response is None
-            for _, _, response in downloaded_reports
-        ):
+        if all(response is None for _, _, response in downloaded_reports):
             click.echo(
                 f"None of the versions of {id} "
                 "support your specified dialect(s).",
@@ -1687,8 +1689,7 @@ def trend(
                 dialect: combined_report
                 for dialect in dialects
                 if (
-                    combined_report :=
-                    _report.Report.combine_reports_for_same_dialect_suite(
+                    combined_report := _report.Report.combine_reports_for_same_dialect_suite(
                         parsed_reports,
                         dialect,
                     )
@@ -1705,8 +1706,7 @@ def trend(
                                 "errored": len(unsuccessful.errored),
                                 "failed": len(unsuccessful.failed),
                             }
-                            for version, unsuccessful
-                            in report.latest_to_oldest()
+                            for version, unsuccessful in report.latest_to_oldest()
                         }
                     click.echo(json.dumps(serializable, indent=2))
                 case "pretty":

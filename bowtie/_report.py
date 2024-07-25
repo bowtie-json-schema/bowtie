@@ -53,10 +53,12 @@ class MissingFooter(InvalidReport):
     mean there's actual data missing too.
     """
 
+
 class CaseMismatchInSameSuiteReports(Exception):
     """
     Two reports for the same dialect suite had some Case mismatch in them.
     """
+
 
 class SeqResultMismatchInSameSuiteReports(Exception):
     """
@@ -66,6 +68,7 @@ class SeqResultMismatchInSameSuiteReports(Exception):
     and its same version) in both the reports, yet there was some mismatch in
     its SeqResults.**
     """
+
 
 class ImplementationInfoMismatchInSameSuiteReports(Exception):
     """
@@ -326,6 +329,7 @@ class Report:
             ),
         )
         if reports:
+
             def combine_cases(
                 acc: HashTrieMap[Seq, TestCase],
                 report: Report,
