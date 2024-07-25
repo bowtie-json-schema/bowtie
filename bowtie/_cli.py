@@ -1687,8 +1687,7 @@ def trend(
                 dialect: combined_report
                 for dialect in dialects
                 if (
-                    combined_report :=
-                    _report.Report.combine_reports_for_same_dialect_suite(
+                    combined_report := _report.Report.combine_reports_for_same_dialect_suite(
                         parsed_reports,
                         dialect,
                     )
@@ -1705,8 +1704,7 @@ def trend(
                                 "errored": len(unsuccessful.errored),
                                 "failed": len(unsuccessful.failed),
                             }
-                            for version, unsuccessful
-                            in report.latest_to_oldest()
+                            for version, unsuccessful in report.latest_to_oldest()
                         }
                     click.echo(json.dumps(serializable, indent=2))
                 case "pretty":
