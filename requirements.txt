@@ -65,6 +65,8 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
+packaging==24.1
+    # via bowtie-json-schema (pyproject.toml)
 pycparser==2.22
     # via cffi
 pygments==2.18.0
