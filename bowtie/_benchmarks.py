@@ -74,14 +74,11 @@ def get_benchmark_filenames(
     files = []
 
     if benchmark_type == "keyword":
-        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
-            "keywords",
-        )
-        search_dir = keywords_benchmark_dir.joinpath(
-            dialect.short_name,
-        )
+        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
+        search_dir = keywords_benchmark_dir / dialect.short_name
+
     elif benchmark_type == "default":
-        search_dir = bowtie_dir.joinpath("benchmarks")
+        search_dir = bowtie_dir / "benchmarks"
 
     if search_dir and search_dir.exists():
         files = [
@@ -864,7 +861,7 @@ class Benchmarker:
     @classmethod
     def from_default_benchmarks(cls, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
-        benchmark_dir = bowtie_dir.joinpath("benchmarks")
+        benchmark_dir = bowtie_dir / "benchmarks"
 
         if not benchmark_dir.exists():
             raise BenchmarkLoadError("Default Benchmarks not found.")
@@ -907,12 +904,12 @@ class Benchmarker:
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
         bowtie_dir = Path(__file__).parent
-        keywords_benchmark_dir = bowtie_dir.joinpath("benchmarks").joinpath(
-            "keywords",
+        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
+
+        dialect_keyword_benchmarks_dir = (
+            keywords_benchmark_dir / dialect.short_name
         )
-        dialect_keyword_benchmarks_dir = keywords_benchmark_dir.joinpath(
-            dialect.short_name,
-        )
+
 
         if not keywords_benchmark_dir.exists():
             raise BenchmarkLoadError("Keyword Benchmarks Folder not found.")

@@ -91,7 +91,7 @@ keyword_benchmark_files = (
     )
     for dialect in Dialect.known()
     for benchmark_file in _iterate_over_benchmark_dir(
-        bowtie_dir.joinpath("benchmarks", "keywords", dialect.short_name),
+        bowtie_dir / "benchmarks/keywords" / dialect.short_name
     )
 )
 
@@ -210,8 +210,8 @@ class TestBenchmarker:
         ids=lambda param: param.short_name,
     )
     def test_keywords_benchmarker(self, dialect, benchmarker_run_args):
-        dialect_keyword_benchmarks_dir = keyword_benchmarks_dir.joinpath(
-            dialect.short_name,
+        dialect_keyword_benchmarks_dir = (
+            keyword_benchmarks_dir / dialect.short_name
         )
 
         if not dialect_keyword_benchmarks_dir.exists():
