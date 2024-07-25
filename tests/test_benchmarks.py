@@ -7,7 +7,7 @@ import pytest
 from bowtie import _benchmarks
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 from bowtie._cli import EX
-from bowtie._core import Dialect, Example, TestCase
+from bowtie._core import Dialect, TestCase
 from bowtie._direct_connectable import Direct
 from tests.test_integration import bowtie
 
@@ -143,9 +143,7 @@ class TestLoadBenchmark:
 
     def test_benchmark_set_dialect(self, valid_single_benchmark):
         benchmark_json = valid_single_benchmark.serializable()
-        benchmark_json["schema"][
-            "$schema"
-        ] = Dialect.latest().serializable()
+        benchmark_json["schema"]["$schema"] = Dialect.latest().serializable()
         benchmark_with_explicit_dialect = _benchmarks.Benchmark.from_dict(
             **benchmark_json,
         ).maybe_set_dialect_from_schema()
