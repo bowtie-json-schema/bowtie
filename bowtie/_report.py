@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import reduce
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -8,6 +9,7 @@ import sys
 
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
+from packaging import version
 from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
@@ -49,6 +51,29 @@ class MissingFooter(InvalidReport):
 
     Even though that only tells us whether the report failed fast, it might
     mean there's actual data missing too.
+    """
+
+class CaseMismatchInSameSuiteReports(Exception):
+    """
+    Two reports for the same dialect suite had some Case mismatch in them.
+    """
+
+class SeqResultMismatchInSameSuiteReports(Exception):
+    """
+    Two reports for the same dialect suite had some SeqResult mismatch.
+
+    **Condition to that it was the same ConnectableId (i.e. same implementation
+    and its same version) in both the reports, yet there was some mismatch in
+    its SeqResults.**
+    """
+
+class ImplementationInfoMismatchInSameSuiteReports(Exception):
+    """
+    Two reports for the same dialect suite had an ImplementationInfo mismatch.
+
+    **Condition to that it was the same ConnectableId (i.e. same implementation
+    and its same version) in both the reports, yet there was some mismatch in
+    its metadata/info.**
     """
 
 
@@ -288,6 +313,79 @@ class Report:
             did_fail_fast=False,
         )
 
+    @classmethod
+    def combine_reports_for_same_dialect_suite(
+        cls,
+        reports: Iterable[Report],
+        dialect: Dialect,
+    ) -> Report | None:
+        reports = list(
+            filter(
+                lambda report: report.metadata.dialect == dialect,
+                reports,
+            ),
+        )
+        if reports:
+            def combine_cases(
+                acc: HashTrieMap[Seq, TestCase],
+                report: Report,
+            ):
+                for seq, case in report._cases.items():
+                    existing_case = acc.get(seq)
+                    if not existing_case:
+                        acc = acc.insert(seq, case)
+                    elif case != existing_case:
+                        raise CaseMismatchInSameSuiteReports()
+                return acc
+
+            def combine_results(
+                acc: HashTrieMap[ConnectableId, HashTrieMap[Seq, SeqResult]],
+                report: Report,
+            ):
+                for id, results in report._results.items():
+                    existing_results = acc.get(id)
+                    if not existing_results:
+                        acc = acc.insert(id, results)
+                    elif results != existing_results:
+                        raise SeqResultMismatchInSameSuiteReports()
+                return acc
+
+            def combine_implementations(
+                acc: dict[ConnectableId, ImplementationInfo],
+                report: Report,
+            ):
+                for id, info in report.metadata.implementations.items():
+                    existing_implementation_info = acc.get(id)
+                    if not existing_implementation_info:
+                        acc[id] = info
+                    elif info != existing_implementation_info:
+                        raise ImplementationInfoMismatchInSameSuiteReports()
+                return acc
+
+            return cls(
+                cases=reduce(
+                    combine_cases,
+                    reports,
+                    HashTrieMap(),
+                ),
+                results=reduce(
+                    combine_results,
+                    reports,
+                    HashTrieMap(),
+                ),
+                metadata=RunMetadata(
+                    implementations=reduce(
+                        combine_implementations,
+                        reports,
+                        dict(),
+                    ),
+                    dialect=dialect,
+                ),
+                did_fail_fast=False,
+            )
+        else:
+            return None
+
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
@@ -327,6 +425,21 @@ class Report:
             for id, implementation in self.implementations.items()
         ]
         unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
+        return unsuccessful
+
+    def latest_to_oldest(self):
+        """
+        All implementations ordered by their latest to oldest versions.
+        """
+        unsuccessful = [
+            (implementation.version, self.unsuccessful(id))
+            for id, implementation in self.implementations.items()
+            if implementation.version is not None
+        ]
+        unsuccessful.sort(
+            key=lambda each: version.parse(each[0]),
+            reverse=True,
+        )
         return unsuccessful
 
     def cases_with_results(

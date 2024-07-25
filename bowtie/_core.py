@@ -5,13 +5,33 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    TypeVar,
+    cast,
+)
 from uuid import uuid4
+import asyncio
 import json
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
+from rich.console import (
+    Console,
+)
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TextColumn,
+    TimeElapsedColumn,
+)
 from rpds import HashTrieMap
 from url import URL
 import httpx
@@ -42,7 +62,6 @@ if TYPE_CHECKING:
     from referencing import Specification
     from referencing.jsonschema import Schema, SchemaRegistry
     from rich.console import (
-        Console,
         ConsoleOptions,
         RenderableType,
         RenderResult,
@@ -616,6 +635,137 @@ class Implementation:
         info = ImplementationInfo.from_dict(**started.implementation)  # type: ignore[reportUnknownArgumentType]
 
         yield cls(harness=harness, id=id, info=info, reporter=reporter)
+
+    @classmethod
+    async def download_versions_of(cls, id: ConnectableId) -> Set[str] | None:
+        url = HOMEPAGE / "implementations" / id / "matrix-versions.json"
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            try:
+                with Progress(
+                    TextColumn("[bold blue]{task.description}"),
+                    SpinnerColumn(finished_text=""),
+                    BarColumn(bar_width=None),
+                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    "•",
+                    DownloadColumn(),
+                    "•",
+                    TimeElapsedColumn(),
+                    console=Console(),
+                    transient=True,
+                ) as progress:
+                    task = progress.add_task(
+                        description=f"Fetching versions of {id}",
+                        total=None,
+                    )
+
+                    response = await client.get(str(url))
+                    response.raise_for_status()
+
+                    content = response.content
+                    content_length = len(content)
+
+                    progress.update(
+                        task,
+                        description=(
+                            f"Successfully fetched all versions of {id}!"
+                        ),
+                        completed=content_length,
+                        total=content_length,
+                        advance=content_length,
+                    )
+                    await asyncio.sleep(2)
+
+                    return frozenset(json.loads(content))
+            except httpx.HTTPStatusError:
+                return None
+
+    @classmethod
+    async def download_reports_for(
+        cls,
+        id: ConnectableId,
+        versions: Set[str],
+        dialects: Iterable[Dialect],
+    ) -> Iterable[tuple[str, Dialect, httpx.Response | None]]:
+        num_dialects = len(list(dialects))
+        pretty_names = [dialect.pretty_name for dialect in dialects]
+        if num_dialects == 1:
+            pretty_names_str = pretty_names[0]
+        elif num_dialects == len(list(Dialect.known())):
+            pretty_names_str = "all known dialects"
+        else:
+            pretty_names_str = ", ".join(pretty_names[:-1])
+            pretty_names_str += " and " + pretty_names[-1]
+
+        total_files = len(versions) * len(list(dialects))
+        progress = Progress(
+            TextColumn("[bold blue]{task.description}"),
+            SpinnerColumn(finished_text=""),
+            BarColumn(bar_width=None),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            "•",
+            MofNCompleteColumn(),
+            "•",
+            TimeElapsedColumn(),
+            console=Console(),
+            transient=True,
+        )
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            async def fetch_report(
+                version: str,
+                dialect: Dialect,
+                taskID: TaskID,
+            ):
+                try:
+                    url =  HOMEPAGE / "implementations" / id \
+                            / f"v{version}" / f"{dialect.short_name}.json"
+
+                    response = await client.get(str(url))
+                    response.raise_for_status()
+
+                    progress.update(
+                        taskID,
+                        description=(
+                            f"Attempting to download: "
+                            f"v{version}/{dialect.short_name}.json"
+                        ),
+                        advance=1,
+                    )
+                except httpx.HTTPStatusError:
+                    return version, dialect, None
+                else:
+                    return version, dialect, response
+
+            with progress:
+                task = progress.add_task(
+                    description=(
+                        "Preparing to download all versioned "
+                        f"reports of {id} for {pretty_names_str}"
+                    ),
+                    total=total_files,
+                )
+
+                responses = await asyncio.gather(
+                    *[
+                        fetch_report(version, dialect, task)
+                        for version in versions
+                        for dialect in dialects
+                    ],
+                )
+
+                progress.update(
+                    task,
+                    description=(
+                        "Successfully downloaded all versioned "
+                        f"reports of {id} for {pretty_names_str}!"
+                    ),
+                    completed=total_files,
+                    total=total_files,
+                )
+                await asyncio.sleep(2)
+
+                return responses
 
     def supports(self, *dialects: Dialect) -> bool:
         """

@@ -19,6 +19,15 @@ import sys
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
 from rich import box, console, panel
+from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
 from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
@@ -1486,6 +1495,228 @@ async def info(
         else:
             output = serializable
         click.echo(json.dumps(output, indent=2))
+
+async def parse_versioned_reports_for(
+    id: ConnectableId,
+    downloaded: Iterable[tuple[str, Dialect, Response | None]],
+) -> Iterable[_report.Report]:
+    downloaded = [
+        (version, dialect, response)
+        for version, dialect, response in downloaded
+        if response is not None
+    ]
+    total = len(downloaded)
+    reports: Iterable[_report.Report] = []
+
+    with Progress(
+        TextColumn("[bold blue]{task.description}"),
+        SpinnerColumn(finished_text=""),
+        BarColumn(bar_width=None),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        "•",
+        MofNCompleteColumn(),
+        "•",
+        TimeElapsedColumn(),
+        console=Console(),
+        transient=True,
+    ) as progress:
+        parsing_report_progress_task = progress.add_task(
+            description=(
+                f"Preparing to parse all downloaded "
+                f"versioned reports of {id}"
+            ),
+            total=total,
+        )
+
+        for version, dialect, response in downloaded:
+            reports.append(_report.Report.from_serialized(response.iter_lines()))
+            progress.update(
+                parsing_report_progress_task,
+                description=(
+                    f"Parsing: "
+                    f"v{version}/{dialect.short_name}.json"
+                ),
+                advance=1,
+            )
+
+        progress.update(
+            parsing_report_progress_task,
+            description=(
+                f"Successfully parsed all downloaded versioned "
+                f"reports of {id}!"
+            ),
+            completed=total,
+            total=total,
+        )
+        await asyncio.sleep(2)
+
+        return reports
+
+def _trend_table_for(
+    id: ConnectableId,
+    dialects_trend: dict[Dialect, _report.Report],
+) -> Table:
+    main_table = Table(show_lines=True)
+    main_table.add_column(
+        "Dialect",
+        justify="center",
+        vertical="middle",
+    )
+    main_table.add_column(
+        f"Trend Data of {id} versions",
+        justify="center",
+    )
+
+    for dialect, report in dialects_trend.items():
+        test = "tests" if report.total_tests != 1 else "test"
+        sub_table = Table(
+            "Versions",
+            "Skips",
+            "Errors",
+            "Failures",
+            caption=f"{report.total_tests} {test} ran",
+            show_edge=False,
+        )
+
+        for version, unsuccessful in report.latest_to_oldest():
+            sub_table.add_row(
+                version,
+                str(len(unsuccessful.skipped)),
+                str(len(unsuccessful.errored)),
+                str(len(unsuccessful.failed)),
+            )
+
+        main_table.add_row(dialect.pretty_name, sub_table)
+
+    return main_table
+
+def _trend_table_in_markdown_for(
+    id: ConnectableId,
+    dialects_trend: dict[Dialect, _report.Report],
+) -> str:
+    rows_data: list[list[str]] = []
+    final_content = ""
+
+    inner_table_columns = [
+        "Versions",
+        "Skips",
+        "Errors",
+        "Failures",
+    ]
+
+    for dialect, report in dialects_trend.items():
+        inner_table_rows: list[list[str]] = []
+        for version, unsuccessful in report.latest_to_oldest():
+            inner_table_rows.append(
+                [
+                    version,
+                    str(len(unsuccessful.skipped)),
+                    str(len(unsuccessful.errored)),
+                    str(len(unsuccessful.failed)),
+                ],
+            )
+        inner_markdown_table = _convert_table_to_markdown(
+            inner_table_columns,
+            inner_table_rows,
+        )
+        row_data = [dialect.pretty_name, inner_markdown_table]
+        rows_data.append(row_data)
+
+    for idx, row_data in enumerate(rows_data):
+        final_content += f"## {idx+1}. Dialect: {row_data[0]}\n\n"
+        final_content += f"### Trend Data of {id} versions:"
+        final_content += f"{row_data[1]}\n"
+
+    return final_content
+
+@subcommand
+@click.option(
+    "--implementation",
+    "-i",
+    "versions_of",
+    required=True,
+    multiple=False,
+    default=None,
+    type=click.Choice(list(Implementation.known())),
+    metavar="IMPLEMENTATION",
+    callback=lambda _, __, id: ( # type: ignore[reportUnknownLambdaType]
+        (id, asyncio.run(Implementation.download_versions_of(id))) # type: ignore[reportUnknownArgumentType]
+    ),
+)
+@click.option(
+    "--dialect",
+    "-D",
+    "dialects",
+    multiple=True,
+    default=lambda: Dialect.known(),
+    type=_Dialect(),
+    metavar="URI_OR_NAME",
+    help=(
+        "A URI or shortname identifying the dialect of each test. "
+        f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}. "
+        "If none specified then defaults to all known dialects."
+    ),
+)
+@format_option()
+def trend(
+    versions_of: tuple[ConnectableId, Set[str] | None],
+    dialects: Iterable[Dialect],
+    format: _F,
+):
+    id, versions = versions_of
+    if versions:
+        downloaded_reports = asyncio.run(
+            Implementation.download_reports_for(id, versions, dialects),
+        )
+
+        if all(
+            response is None
+            for _, _, response in downloaded_reports
+        ):
+            click.echo(
+                f"None of the versions of {id} "
+                "support your specified dialect(s).",
+            )
+            return
+        else:
+            parsed_reports = asyncio.run(
+                parse_versioned_reports_for(id, downloaded_reports),
+            )
+
+            dialects_trend = {
+                dialect: combined_report
+                for dialect in dialects
+                if (
+                    combined_report :=
+                    _report.Report.combine_reports_for_same_dialect_suite(
+                        parsed_reports,
+                        dialect,
+                    )
+                )
+            }
+
+            match format:
+                case "json":
+                    serializable: dict[str, dict[str, dict[str, int]]] = {}
+                    for dialect, report in dialects_trend.items():
+                        serializable[str(dialect.uri)] = {
+                            version: {
+                                "skipped": len(unsuccessful.skipped),
+                                "errored": len(unsuccessful.errored),
+                                "failed": len(unsuccessful.failed),
+                            }
+                            for version, unsuccessful
+                            in report.latest_to_oldest()
+                        }
+                    click.echo(json.dumps(serializable, indent=2))
+                case "pretty":
+                    console.Console().print(
+                        _trend_table_for(id, dialects_trend),
+                    )
+                case "markdown":
+                    console.Console().print(
+                        _trend_table_in_markdown_for(id, dialects_trend),
+                    )
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
