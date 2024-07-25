@@ -23,6 +23,21 @@ def get_benchmark():
         invalid_object_with_one_property = _create_object_with_num_properties(
             1,
         )
+
+        tests = [
+            dict(
+                description="Invalid Object with One",
+                instance=invalid_object_with_one_property,
+            ),
+            dict(
+                description="Invalid Object with One Less",
+                instance=invalid_object_with_one_less,
+            ),
+            dict(description="Valid Object", instance=valid_object),
+        ] if num_properties == max_num_properties else [
+            dict(description="Valid Object", instance=valid_object)
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Minimum Required Properties - {num_properties}",
@@ -30,17 +45,7 @@ def get_benchmark():
                     f"Validating the `minProperties` keyword for minProperties - {num_properties}."
                 ),
                 schema=dict(minProperties=num_properties),
-                tests=[
-                    dict(
-                        description="Invalid Object with One",
-                        instance=invalid_object_with_one_property,
-                    ),
-                    dict(
-                        description="Invalid Object with One Less",
-                        instance=invalid_object_with_one_less,
-                    ),
-                    dict(description="Valid Object", instance=valid_object),
-                ],
+                tests=tests,
             ),
         )
         num_properties *= 10

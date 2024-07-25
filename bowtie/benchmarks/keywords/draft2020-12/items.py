@@ -25,6 +25,23 @@ def get_benchmark():
         invalid_at_last = array[:-1] + [1]
         valid = array
 
+        tests = [
+            dict(
+                description="Invalid at First",
+                instance=invalid_at_first,
+            ),
+            dict(
+                description="Invalid at Middle",
+                instance=invalid_at_middle,
+            ),
+            dict(
+                description="Invalid at Last", instance=invalid_at_last
+            ),
+            dict(description="Valid", instance=valid),
+        ] if array_size == max_array_size else [
+            dict(description="Valid", instance=valid)
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
@@ -35,22 +52,8 @@ def get_benchmark():
                     "type": "array",
                     "items": {"type": "string"},
                 },
-                tests=[
-                    dict(
-                        description="Invalid at First",
-                        instance=invalid_at_first,
-                    ),
-                    dict(
-                        description="Invalid at Middle",
-                        instance=invalid_at_middle,
-                    ),
-                    dict(
-                        description="Invalid at Last",
-                        instance=invalid_at_last,
-                    ),
-                    dict(description="Valid", instance=valid),
-                ],
-            ),
+                tests=tests,
+            )
         )
         array_size *= 10
 

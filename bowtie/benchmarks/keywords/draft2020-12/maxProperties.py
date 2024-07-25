@@ -23,6 +23,25 @@ def get_benchmark():
             num_properties - 1,
         )
         valid_object_with_one_property = _create_object_with_num_properties(1)
+
+        tests = [
+            dict(
+                description="Valid Object with One",
+                instance=valid_object_with_one_property,
+            ),
+            dict(
+                description="Valid Object with One Less",
+                instance=valid_object_with_one_less,
+            ),
+            dict(
+                description="Invalid Object", instance=invalid_object
+            ),
+        ] if num_properties == max_num_properties else [
+            dict(
+                description="Invalid Object", instance=invalid_object
+            )
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Maximum Required Properties - {num_properties}",
@@ -30,21 +49,8 @@ def get_benchmark():
                     f"Validating the `maxProperties` keyword for maxProperties - {num_properties}."
                 ),
                 schema=dict(maxProperties=num_properties),
-                tests=[
-                    dict(
-                        description="Valid Object with One",
-                        instance=valid_object_with_one_property,
-                    ),
-                    dict(
-                        description="Valid Object with One Less",
-                        instance=valid_object_with_one_less,
-                    ),
-                    dict(
-                        description="Invalid Object",
-                        instance=invalid_object,
-                    ),
-                ],
-            ),
+                tests=tests,
+            )
         )
         num_properties *= 10
 

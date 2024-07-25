@@ -19,6 +19,16 @@ def get_benchmark():
         end = [0] * (array_size - 1) + [37]
         invalid = [0] * array_size
 
+        tests = [
+            dict(description="Empty array", instance=[]),
+            dict(description="Beginning of array", instance=start),
+            dict(description="Middle of array", instance=middle),
+            dict(description="End of array", instance=end),
+            dict(description="Invalid array", instance=invalid),
+        ] if array_size == max_array_size else [
+            dict(description="Middle of array", instance=middle)
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
@@ -30,14 +40,8 @@ def get_benchmark():
                     "type": "array",
                     "contains": {"const": 37},
                 },
-                tests=[
-                    dict(description="Empty array", instance=[]),
-                    dict(description="Beginning of array", instance=start),
-                    dict(description="Middle of array", instance=middle),
-                    dict(description="End of array", instance=end),
-                    dict(description="Invalid array", instance=invalid),
-                ],
-            ),
+                tests=tests,
+            )
         )
         array_size *= 10
 

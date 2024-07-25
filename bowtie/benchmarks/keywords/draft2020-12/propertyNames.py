@@ -42,6 +42,24 @@ def get_benchmark():
             for _ in range(object_size)
         }
 
+        tests = [
+            dict(
+                description="Invalid at First",
+                instance=invalid_at_first,
+            ),
+            dict(
+                description="Invalid at Middle",
+                instance=invalid_at_middle,
+            ),
+            dict(
+                description="Invalid at Last",
+                instance=invalid_at_last,
+            ),
+            dict(description="Valid", instance=valid),
+        ] if object_size == max_object_size else [
+            dict(description="Valid", instance=valid)
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Num of Properties - {object_size}",
@@ -49,21 +67,7 @@ def get_benchmark():
                     f"Validating the `propertyNames` keyword over object of size {object_size}."
                 ),
                 schema={"propertyNames": {"maxLength": 5}},
-                tests=[
-                    dict(
-                        description="Invalid at First",
-                        instance=invalid_at_first,
-                    ),
-                    dict(
-                        description="Invalid at Middle",
-                        instance=invalid_at_middle,
-                    ),
-                    dict(
-                        description="Invalid at Last",
-                        instance=invalid_at_last,
-                    ),
-                    dict(description="Valid", instance=valid),
-                ],
+                tests=tests,
             ),
         )
         object_size *= 10

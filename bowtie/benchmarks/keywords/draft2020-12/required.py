@@ -31,6 +31,30 @@ def get_benchmark():
         all_at_last = object_keys + required_properties
         none_present = object_keys + object_keys
 
+        tests = [
+            dict(
+                description="All required properties at beginning",
+                instance=_generate_object_with_keys(all_at_beginning),
+            ),
+            dict(
+                description="All required properties at middle",
+                instance=_generate_object_with_keys(all_at_middle),
+            ),
+            dict(
+                description="All required properties at last",
+                instance=_generate_object_with_keys(all_at_last),
+            ),
+            dict(
+                description="None of the required properties present",
+                instance=_generate_object_with_keys(none_present),
+            ),
+        ] if array_size == max_array_size else [
+            dict(
+                description="None of the required properties present",
+                instance=_generate_object_with_keys(none_present),
+            )
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
@@ -41,24 +65,7 @@ def get_benchmark():
                     "type": "object",
                     "required": required_properties,
                 },
-                tests=[
-                    dict(
-                        description="All required properties at beginning",
-                        instance=_generate_object_with_keys(all_at_beginning),
-                    ),
-                    dict(
-                        description="All required properties at middle",
-                        instance=_generate_object_with_keys(all_at_middle),
-                    ),
-                    dict(
-                        description="All required properties at last",
-                        instance=_generate_object_with_keys(all_at_last),
-                    ),
-                    dict(
-                        description="None of the required properties present",
-                        instance=_generate_object_with_keys(none_present),
-                    ),
-                ],
+                tests=tests,
             ),
         )
         array_size *= 10

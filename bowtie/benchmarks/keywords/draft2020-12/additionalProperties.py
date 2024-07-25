@@ -30,42 +30,48 @@ def get_benchmark():
         invalid_at_last = [*allowed_properties, uuid.uuid4().hex]
         valid = allowed_properties
 
+        tests = [
+            dict(
+                description="Invalid at first",
+                instance=_format_properties_as_instance(
+                    invalid_at_first
+                ),
+            ),
+            dict(
+                description="Invalid at middle",
+                instance=_format_properties_as_instance(
+                    invalid_at_middle
+                ),
+            ),
+            dict(
+                description="Invalid at last",
+                instance=_format_properties_as_instance(
+                    invalid_at_last
+                ),
+            ),
+            dict(
+                description="Valid",
+                instance=_format_properties_as_instance(valid),
+            ),
+        ] if array_size == max_array_size else [
+            dict(
+                description="Valid",
+                instance=_format_properties_as_instance(valid),
+            )
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"Array Size - {array_size}",
                 description=(
-                    "Validating additionalProperties keyword over array "
-                    f"of size {array_size}"
+                    f"Validating additionalProperties keyword over array of size {array_size}"
                 ),
                 schema=dict(
                     properties={key: {} for key in allowed_properties},
                     additionalProperties=False,
                 ),
-                tests=[
-                    dict(
-                        description="Invalid at first",
-                        instance=_format_properties_as_instance(
-                            invalid_at_first,
-                        ),
-                    ),
-                    dict(
-                        description="Invalid at middle",
-                        instance=_format_properties_as_instance(
-                            invalid_at_middle,
-                        ),
-                    ),
-                    dict(
-                        description="Invalid at last",
-                        instance=_format_properties_as_instance(
-                            invalid_at_last,
-                        ),
-                    ),
-                    dict(
-                        description="Valid",
-                        instance=_format_properties_as_instance(valid),
-                    ),
-                ],
-            ),
+                tests=tests,
+            )
         )
 
         array_size *= 10

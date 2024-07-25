@@ -27,7 +27,6 @@ def get_benchmark():
                 },
                 tests=[
                     dict(description="Valid Array", instance=array),
-                    dict(description="Invalid String", instance="string"),
                 ],
             ),
         )

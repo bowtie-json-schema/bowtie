@@ -37,6 +37,30 @@ def get_benchmark():
         ]
         valid = property_value_pairs
 
+        tests = [
+            dict(
+                description="Invalid Property at first",
+                instance=_get_instance_object(invalid_at_first),
+            ),
+            dict(
+                description="Invalid Property at middle",
+                instance=_get_instance_object(invalid_at_middle),
+            ),
+            dict(
+                description="Invalid Property at last",
+                instance=_get_instance_object(invalid_at_last),
+            ),
+            dict(
+                description="Valid",
+                instance=_get_instance_object(valid),
+            ),
+        ] if num_properties == max_num_properties else [
+            dict(
+                description="Valid",
+                instance=_get_instance_object(valid),
+            )
+        ]
+
         benchmarks.append(
             Benchmark.from_dict(
                 name=f"No. of Properties - {num_properties}",
@@ -50,24 +74,7 @@ def get_benchmark():
                         "^[a-z]+$": {"type": "integer"},
                     },
                 ),
-                tests=[
-                    dict(
-                        description="Invalid Property at first",
-                        instance=_get_instance_object(invalid_at_first),
-                    ),
-                    dict(
-                        description="Invalid Property at middle",
-                        instance=_get_instance_object(invalid_at_middle),
-                    ),
-                    dict(
-                        description="Invalid Property at last",
-                        instance=_get_instance_object(invalid_at_last),
-                    ),
-                    dict(
-                        description="Valid",
-                        instance=_get_instance_object(valid),
-                    ),
-                ],
+                tests=tests,
             ),
         )
 
