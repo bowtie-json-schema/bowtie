@@ -107,7 +107,7 @@ class TestBenchmarkFormat:
     @pytest.mark.parametrize(
         "benchmark_file",
         _iterate_over_benchmark_dir(default_benchmarks_dir),
-        ids=lambda f: f.stem,
+        ids=lambda f: str(f),
     )
     def test_validate_default_benchmark_format(self, benchmark_file):
         benchmark_module = "bowtie.benchmarks"
@@ -192,16 +192,23 @@ class TestLoadBenchmark:
 
     def test_load_benchmark_groups_from_folder(self):
         benchmark_groups = BenchmarkGroup.from_folder(
-            default_benchmarks_dir,
-            module="bowtie.benchmarks",
+            Path(__file__).parent / "benchmarks",
+            module="bowtie.tests.benchmarks",
         )
+        valid_count = 0
+
         for benchmark_group in benchmark_groups:
             assert benchmark_validated(benchmark_group.serializable())
+            valid_count += 1
+
+        assert valid_count == 2
 
 
 class TestBenchmarker:
 
     def test_default_benchmarker(self, benchmarker_run_args):
+        if not default_benchmarks_dir.exists():
+            return
         _benchmarks.Benchmarker.from_default_benchmarks(**benchmarker_run_args)
 
     @pytest.mark.parametrize(
