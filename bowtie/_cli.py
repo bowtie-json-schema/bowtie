@@ -1329,10 +1329,7 @@ def validate(
 @click.option(
     "--keywords",
     "-k",
-    "benchmarker_callable",
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        _benchmarks.Benchmarker.for_keywords
-    ),
+    "keywords",
     is_flag=True,
     default=False,
     show_default=True,
@@ -1344,10 +1341,7 @@ def validate(
 @click.option(
     "-b",
     "--benchmark-file",
-    "benchmarker_callable",
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        _benchmarks.Benchmarker.for_benchmark_files
-    ),
+    "benchmark_files",
     multiple=True,
     help=(
         "Allows running benchmark from a file. "
@@ -1357,38 +1351,54 @@ def validate(
 @click.option(
     "--test-suite",
     "-t",
-    "benchmarker_callable",
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        _benchmarks.Benchmarker.from_test_cases
-    ),
+    "test_suite",
     type=_suite.ClickParam(),
     default=None,
     help="Run Benchmarks over the official JSON Schema Test Suite.",
 )
-@click.argument(
-    "benchmark",
-    "benchmarker_callable",
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        _benchmarks.Benchmarker.from_input
-    ),
-    type=JSON(),
-    required=False,
-)
+@click.argument("benchmark", type=JSON(), required=False)
 def perf(
     connectables: Iterable[_connectables.Connectable],
     dialect: Dialect,
     format: _F,
+    keywords: bool,
+    benchmark: dict[str, Any] | None,
     quiet: bool,
-    benchmarker_callable: Callable[..., Any] = (
-        _benchmarks.Benchmarker.from_default_benchmarks
-    ),
+    test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    benchmark_files: Iterable[str],
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
     try:
-        benchmarker: _benchmarks.Benchmarker = benchmarker_callable(**kwargs)
+        if benchmark_files:
+            benchmarker = _benchmarks.Benchmarker.for_benchmark_files(
+                benchmark_files,
+                **kwargs,
+            )
+        elif keywords:
+            benchmarker = _benchmarks.Benchmarker.for_keywords(
+                dialect,
+                **kwargs,
+            )
+        elif test_suite:
+            cases, enforced_dialect, _ = test_suite
+            benchmarker = _benchmarks.Benchmarker.from_test_cases(
+                cases,
+                **kwargs,
+            )
+            dialect = enforced_dialect
+        elif benchmark is None:
+            benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
+                **kwargs,
+            )
+        else:
+            benchmarker = _benchmarks.Benchmarker.from_input(
+                benchmark=benchmark,
+                **kwargs,
+            )
+
         asyncio.run(
             benchmarker.start(
                 connectables=connectables,
