@@ -18,7 +18,6 @@ implementers
 linter
 linters
 positionally
-perf
 providable
 quantiles
 quartiles
