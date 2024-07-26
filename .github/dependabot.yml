@@ -307,11 +307,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/tests/fauxmplementations/envsonschema"
+    directory: "/bowtie/tests/fauxmplementations/envsonschema"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "docker"
-    directory: "/tests/fauxmplementations/lintsonschema"
+    directory: "/bowtie/tests/fauxmplementations/lintsonschema"
     schedule:
       interval: "daily"

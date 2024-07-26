@@ -1,7 +1,3 @@
-import Accordion from "react-bootstrap/Accordion";
-
-import CaseResultSvg from "./CaseResultSvg";
-import SchemaDisplay from "./SchemaDisplay";
 import {
   SetStateAction,
   useEffect,
@@ -10,11 +6,15 @@ import {
   useRef,
   RefObject,
 } from "react";
+import Accordion from "react-bootstrap/Accordion";
+
+import CaseResultSvg from "./CaseResultSvg";
+import SchemaDisplay from "./SchemaDisplay";
+import Implementation from "../../data/Implementation";
 import { mapLanguage } from "../../data/mapLanguage";
 import {
   Case,
   CaseResult,
-  Implementation,
   ImplementationResults,
 } from "../../data/parseReportData";
 

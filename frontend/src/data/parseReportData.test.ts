@@ -2,10 +2,10 @@ import { join } from "node:path";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-
 import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
+import Implementation from "./Implementation";
 import {
   RunMetadata,
   ReportData,
@@ -13,10 +13,9 @@ import {
   prepareImplementationReport,
 } from "./parseReportData";
 
-function tag(image: string) {
-  // Should match what's used in our `noxfile`, certainly until we handle image
-  // building here from the frontend test suite.
-  return `bowtie-ui-tests/${image}`;
+function miniature(name: string) {
+  // Should match what's used in our backend integration tests obviously.
+  return `direct:bowtie.tests.fauxmplementations.miniatures:${name}`;
 }
 
 function bowtie(args: string[] = [], input?: string, status = 0) {
@@ -114,6 +113,7 @@ describe("parseReportData", () => {
   test("parses reports", async () => {
     let lines: string;
 
+    const id = miniature("always_invalid");
     const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
     try {
@@ -123,16 +123,14 @@ describe("parseReportData", () => {
       const instance = join(tempdir, "instance.json");
       await writeFile(instance, "37");
 
-      lines = bowtie(["validate", "-i", tag("envsonschema"), schema, instance]);
+      lines = bowtie(["validate", "-i", id, schema, instance]);
     } finally {
       await rm(tempdir, { recursive: true });
     }
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
-    )!;
+    const metadata = report.runMetadata.implementations.get(id)!;
     const testCase = report.cases.get(1);
 
     expect(report).toStrictEqual({
@@ -140,16 +138,22 @@ describe("parseReportData", () => {
         Dialect.withName("draft2020-12"),
         new Map([
           [
-            tag("envsonschema"),
-            {
-              name: "envsonschema",
-              language: "python",
-              dialects: metadata.dialects,
+            id,
+            new Implementation(id, {
+              name: "always_invalid",
+              version: metadata.version,
+              dialects: Array.from(Dialect.known()).map(
+                (dialect) => dialect.uri,
+              ),
               homepage: metadata.homepage,
               issues: metadata.issues,
               source: metadata.source,
+              os: metadata.os,
+              os_version: metadata.os_version,
+              language: "python",
+              language_version: metadata.language_version,
               links: metadata.links,
-            },
+            }),
           ],
         ]),
         report.runMetadata.bowtieVersion,
@@ -158,7 +162,7 @@ describe("parseReportData", () => {
       ),
       implementationsResults: new Map([
         [
-          tag("envsonschema"),
+          id,
           {
             totals: {
               erroredTests: 0,
@@ -189,34 +193,36 @@ describe("parseReportData", () => {
   });
 
   test("parses reports with multiple test cases", () => {
+    const id = miniature("always_invalid");
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
 
-    const lines = bowtie(
-      ["run", "-i", tag("envsonschema"), "-D", "7"],
-      cases.join("\n") + "\n",
-    );
+    const lines = bowtie(["run", "-i", id, "-D", "7"], cases.join("\n") + "\n");
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runMetadata.implementations.get(
-      tag("envsonschema"),
-    )!;
+    const metadata = report.runMetadata.implementations.get(id)!;
 
     expect(report).toStrictEqual({
       runMetadata: new RunMetadata(
         Dialect.withName("draft7"),
         new Map([
           [
-            tag("envsonschema"),
-            {
-              name: "envsonschema",
-              language: "python",
-              dialects: metadata.dialects,
+            id,
+            new Implementation(id, {
+              name: "always_invalid",
+              version: metadata.version,
+              dialects: Array.from(Dialect.known()).map(
+                (dialect) => dialect.uri,
+              ),
               homepage: metadata.homepage,
               issues: metadata.issues,
               source: metadata.source,
+              os: metadata.os,
+              os_version: metadata.os_version,
+              language: "python",
+              language_version: metadata.language_version,
               links: metadata.links,
-            },
+            }),
           ],
         ]),
         report.runMetadata.bowtieVersion,
@@ -225,7 +231,7 @@ describe("parseReportData", () => {
       ),
       implementationsResults: new Map([
         [
-          tag("envsonschema"),
+          id,
           {
             totals: {
               erroredTests: 0,
@@ -290,13 +296,13 @@ describe("parseReportData", () => {
   });
 
   test("prepares a summarized implementation report using all the dialect reports", () => {
+    const id = miniature("always_invalid");
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
     const allReportsData = new Map<Dialect, ReportData>();
-    const fakeImplementationId = tag("envsonschema");
 
     for (const dialect of Dialect.known()) {
       const lines = bowtie(
-        ["run", "-i", fakeImplementationId, "-D", dialect.shortName],
+        ["run", "-i", id, "-D", dialect.shortName],
         cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
@@ -304,23 +310,26 @@ describe("parseReportData", () => {
     }
 
     const implementationReport = prepareImplementationReport(
+      id,
       allReportsData,
-      fakeImplementationId,
     );
 
     const metadata = implementationReport!.implementation;
 
     expect(implementationReport).toStrictEqual({
-      implementationId: fakeImplementationId,
-      implementation: {
-        name: "envsonschema",
-        language: "python",
+      implementation: new Implementation(id, {
+        name: "always_invalid",
+        version: metadata.version,
+        dialects: Array.from(Dialect.known()).map((dialect) => dialect.uri),
         homepage: metadata.homepage,
         issues: metadata.issues,
         source: metadata.source,
-        dialects: metadata.dialects,
+        os: metadata.os,
+        os_version: metadata.os_version,
+        language: "python",
+        language_version: metadata.language_version,
         links: metadata.links,
-      },
+      }),
       dialectCompliance: new Map([
         [
           Dialect.withName("draft2020-12"),

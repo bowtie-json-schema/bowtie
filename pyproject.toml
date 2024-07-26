@@ -114,6 +114,8 @@ reportUnnecessaryTypeIgnoreComment = true
 strict = ["**/*.py"]
 exclude = [
     "**/tests/__init__.py",
+    "**/tests/conftest.py",
+    "**/tests/fauxmplementations/miniatures.py",
     "**/tests/test_*.py",
 ]
 
@@ -180,5 +182,5 @@ from-first = true
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
+"bowtie/tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]
