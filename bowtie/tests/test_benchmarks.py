@@ -9,7 +9,7 @@ from bowtie._benchmarks import BenchmarkGroup
 from bowtie._cli import EX
 from bowtie._core import Dialect, TestCase
 from bowtie._direct_connectable import Direct
-from tests.test_integration import bowtie
+from bowtie.tests.test_integration import bowtie
 
 validators = Direct.from_id("python-jsonschema").registry()
 
@@ -29,7 +29,7 @@ benchmark_validated, benchmark_invalidated = (
     benchmark_validator.invalidated,
 )
 
-bowtie_dir = Path(__file__).parent.parent / "bowtie"
+bowtie_dir = Path(__file__).parent.parent
 default_benchmarks_dir = bowtie_dir / "benchmarks"
 keyword_benchmarks_dir = bowtie_dir / "benchmarks/keywords"
 
@@ -38,21 +38,21 @@ DIRECT_CONNECTABLE = "python-jsonschema"
 
 @pytest.fixture()
 def valid_single_benchmark():
-    from tests.benchmarks import valid_single_benchmark
+    from bowtie.tests.benchmarks import valid_single_benchmark
 
     return valid_single_benchmark.get_benchmark()
 
 
 @pytest.fixture()
 def valid_benchmark_group(valid_single_benchmark):
-    from tests.benchmarks import valid_benchmark_group
+    from bowtie.tests.benchmarks import valid_benchmark_group
 
     return valid_benchmark_group.get_benchmark()
 
 
 @pytest.fixture()
 def invalid_benchmark():
-    from tests.benchmarks import invalid_benchmark
+    from bowtie.tests.benchmarks import invalid_benchmark
 
     return invalid_benchmark.get_benchmark()
 
