@@ -195,13 +195,14 @@ class TestLoadBenchmark:
             Path(__file__).parent / "benchmarks",
             module="bowtie.tests.benchmarks",
         )
+        valid_benchmarks_for_test = 2
         valid_count = 0
 
         for benchmark_group in benchmark_groups:
             assert benchmark_validated(benchmark_group.serializable())
             valid_count += 1
 
-        assert valid_count == 2
+        assert valid_count == valid_benchmarks_for_test
 
 
 class TestBenchmarker:
