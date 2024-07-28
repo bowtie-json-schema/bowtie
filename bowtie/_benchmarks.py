@@ -866,7 +866,7 @@ class Benchmarker:
         if not benchmark_dir.exists():
             raise BenchmarkLoadError("Default Benchmarks not found.")
 
-        return cls(
+        return cls._from_dict(
             benchmark_groups=BenchmarkGroup.from_folder(
                 benchmark_dir,
             ),
@@ -896,7 +896,7 @@ class Benchmarker:
             for case in cases
         ]
 
-        return cls(
+        return cls._from_dict(
             benchmark_groups=benchmark_groups,
             **kwargs,
         )
@@ -922,7 +922,7 @@ class Benchmarker:
 
         module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
 
-        return cls(
+        return cls._from_dict(
             benchmark_groups=BenchmarkGroup.from_folder(
                 dialect_keyword_benchmarks_dir,
                 module=module_name,
@@ -956,7 +956,7 @@ class Benchmarker:
             if benchmark_group:
                 benchmark_groups.append(benchmark_group)
 
-        return cls(
+        return cls._from_dict(
             benchmark_groups=benchmark_groups,
             **kwargs,
         )
@@ -973,7 +973,25 @@ class Benchmarker:
             raise BenchmarkLoadError("Invalid Benchmark Format !")
 
         benchmark_group = BenchmarkGroup.from_dict(benchmark, Path("stdin"))
-        return cls(benchmark_groups=[benchmark_group], **kwargs)
+        return cls._from_dict(benchmark_groups=[benchmark_group], **kwargs)
+
+    @classmethod
+    def _from_dict(
+        cls,
+        benchmark_groups: Iterable[BenchmarkGroup],
+        runs: int,
+        values: int,
+        loops: int,
+        warmups: int,
+        **kwargs: Any,
+    ):
+        return cls(
+            benchmark_groups=benchmark_groups,
+            runs=runs,
+            values=values,
+            loops=loops,
+            warmups=warmups,
+        )
 
     async def start(
         self,

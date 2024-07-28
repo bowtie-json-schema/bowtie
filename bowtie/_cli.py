@@ -1277,6 +1277,16 @@ def validate(
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
 
 
+def _set_benchmarker_callable(
+    ctx: click.Context,
+    value: Any,
+    callable: Callable[..., Any],
+) -> Any:
+    if value:
+        ctx.params["benchmarker_callable"] = callable
+    return value
+
+
 @subcommand
 @IMPLEMENTATION
 @dialect_option()
@@ -1330,8 +1340,12 @@ def validate(
     "--keywords",
     "-k",
     "keywords",
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx, value, _benchmarks.Benchmarker.for_keywords,  # type: ignore[reportUnknownArgumentType]
+        )
+    ),
     is_flag=True,
-    default=False,
     show_default=True,
     help=(
         "Run keyword specific benchmarks to learn about how "
@@ -1342,6 +1356,11 @@ def validate(
     "-b",
     "--benchmark-file",
     "benchmark_files",
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx, value, _benchmarks.Benchmarker.for_benchmark_files,  # type: ignore[reportUnknownArgumentType]
+        )
+    ),
     multiple=True,
     help=(
         "Allows running benchmark from a file. "
@@ -1352,53 +1371,45 @@ def validate(
     "--test-suite",
     "-t",
     "test_suite",
+    callback=lambda ctx, __, value: ( # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx, value, _benchmarks.Benchmarker.from_test_cases,  # type: ignore[reportUnknownArgumentType]
+        )
+    ),
     type=_suite.ClickParam(),
     default=None,
     help="Run Benchmarks over the official JSON Schema Test Suite.",
 )
-@click.argument("benchmark", type=JSON(), required=False)
+@click.argument(
+    "benchmark",
+    type=JSON(),
+    required=False,
+    callback=lambda ctx, __, value: ( # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx, value, _benchmarks.Benchmarker.from_input,  # type: ignore[reportUnknownArgumentType]
+        )
+    ),
+)
 def perf(
     connectables: Iterable[_connectables.Connectable],
     dialect: Dialect,
     format: _F,
-    keywords: bool,
-    benchmark: dict[str, Any] | None,
     quiet: bool,
-    test_suite: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
-    benchmark_files: Iterable[str],
+    benchmarker_callable: Callable[..., Any] = (
+        _benchmarks.Benchmarker.from_default_benchmarks
+    ),
     **kwargs: Any,
 ):
     """
     Perform performance measurements across supported implementations.
     """
-    try:
-        if benchmark_files:
-            benchmarker = _benchmarks.Benchmarker.for_benchmark_files(
-                benchmark_files,
-                **kwargs,
-            )
-        elif keywords:
-            benchmarker = _benchmarks.Benchmarker.for_keywords(
-                dialect,
-                **kwargs,
-            )
-        elif test_suite:
-            cases, enforced_dialect, _ = test_suite
-            benchmarker = _benchmarks.Benchmarker.from_test_cases(
-                cases,
-                **kwargs,
-            )
-            dialect = enforced_dialect
-        elif benchmark is None:
-            benchmarker = _benchmarks.Benchmarker.from_default_benchmarks(
-                **kwargs,
-            )
-        else:
-            benchmarker = _benchmarks.Benchmarker.from_input(
-                benchmark=benchmark,
-                **kwargs,
-            )
+    if "test_suite" in kwargs:
+        cases, enforced_dialect, _ = kwargs["test_suite"]
+        dialect = enforced_dialect
+        kwargs["cases"] = cases
 
+    try:
+        benchmarker = benchmarker_callable(dialect=dialect, **kwargs)
         asyncio.run(
             benchmarker.start(
                 connectables=connectables,
