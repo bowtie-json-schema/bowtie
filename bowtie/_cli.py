@@ -1342,7 +1342,9 @@ def _set_benchmarker_callable(
     "keywords",
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx, value, _benchmarks.Benchmarker.for_keywords,  # type: ignore[reportUnknownArgumentType]
+            ctx,
+            value,
+            _benchmarks.Benchmarker.for_keywords,  # type: ignore[reportUnknownArgumentType]
         )
     ),
     is_flag=True,
@@ -1358,7 +1360,9 @@ def _set_benchmarker_callable(
     "benchmark_files",
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx, value, _benchmarks.Benchmarker.for_benchmark_files,  # type: ignore[reportUnknownArgumentType]
+            ctx,
+            value,
+            _benchmarks.Benchmarker.for_benchmark_files,  # type: ignore[reportUnknownArgumentType]
         )
     ),
     multiple=True,
@@ -1371,9 +1375,11 @@ def _set_benchmarker_callable(
     "--test-suite",
     "-t",
     "test_suite",
-    callback=lambda ctx, __, value: ( # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx, value, _benchmarks.Benchmarker.from_test_cases,  # type: ignore[reportUnknownArgumentType]
+            ctx,
+            value,
+            _benchmarks.Benchmarker.from_test_cases,  # type: ignore[reportUnknownArgumentType]
         )
     ),
     type=_suite.ClickParam(),
@@ -1384,9 +1390,11 @@ def _set_benchmarker_callable(
     "benchmark",
     type=JSON(),
     required=False,
-    callback=lambda ctx, __, value: ( # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx, value, _benchmarks.Benchmarker.from_input,  # type: ignore[reportUnknownArgumentType]
+            ctx,
+            value,
+            _benchmarks.Benchmarker.from_input,  # type: ignore[reportUnknownArgumentType]
         )
     ),
 )
