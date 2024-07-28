@@ -13,13 +13,16 @@
       "required": ["name", "description", "benchmarks"],
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The name of the benchmark."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "The description of what the benchmark does."
         },
         "benchmarks": {
           "type": "array",
+          "description": "A list of benchmarks.",
           "items": {
             "$ref": "#benchmark"
           }
@@ -33,12 +36,15 @@
       "required": ["name", "description", "schema", "tests"],
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The name of the benchmark."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "The description of what the benchmark does."
         },
         "schema": {
+          "description": "Schema to run the tests against.",
           "oneOf": [
             {
               "type": "object"
@@ -50,6 +56,7 @@
         },
         "tests": {
           "type": "array",
+          "description": "Various tests as part of the benchmark.",
           "items": {
             "type": "object",
             "required": ["description", "instance"],

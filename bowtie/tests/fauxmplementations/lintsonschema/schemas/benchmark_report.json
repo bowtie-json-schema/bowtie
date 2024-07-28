@@ -8,6 +8,7 @@
   "properties": {
     "metadata": {
       "title": "Benchmark Metadata",
+      "description": "Metadata about the benchmark run.",
       "type": "object",
       "required": [
         "implementations",
@@ -33,16 +34,20 @@
           }
         },
         "num_runs": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Number of spawned processes per benchmark."
         },
         "num_values": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Different sets of value per run."
         },
         "num_warmups": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Number of warmup per run used to warmup the benchmark."
         },
         "num_loops": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Number of loop iterations per value."
         },
         "system_metadata": {
           "description": "Metadata about the machine on which the benchmarks have been run.",
@@ -94,7 +99,7 @@
           "type": "string"
         },
         "started": {
-          "description": "When did the benchmark started.",
+          "description": "When did the benchmark started?",
           "type": "string",
           "format": "date-time"
         }
@@ -102,6 +107,7 @@
     },
     "results": {
       "title": "Benchmark Results",
+      "description": "A list of benchmark group results.",
       "type": "array",
       "items": {
         "$ref": "#benchmark_group_result"
@@ -112,6 +118,7 @@
     "benchmark_group_result": {
       "$anchor": "benchmark_group_result",
       "type": "object",
+      "description": "Contains the Benchmark results for the Benchmark Group.",
       "title": "Benchmark Group Result",
       "required": ["name", "description", "benchmark_results"],
       "properties": {
@@ -124,7 +131,7 @@
           "type": "string"
         },
         "benchmark_results": {
-          "description": "Results of All Benchmarks within the Benchmark Group.",
+          "description": "Results of all Benchmarks within the Benchmark Group.",
           "type": "array",
           "items": {
             "$ref": "#benchmark_result"
@@ -195,7 +202,8 @@
           }
         },
         "errored": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Indicates whether a benchmark run encountered an error or not."
         }
       }
     }
