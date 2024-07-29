@@ -1411,7 +1411,7 @@ def perf(
     """
     Perform performance measurements across supported implementations.
     """
-    if "test_suite" in kwargs and kwargs['test_suite']:
+    if kwargs.get("test_suite"):
         cases, enforced_dialect, _ = kwargs["test_suite"]
         dialect = enforced_dialect
         kwargs["cases"] = cases
