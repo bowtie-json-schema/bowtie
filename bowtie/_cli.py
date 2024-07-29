@@ -1342,9 +1342,9 @@ def _set_benchmarker_callable(
     "keywords",
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx,
+            ctx,  # type: ignore[reportUnknownArgumentType]
             value,
-            _benchmarks.Benchmarker.for_keywords,  # type: ignore[reportUnknownArgumentType]
+            _benchmarks.Benchmarker.for_keywords,
         )
     ),
     is_flag=True,
@@ -1360,9 +1360,9 @@ def _set_benchmarker_callable(
     "benchmark_files",
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx,
+            ctx,  # type: ignore[reportUnknownArgumentType]
             value,
-            _benchmarks.Benchmarker.for_benchmark_files,  # type: ignore[reportUnknownArgumentType]
+            _benchmarks.Benchmarker.for_benchmark_files,
         )
     ),
     multiple=True,
@@ -1377,9 +1377,9 @@ def _set_benchmarker_callable(
     "test_suite",
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx,
+            ctx,  # type: ignore[reportUnknownArgumentType]
             value,
-            _benchmarks.Benchmarker.from_test_cases,  # type: ignore[reportUnknownArgumentType]
+            _benchmarks.Benchmarker.from_test_cases,
         )
     ),
     type=_suite.ClickParam(),
@@ -1392,9 +1392,9 @@ def _set_benchmarker_callable(
     required=False,
     callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
         _set_benchmarker_callable(
-            ctx,
+            ctx,  # type: ignore[reportUnknownArgumentType]
             value,
-            _benchmarks.Benchmarker.from_input,  # type: ignore[reportUnknownArgumentType]
+            _benchmarks.Benchmarker.from_input,
         )
     ),
 )
@@ -1411,7 +1411,7 @@ def perf(
     """
     Perform performance measurements across supported implementations.
     """
-    if "test_suite" in kwargs:
+    if "test_suite" in kwargs and kwargs['test_suite']:
         cases, enforced_dialect, _ = kwargs["test_suite"]
         dialect = enforced_dialect
         kwargs["cases"] = cases
