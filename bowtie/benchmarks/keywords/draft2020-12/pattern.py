@@ -2,6 +2,8 @@ from pathlib import Path
 import random
 import string
 
+from url.url import URL
+
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
@@ -71,5 +73,5 @@ def get_benchmark():
         name=name,
         description=description,
         benchmarks=benchmarks,
-        path=Path(__file__),
+        uri=URL.parse(Path(__file__).absolute().as_uri()),
     )
