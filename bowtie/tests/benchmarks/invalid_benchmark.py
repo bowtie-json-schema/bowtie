@@ -1,2 +1,2 @@
 def get_benchmark():
-    return {}
+    return {"hello": "world"}

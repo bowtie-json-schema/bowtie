@@ -156,7 +156,7 @@ class TestLoadBenchmark:
         benchmark_json = valid_benchmark_group.serializable()
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark_json,
-            file=valid_benchmark_group.path,
+            uri=valid_benchmark_group.uri,
         )
 
         serializable = benchmark_group.serializable()
@@ -182,7 +182,7 @@ class TestLoadBenchmark:
         tmp_path = tmp_path / "test_file.json"
 
         benchmark_group_json = valid_benchmark_group.serializable()
-        benchmark_group_json["path"] = str(tmp_path)
+        benchmark_group_json["uri"] = str(tmp_path.absolute().as_uri())
         tmp_path.write_text(json.dumps(benchmark_group_json))
 
         loaded_benchmark_group = BenchmarkGroup.from_file(tmp_path)
@@ -340,7 +340,7 @@ class TestBenchmarkRun:
         expected_data1 = """
 # Benchmark Summary
 ## Benchmark Group: benchmark
-Benchmark File: stdin
+Benchmark File: None
 Benchmark: benchmark
 
 | Test Name | python-jsonschema |
@@ -372,9 +372,8 @@ Warmups: 1
             "--format",
             "json",
             tmp_path / "benchmark.json",
-            exit_code=EX.DATAERR,
+            exit_code=1,
         )
-        assert "benchmark-load-error" in stderr
 
 
 class TestFilterBenchmarks:

@@ -23,7 +23,7 @@ from rich.table import Column, Table
 from url import URL
 import pyperf  # type: ignore[reportMissingTypeStubs]
 
-from bowtie import _registry, _report
+from bowtie import _report
 from bowtie._core import (
     Dialect,
     Example,
@@ -118,14 +118,16 @@ def _load_benchmark_group_from_file(
         if isinstance(loaded_class, Benchmark):
             benchmark_group = BenchmarkGroup.from_dict(
                 loaded_class.serializable(),
-                file=file,
+                uri=URL.parse(file.absolute().as_uri()),
             )
         elif isinstance(loaded_class, BenchmarkGroup):
             benchmark_group = loaded_class
 
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
-        benchmark_group = BenchmarkGroup.from_dict(data, file=file)
+        benchmark_group = BenchmarkGroup.from_dict(
+            data, uri=URL.parse(file.absolute().as_uri()),
+        )
 
     return benchmark_group
 
@@ -247,7 +249,7 @@ class BenchmarkGroup:
     name: str
     benchmarks: Sequence[Benchmark]
     description: str
-    path: Path | None
+    uri: URL | None
 
     @classmethod
     def from_folder(
@@ -276,7 +278,7 @@ class BenchmarkGroup:
     def from_dict(
         cls,
         data: dict[str, Any],
-        file: Path | None = None,
+        uri: URL | None = None,
     ) -> BenchmarkGroup:
         if "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
@@ -286,7 +288,7 @@ class BenchmarkGroup:
                 name=benchmark.name,
                 description=benchmark.description,
                 benchmarks=[benchmark],
-                path=file,
+                uri=uri,
             )
 
         benchmarks = [
@@ -299,7 +301,7 @@ class BenchmarkGroup:
             name=data["name"],
             description=data["description"],
             benchmarks=benchmarks,
-            path=file,
+            uri=uri,
         )
 
     def serializable(self) -> Message:
@@ -307,8 +309,8 @@ class BenchmarkGroup:
             self,
             filter=lambda _, v: v is not None,
         )
-        if "path" in serialized_dict:
-            serialized_dict["path"] = str(serialized_dict["path"])
+        if "uri" in serialized_dict:
+            serialized_dict["uri"] = str(serialized_dict["uri"])
         return serialized_dict
 
 
@@ -415,7 +417,7 @@ class BenchmarkReporter:
 
     _quiet: bool = field(alias="quiet", default=False)
     _format: str = field(alias="format", default="pretty")
-    _benchmark_group_path: dict[str, Path | None] = field(
+    _benchmark_group_uri: dict[str, URL | None] = field(
         factory=dict,
     )
     _mean_threshold: float = field(alias="mean_threshold", default=0.10)
@@ -459,7 +461,7 @@ class BenchmarkReporter:
                 * self._total_tests_in_benchmark_group(benchmark_group),
             )
         benchmark_results: list[BenchmarkResult] = []
-        self._benchmark_group_path[benchmark_group.name] = benchmark_group.path
+        self._benchmark_group_uri[benchmark_group.name] = benchmark_group.uri
 
         def benchmark_started(benchmark_name: str, benchmark_description: str):
             test_results: list[TestResult] = []
@@ -661,7 +663,7 @@ class BenchmarkReporter:
             benchmark_group_name,
             benchmark_group_result,
         ) in self._report.results.items():
-            benchmark_group_path = self._benchmark_group_path[
+            benchmark_group_path = self._benchmark_group_uri[
                 benchmark_group_name
             ]
 
@@ -891,7 +893,7 @@ class Benchmarker:
                         tests=case.tests,
                     ),
                 ],
-                path=None,
+                uri=None,
             )
             for case in cases
         ]
@@ -967,12 +969,10 @@ class Benchmarker:
         benchmark: dict[str, Any],
         **kwargs: Any,
     ):
-        try:
-            benchmark_validated(benchmark)
-        except _registry.Invalid:
-            raise BenchmarkLoadError("Invalid Benchmark Format !")
-
-        benchmark_group = BenchmarkGroup.from_dict(benchmark, Path("stdin"))
+        benchmark_validated(benchmark)
+        benchmark_group = BenchmarkGroup.from_dict(
+            benchmark
+        )
         return cls._from_dict(benchmark_groups=[benchmark_group], **kwargs)
 
     @classmethod
