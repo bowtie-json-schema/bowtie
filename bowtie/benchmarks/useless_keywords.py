@@ -1,4 +1,3 @@
-
 from bowtie._benchmarks import Benchmark
 
 
@@ -20,9 +19,9 @@ def get_benchmark():
                 *(
                     (str(i), i)
                     for i in range(
-                    num_useless_keywords,
-                    num_useless_keywords,
-                )
+                        num_useless_keywords,
+                        num_useless_keywords,
+                    )
                 ),
                 ("minimum", 37),
             ],

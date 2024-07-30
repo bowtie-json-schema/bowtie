@@ -1,4 +1,3 @@
-
 from jsonschema_specifications import REGISTRY as SPECIFICATIONS
 
 from bowtie._benchmarks import Benchmark
