@@ -126,7 +126,8 @@ def _load_benchmark_group_from_file(
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
         benchmark_group = BenchmarkGroup.from_dict(
-            data, uri=URL.parse(file.absolute().as_uri()),
+            data,
+            uri=URL.parse(file.absolute().as_uri()),
         )
 
     return benchmark_group
@@ -971,7 +972,7 @@ class Benchmarker:
     ):
         benchmark_validated(benchmark)
         benchmark_group = BenchmarkGroup.from_dict(
-            benchmark
+            benchmark,
         )
         return cls._from_dict(benchmark_groups=[benchmark_group], **kwargs)
 

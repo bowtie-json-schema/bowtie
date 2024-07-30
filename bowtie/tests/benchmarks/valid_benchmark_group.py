@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from bowtie._benchmarks import Benchmark, BenchmarkGroup
 from url.url import URL
+
+from bowtie._benchmarks import Benchmark, BenchmarkGroup
 
 
 def get_benchmark():
