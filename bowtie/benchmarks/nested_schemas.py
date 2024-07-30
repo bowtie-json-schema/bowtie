@@ -1,46 +1,38 @@
 from itertools import cycle
-from pathlib import Path
 
-from bowtie._benchmarks import Benchmark, BenchmarkGroup
+from bowtie._benchmarks import Benchmark
 
 
 def get_benchmark():
-    return BenchmarkGroup(
+    return Benchmark.from_dict(
         name="nested_schemas",
         description=(
             "Validating highly nested schemas shouldn't "
             "cause exponential time blowups."
         ),
-        benchmarks=[
-            Benchmark.from_dict(
-                name="nested_schemas",
-                description="",
-                schema={
-                    "$id": "https://example.com/draft/2020-12/schema/strict",
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "$vocabulary": {
-                        "https://json-schema.org/draft/2020-12/vocab/core": True,
-                        "https://json-schema.org/draft/2020-12/vocab/applicator": True,
-                        "https://json-schema.org/draft/2020-12/vocab/unevaluated": True,
-                        "https://json-schema.org/draft/2020-12/vocab/validation": True,
-                        "https://json-schema.org/draft/2020-12/vocab/meta-data": True,
-                        "https://json-schema.org/draft/2020-12/vocab/format-annotation": True,
-                        "https://json-schema.org/draft/2020-12/vocab/content": True,
-                    },
-                    "$dynamicAnchor": "meta",
-                    "$ref": "https://json-schema.org/draft/2020-12/schema",
-                    "unevaluatedProperties": False,
-                },
-                tests=[
-                    dict(
-                        description=f"No of Levels {levels}",
-                        instance=nested_object(levels=levels),
-                    )
-                    for levels in range(1, 11, 3)
-                ],
-            ),
+        schema={
+            "$id": "https://example.com/draft/2020-12/schema/strict",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$vocabulary": {
+                "https://json-schema.org/draft/2020-12/vocab/core": True,
+                "https://json-schema.org/draft/2020-12/vocab/applicator": True,
+                "https://json-schema.org/draft/2020-12/vocab/unevaluated": True,
+                "https://json-schema.org/draft/2020-12/vocab/validation": True,
+                "https://json-schema.org/draft/2020-12/vocab/meta-data": True,
+                "https://json-schema.org/draft/2020-12/vocab/format-annotation": True,
+                "https://json-schema.org/draft/2020-12/vocab/content": True,
+            },
+            "$dynamicAnchor": "meta",
+            "$ref": "https://json-schema.org/draft/2020-12/schema",
+            "unevaluatedProperties": False,
+        },
+        tests=[
+            dict(
+                description=f"No of Levels {levels}",
+                instance=nested_object(levels=levels),
+            )
+            for levels in range(1, 11, 3)
         ],
-        path=Path(__file__),
     )
 
 
