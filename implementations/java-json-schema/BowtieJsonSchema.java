@@ -113,6 +113,7 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
+    // well, setting default dialect shouldn't be necessary but why not
     if (SpecificationVersion.DRAFT2020_12.getId().equals(dialectRequest.dialect())) {
         validatorFactory.withDefaultDialect(new Dialects.Draft2020Dialect());
     } else if (SpecificationVersion.DRAFT2019_09.getId().equals(dialectRequest.dialect())) {
