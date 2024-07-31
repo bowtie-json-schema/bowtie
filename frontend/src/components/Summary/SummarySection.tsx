@@ -2,7 +2,8 @@ import Alert from "react-bootstrap/Alert";
 import Card from "react-bootstrap/Card";
 
 import SummaryTable from "./SummaryTable";
-import { Implementation, ReportData } from "../../data/parseReportData.ts";
+import Implementation from "../../data/Implementation.ts";
+import { ReportData } from "../../data/parseReportData.ts";
 import { OtherImplementations } from "../OtherImplementations.tsx";
 
 const SummarySection = ({
@@ -10,7 +11,7 @@ const SummarySection = ({
   otherImplementationsData,
 }: {
   reportData: ReportData;
-  otherImplementationsData: Record<string, Implementation>;
+  otherImplementationsData: Map<string, Implementation>;
 }) => {
   return (
     <Card className="mx-auto mb-3" id="summary">
@@ -22,7 +23,7 @@ const SummarySection = ({
             This run failed fast, so some input cases may not have been run.
           </Alert>
         )}
-        {Object.keys(otherImplementationsData).length > 0 && (
+        {otherImplementationsData.size > 0 && (
           <OtherImplementations
             otherImplementationsData={otherImplementationsData}
           />

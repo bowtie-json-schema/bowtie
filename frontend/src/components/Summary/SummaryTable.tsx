@@ -89,7 +89,6 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
           .map(([id, implResults], index) => (
             <ImplementationRow
               cases={reportData.cases}
-              id={id}
               implementation={reportData.runMetadata.implementations.get(id)!}
               implementationResults={implResults}
               key={index}

@@ -7,21 +7,19 @@ import Row from "react-bootstrap/Row";
 import { InfoCircle } from "react-bootstrap-icons";
 import { NavLink } from "react-router-dom";
 
-import { Implementation } from "../data/parseReportData";
 import { mapLanguage } from "../data/mapLanguage";
 import Dialect from "../data/Dialect";
+import Implementation from "../data/Implementation";
 
 interface Props {
-  otherImplementationsData: Record<string, Implementation>;
+  otherImplementationsData: Map<string, Implementation>;
 }
 
 export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const [showPopover, setShowPopover] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
-  const otherImplementationsDataArray = Object.entries(
-    otherImplementationsData,
-  );
+
   return (
     <div
       ref={overlayRef}
@@ -48,14 +46,14 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
               <Popover.Body>
                 <Container className="p-0">
                   <Row className="d-grid gap-2">
-                    {otherImplementationsDataArray.map(([id, impl]) => {
+                    {Array.from(otherImplementationsData).map(([id, impl]) => {
                       const latest = getLatestSupportedDialect(impl);
                       return (
                         <Col key={id}>
                           <div>
                             <NavLink
                               style={{ fontSize: "1rem", fontWeight: "bold" }}
-                              to={`/implementations/${id}`}
+                              to={impl.routePath}
                             >
                               {impl.name}
                             </NavLink>
