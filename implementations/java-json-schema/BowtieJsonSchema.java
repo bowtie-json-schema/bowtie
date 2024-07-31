@@ -21,7 +21,9 @@ public class BowtieJsonSchema {
 
   private static final String RECOGNIZING_IDENTIFIERS =
       "Determining if a specific location is a schema or not is not supported.";
-  private static final Map<String, String> UNSUPPORTED = Map.of("$ref prevents a sibling $id from changing the base uri", RECOGNIZING_IDENTIFIERS);
+  private static final Map<String, String> UNSUPPORTED =
+      Map.of("$ref prevents a sibling $id from changing the base uri",
+             RECOGNIZING_IDENTIFIERS);
 
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
