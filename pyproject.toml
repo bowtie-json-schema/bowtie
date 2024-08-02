@@ -54,6 +54,7 @@ dependencies = [
   "httpx",
   "jsonschema>=4.19.0",
   "jsonschema_lexer",
+  "pyperf",
   "referencing>=0.31.0",
   "referencing-loaders>=2024.5.2",
   "rich",
@@ -116,6 +117,8 @@ exclude = [
     "**/tests/conftest.py",
     "**/tests/fauxmplementations/miniatures.py",
     "**/tests/test_*.py",
+    "**/bowtie/benchmarks/*",
+    "**/tests/benchmarks/*",
 ]
 
 [tool.ruff]
@@ -181,5 +184,6 @@ from-first = true
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"bowtie/tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S"]
+"bowtie/tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S", "INP"]
+"bowtie/benchmarks/*" = ["ANN", "D", "DTZ011", "RUF012", "S", "INP", "E501"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]
