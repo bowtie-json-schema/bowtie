@@ -13,23 +13,33 @@ import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import { MainContainer } from "./MainContainer";
 import {
-  ReportData,
-  prepareImplementationReport,
+  ImplementationReport,
+  prepareDialectsComplianceReport,
+  prepareVersionsComplianceReport,
 } from "./data/parseReportData";
 
-const implementationReportViewDataLoader = async (
-  langImplementation: string,
-) => {
-  document.title = `Bowtie - ${langImplementation}`;
-  const allReportsData = new Map<Dialect, ReportData>();
-  const promises = [];
-  for (const dialect of Dialect.known()) {
-    promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
-    );
-  }
-  await Promise.all(promises);
-  return prepareImplementationReport(langImplementation, allReportsData);
+const implementationReportViewDataLoader = async (implementationId: string) => {
+  document.title = `Bowtie - ${implementationId}`;
+
+  const allDialectReports = await Dialect.fetchAllReports();
+
+  const implementation = Implementation.withId(implementationId);
+  if (!implementation) return null;
+
+  const versions = await implementation.fetchVersions();
+  const versionedReports = await implementation.fetchVersionedReportsFor(
+    versions,
+    Dialect.newest_to_oldest()[0]
+  );
+
+  return {
+    implementation,
+    dialectsCompliance: prepareDialectsComplianceReport(
+      implementation.id,
+      allDialectReports
+    ),
+    versionsCompliance: prepareVersionsComplianceReport(versionedReports),
+  } satisfies ImplementationReport;
 };
 
 const dialectReportViewDataLoader = async ({
@@ -91,6 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

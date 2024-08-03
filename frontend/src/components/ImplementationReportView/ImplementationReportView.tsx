@@ -15,6 +15,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { EmbedBadgesContextType } from "./EmbedBadges";
+import { VersionsTrend } from "./VersionsTrend";
 
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
@@ -33,7 +34,7 @@ const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementation } = implementationReport;
+  const { implementation, versionsCompliance } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -136,7 +137,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
@@ -147,6 +148,10 @@ const ReportComponent: React.FC<{
         </Card.Body>
       </Card>
       <DialectCompliance implementationReport={implementationReport} />
+      <VersionsTrend
+        implementation={implementation}
+        versionsCompliance={versionsCompliance}
+      />
     </Container>
   );
 };

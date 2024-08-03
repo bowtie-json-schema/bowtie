@@ -46,31 +46,33 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
               <Popover.Body>
                 <Container className="p-0">
                   <Row className="d-grid gap-2">
-                    {Array.from(otherImplementationsData).map(([id, impl]) => {
-                      const latest = getLatestSupportedDialect(impl);
-                      return (
-                        <Col key={id}>
-                          <div>
-                            <NavLink
-                              style={{ fontSize: "1rem", fontWeight: "bold" }}
-                              to={impl.routePath}
-                            >
-                              {impl.name}
-                            </NavLink>
-                            <span className="ps-1 text-body-secondary fw-bold">
-                              {mapLanguage(impl.language)}
+                    {Array.from(otherImplementationsData.values()).map(
+                      (impl) => {
+                        const latest = getLatestSupportedDialect(impl);
+                        return (
+                          <Col key={impl.id}>
+                            <div>
+                              <NavLink
+                                style={{ fontSize: "1rem", fontWeight: "bold" }}
+                                to={impl.routePath}
+                              >
+                                {impl.name}
+                              </NavLink>
+                              <span className="ps-1 text-body-secondary fw-bold">
+                                {mapLanguage(impl.language)}
+                              </span>
+                            </div>
+                            <span className="text-body-secondary text-nowrap">
+                              (latest supported dialect:{" "}
+                              <NavLink to={latest.routePath}>
+                                {latest.prettyName}
+                              </NavLink>
+                              )
                             </span>
-                          </div>
-                          <span className="text-body-secondary text-nowrap">
-                            (latest supported dialect:{" "}
-                            <NavLink to={latest.routePath}>
-                              {latest.prettyName}
-                            </NavLink>
-                            )
-                          </span>
-                        </Col>
-                      );
-                    })}
+                          </Col>
+                        );
+                      }
+                    )}
                   </Row>
                 </Container>
               </Popover.Body>
@@ -91,6 +93,6 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
 
 const getLatestSupportedDialect = (impl: Implementation): Dialect => {
   return impl.dialects.reduce((acc, curr) =>
-    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc,
+    curr.firstPublicationDate > acc.firstPublicationDate ? curr : acc
   );
 };

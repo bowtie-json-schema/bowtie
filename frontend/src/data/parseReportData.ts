@@ -12,7 +12,7 @@ dayjs.extend(relativeTime);
 export const fromSerialized = (jsonl: string): ReportData => {
   const lines = jsonl.trim().split(/\r?\n/);
   return parseReportData(
-    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
+    lines.map((line) => JSON.parse(line) as Record<string, unknown>)
   );
 };
 
@@ -31,7 +31,7 @@ export class RunMetadata {
     implementations: Map<string, Implementation>,
     bowtieVersion: string,
     started: Date,
-    metadata: Record<string, unknown>,
+    metadata: Record<string, unknown>
   ) {
     this.dialect = dialect;
     this.implementations = implementations;
@@ -46,10 +46,14 @@ export class RunMetadata {
 
   static fromRecord(record: Header): RunMetadata {
     const implementations = new Map<string, Implementation>(
-      Object.entries(record.implementations).map(([id, info]) => [
-        id,
-        new Implementation(id, info),
-      ]),
+      Object.entries(record.implementations).map(([id, rawData]) => {
+        const existingImplementation = Implementation.withId(id);
+        if (existingImplementation) {
+          return [id, existingImplementation];
+        } else {
+          return [id, new Implementation(id, rawData)];
+        }
+      })
     );
 
     return new RunMetadata(
@@ -57,7 +61,7 @@ export class RunMetadata {
       implementations,
       record.bowtie_version,
       new Date(record.started),
-      record.metadata,
+      record.metadata
     );
   }
 }
@@ -66,7 +70,7 @@ export class RunMetadata {
  * Parse a report from some deserialized JSON objects.
  */
 export const parseReportData = (
-  lines: Record<string, unknown>[],
+  lines: Record<string, unknown>[]
 ): ReportData => {
   const runMetadata = RunMetadata.fromRecord(lines[0] as unknown as Header);
 
@@ -90,7 +94,7 @@ export const parseReportData = (
     } else if (line.implementation) {
       const caseData = caseMap.get(line.seq as number)!;
       const implementationResults = implementationsResultsMap.get(
-        line.implementation as string,
+        line.implementation as string
       )!;
       if (line.caught !== undefined) {
         const context = line.context as Record<string, unknown>;
@@ -102,7 +106,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "errored",
             message: errorMessage,
-          }),
+          })
         );
       } else if (line.skipped) {
         implementationResults.totals.skippedTests! += caseData.tests.length;
@@ -111,7 +115,7 @@ export const parseReportData = (
           new Array<CaseResult>(caseData.tests.length).fill({
             state: "skipped",
             message: line.message as string,
-          }),
+          })
         );
       } else if (line.implementation) {
         const caseResults: CaseResult[] = (
@@ -162,50 +166,76 @@ export const parseReportData = (
   };
 };
 
+const getTotals = (results: ImplementationResults) => ({
+  erroredTests: results.totals.erroredTests,
+  skippedTests: results.totals.skippedTests,
+  failedTests: results.totals.failedTests,
+});
+
 /**
- * Prepare a summarized implementation report using the
- * passed implementation id and all the dialect reports data
+ * Prepare a dialects compliance report for the passed
+ * implementation id using all the dialect reports data
  * that was fetched.
  */
-export const prepareImplementationReport = (
+export const prepareDialectsComplianceReport = (
   implementationId: string,
-  allReportsData: Map<Dialect, ReportData>,
-) => {
-  let implementationReport: ImplementationReport | null = null;
-  const dialectCompliance = new Map<Dialect, Partial<Totals>>();
+  allDialectReports: Map<Dialect, ReportData>
+): Pick<ImplementationReport, "dialectsCompliance">["dialectsCompliance"] => {
+  const dialectsCompliance: Pick<
+    ImplementationReport,
+    "dialectsCompliance"
+  >["dialectsCompliance"] = new Map();
 
   for (const [
     dialect,
-    { implementationsResults, runMetadata },
-  ] of allReportsData.entries()) {
+    { implementationsResults },
+  ] of allDialectReports.entries()) {
     const implementationResults = implementationsResults.get(implementationId);
-
     if (implementationResults) {
-      dialectCompliance.set(dialect, {
-        erroredTests: implementationResults.totals.erroredTests,
-        skippedTests: implementationResults.totals.skippedTests,
-        failedTests: implementationResults.totals.failedTests,
-      });
+      dialectsCompliance.set(dialect, getTotals(implementationResults));
+    }
+  }
 
-      if (!implementationReport) {
-        const implementation =
-          runMetadata.implementations.get(implementationId)!;
+  return dialectsCompliance;
+};
 
-        implementationReport = {
-          implementation,
-          dialectCompliance,
-        };
+/**
+ * Prepare a versions compliance report using all the
+ * versioned reports data that was fetched for an implementation.
+ */
+export const prepareVersionsComplianceReport = (
+  versionedReports: Map<Dialect, Map<string, ReportData>>
+): Pick<ImplementationReport, "versionsCompliance">["versionsCompliance"] => {
+  const versionsCompliance: Pick<
+    ImplementationReport,
+    "versionsCompliance"
+  >["versionsCompliance"] = new Map();
+
+  for (const [dialect, versionsReportData] of versionedReports.entries()) {
+    versionsCompliance.set(dialect, new Map());
+
+    for (const [version, versionReportData] of versionsReportData.entries()) {
+      if (versionReportData) {
+        const versionResults = versionReportData.implementationsResults
+          .values()
+          .next().value as ImplementationResults;
+
+        versionsCompliance
+          .get(dialect)!
+          .set(version, getTotals(versionResults));
+      } else {
+        continue;
       }
     }
   }
 
-  return implementationReport;
+  return versionsCompliance;
 };
 
 export const calculateTotals = (data: ReportData): Totals => {
   const totalTests = Array.from(data.cases.values()).reduce(
     (prev, curr) => prev + curr.tests.length,
-    0,
+    0
   );
   return Array.from(data.implementationsResults.values()).reduce(
     (prev, curr) => ({
@@ -219,7 +249,7 @@ export const calculateTotals = (data: ReportData): Totals => {
       skippedTests: 0,
       failedTests: 0,
       erroredTests: 0,
-    },
+    }
   );
 };
 
@@ -258,7 +288,8 @@ export interface CaseResult {
 
 export interface ImplementationReport {
   implementation: Implementation;
-  dialectCompliance: Map<Dialect, Partial<Totals>>;
+  dialectsCompliance: Map<Dialect, Partial<Totals>>;
+  versionsCompliance: Map<Dialect, Map<string, Partial<Totals>>>;
 }
 
 export interface Case {

@@ -9,7 +9,7 @@ import { ImplementationReport } from "../../data/parseReportData";
 const DialectCompliance: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
-  const { implementation, dialectCompliance } = implementationReport;
+  const { implementation, dialectsCompliance } = implementationReport;
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -35,7 +35,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Array.from(dialectCompliance.entries())
+            {Array.from(dialectsCompliance.entries())
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
@@ -44,7 +44,7 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
               .map(([dialect, result], index) => {
                 return (
