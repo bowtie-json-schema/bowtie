@@ -56,7 +56,7 @@ export const VersionsTrend = ({
   const [trendData, setTrendData] = useState<TrendData[]>([]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       setIsLoading(true);
 
       try {
@@ -101,7 +101,7 @@ export const VersionsTrend = ({
         setIsLoading(false);
       }
     })();
-  }, [selectedDialect, versionsCompliance]);
+  }, [selectedDialect, implementation, versionsCompliance]);
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -195,7 +195,7 @@ const CustomTooltip = ({
   payload,
   label,
 }: TooltipProps<ValueType, NameType>) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     return (
       <div className="border border-secondary rounded p-3 bg-white">
         <span className="fw-bold mb-1">{label}</span>
