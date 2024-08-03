@@ -53,7 +53,8 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
                           <Col key={impl.id}>
                             <div>
                               <NavLink
-                                style={{ fontSize: "1rem", fontWeight: "bold" }}
+                                className="fw-bold"
+                                style={{ fontSize: "1rem" }}
                                 to={impl.routePath}
                               >
                                 {impl.name}

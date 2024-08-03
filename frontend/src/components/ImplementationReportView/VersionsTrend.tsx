@@ -39,7 +39,7 @@ interface Props {
 
 interface TrendData extends Partial<Totals> {
   version: string;
-  unsuccessfulTests: number | null;
+  unsuccessfulTests: number;
 }
 
 export const VersionsTrend = ({
