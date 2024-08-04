@@ -203,9 +203,10 @@ export const prepareDialectsComplianceReport = (
  */
 export const prepareVersionsComplianceReport = (
   versionedReports: Map<Dialect, Map<string, ReportData>>
-): ImplementationReport["versionsCompliance"] => {
-  const versionsCompliance: ImplementationReport["versionsCompliance"] =
-    new Map();
+): NonNullable<ImplementationReport["versionsCompliance"]> => {
+  const versionsCompliance: NonNullable<
+    ImplementationReport["versionsCompliance"]
+  > = new Map();
 
   for (const [dialect, versionsReportData] of versionedReports.entries()) {
     versionsCompliance.set(dialect, new Map());
