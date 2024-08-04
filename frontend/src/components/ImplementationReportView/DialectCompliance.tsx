@@ -49,7 +49,7 @@ const DialectCompliance: React.FC<Props> = ({
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
               )
               .map(([dialect, result], index) => {
                 return (

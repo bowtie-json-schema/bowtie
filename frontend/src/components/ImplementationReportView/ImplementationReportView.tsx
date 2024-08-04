@@ -138,7 +138,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>

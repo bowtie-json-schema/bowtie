@@ -45,10 +45,10 @@ const VersionsTrend: React.FC<Props> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(
-    initialVersionsCompliance.keys().next().value as Dialect
+    initialVersionsCompliance.keys().next().value as Dialect,
   );
   const [versionsCompliance, setVersionsCompliance] = useState(
-    initialVersionsCompliance
+    initialVersionsCompliance,
   );
   const [trendData, setTrendData] = useState<TrendData[]>([]);
 
@@ -61,16 +61,16 @@ const VersionsTrend: React.FC<Props> = ({
           const selectedDialectData =
             await implementation.fetchVersionedReportsFor(
               selectedDialect,
-              implementation.versions!
+              implementation.versions!,
             );
 
           setVersionsCompliance((prev) =>
             new Map(prev).set(
               selectedDialect,
               prepareVersionsComplianceReport(selectedDialectData).get(
-                selectedDialect
-              )!
-            )
+                selectedDialect,
+              )!,
+            ),
           );
         }
 
@@ -82,7 +82,7 @@ const VersionsTrend: React.FC<Props> = ({
               unsuccessfulTests:
                 data.erroredTests! + data.failedTests! + data.skippedTests!,
               ...data,
-            }))
+            })),
         );
       } catch (error) {
         setTrendData([]);
