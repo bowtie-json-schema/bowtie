@@ -28,14 +28,14 @@ const implementationReportViewDataLoader = async (implementationId: string) => {
 
   const dialectsCompliance = prepareDialectsComplianceReport(
     implementation.id,
-    allDialectReports
+    allDialectReports,
   );
 
   const versions = await implementation.fetchVersions();
   if (versions) {
     const versionedReports = await implementation.fetchVersionedReportsFor(
       Dialect.newest_to_oldest()[0],
-      versions
+      versions,
     );
 
     return {
@@ -111,6 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>
+    </ThemeContextProvider>,
   );
 });
