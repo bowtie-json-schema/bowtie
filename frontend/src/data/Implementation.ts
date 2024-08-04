@@ -48,7 +48,7 @@ export default class Implementation
   readonly os_version?: string;
   readonly language_version?: string;
   readonly routePath: string;
-  private _versions: string[];
+  private _versions: string[] | null;
 
   private static all: Map<string, Implementation> = new Map<
     string,
@@ -75,11 +75,11 @@ export default class Implementation
     this.os_version = rawData.os_version;
     this.language_version = rawData.language_version;
     this.routePath = `/implementations/${id}`;
-    this._versions = [];
+    this._versions = null;
   }
 
   get versions() {
-    return [...this._versions];
+    return this._versions ? [...this._versions] : null;
   }
 
   static withId(id: string) {
@@ -97,16 +97,18 @@ export default class Implementation
       string,
       RawImplementationData
     >;
+    const parsedImplementations = new Map<string, Implementation>();
 
     Object.entries(rawImplementations).forEach(([id, rawData]) => {
-      if (this.withId(id)) {
-        return;
+      const existingImplementation = this.withId(id);
+      if (existingImplementation) {
+        parsedImplementations.set(id, existingImplementation);
       } else {
-        new Implementation(id, rawData);
+        parsedImplementations.set(id, new Implementation(id, rawData));
       }
     });
 
-    return this.all;
+    return parsedImplementations;
   }
 
   private directoryURI(baseURI: URI = siteURI) {
@@ -122,19 +124,19 @@ export default class Implementation
 
     try {
       const response = await fetch(versionsURI);
-      this._versions = (await response.json()) as string[];
-      return this.versions;
+      const versions = (await response.json()) as string[];
+      this._versions = versions;
+      return versions;
     } catch (err) {
-      throw new Error(
-        `Failed to fetch the versions of ${this.id} from ${versionsURI}`,
-      );
+      this._versions = null;
+      return null;
     }
   }
 
   async fetchVersionedReportsFor(
-    versions: string[],
     dialect: Dialect,
-    baseURI: URI = siteURI,
+    versions: string[],
+    baseURI: URI = siteURI
   ) {
     const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
 
@@ -151,7 +153,7 @@ export default class Implementation
               .segment(`v${version}`)
               .segment(dialect.shortName)
               .suffix("json")
-              .href(),
+              .href()
           );
 
           versionedReportsData
@@ -160,7 +162,7 @@ export default class Implementation
         } catch (err) {
           return;
         }
-      }),
+      })
     );
 
     return versionedReportsData;
@@ -172,7 +174,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
     );
   }
 
@@ -182,7 +184,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json"),
+        .suffix("json")
     );
   }
 

@@ -26,19 +26,28 @@ const implementationReportViewDataLoader = async (implementationId: string) => {
   const implementation = Implementation.withId(implementationId);
   if (!implementation) return null;
 
-  const versions = await implementation.fetchVersions();
-  const versionedReports = await implementation.fetchVersionedReportsFor(
-    versions,
-    Dialect.newest_to_oldest()[0],
+  const dialectsCompliance = prepareDialectsComplianceReport(
+    implementation.id,
+    allDialectReports
   );
+
+  const versions = await implementation.fetchVersions();
+  if (versions) {
+    const versionedReports = await implementation.fetchVersionedReportsFor(
+      Dialect.newest_to_oldest()[0],
+      versions
+    );
+
+    return {
+      implementation,
+      dialectsCompliance,
+      versionsCompliance: prepareVersionsComplianceReport(versionedReports),
+    } satisfies ImplementationReport;
+  }
 
   return {
     implementation,
-    dialectsCompliance: prepareDialectsComplianceReport(
-      implementation.id,
-      allDialectReports,
-    ),
-    versionsCompliance: prepareVersionsComplianceReport(versionedReports),
+    dialectsCompliance,
   } satisfies ImplementationReport;
 };
 
@@ -47,7 +56,8 @@ const dialectReportViewDataLoader = async ({
 }: {
   params: Params<string>;
 }) => {
-  const draftName = params?.draftName ?? "draft2020-12";
+  const draftName =
+    params?.draftName ?? Dialect.newest_to_oldest()[0].shortName;
   const dialect = Dialect.withName(draftName);
   document.title = `Bowtie - ${dialect.prettyName}`;
 
@@ -101,6 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

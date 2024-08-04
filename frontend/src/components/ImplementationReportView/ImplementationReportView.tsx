@@ -12,10 +12,10 @@ import Button from "react-bootstrap/Button";
 
 import DialectCompliance from "./DialectCompliance";
 import LoadingAnimation from "../LoadingAnimation";
+import VersionsTrend from "./VersionsTrend";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { EmbedBadgesContextType } from "./EmbedBadges";
-import { VersionsTrend } from "./VersionsTrend";
 
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
@@ -34,7 +34,8 @@ const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementation, versionsCompliance } = implementationReport;
+  const { implementation, dialectsCompliance, versionsCompliance } =
+    implementationReport;
 
   return (
     <Container className="p-4">
@@ -137,7 +138,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
@@ -147,11 +148,16 @@ const ReportComponent: React.FC<{
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance implementationReport={implementationReport} />
-      <VersionsTrend
+      <DialectCompliance
         implementation={implementation}
-        versionsCompliance={versionsCompliance}
+        dialectsCompliance={dialectsCompliance}
       />
+      {versionsCompliance && (
+        <VersionsTrend
+          implementation={implementation}
+          versionsCompliance={versionsCompliance}
+        />
+      )}
     </Container>
   );
 };

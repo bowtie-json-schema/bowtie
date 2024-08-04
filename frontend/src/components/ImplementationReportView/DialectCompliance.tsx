@@ -5,12 +5,17 @@ import Image from "react-bootstrap/Image";
 import Table from "react-bootstrap/Table";
 
 import { ImplementationReport } from "../../data/parseReportData";
+import Implementation from "../../data/Implementation";
 
-const DialectCompliance: React.FC<{
-  implementationReport: ImplementationReport;
-}> = ({ implementationReport }) => {
-  const { implementation, dialectsCompliance } = implementationReport;
+interface Props {
+  implementation: Implementation;
+  dialectsCompliance: ImplementationReport["dialectsCompliance"];
+}
 
+const DialectCompliance: React.FC<Props> = ({
+  implementation,
+  dialectsCompliance,
+}) => {
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -44,7 +49,7 @@ const DialectCompliance: React.FC<{
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
               .map(([dialect, result], index) => {
                 return (

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Card from "react-bootstrap/Card";
 import Dropdown from "react-bootstrap/Dropdown";
-import Spinner from "react-bootstrap/Spinner";
 import {
   CartesianGrid,
   LineChart,
@@ -21,6 +20,7 @@ import {
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import semverCompare from "semver/functions/compare";
 
+import LoadingAnimation from "../LoadingAnimation";
 import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import {
@@ -31,10 +31,7 @@ import {
 
 interface Props {
   implementation: Implementation;
-  versionsCompliance: Pick<
-    ImplementationReport,
-    "versionsCompliance"
-  >["versionsCompliance"];
+  versionsCompliance: NonNullable<ImplementationReport["versionsCompliance"]>;
 }
 
 interface TrendData extends Partial<Totals> {
@@ -42,17 +39,17 @@ interface TrendData extends Partial<Totals> {
   unsuccessfulTests: number;
 }
 
-export const VersionsTrend = ({
+const VersionsTrend: React.FC<Props> = ({
   implementation,
   versionsCompliance: initialVersionsCompliance,
-}: Props) => {
+}) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDialect, setSelectedDialect] = useState<Dialect>(
-    initialVersionsCompliance.keys().next().value as Dialect,
+  const [selectedDialect, setSelectedDialect] = useState(
+    initialVersionsCompliance.keys().next().value as Dialect
   );
-  const [versionsCompliance, setVersionsCompliance] = useState<
-    Pick<ImplementationReport, "versionsCompliance">["versionsCompliance"]
-  >(initialVersionsCompliance);
+  const [versionsCompliance, setVersionsCompliance] = useState(
+    initialVersionsCompliance
+  );
   const [trendData, setTrendData] = useState<TrendData[]>([]);
 
   useEffect(() => {
@@ -63,39 +60,31 @@ export const VersionsTrend = ({
         if (!versionsCompliance.has(selectedDialect)) {
           const selectedDialectData =
             await implementation.fetchVersionedReportsFor(
-              implementation.versions,
               selectedDialect,
+              implementation.versions!
             );
 
           setVersionsCompliance((prev) =>
             new Map(prev).set(
               selectedDialect,
               prepareVersionsComplianceReport(selectedDialectData).get(
-                selectedDialect,
-              )!,
-            ),
+                selectedDialect
+              )!
+            )
           );
         }
 
-        const complianceData = versionsCompliance.get(selectedDialect);
-        if (complianceData) {
-          setTrendData(
-            Array.from(complianceData)
-              .sort(([versionA], [versionB]) =>
-                semverCompare(versionA, versionB),
-              )
-              .map(([version, data]) => ({
-                version: `v${version}`,
-                unsuccessfulTests:
-                  data.erroredTests! + data.failedTests! + data.skippedTests!,
-                ...data,
-              })),
-          );
-        } else {
-          setTrendData([]);
-        }
+        setTrendData(
+          Array.from(versionsCompliance.get(selectedDialect)!)
+            .sort(([versionA], [versionB]) => semverCompare(versionA, versionB))
+            .map(([version, data]) => ({
+              version: `v${version}`,
+              unsuccessfulTests:
+                data.erroredTests! + data.failedTests! + data.skippedTests!,
+              ...data,
+            }))
+        );
       } catch (error) {
-        console.error(error);
         setTrendData([]);
       } finally {
         setIsLoading(false);
@@ -132,11 +121,7 @@ export const VersionsTrend = ({
             </Dropdown>
           </div>
           {isLoading ? (
-            <div className="d-flex justify-content-center align-items-center h-100">
-              <Spinner animation="border" role="status" variant="dark">
-                <span className="visually-hidden">Loading...</span>
-              </Spinner>
-            </div>
+            <LoadingAnimation />
           ) : trendData.length === 0 ? (
             <div className="d-flex justify-content-center align-items-center h-100">
               {`None of the versions of ${implementation.id} support ${selectedDialect.prettyName}.`}
@@ -223,3 +208,5 @@ const CustomTooltip = ({
 
   return null;
 };
+
+export default VersionsTrend;
