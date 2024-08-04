@@ -12,7 +12,7 @@ alabaster==0.7.16
     # via sphinx
 anyio==4.4.0
     # via httpx
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   aiohttp
     #   bowtie-json-schema
