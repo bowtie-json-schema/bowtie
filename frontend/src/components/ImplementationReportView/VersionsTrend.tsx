@@ -48,7 +48,7 @@ export const VersionsTrend = ({
 }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState<Dialect>(
-    initialVersionsCompliance.keys().next().value as Dialect
+    initialVersionsCompliance.keys().next().value as Dialect,
   );
   const [versionsCompliance, setVersionsCompliance] = useState<
     Pick<ImplementationReport, "versionsCompliance">["versionsCompliance"]
@@ -64,16 +64,16 @@ export const VersionsTrend = ({
           const selectedDialectData =
             await implementation.fetchVersionedReportsFor(
               implementation.versions,
-              selectedDialect
+              selectedDialect,
             );
 
           setVersionsCompliance((prev) =>
             new Map(prev).set(
               selectedDialect,
               prepareVersionsComplianceReport(selectedDialectData).get(
-                selectedDialect
-              )!
-            )
+                selectedDialect,
+              )!,
+            ),
           );
         }
 
@@ -82,14 +82,14 @@ export const VersionsTrend = ({
           setTrendData(
             Array.from(complianceData)
               .sort(([versionA], [versionB]) =>
-                semverCompare(versionA, versionB)
+                semverCompare(versionA, versionB),
               )
               .map(([version, data]) => ({
                 version: `v${version}`,
                 unsuccessfulTests:
                   data.erroredTests! + data.failedTests! + data.skippedTests!,
                 ...data,
-              }))
+              })),
           );
         } else {
           setTrendData([]);
