@@ -12,7 +12,7 @@ import json
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
-from rpds import HashTrieMap
+from rpds import HashTrieMap, HashTrieSet
 from url import URL
 import httpx
 import referencing_loaders
@@ -130,7 +130,7 @@ class Dialect:
         if not data.is_dir():
             data = Path(__file__).parent.parent / "data"
 
-        return frozenset(
+        return HashTrieSet(
             Dialect.from_dict(**each)
             for each in json.loads(data.joinpath("dialects.json").read_text())
         )
