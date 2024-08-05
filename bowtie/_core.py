@@ -172,7 +172,15 @@ class Dialect:
 
     @classmethod
     def from_str(cls, uri: str):
-        return cls.by_uri()[URL.parse(uri)]
+        url = URL.parse(uri)
+        by_uri = cls.by_uri()
+
+        if url.fragment is None:
+            dialect = by_uri.get(url.with_fragment(""))
+            if dialect is not None:
+                return dialect
+
+        return by_uri[url]
 
     async def latest_report(self):
         url = HOMEPAGE / f"{self.short_name}.json"
