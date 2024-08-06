@@ -1,0 +1,431 @@
+{
+  "https://github.com/tristanpenman/valijson": {
+    "name": "cpp-valijson",
+    "language": "c++",
+    "homepage": "https://github.com/tristanpenman/valijson",
+    "issues": "https://github.com/tristanpenman/valijson/issues",
+    "language_version": "C++17",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/ajv-validator/ajv": {
+    "name": "js-ajv",
+    "language": "javascript",
+    "version": "8.17.1",
+    "documentation": "https://ajv.js.org/json-schema.html",
+    "homepage": "https://ajv.js.org/",
+    "issues": "https://github.com/ajv-validator/ajv/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/openapi-processor/openapi-parser": {
+    "name": "java-openapiprocessor",
+    "language": "java",
+    "version": "2024.3",
+    "homepage": "https://github.com/openapi-processor/openapi-parser",
+    "issues": "https://github.com/openapi-processor/openapi-parser/issues",
+    "language_version": "22.0.2+11",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/OptimumCode/json-schema-validator": {
+    "name": "kotlin-kmp-json-schema-validator",
+    "language": "kotlin",
+    "version": "0.2.2",
+    "homepage": "https://github.com/OptimumCode/json-schema-validator",
+    "issues": "https://github.com/OptimumCode/json-schema-validator/issues",
+    "language_version": "2.0.0",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/marksparkza/jschon": {
+    "name": "python-jschon",
+    "language": "python",
+    "version": "0.11.1",
+    "documentation": "https://jschon.readthedocs.io/",
+    "homepage": "https://jschon.readthedocs.io/",
+    "issues": "https://github.com/marksparkza/jschon/issues",
+    "language_version": "3.12.4",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema"
+    ]
+  },
+  "https://github.com/corvus-dotnet/corvus.jsonschema": {
+    "name": "dotnet-corvus-jsonschema",
+    "language": "dotnet",
+    "version": "3.0.27",
+    "documentation": "https://github.com/corvus-dotnet/Corvus.JsonSchema/blob/main/README.md",
+    "homepage": "https://github.com/corvus-dotnet/corvus.jsonschema",
+    "issues": "https://github.com/corvus-dotnet/corvus.jsonschema/issues",
+    "language_version": "8.0.7",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/harrel56/json-schema": {
+    "name": "java-json-schema",
+    "language": "java",
+    "version": "1.7.0",
+    "documentation": "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/harrel/jsonschema/package-summary.html",
+    "homepage": "https://github.com/harrel56/json-schema",
+    "issues": "https://github.com/harrel56/json-schema/issues",
+    "language_version": "22.0.2+11",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#"
+    ],
+    "links": [
+      {
+        "description": "Group homepage",
+        "url": "https://harrel.dev/"
+      },
+      {
+        "description": "Maven Central - implementation",
+        "url": "https://mvnrepository.com/artifact/dev.harrel/json-schema/1.7.0"
+      },
+      {
+        "description": "Maven Central - used JSON provider",
+        "url": "https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind/2.17.2"
+      }
+    ]
+  },
+  "https://github.com/java-json-tools/json-schema-validator": {
+    "name": "java-json-tools-json-schema-validator",
+    "language": "java",
+    "version": "2.2.14",
+    "documentation": "https://github.com/java-json-tools/json-schema-validator",
+    "homepage": "https://github.com/java-json-tools/json-schema-validator",
+    "issues": "https://github.com/java-json-tools/json-schema-validator/issues",
+    "language_version": "22.0.2+11",
+    "dialects": [
+      "http://json-schema.org/draft-04/schema#",
+      "http://json-schema.org/draft-03/schema#"
+    ]
+  },
+  "https://github.com/microsoft/vscode-json-languageservice": {
+    "name": "ts-vscode-json-languageservice",
+    "language": "typescript",
+    "version": "5.4.0",
+    "homepage": "https://github.com/microsoft/vscode-json-languageservice",
+    "issues": "https://github.com/microsoft/vscode-json-languageservice/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/santhosh-tekuri/jsonschema": {
+    "name": "go-jsonschema",
+    "language": "go",
+    "version": "v6.0.1",
+    "homepage": "https://github.com/santhosh-tekuri/jsonschema",
+    "issues": "https://github.com/santhosh-tekuri/jsonschema/issues",
+    "language_version": "go1.22.5",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/davishmcclurg/json_schemer": {
+    "name": "ruby-json_schemer",
+    "language": "ruby",
+    "version": "2.3.0",
+    "homepage": "https://github.com/davishmcclurg/json_schemer",
+    "issues": "https://github.com/davishmcclurg/json_schemer/issues",
+    "language_version": "3.3.4",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator": {
+    "name": "scala-mjs-validator",
+    "language": "scala",
+    "version": "v0.1.0",
+    "homepage": "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator",
+    "issues": "https://gitlab.lip6.fr/jsonschema/modernjsonschemavalidator/issues",
+    "language_version": "22.0.2+11",
+    "dialects": ["https://json-schema.org/draft/2020-12/schema"]
+  },
+  "https://github.com/cfworker/cfworker": {
+    "name": "js-json-schema",
+    "language": "javascript",
+    "version": "1.12.8",
+    "homepage": "https://github.com/cfworker/cfworker/blob/main/packages/json-schema/README.md",
+    "issues": "https://github.com/cfworker/cfworker/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/jimblackler/jsonschemafriend": {
+    "name": "java-jsonschemafriend",
+    "language": "java",
+    "version": "0.12.4",
+    "homepage": "https://github.com/jimblackler/jsonschemafriend",
+    "issues": "https://github.com/jimblackler/jsonschemafriend/issues",
+    "language_version": "22.0.2+11",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#",
+      "http://json-schema.org/draft-03/schema#"
+    ],
+    "links": [
+      {
+        "description": "Maven Central - used JSON provider",
+        "url": "https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind/2.17.2"
+      }
+    ]
+  },
+  "https://github.com/xeipuuv/gojsonschema": {
+    "name": "go-gojsonschema",
+    "language": "go",
+    "version": "v1.2.0",
+    "homepage": "https://github.com/xeipuuv/gojsonschema",
+    "issues": "https://github.com/xeipuuv/gojsonschema/issues",
+    "language_version": "go1.20.5",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/networknt/json-schema-validator/": {
+    "name": "java-networknt-json-schema-validator",
+    "language": "java",
+    "version": "1.5.1",
+    "documentation": "https://doc.networknt.com/library/json-schema-validator/",
+    "homepage": "https://github.com/networknt/json-schema-validator/",
+    "issues": "https://github.com/networknt/json-schema-validator/issues",
+    "language_version": "22.0.2+11",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/opis/json-schema": {
+    "name": "php-opis-json-schema",
+    "language": "php",
+    "version": "2.3.0",
+    "documentation": "https://opis.io/json-schema/2.x/",
+    "homepage": "https://opis.io/json-schema",
+    "issues": "https://github.com/opis/json-schema/issues",
+    "language_version": "8.4.0alpha2",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#"
+    ]
+  },
+  "https://github.com/api7/jsonschema": {
+    "name": "lua-jsonschema",
+    "language": "lua",
+    "version": "0.9.9-0\n",
+    "homepage": "https://github.com/api7/jsonschema",
+    "issues": "https://github.com/api7/jsonschema/issues",
+    "language_version": "5.1",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/horejsek/python-fastjsonschema": {
+    "name": "python-fastjsonschema",
+    "language": "python",
+    "version": "2.20.0",
+    "documentation": "https://horejsek.github.io/python-fastjsonschema/",
+    "homepage": "https://horejsek.github.io/python-fastjsonschema/",
+    "issues": "https://github.com/horejsek/python-fastjsonschema/issues",
+    "language_version": "3.12.4",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/Stranger6667/jsonschema-rs": {
+    "name": "rust-jsonschema",
+    "language": "rust",
+    "version": "0.18.0",
+    "documentation": "https://docs.rs/jsonschema",
+    "homepage": "https://docs.rs/jsonschema",
+    "issues": "https://github.com/Stranger6667/jsonschema-rs/issues",
+    "language_version": "1.80.0",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/hyperjump-io/json-schema": {
+    "name": "js-hyperjump",
+    "language": "javascript",
+    "version": "1.9.6",
+    "homepage": "https://json-schema.hyperjump.io/",
+    "issues": "https://github.com/hyperjump-io/json-schema/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/ExodusMovement/schemasafe": {
+    "name": "js-schemasafe",
+    "language": "javascript",
+    "version": "1.3.0",
+    "homepage": "https://github.com/ExodusMovement/schemasafe",
+    "issues": "https://github.com/ExodusMovement/schemasafe/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/tdegrunt/jsonschema": {
+    "name": "js-jsonschema",
+    "language": "javascript",
+    "version": "1.4.1",
+    "homepage": "https://github.com/tdegrunt/jsonschema",
+    "issues": "https://github.com/tdegrunt/jsonschema/issues",
+    "language_version": "v22.5.1",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#",
+      "http://json-schema.org/draft-03/schema#"
+    ]
+  },
+  "https://github.com/sourcemeta/jsontoolkit": {
+    "name": "cpp-jsontoolkit",
+    "language": "c++",
+    "version": "631ce15e",
+    "homepage": "https://github.com/sourcemeta/jsontoolkit",
+    "issues": "https://github.com/sourcemeta/jsontoolkit/issues",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/python-jsonschema/jsonschema": {
+    "name": "python-jsonschema",
+    "language": "python",
+    "version": "4.23.0",
+    "documentation": "https://python-jsonschema.readthedocs.io/",
+    "homepage": "https://python-jsonschema.readthedocs.io/",
+    "issues": "https://github.com/python-jsonschema/jsonschema/issues",
+    "language_version": "3.12.4",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#",
+      "http://json-schema.org/draft-03/schema#"
+    ]
+  },
+  "https://github.com/luposlip/json-schema": {
+    "name": "clojure-json-schema",
+    "language": "clojure",
+    "homepage": "https://github.com/luposlip/json-schema",
+    "issues": "https://github.com/luposlip/json-schema/issues",
+    "language_version": "1.11.0",
+    "dialects": [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  },
+  "https://github.com/gregsdennis/json-everything": {
+    "name": "dotnet-jsonschema-net",
+    "language": "dotnet",
+    "version": "7.1.2",
+    "documentation": "https://docs.json-everything.net/schema/basics/",
+    "homepage": "https://json-everything.net/json-schema/",
+    "issues": "https://github.com/gregsdennis/json-everything/issues",
+    "language_version": "8.0.7",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#"
+    ]
+  },
+  "https://github.com/reactivecore/rc-circe-json-schema": {
+    "name": "scala-rc-circe-json-validator",
+    "language": "scala",
+    "version": "0.4.1",
+    "homepage": "https://github.com/reactivecore/rc-circe-json-schema",
+    "issues": "https://github.com/reactivecore/rc-circe-json-schema/issues",
+    "language_version": "22.0.2+11",
+    "dialects": ["https://json-schema.org/draft/2020-12/schema"]
+  },
+  "https://github.com/santhosh-tekuri/boon": {
+    "name": "rust-boon",
+    "language": "rust",
+    "version": "0.6.0",
+    "documentation": "https://docs.rs/boon",
+    "homepage": "https://github.com/santhosh-tekuri/boon",
+    "issues": "htps://github.com/santhosh-tekuri/boon/issues",
+    "language_version": "1.80.0",
+    "dialects": [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-06/schema#",
+      "http://json-schema.org/draft-04/schema#"
+    ]
+  }
+}

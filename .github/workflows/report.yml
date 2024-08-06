@@ -86,19 +86,29 @@ jobs:
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
 
-      - name: Generate public-implementations (Public API) file
+      - name: Generate implementations API file for JSON Schema Org
         run: |
           bowtie filter-implementations | \
             while read -r impl; do
+              COMPLIANCE_URLS=( \
+                bowtie filter-dialects -i $impl | \
+                jq -R -s 'split("\n")[:-1] | map(. as $uri | input | fromjson | .[] | select(.uri == $uri) | \
+                "https://bowtie.report/badges/\($impl)/compliance/" + .shortName)' data/dialects.json
+              )
+
               bowtie info -i $impl --format json | \
-              jq --arg impl "$impl" '
+              jq --arg impl "$impl" --argjson compliance "$COMPLIANCE_URLS" '
                 {(.source): (
-                  . + {name: $impl}
-                  | del(
-                      .os,
-                      .os_version,
-                      .source
+                  {
+                    id: $impl,
+                    dialects: .dialects,
+                    badges_urls: (
+                      {
+                        supported_versions: "https://bowtie.report/badges/\($impl)/supported_versions.json",
+                        compliance: $compliance
+                      }
                     )
+                  }
                 )}
               '
             done | \
@@ -106,7 +116,7 @@ jobs:
 
       - name: Validate public-implementations against its corresponding JSON Schema
         run: |
-          VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/public-implementations.json public-implementations)
+          VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json public-implementations)
           SUMMARY=$(echo "$VALIDATION" | bowtie summary --show failures --format json)
           if [ $(echo "$SUMMARY" | \
                  jq 'all(.[]; .[1].failed == 0 and .[1].errored == 0 and .[1].skipped == 0)') == false ]; then

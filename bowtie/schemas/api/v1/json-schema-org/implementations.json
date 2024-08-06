@@ -1,0 +1,29 @@
+{
+  "title": "Implementations API for JSON Schema Org",
+  "description": "API providing metadata about implementations of JSON Schema supported by Bowtie",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:api:v1:json-schema-org:implementations",
+
+  "type": "object",
+  "propertyNames": {
+    "description": "A URL where the implementation's source code is hosted",
+
+    "type": "string",
+    "format": "uri"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "required": ["dialects"],
+    "properties": {
+      "dialects": {
+        "description": "A list of JSON Schema dialects (URIs) which the implementation understands.",
+
+        "type": "array",
+        "items": { "type": "string", "format": "uri" }
+      }
+    },
+    "additionalProperties": false
+  }
+}
