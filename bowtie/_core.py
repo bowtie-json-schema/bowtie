@@ -28,7 +28,6 @@ from rich.progress import (
     MofNCompleteColumn,
     Progress,
     SpinnerColumn,
-    TaskID,
     TextColumn,
     TimeElapsedColumn,
 )
@@ -731,6 +730,7 @@ class Implementation:
         )
 
         async with httpx.AsyncClient(timeout=10) as client:
+
             async def fetch_report(version: str, dialect: Dialect):
                 try:
                     url = (
