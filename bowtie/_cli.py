@@ -964,7 +964,6 @@ class _Dialect(click.ParamType):
                     *dialect.aliases,
                 ]
             ]
-            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
         else:  # the user didn't type anything, only suggest short names
             suggestions = Dialect.by_short_name().items()
 
@@ -1788,7 +1787,7 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
 @SET_SCHEMA
 @TIMEOUT
 @VALIDATE
-@click.argument("input", type=_suite.ClickParam())
+@click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
