@@ -84,18 +84,6 @@ def _validate_benchmark_file(file, module):
         benchmark_validated(data)
 
 
-keyword_benchmark_files = (
-    (
-        dialect.short_name,
-        benchmark_file,
-    )
-    for dialect in Dialect.known()
-    for benchmark_file in _iterate_over_benchmark_dir(
-        bowtie_dir / "benchmarks/keywords" / dialect.short_name,
-    )
-)
-
-
 class TestBenchmarkFormat:
 
     def test_validate_single_benchmark(self, valid_single_benchmark):
@@ -114,16 +102,12 @@ class TestBenchmarkFormat:
         _validate_benchmark_file(benchmark_file, benchmark_module)
 
     @pytest.mark.parametrize(
-        "dialect,benchmark_file",
-        keyword_benchmark_files,
-        ids=lambda param: str(param),
+        "benchmark_file",
+        _iterate_over_benchmark_dir(default_benchmarks_dir / "keywords"),
+        ids=lambda f: str(f),
     )
-    def test_validate_keyword_benchmark_format(
-        self,
-        dialect,
-        benchmark_file,
-    ):
-        benchmark_module = f"bowtie.benchmarks.keywords.{dialect}"
+    def test_validate_keyword_benchmark_format(self, benchmark_file):
+        benchmark_module = "bowtie.benchmarks.keywords"
         _validate_benchmark_file(benchmark_file, benchmark_module)
 
 
@@ -148,7 +132,9 @@ class TestLoadBenchmark:
         valid_single_benchmark,
     ):
         benchmark = valid_single_benchmark.serializable()
-        benchmark_group = BenchmarkGroup.from_dict(benchmark)
+        benchmark_group = BenchmarkGroup.from_dict(
+            benchmark, benchmark_type="test",
+        )
 
         assert benchmark_validated(benchmark_group.serializable())
 
@@ -157,6 +143,7 @@ class TestLoadBenchmark:
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark_json,
             uri=valid_benchmark_group.uri,
+            benchmark_type="test",
         )
 
         serializable = benchmark_group.serializable()
