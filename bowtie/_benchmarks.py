@@ -64,28 +64,27 @@ benchmark_validated, benchmark_invalidated = (
 )
 
 
-def get_benchmark_filenames(
+def get_benchmark_files(
     benchmark_type: str,
-    benchmarks: Iterable[str],
     dialect: Dialect,
-):
-    bowtie_dir = Path(__file__).parent
-    search_dir: Path | None = None
-    files = []
+    benchmarks: Iterable[str] = [],
+) -> list[Path]:
+    bowtie_parent_dir = Path(__file__).parent.parent
+    benchmarks_dir = bowtie_parent_dir / "bowtie/benchmarks"
+    files: list[Path] = []
 
-    if benchmark_type == "keyword":
-        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
-        search_dir = keywords_benchmark_dir / dialect.short_name
-
-    elif benchmark_type == "default":
-        search_dir = bowtie_dir / "benchmarks"
-
-    if search_dir and search_dir.exists():
-        files = [
-            str(file)
-            for file in search_dir.iterdir()
-            if file.suffix in (".json", ".py") and file.name != "__init__.py"
-        ]
+    for file in benchmarks_dir.rglob("*"):
+        relative_folder_path = file.parent.relative_to(bowtie_parent_dir)
+        module_name = str(relative_folder_path).replace(os.sep, ".")
+        benchmark_group = _load_benchmark_group_from_file(
+            file, module_name,
+        )
+        if (
+            benchmark_group is not None and
+            benchmark_group.benchmark_type == benchmark_type and
+            dialect in benchmark_group.dialects_supported
+        ):
+            files.append(file)
 
     if benchmarks:
         files = [
@@ -93,15 +92,13 @@ def get_benchmark_filenames(
             for benchmark in benchmarks
             if (
                 matched_file := next(
-                    (file for file in files if benchmark in file),
+                    (file for file in files if benchmark in str(file)),
                     None,
                 )
             )
         ]
 
-    for file in files:
-        STDOUT.file.write(file)
-        STDOUT.file.write("\n")
+    return files
 
 
 def _load_benchmark_group_from_file(
@@ -119,15 +116,24 @@ def _load_benchmark_group_from_file(
             benchmark_group = BenchmarkGroup.from_dict(
                 loaded_class.serializable(),
                 uri=URL.parse(file.absolute().as_uri()),
+                benchmark_type="None",
             )
         elif isinstance(loaded_class, BenchmarkGroup):
             benchmark_group = loaded_class
 
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
+        dialects_supported = list(Dialect.known())
+        if "dialects_supported" in data:
+            dialects_supported = [
+                Dialect.from_str(dialect)
+                for dialect in data["dialects_supported"]
+            ]
         benchmark_group = BenchmarkGroup.from_dict(
             data,
             uri=URL.parse(file.absolute().as_uri()),
+            benchmark_type=str(data.get("benchmark_type", None)),
+            dialects_supported=dialects_supported,
         )
 
     return benchmark_group
@@ -251,6 +257,9 @@ class BenchmarkGroup:
     benchmarks: Sequence[Benchmark]
     description: str
     uri: URL | None
+    benchmark_type: str
+    dialects_supported: Sequence[Dialect] = list(Dialect.known())
+    varying_parameter: str | None = None
 
     @classmethod
     def from_folder(
@@ -279,9 +288,16 @@ class BenchmarkGroup:
     def from_dict(
         cls,
         data: dict[str, Any],
+        benchmark_type: str,
         uri: URL | None = None,
+        dialects_supported: Sequence[Dialect] = list(Dialect.known()),
+        varying_parameter: str | None = None,
     ) -> BenchmarkGroup:
         if "benchmarks" not in data:
+            if "benchmark_type" in data:
+                data.pop("benchmark_type")
+            if "dialects_supported" in data:
+                data.pop("dialects_supported")
             benchmark = Benchmark.from_dict(
                 **data,
             ).maybe_set_dialect_from_schema()
@@ -290,6 +306,9 @@ class BenchmarkGroup:
                 description=benchmark.description,
                 benchmarks=[benchmark],
                 uri=uri,
+                benchmark_type=benchmark_type,
+                dialects_supported=dialects_supported,
+                varying_parameter=varying_parameter,
             )
 
         benchmarks = [
@@ -303,6 +322,8 @@ class BenchmarkGroup:
             description=data["description"],
             benchmarks=benchmarks,
             uri=uri,
+            benchmark_type=benchmark_type,
+            varying_parameter=varying_parameter,
         )
 
     def serializable(self) -> Message:
@@ -312,14 +333,19 @@ class BenchmarkGroup:
         )
         if "uri" in serialized_dict:
             serialized_dict["uri"] = str(serialized_dict["uri"])
+        serialized_dict["dialects_supported"] = [
+            dialect.serializable() for dialect in self.dialects_supported
+        ]
         return serialized_dict
 
 
 @frozen
 class BenchmarkGroupResult:
     name: str
+    benchmark_type: str
     description: str
     benchmark_results: list[BenchmarkResult]
+    varying_parameter: str | None = None
 
     def serializable(self):
         return asdict(self)
@@ -591,8 +617,10 @@ class BenchmarkReporter:
         def benchmark_group_finished():
             benchmark_group_result = BenchmarkGroupResult(
                 name=benchmark_group.name,
+                benchmark_type=benchmark_group.benchmark_type,
                 description=benchmark_group.description,
                 benchmark_results=benchmark_results,
+                varying_parameter=benchmark_group.varying_parameter,
             )
             self._report.results[benchmark_group.name] = benchmark_group_result
             if progress_bar_task is not None:
@@ -895,6 +923,7 @@ class Benchmarker:
                     ),
                 ],
                 uri=None,
+                benchmark_type="test_case",
             )
             for case in cases
         ]
@@ -906,30 +935,39 @@ class Benchmarker:
 
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
-        bowtie_dir = Path(__file__).parent
-        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
-
-        dialect_keyword_benchmarks_dir = (
-            keywords_benchmark_dir / dialect.short_name
+        bowtie_parent_dir = Path(__file__).parent.parent
+        keywords_benchmark_dir = (
+            bowtie_parent_dir / "bowtie/benchmarks/keywords"
         )
 
         if not keywords_benchmark_dir.exists():
             raise BenchmarkLoadError("Keyword Benchmarks Folder not found.")
-        if not dialect_keyword_benchmarks_dir.exists():
-            raise BenchmarkLoadError(
-                message=(
-                    "Keyword Specific Benchmarks not present "
-                    f"for {dialect.serializable()}"
-                ),
-            )
 
-        module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
+        keyword_benchmarks = get_benchmark_files(
+            benchmark_type="keyword",
+            dialect=dialect,
+        )
+
+        benchmark_groups: list[BenchmarkGroup] = []
+        for keyword_benchmark in keyword_benchmarks:
+            relative_folder_path = keyword_benchmark.parent.relative_to(
+                bowtie_parent_dir,
+            )
+            module_name = str(relative_folder_path).replace(os.sep, ".")
+            benchmark_group = BenchmarkGroup.from_file(
+                keyword_benchmark,
+                module_name,
+            )
+            if (
+                benchmark_group is not None and
+                dialect in benchmark_group.dialects_supported
+            ):
+                benchmark_groups.append(
+                    benchmark_group,
+                )
 
         return cls._from_dict(
-            benchmark_groups=BenchmarkGroup.from_folder(
-                dialect_keyword_benchmarks_dir,
-                module=module_name,
-            ),
+            benchmark_groups=benchmark_groups,
             **kwargs,
         )
 
@@ -973,6 +1011,7 @@ class Benchmarker:
         benchmark_validated(benchmark)
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark,
+            benchmark_type="from_input",
         )
         return cls._from_dict(benchmark_groups=[benchmark_group], **kwargs)
 
@@ -1052,6 +1091,14 @@ class Benchmarker:
             some_benchmark_ran = False
             some_benchmark_ran_successfully = False
             for benchmark_group in self._benchmark_groups:
+                if dialect not in benchmark_group.dialects_supported:
+                    if not quiet:
+                        STDOUT.log(
+                            f"Skipping Benchmark Group: {benchmark_group.name}"
+                            f" as it does not support dialect"
+                            f" {dialect.serializable()}",
+                        )
+                    continue
                 (
                     benchmark_started,
                     benchmark_group_finished,
@@ -1165,6 +1212,7 @@ class Benchmarker:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
         benchmark_dict = benchmark.serializable()
+        benchmark_dict["schema"]["$schema"] = str(dialect.uri)
         if "name" in benchmark_dict:
             benchmark_dict.pop("name")
 
