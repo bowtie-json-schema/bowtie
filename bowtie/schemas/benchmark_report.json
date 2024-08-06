@@ -1,0 +1,211 @@
+{
+  "title": "Bowtie Benchmark Report",
+  "description": "Bowtie's Benchmark Report Format",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tag:bowtie.report,2024:benchmark_report",
+  "type": "object",
+  "required": ["metadata", "results"],
+  "properties": {
+    "metadata": {
+      "title": "Benchmark Metadata",
+      "description": "Metadata about the benchmark run.",
+      "type": "object",
+      "required": [
+        "implementations",
+        "num_runs",
+        "num_values",
+        "num_warmups",
+        "num_loops",
+        "system_metadata",
+        "bowtie_version",
+        "dialect",
+        "started"
+      ],
+      "properties": {
+        "implementations": {
+          "description": "Metadata about each of the participating implementations.",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "$ref": "tag:bowtie.report,2024:models:implementation:id"
+          },
+          "additionalProperties": {
+            "$ref": "tag:bowtie.report,2024:models:implementation"
+          }
+        },
+        "num_runs": {
+          "type": "integer",
+          "description": "Number of spawned processes per benchmark."
+        },
+        "num_values": {
+          "type": "integer",
+          "description": "Different sets of value per run."
+        },
+        "num_warmups": {
+          "type": "integer",
+          "description": "Number of warmup per run used to warmup the benchmark."
+        },
+        "num_loops": {
+          "type": "integer",
+          "description": "Number of loop iterations per value."
+        },
+        "system_metadata": {
+          "description": "Metadata about the machine on which the benchmarks have been run.",
+          "type": "object",
+          "required": [
+            "cpu_count",
+            "hostname",
+            "perf_version",
+            "platform",
+            "unit"
+          ],
+          "properties": {
+            "cpu_count": {
+              "description": "Number of CPU Cores present on the benchmarking machine.",
+              "type": "integer"
+            },
+            "cpu_freq": {
+              "description": "Frequency of CPU Cores present on the benchmarking machine.",
+              "type": "string"
+            },
+            "cpu_model_name": {
+              "description": "Model Name of CPU present on the benchmarking machine.",
+              "type": "string"
+            },
+            "hostname": {
+              "description": "The hostname of the benchmarking machine.",
+              "type": "string"
+            },
+            "perf_version": {
+              "description": "The version of pyperf used to run the benchmark.",
+              "type": "string"
+            },
+            "platform": {
+              "description": "The platform on which the benchmarking machine is running.",
+              "type": "string"
+            },
+            "unit": {
+              "description": "The unit in which values have been measured in the benchmark.",
+              "type": "string"
+            }
+          }
+        },
+        "bowtie_version": {
+          "description": "The version of Bowtie which produced the benchmark report.",
+          "type": "string"
+        },
+        "dialect": {
+          "description": "Which dialect was the benchmark run for?",
+          "type": "string"
+        },
+        "started": {
+          "description": "When did the benchmark started?",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "results": {
+      "title": "Benchmark Results",
+      "description": "A list of benchmark group results.",
+      "type": "array",
+      "items": {
+        "$ref": "#benchmark_group_result"
+      }
+    }
+  },
+  "$defs": {
+    "benchmark_group_result": {
+      "$anchor": "benchmark_group_result",
+      "type": "object",
+      "description": "Contains the Benchmark results for the Benchmark Group.",
+      "title": "Benchmark Group Result",
+      "required": ["name", "description", "benchmark_results"],
+      "properties": {
+        "name": {
+          "description": "Benchmark Group's Name.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Benchmark Group's Description.",
+          "type": "string"
+        },
+        "benchmark_results": {
+          "description": "Results of all Benchmarks within the Benchmark Group.",
+          "type": "array",
+          "items": {
+            "$ref": "#benchmark_result"
+          }
+        }
+      }
+    },
+    "benchmark_result": {
+      "$anchor": "benchmark_result",
+      "description": "Result of a Benchmark within a Benchmark Group.",
+      "type": "object",
+      "required": ["name", "description", "test_results"],
+      "properties": {
+        "name": {
+          "description": "Benchmark's Name.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Benchmark's Description.",
+          "type": "string"
+        },
+        "test_results": {
+          "description": "Results of all tests within the Benchmark.",
+          "type": "array",
+          "items": {
+            "$ref": "#test_result"
+          }
+        }
+      }
+    },
+    "test_result": {
+      "$anchor": "test_result",
+      "description": "Result of a test within a Benchmark.",
+      "type": "object",
+      "required": ["description", "connectable_results"],
+      "properties": {
+        "description": {
+          "description": "Test's Description.",
+          "type": "string"
+        },
+        "connectable_results": {
+          "description": "Test Results for all Connectables.",
+          "type": "array",
+          "items": {
+            "$ref": "#connectable_result"
+          }
+        }
+      }
+    },
+    "connectable_result": {
+      "$anchor": "connectable_result",
+      "description": "Benchmark Result of a connectable for a test.",
+      "type": "object",
+      "required": ["connectable_id", "duration", "values"],
+      "properties": {
+        "connectable_id": {
+          "type": "string"
+        },
+        "duration": {
+          "description": "Time taken for the benchmark to complete.",
+          "type": "number"
+        },
+        "values": {
+          "description": "Time Taken for Each Run",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "errored": {
+          "type": "boolean",
+          "description": "Indicates whether a benchmark run encountered an error or not."
+        }
+      }
+    }
+  }
+}

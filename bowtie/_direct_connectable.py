@@ -74,7 +74,7 @@ class Unconnection(Generic[E_co]):
                 )
                 return asdict(started)
             case {"cmd": "dialect", "dialect": uri}:
-                self._current_dialect = Dialect.by_uri()[URL.parse(uri)]
+                self._current_dialect = Dialect.from_str(uri)
                 self._compile = self.compiler_for(self._current_dialect)
                 return asdict(self._implicit_dialect_response)
             case {"cmd": "run", "seq": seq, "case": case}:

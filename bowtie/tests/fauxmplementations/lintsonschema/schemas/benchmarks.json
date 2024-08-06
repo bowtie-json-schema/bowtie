@@ -1,0 +1,73 @@
+{
+  "title": "Bowtie Benchmarks",
+  "description": "A collection of benchmarks used to compare the performance between various JSON Schema implementations.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tag:bowtie.report,2024:benchmarks",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#benchmark"
+    },
+    {
+      "type": "object",
+      "required": ["name", "description", "benchmarks"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the benchmark."
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of what the benchmark does."
+        },
+        "benchmarks": {
+          "type": "array",
+          "description": "A list of benchmarks.",
+          "items": {
+            "$ref": "#benchmark"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "benchmark": {
+      "$anchor": "benchmark",
+      "required": ["name", "description", "schema", "tests"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the benchmark."
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of what the benchmark does."
+        },
+        "schema": {
+          "description": "Schema to run the tests against.",
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "tests": {
+          "type": "array",
+          "description": "Various tests as part of the benchmark.",
+          "items": {
+            "type": "object",
+            "required": ["description", "instance"],
+            "properties": {
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
