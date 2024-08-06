@@ -48,7 +48,7 @@ export default class Implementation
   readonly os_version?: string;
   readonly language_version?: string;
   readonly routePath: string;
-  private _versions: string[] | null;
+  private _versions?: string[];
 
   private static all: Map<string, Implementation> = new Map<
     string,
@@ -75,11 +75,10 @@ export default class Implementation
     this.os_version = rawData.os_version;
     this.language_version = rawData.language_version;
     this.routePath = `/implementations/${id}`;
-    this._versions = null;
   }
 
   get versions() {
-    return this._versions ? [...this._versions] : null;
+    return this._versions ? [...this._versions] : undefined;
   }
 
   static withId(id: string) {
@@ -124,19 +123,18 @@ export default class Implementation
 
     try {
       const response = await fetch(versionsURI);
-      const versions = (await response.json()) as string[];
-      this._versions = versions;
-      return versions;
+      this._versions = (await response.json()) as string[];
+      return this.versions;
     } catch (err) {
-      this._versions = null;
-      return null;
+      this._versions = undefined;
+      return this.versions;
     }
   }
 
   async fetchVersionedReportsFor(
     dialect: Dialect,
     versions: string[],
-    baseURI: URI = siteURI,
+    baseURI: URI = siteURI
   ) {
     const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
 
@@ -153,7 +151,7 @@ export default class Implementation
               .segment(`v${version}`)
               .segment(dialect.shortName)
               .suffix("json")
-              .href(),
+              .href()
           );
 
           versionedReportsData
@@ -162,7 +160,7 @@ export default class Implementation
         } catch (err) {
           return;
         }
-      }),
+      })
     );
 
     return versionedReportsData;
@@ -174,7 +172,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
     );
   }
 
@@ -184,7 +182,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json"),
+        .suffix("json")
     );
   }
 
