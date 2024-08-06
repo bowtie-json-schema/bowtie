@@ -708,6 +708,8 @@ class Implementation:
             pretty_names_str += " and " + pretty_names[-1]
 
         total_files = len(versions) * len(list(dialects))
+        actual_downloaded_files = 0
+
         progress = Progress(
             TextColumn("[bold blue]{task.description}"),
             SpinnerColumn(finished_text=""),
@@ -720,14 +722,16 @@ class Implementation:
             console=Console(),
             transient=True,
         )
+        task = progress.add_task(
+            description=(
+                "Preparing to download all versioned "
+                f"reports of {id} for {pretty_names_str}"
+            ),
+            total=total_files,
+        )
 
         async with httpx.AsyncClient(timeout=10) as client:
-
-            async def fetch_report(
-                version: str,
-                dialect: Dialect,
-                taskID: TaskID,
-            ):
+            async def fetch_report(version: str, dialect: Dialect):
                 try:
                     url = (
                         HOMEPAGE
@@ -736,12 +740,14 @@ class Implementation:
                         / f"v{version}"
                         / f"{dialect.short_name}.json"
                     )
-
                     response = await client.get(str(url))
                     response.raise_for_status()
 
+                    nonlocal actual_downloaded_files
+                    actual_downloaded_files += 1
+
                     progress.update(
-                        taskID,
+                        task,
                         description=(
                             f"Attempting to download: "
                             f"v{version}/{dialect.short_name}.json"
@@ -754,17 +760,9 @@ class Implementation:
                     return version, dialect, response
 
             with progress:
-                task = progress.add_task(
-                    description=(
-                        "Preparing to download all versioned "
-                        f"reports of {id} for {pretty_names_str}"
-                    ),
-                    total=total_files,
-                )
-
                 responses = await asyncio.gather(
                     *[
-                        fetch_report(version, dialect, task)
+                        fetch_report(version, dialect)
                         for version in versions
                         for dialect in dialects
                     ],
@@ -776,8 +774,8 @@ class Implementation:
                         "Successfully downloaded all versioned "
                         f"reports of {id} for {pretty_names_str}!"
                     ),
-                    completed=total_files,
-                    total=total_files,
+                    completed=actual_downloaded_files,
+                    total=actual_downloaded_files,
                 )
                 await asyncio.sleep(2)
 
