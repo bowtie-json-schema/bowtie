@@ -1865,6 +1865,8 @@ def trend(
     format: _F,
 ):
     id, versions = versions_of
+    serializable: dict[str, dict[str, dict[str, int]]] = {}
+
     if versions:
         downloaded_reports = asyncio.run(
             Implementation.download_reports_for(id, versions, dialects),
@@ -1894,7 +1896,6 @@ def trend(
 
             match format:
                 case "json":
-                    serializable: dict[str, dict[str, dict[str, int]]] = {}
                     for dialect, report in dialects_trend.items():
                         serializable[str(dialect.uri)] = {
                             version: {
@@ -1904,7 +1905,6 @@ def trend(
                             }
                             for version, unsuccessful in report.latest_to_oldest()
                         }
-                    click.echo(json.dumps(serializable, indent=2))
                 case "pretty":
                     console.Console().print(
                         _trend_table_for(id, dialects_trend),
@@ -1913,6 +1913,13 @@ def trend(
                     console.Console().print(
                         _trend_table_in_markdown_for(id, dialects_trend),
                     )
+
+        if format == "json":
+            if len(serializable) == 1:
+                (output,) = serializable.values()
+            else:
+                output = serializable
+            click.echo(json.dumps(output, indent=2))
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
