@@ -3,6 +3,7 @@ import URI from "urijs";
 import { badgeFor, BADGES } from "./Badge";
 import Dialect from "./Dialect";
 import siteURI from "./Site";
+import { fromSerialized, ReportData } from "./parseReportData";
 
 export interface RawImplementationData {
   language: string;
@@ -29,14 +30,15 @@ export interface RawImplementationData {
 export default class Implementation
   implements Omit<RawImplementationData, "dialects">
 {
-  readonly language!: string;
-  readonly name!: string;
+  readonly id: string;
+  readonly language: string;
+  readonly name: string;
   readonly version?: string;
-  readonly dialects!: Dialect[];
-  readonly homepage!: string;
+  readonly dialects: Dialect[];
+  readonly homepage: string;
   readonly documentation?: string;
-  readonly issues!: string;
-  readonly source!: string;
+  readonly issues: string;
+  readonly source: string;
   readonly links?: {
     description?: string;
     url?: string;
@@ -45,7 +47,8 @@ export default class Implementation
   readonly os?: string;
   readonly os_version?: string;
   readonly language_version?: string;
-  readonly routePath!: string;
+  readonly routePath: string;
+  private _versions?: string[];
 
   private static all: Map<string, Implementation> = new Map<
     string,
@@ -54,11 +57,11 @@ export default class Implementation
 
   constructor(id: string, rawData: RawImplementationData) {
     if (Implementation.all.has(id)) {
-      return Implementation.all.get(id)!;
-    } else {
-      Implementation.all.set(id, this);
+      throw new ImplementationError(`A "${id}" implementation already exists.`);
     }
+    Implementation.all.set(id, this);
 
+    this.id = id;
     this.language = rawData.language;
     this.name = rawData.name;
     this.version = rawData.version;
@@ -74,8 +77,16 @@ export default class Implementation
     this.routePath = `/implementations/${id}`;
   }
 
-  static async fetchAllImplementationsData() {
-    const url = siteURI
+  get versions() {
+    return this._versions ? [...this._versions] : undefined;
+  }
+
+  static withId(id: string) {
+    return this.all.get(id);
+  }
+
+  static async fetchAllImplementationsData(baseURI: URI = siteURI) {
+    const url = baseURI
       .clone()
       .segment("implementations")
       .suffix("json")
@@ -85,12 +96,74 @@ export default class Implementation
       string,
       RawImplementationData
     >;
+    const parsedImplementations = new Map<string, Implementation>();
 
-    Object.entries(rawImplementations).forEach(
-      ([id, rawData]) => new Implementation(id, rawData),
+    Object.entries(rawImplementations).forEach(([id, rawData]) => {
+      const existingImplementation = this.withId(id);
+      if (existingImplementation) {
+        parsedImplementations.set(id, existingImplementation);
+      } else {
+        parsedImplementations.set(id, new Implementation(id, rawData));
+      }
+    });
+
+    return parsedImplementations;
+  }
+
+  private directoryURI(baseURI: URI = siteURI) {
+    return baseURI.clone().directory("implementations").filename(this.id);
+  }
+
+  async fetchVersions(baseURI: URI = siteURI) {
+    const versionsURI = this.directoryURI(baseURI)
+      .clone()
+      .segment("matrix-versions")
+      .suffix("json")
+      .href();
+
+    try {
+      const response = await fetch(versionsURI);
+      this._versions = (await response.json()) as string[];
+      return this.versions;
+    } catch (err) {
+      this._versions = undefined;
+      return this.versions;
+    }
+  }
+
+  async fetchVersionedReportsFor(
+    dialect: Dialect,
+    versions: string[],
+    baseURI: URI = siteURI,
+  ) {
+    const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
+
+    await Promise.all(
+      versions.map(async (version) => {
+        if (!versionedReportsData.has(dialect)) {
+          versionedReportsData.set(dialect, new Map<string, ReportData>());
+        }
+
+        try {
+          const response = await fetch(
+            this.directoryURI(baseURI)
+              .clone()
+              .segment(`v${version}`)
+              .segment(dialect.shortName)
+              .suffix("json")
+              .href(),
+          );
+
+          versionedReportsData
+            .get(dialect)!
+            .set(version, fromSerialized(await response.text()));
+        } catch (err) {
+          return;
+        }
+      }),
     );
 
-    return this.all;
+    return versionedReportsData;
   }
 
   private get badgesIdSegment(): URI {
@@ -131,5 +204,13 @@ export default class Implementation
         };
       }),
     };
+  }
+}
+
+class ImplementationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ImplementationError";
+    Object.setPrototypeOf(this, ImplementationError.prototype);
   }
 }

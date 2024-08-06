@@ -9,14 +9,16 @@ import { badgeFor, BADGES } from "./Badge";
 import Implementation from "./Implementation";
 import Dialect from "./Dialect";
 
-const mockImplementation = new Implementation("fake-javascript", {
-  name: "fake",
-  language: "javascript",
-  homepage: "",
-  issues: "",
-  source: "",
-  dialects: [],
-});
+const mockImplementation: Implementation =
+  Implementation.withId("fake-javascript") ??
+  new Implementation("fake-javascript", {
+    name: "fake",
+    language: "javascript",
+    homepage: "",
+    issues: "",
+    source: "",
+    dialects: [],
+  });
 
 describe("Badge", () => {
   test("BADGES URI", () => {

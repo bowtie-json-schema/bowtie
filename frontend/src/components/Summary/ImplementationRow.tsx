@@ -12,17 +12,17 @@ import { mapLanguage } from "../../data/mapLanguage";
 import { Case, ImplementationResults } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
+interface Props {
+  cases: Map<number, Case>;
+  implementation: Implementation;
+  implementationResults: ImplementationResults;
+}
+
 const ImplementationRow = ({
   cases,
   implementation,
   implementationResults,
-}: {
-  cases: Map<number, Case>;
-  implementation: Implementation;
-  implementationResults: ImplementationResults;
-  key: number;
-  index: number;
-}) => {
+}: Props) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();

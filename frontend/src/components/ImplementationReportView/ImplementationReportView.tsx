@@ -12,6 +12,7 @@ import Button from "react-bootstrap/Button";
 
 import DialectCompliance from "./DialectCompliance";
 import LoadingAnimation from "../LoadingAnimation";
+import VersionsTrend from "./VersionsTrend";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { EmbedBadgesContextType } from "./EmbedBadges";
@@ -33,7 +34,8 @@ const ReportComponent: React.FC<{
   implementationReport: ImplementationReport;
 }> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementation } = implementationReport;
+  const { implementation, dialectsCompliance, versionsCompliance } =
+    implementationReport;
 
   return (
     <Container className="p-4">
@@ -146,7 +148,16 @@ const ReportComponent: React.FC<{
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance implementationReport={implementationReport} />
+      <DialectCompliance
+        implementation={implementation}
+        dialectsCompliance={dialectsCompliance}
+      />
+      {versionsCompliance && (
+        <VersionsTrend
+          implementation={implementation}
+          versionsCompliance={versionsCompliance}
+        />
+      )}
     </Container>
   );
 };
