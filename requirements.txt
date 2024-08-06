@@ -3,12 +3,14 @@
 aiodocker==0.22.2
     # via bowtie-json-schema (pyproject.toml)
 aiohttp==3.9.5
-    # via aiodocker
+    # via
+    #   bowtie-json-schema (pyproject.toml)
+    #   aiodocker
 aiosignal==1.3.1
     # via aiohttp
 anyio==4.4.0
     # via httpx
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   aiohttp
@@ -65,14 +67,18 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
+psutil==6.0.0
+    # via pyperf
 pycparser==2.22
     # via cffi
 pygments==2.18.0
     # via
     #   jsonschema-lexer
     #   rich
-pyjwt==2.8.0
+pyjwt==2.9.0
     # via github3-py
+pyperf==2.7.0
+    # via bowtie-json-schema (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via github3-py
 referencing==0.35.1

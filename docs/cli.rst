@@ -272,6 +272,9 @@ After modifying your shell configuration, you may need to start a new shell in o
 Reference
 ---------
 
+.. spelling:word-list::
+   perf
+
 .. click:: bowtie._cli:main
    :prog: bowtie
    :nested: full

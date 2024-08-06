@@ -10,6 +10,7 @@ import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,12 +21,9 @@ public class BowtieJsonSchema {
 
   private static final String RECOGNIZING_IDENTIFIERS =
       "Determining if a specific location is a schema or not is not supported.";
-  private static final Map<String, String> UNSUPPORTED = Map.of(
-      "$id inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS,
-      "$id inside an unknown keyword is not a real identifier",
-      RECOGNIZING_IDENTIFIERS,
-      "$anchor inside an enum is not a real identifier",
-      RECOGNIZING_IDENTIFIERS);
+  private static final Map<String, String> UNSUPPORTED =
+      Map.of("$ref prevents a sibling $id from changing the base uri",
+             RECOGNIZING_IDENTIFIERS);
 
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
@@ -89,7 +87,7 @@ public class BowtieJsonSchema {
         "java",
         fullName,
         attributes.getValue("Implementation-Version"),
-        List.of(SpecificationVersion.DRAFT2019_09.getId(), SpecificationVersion.DRAFT2020_12.getId()),
+        Arrays.stream(SpecificationVersion.values()).map(SpecificationVersion::getId).toList(),
         "https://github.com/harrel56/json-schema",
         "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/harrel/jsonschema/package-summary.html",
         "https://github.com/harrel56/json-schema/issues",
@@ -117,10 +115,13 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
+    // well, setting default dialect shouldn't be necessary but why not
     if (SpecificationVersion.DRAFT2020_12.getId().equals(dialectRequest.dialect())) {
-        validatorFactory.withDialect(new Dialects.Draft2020Dialect());
+        validatorFactory.withDefaultDialect(new Dialects.Draft2020Dialect());
     } else if (SpecificationVersion.DRAFT2019_09.getId().equals(dialectRequest.dialect())) {
-        validatorFactory.withDialect(new Dialects.Draft2019Dialect());
+        validatorFactory.withDefaultDialect(new Dialects.Draft2019Dialect());
+    } else if (SpecificationVersion.DRAFT7.getId().equals(dialectRequest.dialect())) {
+      validatorFactory.withDefaultDialect(new Dialects.Draft7Dialect());
     }
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));

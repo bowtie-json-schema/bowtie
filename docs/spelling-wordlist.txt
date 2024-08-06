@@ -30,6 +30,7 @@ stdin
 subcommand
 subcommands
 validator
+warmup
 
 # Language names, which can disappear after we have a Language data file
 clojure

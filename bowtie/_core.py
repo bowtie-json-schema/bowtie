@@ -12,7 +12,7 @@ import json
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
-from rpds import HashTrieMap
+from rpds import HashTrieMap, HashTrieSet
 from url import URL
 import httpx
 import referencing_loaders
@@ -130,7 +130,7 @@ class Dialect:
         if not data.is_dir():
             data = Path(__file__).parent.parent / "data"
 
-        return frozenset(
+        return HashTrieSet(
             Dialect.from_dict(**each)
             for each in json.loads(data.joinpath("dialects.json").read_text())
         )
@@ -172,7 +172,15 @@ class Dialect:
 
     @classmethod
     def from_str(cls, uri: str):
-        return cls.by_uri()[URL.parse(uri)]
+        url = URL.parse(uri)
+        by_uri = cls.by_uri()
+
+        if url.fragment is None:
+            dialect = by_uri.get(url.with_fragment(""))
+            if dialect is not None:
+                return dialect
+
+        return by_uri[url]
 
     async def latest_report(self):
         url = HOMEPAGE / f"{self.short_name}.json"
@@ -714,12 +722,13 @@ class Example:
     @classmethod
     def from_dict(
         cls,
+        instance: Any = None,
         valid: bool | None = None,
         **data: Any,
     ) -> Example | Test:
         if valid is None:
-            return cls(**data)
-        return Test(**data, valid=valid)
+            return cls(**data, instance=instance)
+        return Test(**data, instance=instance, valid=valid)
 
 
 @frozen
@@ -859,3 +868,31 @@ class TestCase:
 def registry():
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
     return EMPTY_REGISTRY.with_resources(resources).crawl()
+
+
+def convert_table_to_markdown(
+    columns: list[str],
+    rows: list[list[str]],
+):
+    widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
+    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
+
+    header = "| " + " | ".join(columns) + " |"
+    border_left = "|:"
+    border_center = ":|:"
+    border_right = ":|"
+
+    separator = (
+        border_left
+        + border_center.join(["-" * w for w in widths])
+        + border_right
+    )
+
+    # body of the table
+    body = [""] * len(rows)  # empty string list that we fill after
+    for idx, line in enumerate(rows):
+        # for each line, change the body at the correct index
+        body[idx] = "| " + " | ".join(line) + " |"
+    body = "\n".join(body)
+
+    return f"\n{header}\n{separator}\n{body}"
