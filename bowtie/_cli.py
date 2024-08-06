@@ -1815,7 +1815,7 @@ def _trend_table_in_markdown_for(
                     str(len(unsuccessful.failed)),
                 ],
             )
-        inner_markdown_table = _convert_table_to_markdown(
+        inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
             inner_table_rows,
         )
