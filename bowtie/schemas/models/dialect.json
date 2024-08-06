@@ -11,6 +11,8 @@
       "description": "The URI representing this dialect, also known as its dialect identifier",
       "readOnly": true,
 
+      "$id": "tag:bowtie.report,2024:models:dialect:uri",
+
       "type": "string",
       "format": "uri"
     },
