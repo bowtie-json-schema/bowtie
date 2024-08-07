@@ -82,15 +82,17 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate implementations.json file for private API
+      - name: Regenerate data needed by the UI
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: implementations
+          path: implementations.json
 
-      - name: Create a directory structure for json-schema.org to access Implementations metadata file
-        run: mkdir -p api/v1/json-schema-org
-
-      - name: Generate implementations metadata file suitable for use by json-schema.org
+      - name: Regenerate data for our public APIs
         run: |
+          mkdir -p api/v1/json-schema-org
           bowtie filter-implementations | \
             while read -r impl; do
               bowtie info -i $impl --format json | \
@@ -120,7 +122,7 @@ jobs:
             done | \
           jq -s 'add' > api/v1/json-schema-org/implementations
 
-      - name: Validate implementations metadata file generated for json-schema.org against its corresponding JSON Schema
+      - name: Validate the public API data against their schema(s)
         run: |
           VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
           SUMMARY=$(echo "$VALIDATION" | bowtie summary --show failures --format json)
@@ -129,12 +131,6 @@ jobs:
               echo "Implementations metadata file generated for json-schema.org is invalid under its JSON Schema"
               exit 1
           fi
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: implementations
-          path: implementations.json
-
       - uses: actions/upload-artifact@v4
         with:
           name: api
@@ -163,13 +159,12 @@ jobs:
           path: site/
           merge-multiple: true
 
-      - name: Include Implementations metadata file for private API
+      - name: Include our UI data
         uses: actions/download-artifact@v4
         with:
           name: implementations
           path: site/
-
-      - name: Include api directory
+      - name: Include our public API data
         uses: actions/download-artifact@v4
         with:
           name: api
