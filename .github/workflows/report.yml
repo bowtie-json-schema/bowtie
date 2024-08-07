@@ -105,12 +105,12 @@ jobs:
                     badges_urls: (
                       {
                         supported_versions: "https://bowtie.report/badges/\($info.language)-\($info.name)/supported_versions.json",
-                        dialects_compliance: (
+                        compliance: (
                           $info.dialects | map(
                             . as $uri |
                             $dialects[0] | map(select(.uri == $uri)) | .[0] |
                             {
-                              (.shortName): "https://bowtie.report/badges/\($info.language)-\($info.name)/compliance/\(.shortName).json"
+                              (.uri): "https://bowtie.report/badges/\($info.language)-\($info.name)/compliance/\(.shortName).json"
                             }
                           ) | add
                         )
