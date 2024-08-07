@@ -1442,12 +1442,14 @@ def filter_benchmarks(
     """
     Output benchmarks matching the specified criteria.
     """
-    _benchmarks.get_benchmark_filenames(
+    files: list[Path] = _benchmarks.get_benchmark_files(
         benchmark_type,
         benchmarks=benchmark_names,
         dialect=dialect,
     )
-
+    for file in files:
+        console.Console().file.write(str(file))
+        console.Console().file.write("\n")
 
 LANGUAGE_ALIASES = {
     "cpp": "c++",
