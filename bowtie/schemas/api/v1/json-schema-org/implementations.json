@@ -32,12 +32,12 @@
             "type": "string",
             "format": "uri"
           },
-          "dialects_compliance": {
+          "compliance": {
             "type": "object",
             "propertyNames": {
               "readOnly": true,
               "type": "string",
-              "pattern": "[a-z]+[a-z0-9-]*"
+              "format": "uri"
             },
             "additionalProperties": {
               "type": "string",
@@ -45,7 +45,7 @@
             }
           }
         },
-        "required": ["supported_versions", "dialects_compliance"],
+        "required": ["supported_versions", "compliance"],
         "additionalProperties": false
       }
     },
