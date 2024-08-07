@@ -58,16 +58,25 @@
         "$ref": "#/$defs/external-documentation"
       }
     },
-    "required": ["openapi", "info"],
+    "required": [
+      "openapi",
+      "info"
+    ],
     "anyOf": [
       {
-        "required": ["paths"]
+        "required": [
+          "paths"
+        ]
       },
       {
-        "required": ["components"]
+        "required": [
+          "components"
+        ]
       },
       {
-        "required": ["webhooks"]
+        "required": [
+          "webhooks"
+        ]
       }
     ],
     "$ref": "#/$defs/specification-extensions",
@@ -100,7 +109,10 @@
             "type": "string"
           }
         },
-        "required": ["title", "version"],
+        "required": [
+          "title",
+          "version"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
@@ -138,11 +150,15 @@
             "format": "uri"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "dependentSchemas": {
           "identifier": {
             "not": {
-              "required": ["url"]
+              "required": [
+                "url"
+              ]
             }
           }
         },
@@ -167,7 +183,9 @@
             }
           }
         },
-        "required": ["url"],
+        "required": [
+          "url"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
@@ -189,7 +207,9 @@
             "type": "string"
           }
         },
-        "required": ["default"],
+        "required": [
+          "default"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
@@ -333,7 +353,9 @@
       "path-item-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -414,7 +436,9 @@
             "format": "uri"
           }
         },
-        "required": ["url"],
+        "required": [
+          "url"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
@@ -426,7 +450,12 @@
             "type": "string"
           },
           "in": {
-            "enum": ["query", "header", "path", "cookie"]
+            "enum": [
+              "query",
+              "header",
+              "path",
+              "cookie"
+            ]
           },
           "description": {
             "type": "string"
@@ -448,13 +477,20 @@
             "maxProperties": 1
           }
         },
-        "required": ["name", "in"],
+        "required": [
+          "name",
+          "in"
+        ],
         "oneOf": [
           {
-            "required": ["schema"]
+            "required": [
+              "schema"
+            ]
           },
           {
-            "required": ["content"]
+            "required": [
+              "content"
+            ]
           }
         ],
         "if": {
@@ -463,7 +499,9 @@
               "const": "query"
             }
           },
-          "required": ["in"]
+          "required": [
+            "in"
+          ]
         },
         "then": {
           "properties": {
@@ -511,19 +549,27 @@
                       "const": "path"
                     }
                   },
-                  "required": ["in"]
+                  "required": [
+                    "in"
+                  ]
                 },
                 "then": {
                   "properties": {
                     "style": {
                       "default": "simple",
-                      "enum": ["matrix", "label", "simple"]
+                      "enum": [
+                        "matrix",
+                        "label",
+                        "simple"
+                      ]
                     },
                     "required": {
                       "const": true
                     }
                   },
-                  "required": ["required"]
+                  "required": [
+                    "required"
+                  ]
                 }
               },
               "styles-for-header": {
@@ -533,7 +579,9 @@
                       "const": "header"
                     }
                   },
-                  "required": ["in"]
+                  "required": [
+                    "in"
+                  ]
                 },
                 "then": {
                   "properties": {
@@ -551,7 +599,9 @@
                       "const": "query"
                     }
                   },
-                  "required": ["in"]
+                  "required": [
+                    "in"
+                  ]
                 },
                 "then": {
                   "properties": {
@@ -578,7 +628,9 @@
                       "const": "cookie"
                     }
                   },
-                  "required": ["in"]
+                  "required": [
+                    "in"
+                  ]
                 },
                 "then": {
                   "properties": {
@@ -598,7 +650,9 @@
       "parameter-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -622,14 +676,18 @@
             "type": "boolean"
           }
         },
-        "required": ["content"],
+        "required": [
+          "content"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
       "request-body-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -688,7 +746,12 @@
           },
           "style": {
             "default": "form",
-            "enum": ["form", "spaceDelimited", "pipeDelimited", "deepObject"]
+            "enum": [
+              "form",
+              "spaceDelimited",
+              "pipeDelimited",
+              "deepObject"
+            ]
           },
           "explode": {
             "type": "boolean"
@@ -731,7 +794,9 @@
           }
         },
         "then": {
-          "required": ["default"]
+          "required": [
+            "default"
+          ]
         }
       },
       "response": {
@@ -757,14 +822,18 @@
             }
           }
         },
-        "required": ["description"],
+        "required": [
+          "description"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
       "response-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -784,7 +853,9 @@
       "callbacks-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -810,7 +881,10 @@
           }
         },
         "not": {
-          "required": ["value", "externalValue"]
+          "required": [
+            "value",
+            "externalValue"
+          ]
         },
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
@@ -818,7 +892,9 @@
       "example-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -851,10 +927,14 @@
         },
         "oneOf": [
           {
-            "required": ["operationRef"]
+            "required": [
+              "operationRef"
+            ]
           },
           {
-            "required": ["operationId"]
+            "required": [
+              "operationId"
+            ]
           }
         ],
         "$ref": "#/$defs/specification-extensions",
@@ -863,7 +943,9 @@
       "link-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -898,10 +980,14 @@
         },
         "oneOf": [
           {
-            "required": ["schema"]
+            "required": [
+              "schema"
+            ]
           },
           {
-            "required": ["content"]
+            "required": [
+              "content"
+            ]
           }
         ],
         "dependentSchemas": {
@@ -925,7 +1011,9 @@
       "header-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -948,7 +1036,9 @@
             "$ref": "#/$defs/external-documentation"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "$ref": "#/$defs/specification-extensions",
         "unevaluatedProperties": false
       },
@@ -971,20 +1061,31 @@
       "schema": {
         "$comment": "https://spec.openapis.org/oas/v3.1.0#schema-object",
         "$dynamicAnchor": "meta",
-        "type": ["object", "boolean"]
+        "type": [
+          "object",
+          "boolean"
+        ]
       },
       "security-scheme": {
         "$comment": "https://spec.openapis.org/oas/v3.1.0#security-scheme-object",
         "type": "object",
         "properties": {
           "type": {
-            "enum": ["apiKey", "http", "mutualTLS", "oauth2", "openIdConnect"]
+            "enum": [
+              "apiKey",
+              "http",
+              "mutualTLS",
+              "oauth2",
+              "openIdConnect"
+            ]
           },
           "description": {
             "type": "string"
           }
         },
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "allOf": [
           {
             "$ref": "#/$defs/specification-extensions"
@@ -1014,7 +1115,9 @@
                   "const": "apiKey"
                 }
               },
-              "required": ["type"]
+              "required": [
+                "type"
+              ]
             },
             "then": {
               "properties": {
@@ -1022,10 +1125,17 @@
                   "type": "string"
                 },
                 "in": {
-                  "enum": ["query", "header", "cookie"]
+                  "enum": [
+                    "query",
+                    "header",
+                    "cookie"
+                  ]
                 }
               },
-              "required": ["name", "in"]
+              "required": [
+                "name",
+                "in"
+              ]
             }
           },
           "type-http": {
@@ -1035,7 +1145,9 @@
                   "const": "http"
                 }
               },
-              "required": ["type"]
+              "required": [
+                "type"
+              ]
             },
             "then": {
               "properties": {
@@ -1043,7 +1155,9 @@
                   "type": "string"
                 }
               },
-              "required": ["scheme"]
+              "required": [
+                "scheme"
+              ]
             }
           },
           "type-http-bearer": {
@@ -1057,7 +1171,10 @@
                   "pattern": "^[Bb][Ee][Aa][Rr][Ee][Rr]$"
                 }
               },
-              "required": ["type", "scheme"]
+              "required": [
+                "type",
+                "scheme"
+              ]
             },
             "then": {
               "properties": {
@@ -1074,7 +1191,9 @@
                   "const": "oauth2"
                 }
               },
-              "required": ["type"]
+              "required": [
+                "type"
+              ]
             },
             "then": {
               "properties": {
@@ -1082,7 +1201,9 @@
                   "$ref": "#/$defs/oauth-flows"
                 }
               },
-              "required": ["flows"]
+              "required": [
+                "flows"
+              ]
             }
           },
           "type-oidc": {
@@ -1092,7 +1213,9 @@
                   "const": "openIdConnect"
                 }
               },
-              "required": ["type"]
+              "required": [
+                "type"
+              ]
             },
             "then": {
               "properties": {
@@ -1101,7 +1224,9 @@
                   "format": "uri"
                 }
               },
-              "required": ["openIdConnectUrl"]
+              "required": [
+                "openIdConnectUrl"
+              ]
             }
           }
         }
@@ -1109,7 +1234,9 @@
       "security-scheme-or-reference": {
         "if": {
           "type": "object",
-          "required": ["$ref"]
+          "required": [
+            "$ref"
+          ]
         },
         "then": {
           "$ref": "#/$defs/reference"
@@ -1152,7 +1279,10 @@
                 "$ref": "#/$defs/map-of-strings"
               }
             },
-            "required": ["authorizationUrl", "scopes"],
+            "required": [
+              "authorizationUrl",
+              "scopes"
+            ],
             "$ref": "#/$defs/specification-extensions",
             "unevaluatedProperties": false
           },
@@ -1171,7 +1301,10 @@
                 "$ref": "#/$defs/map-of-strings"
               }
             },
-            "required": ["tokenUrl", "scopes"],
+            "required": [
+              "tokenUrl",
+              "scopes"
+            ],
             "$ref": "#/$defs/specification-extensions",
             "unevaluatedProperties": false
           },
@@ -1190,7 +1323,10 @@
                 "$ref": "#/$defs/map-of-strings"
               }
             },
-            "required": ["tokenUrl", "scopes"],
+            "required": [
+              "tokenUrl",
+              "scopes"
+            ],
             "$ref": "#/$defs/specification-extensions",
             "unevaluatedProperties": false
           },
@@ -1213,7 +1349,11 @@
                 "$ref": "#/$defs/map-of-strings"
               }
             },
-            "required": ["authorizationUrl", "tokenUrl", "scopes"],
+            "required": [
+              "authorizationUrl",
+              "tokenUrl",
+              "scopes"
+            ],
             "$ref": "#/$defs/specification-extensions",
             "unevaluatedProperties": false
           }
@@ -1259,7 +1399,9 @@
               "const": "form"
             }
           },
-          "required": ["style"]
+          "required": [
+            "style"
+          ]
         },
         "then": {
           "properties": {
@@ -1292,7 +1434,10 @@
             "get": {
               "security": [
                 {
-                  "bearerAuth": ["read:users", "public"]
+                  "bearerAuth": [
+                    "read:users",
+                    "public"
+                  ]
                 }
               ]
             }
@@ -1342,7 +1487,10 @@
         "components": {
           "schemas": {
             "Pet": {
-              "required": ["id", "name"],
+              "required": [
+                "id",
+                "name"
+              ],
               "properties": {
                 "id": {
                   "type": "integer",

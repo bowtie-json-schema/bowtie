@@ -1,10 +1,8 @@
 from itertools import cycle
 
-from bowtie._benchmarks import Benchmark
-
 
 def get_benchmark():
-    return Benchmark.from_dict(
+    return dict(
         name="nested_schemas",
         description=(
             "Validating highly nested schemas shouldn't "
@@ -29,9 +27,8 @@ def get_benchmark():
         tests=[
             dict(
                 description=f"No of Levels {levels}",
-                instance=nested_object(levels=levels),
-            )
-            for levels in range(1, 11, 3)
+                instance=nested_object(levels=levels)
+            ) for levels in range(1, 11, 3)
         ],
     )
 

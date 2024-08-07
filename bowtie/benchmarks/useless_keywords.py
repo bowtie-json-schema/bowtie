@@ -1,10 +1,7 @@
-from bowtie._benchmarks import Benchmark
-
-
 def get_benchmark():
-    num_useless_keywords = 300000
+    num_useless_keywords = 3000
 
-    return Benchmark.from_dict(
+    return dict(
         name="useless_keywords",
         description=(
             "A benchmark for validation of schemas containing "
@@ -16,13 +13,8 @@ def get_benchmark():
                 ("not", {"const": 42}),
                 *((str(i), i) for i in range(num_useless_keywords)),
                 ("type", "integer"),
-                *(
-                    (str(i), i)
-                    for i in range(
-                        num_useless_keywords,
-                        num_useless_keywords,
-                    )
-                ),
+                *((str(i), i)
+                  for i in range(num_useless_keywords, num_useless_keywords)),
                 ("minimum", 37),
             ],
         ),
