@@ -82,14 +82,63 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate implementations.json file
+      - name: Generate implementations.json file for private API
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
+
+      - name: Create a directory structure for json-schema.org to access Implementations metadata file
+        run: mkdir -p api/v1/json-schema-org
+
+      - name: Generate implementations metadata file suitable for use by json-schema.org
+        run: |
+          bowtie filter-implementations | \
+            while read -r impl; do
+              bowtie info -i $impl --format json | \
+              jq --arg impl "$impl" --slurpfile dialects data/dialects.json '
+                . as $info |
+                {($info.source): (
+                  {
+                    id: $impl,
+                    dialects: $info.dialects,
+                    badges_urls: (
+                      {
+                        supported_versions: "https://bowtie.report/badges/\($info.language)-\($info.name)/supported_versions.json",
+                        dialects_compliance: (
+                          $info.dialects | map(
+                            . as $uri |
+                            $dialects[0] | map(select(.uri == $uri)) | .[0] |
+                            {
+                              (.shortName): "https://bowtie.report/badges/\($info.language)-\($info.name)/compliance/\(.shortName).json"
+                            }
+                          ) | add
+                        )
+                      }
+                    )
+                  }
+                )}
+              '
+            done | \
+          jq -s 'add' > api/v1/json-schema-org/implementations
+
+      - name: Validate implementations metadata file generated for json-schema.org against its corresponding JSON Schema
+        run: |
+          VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
+          SUMMARY=$(echo "$VALIDATION" | bowtie summary --show failures --format json)
+          if [ $(echo "$SUMMARY" | \
+                 jq 'all(.[]; .[1].failed == 0 and .[1].errored == 0 and .[1].skipped == 0)') == false ]; then
+              echo "Implementations metadata file generated for json-schema.org is invalid under its JSON Schema"
+              exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: implementations
           path: implementations.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: api
 
   site:
     needs:
@@ -114,11 +163,17 @@ jobs:
           path: site/
           merge-multiple: true
 
-      - name: Include Implementation Metadata
+      - name: Include Implementations metadata file for private API
         uses: actions/download-artifact@v4
         with:
           name: implementations
           path: site/
+
+      - name: Include api directory
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: site/api
 
       - name: Generate Badges
         run: bowtie badges
