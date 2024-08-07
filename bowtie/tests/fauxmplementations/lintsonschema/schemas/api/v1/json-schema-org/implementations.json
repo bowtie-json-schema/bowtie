@@ -43,10 +43,10 @@
               "type": "string",
               "format": "uri"
             }
-          },
-          "required": ["supported_versions", "dialects_compliance"],
-          "additionalProperties": false
-        }
+          }
+        },
+        "required": ["supported_versions", "dialects_compliance"],
+        "additionalProperties": false
       }
     },
     "required": ["id", "dialects", "badges_urls"],
