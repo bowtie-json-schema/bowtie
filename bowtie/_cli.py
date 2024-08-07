@@ -35,14 +35,18 @@ from bowtie._core import (
     Dialect,
     Example,
     Implementation,
-    NoSuchImplementation,
-    StartupFailed,
     Test,
     TestCase,
     convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
-from bowtie.exceptions import DialectError, UnsupportedDialect
+from bowtie.exceptions import (
+    CannotConnect,
+    DialectError,
+    NoSuchImplementation,
+    StartupFailed,
+    UnsupportedDialect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -73,6 +77,8 @@ class _EX:
 EX = _EX()
 
 STDERR = console.Console(stderr=True)
+
+STARTUP_ERRORS = (CannotConnect, NoSuchImplementation, StartupFailed)
 
 
 # rich-click's CommandGroupDict seems to be missing some covariance,
@@ -322,7 +328,7 @@ def implementation_subcommand(
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             connectable_implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as error:
+                        except STARTUP_ERRORS as error:
                             exit_code |= EX.CONFIG
                             STDERR.print(error)
                             continue
@@ -1828,7 +1834,7 @@ async def _run(
         for each in starting:
             try:
                 _, implementation = await each
-            except (NoSuchImplementation, StartupFailed) as error:
+            except STARTUP_ERRORS as error:
                 exit_code |= EX.CONFIG
                 STDERR.print(error)
                 continue

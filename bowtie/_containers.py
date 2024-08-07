@@ -17,11 +17,11 @@ from aiodocker import Docker
 from attrs import field, frozen, mutable
 import aiodocker.exceptions
 
-from bowtie._core import (
+from bowtie._core import InvalidResponse, Restarted
+from bowtie.exceptions import (
+    CannotConnect,
     GotStderr,
-    InvalidResponse,
     NoSuchImplementation,
-    Restarted,
     StartupFailed,
 )
 
@@ -235,7 +235,27 @@ class ConnectableImage:
             async def new_stream():
                 nonlocal create
 
-                container = await create(docker=docker, image_name=self._id)
+                try:
+                    container = await create(
+                        docker=docker,
+                        image_name=self._id,
+                    )
+                except aiodocker.exceptions.DockerError as err:
+                    if err.status != 900:  # noqa: PLR2004
+                        raise
+                    raise CannotConnect(
+                        kind=self.kind,
+                        id=self._id,
+                        hint=(
+                            "Can't connect to your container runtime "
+                            "(e.g. podman or docker). "
+                            "Ensure you have one installed, that you have "
+                            "set the DOCKER_HOST environment variable if "
+                            "needed, and that containers successfully start "
+                            "if you directly run one outside of Bowtie."
+                        ),
+                    ) from err
+
                 stack.push_async_callback(container.delete, force=True)  # type: ignore[reportUnknownMemberType]
                 create = start_container
 
@@ -267,6 +287,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
     except aiodocker.exceptions.DockerError as err:
         if err.status != 404:  # noqa: PLR2004
             raise
+
         try:
             tag = image_name.partition(":")[2] or "latest"
             await docker.pull(from_image=image_name, tag=tag)
