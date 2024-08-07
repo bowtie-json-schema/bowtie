@@ -1,6 +1,6 @@
 {
-  "title": "Implementations API for JSON Schema Org",
-  "description": "API providing metadata about implementations of JSON Schema supported by Bowtie",
+  "title": "Implementations metadata file suitable for use by json-schema.org",
+  "description": "JSON file providing metadata about implementations of JSON Schema supported by Bowtie",
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -15,15 +15,41 @@
   },
   "additionalProperties": {
     "type": "object",
-    "required": ["dialects"],
     "properties": {
+      "id": {
+        "type": "string"
+      },
       "dialects": {
         "description": "A list of JSON Schema dialects (URIs) which the implementation understands.",
 
         "type": "array",
         "items": { "type": "string", "format": "uri" }
+      },
+      "badges_urls": {
+        "type": "object",
+        "properties": {
+          "supported_versions": {
+            "type": "string",
+            "format": "uri"
+          },
+          "dialects_compliance": {
+            "type": "object",
+            "propertyNames": {
+              "readOnly": true,
+              "type": "string",
+              "pattern": "[a-z]+[a-z0-9-]*"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": ["supported_versions", "dialects_compliance"],
+          "additionalProperties": false
+        }
       }
     },
+    "required": ["id", "dialects", "badges_urls"],
     "additionalProperties": false
   }
 }
