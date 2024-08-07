@@ -41,7 +41,7 @@ class Connector(Protocol):
 ConnectableId = str
 
 
-def happy(id: str) -> Connector:
+def happy(id: str, **params: Any) -> Connector:
     """
     A happy (eyeballs) connector.
 
@@ -57,7 +57,7 @@ def happy(id: str) -> Connector:
     try:
         return Direct.from_id(id=id)
     except NoDirectConnection:
-        return _containers.ConnectableImage(id=id)
+        return _containers.ConnectableImage(id=id, **params)
 
 
 CONNECTORS = HashTrieMap(
@@ -73,7 +73,26 @@ CONNECTORS = HashTrieMap(
 )
 
 
-@frozen
+def _params(with_params: str) -> tuple[tuple[str, ...], dict[str, str]]:
+    args: list[str] = []
+    kwargs: dict[str, str] = {}
+    split = iter(with_params.split(","))
+
+    for each in split:
+        k, sep, v = each.partition("=")
+        if not sep:
+            args.append(k)
+        else:
+            kwargs[k] = v
+            break
+    for each in split:
+        k, sep, v = each.partition("=")
+        kwargs[k] = v
+
+    return tuple(args), kwargs
+
+
+@frozen(kw_only=True)
 class Connectable:
     """
     A parsed connectable description.
@@ -96,9 +115,17 @@ class Connectable:
             kind, id = "happy", kind
         Connector = CONNECTORS.get(kind)
         if Connector is not None:
-            connector = Connector(id)
+            id, sep, raw_params = id.partition(":")
+            if sep:
+                args, kwargs = _params(raw_params)
+                if len(args) == 1 and not kwargs:
+                    connector = Connector(id=f"{id}:{args[0]}")
+                else:
+                    connector = Connector(*args, id=id, **kwargs)
+            else:
+                connector = Connector(id=id)
         elif "/" in kind:  # special case allowing foo/bar:baz, image w/repo
-            connector = CONNECTORS["image"](fqid)
+            connector = CONNECTORS["image"](id=fqid)
         else:
             raise UnknownConnector(kind)
         return cls(id=fqid, connector=connector)

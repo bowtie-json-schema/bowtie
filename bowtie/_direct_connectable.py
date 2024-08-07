@@ -202,7 +202,7 @@ IMPLEMENTATIONS = {
 }
 
 
-@frozen
+@frozen(kw_only=True)
 class Direct(Generic[E_co]):
     """
     A direct connectable connects by simply importing some Python object.
