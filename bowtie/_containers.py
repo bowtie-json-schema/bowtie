@@ -367,7 +367,7 @@ class ConnectableContainer:
             try:
                 container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
             except aiodocker.exceptions.DockerError as err:
-                raise NoSuchImplementation(id=self._id) from err
+                raise CannotConnect(kind=self.kind, id=self._id) from err
 
             async def new_stream():
                 return Stream.attached_to(

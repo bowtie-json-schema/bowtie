@@ -139,7 +139,6 @@ class TestDirect:
 
     def test_named_unknown(self):
         id = validated("direct:foobar")
-        # TODO: Probably this should be NoSuchImplementation
         with pytest.raises(CannotConnect, match="'foobar'"):
             Connectable.from_str(id)
 

@@ -1,27 +1,24 @@
 """
 Errors. Oh no!
 
-Bowtie's sequence speaking to an implementation breaks down roughly as
-attempting to perform a sequence of steps.
+Bowtie's communication with an implementation breaks down into a sequence
+of steps roughly listed below, along with a possible exception that
+connectables and/or harnesses can raise if the corresponding step fails.
 
-Listed below is a short description of each step, along with a possible
-exception class that connectables and/or harnesses can raise if the specific
-step fails.
-
-    * establish a connection (fails via `CannotConnect`)
-    * send a first request, retrieving metadata about the implementation
+    * connect to the implementation (fails via `CannotConnect` or via
+    `NoSuchImplementation` if we seem sure the implementation doesn't exist)
+    * send a first request which retrieves metadata about the implementation
       (fails via `StartupFailed` or `VersionMismatch`)
     * send sequences of test cases, collecting results
     * close the connection
 
-At any given point in time, `InvalidResponse` or `ProtocolError` may be raised
-to indicate that the harness didn't return a response which appropriately
-matches Bowtie's IO protocol (which essentially always indicates a harness
-bug, at least in not catching the implementation crashing or writing
-extraneous data).
-
-Similarly, `GotStderr` can be raised to indicate that some (likely) error has
-appeared on standard error and that a response may no longer be expected.
+At any given point in time after connecting, `InvalidResponse` or
+`ProtocolError` may be raised to indicate that the harness is not properly
+speaking Bowtie's IO protocol, and `GotStderr` may be raised to indicate the
+harness has spewed data to standard error which likely means it will not return
+a response to any current request. All of these typically are harness bugs, as
+the harness should generally catch implementation crashes and respond within
+Bowtie's protocol.
 """
 
 from __future__ import annotations
@@ -45,43 +42,15 @@ _PROTOCOL_VERSION = 1
 
 
 @frozen
-class CannotConnect(Exception):
-    """
-    A connectable could not locate the given implementation.
-
-    Either it isn't connectable the way we asked for or it's unreachable in
-    some connectable-specific way.
-    """
-
-    kind: str
-    id: ConnectableId
-    hint: str | None = None
-
-    def __rich__(self):
-        causes: list[str] = []
-        if self.__cause__ is not None:
-            causes.append(str(self.__cause__))
-        elif self.__context__ is not None:
-            causes.append(str(self.__context__))
-
-        return DiagnosticError(
-            code="cannot-connect",
-            message=f"Couldn't connect to '{self.kind}:{self.id}'",
-            causes=causes,
-            hint_stmt=self.hint,
-        )
-
-
-@frozen
 class NoSuchImplementation(Exception):
     """
     An implementation with the given name does not exist.
+
+    This means we don't know what implementation is intended, either because
+    Bowtie doesn't support it yet or because its name contains a typo.
     """
 
     id: ConnectableId
-
-    # TODO: Combine with CannotConnect / make so CannotConnect means 'we know
-    #       that implementation but can't reach it?
 
     def __rich__(self):
         return DiagnosticError(
@@ -94,6 +63,36 @@ class NoSuchImplementation(Exception):
                 "If you are developing a new harness, ensure you have "
                 "built and tagged it properly."
             ),
+        )
+
+
+@frozen
+class CannotConnect(Exception):
+    """
+    We could not connect to the desired implementation.
+
+    It may exist, but this exception may also be used to indicate we could not
+    even check whether that was the case for some connectable-specific reason.
+
+    In particular, either the implementation doesn't support connection via
+    the connectable used, or it does but is unreachable in a way which will
+    be connectable-specific (e.g. general networking issues).
+    """
+
+    kind: str
+    id: ConnectableId
+    hint: str | None = None
+
+    def __rich__(self):
+        cause = self.__cause__ or self.__context__
+        causes = [str(cause)] if cause is not None else []
+
+        fqid = f"{self.kind}:{self.id}"
+        return DiagnosticError(
+            code="cannot-connect",
+            message=f"Couldn't connect to {fqid!r}.",
+            causes=causes,
+            hint_stmt=self.hint,
         )
 
 
