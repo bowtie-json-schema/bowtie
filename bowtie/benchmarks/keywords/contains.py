@@ -10,10 +10,10 @@ def get_benchmark():
     name = "contains"
     benchmark_type = "keyword"
     description = "A benchmark for validation of the `contains` keyword."
-    max_array_length = 100
+    max_array_length = 100000
     varying_parameter = "Array length"
 
-    array_length = 10
+    array_length = 1000
     benchmarks = []
     while array_length <= max_array_length:
 
