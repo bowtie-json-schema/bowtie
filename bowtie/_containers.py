@@ -191,7 +191,19 @@ class Connection:
                 raise InvalidResponse(contents=response) from err
 
 
-@frozen
+def _float_or_none(value: str | float | None) -> float | None:
+    """
+    Coerce 0 to None, otherwise return a float.
+    """
+    if value is None:
+        return value
+    value = float(value)
+    if value:
+        return value
+    return None
+
+
+@frozen(kw_only=True)
 class ConnectableImage:
 
     _id: str = field(
@@ -199,6 +211,17 @@ class ConnectableImage:
             value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
         ),
         alias="id",
+    )
+
+    #: An explicit timeout to wait for each implementation to respond
+    #: to *each* instance being validated. Set this to 0 if you wish
+    #: to wait forever, though note that this means you may end up waiting
+    #: ... forever!
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        converter=_float_or_none,
+        repr=False,
+        alias="read_timeout_sec",
     )
 
     kind = "image"
@@ -219,7 +242,7 @@ class ConnectableImage:
                 try:
                     return Stream.attached_to(
                         container,
-                        read_timeout_sec=2.0,  # FIXME: Parameters
+                        read_timeout_sec=self._read_timeout_sec,
                     )
                 except GotStderr as error:
                     err = StartupFailed(
@@ -299,10 +322,21 @@ async def start_container(docker: Docker, image_name: str):
     return container
 
 
-@frozen
+@frozen(kw_only=True)
 class ConnectableContainer:
 
     _id: str = field(alias="id")
+
+    #: An explicit timeout to wait for each implementation to respond
+    #: to *each* instance being validated. Set this to 0 if you wish
+    #: to wait forever, though note that this means you may end up waiting
+    #: ... forever!
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        converter=_float_or_none,
+        repr=False,
+        alias="read_timeout_sec",
+    )
 
     kind = "container"
 
@@ -317,7 +351,7 @@ class ConnectableContainer:
             async def new_stream():
                 return Stream.attached_to(
                     container,
-                    read_timeout_sec=2.0,  # FIXME: Parameters
+                    read_timeout_sec=self._read_timeout_sec,
                 )
 
             yield Connection(new_stream=new_stream)
