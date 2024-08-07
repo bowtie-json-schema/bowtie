@@ -648,6 +648,212 @@ class BenchmarkReporter:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
 
+        def _get_sorted_table_from_test_results(
+            test_results: Sequence[TestResult],
+        ):
+            results_for_connectable: dict[
+                ConnectableId,
+                list[tuple[float, float, bool]],
+            ] = {}
+            ref_row: list[str] = [""]
+
+            for idx, connectable_result in enumerate(
+                test_results[0].connectable_results,
+            ):
+                connectable_results = [
+                    (
+                        statistics.mean(
+                            test_result.connectable_results[idx].values,
+                        ),
+                        statistics.stdev(
+                            test_result.connectable_results[idx].values,
+                        ),
+                        test_result.connectable_results[idx].errored,
+                    )
+                    for test_result in test_results
+                ]
+                results_for_connectable[
+                    connectable_result.connectable_id
+                ] = connectable_results
+
+            sorted_connectables = sorted(
+                results_for_connectable.keys(),
+                key=(
+                    lambda connectable_id: (
+                        geometric_mean(
+                            [
+                                result_mean
+                                for (
+                                result_mean,
+                                _,
+                                errored,
+                            ) in results_for_connectable[
+                                connectable_id
+                            ]
+                                if not errored
+                            ]
+                            or [1e9],
+                        )
+                    )
+                ),
+            )
+            results_for_connectable = {
+                connectable: results_for_connectable[connectable]
+                for connectable in sorted_connectables
+            }
+            columns = ["Test Name"]
+            rows: list[list[str]] = []
+            for (
+                connectable_id,
+                connectable_results,
+            ) in results_for_connectable.items():
+                columns.append(
+                    connectable_id,
+                )
+                g_mean = geometric_mean(
+                    [
+                        result_mean
+                        for result_mean, _, errored in connectable_results
+                        if not errored
+                    ]
+                    or [1e9],
+                )
+                if g_mean == geometric_mean([1e9]):
+                    ref_row.append("Errored")
+                else:
+                    ref_row.append(
+                        str(g_mean),
+                    )
+
+            fastest_connectable_results = next(
+                iter(
+                    results_for_connectable.values(),
+                ),
+            )
+
+            for idx, test_result in enumerate(
+                test_results,
+            ):
+                row_elements = [
+                    test_result.description,
+                ]
+                for connectable_idx, results in enumerate(
+                    results_for_connectable.items(),
+                ):
+                    _, connectable_results = results
+                    _mean, std_dev, errored = connectable_results[idx]
+
+                    fastest_implementation_mean, _, __ = (
+                        fastest_connectable_results[idx]
+                    )
+                    relative = _mean / fastest_implementation_mean
+
+                    if errored:
+                        repr_string = "Errored"
+                    else:
+                        repr_string = (
+                            f"{_format_value(_mean)} +- "
+                            f"{_format_value(std_dev)}"
+                        )
+                        if connectable_idx != 0 and relative > 1:
+                            repr_string += (
+                                f": {round(relative, 2)}x slower"
+                            )
+                        elif connectable_idx:
+                            repr_string += (
+                                f": {round(1 / relative, 2)}x faster"
+                            )
+
+                    row_elements.append(repr_string)
+
+                rows.append(row_elements)
+
+            for implementation_idx in range(2, len(ref_row)):
+                if ref_row[implementation_idx] == "Errored":
+                    continue
+                rounded_off_val = round(
+                    float(ref_row[implementation_idx])
+                    / float(ref_row[1]),
+                    2,
+                )
+                ref_row[implementation_idx] = f"{rounded_off_val}x slower"
+
+            ref_row[1] = "Reference"
+
+            if len(results_for_connectable) > 1:
+                rows.append(ref_row)
+
+            return rows, columns
+
+        def _table_for_benchmark_result(
+            benchmark_result: BenchmarkResult,
+        ):
+            markdown_content = f"Benchmark: {benchmark_result.name}\n"
+            inner_table = Table(
+                box=box.SIMPLE_HEAD,
+                title=(
+                    f"Tests with {benchmark_result.name}"
+                ),
+                min_width=100,
+            )
+            rows, columns = _get_sorted_table_from_test_results(
+                benchmark_result.test_results,
+            )
+            for column in columns:
+                inner_table.add_column(column)
+            for row in rows:
+                inner_table.add_row(*row)
+            markdown_content += convert_table_to_markdown(columns, rows)
+            return inner_table, markdown_content
+
+        def _table_for_common_tests(
+            benchmark_results: list[BenchmarkResult],
+        ):
+            common_tests = {
+                test.description for test in
+                benchmark_results[0].test_results
+            }
+            for benchmark_result in (
+                benchmark_results[1:]
+            ):
+                common_tests.intersection_update(
+                    test.description for test in
+                    benchmark_result.test_results
+                )
+
+            common_test = next(iter(common_tests))
+            common_test_table = Table(
+                box=box.SIMPLE_HEAD,
+                title=(
+                    f"Tests with varying "
+                    f"{benchmark_group_result.varying_parameter}"
+                ),
+                min_width=100,
+            )
+            common_test_results: list[TestResult] = [
+                TestResult(
+                    description=benchmark_result.name,
+                    connectable_results=test_result.connectable_results,
+                )
+                for benchmark_result in benchmark_results
+                for test_result in benchmark_result.test_results
+                if test_result.description is common_test
+            ]
+
+            rows, columns = _get_sorted_table_from_test_results(
+                common_test_results,
+            )
+            for column in columns:
+                common_test_table.add_column(column)
+            for row in rows:
+                common_test_table.add_row(*row)
+
+            common_test_table_markdown = convert_table_to_markdown(
+                columns, rows,
+            )
+            return common_test_table, common_test_table_markdown
+
+
         cpu_count = self._report.metadata.system_metadata.get(
             "cpu_count",
             "Not Available",
@@ -702,157 +908,25 @@ class BenchmarkReporter:
                 box=box.SIMPLE_HEAD,
                 caption='File "' + str(benchmark_group_path) + '"',
             )
-            for benchmark_result in benchmark_group_result.benchmark_results:
-                markdown_content += f"Benchmark: {benchmark_result.name}\n"
-                inner_table = Table(
-                    "Test Name",
-                    box=box.SIMPLE_HEAD,
-                    title=benchmark_result.name,
-                    min_width=100,
-                )
-                ref_row: list[str] = [""]
-                results_for_connectable: dict[
-                    ConnectableId,
-                    list[tuple[float, float, bool]],
-                ] = {}
 
-                for idx, connectable_result in enumerate(
-                    benchmark_result.test_results[0].connectable_results,
-                ):
-                    connectable_results = [
-                        (
-                            statistics.mean(
-                                test_result.connectable_results[idx].values,
-                            ),
-                            statistics.stdev(
-                                test_result.connectable_results[idx].values,
-                            ),
-                            test_result.connectable_results[idx].errored,
-                        )
-                        for test_result in benchmark_result.test_results
-                    ]
-                    results_for_connectable[
-                        connectable_result.connectable_id
-                    ] = connectable_results
-
-                sorted_connectables = sorted(
-                    results_for_connectable.keys(),
-                    key=(
-                        lambda connectable_id: (
-                            geometric_mean(
-                                [
-                                    result_mean
-                                    for (
-                                        result_mean,
-                                        _,
-                                        errored,
-                                    ) in results_for_connectable[
-                                        connectable_id
-                                    ]
-                                    if not errored
-                                ]
-                                or [1e9],
-                            )
-                        )
-                    ),
-                )
-                results_for_connectable = {
-                    connectable: results_for_connectable[connectable]
-                    for connectable in sorted_connectables
-                }
-                columns = ["Test Name"]
-                rows: list[list[str]] = []
-                for (
-                    connectable_id,
-                    connectable_results,
-                ) in results_for_connectable.items():
-                    columns.append(
-                        connectable_id,
+            if benchmark_group_result.varying_parameter:
+                common_tests_table, common_tests_table_markdown = (
+                    _table_for_common_tests(
+                        benchmark_group_result.benchmark_results,
                     )
-                    inner_table.add_column(
-                        connectable_id,
-                    )
-                    g_mean = geometric_mean(
-                        [
-                            result_mean
-                            for result_mean, _, errored in connectable_results
-                            if not errored
-                        ]
-                        or [1e9],
-                    )
-                    if g_mean == geometric_mean([1e9]):
-                        ref_row.append("Errored")
-                    else:
-                        ref_row.append(
-                            str(g_mean),
-                        )
-
-                fastest_connectable_results = next(
-                    iter(
-                        results_for_connectable.values(),
-                    ),
                 )
 
-                for idx, test_result in enumerate(
-                    benchmark_result.test_results,
-                ):
-                    row_elements = [
-                        test_result.description,
-                    ]
-                    for connectable_idx, results in enumerate(
-                        results_for_connectable.items(),
-                    ):
-                        _, connectable_results = results
-                        _mean, std_dev, errored = connectable_results[idx]
+                outer_table.add_row(common_tests_table)
+                markdown_content += common_tests_table_markdown
 
-                        fastest_implementation_mean, _, __ = (
-                            fastest_connectable_results[idx]
-                        )
-                        relative = _mean / fastest_implementation_mean
+            inner_table, inner_table_markdown = (
+                _table_for_benchmark_result(
+                    benchmark_group_result.benchmark_results[-1],
+                )
+            )
 
-                        if errored:
-                            repr_string = "Errored"
-                        else:
-                            repr_string = (
-                                f"{_format_value(_mean)} +- "
-                                f"{_format_value(std_dev)}"
-                            )
-                            if connectable_idx != 0 and relative > 1:
-                                repr_string += (
-                                    f": {round(relative, 2)}x slower"
-                                )
-                            elif connectable_idx:
-                                repr_string += (
-                                    f": {round(1 / relative, 2)}x faster"
-                                )
-
-                        row_elements.append(repr_string)
-
-                    rows.append(row_elements)
-                    inner_table.add_row(*row_elements)
-
-                for implementation_idx in range(2, len(ref_row)):
-                    if ref_row[implementation_idx] == "Errored":
-                        continue
-                    rounded_off_val = {
-                        round(
-                            float(ref_row[implementation_idx])
-                            / float(ref_row[1]),
-                            2,
-                        ),
-                    }
-                    ref_row[implementation_idx] = f"{rounded_off_val}x slower"
-
-                ref_row[1] = "Reference"
-                inner_table.add_section()
-
-                if len(results_for_connectable) > 1:
-                    rows.append(ref_row)
-                    inner_table.add_row(*ref_row)
-
-                markdown_content += convert_table_to_markdown(columns, rows)
-                markdown_content += "\n\n"
-                outer_table.add_row(inner_table)
+            outer_table.add_row(inner_table)
+            markdown_content += inner_table_markdown
 
             if len(benchmark_group_result.benchmark_results) > 0:
                 table.add_row(
