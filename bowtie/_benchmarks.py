@@ -116,24 +116,15 @@ def _load_benchmark_group_from_file(
             benchmark_group = BenchmarkGroup.from_dict(
                 loaded_class.serializable(),
                 uri=URL.parse(file.absolute().as_uri()),
-                benchmark_type="None",
             )
         elif isinstance(loaded_class, BenchmarkGroup):
             benchmark_group = loaded_class
 
     elif file.suffix == ".json":
         data = json.loads(file.read_text())
-        dialects_supported = list(Dialect.known())
-        if "dialects_supported" in data:
-            dialects_supported = [
-                Dialect.from_str(dialect)
-                for dialect in data["dialects_supported"]
-            ]
         benchmark_group = BenchmarkGroup.from_dict(
             data,
             uri=URL.parse(file.absolute().as_uri()),
-            benchmark_type=str(data.get("benchmark_type", None)),
-            dialects_supported=dialects_supported,
         )
 
     return benchmark_group
@@ -288,16 +279,18 @@ class BenchmarkGroup:
     def from_dict(
         cls,
         data: dict[str, Any],
-        benchmark_type: str,
         uri: URL | None = None,
-        dialects_supported: Sequence[Dialect] = list(Dialect.known()),
-        varying_parameter: str | None = None,
     ) -> BenchmarkGroup:
+        varying_parameter = data.pop("varying_parameter", None)
+        benchmark_type = data.pop("benchmark_type", "None")
+        dialects_supported = [
+            dialect
+            if isinstance(dialect, Dialect)
+            else Dialect.from_str(dialect)
+            for dialect in data.pop("dialects_supported", Dialect.known())
+        ]
+
         if "benchmarks" not in data:
-            if "benchmark_type" in data:
-                data.pop("benchmark_type")
-            if "dialects_supported" in data:
-                data.pop("dialects_supported")
             benchmark = Benchmark.from_dict(
                 **data,
             ).maybe_set_dialect_from_schema()
@@ -324,6 +317,7 @@ class BenchmarkGroup:
             uri=uri,
             benchmark_type=benchmark_type,
             varying_parameter=varying_parameter,
+            dialects_supported=dialects_supported,
         )
 
     def serializable(self) -> Message:
@@ -844,7 +838,7 @@ class BenchmarkReporter:
                 )
                 for benchmark_result in benchmark_results
                 for test_result in benchmark_result.test_results
-                if test_result.description is common_test
+                if test_result.description == common_test
             ]
 
             rows, columns = _get_sorted_table_from_test_results(
@@ -1090,10 +1084,10 @@ class Benchmarker:
         benchmark: dict[str, Any],
         **kwargs: Any,
     ):
+        benchmark["benchmark_type"] = "from_input"
         benchmark_validated(benchmark)
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark,
-            benchmark_type="from_input",
         )
         return cls._from_dict(benchmark_groups=[benchmark_group], **kwargs)
 
