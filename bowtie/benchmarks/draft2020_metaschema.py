@@ -13,6 +13,11 @@ def get_benchmark():
     return BenchmarkGroup.from_dict(
         data=dict(
             name="Draft2020-12_MetaSchema",
+            benchmark_type="default",
+            dialects_supported=[
+                Dialect.from_str(
+                    "https://json-schema.org/draft/2020-12/schema"),
+            ],
             description=(
                 "A benchmark for validation of the Draft2020-12 MetaSchema."
             ),
@@ -27,8 +32,4 @@ def get_benchmark():
             ],
         ),
         uri=URL.parse(Path(__file__).absolute().as_uri()),
-        benchmark_type="default",
-        dialects_supported=[
-            Dialect.from_str("https://json-schema.org/draft/2020-12/schema"),
-        ],
     )
