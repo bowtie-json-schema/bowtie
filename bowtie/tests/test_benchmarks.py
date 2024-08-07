@@ -132,8 +132,9 @@ class TestLoadBenchmark:
         valid_single_benchmark,
     ):
         benchmark = valid_single_benchmark.serializable()
+        benchmark["benchmark_type"] = "test"
         benchmark_group = BenchmarkGroup.from_dict(
-            benchmark, benchmark_type="test",
+            benchmark,
         )
 
         assert benchmark_validated(benchmark_group.serializable())
@@ -143,13 +144,12 @@ class TestLoadBenchmark:
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark_json,
             uri=valid_benchmark_group.uri,
-            benchmark_type="test",
         )
 
         serializable = benchmark_group.serializable()
 
-        assert benchmark_json == serializable
         assert benchmark_validated(serializable)
+        assert valid_benchmark_group.serializable() == serializable
 
     def test_load_single_benchmark_group_from_json(
         self,
@@ -157,7 +157,9 @@ class TestLoadBenchmark:
         valid_single_benchmark,
     ):
         tmp_path = tmp_path / "test_file.json"
-        tmp_path.write_text(json.dumps(valid_single_benchmark.serializable()))
+        single_benchmark_json = valid_single_benchmark.serializable()
+        single_benchmark_json["benchmark_type"] = "test"
+        tmp_path.write_text(json.dumps(single_benchmark_json))
         benchmark_group = BenchmarkGroup.from_file(tmp_path)
         assert benchmark_validated(benchmark_group.serializable())
 
@@ -182,7 +184,7 @@ class TestLoadBenchmark:
             Path(__file__).parent / "benchmarks",
             module="bowtie.tests.benchmarks",
         )
-        valid_benchmarks_for_test = 2
+        valid_benchmarks_for_test = 3
         valid_count = 0
 
         for benchmark_group in benchmark_groups:
@@ -328,7 +330,9 @@ class TestBenchmarkRun:
 # Benchmark Summary
 ## Benchmark Group: benchmark
 Benchmark File: None
-Benchmark: benchmark
+
+
+Benchmark: Tests with benchmark
 
 | Test Name | python-jsonschema |
         """.strip()
@@ -345,6 +349,58 @@ Warmups: 1
         # with differing values
         assert expected_data1 in stdout
         assert expected_data2 in stdout
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_varying_param_markdown(
+        self,
+        tmp_path,
+    ):
+        from bowtie.tests.benchmarks import benchmark_with_varying_parameter
+        tmp_path.joinpath("benchmark.json").write_text(
+            json.dumps(
+                benchmark_with_varying_parameter.get_benchmark().serializable(),
+            ),
+        )
+        stdout, stderr = await bowtie(
+            "perf",
+            "-i",
+            DIRECT_CONNECTABLE,
+            "-q",
+            "--format",
+            "markdown",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+        )
+
+        expected_data1 = """
+# Benchmark Summary
+## Benchmark Group: benchmark
+Benchmark File: None
+
+Benchmark: Tests with varying Array Size
+
+| Test Name | python-jsonschema |
+            """.strip()
+
+        expected_data2 = """
+Benchmark: Tests with benchmark 2
+
+| Test Name | python-jsonschema |
+ """.strip()
+
+        expected_data3 = """
+    ## Benchmark Metadata
+
+Runs: 3
+Values: 2
+Warmups: 1
+            """.strip()
+
+        # Cant verify the whole output as it would be dynamic
+        # with differing values
+        assert expected_data1 in stdout
+        assert expected_data2 in stdout
+        assert expected_data3 in stdout
 
     @pytest.mark.asyncio
     async def test_invalid_benchmark_run(self, invalid_benchmark, tmp_path):
