@@ -12,7 +12,7 @@ If you're going to work on Bowtie itself, you likely will want to install it usi
 
 .. code:: sh
 
-    $ pip install -r test-requirements.txt -e .
+    $ uv pip install -r test-requirements.txt -e .
 
 within a checkout of the Bowtie repository.
 This will allow you to make changes to files within Bowtie and see results without reinstalling it repeatedly.
