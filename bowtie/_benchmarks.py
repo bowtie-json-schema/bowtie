@@ -788,7 +788,9 @@ class BenchmarkReporter:
         def _table_for_benchmark_result(
             benchmark_result: BenchmarkResult,
         ):
-            markdown_content = f"Benchmark: {benchmark_result.name}\n"
+            markdown_content = (
+                f"\n\nBenchmark: Tests with {benchmark_result.name}\n"
+            )
             inner_table = Table(
                 box=box.SIMPLE_HEAD,
                 title=(
@@ -804,11 +806,16 @@ class BenchmarkReporter:
             for row in rows:
                 inner_table.add_row(*row)
             markdown_content += convert_table_to_markdown(columns, rows)
+            markdown_content += "\n\n"
             return inner_table, markdown_content
 
         def _table_for_common_tests(
             benchmark_results: list[BenchmarkResult],
         ):
+            markdown_content = (
+                f"\nBenchmark: Tests with varying "
+                f"{benchmark_group_result.varying_parameter}\n"
+            )
             common_tests = {
                 test.description for test in
                 benchmark_results[0].test_results
@@ -848,10 +855,11 @@ class BenchmarkReporter:
             for row in rows:
                 common_test_table.add_row(*row)
 
-            common_test_table_markdown = convert_table_to_markdown(
+            markdown_content += convert_table_to_markdown(
                 columns, rows,
             )
-            return common_test_table, common_test_table_markdown
+            markdown_content += "\n\n"
+            return common_test_table, markdown_content
 
 
         cpu_count = self._report.metadata.system_metadata.get(
