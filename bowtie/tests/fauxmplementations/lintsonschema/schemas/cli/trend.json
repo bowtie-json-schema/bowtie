@@ -1,0 +1,55 @@
+{
+  "title": "bowtie trend",
+  "description": "Trend data of supported implementation(s), emitted by `bowtie trend --format json`.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:cli:trend",
+
+  "type": "object",
+
+  "$defs": {
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "complianceNumbers": {
+      "type": "object",
+      "properties": {
+        "skipped": { "$ref": "#/$defs/count" },
+        "errored": { "$ref": "#/$defs/count" },
+        "failed": { "$ref": "#/$defs/count" }
+      },
+      "required": ["skipped", "errored", "failed"],
+      "additionalProperties": false
+    }
+  },
+
+  "oneOf": [
+    {
+      "description": "A single dialect suite trend",
+      "propertyNames": {
+        "$ref": "tag:bowtie.report,2024:models:implementation:version"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/complianceNumbers"
+      }
+    },
+    {
+      "description": "Multiple dialect suite trends, nested by their URIs.",
+      "minProperties": 2,
+      "propertyNames": {
+        "$ref": "tag:bowtie.report,2024:models:dialect:uri"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "tag:bowtie.report,2024:models:implementation:version"
+        },
+        "additionalProperties": {
+          "$ref": "#/$defs/complianceNumbers"
+        }
+      }
+    }
+  ]
+}
