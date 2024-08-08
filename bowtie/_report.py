@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import reduce
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -9,6 +10,7 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
+from semver import VersionInfo
 from url import URL
 import structlog.stdlib
 
@@ -49,6 +51,12 @@ class MissingFooter(InvalidReport):
 
     Even though that only tells us whether the report failed fast, it might
     mean there's actual data missing too.
+    """
+
+
+class CaseMismatchInReportsForSameDialect(Exception):
+    """
+    Two reports for the same dialect had some TestCase mismatch in them.
     """
 
 
@@ -288,6 +296,72 @@ class Report:
             did_fail_fast=False,
         )
 
+    @classmethod
+    def combine_versions_reports_for(
+        cls,
+        versions_reports: Iterable[Report],
+        dialect: Dialect,
+    ) -> Report | None:
+        versions_reports = [
+            version_report
+            for version_report in versions_reports
+            if version_report.metadata.dialect == dialect
+        ]
+
+        if versions_reports:
+
+            def combine_cases(
+                acc: HashTrieMap[Seq, TestCase],
+                report: Report,
+            ):
+                for seq, case in report._cases.items():
+                    existing_case = acc.get(seq)
+                    if not existing_case:
+                        acc = acc.insert(seq, case)
+                    elif case != existing_case:
+                        raise CaseMismatchInReportsForSameDialect()
+                return acc
+
+            def combine_results(
+                acc: HashTrieMap[ConnectableId, HashTrieMap[Seq, SeqResult]],
+                report: Report,
+            ):
+                id, results = next(iter(report._results.items()))
+                acc = acc.insert(id, results)
+                return acc
+
+            def combine_implementations(
+                acc: dict[ConnectableId, ImplementationInfo],
+                report: Report,
+            ):
+                id, info = next(iter(report.metadata.implementations.items()))
+                acc[id] = info
+                return acc
+
+            return cls(
+                cases=reduce(
+                    combine_cases,
+                    versions_reports,
+                    HashTrieMap(),
+                ),
+                results=reduce(
+                    combine_results,
+                    versions_reports,
+                    HashTrieMap(),
+                ),
+                metadata=RunMetadata(
+                    implementations=reduce(
+                        combine_implementations,
+                        versions_reports,
+                        dict(),
+                    ),
+                    dialect=dialect,
+                ),
+                did_fail_fast=False,
+            )
+        else:
+            return None
+
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
@@ -327,6 +401,21 @@ class Report:
             for id, implementation in self.implementations.items()
         ]
         unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
+        return unsuccessful
+
+    def latest_to_oldest(self):
+        """
+        Versioned implementations sorted by their latest to oldest versions.
+        """
+        unsuccessful = [
+            (implementation.version, self.unsuccessful(id))
+            for id, implementation in self.implementations.items()
+            if implementation.version is not None
+        ]
+        unsuccessful.sort(
+            key=lambda each: VersionInfo.parse(each[0]),
+            reverse=True,
+        )
         return unsuccessful
 
     def cases_with_results(
