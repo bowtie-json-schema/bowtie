@@ -439,7 +439,7 @@ class BenchmarkReporter:
         for connectable in incompatible_connectables:
             if not self._quiet:
                 STDOUT.log(
-                    f"{connectable.to_terse()} does not supports "
+                    f"{connectable.to_terse()} does not support "
                     f"dialect {dialect.serializable()}\n",
                 )
 
