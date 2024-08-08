@@ -66,10 +66,6 @@ jobs:
           package_json_file: frontend/package.json
           run_install: false
         if: startsWith(matrix.noxenv, 'ui')
-      # We temporarily build images in the noxfile, and do so with podman.
-      - name: Set DOCKER_HOST so podman-built images are findable
-        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
-        if: startsWith(matrix.noxenv, 'ui')
 
       - name: Set up uv
         uses: hynek/setup-cached-uv@v2
@@ -78,6 +74,27 @@ jobs:
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}"
+
+  containerless:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v2
+      - name: Set up nox
+        uses: wntrblm/nox@2024.04.15
+
+      - name: Ensure containers don't work
+        run: sudo apt-get purge docker podman
+
+      - name: Run nox
+        run: nox -s tests-3.12 -- -m 'not containers'
 
   coverage:
     runs-on: ubuntu-latest

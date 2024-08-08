@@ -38,20 +38,23 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
-from bowtie._benchmarks import BenchmarkError, BenchmarkLoadError
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
     Implementation,
-    NoSuchImplementation,
-    StartupFailed,
     Test,
     TestCase,
     convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
-from bowtie.exceptions import DialectError, UnsupportedDialect
+from bowtie.exceptions import (
+    CannotConnect,
+    DialectError,
+    NoSuchImplementation,
+    StartupFailed,
+    UnsupportedDialect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -82,6 +85,8 @@ class _EX:
 EX = _EX()
 
 STDERR = console.Console(stderr=True)
+
+STARTUP_ERRORS = (CannotConnect, NoSuchImplementation, StartupFailed)
 
 
 # rich-click's CommandGroupDict seems to be missing some covariance,
@@ -310,7 +315,6 @@ def implementation_subcommand(
     def wrapper(fn: ImplementationSubcommand):
         async def run(
             connectables: Iterable[Connectable],
-            read_timeout_sec: float,
             registry: ValidatorRegistry[Any] = Direct.from_id(
                 "python-jsonschema",
             ).registry(),
@@ -328,12 +332,11 @@ def implementation_subcommand(
                     connectables=connectables,
                     registry=registry,
                     reporter=reporter,
-                    read_timeout_sec=read_timeout_sec,
                 ) as implementations:
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             connectable_implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as error:
+                        except STARTUP_ERRORS as error:
                             exit_code |= EX.CONFIG
                             STDERR.print(error)
                             continue
@@ -377,7 +380,6 @@ def implementation_subcommand(
                 "supported implementations."
             ),
         )
-        @TIMEOUT
         @wraps(fn)
         def cmd(
             connectables: Iterable[Connectable],
@@ -973,7 +975,6 @@ class _Dialect(click.ParamType):
                     *dialect.aliases,
                 ]
             ]
-            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
         else:  # the user didn't type anything, only suggest short names
             suggestions = Dialect.by_short_name().items()
 
@@ -1078,20 +1079,6 @@ SET_SCHEMA = click.option(
         "Explicitly set $schema in all (non-boolean) case schemas sent to "
         "implementations. Note this of course means what is passed to "
         "implementations will differ from what is provided in the input."
-    ),
-)
-TIMEOUT = click.option(
-    "--read-timeout",
-    "-T",
-    "read_timeout_sec",
-    default=2.0,
-    show_default=True,
-    metavar="SECONDS",
-    help=(
-        "An explicit timeout to wait for each implementation to respond "
-        "to *each* instance being validated. Set this to 0 if you wish "
-        "to wait forever, though note that this means you may end up waiting "
-        "... forever!"
     ),
 )
 VALIDATE = click.option(
@@ -1210,7 +1197,6 @@ class JSON(click.File):
 @FILTER
 @fail_fast
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
 @click.argument(
     "input",
@@ -1242,7 +1228,6 @@ def run(
 @dialect_option(default=None, callback=_set_dialect_via_schema)
 @IMPLEMENTATION
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
 @click.option(
     "-d",
@@ -1435,7 +1420,7 @@ def perf(
                 format=format,
             ),
         )
-    except (BenchmarkError, BenchmarkLoadError) as err:
+    except (_benchmarks.BenchmarkError, _benchmarks.BenchmarkLoadError) as err:
         STDERR.print(err)
         return EX.DATAERR
 
@@ -2022,9 +2007,8 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
 @FILTER
 @fail_fast
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
-@click.argument("input", type=_suite.ClickParam())
+@click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
@@ -2085,7 +2069,7 @@ async def _run(
         for each in starting:
             try:
                 _, implementation = await each
-            except (NoSuchImplementation, StartupFailed) as error:
+            except STARTUP_ERRORS as error:
                 exit_code |= EX.CONFIG
                 STDERR.print(error)
                 continue
@@ -2169,7 +2153,6 @@ async def _run(
 @asynccontextmanager
 async def _start(
     connectables: Iterable[Connectable],
-    read_timeout_sec: float,
     **kwargs: Any,
 ):
     async def _connected(
