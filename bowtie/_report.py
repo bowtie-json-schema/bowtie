@@ -327,8 +327,7 @@ class Report:
                 report: Report,
             ):
                 id, results = next(iter(report._results.items()))
-                acc = acc.insert(id, results)
-                return acc
+                return acc.insert(id, results)
 
             def combine_implementations(
                 acc: dict[ConnectableId, ImplementationInfo],
