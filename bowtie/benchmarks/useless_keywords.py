@@ -15,10 +15,10 @@ def get_benchmark():
             benchmark_type="default",
             dialects_supported=[
                 Dialect.from_str(
-                    "https://json-schema.org/draft/2020-12/schema"
+                    "https://json-schema.org/draft/2020-12/schema",
                 ),
                 Dialect.from_str(
-                    "https://json-schema.org/draft/2019-09/schema"
+                    "https://json-schema.org/draft/2019-09/schema",
                 ),
                 Dialect.from_str("http://json-schema.org/draft-07/schema#"),
                 Dialect.from_str("http://json-schema.org/draft-06/schema#"),
