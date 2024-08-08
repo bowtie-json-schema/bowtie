@@ -14,7 +14,8 @@ def get_benchmark():
             benchmark_type="default",
             dialects_supported=[
                 Dialect.from_str(
-                    "https://json-schema.org/draft/2020-12/schema"),
+                    "https://json-schema.org/draft/2020-12/schema"
+                ),
             ],
             description=(
                 "Validating highly nested schemas shouldn't "

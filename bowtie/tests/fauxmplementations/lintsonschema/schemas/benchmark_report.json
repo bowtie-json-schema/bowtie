@@ -4,6 +4,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tag:bowtie.report,2024:benchmark_report",
   "type": "object",
+  "additionalProperties": false,
   "required": ["metadata", "results"],
   "properties": {
     "metadata": {
@@ -120,7 +121,14 @@
       "type": "object",
       "description": "Contains the Benchmark results for the Benchmark Group.",
       "title": "Benchmark Group Result",
-      "required": ["name", "benchmark_type", "description", "varying_parameter", "benchmark_results"],
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "benchmark_type",
+        "description",
+        "varying_parameter",
+        "benchmark_results"
+      ],
       "properties": {
         "name": {
           "description": "Benchmark Group's Name.",

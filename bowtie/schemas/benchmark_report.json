@@ -122,7 +122,13 @@
       "description": "Contains the Benchmark results for the Benchmark Group.",
       "title": "Benchmark Group Result",
       "additionalProperties": false,
-      "required": ["name", "benchmark_type", "description", "varying_parameter", "benchmark_results"],
+      "required": [
+        "name",
+        "benchmark_type",
+        "description",
+        "varying_parameter",
+        "benchmark_results"
+      ],
       "properties": {
         "name": {
           "description": "Benchmark Group's Name.",

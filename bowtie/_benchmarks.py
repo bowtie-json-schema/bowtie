@@ -77,12 +77,13 @@ def get_benchmark_files(
         relative_folder_path = file.parent.relative_to(bowtie_parent_dir)
         module_name = str(relative_folder_path).replace(os.sep, ".")
         benchmark_group = _load_benchmark_group_from_file(
-            file, module_name,
+            file,
+            module_name,
         )
         if (
-            benchmark_group is not None and
-            benchmark_group.benchmark_type == benchmark_type and
-            dialect in benchmark_group.dialects_supported
+            benchmark_group is not None
+            and benchmark_group.benchmark_type == benchmark_type
+            and dialect in benchmark_group.dialects_supported
         ):
             files.append(file)
 
@@ -284,9 +285,11 @@ class BenchmarkGroup:
         varying_parameter = data.pop("varying_parameter", None)
         benchmark_type = data.pop("benchmark_type", "None")
         dialects_supported = [
-            dialect
-            if isinstance(dialect, Dialect)
-            else Dialect.from_str(dialect)
+            (
+                dialect
+                if isinstance(dialect, Dialect)
+                else Dialect.from_str(dialect)
+            )
             for dialect in data.pop("dialects_supported", Dialect.known())
         ]
 
@@ -666,9 +669,9 @@ class BenchmarkReporter:
                     )
                     for test_result in test_results
                 ]
-                results_for_connectable[
-                    connectable_result.connectable_id
-                ] = connectable_results
+                results_for_connectable[connectable_result.connectable_id] = (
+                    connectable_results
+                )
 
             sorted_connectables = sorted(
                 results_for_connectable.keys(),
@@ -678,12 +681,10 @@ class BenchmarkReporter:
                             [
                                 result_mean
                                 for (
-                                result_mean,
-                                _,
-                                errored,
-                            ) in results_for_connectable[
-                                connectable_id
-                            ]
+                                    result_mean,
+                                    _,
+                                    errored,
+                                ) in results_for_connectable[connectable_id]
                                 if not errored
                             ]
                             or [1e9],
@@ -750,9 +751,7 @@ class BenchmarkReporter:
                             f"{_format_value(std_dev)}"
                         )
                         if connectable_idx != 0 and relative > 1:
-                            repr_string += (
-                                f": {round(relative, 2)}x slower"
-                            )
+                            repr_string += f": {round(relative, 2)}x slower"
                         elif connectable_idx:
                             repr_string += (
                                 f": {round(1 / relative, 2)}x faster"
@@ -766,8 +765,7 @@ class BenchmarkReporter:
                 if ref_row[implementation_idx] == "Errored":
                     continue
                 rounded_off_val = round(
-                    float(ref_row[implementation_idx])
-                    / float(ref_row[1]),
+                    float(ref_row[implementation_idx]) / float(ref_row[1]),
                     2,
                 )
                 ref_row[implementation_idx] = f"{rounded_off_val}x slower"
@@ -787,9 +785,7 @@ class BenchmarkReporter:
             )
             inner_table = Table(
                 box=box.SIMPLE_HEAD,
-                title=(
-                    f"Tests with {benchmark_result.name}"
-                ),
+                title=(f"Tests with {benchmark_result.name}"),
                 min_width=100,
             )
             rows, columns = _get_sorted_table_from_test_results(
@@ -811,15 +807,11 @@ class BenchmarkReporter:
                 f"{benchmark_group_result.varying_parameter}\n"
             )
             common_tests = {
-                test.description for test in
-                benchmark_results[0].test_results
+                test.description for test in benchmark_results[0].test_results
             }
-            for benchmark_result in (
-                benchmark_results[1:]
-            ):
+            for benchmark_result in benchmark_results[1:]:
                 common_tests.intersection_update(
-                    test.description for test in
-                    benchmark_result.test_results
+                    test.description for test in benchmark_result.test_results
                 )
 
             common_test = next(iter(common_tests))
@@ -850,11 +842,11 @@ class BenchmarkReporter:
                 common_test_table.add_row(*row)
 
             markdown_content += convert_table_to_markdown(
-                columns, rows,
+                columns,
+                rows,
             )
             markdown_content += "\n\n"
             return common_test_table, markdown_content
-
 
         cpu_count = self._report.metadata.system_metadata.get(
             "cpu_count",
@@ -921,10 +913,8 @@ class BenchmarkReporter:
                 outer_table.add_row(common_tests_table)
                 markdown_content += common_tests_table_markdown
 
-            inner_table, inner_table_markdown = (
-                _table_for_benchmark_result(
-                    benchmark_group_result.benchmark_results[-1],
-                )
+            inner_table, inner_table_markdown = _table_for_benchmark_result(
+                benchmark_group_result.benchmark_results[-1],
             )
 
             outer_table.add_row(inner_table)
@@ -1035,8 +1025,8 @@ class Benchmarker:
                 module_name,
             )
             if (
-                benchmark_group is not None and
-                dialect in benchmark_group.dialects_supported
+                benchmark_group is not None
+                and dialect in benchmark_group.dialects_supported
             ):
                 benchmark_groups.append(
                     benchmark_group,

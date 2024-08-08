@@ -10,7 +10,13 @@
     },
     {
       "type": "object",
-      "required": ["name", "benchmark_type", "dialects_supported", "description", "benchmarks"],
+      "required": [
+        "name",
+        "benchmark_type",
+        "dialects_supported",
+        "description",
+        "benchmarks"
+      ],
       "properties": {
         "name": {
           "type": "string",

@@ -356,6 +356,7 @@ Warmups: 1
         tmp_path,
     ):
         from bowtie.tests.benchmarks import benchmark_with_varying_parameter
+
         tmp_path.joinpath("benchmark.json").write_text(
             json.dumps(
                 benchmark_with_varying_parameter.get_benchmark().serializable(),

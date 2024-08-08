@@ -25,7 +25,9 @@ def get_benchmark():
 
         both_at_first = [1, 1] + array[:-2]
         both_at_middle = (
-            array[1 : array_length // 2] + [1, 1] + array[array_length // 2 : -1]
+            array[1 : array_length // 2]
+            + [1, 1]
+            + array[array_length // 2 : -1]
         )
         both_at_last = array[:-2] + [1, 1]
         invalid = array
