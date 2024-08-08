@@ -29,7 +29,6 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
-from bowtie._benchmarks import BenchmarkError, BenchmarkLoadError
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -1412,7 +1411,7 @@ def perf(
                 format=format,
             ),
         )
-    except (BenchmarkError, BenchmarkLoadError) as err:
+    except (_benchmarks.BenchmarkError, _benchmarks.BenchmarkLoadError) as err:
         STDERR.print(err)
         return EX.DATAERR
 
