@@ -317,19 +317,23 @@ class Report:
             ] = HashTrieMap()
             implementations: dict[ConnectableId, ImplementationInfo] = {}
 
-            for report in versioned_reports:
-                for seq, case in report._cases.items():
+            for versioned_report in versioned_reports:
+                for seq, case in versioned_report._cases.items():
                     existing_case = cases.get(seq)
                     if not existing_case:
                         cases = cases.insert(seq, case)
                     elif case != existing_case:
                         raise CaseMismatchInReportsForSameDialect()
 
-                id, report_results = next(iter(report._results.items()))
-                results = results.insert(id, report_results)
+                version_id, version_results = next(
+                    iter(versioned_report._results.items()),
+                )
+                results = results.insert(version_id, version_results)
 
-                id, info = next(iter(report.metadata.implementations.items()))
-                implementations[id] = info
+                version_id, version_info = next(
+                    iter(versioned_report.metadata.implementations.items()),
+                )
+                implementations[version_id] = version_info
 
             return cls(
                 cases=cases,
