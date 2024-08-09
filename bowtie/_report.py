@@ -399,18 +399,20 @@ class Report:
                 v2.split("."),
                 fillvalue="0",
             ):
-                if p1.isdigit() and p2.isdigit():
-                    # compare integers
+                try:
                     p1, p2 = int(p1), int(p2)
+                except ValueError:
+                    # compare lexicographically
                     if p1 > p2:
                         return 1
                     elif p1 < p2:
                         return -1
-                # compare lexicographically
-                elif p1 > p2:
-                    return 1
-                elif p1 < p2:
-                    return -1
+                else:
+                    # compare integers
+                    if p1 > p2:
+                        return 1
+                    elif p1 < p2:
+                        return -1
             # versions are equal
             return 0
 
