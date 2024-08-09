@@ -1448,7 +1448,7 @@ def filter_benchmarks(
         dialect=dialect,
     )
     for file in files:
-        console.Console().file.write(str(file))
+        console.Console().file.write(f"{file}\n")
         console.Console().file.write("\n")
 
 
