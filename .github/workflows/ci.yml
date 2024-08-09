@@ -149,6 +149,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
@@ -165,6 +166,12 @@ jobs:
 
       - name: Create packages
         run: python -m build .
+
+      - name: Generate attestation for wheels
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*.whl"
 
       - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
