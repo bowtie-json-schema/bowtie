@@ -75,7 +75,7 @@ class Runner:
         self._DefaultValidator = validator_for({"$schema": dialect})
         if use_referencing_library:
             self._default_spec = referencing.jsonschema.specification_with(
-                dialect
+                dialect,
             )
         return dict(ok=True)
 
