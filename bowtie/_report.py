@@ -371,7 +371,6 @@ class Report:
         results = self._results[implementation].values()
         return sum((each.unsuccessful() for each in results), Unsuccessful())
 
-
     def worst_to_best(self):
         """
         All implementations ordered by number of unsuccessful tests.
@@ -389,6 +388,7 @@ class Report:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """
+
         def compare_versions(v1: str, v2: str):
             v1_parts = v1.split(".")
             v2_parts = v2.split(".")
@@ -409,7 +409,7 @@ class Report:
                         return 1
                     elif p1 < p2:
                         return -1
-            return 0 # Versions are equal
+            return 0  # Versions are equal
 
         unsuccessful = [
             (implementation.version, self.unsuccessful(id))
