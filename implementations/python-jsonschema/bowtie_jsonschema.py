@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
+from itertools import zip_longest
 from typing import TYPE_CHECKING
 import json
 import platform
@@ -10,7 +11,36 @@ import sys
 import traceback
 
 from jsonschema.validators import validator_for
-import referencing.jsonschema
+
+jsonschema_version = metadata.version("jsonschema")
+
+def compare_versions(v1: str, v2: str) -> int:
+    for p1, p2 in zip_longest(
+        v1.split("."),
+        v2.split("."),
+        fillvalue="0",
+    ):
+        if p1.isdigit() and p2.isdigit():
+            # compare integers
+            p1, p2 = int(p1), int(p2)
+            if p1 > p2:
+                return 1
+            elif p1 < p2:
+                return -1
+        # compare lexicographically
+        elif p1 > p2:
+            return 1
+        elif p1 < p2:
+            return -1
+    # versions are equal
+    return 0
+
+use_referencing_library = compare_versions(jsonschema_version, "4.18.0") >= 0
+
+if use_referencing_library:
+    import referencing.jsonschema
+else:
+    from jsonschema.validators import RefResolver
 
 if TYPE_CHECKING:
     import io
@@ -23,7 +53,7 @@ class Runner:
     _started: bool = False
     _stdout: io.TextIOWrapper = sys.stdout
     _DefaultValidator: Validator | None = None
-    _default_spec: referencing.Specification | None = None
+    _default_spec = None
 
     def run(self, stdin=sys.stdin):
         for line in stdin:
@@ -41,7 +71,7 @@ class Runner:
             implementation=dict(
                 language="python",
                 name="jsonschema",
-                version=metadata.version("jsonschema"),
+                version=jsonschema_version,
                 homepage="https://python-jsonschema.readthedocs.io/",
                 documentation="https://python-jsonschema.readthedocs.io/",
                 issues=(
@@ -65,7 +95,10 @@ class Runner:
     def cmd_dialect(self, dialect):
         assert self._started, "Not started!"
         self._DefaultValidator = validator_for({"$schema": dialect})
-        self._default_spec = referencing.jsonschema.specification_with(dialect)
+        if use_referencing_library:
+            self._default_spec = referencing.jsonschema.specification_with(
+                dialect,
+            )
         return dict(ok=True)
 
     def cmd_run(self, case, seq):
@@ -77,11 +110,16 @@ class Runner:
                 Validator is not None
             ), "No dialect sent and schema is missing $schema."
 
-            registry = referencing.Registry().with_contents(
-                case.get("registry", {}).items(),
-                default_specification=self._default_spec,
-            )
-            validator = Validator(schema, registry=registry)
+            if use_referencing_library:
+                registry = referencing.Registry().with_contents(
+                    case.get("registry", {}).items(),
+                    default_specification=self._default_spec,
+                )
+                validator = Validator(schema, registry=registry)
+            else:
+                registry = case.get("registry", {})
+                resolver = RefResolver.from_schema(schema, store=registry)
+                validator = Validator(schema, resolver=resolver)
 
             results = [
                 {"valid": validator.is_valid(test["instance"])}
