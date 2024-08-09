@@ -9,6 +9,17 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "aiohttp" # until it works with aiodocker
+    groups:
+      bowtie-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
     groups:
       bowtie-dependencies:
         patterns:

@@ -2,9 +2,10 @@ import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
 import { useLocation } from "react-router-dom";
 
+import styles from "./DragAndDrop.module.css";
+import Implementation from "../../data/Implementation";
 import { DialectReportView } from "../../DialectReportView";
 import { ReportData, parseReportData } from "../../data/parseReportData";
-import styles from "./DragAndDrop.module.css";
 
 export const DragAndDrop = () => {
   const location = useLocation();
@@ -81,7 +82,12 @@ export const DragAndDrop = () => {
   };
 
   if (lines) {
-    return <DialectReportView reportData={lines} allImplementationsData={{}} />;
+    return (
+      <DialectReportView
+        reportData={lines}
+        allImplementationsData={new Map<string, Implementation>()}
+      />
+    );
   }
 
   return (

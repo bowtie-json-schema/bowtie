@@ -17,11 +17,11 @@ from aiodocker import Docker
 from attrs import field, frozen, mutable
 import aiodocker.exceptions
 
-from bowtie._core import (
+from bowtie._core import InvalidResponse, Restarted
+from bowtie.exceptions import (
+    CannotConnect,
     GotStderr,
-    InvalidResponse,
     NoSuchImplementation,
-    Restarted,
     StartupFailed,
 )
 
@@ -191,7 +191,19 @@ class Connection:
                 raise InvalidResponse(contents=response) from err
 
 
-@frozen
+def _float_or_none(value: str | float | None) -> float | None:
+    """
+    Coerce 0 to None, otherwise return a float.
+    """
+    if value is None:
+        return value
+    value = float(value)
+    if value:
+        return value
+    return None
+
+
+@frozen(kw_only=True)
 class ConnectableImage:
 
     _id: str = field(
@@ -199,6 +211,17 @@ class ConnectableImage:
             value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
         ),
         alias="id",
+    )
+
+    #: An explicit timeout to wait for each implementation to respond
+    #: to *each* instance being validated. Set this to 0 if you wish
+    #: to wait forever, though note that this means you may end up waiting
+    #: ... forever!
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        converter=_float_or_none,
+        repr=False,
+        alias="read_timeout_sec",
     )
 
     kind = "image"
@@ -212,14 +235,34 @@ class ConnectableImage:
             async def new_stream():
                 nonlocal create
 
-                container = await create(docker=docker, image_name=self._id)
+                try:
+                    container = await create(
+                        docker=docker,
+                        image_name=self._id,
+                    )
+                except aiodocker.exceptions.DockerError as err:
+                    if err.status != 900:  # noqa: PLR2004
+                        raise
+                    raise CannotConnect(
+                        kind=self.kind,
+                        id=self._id,
+                        hint=(
+                            "Can't connect to your container runtime "
+                            "(e.g. podman or docker). "
+                            "Ensure you have one installed, that you have "
+                            "set the DOCKER_HOST environment variable if "
+                            "needed, and that containers successfully start "
+                            "if you directly run one outside of Bowtie."
+                        ),
+                    ) from err
+
                 stack.push_async_callback(container.delete, force=True)  # type: ignore[reportUnknownMemberType]
                 create = start_container
 
                 try:
                     return Stream.attached_to(
                         container,
-                        read_timeout_sec=2.0,  # FIXME: Parameters
+                        read_timeout_sec=self._read_timeout_sec,
                     )
                 except GotStderr as error:
                     err = StartupFailed(
@@ -244,6 +287,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
     except aiodocker.exceptions.DockerError as err:
         if err.status != 404:  # noqa: PLR2004
             raise
+
         try:
             tag = image_name.partition(":")[2] or "latest"
             await docker.pull(from_image=image_name, tag=tag)
@@ -299,10 +343,21 @@ async def start_container(docker: Docker, image_name: str):
     return container
 
 
-@frozen
+@frozen(kw_only=True)
 class ConnectableContainer:
 
     _id: str = field(alias="id")
+
+    #: An explicit timeout to wait for each implementation to respond
+    #: to *each* instance being validated. Set this to 0 if you wish
+    #: to wait forever, though note that this means you may end up waiting
+    #: ... forever!
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        converter=_float_or_none,
+        repr=False,
+        alias="read_timeout_sec",
+    )
 
     kind = "container"
 
@@ -312,12 +367,12 @@ class ConnectableContainer:
             try:
                 container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
             except aiodocker.exceptions.DockerError as err:
-                raise NoSuchImplementation(id=self._id) from err
+                raise CannotConnect(kind=self.kind, id=self._id) from err
 
             async def new_stream():
                 return Stream.attached_to(
                     container,
-                    read_timeout_sec=2.0,  # FIXME: Parameters
+                    read_timeout_sec=self._read_timeout_sec,
                 )
 
             yield Connection(new_stream=new_stream)

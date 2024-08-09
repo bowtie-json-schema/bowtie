@@ -10,9 +10,8 @@ from uuid import uuid4
 import json
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
-from diagnostic import DiagnosticError
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
-from rpds import HashTrieMap
+from rpds import HashTrieMap, HashTrieSet
 from url import URL
 import httpx
 import referencing_loaders
@@ -26,7 +25,14 @@ from bowtie._commands import (
     SeqResult,
     StartedDialect,
 )
-from bowtie.exceptions import DialectError, ProtocolError, UnsupportedDialect
+from bowtie.exceptions import (
+    DialectError,
+    GotStderr,
+    InvalidResponse,
+    ProtocolError,
+    StartupFailed,
+    UnsupportedDialect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -41,12 +47,7 @@ if TYPE_CHECKING:
 
     from referencing import Specification
     from referencing.jsonschema import Schema, SchemaRegistry
-    from rich.console import (
-        Console,
-        ConsoleOptions,
-        RenderableType,
-        RenderResult,
-    )
+    from rich.console import RenderableType
 
     from bowtie._commands import (
         AnyCaseResult,
@@ -130,7 +131,7 @@ class Dialect:
         if not data.is_dir():
             data = Path(__file__).parent.parent / "data"
 
-        return frozenset(
+        return HashTrieSet(
             Dialect.from_dict(**each)
             for each in json.loads(data.joinpath("dialects.json").read_text())
         )
@@ -172,7 +173,15 @@ class Dialect:
 
     @classmethod
     def from_str(cls, uri: str):
-        return cls.by_uri()[URL.parse(uri)]
+        url = URL.parse(uri)
+        by_uri = cls.by_uri()
+
+        if url.fragment is None:
+            dialect = by_uri.get(url.with_fragment(""))
+            if dialect is not None:
+                return dialect
+
+        return by_uri[url]
 
     async def latest_report(self):
         url = HOMEPAGE / f"{self.short_name}.json"
@@ -238,104 +247,10 @@ class Dialect:
         )
 
 
-@frozen
-class NoSuchImplementation(Exception):
-    """
-    An implementation with the given name does not exist.
-    """
-
-    id: ConnectableId
-
-    def __rich__(self):
-        return DiagnosticError(
-            code="no-such-implementation",
-            message=f"{self.id!r} is not a known Bowtie implementation.",
-            causes=[],
-            hint_stmt=(
-                "Check Bowtie's supported list of implementations "
-                "to ensure you have the name correct. "
-                "If you are developing a new harness, ensure you have "
-                "built and tagged it properly."
-            ),
-        )
-
-
-@frozen
-class GotStderr(Exception):
-    """
-    An implementation sent data on standard error.
-
-    We were trying to communicate with it (via Bowtie's protocol), but the
-    implementation has likely encountered some unexpected error.
-
-    It may have crashed.
-
-    Implementations of the `Connection` protocol should raise this exception
-    when they detect this kind of out-of-band error (in whatever concrete
-    connection-specific mechanism indicates this has occurred).
-    """
-
-    stderr: bytes
-
-
 class Restarted(Exception):
     """
     A connection was restarted, so we may need to replay some messages.
     """
-
-
-@frozen
-class InvalidResponse(Exception):
-    """
-    An invalid response was sent by a harnes.
-    """
-
-    contents: str
-
-
-@frozen
-class StartupFailed(Exception):
-    id: ConnectableId
-    stderr: str = ""
-    data: Any = None
-
-    def __rich_console__(
-        self,
-        console: Console,
-        options: ConsoleOptions,
-    ) -> RenderResult:
-        cause = self.__cause__
-        if cause is None:
-            root_causes, hint = [], (
-                "If you are developing a new harness, check if stderr "
-                "(shown below) contains harness-specific information "
-                "which can help. Otherwise, you may have an issue with your "
-                "local container setup (podman, docker, etc.)."
-            )
-        else:
-            root_causes: Iterable[Exception] = getattr(
-                cause.__cause__,
-                "exceptions",
-                [],
-            )
-            hint = (
-                "The harness sent an invalid response for Bowtie's protocol. "
-                "Details for what was wrong are above. If you are developing "
-                "support for a new harness you should address them, otherwise "
-                "if you are not, this is a bug in Bowtie's harness for this "
-                "implementation! File an issue on Bowtie's issue tracker."
-            )
-
-        yield DiagnosticError(
-            code="startup-failed",
-            message=f"{self.id!r} failed to start.",
-            causes=[str(exc) for exc in root_causes],
-            hint_stmt=hint,
-        )
-        if self.stderr:
-            from rich.panel import Panel
-
-            yield Panel(self.stderr, title="stderr")
 
 
 R = TypeVar("R")
@@ -714,12 +629,13 @@ class Example:
     @classmethod
     def from_dict(
         cls,
+        instance: Any = None,
         valid: bool | None = None,
         **data: Any,
     ) -> Example | Test:
         if valid is None:
-            return cls(**data)
-        return Test(**data, valid=valid)
+            return cls(**data, instance=instance)
+        return Test(**data, instance=instance, valid=valid)
 
 
 @frozen
@@ -859,3 +775,31 @@ class TestCase:
 def registry():
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
     return EMPTY_REGISTRY.with_resources(resources).crawl()
+
+
+def convert_table_to_markdown(
+    columns: list[str],
+    rows: list[list[str]],
+):
+    widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
+    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
+
+    header = "| " + " | ".join(columns) + " |"
+    border_left = "|:"
+    border_center = ":|:"
+    border_right = ":|"
+
+    separator = (
+        border_left
+        + border_center.join(["-" * w for w in widths])
+        + border_right
+    )
+
+    # body of the table
+    body = [""] * len(rows)  # empty string list that we fill after
+    for idx, line in enumerate(rows):
+        # for each line, change the body at the correct index
+        body[idx] = "| " + " | ".join(line) + " |"
+    body = "\n".join(body)
+
+    return f"\n{header}\n{separator}\n{body}"

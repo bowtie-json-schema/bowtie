@@ -6,7 +6,8 @@ from bowtie._containers import (
     ConnectableContainer,
     ConnectableImage,
 )
-from bowtie._direct_connectable import Direct, NoDirectConnection
+from bowtie._direct_connectable import Direct
+from bowtie.exceptions import CannotConnect
 
 validators = Direct.from_id("python-jsonschema").registry()
 validator = validators.for_uri("tag:bowtie.report,2024:connectables")
@@ -68,6 +69,26 @@ class TestImage:
             connector=ConnectableImage(id=f"{IMAGE_REPOSITORY}/bar"),
         )
 
+    def test_read_timeout_sec(self):
+        id = validated("image:bar:read_timeout_sec=5")
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=ConnectableImage(
+                id=f"{IMAGE_REPOSITORY}/bar",
+                read_timeout_sec=5,
+            ),
+        )
+
+    def test_no_timeout(self):
+        id = validated("image:bar:read_timeout_sec=0")
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=ConnectableImage(
+                id=f"{IMAGE_REPOSITORY}/bar",
+                read_timeout_sec=None,
+            ),
+        )
+
 
 class TestContainer:
     def test_uuid(self):
@@ -75,6 +96,26 @@ class TestContainer:
         assert Connectable.from_str(id) == Connectable(
             id=id,
             connector=ConnectableContainer(id="c7895a98f49d"),
+        )
+
+    def test_read_timeout_sec(self):
+        id = validated("container:c7895a98f49d:read_timeout_sec=5")
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=ConnectableContainer(
+                id="c7895a98f49d",
+                read_timeout_sec=5,
+            ),
+        )
+
+    def test_no_timeout(self):
+        id = validated("container:c7895a98f49d:read_timeout_sec=0")
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=ConnectableContainer(
+                id="c7895a98f49d",
+                read_timeout_sec=None,
+            ),
         )
 
 
@@ -98,8 +139,7 @@ class TestDirect:
 
     def test_named_unknown(self):
         id = validated("direct:foobar")
-        # TODO: Probably this should be NoSuchImplementation
-        with pytest.raises(NoDirectConnection, match="'foobar'"):
+        with pytest.raises(CannotConnect, match="'foobar'"):
             Connectable.from_str(id)
 
     def test_import(self):
@@ -122,6 +162,12 @@ class TestExplicitHappy:
 
     def test_unknown_direct_becomes_image(self):
         name = "asdf"
+        happy = validated(f"happy:{name}")
+        image = validated(f"image:{name}")
+        assert Connectable.from_str(happy) == Connectable.from_str(image)
+
+    def test_image_parameters(self):
+        name = "asdf:read_timeout_sec=5"
         happy = validated(f"happy:{name}")
         image = validated(f"image:{name}")
         assert Connectable.from_str(happy) == Connectable.from_str(image)

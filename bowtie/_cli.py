@@ -9,6 +9,7 @@ from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
+from time import perf_counter_ns
 from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
 import asyncio
 import json
@@ -27,19 +28,24 @@ import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import DOCS, _connectables, _report, _suite
+from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
     Implementation,
-    NoSuchImplementation,
-    StartupFailed,
     Test,
     TestCase,
+    convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
-from bowtie.exceptions import DialectError, UnsupportedDialect
+from bowtie.exceptions import (
+    CannotConnect,
+    DialectError,
+    NoSuchImplementation,
+    StartupFailed,
+    UnsupportedDialect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -71,6 +77,8 @@ EX = _EX()
 
 STDERR = console.Console(stderr=True)
 
+STARTUP_ERRORS = (CannotConnect, NoSuchImplementation, StartupFailed)
+
 
 # rich-click's CommandGroupDict seems to be missing some covariance,
 # as using a regular dict here makes pyright complain.
@@ -93,6 +101,10 @@ _COMMAND_GROUPS = {
         CommandGroupDict(
             name="Plumbing Commands",
             commands=["badges", "smoke"],
+        ),
+        CommandGroupDict(
+            name="Benchmarking Commands",
+            commands=["perf", "filter-benchmarks"],
         ),
     ],
 }
@@ -159,6 +171,29 @@ _OPTION_GROUPS = {
                 (
                     "Test Run Options",
                     ["fail-fast", "filter", "max-error", "max-fail"],
+                ),
+            ],
+        ),
+        (
+            "perf",
+            [
+                ("Required", ["implementation"]),
+                (
+                    "Benchmark Configuration Options",
+                    [
+                        "benchmark-file",
+                        "dialect",
+                        "keywords",
+                        "loops",
+                        "runs",
+                        "test-suite",
+                        "values",
+                        "warmups",
+                    ],
+                ),
+                (
+                    "Basic Options",
+                    ["format", "max-fail", "quiet"],
                 ),
             ],
         ),
@@ -271,7 +306,6 @@ def implementation_subcommand(
     def wrapper(fn: ImplementationSubcommand):
         async def run(
             connectables: Iterable[Connectable],
-            read_timeout_sec: float,
             registry: ValidatorRegistry[Any] = Direct.from_id(
                 "python-jsonschema",
             ).registry(),
@@ -289,12 +323,11 @@ def implementation_subcommand(
                     connectables=connectables,
                     registry=registry,
                     reporter=reporter,
-                    read_timeout_sec=read_timeout_sec,
                 ) as implementations:
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             connectable_implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as error:
+                        except STARTUP_ERRORS as error:
                             exit_code |= EX.CONFIG
                             STDERR.print(error)
                             continue
@@ -338,7 +371,6 @@ def implementation_subcommand(
                 "supported implementations."
             ),
         )
-        @TIMEOUT
         @wraps(fn)
         def cmd(
             connectables: Iterable[Connectable],
@@ -627,31 +659,6 @@ def summary(report: _report.Report, format: _F, show: str):
             console.Console().print(table)
 
 
-def _convert_table_to_markdown(columns: list[str], rows: list[list[str]]):
-    widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
-    rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
-
-    header = "| " + " | ".join(columns) + " |"
-    border_left = "|:"
-    border_center = ":|:"
-    border_right = ":|"
-
-    separator = (
-        border_left
-        + border_center.join(["-" * w for w in widths])
-        + border_right
-    )
-
-    # body of the table
-    body = [""] * len(rows)  # empty string list that we fill after
-    for idx, line in enumerate(rows):
-        # for each line, change the body at the correct index
-        body[idx] = "| " + " | ".join(line) + " |"
-    body = "\n".join(body)
-
-    return f"\n{header}\n{separator}\n{body}"
-
-
 def _failure_table(
     report: _report.Report,
     results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
@@ -722,7 +729,7 @@ def _failure_table_in_markdown(
     return "\n".join(
         [
             "# Bowtie Failures Summary",
-            _convert_table_to_markdown(columns, rows),
+            convert_table_to_markdown(columns, rows),
             "",
             f"**{report.total_tests} {test} ran**",
         ],
@@ -810,7 +817,7 @@ def _validation_results_table_in_markdown(
                     *(test_result[id].description for id in implementations),
                 ],
             )
-        inner_markdown_table = _convert_table_to_markdown(
+        inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
             inner_table_rows,
         )
@@ -901,7 +908,7 @@ def statistics(
                 f"## Dialect: {dialect.pretty_name}\n\n"
                 f"### Ran on: {ran_on_date.strftime('%x %X %Z')}\n"
             )
-            markdown = _convert_table_to_markdown(
+            markdown = convert_table_to_markdown(
                 columns=["Metric", "Value"],
                 rows=[[k, str(v)] for k, v in statistics.items()],
             )
@@ -959,7 +966,6 @@ class _Dialect(click.ParamType):
                     *dialect.aliases,
                 ]
             ]
-            suggestions = [(str(u), d) for u, d in Dialect.by_uri().items()]
         else:  # the user didn't type anything, only suggest short names
             suggestions = Dialect.by_short_name().items()
 
@@ -1064,20 +1070,6 @@ SET_SCHEMA = click.option(
         "Explicitly set $schema in all (non-boolean) case schemas sent to "
         "implementations. Note this of course means what is passed to "
         "implementations will differ from what is provided in the input."
-    ),
-)
-TIMEOUT = click.option(
-    "--read-timeout",
-    "-T",
-    "read_timeout_sec",
-    default=2.0,
-    show_default=True,
-    metavar="SECONDS",
-    help=(
-        "An explicit timeout to wait for each implementation to respond "
-        "to *each* instance being validated. Set this to 0 if you wish "
-        "to wait forever, though note that this means you may end up waiting "
-        "... forever!"
     ),
 )
 VALIDATE = click.option(
@@ -1196,7 +1188,6 @@ class JSON(click.File):
 @FILTER
 @fail_fast
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
 @click.argument(
     "input",
@@ -1220,6 +1211,7 @@ def run(
         TestCase.from_dict(dialect=dialect, **json.loads(line))
         for line in input
     )
+
     return asyncio.run(_run(**kwargs, cases=cases, dialect=dialect))
 
 
@@ -1227,7 +1219,6 @@ def run(
 @dialect_option(default=None, callback=_set_dialect_via_schema)
 @IMPLEMENTATION
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
 @click.option(
     "-d",
@@ -1269,6 +1260,198 @@ def validate(
         tests = [test.expect(expect) for test in tests]
     case = TestCase(description=description, schema=schema, tests=tests)
     return asyncio.run(_run(fail_fast=False, **kwargs, cases=[case]))
+
+
+def _set_benchmarker_callable(
+    ctx: click.Context,
+    value: Any,
+    callable: Callable[..., Any],
+) -> Any:
+    if value:
+        ctx.params["benchmarker_callable"] = callable
+    return value
+
+
+@subcommand
+@IMPLEMENTATION
+@dialect_option()
+@format_option()
+@click.option(
+    "--runs",
+    "-r",
+    "runs",
+    type=int,
+    default=3,
+    show_default=True,
+    help="Number of runs used to run benchmarks.",
+)
+@click.option(
+    "--values",
+    "-v",
+    "values",
+    type=click.IntRange(min=2),
+    default=2,
+    show_default=True,
+    help="Number of values per run.",
+)
+@click.option(
+    "--warmups",
+    "-w",
+    "warmups",
+    type=int,
+    default=1,
+    show_default=True,
+    help="Number of skipped values per run used to warmup the benchmark.",
+)
+@click.option(
+    "--loops",
+    "-l",
+    "loops",
+    type=int,
+    default=1,
+    show_default=True,
+    help="Number of loops per value.",
+)
+@click.option(
+    "--quiet",
+    "-q",
+    "quiet",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Enable quiet mode (Only output the final result).",
+)
+@click.option(
+    "--keywords",
+    "-k",
+    "keywords",
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx,  # type: ignore[reportUnknownArgumentType]
+            value,
+            _benchmarks.Benchmarker.for_keywords,
+        )
+    ),
+    is_flag=True,
+    show_default=True,
+    help=(
+        "Run keyword specific benchmarks to learn about how "
+        "various implementations implement the keyword."
+    ),
+)
+@click.option(
+    "-b",
+    "--benchmark-file",
+    "benchmark_files",
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx,  # type: ignore[reportUnknownArgumentType]
+            value,
+            _benchmarks.Benchmarker.for_benchmark_files,
+        )
+    ),
+    multiple=True,
+    help=(
+        "Allows running benchmark from a file. "
+        "Specify the path of the benchmark file"
+    ),
+)
+@click.option(
+    "--test-suite",
+    "-t",
+    "test_suite",
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx,  # type: ignore[reportUnknownArgumentType]
+            value,
+            _benchmarks.Benchmarker.from_test_cases,
+        )
+    ),
+    type=_suite.ClickParam(),
+    default=None,
+    help="Run Benchmarks over the official JSON Schema Test Suite.",
+)
+@click.argument(
+    "benchmark",
+    type=JSON(),
+    required=False,
+    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+        _set_benchmarker_callable(
+            ctx,  # type: ignore[reportUnknownArgumentType]
+            value,
+            _benchmarks.Benchmarker.from_input,
+        )
+    ),
+)
+def perf(
+    connectables: Iterable[_connectables.Connectable],
+    dialect: Dialect,
+    format: _F,
+    quiet: bool,
+    benchmarker_callable: Callable[..., Any] = (
+        _benchmarks.Benchmarker.from_default_benchmarks
+    ),
+    **kwargs: Any,
+):
+    """
+    Perform performance measurements across supported implementations.
+    """
+    if kwargs.get("test_suite"):
+        cases, enforced_dialect, _ = kwargs["test_suite"]
+        dialect = enforced_dialect
+        kwargs["cases"] = cases
+
+    try:
+        benchmarker = benchmarker_callable(dialect=dialect, **kwargs)
+        asyncio.run(
+            benchmarker.start(
+                connectables=connectables,
+                dialect=dialect,
+                quiet=quiet,
+                format=format,
+            ),
+        )
+    except (_benchmarks.BenchmarkError, _benchmarks.BenchmarkLoadError) as err:
+        STDERR.print(err)
+        return EX.DATAERR
+
+    return 0
+
+
+@subcommand
+@dialect_option()
+@click.option(
+    "-t",
+    "--benchmark-type",
+    type=click.Choice(["default", "keyword"]),
+    default="default",
+    show_default=True,
+    help=("Specify the type of benchmark to filter."),
+)
+@click.option(
+    "-n",
+    "--name",
+    "benchmark_names",
+    type=str,
+    multiple=True,
+    help=(
+        "Filter the benchmarks with given name. "
+        "Use the option multiple times to filter multiple benchmarks."
+    ),
+)
+def filter_benchmarks(
+    dialect: Dialect,
+    benchmark_type: str,
+    benchmark_names: Iterable[str],
+):
+    """
+    Output benchmarks matching the specified criteria.
+    """
+    _benchmarks.get_benchmark_filenames(
+        benchmark_type,
+        benchmarks=benchmark_names,
+        dialect=dialect,
+    )
 
 
 LANGUAGE_ALIASES = {
@@ -1588,9 +1771,8 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
 @FILTER
 @fail_fast
 @SET_SCHEMA
-@TIMEOUT
 @VALIDATE
-@click.argument("input", type=_suite.ClickParam())
+@click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
@@ -1651,7 +1833,7 @@ async def _run(
         for each in starting:
             try:
                 _, implementation = await each
-            except (NoSuchImplementation, StartupFailed) as error:
+            except STARTUP_ERRORS as error:
                 exit_code |= EX.CONFIG
                 STDERR.print(error)
                 continue
@@ -1684,16 +1866,27 @@ async def _run(
         count = 0
         should_stop = False
         unsucessful = Unsuccessful()
+
+        # Just to complement bowtie perf (not for other purposes)
+        time_taken_by_implementations = 0
+        time_output_file = (
+            Path(os.environ["TIME_OUTPUT_FILE"])
+            if "TIME_OUTPUT_FILE" in os.environ
+            else None
+        )
+
         for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
             seq_case = SeqCase(seq=count, case=case)
             got_result = reporter.case_started(seq_case, dialect)
 
             responses = [seq_case.run(runner=runner) for runner in runners]
+            st_time = perf_counter_ns()
 
             for each in asyncio.as_completed(responses):
                 result = await each
                 got_result(result=result)
                 unsucessful += result.unsuccessful()
+                time_taken_by_implementations += perf_counter_ns() - st_time
                 if (
                     max_fail
                     and len(unsucessful.failed) >= max_fail
@@ -1713,13 +1906,17 @@ async def _run(
             STDERR.print("[bold red]No test cases ran.[/]")
         elif count > 1:  # XXX: Ugh, this should be removed when Reporter dies
             STDERR.print(f"Ran [green]{count}[/] test cases.")
+
+        if time_output_file:
+            with time_output_file.open("a") as file:
+                file.write(f"{time_taken_by_implementations}\n")
+
     return exit_code
 
 
 @asynccontextmanager
 async def _start(
     connectables: Iterable[Connectable],
-    read_timeout_sec: float,
     **kwargs: Any,
 ):
     async def _connected(

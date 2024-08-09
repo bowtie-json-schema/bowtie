@@ -40,7 +40,8 @@ int main() {
       implementation.assign("source",
                             JSON{"https://github.com/sourcemeta/jsontoolkit"});
       implementation.assign(
-          "dialects", JSON{JSON{"http://json-schema.org/draft-07/schema#"},
+          "dialects", JSON{JSON{"https://json-schema.org/draft/2019-09/schema"},
+                           JSON{"http://json-schema.org/draft-07/schema#"},
                            JSON{"http://json-schema.org/draft-06/schema#"},
                            JSON{"http://json-schema.org/draft-04/schema#"}});
 

@@ -2,13 +2,11 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
-import { mapLanguage } from "../../data/mapLanguage";
-import {
-  Case,
-  Implementation,
-  ImplementationResults,
-} from "../../data/parseReportData";
+
 import SchemaDisplay from "../Cases/SchemaDisplay";
+import Implementation from "../../data/Implementation";
+import { mapLanguage } from "../../data/mapLanguage";
+import { Case, ImplementationResults } from "../../data/parseReportData";
 
 export const DetailsButtonModal = ({
   show,
