@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from functools import reduce
+from functools import cmp_to_key
+from itertools import zip_longest
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -10,7 +11,6 @@ import sys
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
 from rpds import HashTrieMap
-from semver import VersionInfo
 from url import URL
 import structlog.stdlib
 
@@ -297,63 +297,45 @@ class Report:
         )
 
     @classmethod
-    def combine_versions_reports_for(
+    def combine_versioned_reports_for(
         cls,
-        versions_reports: Iterable[Report],
+        versioned_reports: Iterable[Report],
         dialect: Dialect,
     ) -> Report | None:
-        versions_reports = [
-            version_report
-            for version_report in versions_reports
-            if version_report.metadata.dialect == dialect
+        versioned_reports = [
+            versioned_report
+            for versioned_report in versioned_reports
+            if versioned_report.metadata.dialect == dialect
         ]
 
-        if versions_reports:
+        if versioned_reports:
 
-            def combine_cases(
-                acc: HashTrieMap[Seq, TestCase],
-                report: Report,
-            ):
+            cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
+            results: HashTrieMap[
+                ConnectableId,
+                HashTrieMap[Seq, SeqResult],
+            ] = HashTrieMap()
+            implementations: dict[ConnectableId, ImplementationInfo] = {}
+
+            for report in versioned_reports:
                 for seq, case in report._cases.items():
-                    existing_case = acc.get(seq)
+                    existing_case = cases.get(seq)
                     if not existing_case:
-                        acc = acc.insert(seq, case)
+                        cases = cases.insert(seq, case)
                     elif case != existing_case:
                         raise CaseMismatchInReportsForSameDialect()
-                return acc
 
-            def combine_results(
-                acc: HashTrieMap[ConnectableId, HashTrieMap[Seq, SeqResult]],
-                report: Report,
-            ):
-                id, results = next(iter(report._results.items()))
-                return acc.insert(id, results)
+                id, report_results = next(iter(report._results.items()))
+                results = results.insert(id, report_results)
 
-            def combine_implementations(
-                acc: dict[ConnectableId, ImplementationInfo],
-                report: Report,
-            ):
                 id, info = next(iter(report.metadata.implementations.items()))
-                acc[id] = info
-                return acc
+                implementations[id] = info
 
             return cls(
-                cases=reduce(
-                    combine_cases,
-                    versions_reports,
-                    HashTrieMap(),
-                ),
-                results=reduce(
-                    combine_results,
-                    versions_reports,
-                    HashTrieMap(),
-                ),
+                cases=cases,
+                results=results,
                 metadata=RunMetadata(
-                    implementations=reduce(
-                        combine_implementations,
-                        versions_reports,
-                        dict(),
-                    ),
+                    implementations=implementations,
                     dialect=dialect,
                 ),
                 did_fail_fast=False,
@@ -389,6 +371,7 @@ class Report:
         results = self._results[implementation].values()
         return sum((each.unsuccessful() for each in results), Unsuccessful())
 
+
     def worst_to_best(self):
         """
         All implementations ordered by number of unsuccessful tests.
@@ -406,14 +389,35 @@ class Report:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """
+        def compare_versions(v1: str, v2: str):
+            v1_parts = v1.split(".")
+            v2_parts = v2.split(".")
+            for part1, part2 in zip_longest(v1_parts, v2_parts, fillvalue="0"):
+                try:
+                    p1 = int(part1)
+                    p2 = int(part2)
+                except ValueError:
+                    # If parts can't be converted to int,
+                    # compare lexicographically
+                    if part1 > part2:
+                        return 1
+                    elif part1 < part2:
+                        return -1
+                else:
+                    # Compare as int
+                    if p1 > p2:
+                        return 1
+                    elif p1 < p2:
+                        return -1
+            return 0 # Versions are equal
+
         unsuccessful = [
             (implementation.version, self.unsuccessful(id))
             for id, implementation in self.implementations.items()
             if implementation.version is not None
         ]
         unsuccessful.sort(
-            key=lambda each: VersionInfo.parse(each[0]),
-            reverse=True,
+            key=cmp_to_key(lambda x, y: compare_versions(y[0], x[0])),
         )
         return unsuccessful
 

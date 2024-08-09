@@ -61,7 +61,6 @@ dependencies = [
   "rich",
   "rich-click>=1.8.0",
   "rpds.py>=0.18.0",
-  "semver",
   "structlog",
   "url.py>=0.11.3",
 ]
