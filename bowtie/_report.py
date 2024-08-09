@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from functools import cmp_to_key
-from itertools import zip_longest
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -392,37 +390,19 @@ class Report:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """
-
-        def compare_versions(v1: str, v2: str) -> int:
-            for p1, p2 in zip_longest(
-                v1.split("."),
-                v2.split("."),
-                fillvalue="0",
-            ):
-                try:
-                    p1, p2 = int(p1), int(p2)
-                except ValueError:
-                    # compare lexicographically
-                    if p1 > p2:
-                        return 1
-                    elif p1 < p2:
-                        return -1
-                else:
-                    # compare integers
-                    if p1 > p2:
-                        return 1
-                    elif p1 < p2:
-                        return -1
-            # versions are equal
-            return 0
-
         unsuccessful = [
             (implementation.version, self.unsuccessful(id))
             for id, implementation in self.implementations.items()
             if implementation.version is not None
         ]
         unsuccessful.sort(
-            key=cmp_to_key(lambda x, y: compare_versions(y[0], x[0])),
+            key=lambda version: (
+                [
+                    int(part) if part.isdigit() else part
+                    for part in version[0].split(".")
+                ]
+            ),
+            reverse=True,
         )
         return unsuccessful
 
