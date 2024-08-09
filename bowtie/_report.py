@@ -406,13 +406,11 @@ class Report:
                         return 1
                     elif p1 < p2:
                         return -1
-
                 # compare lexicographically
                 elif p1 > p2:
                     return 1
                 elif p1 < p2:
                     return -1
-
             # versions are equal
             return 0
 
