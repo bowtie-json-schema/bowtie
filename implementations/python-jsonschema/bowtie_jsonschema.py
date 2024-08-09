@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
-from itertools import zip_longest
 from typing import TYPE_CHECKING
 import json
 import platform
@@ -11,33 +10,10 @@ import sys
 import traceback
 
 from jsonschema.validators import validator_for
+from packaging.version import parse
 
 jsonschema_version = metadata.version("jsonschema")
-
-
-def compare_versions(v1: str, v2: str) -> int:
-    for p1, p2 in zip_longest(
-        v1.split("."),
-        v2.split("."),
-        fillvalue="0",
-    ):
-        if p1.isdigit() and p2.isdigit():
-            # compare integers
-            p1, p2 = int(p1), int(p2)
-            if p1 > p2:
-                return 1
-            elif p1 < p2:
-                return -1
-        # compare lexicographically
-        elif p1 > p2:
-            return 1
-        elif p1 < p2:
-            return -1
-    # versions are equal
-    return 0
-
-
-use_referencing_library = compare_versions(jsonschema_version, "4.18.0") >= 0
+use_referencing_library = parse(jsonschema_version) >= parse("4.18.0")
 
 if use_referencing_library:
     import referencing.jsonschema
@@ -98,8 +74,8 @@ class Runner:
         assert self._started, "Not started!"
         self._DefaultValidator = validator_for({"$schema": dialect})
         if use_referencing_library:
-            self._default_spec = referencing.jsonschema.specification_with(
-                dialect,
+            self._default_spec = (
+                referencing.jsonschema.specification_with(dialect)
             )
         return dict(ok=True)
 
