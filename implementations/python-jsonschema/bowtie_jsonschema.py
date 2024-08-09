@@ -74,8 +74,8 @@ class Runner:
         assert self._started, "Not started!"
         self._DefaultValidator = validator_for({"$schema": dialect})
         if use_referencing_library:
-            self._default_spec = referencing.jsonschema.specification_with(
-                dialect,
+            self._default_spec = (
+                referencing.jsonschema.specification_with(dialect)
             )
         return dict(ok=True)
 
