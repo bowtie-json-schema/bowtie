@@ -52,12 +52,6 @@ class MissingFooter(InvalidReport):
     """
 
 
-class CaseMismatchInReportsForSameDialect(Exception):
-    """
-    Two reports for the same dialect had some TestCase mismatch in them.
-    """
-
-
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 
@@ -306,44 +300,32 @@ class Report:
             if versioned_report.metadata.dialect == dialect
         ]
 
-        if versioned_reports:
-
-            cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
-            results: HashTrieMap[
-                ConnectableId,
-                HashTrieMap[Seq, SeqResult],
-            ] = HashTrieMap()
-            implementations: dict[ConnectableId, ImplementationInfo] = {}
-
-            for versioned_report in versioned_reports:
-                for seq, case in versioned_report._cases.items():
-                    existing_case = cases.get(seq)
-                    if not existing_case:
-                        cases = cases.insert(seq, case)
-                    elif case != existing_case:
-                        raise CaseMismatchInReportsForSameDialect()
-
-                version_id, version_results = next(
-                    iter(versioned_report._results.items()),
-                )
-                results = results.insert(version_id, version_results)
-
-                version_id, version_info = next(
-                    iter(versioned_report.metadata.implementations.items()),
-                )
-                implementations[version_id] = version_info
-
-            return cls(
-                cases=cases,
-                results=results,
-                metadata=RunMetadata(
-                    implementations=implementations,
-                    dialect=dialect,
-                ),
-                did_fail_fast=False,
-            )
-        else:
+        if not versioned_reports:
             return None
+
+        results: HashTrieMap[
+            ConnectableId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap()
+        implementations: dict[ConnectableId, ImplementationInfo] = {}
+
+        for versioned_report in versioned_reports:
+            version_id, version_info = next(
+                iter(versioned_report.metadata.implementations.items()),
+            )
+            implementations[version_id] = version_info
+            version_results = next(iter(versioned_report._results.values()))
+            results = results.insert(version_id, version_results)
+
+        return cls(
+            cases=versioned_reports[0]._cases,
+            results=results,
+            metadata=RunMetadata(
+                implementations=implementations,
+                dialect=dialect,
+            ),
+            did_fail_fast=False,
+        )
 
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
