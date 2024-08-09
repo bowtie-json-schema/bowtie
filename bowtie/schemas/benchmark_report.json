@@ -4,6 +4,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tag:bowtie.report,2024:benchmark_report",
   "type": "object",
+  "additionalProperties": false,
   "required": ["metadata", "results"],
   "properties": {
     "metadata": {
@@ -120,15 +121,30 @@
       "type": "object",
       "description": "Contains the Benchmark results for the Benchmark Group.",
       "title": "Benchmark Group Result",
-      "required": ["name", "description", "benchmark_results"],
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "benchmark_type",
+        "description",
+        "varying_parameter",
+        "benchmark_results"
+      ],
       "properties": {
         "name": {
           "description": "Benchmark Group's Name.",
           "type": "string"
         },
+        "benchmark_type": {
+          "description": "The type of the Benchmark Group (Eg. keyword, default, etc.)",
+          "type": "string"
+        },
         "description": {
           "description": "Benchmark Group's Description.",
           "type": "string"
+        },
+        "varying_parameter": {
+          "description": "The parameter which is changing in the various benchmarks present in the Benchmark Group (Eg. array_size, object_size, etc.)",
+          "type": ["string", "null"]
         },
         "benchmark_results": {
           "description": "Results of all Benchmarks within the Benchmark Group.",

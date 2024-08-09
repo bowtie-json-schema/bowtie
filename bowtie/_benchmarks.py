@@ -64,28 +64,28 @@ benchmark_validated, benchmark_invalidated = (
 )
 
 
-def get_benchmark_filenames(
+def get_benchmark_files(
     benchmark_type: str,
-    benchmarks: Iterable[str],
     dialect: Dialect,
-):
-    bowtie_dir = Path(__file__).parent
-    search_dir: Path | None = None
-    files = []
+    benchmarks: Iterable[str] = [],
+) -> list[Path]:
+    bowtie_parent_dir = Path(__file__).parent.parent
+    benchmarks_dir = bowtie_parent_dir / "bowtie/benchmarks"
+    files: list[Path] = []
 
-    if benchmark_type == "keyword":
-        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
-        search_dir = keywords_benchmark_dir / dialect.short_name
-
-    elif benchmark_type == "default":
-        search_dir = bowtie_dir / "benchmarks"
-
-    if search_dir and search_dir.exists():
-        files = [
-            str(file)
-            for file in search_dir.iterdir()
-            if file.suffix in (".json", ".py") and file.name != "__init__.py"
-        ]
+    for file in benchmarks_dir.rglob("*"):
+        relative_folder_path = file.parent.relative_to(bowtie_parent_dir)
+        module_name = str(relative_folder_path).replace(os.sep, ".")
+        benchmark_group = _load_benchmark_group_from_file(
+            file,
+            module_name,
+        )
+        if (
+            benchmark_group is not None
+            and benchmark_group.benchmark_type == benchmark_type
+            and dialect in benchmark_group.dialects_supported
+        ):
+            files.append(file)
 
     if benchmarks:
         files = [
@@ -93,15 +93,13 @@ def get_benchmark_filenames(
             for benchmark in benchmarks
             if (
                 matched_file := next(
-                    (file for file in files if benchmark in file),
+                    (file for file in files if benchmark in str(file)),
                     None,
                 )
             )
         ]
 
-    for file in files:
-        STDOUT.file.write(file)
-        STDOUT.file.write("\n")
+    return files
 
 
 def _load_benchmark_group_from_file(
@@ -251,6 +249,9 @@ class BenchmarkGroup:
     benchmarks: Sequence[Benchmark]
     description: str
     uri: URL | None
+    benchmark_type: str
+    dialects_supported: Sequence[Dialect] = list(Dialect.known())
+    varying_parameter: str | None = None
 
     @classmethod
     def from_folder(
@@ -281,6 +282,17 @@ class BenchmarkGroup:
         data: dict[str, Any],
         uri: URL | None = None,
     ) -> BenchmarkGroup:
+        varying_parameter = data.pop("varying_parameter", None)
+        benchmark_type = data.pop("benchmark_type", "None")
+        dialects_supported = [
+            (
+                dialect
+                if isinstance(dialect, Dialect)
+                else Dialect.from_str(dialect)
+            )
+            for dialect in data.pop("dialects_supported", Dialect.known())
+        ]
+
         if "benchmarks" not in data:
             benchmark = Benchmark.from_dict(
                 **data,
@@ -290,6 +302,9 @@ class BenchmarkGroup:
                 description=benchmark.description,
                 benchmarks=[benchmark],
                 uri=uri,
+                benchmark_type=benchmark_type,
+                dialects_supported=dialects_supported,
+                varying_parameter=varying_parameter,
             )
 
         benchmarks = [
@@ -303,6 +318,9 @@ class BenchmarkGroup:
             description=data["description"],
             benchmarks=benchmarks,
             uri=uri,
+            benchmark_type=benchmark_type,
+            varying_parameter=varying_parameter,
+            dialects_supported=dialects_supported,
         )
 
     def serializable(self) -> Message:
@@ -312,14 +330,19 @@ class BenchmarkGroup:
         )
         if "uri" in serialized_dict:
             serialized_dict["uri"] = str(serialized_dict["uri"])
+        serialized_dict["dialects_supported"] = [
+            dialect.serializable() for dialect in self.dialects_supported
+        ]
         return serialized_dict
 
 
 @frozen
 class BenchmarkGroupResult:
     name: str
+    benchmark_type: str
     description: str
     benchmark_results: list[BenchmarkResult]
+    varying_parameter: str | None = None
 
     def serializable(self):
         return asdict(self)
@@ -591,8 +614,10 @@ class BenchmarkReporter:
         def benchmark_group_finished():
             benchmark_group_result = BenchmarkGroupResult(
                 name=benchmark_group.name,
+                benchmark_type=benchmark_group.benchmark_type,
                 description=benchmark_group.description,
                 benchmark_results=benchmark_results,
+                varying_parameter=benchmark_group.varying_parameter,
             )
             self._report.results[benchmark_group.name] = benchmark_group_result
             if progress_bar_task is not None:
@@ -619,6 +644,209 @@ class BenchmarkReporter:
             elif value < 1:
                 return f"{round(value * 1000)}ms"
             return f"{round(value, 2)}s"
+
+        def _get_sorted_table_from_test_results(
+            test_results: Sequence[TestResult],
+        ):
+            results_for_connectable: dict[
+                ConnectableId,
+                list[tuple[float, float, bool]],
+            ] = {}
+            ref_row: list[str] = [""]
+
+            for idx, connectable_result in enumerate(
+                test_results[0].connectable_results,
+            ):
+                connectable_results = [
+                    (
+                        statistics.mean(
+                            test_result.connectable_results[idx].values,
+                        ),
+                        statistics.stdev(
+                            test_result.connectable_results[idx].values,
+                        ),
+                        test_result.connectable_results[idx].errored,
+                    )
+                    for test_result in test_results
+                ]
+                results_for_connectable[connectable_result.connectable_id] = (
+                    connectable_results
+                )
+
+            sorted_connectables = sorted(
+                results_for_connectable.keys(),
+                key=(
+                    lambda connectable_id: (
+                        geometric_mean(
+                            [
+                                result_mean
+                                for (
+                                    result_mean,
+                                    _,
+                                    errored,
+                                ) in results_for_connectable[connectable_id]
+                                if not errored
+                            ]
+                            or [1e9],
+                        )
+                    )
+                ),
+            )
+            results_for_connectable = {
+                connectable: results_for_connectable[connectable]
+                for connectable in sorted_connectables
+            }
+            columns = ["Test Name"]
+            rows: list[list[str]] = []
+            for (
+                connectable_id,
+                connectable_results,
+            ) in results_for_connectable.items():
+                columns.append(
+                    connectable_id,
+                )
+                g_mean = geometric_mean(
+                    [
+                        result_mean
+                        for result_mean, _, errored in connectable_results
+                        if not errored
+                    ]
+                    or [1e9],
+                )
+                if g_mean == geometric_mean([1e9]):
+                    ref_row.append("Errored")
+                else:
+                    ref_row.append(
+                        str(g_mean),
+                    )
+
+            fastest_connectable_results = next(
+                iter(
+                    results_for_connectable.values(),
+                ),
+            )
+
+            for idx, test_result in enumerate(
+                test_results,
+            ):
+                row_elements = [
+                    test_result.description,
+                ]
+                for connectable_idx, results in enumerate(
+                    results_for_connectable.items(),
+                ):
+                    _, connectable_results = results
+                    _mean, std_dev, errored = connectable_results[idx]
+
+                    fastest_implementation_mean, _, __ = (
+                        fastest_connectable_results[idx]
+                    )
+                    relative = _mean / fastest_implementation_mean
+
+                    if errored:
+                        repr_string = "Errored"
+                    else:
+                        repr_string = (
+                            f"{_format_value(_mean)} +- "
+                            f"{_format_value(std_dev)}"
+                        )
+                        if connectable_idx != 0 and relative > 1:
+                            repr_string += f": {round(relative, 2)}x slower"
+                        elif connectable_idx:
+                            repr_string += (
+                                f": {round(1 / relative, 2)}x faster"
+                            )
+
+                    row_elements.append(repr_string)
+
+                rows.append(row_elements)
+
+            for implementation_idx in range(2, len(ref_row)):
+                if ref_row[implementation_idx] == "Errored":
+                    continue
+                rounded_off_val = round(
+                    float(ref_row[implementation_idx]) / float(ref_row[1]),
+                    2,
+                )
+                ref_row[implementation_idx] = f"{rounded_off_val}x slower"
+
+            ref_row[1] = "Reference"
+
+            if len(results_for_connectable) > 1:
+                rows.append(ref_row)
+
+            return rows, columns
+
+        def _table_for_benchmark_result(
+            benchmark_result: BenchmarkResult,
+        ):
+            markdown_content = (
+                f"\n\nBenchmark: Tests with {benchmark_result.name}\n"
+            )
+            inner_table = Table(
+                box=box.SIMPLE_HEAD,
+                title=(f"Tests with {benchmark_result.name}"),
+                min_width=100,
+            )
+            rows, columns = _get_sorted_table_from_test_results(
+                benchmark_result.test_results,
+            )
+            for column in columns:
+                inner_table.add_column(column)
+            for row in rows:
+                inner_table.add_row(*row)
+            markdown_content += convert_table_to_markdown(columns, rows)
+            markdown_content += "\n\n"
+            return inner_table, markdown_content
+
+        def _table_for_common_tests(
+            benchmark_results: list[BenchmarkResult],
+        ):
+            markdown_content = (
+                f"\nBenchmark: Tests with varying "
+                f"{benchmark_group_result.varying_parameter}\n"
+            )
+            common_tests = {
+                test.description for test in benchmark_results[0].test_results
+            }
+            for benchmark_result in benchmark_results[1:]:
+                common_tests.intersection_update(
+                    test.description for test in benchmark_result.test_results
+                )
+
+            common_test = next(iter(common_tests))
+            common_test_table = Table(
+                box=box.SIMPLE_HEAD,
+                title=(
+                    f"Tests with varying "
+                    f"{benchmark_group_result.varying_parameter}"
+                ),
+                min_width=100,
+            )
+            common_test_results: list[TestResult] = [
+                TestResult(
+                    description=benchmark_result.name,
+                    connectable_results=test_result.connectable_results,
+                )
+                for benchmark_result in benchmark_results
+                for test_result in benchmark_result.test_results
+                if test_result.description == common_test
+            ]
+
+            rows, columns = _get_sorted_table_from_test_results(
+                common_test_results,
+            )
+            for column in columns:
+                common_test_table.add_column(column)
+            for row in rows:
+                common_test_table.add_row(*row)
+
+            markdown_content += convert_table_to_markdown(
+                columns,
+                rows,
+            )
+            markdown_content += "\n\n"
+            return common_test_table, markdown_content
 
         cpu_count = self._report.metadata.system_metadata.get(
             "cpu_count",
@@ -674,157 +902,23 @@ class BenchmarkReporter:
                 box=box.SIMPLE_HEAD,
                 caption='File "' + str(benchmark_group_path) + '"',
             )
-            for benchmark_result in benchmark_group_result.benchmark_results:
-                markdown_content += f"Benchmark: {benchmark_result.name}\n"
-                inner_table = Table(
-                    "Test Name",
-                    box=box.SIMPLE_HEAD,
-                    title=benchmark_result.name,
-                    min_width=100,
-                )
-                ref_row: list[str] = [""]
-                results_for_connectable: dict[
-                    ConnectableId,
-                    list[tuple[float, float, bool]],
-                ] = {}
 
-                for idx, connectable_result in enumerate(
-                    benchmark_result.test_results[0].connectable_results,
-                ):
-                    connectable_results = [
-                        (
-                            statistics.mean(
-                                test_result.connectable_results[idx].values,
-                            ),
-                            statistics.stdev(
-                                test_result.connectable_results[idx].values,
-                            ),
-                            test_result.connectable_results[idx].errored,
-                        )
-                        for test_result in benchmark_result.test_results
-                    ]
-                    results_for_connectable[
-                        connectable_result.connectable_id
-                    ] = connectable_results
-
-                sorted_connectables = sorted(
-                    results_for_connectable.keys(),
-                    key=(
-                        lambda connectable_id: (
-                            geometric_mean(
-                                [
-                                    result_mean
-                                    for (
-                                        result_mean,
-                                        _,
-                                        errored,
-                                    ) in results_for_connectable[
-                                        connectable_id
-                                    ]
-                                    if not errored
-                                ]
-                                or [1e9],
-                            )
-                        )
-                    ),
-                )
-                results_for_connectable = {
-                    connectable: results_for_connectable[connectable]
-                    for connectable in sorted_connectables
-                }
-                columns = ["Test Name"]
-                rows: list[list[str]] = []
-                for (
-                    connectable_id,
-                    connectable_results,
-                ) in results_for_connectable.items():
-                    columns.append(
-                        connectable_id,
+            if benchmark_group_result.varying_parameter:
+                common_tests_table, common_tests_table_markdown = (
+                    _table_for_common_tests(
+                        benchmark_group_result.benchmark_results,
                     )
-                    inner_table.add_column(
-                        connectable_id,
-                    )
-                    g_mean = geometric_mean(
-                        [
-                            result_mean
-                            for result_mean, _, errored in connectable_results
-                            if not errored
-                        ]
-                        or [1e9],
-                    )
-                    if g_mean == geometric_mean([1e9]):
-                        ref_row.append("Errored")
-                    else:
-                        ref_row.append(
-                            str(g_mean),
-                        )
-
-                fastest_connectable_results = next(
-                    iter(
-                        results_for_connectable.values(),
-                    ),
                 )
 
-                for idx, test_result in enumerate(
-                    benchmark_result.test_results,
-                ):
-                    row_elements = [
-                        test_result.description,
-                    ]
-                    for connectable_idx, results in enumerate(
-                        results_for_connectable.items(),
-                    ):
-                        _, connectable_results = results
-                        _mean, std_dev, errored = connectable_results[idx]
+                outer_table.add_row(common_tests_table)
+                markdown_content += common_tests_table_markdown
 
-                        fastest_implementation_mean, _, __ = (
-                            fastest_connectable_results[idx]
-                        )
-                        relative = _mean / fastest_implementation_mean
+            inner_table, inner_table_markdown = _table_for_benchmark_result(
+                benchmark_group_result.benchmark_results[-1],
+            )
 
-                        if errored:
-                            repr_string = "Errored"
-                        else:
-                            repr_string = (
-                                f"{_format_value(_mean)} +- "
-                                f"{_format_value(std_dev)}"
-                            )
-                            if connectable_idx != 0 and relative > 1:
-                                repr_string += (
-                                    f": {round(relative, 2)}x slower"
-                                )
-                            elif connectable_idx:
-                                repr_string += (
-                                    f": {round(1 / relative, 2)}x faster"
-                                )
-
-                        row_elements.append(repr_string)
-
-                    rows.append(row_elements)
-                    inner_table.add_row(*row_elements)
-
-                for implementation_idx in range(2, len(ref_row)):
-                    if ref_row[implementation_idx] == "Errored":
-                        continue
-                    rounded_off_val = {
-                        round(
-                            float(ref_row[implementation_idx])
-                            / float(ref_row[1]),
-                            2,
-                        ),
-                    }
-                    ref_row[implementation_idx] = f"{rounded_off_val}x slower"
-
-                ref_row[1] = "Reference"
-                inner_table.add_section()
-
-                if len(results_for_connectable) > 1:
-                    rows.append(ref_row)
-                    inner_table.add_row(*ref_row)
-
-                markdown_content += convert_table_to_markdown(columns, rows)
-                markdown_content += "\n\n"
-                outer_table.add_row(inner_table)
+            outer_table.add_row(inner_table)
+            markdown_content += inner_table_markdown
 
             if len(benchmark_group_result.benchmark_results) > 0:
                 table.add_row(
@@ -895,6 +989,7 @@ class Benchmarker:
                     ),
                 ],
                 uri=None,
+                benchmark_type="test_case",
             )
             for case in cases
         ]
@@ -906,30 +1001,39 @@ class Benchmarker:
 
     @classmethod
     def for_keywords(cls, dialect: Dialect, **kwargs: Any):
-        bowtie_dir = Path(__file__).parent
-        keywords_benchmark_dir = bowtie_dir / "benchmarks/keywords"
-
-        dialect_keyword_benchmarks_dir = (
-            keywords_benchmark_dir / dialect.short_name
+        bowtie_parent_dir = Path(__file__).parent.parent
+        keywords_benchmark_dir = (
+            bowtie_parent_dir / "bowtie/benchmarks/keywords"
         )
 
         if not keywords_benchmark_dir.exists():
             raise BenchmarkLoadError("Keyword Benchmarks Folder not found.")
-        if not dialect_keyword_benchmarks_dir.exists():
-            raise BenchmarkLoadError(
-                message=(
-                    "Keyword Specific Benchmarks not present "
-                    f"for {dialect.serializable()}"
-                ),
-            )
 
-        module_name = f"bowtie.benchmarks.keywords.{dialect.short_name}"
+        keyword_benchmarks = get_benchmark_files(
+            benchmark_type="keyword",
+            dialect=dialect,
+        )
+
+        benchmark_groups: list[BenchmarkGroup] = []
+        for keyword_benchmark in keyword_benchmarks:
+            relative_folder_path = keyword_benchmark.parent.relative_to(
+                bowtie_parent_dir,
+            )
+            module_name = str(relative_folder_path).replace(os.sep, ".")
+            benchmark_group = BenchmarkGroup.from_file(
+                keyword_benchmark,
+                module_name,
+            )
+            if (
+                benchmark_group is not None
+                and dialect in benchmark_group.dialects_supported
+            ):
+                benchmark_groups.append(
+                    benchmark_group,
+                )
 
         return cls._from_dict(
-            benchmark_groups=BenchmarkGroup.from_folder(
-                dialect_keyword_benchmarks_dir,
-                module=module_name,
-            ),
+            benchmark_groups=benchmark_groups,
             **kwargs,
         )
 
@@ -970,6 +1074,7 @@ class Benchmarker:
         benchmark: dict[str, Any],
         **kwargs: Any,
     ):
+        benchmark["benchmark_type"] = "from_input"
         benchmark_validated(benchmark)
         benchmark_group = BenchmarkGroup.from_dict(
             benchmark,
@@ -1052,6 +1157,14 @@ class Benchmarker:
             some_benchmark_ran = False
             some_benchmark_ran_successfully = False
             for benchmark_group in self._benchmark_groups:
+                if dialect not in benchmark_group.dialects_supported:
+                    if not quiet:
+                        STDOUT.log(
+                            f"Skipping Benchmark Group: {benchmark_group.name}"
+                            f" as it does not support dialect"
+                            f" {dialect.serializable()}",
+                        )
+                    continue
                 (
                     benchmark_started,
                     benchmark_group_finished,
@@ -1165,6 +1278,7 @@ class Benchmarker:
         benchmark_name = f"{benchmark.name}::{benchmark.tests[0].description}"
 
         benchmark_dict = benchmark.serializable()
+        benchmark_dict["schema"]["$schema"] = str(dialect.uri)
         if "name" in benchmark_dict:
             benchmark_dict.pop("name")
 

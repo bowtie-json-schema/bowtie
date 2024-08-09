@@ -4,22 +4,24 @@ import uuid
 from url.url import URL
 
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
+from bowtie._core import Dialect
 
 
 def get_benchmark():
     name = "additionalProperties"
+    benchmark_type = "keyword"
     description = (
         "A benchmark for measuring performance of the "
         "implementation for the additionalProperties keyword."
     )
-    max_array_size = 100000
+    max_array_length = 100000
+    varying_parameter = "Array length"
+
+    array_length = 1000
     benchmarks: list[Benchmark] = []
-
-    array_size = 1000
-
-    while array_size <= max_array_size:
+    while array_length <= max_array_length:
         allowed_properties = [
-            uuid.uuid4().hex for _ in range(max_array_size - 1)
+            uuid.uuid4().hex for _ in range(max_array_length - 1)
         ]
 
         middle_index = len(allowed_properties) // 2
@@ -57,7 +59,7 @@ def get_benchmark():
                     instance=_format_properties_as_instance(valid),
                 ),
             ]
-            if array_size == max_array_size
+            if array_length == max_array_length
             else [
                 dict(
                     description="Valid",
@@ -68,9 +70,9 @@ def get_benchmark():
 
         benchmarks.append(
             Benchmark.from_dict(
-                name=f"Array Size - {array_size}",
+                name=f"Array length - {array_length}",
                 description=(
-                    f"Validating additionalProperties keyword over array of size {array_size}"
+                    f"Validating additionalProperties keyword over array of length {array_length}"
                 ),
                 schema=dict(
                     properties={key: {} for key in allowed_properties},
@@ -80,12 +82,22 @@ def get_benchmark():
             ),
         )
 
-        array_size *= 10
+        array_length *= 10
 
     return BenchmarkGroup(
         name=name,
+        benchmark_type=benchmark_type,
+        dialects_supported=[
+            Dialect.from_str("https://json-schema.org/draft/2020-12/schema"),
+            Dialect.from_str("https://json-schema.org/draft/2019-09/schema"),
+            Dialect.from_str("http://json-schema.org/draft-07/schema#"),
+            Dialect.from_str("http://json-schema.org/draft-06/schema#"),
+            Dialect.from_str("http://json-schema.org/draft-04/schema#"),
+            Dialect.from_str("http://json-schema.org/draft-03/schema#"),
+        ],
         description=description,
         benchmarks=benchmarks,
+        varying_parameter=varying_parameter,
         uri=URL.parse(Path(__file__).absolute().as_uri()),
     )
 
