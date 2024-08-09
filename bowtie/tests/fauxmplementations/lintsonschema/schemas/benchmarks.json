@@ -34,7 +34,7 @@
           "type": "array",
           "description": "An array of supported dialects by the benchmark.",
           "items": {
-            "type": "string"
+            "$ref": "tag:bowtie.report,2024:models:dialect:uri"
           }
         },
         "benchmarks": {
