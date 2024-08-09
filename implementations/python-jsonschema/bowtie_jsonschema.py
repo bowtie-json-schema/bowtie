@@ -14,6 +14,7 @@ from jsonschema.validators import validator_for
 
 jsonschema_version = metadata.version("jsonschema")
 
+
 def compare_versions(v1: str, v2: str) -> int:
     for p1, p2 in zip_longest(
         v1.split("."),
@@ -34,6 +35,7 @@ def compare_versions(v1: str, v2: str) -> int:
             return -1
     # versions are equal
     return 0
+
 
 use_referencing_library = compare_versions(jsonschema_version, "4.18.0") >= 0
 
