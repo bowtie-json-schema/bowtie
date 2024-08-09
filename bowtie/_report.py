@@ -392,28 +392,28 @@ class Report:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """
-
-        def compare_versions(v1: str, v2: str):
-            v1_parts = v1.split(".")
-            v2_parts = v2.split(".")
-            for part1, part2 in zip_longest(v1_parts, v2_parts, fillvalue="0"):
-                try:
-                    p1 = int(part1)
-                    p2 = int(part2)
-                except ValueError:
-                    # If parts can't be converted to int,
-                    # compare lexicographically
-                    if part1 > part2:
-                        return 1
-                    elif part1 < part2:
-                        return -1
-                else:
-                    # Compare as int
+        def compare_versions(v1: str, v2: str) -> int:
+            for p1, p2 in zip_longest(
+                v1.split("."),
+                v2.split("."),
+                fillvalue="0",
+            ):
+                if p1.isdigit() and p2.isdigit():
+                    # compare integers
+                    p1, p2 = int(p1), int(p2)
                     if p1 > p2:
                         return 1
                     elif p1 < p2:
                         return -1
-            return 0  # Versions are equal
+                else:
+                    # compare lexicographically
+                    if p1 > p2:
+                        return 1
+                    elif p1 < p2:
+                        return -1
+
+            # versions are equal
+            return 0
 
         unsuccessful = [
             (implementation.version, self.unsuccessful(id))
