@@ -52,6 +52,12 @@ class MissingFooter(InvalidReport):
     """
 
 
+class CaseMismatchInReportsForSameDialect(Exception):
+    """
+    Two reports for the same dialect had some TestCase mismatch in them.
+    """
+
+
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 
@@ -288,6 +294,57 @@ class Report:
             did_fail_fast=False,
         )
 
+    @classmethod
+    def combine_versioned_reports_for(
+        cls,
+        versioned_reports: Iterable[Report],
+        dialect: Dialect,
+    ) -> Report | None:
+        versioned_reports = [
+            versioned_report
+            for versioned_report in versioned_reports
+            if versioned_report.metadata.dialect == dialect
+        ]
+
+        if versioned_reports:
+
+            cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
+            results: HashTrieMap[
+                ConnectableId,
+                HashTrieMap[Seq, SeqResult],
+            ] = HashTrieMap()
+            implementations: dict[ConnectableId, ImplementationInfo] = {}
+
+            for versioned_report in versioned_reports:
+                for seq, case in versioned_report._cases.items():
+                    existing_case = cases.get(seq)
+                    if not existing_case:
+                        cases = cases.insert(seq, case)
+                    elif case != existing_case:
+                        raise CaseMismatchInReportsForSameDialect()
+
+                version_id, version_results = next(
+                    iter(versioned_report._results.items()),
+                )
+                results = results.insert(version_id, version_results)
+
+                version_id, version_info = next(
+                    iter(versioned_report.metadata.implementations.items()),
+                )
+                implementations[version_id] = version_info
+
+            return cls(
+                cases=cases,
+                results=results,
+                metadata=RunMetadata(
+                    implementations=implementations,
+                    dialect=dialect,
+                ),
+                did_fail_fast=False,
+            )
+        else:
+            return None
+
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
@@ -327,6 +384,26 @@ class Report:
             for id, implementation in self.implementations.items()
         ]
         unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
+        return unsuccessful
+
+    def latest_to_oldest(self):
+        """
+        Versioned implementations sorted by their latest to oldest versions.
+        """
+        unsuccessful = [
+            (implementation.version, self.unsuccessful(id))
+            for id, implementation in self.implementations.items()
+            if implementation.version is not None
+        ]
+        unsuccessful.sort(
+            key=lambda version: (
+                [
+                    int(part) if part.isdigit() else part
+                    for part in version[0].split(".")
+                ]
+            ),
+            reverse=True,
+        )
         return unsuccessful
 
     def cases_with_results(
