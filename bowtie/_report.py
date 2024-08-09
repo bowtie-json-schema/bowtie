@@ -392,6 +392,7 @@ class Report:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """
+
         def compare_versions(v1: str, v2: str) -> int:
             for p1, p2 in zip_longest(
                 v1.split("."),
@@ -405,12 +406,10 @@ class Report:
                         return 1
                     elif p1 < p2:
                         return -1
-                else:
-                    # compare lexicographically
-                    if p1 > p2:
-                        return 1
-                    elif p1 < p2:
-                        return -1
+                elif p1 > p2:
+                    return 1
+                elif p1 < p2:
+                    return -1
 
             # versions are equal
             return 0
