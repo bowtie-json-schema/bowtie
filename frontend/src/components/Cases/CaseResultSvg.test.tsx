@@ -1,13 +1,14 @@
 import { describe, expect, test } from "vitest";
-import { create } from "react-test-renderer";
-import CaseResultSvg from "./CaseResultSvg";
-import { CaseResult } from "../../data/parseReportData";
+import { render } from "@testing-library/react";
 import {
   CheckCircleFill,
   XCircleFill,
   ExclamationOctagon,
   Icon,
 } from "react-bootstrap-icons";
+
+import CaseResultSvg from "./CaseResultSvg";
+import { CaseResult } from "../../data/parseReportData";
 
 interface CaseResultIconTestParams {
   state: CaseResult["state"];
@@ -36,16 +37,25 @@ const testCases: CaseResultIconTestParams[] = [
   },
 ];
 
-describe.each(testCases)("Case Result Icons", ({ state, valid, icon }) => {
-  const testCaseData = {
-    state,
-    valid,
-  } as CaseResult;
+describe.each(testCases)(
+  "Case Result Icons",
+  ({ state, valid, icon: IconComponent }) => {
+    const testCaseData = {
+      state,
+      valid,
+    } as CaseResult;
 
-  const testName = valid == undefined ? state : `${state} expected ${valid}`;
-  test(testName, () => {
-    const testRenderer = create(<CaseResultSvg result={testCaseData} />);
-    const testInstance = testRenderer.root;
-    expect(testInstance.findByType(icon));
-  });
-});
+    const testName = valid == undefined ? state : `${state} expected ${valid}`;
+    test(testName, () => {
+      const { container } = render(<CaseResultSvg result={testCaseData} />);
+      const renderedSvg = container.querySelector("svg");
+
+      expect(renderedSvg).not.toBeNull();
+
+      const { container: iconContainer } = render(<IconComponent />);
+      const expectedSvg = iconContainer.querySelector("svg");
+
+      expect(renderedSvg?.innerHTML).toBe(expectedSvg?.innerHTML);
+    });
+  },
+);

@@ -317,78 +317,43 @@ class Report:
         )
 
     @classmethod
-    def combine_reports_for_same_dialect_suite(
+    def combine_versioned_reports_for(
         cls,
-        reports: Iterable[Report],
+        versioned_reports: Iterable[Report],
         dialect: Dialect,
-    ) -> Report | None:
-        reports = list(
-            filter(
-                lambda report: report.metadata.dialect == dialect,
-                reports,
-            ),
-        )
-        if reports:
+    ) -> Report:
+        versioned_reports = [
+            versioned_report
+            for versioned_report in versioned_reports
+            if versioned_report.metadata.dialect == dialect
+        ]
 
-            def combine_cases(
-                acc: HashTrieMap[Seq, TestCase],
-                report: Report,
-            ):
-                for seq, case in report._cases.items():
-                    existing_case = acc.get(seq)
-                    if not existing_case:
-                        acc = acc.insert(seq, case)
-                    elif case != existing_case:
-                        raise CaseMismatchInSameSuiteReports()
-                return acc
+        if not versioned_reports:
+            return cls.empty(dialect=dialect)
 
-            def combine_results(
-                acc: HashTrieMap[ConnectableId, HashTrieMap[Seq, SeqResult]],
-                report: Report,
-            ):
-                for id, results in report._results.items():
-                    existing_results = acc.get(id)
-                    if not existing_results:
-                        acc = acc.insert(id, results)
-                    elif results != existing_results:
-                        raise SeqResultMismatchInSameSuiteReports()
-                return acc
+        results: HashTrieMap[
+            ConnectableId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap()
+        implementations: dict[ConnectableId, ImplementationInfo] = {}
 
-            def combine_implementations(
-                acc: dict[ConnectableId, ImplementationInfo],
-                report: Report,
-            ):
-                for id, info in report.metadata.implementations.items():
-                    existing_implementation_info = acc.get(id)
-                    if not existing_implementation_info:
-                        acc[id] = info
-                    elif info != existing_implementation_info:
-                        raise ImplementationInfoMismatchInSameSuiteReports()
-                return acc
-
-            return cls(
-                cases=reduce(
-                    combine_cases,
-                    reports,
-                    HashTrieMap(),
-                ),
-                results=reduce(
-                    combine_results,
-                    reports,
-                    HashTrieMap(),
-                ),
-                metadata=RunMetadata(
-                    implementations=reduce(
-                        combine_implementations,
-                        reports,
-                        dict(),
-                    ),
-                    dialect=dialect,
-                ),
-                did_fail_fast=False,
+        for versioned_report in versioned_reports:
+            ((version_id, version_info),) = (
+                versioned_report.metadata.implementations.items()
             )
-        else:
-            return None
+            implementations[version_id] = version_info
+            (version_results,) = versioned_report._results.values()
+            results = results.insert(version_id, version_results)
+
+        return cls(
+            cases=versioned_reports[0]._cases,
+            results=results,
+            metadata=RunMetadata(
+                implementations=implementations,
+                dialect=dialect,
+            ),
+            did_fail_fast=False,
+        )
 
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
@@ -433,7 +398,7 @@ class Report:
 
     def latest_to_oldest(self):
         """
-        All implementations ordered by their latest to oldest versions.
+        Versioned implementations sorted by their latest to oldest versions.
         """
         unsuccessful = [
             (implementation.version, self.unsuccessful(id))
@@ -441,7 +406,12 @@ class Report:
             if implementation.version is not None
         ]
         unsuccessful.sort(
-            key=lambda each: version.parse(each[0]),
+            key=lambda version: (
+                [
+                    int(part) if part.isdigit() else part
+                    for part in version[0].split(".")
+                ]
+            ),
             reverse=True,
         )
         return unsuccessful
