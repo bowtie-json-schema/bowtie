@@ -310,11 +310,11 @@ class Report:
         implementations: dict[ConnectableId, ImplementationInfo] = {}
 
         for versioned_report in versioned_reports:
-            (version_id, version_info), = (
+            ((version_id, version_info),) = (
                 versioned_report.metadata.implementations.items()
             )
             implementations[version_id] = version_info
-            version_results, = versioned_report._results.values()
+            (version_results,) = versioned_report._results.values()
             results = results.insert(version_id, version_results)
 
         return cls(
