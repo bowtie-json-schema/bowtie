@@ -2094,6 +2094,7 @@ def trend(
     Show trend data of an implementation across its multiple versions.
     """
     id = connectable.to_terse()
+
     versions = asyncio.run(download_versions_of(id))
 
     downloaded_reports = asyncio.run(
@@ -2117,6 +2118,7 @@ def trend(
             downloaded_reports,
         ),
     )
+
     if versions:
         combine_versioned_reports_for = (
             _report.Report.combine_versioned_reports_for
