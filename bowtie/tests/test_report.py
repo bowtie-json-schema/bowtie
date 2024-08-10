@@ -309,7 +309,7 @@ def test_ne_different_results():
     assert Report.from_input(data) != Report.from_input(different_result)
 
 
-def test_eq_combine_different_versions_of_an_implementation():
+def test_eq_combine_versioned_reports():
     BAZ_V1_2020_RUN = RunMetadata(
         dialect=DIALECT_2020,
         implementations={"baz_v1": BAZ_V1},

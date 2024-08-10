@@ -293,7 +293,7 @@ class Report:
         cls,
         versioned_reports: Iterable[Report],
         dialect: Dialect,
-    ) -> Report | None:
+    ) -> Report:
         versioned_reports = [
             versioned_report
             for versioned_report in versioned_reports
@@ -301,7 +301,7 @@ class Report:
         ]
 
         if not versioned_reports:
-            return None
+            return cls.empty(dialect=dialect)
 
         results: HashTrieMap[
             ConnectableId,
@@ -310,11 +310,11 @@ class Report:
         implementations: dict[ConnectableId, ImplementationInfo] = {}
 
         for versioned_report in versioned_reports:
-            version_id, version_info = next(
-                iter(versioned_report.metadata.implementations.items()),
+            (version_id, version_info), = (
+                versioned_report.metadata.implementations.items()
             )
             implementations[version_id] = version_info
-            version_results = next(iter(versioned_report._results.values()))
+            version_results, = versioned_report._results.values()
             results = results.insert(version_id, version_results)
 
         return cls(
