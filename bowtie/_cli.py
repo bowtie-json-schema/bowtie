@@ -2094,7 +2094,6 @@ def trend(
     Show trend data of an implementation across its multiple versions.
     """
     id = connectable.to_terse()
-
     versions = asyncio.run(download_versions_of(id))
 
     downloaded_reports = asyncio.run(
@@ -2103,7 +2102,7 @@ def trend(
     if all(response is None for _, _, response in downloaded_reports):
         click.echo(
             f"None of the versions of {id} "
-            "support your specified dialect(s).",
+            f"support {pretty_names_str_for(dialects)}.",
         )
         return
 
@@ -2140,10 +2139,9 @@ def trend(
             if report.metadata.dialect == dialect
         }
 
-    serializable: dict[str, dict[str, dict[str, int]]] = {}
     match format:
         case "json":
-
+            serializable: dict[str, dict[str, dict[str, int]]] = {}
             def add_to_serializable(
                 uri: URL,
                 version: str,
@@ -2165,6 +2163,7 @@ def trend(
                         version = implementation.version or "latest"
                         unsuccessful = report.unsuccessful(id)
                         add_to_serializable(dialect.uri, version, unsuccessful)
+
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
             console.Console().print(
