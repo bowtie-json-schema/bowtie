@@ -2142,6 +2142,7 @@ def trend(
     match format:
         case "json":
             serializable: dict[str, dict[str, dict[str, int]]] = {}
+
             def add_to_serializable(
                 uri: URL,
                 version: str,
