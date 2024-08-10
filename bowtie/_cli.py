@@ -1105,6 +1105,8 @@ VALIDATE = click.option(
 
 
 POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
+
+
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
     num_dialects = len(list(dialects))
     pretty_names = [dialect.pretty_name for dialect in dialects]
@@ -1692,21 +1694,22 @@ async def info(
             output = serializable
         click.echo(json.dumps(output, indent=2))
 
+
 async def download_versions_of(id: ConnectableId) -> Set[str]:
     progress = Progress(
-                TextColumn("[bold blue]{task.description}"),
-                SpinnerColumn(finished_text=""),
-                BarColumn(bar_width=None),
-                TextColumn(
-                    "[progress.percentage]{task.percentage:>3.0f}%",
-                ),
-                "•",
-                DownloadColumn(),
-                "•",
-                TimeElapsedColumn(),
-                console=console.Console(),
-                transient=True,
-            )
+        TextColumn("[bold blue]{task.description}"),
+        SpinnerColumn(finished_text=""),
+        BarColumn(bar_width=None),
+        TextColumn(
+            "[progress.percentage]{task.percentage:>3.0f}%",
+        ),
+        "•",
+        DownloadColumn(),
+        "•",
+        TimeElapsedColumn(),
+        console=console.Console(),
+        transient=True,
+    )
     task = progress.add_task(
         description=f"Fetching versions metadata of {id}",
         total=None,
@@ -1716,10 +1719,7 @@ async def download_versions_of(id: ConnectableId) -> Set[str]:
         try:
             with progress:
                 url = (
-                    HOMEPAGE
-                    / "implementations"
-                    / id
-                    / "matrix-versions.json"
+                    HOMEPAGE / "implementations" / id / "matrix-versions.json"
                 )
                 response = await client.get(str(url))
                 response.raise_for_status()
@@ -1738,17 +1738,18 @@ async def download_versions_of(id: ConnectableId) -> Set[str]:
                 )
                 return frozenset(json.loads(content))
         except httpx.HTTPStatusError as err:
-                progress.update(
-                    task,
-                    description=(
-                        f"[bold red]Could not fetch versions metadata of "
-                        f"{id}: {err.response.status_code}"
-                    ),
-                    completed=None,
-                    total=None,
-                    advance=None,
-                )
-                return frozenset()
+            progress.update(
+                task,
+                description=(
+                    f"[bold red]Could not fetch versions metadata of "
+                    f"{id}: {err.response.status_code}"
+                ),
+                completed=None,
+                total=None,
+                advance=None,
+            )
+            return frozenset()
+
 
 async def download_reports_for(
     id: ConnectableId,
@@ -1860,10 +1861,7 @@ async def download_reports_for(
 
         with progress:
             responses = await asyncio.gather(
-                *[
-                    download_latest_report_for(dialect)
-                    for dialect in dialects
-                ],
+                *[download_latest_report_for(dialect) for dialect in dialects],
             )
 
             progress.update(
@@ -1876,6 +1874,7 @@ async def download_reports_for(
                 total=total_files,
             )
             return responses
+
 
 async def parse_reports_for(
     id: ConnectableId,
@@ -2053,6 +2052,7 @@ def _trend_table_in_markdown_for(
 
     return final_content
 
+
 @subcommand
 @click.option(
     "--implementation",
@@ -2100,10 +2100,7 @@ def trend(
     downloaded_reports = asyncio.run(
         download_reports_for(id, versions, dialects),
     )
-    if all(
-        response is None
-        for _, _, response in downloaded_reports
-    ):
+    if all(response is None for _, _, response in downloaded_reports):
         click.echo(
             f"None of the versions of {id} "
             "support your specified dialect(s).",
@@ -2132,7 +2129,8 @@ def trend(
                     parsed_reports,
                     dialect,
                 )
-            ) and not combined_versions_report.is_empty
+            )
+            and not combined_versions_report.is_empty
         }
     else:
         dialects_trend = {
@@ -2145,6 +2143,7 @@ def trend(
     serializable: dict[str, dict[str, dict[str, int]]] = {}
     match format:
         case "json":
+
             def add_to_serializable(
                 uri: URL,
                 version: str,
