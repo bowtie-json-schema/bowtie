@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from functools import reduce
 from typing import TYPE_CHECKING, TypedDict
 import importlib.metadata
 import json
@@ -9,7 +8,6 @@ import sys
 
 from attrs import asdict, field, frozen
 from attrs.filters import exclude
-from packaging import version
 from rpds import HashTrieMap
 from url import URL
 import structlog.stdlib
