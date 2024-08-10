@@ -13,7 +13,7 @@
       "type": "integer",
       "minimum": 0
     },
-    "complianceNumbers": {
+    "compliance": {
       "type": "object",
       "properties": {
         "skipped": { "$ref": "#/$defs/count" },
@@ -25,31 +25,17 @@
     }
   },
 
-  "oneOf": [
-    {
-      "description": "A single dialect suite trend",
-      "propertyNames": {
-        "$ref": "tag:bowtie.report,2024:models:implementation:version"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/complianceNumbers"
-      }
+  "minProperties": 1,
+  "propertyNames": {
+    "$ref": "tag:bowtie.report,2024:models:dialect:uri"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "propertyNames": {
+      "$ref": "tag:bowtie.report,2024:models:implementation:version"
     },
-    {
-      "description": "Multiple dialect suite trends, nested by their URIs.",
-      "minProperties": 2,
-      "propertyNames": {
-        "$ref": "tag:bowtie.report,2024:models:dialect:uri"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "propertyNames": {
-          "$ref": "tag:bowtie.report,2024:models:implementation:version"
-        },
-        "additionalProperties": {
-          "$ref": "#/$defs/complianceNumbers"
-        }
-      }
+    "additionalProperties": {
+      "$ref": "#/$defs/compliance"
     }
-  ]
+  }
 }

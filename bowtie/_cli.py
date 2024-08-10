@@ -20,9 +20,9 @@ import sys
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
 from rich import box, console, panel
-from rich.console import Console
 from rich.progress import (
     BarColumn,
+    DownloadColumn,
     MofNCompleteColumn,
     Progress,
     SpinnerColumn,
@@ -33,11 +33,12 @@ from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
 from url import URL, RelativeURLWithoutBase
+import httpx
 import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
+from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -105,6 +106,7 @@ _COMMAND_GROUPS = {
                 "latest-report",
                 "run",
                 "statistics",
+                "trend",
             ],
         ),
         CommandGroupDict(
@@ -1103,6 +1105,17 @@ VALIDATE = click.option(
 
 
 POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
+def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
+    num_dialects = len(list(dialects))
+    pretty_names = [dialect.pretty_name for dialect in dialects]
+    if num_dialects == 1:
+        pretty_names_str = pretty_names[0]
+    elif num_dialects == len(list(Dialect.known())):
+        pretty_names_str = "all known dialects"
+    else:
+        pretty_names_str = ", ".join(pretty_names[:-1])
+        pretty_names_str += " and " + pretty_names[-1]
+    return pretty_names_str
 
 
 def dialect_option(
@@ -1679,20 +1692,72 @@ async def info(
             output = serializable
         click.echo(json.dumps(output, indent=2))
 
+async def download_versions_of(id: ConnectableId) -> Set[str]:
+    progress = Progress(
+                TextColumn("[bold blue]{task.description}"),
+                SpinnerColumn(finished_text=""),
+                BarColumn(bar_width=None),
+                TextColumn(
+                    "[progress.percentage]{task.percentage:>3.0f}%",
+                ),
+                "•",
+                DownloadColumn(),
+                "•",
+                TimeElapsedColumn(),
+                console=console.Console(),
+                transient=True,
+            )
+    task = progress.add_task(
+        description=f"Fetching versions metadata of {id}",
+        total=None,
+    )
 
-async def parse_versioned_reports_for(
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            with progress:
+                url = (
+                    HOMEPAGE
+                    / "implementations"
+                    / id
+                    / "matrix-versions.json"
+                )
+                response = await client.get(str(url))
+                response.raise_for_status()
+
+                content = response.content
+                content_length = len(content)
+
+                progress.update(
+                    task,
+                    description=(
+                        f"Successfully fetched all versions of {id}!"
+                    ),
+                    completed=content_length,
+                    total=content_length,
+                    advance=content_length,
+                )
+                return frozenset(json.loads(content))
+        except httpx.HTTPStatusError as err:
+                progress.update(
+                    task,
+                    description=(
+                        f"[bold red]Could not fetch versions metadata of "
+                        f"{id}: {err.response.status_code}"
+                    ),
+                    completed=None,
+                    total=None,
+                    advance=None,
+                )
+                return frozenset()
+
+async def download_reports_for(
     id: ConnectableId,
-    downloaded: Iterable[tuple[str, Dialect, Response | None]],
-) -> Iterable[_report.Report]:
-    downloaded = [
-        (version, dialect, response)
-        for version, dialect, response in downloaded
-        if response is not None
-    ]
-    total = len(downloaded)
-    reports: Iterable[_report.Report] = []
+    versions: Set[str],
+    dialects: Iterable[Dialect],
+) -> Iterable[tuple[str, Dialect, Response | None]]:
+    pretty_names_str = pretty_names_str_for(dialects)
 
-    with Progress(
+    progress = Progress(
         TextColumn("[bold blue]{task.description}"),
         SpinnerColumn(finished_text=""),
         BarColumn(bar_width=None),
@@ -1701,43 +1766,186 @@ async def parse_versioned_reports_for(
         MofNCompleteColumn(),
         "•",
         TimeElapsedColumn(),
-        console=Console(),
+        console=console.Console(),
         transient=True,
-    ) as progress:
-        parsing_report_progress_task = progress.add_task(
+    )
+
+    if versions:
+        total_files = len(versions) * len(list(dialects))
+        actual_downloaded_files = 0
+
+        task = progress.add_task(
             description=(
-                f"Preparing to parse all downloaded "
-                f"versioned reports of {id}"
+                "Preparing to download versioned reports "
+                f"of {id} for {pretty_names_str}"
             ),
-            total=total,
+            total=total_files,
         )
 
+        async with httpx.AsyncClient(timeout=10) as client:
+
+            async def download_versioned_report_for(
+                version: str,
+                dialect: Dialect,
+            ):
+                try:
+                    url = (
+                        HOMEPAGE
+                        / "implementations"
+                        / id
+                        / f"v{version}"
+                        / f"{dialect.short_name}.json"
+                    )
+                    response = await client.get(str(url))
+                    response.raise_for_status()
+
+                    nonlocal actual_downloaded_files
+                    actual_downloaded_files += 1
+
+                    progress.update(
+                        task,
+                        description=(
+                            f"Attempting to download: "
+                            f"v{version}/{dialect.short_name}.json"
+                        ),
+                        advance=1,
+                    )
+                except httpx.HTTPStatusError:
+                    return version, dialect, None
+                else:
+                    return version, dialect, response
+
+            with progress:
+                responses = await asyncio.gather(
+                    *[
+                        download_versioned_report_for(version, dialect)
+                        for version in versions
+                        for dialect in dialects
+                    ],
+                )
+
+                progress.update(
+                    task,
+                    description=(
+                        "Successfully downloaded all versioned "
+                        f"reports of {id} for {pretty_names_str}!"
+                    ),
+                    completed=actual_downloaded_files,
+                    total=actual_downloaded_files,
+                )
+                return responses
+    else:
+        total_files = len(list(dialects))
+
+        task = progress.add_task(
+            description=(
+                f"Preparing to download latest reports "
+                f"of {id} for {pretty_names_str}"
+            ),
+            total=total_files,
+        )
+
+        async def download_latest_report_for(dialect: Dialect):
+            try:
+                response = await dialect.latest_report()
+                progress.update(
+                    task,
+                    description=f"Downloading: {dialect.short_name}.json",
+                    advance=1,
+                )
+            except httpx.HTTPStatusError:
+                return "latest", dialect, None
+            else:
+                return "latest", dialect, response
+
+        with progress:
+            responses = await asyncio.gather(
+                *[
+                    download_latest_report_for(dialect)
+                    for dialect in dialects
+                ],
+            )
+
+            progress.update(
+                task,
+                description=(
+                    f"Successfully downloaded all latest reports "
+                    f"of {id} for {pretty_names_str}"
+                ),
+                completed=total_files,
+                total=total_files,
+            )
+            return responses
+
+async def parse_reports_for(
+    id: ConnectableId,
+    versions: Set[str],
+    dialects: Iterable[Dialect],
+    downloaded: Iterable[tuple[str, Dialect, Response | None]],
+) -> Iterable[_report.Report]:
+    pretty_names_str = pretty_names_str_for(dialects)
+
+    progress = Progress(
+        TextColumn("[bold blue]{task.description}"),
+        SpinnerColumn(finished_text=""),
+        BarColumn(bar_width=None),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        "•",
+        MofNCompleteColumn(),
+        "•",
+        TimeElapsedColumn(),
+        console=console.Console(),
+        transient=True,
+    )
+
+    downloaded = [
+        (_, __, response)
+        for _, __, response in downloaded
+        if response is not None
+    ]
+    total = len(downloaded)
+
+    task = progress.add_task(
+        description=(
+            f"Preparing to parse all downloaded "
+            f"{'versioned' if versions else 'latest'} reports "
+            f"of {id} for {pretty_names_str}"
+        ),
+        total=total,
+    )
+
+    reports: Iterable[_report.Report] = []
+
+    with progress:
         for version, dialect, response in downloaded:
+            progress.update(
+                task,
+                description=(
+                    f"Parsing: {'v' + version if versions else 'latest'}/"
+                    f"{dialect.short_name}.json"
+                ),
+            )
             reports.append(
                 _report.Report.from_serialized(response.iter_lines()),
             )
-            progress.update(
-                parsing_report_progress_task,
-                description=(f"Parsing: v{version}/{dialect.short_name}.json"),
-                advance=1,
-            )
+            progress.update(task, advance=1)
 
         progress.update(
-            parsing_report_progress_task,
+            task,
             description=(
-                f"Successfully parsed all downloaded versioned "
-                f"reports of {id}!"
+                f"Successfully parsed all downloaded "
+                f"{'versioned' if versions else 'latest'} reports "
+                f"of {id} for {pretty_names_str}!"
             ),
             completed=total,
             total=total,
         )
-        await asyncio.sleep(2)
-
         return reports
 
 
 def _trend_table_for(
     id: ConnectableId,
+    versions: Set[str],
     dialects_trend: dict[Dialect, _report.Report],
 ) -> Table:
     main_table = Table(show_lines=True)
@@ -1751,10 +1959,22 @@ def _trend_table_for(
         justify="center",
     )
 
+    def add_sub_table_row(
+        sub_table: Table,
+        version: str,
+        unsuccessful: Unsuccessful,
+    ):
+        sub_table.add_row(
+            version,
+            str(len(unsuccessful.skipped)),
+            str(len(unsuccessful.errored)),
+            str(len(unsuccessful.failed)),
+        )
+
     for dialect, report in dialects_trend.items():
         test = "tests" if report.total_tests != 1 else "test"
         sub_table = Table(
-            "Versions",
+            "Version",
             "Skips",
             "Errors",
             "Failures",
@@ -1762,13 +1982,15 @@ def _trend_table_for(
             show_edge=False,
         )
 
-        for version, unsuccessful in report.latest_to_oldest():
-            sub_table.add_row(
-                version,
-                str(len(unsuccessful.skipped)),
-                str(len(unsuccessful.errored)),
-                str(len(unsuccessful.failed)),
-            )
+        if versions:
+            for version, unsuccessful in report.latest_to_oldest():
+                add_sub_table_row(sub_table, version, unsuccessful)
+        else:
+            implementation = report.implementations.get(id)
+            if implementation:
+                version = implementation.version or "latest"
+                unsuccessful = report.unsuccessful(id)
+                add_sub_table_row(sub_table, version, unsuccessful)
 
         main_table.add_row(dialect.pretty_name, sub_table)
 
@@ -1777,29 +1999,46 @@ def _trend_table_for(
 
 def _trend_table_in_markdown_for(
     id: ConnectableId,
+    versions: Set[str],
     dialects_trend: dict[Dialect, _report.Report],
 ) -> str:
     rows_data: list[list[str]] = []
     final_content = ""
 
     inner_table_columns = [
-        "Versions",
+        "Version",
         "Skips",
         "Errors",
         "Failures",
     ]
 
+    def create_inner_table_row(
+        version: str,
+        unsuccessful: Unsuccessful,
+    ):
+        return [
+            version,
+            str(len(unsuccessful.skipped)),
+            str(len(unsuccessful.errored)),
+            str(len(unsuccessful.failed)),
+        ]
+
     for dialect, report in dialects_trend.items():
         inner_table_rows: list[list[str]] = []
-        for version, unsuccessful in report.latest_to_oldest():
-            inner_table_rows.append(
-                [
-                    version,
-                    str(len(unsuccessful.skipped)),
-                    str(len(unsuccessful.errored)),
-                    str(len(unsuccessful.failed)),
-                ],
-            )
+        if versions:
+            for version, unsuccessful in report.latest_to_oldest():
+                inner_table_rows.append(
+                    create_inner_table_row(version, unsuccessful),
+                )
+        else:
+            implementation = report.implementations.get(id)
+            if implementation:
+                version = implementation.version or "latest"
+                unsuccessful = report.unsuccessful(id)
+                inner_table_rows.append(
+                    create_inner_table_row(version, unsuccessful),
+                )
+
         inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
             inner_table_rows,
@@ -1807,26 +2046,27 @@ def _trend_table_in_markdown_for(
         row_data = [dialect.pretty_name, inner_markdown_table]
         rows_data.append(row_data)
 
-    for idx, row_data in enumerate(rows_data):
-        final_content += f"## {idx+1}. Dialect: {row_data[0]}\n\n"
-        final_content += f"### Trend Data of {id} versions:"
+    final_content += f"## Trend Data of {id} versions:\n\n"
+    for _, row_data in enumerate(rows_data):
+        final_content += f"### Dialect: {row_data[0]}\n\n"
         final_content += f"{row_data[1]}\n"
 
     return final_content
-
 
 @subcommand
 @click.option(
     "--implementation",
     "-i",
-    "versions_of",
+    "connectable",
     required=True,
     multiple=False,
     default=None,
-    type=click.Choice(list(Implementation.known())),
+    type=_connectables.ClickParam(),
     metavar="IMPLEMENTATION",
-    callback=lambda _, __, id: (  # type: ignore[reportUnknownLambdaType]
-        (id, asyncio.run(Implementation.download_versions_of(id)))  # type: ignore[reportUnknownArgumentType]
+    help=(
+        "A connectable ID for a JSON Schema implementation supported "
+        "by Bowtie. Run `bowtie filter-implementations` for the full "
+        "list of supported implementations."
     ),
 )
 @click.option(
@@ -1838,73 +2078,101 @@ def _trend_table_in_markdown_for(
     type=_Dialect(),
     metavar="URI_OR_NAME",
     help=(
-        "A URI or shortname identifying the dialect of each test. "
-        f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}. "
-        "If none specified then defaults to all known dialects."
+        "A URI or shortname identifying the dialect of the test suite "
+        "you wish to see the trend data for. Possible shortnames include: "
+        f"{POSSIBLE_DIALECT_SHORTNAMES}. If none specified then defaults "
+        "to all known dialects."
     ),
 )
 @format_option()
 def trend(
-    versions_of: tuple[ConnectableId, Set[str] | None],
+    connectable: Connectable,
     dialects: Iterable[Dialect],
     format: _F,
 ):
-    id, versions = versions_of
-    serializable: dict[str, dict[str, dict[str, int]]] = {}
+    """
+    Show trend data of an implementation across its multiple versions.
+    """
+    id = connectable.to_terse()
+    versions = asyncio.run(download_versions_of(id))
 
+    downloaded_reports = asyncio.run(
+        download_reports_for(id, versions, dialects),
+    )
+    if all(
+        response is None
+        for _, _, response in downloaded_reports
+    ):
+        click.echo(
+            f"None of the versions of {id} "
+            "support your specified dialect(s).",
+        )
+        return
+
+    parsed_reports = asyncio.run(
+        parse_reports_for(
+            id,
+            versions,
+            dialects,
+            downloaded_reports,
+        ),
+    )
     if versions:
-        downloaded_reports = asyncio.run(
-            Implementation.download_reports_for(id, versions, dialects),
+        combine_versioned_reports_for = (
+            _report.Report.combine_versioned_reports_for
         )
 
-        if all(response is None for _, _, response in downloaded_reports):
-            click.echo(
-                f"None of the versions of {id} "
-                "support your specified dialect(s).",
-            )
-            return
-        else:
-            parsed_reports = asyncio.run(
-                parse_versioned_reports_for(id, downloaded_reports),
-            )
-
-            dialects_trend = {
-                dialect: combined_report
-                for dialect in dialects
-                if (
-                    combined_report := _report.Report.combine_reports_for_same_dialect_suite(
-                        parsed_reports,
-                        dialect,
-                    )
+        dialects_trend = {
+            dialect: combined_versions_report
+            for dialect in dialects
+            if (
+                combined_versions_report := combine_versioned_reports_for(
+                    parsed_reports,
+                    dialect,
                 )
-            }
+            ) and not combined_versions_report.is_empty
+        }
+    else:
+        dialects_trend = {
+            dialect: report
+            for dialect in dialects
+            for report in parsed_reports
+            if report.metadata.dialect == dialect
+        }
 
-            match format:
-                case "json":
-                    for dialect, report in dialects_trend.items():
-                        serializable[str(dialect.uri)] = {
-                            version: {
-                                "skipped": len(unsuccessful.skipped),
-                                "errored": len(unsuccessful.errored),
-                                "failed": len(unsuccessful.failed),
-                            }
-                            for version, unsuccessful in report.latest_to_oldest()
-                        }
-                case "pretty":
-                    console.Console().print(
-                        _trend_table_for(id, dialects_trend),
-                    )
-                case "markdown":
-                    console.Console().print(
-                        _trend_table_in_markdown_for(id, dialects_trend),
-                    )
+    serializable: dict[str, dict[str, dict[str, int]]] = {}
+    match format:
+        case "json":
+            def add_to_serializable(
+                uri: URL,
+                version: str,
+                unsuccessful: Unsuccessful,
+            ):
+                serializable.setdefault(str(uri), {})[version] = {
+                    "skipped": len(unsuccessful.skipped),
+                    "errored": len(unsuccessful.errored),
+                    "failed": len(unsuccessful.failed),
+                }
 
-        if format == "json":
-            if len(serializable) == 1:
-                (output,) = serializable.values()
-            else:
-                output = serializable
-            click.echo(json.dumps(output, indent=2))
+            for dialect, report in dialects_trend.items():
+                if versions:
+                    for version, unsuccessful in report.latest_to_oldest():
+                        add_to_serializable(dialect.uri, version, unsuccessful)
+                else:
+                    implementation = report.implementations.get(id)
+                    if implementation:
+                        version = implementation.version or "latest"
+                        unsuccessful = report.unsuccessful(id)
+                        add_to_serializable(dialect.uri, version, unsuccessful)
+            click.echo(json.dumps(serializable, indent=2))
+        case "pretty":
+            console.Console().print(
+                _trend_table_for(id, versions, dialects_trend),
+            )
+        case "markdown":
+            console.Console().print(
+                _trend_table_in_markdown_for(id, versions, dialects_trend),
+            )
 
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]

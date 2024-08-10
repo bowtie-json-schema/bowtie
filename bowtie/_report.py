@@ -340,7 +340,7 @@ class Report:
                 versioned_report.metadata.implementations.items()
             )
             implementations[version_id] = version_info
-            (version_results,) = versioned_report._results.values()
+            version_results = versioned_report._results[version_id]
             results = results.insert(version_id, version_results)
 
         return cls(
