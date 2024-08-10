@@ -308,6 +308,7 @@ def test_ne_different_results():
 
     assert Report.from_input(data) != Report.from_input(different_result)
 
+
 def test_eq_combine_different_versions_of_an_implementation():
     BAZ_V1_2020_RUN = RunMetadata(
         dialect=DIALECT_2020,
@@ -416,6 +417,7 @@ def test_eq_combine_different_versions_of_an_implementation():
         ],
         dialect=DIALECT_2020,
     ) == Report.from_input(combined)
+
 
 @given(dialect=known_dialects)
 @settings(suppress_health_check=[HealthCheck.too_slow])
