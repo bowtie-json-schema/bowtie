@@ -57,5 +57,5 @@ describe.each(testCases)(
 
       expect(renderedSvg?.innerHTML).toBe(expectedSvg?.innerHTML);
     });
-  }
+  },
 );
