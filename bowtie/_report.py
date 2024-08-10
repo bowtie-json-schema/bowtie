@@ -52,32 +52,6 @@ class MissingFooter(InvalidReport):
     """
 
 
-class CaseMismatchInSameSuiteReports(Exception):
-    """
-    Two reports for the same dialect suite had some Case mismatch in them.
-    """
-
-
-class SeqResultMismatchInSameSuiteReports(Exception):
-    """
-    Two reports for the same dialect suite had some SeqResult mismatch.
-
-    **Condition to that it was the same ConnectableId (i.e. same implementation
-    and its same version) in both the reports, yet there was some mismatch in
-    its SeqResults.**
-    """
-
-
-class ImplementationInfoMismatchInSameSuiteReports(Exception):
-    """
-    Two reports for the same dialect suite had an ImplementationInfo mismatch.
-
-    **Condition to that it was the same ConnectableId (i.e. same implementation
-    and its same version) in both the reports, yet there was some mismatch in
-    its metadata/info.**
-    """
-
-
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
     return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
 

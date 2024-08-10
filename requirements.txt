@@ -67,8 +67,6 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-packaging==24.1
-    # via bowtie-json-schema (pyproject.toml)
 psutil==6.0.0
     # via pyperf
 pycparser==2.22
