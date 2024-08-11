@@ -1449,7 +1449,6 @@ def filter_benchmarks(
     )
     for file in files:
         console.Console().file.write(f"{file}\n")
-        console.Console().file.write("\n")
 
 
 LANGUAGE_ALIASES = {
