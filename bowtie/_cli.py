@@ -1985,11 +1985,10 @@ def _trend_table_for(
             for version, unsuccessful in report.latest_to_oldest():
                 add_sub_table_row(sub_table, version, unsuccessful)
         else:
-            implementation = report.implementations.get(id)
-            if implementation:
-                version = implementation.version or "latest"
-                unsuccessful = report.unsuccessful(id)
-                add_sub_table_row(sub_table, version, unsuccessful)
+            implementation = report.implementations[id]
+            version = implementation.version or "latest"
+            unsuccessful = report.unsuccessful(id)
+            add_sub_table_row(sub_table, version, unsuccessful)
 
         main_table.add_row(dialect.pretty_name, sub_table)
 
@@ -2030,13 +2029,12 @@ def _trend_table_in_markdown_for(
                     create_inner_table_row(version, unsuccessful),
                 )
         else:
-            implementation = report.implementations.get(id)
-            if implementation:
-                version = implementation.version or "latest"
-                unsuccessful = report.unsuccessful(id)
-                inner_table_rows.append(
-                    create_inner_table_row(version, unsuccessful),
-                )
+            implementation = report.implementations[id]
+            version = implementation.version or "latest"
+            unsuccessful = report.unsuccessful(id)
+            inner_table_rows.append(
+                create_inner_table_row(version, unsuccessful),
+            )
 
         inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
@@ -2137,6 +2135,7 @@ def trend(
             for dialect in dialects
             for report in parsed_reports
             if report.metadata.dialect == dialect
+            and report.implementations.get(id)
         }
 
     match format:
@@ -2159,11 +2158,10 @@ def trend(
                     for version, unsuccessful in report.latest_to_oldest():
                         add_to_serializable(dialect.uri, version, unsuccessful)
                 else:
-                    implementation = report.implementations.get(id)
-                    if implementation:
-                        version = implementation.version or "latest"
-                        unsuccessful = report.unsuccessful(id)
-                        add_to_serializable(dialect.uri, version, unsuccessful)
+                    implementation = report.implementations[id]
+                    version = implementation.version or "latest"
+                    unsuccessful = report.unsuccessful(id)
+                    add_to_serializable(dialect.uri, version, unsuccessful)
 
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
