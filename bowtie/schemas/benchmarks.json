@@ -10,15 +10,32 @@
     },
     {
       "type": "object",
-      "required": ["name", "description", "benchmarks"],
+      "required": [
+        "name",
+        "benchmark_type",
+        "dialects_supported",
+        "description",
+        "benchmarks"
+      ],
       "properties": {
         "name": {
           "type": "string",
           "description": "The name of the benchmark."
         },
+        "benchmark_type": {
+          "type": "string",
+          "description": "The type of the benchmark."
+        },
         "description": {
           "type": "string",
           "description": "The description of what the benchmark does."
+        },
+        "dialects_supported": {
+          "type": "array",
+          "description": "An array of supported dialects by the benchmark.",
+          "items": {
+            "$ref": "tag:bowtie.report,2024:models:dialect:uri"
+          }
         },
         "benchmarks": {
           "type": "array",
