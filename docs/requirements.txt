@@ -18,7 +18,7 @@ attrs==24.2.0
     #   bowtie-json-schema
     #   jsonschema
     #   referencing
-babel==2.15.0
+babel==2.16.0
     # via sphinx
 beautifulsoup4==4.12.3
     # via furo
@@ -78,7 +78,7 @@ jsonschema-lexer==0.2.1
     # via bowtie-json-schema
 jsonschema-specifications==2023.12.1
     # via jsonschema
-lxml==5.2.2
+lxml==5.3.0
     # via sphinx-json-schema-spec
 markdown-it-py==3.0.0
     # via
