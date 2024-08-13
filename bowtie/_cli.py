@@ -1114,7 +1114,7 @@ def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
         return "all known dialects"
 
     if len(list(dialects)) == 1:
-       return next(iter(dialects)).pretty_name
+        return next(iter(dialects)).pretty_name
 
     pretty_names = [dialect.pretty_name for dialect in dialects]
     pretty_names_str = ", ".join(pretty_names[:-1])
@@ -2052,6 +2052,7 @@ def _trend_table_in_markdown_for(
 
     return final_content
 
+
 class _VersionedReportsTar(click.File):
     """
     Select a tar containing previously produced versioned Bowtie reports.
@@ -2078,8 +2079,7 @@ class _VersionedReportsTar(click.File):
                 members = tar.getmembers()
 
                 if not any(
-                    member.name.startswith(f"./{id}/")
-                    for member in members
+                    member.name.startswith(f"./{id}/") for member in members
                 ):
                     STDERR.print(
                         f"Couldn't find a '{id}' directory in {input.name}.",
@@ -2117,7 +2117,8 @@ class _VersionedReportsTar(click.File):
                     if member.isdir()
                     and (
                         member.name.removeprefix(f"./{id}/").removeprefix("v")
-                    ) in versions
+                    )
+                    in versions
                 ]
                 if not versions_dirs:
                     STDERR.print(
@@ -2155,6 +2156,7 @@ class _VersionedReportsTar(click.File):
         except tarfile.TarError:
             STDERR.print(f"Failed to process {input.name}.")
             ctx.exit(EX.DATAERR)
+
 
 @subcommand
 @click.option(
@@ -2197,10 +2199,13 @@ class _VersionedReportsTar(click.File):
 def trend(
     connectable: Connectable,
     dialects: Iterable[Dialect],
-    versioned_reports_tar: tuple[
-        frozenset[str],
-        Iterable[tuple[str, Dialect, IO[Any] | None]],
-    ] | None,
+    versioned_reports_tar: (
+        tuple[
+            frozenset[str],
+            Iterable[tuple[str, Dialect, IO[Any] | None]],
+        ]
+        | None
+    ),
     format: _F,
 ):
     """
@@ -2209,6 +2214,7 @@ def trend(
     id = connectable.to_terse()
 
     if not versioned_reports_tar:
+
         async def download_versions_and_reports_for(
             id: ConnectableId,
             dialects: Iterable[Dialect],
