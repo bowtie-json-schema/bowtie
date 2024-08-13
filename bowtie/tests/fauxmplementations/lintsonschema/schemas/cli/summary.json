@@ -80,6 +80,8 @@
           {
             "description": "Unsuccessful tests for a specific implementation.",
 
+            "$id": "tag:bowtie.report,2024:cli:summary:unsuccessfulTests",
+
             "type": "object",
 
             "additionalProperties": false,
