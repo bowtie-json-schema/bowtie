@@ -92,19 +92,16 @@
       "additionalProperties": false,
       "required": ["failed", "errored", "skipped"],
       "properties": {
-        "failed": { "$ref": "#count" },
-        "errored": { "$ref": "#count" },
-        "skipped": { "$ref": "#count" }
-      },
-
-      "$defs": {
-        "count": {
-          "description": "The total number of tests with a specific outcome.",
-
-          "type": "integer",
-          "minimum": 0
-        }
+        "failed": { "$ref": "#/$defs/count" },
+        "errored": { "$ref": "#/$defs/count" },
+        "skipped": { "$ref": "#/$defs/count" }
       }
+    },
+    "count": {
+      "description": "The total number of tests with a specific outcome.",
+
+      "type": "integer",
+      "minimum": 0
     }
   }
 }
