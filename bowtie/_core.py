@@ -5,13 +5,7 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Protocol,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
 

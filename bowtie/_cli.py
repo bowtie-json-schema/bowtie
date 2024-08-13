@@ -10,12 +10,13 @@ from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol
+from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol, cast
 import asyncio
 import json
 import logging
 import os
 import sys
+import tarfile
 
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
@@ -40,6 +41,7 @@ import structlog.typing
 
 from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
+from bowtie._connectables import Connectable
 from bowtie._core import (
     Dialect,
     Example,
@@ -73,7 +75,7 @@ if TYPE_CHECKING:
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import AnyTestResult, SeqResult
-    from bowtie._connectables import Connectable, ConnectableId
+    from bowtie._connectables import ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
 
@@ -1108,15 +1110,15 @@ POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
 
 
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
-    num_dialects = len(list(dialects))
+    if list(dialects) == list(Dialect.known()):
+        return "all known dialects"
+
+    if len(list(dialects)) == 1:
+       return next(iter(dialects)).pretty_name
+
     pretty_names = [dialect.pretty_name for dialect in dialects]
-    if num_dialects == 1:
-        pretty_names_str = pretty_names[0]
-    elif num_dialects == len(list(Dialect.known())):
-        pretty_names_str = "all known dialects"
-    else:
-        pretty_names_str = ", ".join(pretty_names[:-1])
-        pretty_names_str += " and " + pretty_names[-1]
+    pretty_names_str = ", ".join(pretty_names[:-1])
+    pretty_names_str += " and " + pretty_names[-1]
     return pretty_names_str
 
 
@@ -1876,11 +1878,11 @@ async def download_reports_for(
             return responses
 
 
-async def parse_reports_for(
+def parse_reports_for(
     id: ConnectableId,
     versions: Set[str],
     dialects: Iterable[Dialect],
-    downloaded: Iterable[tuple[str, Dialect, Response | None]],
+    downloaded: Iterable[tuple[str, Dialect, Response | IO[Any] | None]],
 ) -> Iterable[_report.Report]:
     pretty_names_str = pretty_names_str_for(dialects)
 
@@ -1897,12 +1899,7 @@ async def parse_reports_for(
         transient=True,
     )
 
-    downloaded = [
-        (_, __, response)
-        for _, __, response in downloaded
-        if response is not None
-    ]
-    total = len(downloaded)
+    total = len(list(downloaded))
 
     task = progress.add_task(
         description=(
@@ -1924,9 +1921,14 @@ async def parse_reports_for(
                     f"{dialect.short_name}.json"
                 ),
             )
-            reports.append(
-                _report.Report.from_serialized(response.iter_lines()),
-            )
+            if not response:
+                reports.append(_report.Report.empty(dialect=dialect))
+            elif isinstance(response, httpx.Response):
+                reports.append(
+                    _report.Report.from_serialized(response.iter_lines()),
+                )
+            else:
+                reports.append(_report.Report.from_serialized(response))
             progress.update(task, advance=1)
 
         progress.update(
@@ -2050,6 +2052,109 @@ def _trend_table_in_markdown_for(
 
     return final_content
 
+class _VersionedReportsTar(click.File):
+    """
+    Select a tar containing previously produced versioned Bowtie reports.
+    """
+
+    name = "versioned_reports_tar"
+    mode = "rb"
+
+    def convert(  # type: ignore[reportIncompatibleMethodOverride]
+        self,
+        value: str | PathLike[str] | IO[Any],
+        param: click.Parameter | None,
+        ctx: click.Context,
+    ) -> tuple[frozenset[str], Iterable[tuple[str, Dialect, IO[Any] | None]]]:
+        input = super().convert(value, param, ctx)
+
+        connectable = cast(Connectable, ctx.params.get("connectable"))
+        id = connectable.to_terse()
+
+        dialects = cast(Iterable[Dialect] | None, ctx.params.get("dialects"))
+
+        try:
+            with tarfile.open(fileobj=input) as tar:
+                members = tar.getmembers()
+
+                if not any(
+                    member.name.startswith(f"./{id}/")
+                    for member in members
+                ):
+                    STDERR.print(
+                        f"Couldn't find a '{id}' directory in {input.name}.",
+                    )
+                    ctx.exit(EX.DATAERR)
+
+                matrix_versions_found = False
+                versions: frozenset[str] = frozenset()
+                for member in members:
+                    if (
+                        member.name.removeprefix(f"./{id}/")
+                        == "matrix-versions.json"
+                    ):
+                        matrix_versions_found = True
+                        try:
+                            versions_content = tar.extractfile(member.name)
+                            if versions_content:
+                                versions = json.load(versions_content)
+                        except KeyError:
+                            STDERR.print(
+                                f"Failed to extract matrix-versions.json file "
+                                f"from {id} directory of {input.name}.",
+                            )
+                            ctx.exit(EX.DATAERR)
+                if not matrix_versions_found:
+                    STDERR.print(
+                        f"Couldn't find a 'matrix-versions.json' file in {id} "
+                        f"directory of {input.name}.",
+                    )
+                    ctx.exit(EX.DATAERR)
+
+                versions_dirs = [
+                    member.name
+                    for member in members
+                    if member.isdir()
+                    and (
+                        member.name.removeprefix(f"./{id}/").removeprefix("v")
+                    ) in versions
+                ]
+                if not versions_dirs:
+                    STDERR.print(
+                        f"Couldn't find any versions sub-directories in {id} "
+                        f"directory of {input.name} as per listed by its "
+                        "matrix-versions.json file.",
+                    )
+                    ctx.exit(EX.DATAERR)
+
+                reports: Iterable[tuple[str, Dialect, IO[Any] | None]] = []
+                for version in versions:
+                    for dialect in dialects or Dialect.known():
+                        report_file = (
+                            f"./{id}/v{version}/{dialect.short_name}.json"
+                        )
+                        try:
+                            report_content = tar.extractfile(report_file)
+                            if report_content:
+                                reports.append(
+                                    (
+                                        version,
+                                        dialect,
+                                        report_content,
+                                    ),
+                                )
+                        except KeyError:
+                            reports.append(
+                                (
+                                    version,
+                                    dialect,
+                                    None,
+                                ),
+                            )
+                return versions, reports
+        except tarfile.TarError:
+            STDERR.print(f"Failed to process {input.name}.")
+            ctx.exit(EX.DATAERR)
 
 @subcommand
 @click.option(
@@ -2082,48 +2187,70 @@ def _trend_table_in_markdown_for(
         "to all known dialects."
     ),
 )
+@click.argument(
+    "versioned_reports_tar",
+    default=None,
+    type=_VersionedReportsTar(mode="rb"),
+    required=False,
+)
 @format_option()
 def trend(
     connectable: Connectable,
     dialects: Iterable[Dialect],
+    versioned_reports_tar: tuple[
+        frozenset[str],
+        Iterable[tuple[str, Dialect, IO[Any] | None]],
+    ] | None,
     format: _F,
 ):
     """
     Show trend data of an implementation across its multiple versions.
     """
     id = connectable.to_terse()
-    versions = asyncio.run(download_versions_of(id))
 
-    downloaded_reports = asyncio.run(
-        download_reports_for(id, versions, dialects),
-    )
-    if all(response is None for _, _, response in downloaded_reports):
+    if not versioned_reports_tar:
+        async def download_versions_and_reports_for(
+            id: ConnectableId,
+            dialects: Iterable[Dialect],
+        ):
+            versions = await download_versions_of(id)
+            downloaded_versioned_reports = await download_reports_for(
+                id,
+                versions,
+                dialects,
+            )
+            return versions, downloaded_versioned_reports
+
+        versions, raw_versioned_reports = asyncio.run(
+            download_versions_and_reports_for(id, dialects),
+        )
+    else:
+        versions, raw_versioned_reports = versioned_reports_tar
+
+    if all(response is None for _, _, response in raw_versioned_reports):
         click.echo(
             f"None of the versions of {id} "
             f"support {pretty_names_str_for(dialects)}.",
         )
         return
 
-    parsed_reports = asyncio.run(
-        parse_reports_for(
-            id,
-            versions,
-            dialects,
-            downloaded_reports,
-        ),
+    parsed_versioned_reports = parse_reports_for(
+        id,
+        versions,
+        dialects,
+        raw_versioned_reports,
     )
 
     if versions:
         combine_versioned_reports_for = (
             _report.Report.combine_versioned_reports_for
         )
-
         dialects_trend = {
             dialect: combined_versions_report
             for dialect in dialects
             if (
                 combined_versions_report := combine_versioned_reports_for(
-                    parsed_reports,
+                    parsed_versioned_reports,
                     dialect,
                 )
             )
@@ -2133,8 +2260,9 @@ def trend(
         dialects_trend = {
             dialect: report
             for dialect in dialects
-            for report in parsed_reports
-            if report.metadata.dialect == dialect
+            for report in parsed_versioned_reports
+            if not report.is_empty
+            and report.metadata.dialect == dialect
             and report.implementations.get(id)
         }
 
