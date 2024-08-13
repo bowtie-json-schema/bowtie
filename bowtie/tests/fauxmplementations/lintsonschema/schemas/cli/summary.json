@@ -77,32 +77,39 @@
         "unevaluatedItems": false,
         "prefixItems": [
           { "$ref": "tag:bowtie.report,2024:models:implementation:id" },
-          {
-            "description": "Unsuccessful tests for a specific implementation.",
-
-            "type": "object",
-
-            "additionalProperties": false,
-            "required": ["failed", "errored", "skipped"],
-            "properties": {
-              "failed": { "$ref": "#count" },
-              "errored": { "$ref": "#count" },
-              "skipped": { "$ref": "#count" }
-            },
-
-            "$defs": {
-              "count": {
-                "description": "The total number of tests with a specific outcome.",
-
-                "$anchor": "count",
-
-                "type": "integer",
-                "minimum": 0
-              }
-            }
-          }
+          { "$ref": "#unsucessfulTests" }
         ]
       }
     }
-  ]
+  ],
+  "$defs": {
+    "unsucessfulTests": {
+      "description": "Unsuccessful tests for a specific implementation.",
+
+      "$anchor": "unsucessfulTests",
+
+      "$id": "tag:bowtie.report,2024:cli:summary:unsucessfulTests",
+
+      "type": "object",
+
+      "additionalProperties": false,
+      "required": ["failed", "errored", "skipped"],
+      "properties": {
+        "failed": { "$ref": "#count" },
+        "errored": { "$ref": "#count" },
+        "skipped": { "$ref": "#count" }
+      },
+
+      "$defs": {
+        "count": {
+          "description": "The total number of tests with a specific outcome.",
+
+          "$anchor": "count",
+
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
 }
