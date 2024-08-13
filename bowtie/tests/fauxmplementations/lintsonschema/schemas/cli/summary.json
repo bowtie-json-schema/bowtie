@@ -92,9 +92,9 @@
       "additionalProperties": false,
       "required": ["failed", "errored", "skipped"],
       "properties": {
-        "failed": { "$ref": "#/$defs/count" },
-        "errored": { "$ref": "#/$defs/count" },
-        "skipped": { "$ref": "#/$defs/count" }
+        "failed": { "$ref": "#count" },
+        "errored": { "$ref": "#count" },
+        "skipped": { "$ref": "#count" }
       }
     },
     "count": {
