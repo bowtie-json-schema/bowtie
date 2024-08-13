@@ -92,15 +92,13 @@
       "additionalProperties": false,
       "required": ["failed", "errored", "skipped"],
       "properties": {
-        "failed": { "$ref": "#count" },
-        "errored": { "$ref": "#count" },
-        "skipped": { "$ref": "#count" }
+        "failed": { "$ref": "#/$defs/count" },
+        "errored": { "$ref": "#/$defs/count" },
+        "skipped": { "$ref": "#/$defs/count" }
       }
     },
     "count": {
       "description": "The total number of tests with a specific outcome.",
-
-      "$anchor": "count",
 
       "type": "integer",
       "minimum": 0
