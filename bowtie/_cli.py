@@ -2090,7 +2090,9 @@ class _VersionedReportsTar(click.File):
                     TextColumn("[bold blue]{task.description}"),
                     SpinnerColumn(finished_text=""),
                     BarColumn(bar_width=None),
-                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    TextColumn(
+                        "[progress.percentage]{task.percentage:>3.0f}%"
+                    ),
                     "•",
                     MofNCompleteColumn(),
                     "•",
