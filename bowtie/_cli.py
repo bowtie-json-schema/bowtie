@@ -1110,11 +1110,13 @@ VALIDATE = click.option(
 POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
 
 inflect_engine = InflectEngine()
+
+
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
     if list(dialects) == list(Dialect.known()):
         return "all known dialects"
 
-    return inflect_engine.join([dialect.pretty_name for dialect in dialects]) # type: ignore[reportArgumentType]
+    return inflect_engine.join([dialect.pretty_name for dialect in dialects])  # type: ignore[reportArgumentType]
 
 
 def dialect_option(
