@@ -8,29 +8,6 @@
 
   "type": "object",
 
-  "$defs": {
-    "count": {
-      "type": "integer",
-
-      "$anchor": "count",
-
-      "minimum": 0
-    },
-    "unsuccessfulTests": {
-      "type": "object",
-
-      "$anchor": "unsuccessfulTests",
-
-      "properties": {
-        "skipped": { "$ref": "#count" },
-        "errored": { "$ref": "#count" },
-        "failed": { "$ref": "#count" }
-      },
-      "required": ["skipped", "errored", "failed"],
-      "additionalProperties": false
-    }
-  },
-
   "minProperties": 1,
   "propertyNames": {
     "$ref": "tag:bowtie.report,2024:models:dialect:uri"
@@ -41,7 +18,7 @@
       "$ref": "tag:bowtie.report,2024:models:implementation:version"
     },
     "additionalProperties": {
-      "$ref": "#unsuccessfulTests"
+      "$ref": "tag:bowtie.report,2024:cli:summary:unsuccessfulTests"
     }
   }
 }
