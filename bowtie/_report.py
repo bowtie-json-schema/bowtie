@@ -323,8 +323,8 @@ class Report:
                 )
                 implementations[version_id] = version_info
                 results = results.insert(
-                    version_id, 
-                    versioned_report._results[version_id]
+                    version_id,
+                    versioned_report._results[version_id],
                 )
 
         return cls(
