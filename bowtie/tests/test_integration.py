@@ -2523,6 +2523,7 @@ async def test_summary_show_failures_json(tmp_path):
         "failures",
         stdin=validate_stdout,
         json=True,
+        exit_code=EX.DATAERR,
     )
 
     assert (await command_validator("summary")).validated(jsonout) == [
@@ -2564,6 +2565,7 @@ async def test_summary_show_failures_markdown(tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        exit_code=EX.DATAERR,
     )
     assert stderr == ""
     assert stdout == dedent(
@@ -2664,6 +2666,7 @@ async def test_summary_failures_valid_markdown(tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        exit_code=EX.DATAERR,
     )
     parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
     tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)

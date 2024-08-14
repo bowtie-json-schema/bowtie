@@ -611,6 +611,14 @@ def summary(report: _report.Report, format: _F, show: str):
     """
     if show == "failures":
         results = report.worst_to_best()
+        exit_code = (
+            EX.DATAERR
+            if any(
+                unsuccessful.failed or unsuccessful.errored
+                for _, __, unsuccessful in results
+            )
+            else 0
+        )
         to_table = _failure_table
         to_markdown_table = _failure_table_in_markdown
 
@@ -623,6 +631,7 @@ def summary(report: _report.Report, format: _F, show: str):
 
     else:
         results = report.cases_with_results()
+        exit_code = 0
         to_table = _validation_results_table
         to_markdown_table = _validation_results_table_in_markdown
 
@@ -657,6 +666,8 @@ def summary(report: _report.Report, format: _F, show: str):
         case "markdown":
             table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
+
+    return exit_code
 
 
 def _failure_table(
