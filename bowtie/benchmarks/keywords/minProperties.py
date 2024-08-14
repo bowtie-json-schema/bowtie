@@ -4,18 +4,20 @@ import uuid
 from url.url import URL
 
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
+from bowtie._core import Dialect
 
 
 def get_benchmark():
     name = "minProperties"
+    benchmark_type = "keyword"
     description = (
         "A benchmark for measuring performance of the implementation "
         "for the minProperties keyword."
     )
-
     max_num_properties = 100000
-    num_properties = 1000
+    varying_parameter = "No. of minProperties Needed"
 
+    num_properties = 1000
     benchmarks = []
     while num_properties <= max_num_properties:
         valid_object = _create_object_with_num_properties(num_properties)
@@ -58,9 +60,18 @@ def get_benchmark():
 
     return BenchmarkGroup(
         name=name,
+        benchmark_type=benchmark_type,
         description=description,
+        dialects_supported=[
+            Dialect.from_str("https://json-schema.org/draft/2020-12/schema"),
+            Dialect.from_str("https://json-schema.org/draft/2019-09/schema"),
+            Dialect.from_str("http://json-schema.org/draft-07/schema#"),
+            Dialect.from_str("http://json-schema.org/draft-06/schema#"),
+            Dialect.from_str("http://json-schema.org/draft-04/schema#"),
+        ],
         benchmarks=benchmarks,
         uri=URL.parse(Path(__file__).absolute().as_uri()),
+        varying_parameter=varying_parameter,
     )
 
 
