@@ -11,14 +11,20 @@
   "$defs": {
     "count": {
       "type": "integer",
+
+      "$anchor": "count",
+
       "minimum": 0
     },
-    "compliance": {
+    "unsuccessfulTests": {
       "type": "object",
+
+      "$anchor": "unsuccessfulTests",
+
       "properties": {
-        "skipped": { "$ref": "#/$defs/count" },
-        "errored": { "$ref": "#/$defs/count" },
-        "failed": { "$ref": "#/$defs/count" }
+        "skipped": { "$ref": "#count" },
+        "errored": { "$ref": "#count" },
+        "failed": { "$ref": "#count" }
       },
       "required": ["skipped", "errored", "failed"],
       "additionalProperties": false
@@ -35,7 +41,7 @@
       "$ref": "tag:bowtie.report,2024:models:implementation:version"
     },
     "additionalProperties": {
-      "$ref": "#/$defs/compliance"
+      "$ref": "#unsuccessfulTests"
     }
   }
 }
