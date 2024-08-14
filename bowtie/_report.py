@@ -322,8 +322,10 @@ class Report:
                     versioned_report.metadata.implementations.items()
                 )
                 implementations[version_id] = version_info
-                version_results = versioned_report._results[version_id]
-                results = results.insert(version_id, version_results)
+                results = results.insert(
+                    version_id, 
+                    versioned_report._results[version_id]
+                )
 
         return cls(
             cases=cases,
