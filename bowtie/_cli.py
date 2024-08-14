@@ -10,7 +10,7 @@ from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, Literal, ParamSpec, Protocol, cast
+from typing import IO, TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, cast
 import asyncio
 import json
 import logging
@@ -68,7 +68,7 @@ if TYPE_CHECKING:
         Set,
     )
     from os import PathLike
-    from typing import IO, Any, TextIO
+    from typing import TextIO
 
     from click.decorators import FC
     from httpx import Response
@@ -1713,19 +1713,31 @@ async def download_versions_of(id: ConnectableId) -> Set[str]:
         transient=True,
     )
     task = progress.add_task(
-        description=f"Fetching versions metadata of {id}",
+        description=f"Fetching versions of {id}",
         total=None,
     )
 
     async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            with progress:
+        with progress:
+            try:
                 url = (
                     HOMEPAGE / "implementations" / id / "matrix-versions.json"
                 )
                 response = await client.get(str(url))
                 response.raise_for_status()
-
+            except httpx.HTTPStatusError as err:
+                progress.update(
+                    task,
+                    description=(
+                        f"[bold red]Could not fetch versions of "
+                        f"{id}: {err.response.status_code}"
+                    ),
+                    completed=None,
+                    total=None,
+                    advance=None,
+                )
+                return frozenset()
+            else:
                 content = response.content
                 content_length = len(content)
 
@@ -1739,25 +1751,13 @@ async def download_versions_of(id: ConnectableId) -> Set[str]:
                     advance=content_length,
                 )
                 return frozenset(json.loads(content))
-        except httpx.HTTPStatusError as err:
-            progress.update(
-                task,
-                description=(
-                    f"[bold red]Could not fetch versions metadata of "
-                    f"{id}: {err.response.status_code}"
-                ),
-                completed=None,
-                total=None,
-                advance=None,
-            )
-            return frozenset()
 
 
-async def download_reports_for(
+async def download_and_parse_reports_for(
     id: ConnectableId,
     versions: Set[str],
     dialects: Iterable[Dialect],
-) -> Iterable[tuple[str, Dialect, Response | None]]:
+) -> Iterable[tuple[str, Dialect, _report.Report]]:
     pretty_names_str = pretty_names_str_for(dialects)
 
     progress = Progress(
@@ -1779,15 +1779,15 @@ async def download_reports_for(
 
         task = progress.add_task(
             description=(
-                "Preparing to download versioned reports "
-                f"of {id} for {pretty_names_str}"
+                "Preparing to download and parse versioned "
+                f"reports of {id} for {pretty_names_str}"
             ),
             total=total_files,
         )
 
         async with httpx.AsyncClient(timeout=10) as client:
 
-            async def download_versioned_report_for(
+            async def download_and_parse_versioned_report_for(
                 version: str,
                 dialect: Dialect,
             ):
@@ -1801,27 +1801,37 @@ async def download_reports_for(
                     )
                     response = await client.get(str(url))
                     response.raise_for_status()
-
+                except httpx.HTTPStatusError:
+                    return (
+                        version,
+                        dialect,
+                        _report.Report.empty(dialect=dialect),
+                    )
+                else:
                     nonlocal actual_downloaded_files
                     actual_downloaded_files += 1
 
                     progress.update(
                         task,
                         description=(
-                            f"Attempting to download: "
+                            f"Attempting to download and parse: "
                             f"v{version}/{dialect.short_name}.json"
                         ),
                         advance=1,
                     )
-                except httpx.HTTPStatusError:
-                    return version, dialect, None
-                else:
-                    return version, dialect, response
+                    return (
+                        version,
+                        dialect,
+                        _report.Report.from_serialized(response.iter_lines()),
+                    )
 
             with progress:
                 responses = await asyncio.gather(
                     *[
-                        download_versioned_report_for(version, dialect)
+                        download_and_parse_versioned_report_for(
+                            version,
+                            dialect,
+                        )
                         for version in versions
                         for dialect in dialects
                     ],
@@ -1830,7 +1840,7 @@ async def download_reports_for(
                 progress.update(
                     task,
                     description=(
-                        "Successfully downloaded all versioned "
+                        "Successfully downloaded and parsed all versioned "
                         f"reports of {id} for {pretty_names_str}!"
                     ),
                     completed=actual_downloaded_files,
@@ -1842,106 +1852,54 @@ async def download_reports_for(
 
         task = progress.add_task(
             description=(
-                f"Preparing to download latest reports "
-                f"of {id} for {pretty_names_str}"
+                f"Preparing to download and parse latest "
+                f"reports of {id} for {pretty_names_str}"
             ),
             total=total_files,
         )
 
-        async def download_latest_report_for(dialect: Dialect):
+        async def download_and_parse_latest_report_for(dialect: Dialect):
             try:
                 response = await dialect.latest_report()
                 progress.update(
                     task,
-                    description=f"Downloading: {dialect.short_name}.json",
+                    description=(
+                        f"Attempting to download and parse: "
+                        f"{dialect.short_name}.json"
+                    ),
                     advance=1,
                 )
             except httpx.HTTPStatusError:
-                return "latest", dialect, None
+                return (
+                    "latest",
+                    dialect,
+                    _report.Report.empty(dialect=dialect),
+                )
             else:
-                return "latest", dialect, response
+                return (
+                    "latest",
+                    dialect,
+                    _report.Report.from_serialized(response.iter_lines()),
+                )
 
         with progress:
             responses = await asyncio.gather(
-                *[download_latest_report_for(dialect) for dialect in dialects],
+                *[
+                    download_and_parse_latest_report_for(dialect)
+                    for dialect in dialects
+                ],
             )
 
             progress.update(
                 task,
                 description=(
-                    f"Successfully downloaded all latest reports "
-                    f"of {id} for {pretty_names_str}"
+                    f"Successfully downloaded and parsed all latest "
+                    f"reports of {id} for {pretty_names_str}!"
                 ),
                 completed=total_files,
                 total=total_files,
             )
             return responses
-
-
-def parse_reports_for(
-    id: ConnectableId,
-    versions: Set[str],
-    dialects: Iterable[Dialect],
-    downloaded: Iterable[tuple[str, Dialect, Response | IO[Any] | None]],
-) -> Iterable[_report.Report]:
-    pretty_names_str = pretty_names_str_for(dialects)
-
-    progress = Progress(
-        TextColumn("[bold blue]{task.description}"),
-        SpinnerColumn(finished_text=""),
-        BarColumn(bar_width=None),
-        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        "•",
-        MofNCompleteColumn(),
-        "•",
-        TimeElapsedColumn(),
-        console=console.Console(),
-        transient=True,
-    )
-
-    total = len(list(downloaded))
-
-    task = progress.add_task(
-        description=(
-            f"Preparing to parse all downloaded "
-            f"{'versioned' if versions else 'latest'} reports "
-            f"of {id} for {pretty_names_str}"
-        ),
-        total=total,
-    )
-
-    reports: Iterable[_report.Report] = []
-
-    with progress:
-        for version, dialect, response in downloaded:
-            progress.update(
-                task,
-                description=(
-                    f"Parsing: {'v' + version if versions else 'latest'}/"
-                    f"{dialect.short_name}.json"
-                ),
-            )
-            if not response:
-                reports.append(_report.Report.empty(dialect=dialect))
-            elif isinstance(response, httpx.Response):
-                reports.append(
-                    _report.Report.from_serialized(response.iter_lines()),
-                )
-            else:
-                reports.append(_report.Report.from_serialized(response))
-            progress.update(task, advance=1)
-
-        progress.update(
-            task,
-            description=(
-                f"Successfully parsed all downloaded "
-                f"{'versioned' if versions else 'latest'} reports "
-                f"of {id} for {pretty_names_str}!"
-            ),
-            completed=total,
-            total=total,
-        )
-        return reports
 
 
 def _trend_table_for(
@@ -2066,7 +2024,7 @@ class _VersionedReportsTar(click.File):
         value: str | PathLike[str] | IO[Any],
         param: click.Parameter | None,
         ctx: click.Context,
-    ) -> tuple[frozenset[str], Iterable[tuple[str, Dialect, IO[Any] | None]]]:
+    ) -> tuple[frozenset[str], Iterable[tuple[str, Dialect, _report.Report]]]:
         input = super().convert(value, param, ctx)
 
         connectable = cast(Connectable, ctx.params.get("connectable"))
@@ -2128,31 +2086,80 @@ class _VersionedReportsTar(click.File):
                     )
                     ctx.exit(EX.DATAERR)
 
-                reports: Iterable[tuple[str, Dialect, IO[Any] | None]] = []
-                for version in versions:
-                    for dialect in dialects or Dialect.known():
-                        report_file = (
-                            f"./{id}/v{version}/{dialect.short_name}.json"
-                        )
-                        try:
-                            report_content = tar.extractfile(report_file)
-                            if report_content:
-                                reports.append(
+                progress = Progress(
+                    TextColumn("[bold blue]{task.description}"),
+                    SpinnerColumn(finished_text=""),
+                    BarColumn(bar_width=None),
+                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    "•",
+                    MofNCompleteColumn(),
+                    "•",
+                    TimeElapsedColumn(),
+                    console=console.Console(),
+                    transient=True,
+                )
+                dialects = dialects or Dialect.known()
+                pretty_names_str = pretty_names_str_for(dialects)
+                total_files = len(versions) * len(list(dialects))
+                task = progress.add_task(
+                    description=(
+                        f"Preparing to parse all versioned reports of "
+                        f"{id} for {pretty_names_str} found in {input.name}"
+                    ),
+                    total=total_files,
+                )
+
+                actual_parsed_files = [0]
+                versioned_reports: Iterable[
+                    tuple[str, Dialect, _report.Report]
+                ] = []
+
+                with progress:
+                    for version in versions:
+                        for dialect in dialects:
+                            report_file = (
+                                f"./{id}/v{version}/{dialect.short_name}.json"
+                            )
+                            progress.update(
+                                task,
+                                description=(
+                                    f"Attempting to parse: {report_file}"
+                                ),
+                            )
+                            try:
+                                report_content = tar.extractfile(report_file)
+                            except KeyError:
+                                versioned_reports.append(
                                     (
                                         version,
                                         dialect,
-                                        report_content,
+                                        _report.Report.empty(dialect=dialect),
                                     ),
                                 )
-                        except KeyError:
-                            reports.append(
-                                (
-                                    version,
-                                    dialect,
-                                    None,
-                                ),
-                            )
-                return versions, reports
+                            else:
+                                if report_content:
+                                    versioned_reports.append(
+                                        (
+                                            version,
+                                            dialect,
+                                            _report.Report.from_serialized(
+                                                cast(IO[Any], report_content),
+                                            ),
+                                        ),
+                                    )
+                                    actual_parsed_files[0] += 1
+                            progress.update(task, advance=1)
+                    progress.update(
+                        task,
+                        description=(
+                            f"Successfully parsed all versioned reports "
+                            f"of {id} for {pretty_names_str} found in "
+                            f"{input.name}"
+                        ),
+                        completed=actual_parsed_files[0],
+                        total=actual_parsed_files[0],
+                    )
+                    return versions, versioned_reports
         except tarfile.TarError:
             STDERR.print(f"Failed to process {input.name}.")
             ctx.exit(EX.DATAERR)
@@ -2202,7 +2209,7 @@ def trend(
     versioned_reports_tar: (
         tuple[
             frozenset[str],
-            Iterable[tuple[str, Dialect, IO[Any] | None]],
+            Iterable[tuple[str, Dialect, _report.Report]],
         ]
         | None
     ),
@@ -2215,37 +2222,32 @@ def trend(
 
     if not versioned_reports_tar:
 
-        async def download_versions_and_reports_for(
+        async def download_versions_and_parse_reports_for(
             id: ConnectableId,
             dialects: Iterable[Dialect],
         ):
             versions = await download_versions_of(id)
-            downloaded_versioned_reports = await download_reports_for(
-                id,
-                versions,
-                dialects,
+            downloaded_versioned_reports = (
+                await download_and_parse_reports_for(
+                    id,
+                    versions,
+                    dialects,
+                )
             )
             return versions, downloaded_versioned_reports
 
-        versions, raw_versioned_reports = asyncio.run(
-            download_versions_and_reports_for(id, dialects),
+        versions, versioned_reports = asyncio.run(
+            download_versions_and_parse_reports_for(id, dialects),
         )
     else:
-        versions, raw_versioned_reports = versioned_reports_tar
+        versions, versioned_reports = versioned_reports_tar
 
-    if all(response is None for _, _, response in raw_versioned_reports):
+    if all(report.is_empty for _, _, report in versioned_reports):
         click.echo(
             f"None of the versions of {id} "
             f"support {pretty_names_str_for(dialects)}.",
         )
         return
-
-    parsed_versioned_reports = parse_reports_for(
-        id,
-        versions,
-        dialects,
-        raw_versioned_reports,
-    )
 
     if versions:
         combine_versioned_reports_for = (
@@ -2256,7 +2258,7 @@ def trend(
             for dialect in dialects
             if (
                 combined_versions_report := combine_versioned_reports_for(
-                    parsed_versioned_reports,
+                    [report for _, _, report in versioned_reports],
                     dialect,
                 )
             )
@@ -2264,12 +2266,12 @@ def trend(
         }
     else:
         dialects_trend = {
-            dialect: report
+            dialect: latest_report
             for dialect in dialects
-            for report in parsed_versioned_reports
-            if not report.is_empty
-            and report.metadata.dialect == dialect
-            and report.implementations.get(id)
+            for _, _, latest_report in versioned_reports
+            if not latest_report.is_empty
+            and latest_report.metadata.dialect == dialect
+            and latest_report.implementations.get(id)
         }
 
     match format:
