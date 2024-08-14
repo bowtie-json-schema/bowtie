@@ -20,6 +20,7 @@ import tarfile
 
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
+from inflect import engine as InflectEngine
 from rich import box, console, panel
 from rich.progress import (
     BarColumn,
@@ -1108,18 +1109,12 @@ VALIDATE = click.option(
 
 POSSIBLE_DIALECT_SHORTNAMES = ", ".join(sorted(Dialect.by_alias()))
 
-
+inflect_engine = InflectEngine()
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
     if list(dialects) == list(Dialect.known()):
         return "all known dialects"
 
-    if len(list(dialects)) == 1:
-        return next(iter(dialects)).pretty_name
-
-    pretty_names = [dialect.pretty_name for dialect in dialects]
-    pretty_names_str = ", ".join(pretty_names[:-1])
-    pretty_names_str += " and " + pretty_names[-1]
-    return pretty_names_str
+    return inflect_engine.join([dialect.pretty_name for dialect in dialects]) # type: ignore[reportArgumentType]
 
 
 def dialect_option(
