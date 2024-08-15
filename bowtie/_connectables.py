@@ -14,7 +14,8 @@ import click
 
 from bowtie import _containers
 from bowtie._core import Implementation
-from bowtie._direct_connectable import Direct, NoDirectConnection
+from bowtie._direct_connectable import Direct
+from bowtie.exceptions import CannotConnect
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -56,7 +57,7 @@ def happy(id: str, **params: Any) -> Connector:
     """
     try:
         return Direct.from_id(id=id)
-    except NoDirectConnection:
+    except CannotConnect:
         return _containers.ConnectableImage(id=id, **params)
 
 

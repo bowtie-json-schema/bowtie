@@ -288,6 +288,45 @@ class Report:
             did_fail_fast=False,
         )
 
+    @classmethod
+    def combine_versioned_reports_for(
+        cls,
+        versioned_reports: Iterable[Report],
+        dialect: Dialect,
+    ) -> Report:
+        versioned_reports = [
+            versioned_report
+            for versioned_report in versioned_reports
+            if versioned_report.metadata.dialect == dialect
+        ]
+
+        if not versioned_reports:
+            return cls.empty(dialect=dialect)
+
+        results: HashTrieMap[
+            ConnectableId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap()
+        implementations: dict[ConnectableId, ImplementationInfo] = {}
+
+        for versioned_report in versioned_reports:
+            ((version_id, version_info),) = (
+                versioned_report.metadata.implementations.items()
+            )
+            implementations[version_id] = version_info
+            (version_results,) = versioned_report._results.values()
+            results = results.insert(version_id, version_results)
+
+        return cls(
+            cases=versioned_reports[0]._cases,
+            results=results,
+            metadata=RunMetadata(
+                implementations=implementations,
+                dialect=dialect,
+            ),
+            did_fail_fast=False,
+        )
+
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
@@ -327,6 +366,26 @@ class Report:
             for id, implementation in self.implementations.items()
         ]
         unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
+        return unsuccessful
+
+    def latest_to_oldest(self):
+        """
+        Versioned implementations sorted by their latest to oldest versions.
+        """
+        unsuccessful = [
+            (implementation.version, self.unsuccessful(id))
+            for id, implementation in self.implementations.items()
+            if implementation.version is not None
+        ]
+        unsuccessful.sort(
+            key=lambda version: (
+                [
+                    int(part) if part.isdigit() else part
+                    for part in version[0].split(".")
+                ]
+            ),
+            reverse=True,
+        )
         return unsuccessful
 
     def cases_with_results(

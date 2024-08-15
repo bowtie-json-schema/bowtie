@@ -18,6 +18,7 @@ from bowtie import DOCS, HOMEPAGE, REPO
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Dialect, ImplementationInfo, registry
 from bowtie._registry import E_co, Invalid, SchemaCompiler, ValidatorRegistry
+from bowtie.exceptions import CannotConnect
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -29,11 +30,6 @@ if TYPE_CHECKING:
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
-
-
-class NoDirectConnection(Exception):
-    def __str__(self):
-        return f"No direct connection can be made to {self.args[0]!r}."
 
 
 def not_yet_connected(schema: Schema, registry: SchemaRegistry):
@@ -234,7 +230,7 @@ class Direct(Generic[E_co]):
         else:
             connect = IMPLEMENTATIONS.get(id)
             if connect is None:
-                raise NoDirectConnection(id)
+                raise CannotConnect(kind=cls.kind, id=id)
         return cls(connect=connect)
 
     @classmethod

@@ -29,20 +29,23 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, _benchmarks, _connectables, _report, _suite
-from bowtie._benchmarks import BenchmarkError, BenchmarkLoadError
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
     Implementation,
-    NoSuchImplementation,
-    StartupFailed,
     Test,
     TestCase,
     convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
-from bowtie.exceptions import DialectError, UnsupportedDialect
+from bowtie.exceptions import (
+    CannotConnect,
+    DialectError,
+    NoSuchImplementation,
+    StartupFailed,
+    UnsupportedDialect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -73,6 +76,8 @@ class _EX:
 EX = _EX()
 
 STDERR = console.Console(stderr=True)
+
+STARTUP_ERRORS = (CannotConnect, NoSuchImplementation, StartupFailed)
 
 
 # rich-click's CommandGroupDict seems to be missing some covariance,
@@ -322,7 +327,7 @@ def implementation_subcommand(
                     for each in implementations:  # FIXME: respect --quiet
                         try:
                             connectable_implementation = await each
-                        except (NoSuchImplementation, StartupFailed) as error:
+                        except STARTUP_ERRORS as error:
                             exit_code |= EX.CONFIG
                             STDERR.print(error)
                             continue
@@ -606,6 +611,14 @@ def summary(report: _report.Report, format: _F, show: str):
     """
     if show == "failures":
         results = report.worst_to_best()
+        exit_code = (
+            EX.DATAERR
+            if any(
+                unsuccessful.failed or unsuccessful.errored
+                for _, __, unsuccessful in results
+            )
+            else 0
+        )
         to_table = _failure_table
         to_markdown_table = _failure_table_in_markdown
 
@@ -618,6 +631,7 @@ def summary(report: _report.Report, format: _F, show: str):
 
     else:
         results = report.cases_with_results()
+        exit_code = 0
         to_table = _validation_results_table
         to_markdown_table = _validation_results_table_in_markdown
 
@@ -652,6 +666,8 @@ def summary(report: _report.Report, format: _F, show: str):
         case "markdown":
             table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             console.Console().print(table)
+
+    return exit_code
 
 
 def _failure_table(
@@ -1406,7 +1422,7 @@ def perf(
                 format=format,
             ),
         )
-    except (BenchmarkError, BenchmarkLoadError) as err:
+    except (_benchmarks.BenchmarkError, _benchmarks.BenchmarkLoadError) as err:
         STDERR.print(err)
         return EX.DATAERR
 
@@ -1830,7 +1846,7 @@ async def _run(
         for each in starting:
             try:
                 _, implementation = await each
-            except (NoSuchImplementation, StartupFailed) as error:
+            except STARTUP_ERRORS as error:
                 exit_code |= EX.CONFIG
                 STDERR.print(error)
                 continue

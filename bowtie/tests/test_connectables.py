@@ -6,7 +6,8 @@ from bowtie._containers import (
     ConnectableContainer,
     ConnectableImage,
 )
-from bowtie._direct_connectable import Direct, NoDirectConnection
+from bowtie._direct_connectable import Direct
+from bowtie.exceptions import CannotConnect
 
 validators = Direct.from_id("python-jsonschema").registry()
 validator = validators.for_uri("tag:bowtie.report,2024:connectables")
@@ -138,8 +139,7 @@ class TestDirect:
 
     def test_named_unknown(self):
         id = validated("direct:foobar")
-        # TODO: Probably this should be NoSuchImplementation
-        with pytest.raises(NoDirectConnection, match="'foobar'"):
+        with pytest.raises(CannotConnect, match="'foobar'"):
             Connectable.from_str(id)
 
     def test_import(self):

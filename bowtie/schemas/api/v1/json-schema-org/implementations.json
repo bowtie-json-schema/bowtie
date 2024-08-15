@@ -1,0 +1,55 @@
+{
+  "title": "Implementations metadata file suitable for use by json-schema.org",
+  "description": "JSON file providing metadata about implementations of JSON Schema supported by Bowtie",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:api:v1:json-schema-org:implementations",
+
+  "type": "object",
+  "propertyNames": {
+    "description": "A URL where the implementation's source code is hosted",
+
+    "type": "string",
+    "format": "uri"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "dialects": {
+        "description": "A list of JSON Schema dialects (URIs) which the implementation understands.",
+
+        "type": "array",
+        "items": { "type": "string", "format": "uri" }
+      },
+      "badges_urls": {
+        "type": "object",
+        "properties": {
+          "supported_versions": {
+            "type": "string",
+            "format": "uri"
+          },
+          "compliance": {
+            "type": "object",
+            "propertyNames": {
+              "readOnly": true,
+              "type": "string",
+              "format": "uri"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": ["supported_versions", "compliance"],
+        "additionalProperties": false
+      }
+    },
+    "required": ["id", "dialects", "badges_urls"],
+    "additionalProperties": false
+  }
+}
