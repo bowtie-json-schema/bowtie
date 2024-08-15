@@ -11,14 +11,17 @@ from bowtie.hypothesis import dialects, implementations, known_dialects
 TestCase.__test__ = False  # frigging py.test
 
 
-DIALECT = Dialect.by_alias()["2020"]
+DIALECT_2020, DIALECT_2019 = (
+    Dialect.by_alias()["2020"],
+    Dialect.by_alias()["2019"],
+)
 FOO = ImplementationInfo(
     name="foo",
     language="blub",
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,
-    dialects=frozenset([DIALECT]),
+    dialects=frozenset([DIALECT_2020]),
 )
 BAR = ImplementationInfo(
     name="bar",
@@ -26,9 +29,27 @@ BAR = ImplementationInfo(
     homepage=HOMEPAGE,
     issues=REPO / "issues",
     source=REPO,
-    dialects=frozenset([DIALECT]),
+    dialects=frozenset([DIALECT_2020]),
 )
-FOO_RUN = RunMetadata(dialect=DIALECT, implementations={"foo": FOO})
+BAZ_V1 = ImplementationInfo(
+    name="baz",
+    language="quux",
+    version="1",
+    homepage=HOMEPAGE,
+    issues=REPO / "issues",
+    source=REPO,
+    dialects=frozenset([DIALECT_2020, DIALECT_2019]),
+)
+BAZ_V2 = ImplementationInfo(
+    name="baz",
+    language="quux",
+    version="2",
+    homepage=HOMEPAGE,
+    issues=REPO / "issues",
+    source=REPO,
+    dialects=frozenset([DIALECT_2020, DIALECT_2019]),
+)
+FOO_RUN = RunMetadata(dialect=DIALECT_2020, implementations={"foo": FOO})
 NO_FAIL_FAST = dict(did_fail_fast=False)
 
 
@@ -286,6 +307,116 @@ def test_ne_different_results():
     ]
 
     assert Report.from_input(data) != Report.from_input(different_result)
+
+
+def test_eq_combine_versioned_reports():
+    BAZ_V1_2020_RUN = RunMetadata(
+        dialect=DIALECT_2020,
+        implementations={"baz_v1": BAZ_V1},
+    )
+    BAZ_V1_2019_RUN = RunMetadata(
+        dialect=DIALECT_2019,
+        implementations={"baz_v1": BAZ_V1},
+    )
+    data_baz_v1_2020 = [
+        BAZ_V1_2020_RUN.serializable(),
+        SeqCase(
+            seq=1,
+            case=TestCase(
+                description="foo",
+                schema={},
+                tests=[Example(description="1", instance=1)],
+            ),
+        ).serializable(),
+        SeqResult(
+            seq=1,
+            implementation="baz_v1",
+            expected=[None],
+            result=CaseResult(results=[TestResult.VALID]),
+        ).serializable(),
+        NO_FAIL_FAST,
+    ]
+    data_baz_v1_2019 = [
+        BAZ_V1_2019_RUN.serializable(),
+        SeqCase(
+            seq=1,
+            case=TestCase(
+                description="bar",
+                schema={},
+                tests=[Example(description="1", instance="bar")],
+            ),
+        ).serializable(),
+        SeqResult(
+            seq=1,
+            implementation="baz_v1",
+            expected=[None],
+            result=CaseResult(results=[TestResult.VALID]),
+        ).serializable(),
+        NO_FAIL_FAST,
+    ]
+
+    BAZ_V2_2020_RUN = RunMetadata(
+        dialect=DIALECT_2020,
+        implementations={"baz_v2": BAZ_V2},
+    )
+    data_baz_v2_2020 = [
+        BAZ_V2_2020_RUN.serializable(),
+        SeqCase(
+            seq=1,
+            case=TestCase(
+                description="foo",
+                schema={},
+                tests=[Example(description="1", instance=1)],
+            ),
+        ).serializable(),
+        SeqResult(
+            seq=1,
+            implementation="baz_v2",
+            expected=[None],
+            result=CaseResult(results=[TestResult.INVALID]),
+        ).serializable(),
+        NO_FAIL_FAST,
+    ]
+
+    combined = [
+        RunMetadata(
+            dialect=DIALECT_2020,
+            implementations={
+                "baz_v1": BAZ_V1,
+                "baz_v2": BAZ_V2,
+            },
+        ).serializable(),
+        SeqCase(
+            seq=1,
+            case=TestCase(
+                description="foo",
+                schema={},
+                tests=[Example(description="1", instance=1)],
+            ),
+        ).serializable(),
+        SeqResult(
+            seq=1,
+            implementation="baz_v1",
+            expected=[None],
+            result=CaseResult(results=[TestResult.VALID]),
+        ).serializable(),
+        SeqResult(
+            seq=1,
+            implementation="baz_v2",
+            expected=[None],
+            result=CaseResult(results=[TestResult.INVALID]),
+        ).serializable(),
+        NO_FAIL_FAST,
+    ]
+
+    assert Report.combine_versioned_reports_for(
+        [
+            Report.from_input(data_baz_v1_2020),
+            Report.from_input(data_baz_v1_2019),
+            Report.from_input(data_baz_v2_2020),
+        ],
+        dialect=DIALECT_2020,
+    ) == Report.from_input(combined)
 
 
 @given(dialect=known_dialects)
