@@ -2022,10 +2022,7 @@ def _trend_table_in_markdown_for(
             f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}",
         )
 
-    return (
-        f"## Trend Data of {id} versions:\n\n" +
-        "\n\n".join(final_content)
-    )
+    return f"## Trend Data of {id} versions:\n\n" + "\n\n".join(final_content)
 
 
 class _VersionedReportsTar(click.File):
@@ -2317,8 +2314,9 @@ def trend(
                                     },
                                 )
                                 for version, unsuccessful in (
-                                    report.latest_to_oldest() if versions else
-                                    [
+                                    report.latest_to_oldest()
+                                    if versions
+                                    else [
                                         (
                                             report.implementations[id].version,
                                             report.unsuccessful(id),

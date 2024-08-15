@@ -6,19 +6,44 @@
 
   "$id": "tag:bowtie.report,2024:cli:trend",
 
-  "type": "object",
+  "type": "array",
 
-  "minProperties": 1,
-  "propertyNames": {
-    "$ref": "tag:bowtie.report,2024:models:dialect:uri"
-  },
-  "additionalProperties": {
-    "type": "object",
-    "propertyNames": {
-      "$ref": "tag:bowtie.report,2024:models:implementation:version"
-    },
-    "additionalProperties": {
-      "$ref": "tag:bowtie.report,2024:cli:summary:unsuccessfulTests"
-    }
+  "unevaluatedItems": false,
+  "items": {
+    "type": "array",
+
+    "unevaluatedItems": false,
+    "prefixItems": [
+      { "$ref": "tag:bowtie.report,2024:models:implementation:id" },
+      {
+        "type": "array",
+
+        "items": {
+          "type": "array",
+
+          "unevaluatedItems": false,
+          "prefixItems": [
+            { "$ref": "tag:bowtie.report,2024:models:dialect:shortName" },
+            {
+              "type": "array",
+
+              "items": {
+                "type": "array",
+
+                "unevaluatedItems": false,
+                "prefixItems": [
+                  {
+                    "$ref": "tag:bowtie.report,2024:models:implementation:version"
+                  },
+                  {
+                    "$ref": "tag:bowtie.report,2024:cli:summary:unsuccessfulTests"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
   }
 }
