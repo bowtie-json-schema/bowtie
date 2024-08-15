@@ -32,7 +32,7 @@ from bowtie._core import (
 )
 from bowtie._direct_connectable import IMPLEMENTATIONS as KNOWN_DIRECT, Direct
 from bowtie._report import EmptyReport, InvalidReport, Report
-import bowtie.tests.fauxmplementations.miniatures as _miniatures
+from bowtie.tests import miniatures as _miniatures
 
 Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
     False  # frigging py.test
