@@ -82,7 +82,10 @@ def get_benchmark_files(
         )
         if (
             benchmark_group is not None
-            and (benchmark_group.benchmark_type == benchmark_type or benchmark_type is None)
+            and (
+                benchmark_group.benchmark_type == benchmark_type
+                or benchmark_type is None
+            )
             and dialect in benchmark_group.dialects_supported
         ):
             files.append(file)
