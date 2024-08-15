@@ -1,4 +1,11 @@
-import { FC, useContext, useEffect, useState } from "react";
+import {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Card from "react-bootstrap/Card";
 import Dropdown from "react-bootstrap/Dropdown";
 import {
@@ -24,7 +31,6 @@ import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import sortVersions from "../../data/sortVersions";
 import {
-  ImplementationReport,
   prepareVersionsComplianceReport,
   Totals,
 } from "../../data/parseReportData";
@@ -43,52 +49,80 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
   const { isDarkMode } = useContext(ThemeContext);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDialect, setSelectedDialect] = useState<Dialect>();
-  const [versionsCompliance, setVersionsCompliance] = useState<
-    NonNullable<ImplementationReport["versionsCompliance"]>
+  const [selectedDialect, setSelectedDialect] = useState(
+    Dialect.newest_to_oldest()[0]
+  );
+  const [dialectsTrendData, setDialectsTrendData] = useState<
+    Map<Dialect, TrendData[]>
   >(new Map());
-  const [trendData, setTrendData] = useState<TrendData[]>([]);
 
-  const onDialectSelected = (dialectShortName: string | null) => {
-    void (async () => {
-      setIsLoading(true);
-      const dialect = Dialect.withName(dialectShortName!);
-      setSelectedDialect(dialect);
-      try {
-        if (!versionsCompliance.has(dialect)) {
-          const dialectData = await implementation.fetchVersionedReportsFor(
-            dialect,
-            implementation.versions!,
-          );
-          setVersionsCompliance((prev) =>
-            new Map(prev).set(
-              dialect,
-              prepareVersionsComplianceReport(dialectData).get(dialect)!,
-            ),
-          );
-        }
-      } catch (error) {
-        setTrendData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  };
+  const fetchDialectTrendData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const versionedReports = await implementation.fetchVersionedReportsFor(
+        selectedDialect,
+        implementation.versions!
+      );
+
+      const versionsCompliance =
+        prepareVersionsComplianceReport(versionedReports).get(selectedDialect)!;
+
+      setDialectsTrendData((prev) =>
+        new Map(prev).set(
+          selectedDialect,
+          Array.from(versionsCompliance)
+            .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
+            .map(([version, data]) => ({
+              version: `v${version}`,
+              unsuccessfulTests:
+                data.failedTests! + data.erroredTests! + data.skippedTests!,
+              ...data,
+            }))
+        )
+      );
+    } catch (error) {
+      setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDialect, implementation]);
+
+  const shouldFetchDialectTrendData = useMemo(
+    () => !dialectsTrendData.has(selectedDialect),
+    [selectedDialect, dialectsTrendData]
+  );
 
   useEffect(() => {
-    if (selectedDialect && versionsCompliance.has(selectedDialect)) {
-      setTrendData(
-        Array.from(versionsCompliance.get(selectedDialect)!)
-          .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
-          .map(([version, data]) => ({
-            version: `v${version}`,
-            unsuccessfulTests:
-              data.erroredTests! + data.failedTests! + data.skippedTests!,
-            ...data,
-          })),
-      );
+    if (shouldFetchDialectTrendData) {
+      void fetchDialectTrendData();
     }
-  }, [selectedDialect, versionsCompliance]);
+  }, [shouldFetchDialectTrendData, fetchDialectTrendData]);
+
+  const filteredDialects = useMemo(
+    () =>
+      Dialect.newest_to_oldest().filter(
+        (dialect) => dialect != selectedDialect
+      ),
+    [selectedDialect]
+  );
+
+  const handleDialectSelect = useCallback(
+    (shortName: string | null) =>
+      setSelectedDialect(Dialect.withName(shortName!)),
+    []
+  );
+
+  const legendPayload = useMemo(
+    () =>
+      [
+        {
+          value: `${implementation.id} versions`,
+          type: "line",
+          color: isDarkMode ? "#fff" : "#000",
+        },
+      ] as Payload[],
+    [implementation.id, isDarkMode]
+  );
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -96,44 +130,35 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
       <Card.Body className="p-3" style={{ height: "35rem" }}>
         <Card className="p-3 h-100">
           <div className="mb-4 d-flex justify-content-end">
-            <Dropdown onSelect={onDialectSelected}>
+            <Dropdown onSelect={handleDialectSelect}>
               <Dropdown.Toggle
                 variant={isDarkMode ? "outline-light" : "outline-dark"}
               >
-                {selectedDialect ? selectedDialect.prettyName : "Dialects"}
+                {selectedDialect.prettyName}
               </Dropdown.Toggle>
               <Dropdown.Menu>
-                {Dialect.newest_to_oldest()
-                  .filter(
-                    (dialect) =>
-                      !selectedDialect || dialect !== selectedDialect,
-                  )
-                  .map((dialect) => (
-                    <Dropdown.Item
-                      key={dialect.shortName}
-                      eventKey={dialect.shortName}
-                    >
-                      {dialect.prettyName}
-                    </Dropdown.Item>
-                  ))}
+                {filteredDialects.map((dialect) => (
+                  <Dropdown.Item
+                    key={dialect.shortName}
+                    eventKey={dialect.shortName}
+                  >
+                    {dialect.prettyName}
+                  </Dropdown.Item>
+                ))}
               </Dropdown.Menu>
             </Dropdown>
           </div>
-          {!selectedDialect ? (
-            <div className="d-flex justify-content-center align-items-center h-100">
-              {`Select a dialect from the dropdown to see the versions trend data
-              of ${implementation.id} on it's test suite.`}
-            </div>
-          ) : isLoading ? (
+          {isLoading ? (
             <LoadingAnimation />
-          ) : !trendData.length ? (
+          ) : !dialectsTrendData.has(selectedDialect) ||
+            !dialectsTrendData.get(selectedDialect)!.length ? (
             <div className="d-flex justify-content-center align-items-center h-100">
               {`None of the versions of ${implementation.id} support ${selectedDialect.prettyName}.`}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={trendData}
+                data={dialectsTrendData.get(selectedDialect)}
                 margin={{
                   top: 10,
                   right: 40,
@@ -163,17 +188,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
                   </Label>
                 </YAxis>
                 <Tooltip content={<CustomTooltip isDarkMode={isDarkMode!} />} />
-                <Legend
-                  payload={
-                    [
-                      {
-                        value: `${implementation.id} versions`,
-                        type: "line",
-                        color: isDarkMode ? "#fff" : "#000",
-                      },
-                    ] satisfies Payload[]
-                  }
-                />
+                <Legend payload={legendPayload} />
                 <Line
                   type="linear"
                   dataKey="unsuccessfulTests"
