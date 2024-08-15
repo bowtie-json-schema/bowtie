@@ -65,7 +65,7 @@ benchmark_validated, benchmark_invalidated = (
 
 
 def get_benchmark_files(
-    benchmark_type: str,
+    benchmark_type: str | None,
     dialect: Dialect,
     benchmarks: Iterable[str] = [],
 ) -> list[Path]:
@@ -82,7 +82,7 @@ def get_benchmark_files(
         )
         if (
             benchmark_group is not None
-            and benchmark_group.benchmark_type == benchmark_type
+            and (benchmark_group.benchmark_type == benchmark_type or benchmark_type is None)
             and dialect in benchmark_group.dialects_supported
         ):
             files.append(file)
