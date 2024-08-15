@@ -1970,7 +1970,6 @@ def _trend_table_in_markdown_for(
     dialects_trend: dict[Dialect, _report.Report],
 ) -> str:
     rows_data: list[list[str]] = []
-    final_content = ""
 
     inner_table_columns = [
         "Version",
@@ -2017,7 +2016,7 @@ def _trend_table_in_markdown_for(
         ]
         rows_data.append(row_data)
 
-    final_content: list[str] = []
+    final_content: Iterable[str] = []
     for _, row_data in enumerate(rows_data):
         final_content.append(
             f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}",
