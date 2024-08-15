@@ -2640,6 +2640,7 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        exit_code=EX.DATAERR,
     )
     assert stderr == ""
     assert stdout in {
