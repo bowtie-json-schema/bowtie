@@ -58,13 +58,13 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
         if (!versionsCompliance.has(dialect)) {
           const dialectData = await implementation.fetchVersionedReportsFor(
             dialect,
-            implementation.versions!,
+            implementation.versions!
           );
           setVersionsCompliance((prev) =>
             new Map(prev).set(
               dialect,
-              prepareVersionsComplianceReport(dialectData).get(dialect)!,
-            ),
+              prepareVersionsComplianceReport(dialectData).get(dialect)!
+            )
           );
         }
       } catch (error) {
@@ -85,7 +85,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
             unsuccessfulTests:
               data.erroredTests! + data.failedTests! + data.skippedTests!,
             ...data,
-          })),
+          }))
       );
     }
   }, [selectedDialect, versionsCompliance]);
@@ -105,8 +105,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
               <Dropdown.Menu>
                 {Dialect.newest_to_oldest()
                   .filter(
-                    (dialect) =>
-                      !selectedDialect || dialect !== selectedDialect,
+                    (dialect) => !selectedDialect || dialect !== selectedDialect
                   )
                   .map((dialect) => (
                     <Dropdown.Item
@@ -177,7 +176,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
                 <Line
                   type="linear"
                   dataKey="unsuccessfulTests"
-                  stroke={isDarkMode ? "#ff007f" : "#f05f80"}
+                  stroke="#ff007f"
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
