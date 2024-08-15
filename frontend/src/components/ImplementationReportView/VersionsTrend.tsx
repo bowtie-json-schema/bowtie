@@ -50,7 +50,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(
-    Dialect.newest_to_oldest()[0]
+    Dialect.newest_to_oldest()[0],
   );
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
@@ -61,7 +61,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
     try {
       const versionedReports = await implementation.fetchVersionedReportsFor(
         selectedDialect,
-        implementation.versions!
+        implementation.versions!,
       );
 
       const versionsCompliance =
@@ -77,8 +77,8 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
               unsuccessfulTests:
                 data.failedTests! + data.erroredTests! + data.skippedTests!,
               ...data,
-            }))
-        )
+            })),
+        ),
       );
     } catch (error) {
       setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
@@ -89,7 +89,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
 
   const shouldFetchDialectTrendData = useMemo(
     () => !dialectsTrendData.has(selectedDialect),
-    [selectedDialect, dialectsTrendData]
+    [selectedDialect, dialectsTrendData],
   );
 
   useEffect(() => {
@@ -101,15 +101,15 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
   const filteredDialects = useMemo(
     () =>
       Dialect.newest_to_oldest().filter(
-        (dialect) => dialect != selectedDialect
+        (dialect) => dialect != selectedDialect,
       ),
-    [selectedDialect]
+    [selectedDialect],
   );
 
   const handleDialectSelect = useCallback(
     (shortName: string | null) =>
       setSelectedDialect(Dialect.withName(shortName!)),
-    []
+    [],
   );
 
   const legendPayload = useMemo(
@@ -121,7 +121,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
           color: isDarkMode ? "#fff" : "#000",
         },
       ] as Payload[],
-    [implementation.id, isDarkMode]
+    [implementation.id, isDarkMode],
   );
 
   return (
