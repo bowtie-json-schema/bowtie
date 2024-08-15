@@ -18,11 +18,11 @@ import {
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
 import { Payload } from "recharts/types/component/DefaultLegendContent";
-import semverCompare from "semver/functions/compare";
 
 import LoadingAnimation from "../LoadingAnimation";
 import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
+import sortVersions from "../../data/sortVersions";
 import {
   ImplementationReport,
   prepareVersionsComplianceReport,
@@ -79,7 +79,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
     if (selectedDialect && versionsCompliance.has(selectedDialect)) {
       setTrendData(
         Array.from(versionsCompliance.get(selectedDialect)!)
-          .sort(([versionA], [versionB]) => semverCompare(versionA, versionB))
+          .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
           .map(([version, data]) => ({
             version: `v${version}`,
             unsuccessfulTests:
@@ -120,8 +120,8 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
           </div>
           {!selectedDialect ? (
             <div className="d-flex justify-content-center align-items-center h-100">
-              Select a dialect from the dropdown you wish to see the versions
-              trend data for.
+              {`Select a dialect from the dropdown to see the versions trend data
+              of ${implementation.id} on it's test suite.`}
             </div>
           ) : isLoading ? (
             <LoadingAnimation />
