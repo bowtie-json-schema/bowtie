@@ -2007,7 +2007,7 @@ def _trend_table_in_markdown_for(
     final_content = [f"## Trend Data of {id} versions:\n\n"]
     for _, row_data in enumerate(rows_data):
         final_content.append(
-            f"### Dialect: {row_data[0]}\n" f"{row_data[1]}\n\n{row_data[2]}",
+            f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}",
         )
 
     return final_content[0] + "\n\n".join(final_content[1:])
