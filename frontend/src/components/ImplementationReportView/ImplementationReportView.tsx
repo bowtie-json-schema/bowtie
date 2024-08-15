@@ -140,7 +140,7 @@ const ReportComponent: FC<Props> = ({ implementationReport }) => {
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        )
+                        ),
                       )}
                     </ul>
                   </td>
