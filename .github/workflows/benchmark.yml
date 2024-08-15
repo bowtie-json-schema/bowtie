@@ -95,22 +95,33 @@ jobs:
       matrix: ${{ fromJson(needs.benchmark_files.outputs.dialect_keyword_benchmarks) }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+
       - name: Install Bowtie
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Install dependencies
+      - name: Install pyperf dependency
         run: |
           python -m pip install pyperf
 
       - name: Generate Benchmark Report
         run: |
-          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }}
+          bowtie perf -i python-jsonschema -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > ${{ matrix.benchmark }}-keyword.json
+        
+      - name: Store File basename
+        run: echo "basename=$(basename ${{ matrix.benchmark }})" >> $GITHUB_ENV
+        
+      - name: Upload Benchmark file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-file-${{ matrix.dialect }}-${{ env.basename }}-keyword
+          path: ${{ matrix.benchmark }}-keyword.json
 
   run_default_benchmarks:
     needs: benchmark_files
@@ -136,4 +147,100 @@ jobs:
 
       - name: Generate Benchmark Report
         run: |
-          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }}
+          bowtie perf -i python-jsonschema -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > ${{ matrix.benchmark }}-default.json
+        
+      - name: Store File basename
+        run: echo "basename=$(basename ${{ matrix.benchmark }})" >> $GITHUB_ENV
+        
+      - name: Upload Benchmark file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-file-${{ matrix.dialect }}-${{ env.basename }}-default
+          path: ${{ matrix.benchmark }}-default.json
+
+  merge_benchmarks_into_single_report:
+    needs:
+      - dialects
+      - run_default_benchmarks
+      - run_keyword_benchmarks
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dialect: ${{ fromJson(needs.dialects.outputs.dialects) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Benchmark Reports for a dialect
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-file-${{ matrix.dialect }}-*
+          path: benchmarks-${{ matrix.dialect }}/
+          merge-multiple: true
+
+      - name: Merge Benchmark Reports for a dialect
+        run: |
+          python - <<EOF
+          import os
+          import json
+
+          directory_path = f'benchmarks-${{ matrix.dialect }}'
+          output_file = f'${{ matrix.dialect }}.json'
+          metadata = None
+          combined_results = []
+
+          for filename in sorted(os.listdir(directory_path)):
+              file_path = os.path.join(directory_path, filename)
+              with open(file_path, 'r') as file:
+                  data = json.load(file)
+                  if metadata is None:
+                      metadata = data.get('metadata', {})
+                  results = data.get('results', [])
+                  combined_results.extend(results)
+
+          combined_json = {
+              'metadata': metadata,
+              'results': combined_results
+          }
+
+          with open(output_file, 'w') as file:
+              json.dump(combined_json, file, indent=4)
+          EOF
+
+      - name: Upload final Benchmark Report for dialect
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-${{ matrix.dialect }}
+          path: ${{ matrix.dialect }}.json
+    
+          
+  upload_benchmark_artifact:
+    needs:
+      - merge_benchmarks_into_single_report
+    
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Benchmarks folder
+        run: mkdir benchmarks
+
+      - name: Include New Benchmark Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-report-*
+          path: benchmarks/
+          merge-multiple: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: benchmarks
+
+  regenerate-reports:
+    needs: upload_benchmark_artifact
+    uses: ./.github/workflows/report.yml
+    with:
+      report_benchmark_artifact_in_scope: true
