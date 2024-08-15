@@ -133,22 +133,22 @@ def links(dialect: Dialect):
     return lambda schema, registry: lambda instance: None
 
 
-@fake(name="versioned", version="1.0")
-def version_1(dialect: Dialect):
+@fake(name="foo", version="1.0")
+def foo_v1(dialect: Dialect):
     """
-    An implementation which claims to be in version 1.0.
+    An implementation that claims to be named 'foo' and to be in version 1.0.
 
-    The validity result of instances should not be relied on.
+    Always considers any instance invalid.
     """
-    return lambda schema, registry: lambda instance: None
+    return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
 
-@fake(name="versioned", version="2.0")
-def version_2(dialect: Dialect):
+@fake(name="foo", version="2.0")
+def foo_v2(dialect: Dialect):
     """
-    An implementation which claims to be in version 2.0.
+    An implementation that claims to be named 'foo' and to be in version 2.0.
 
-    The validity result of instances should not be relied on.
+    Always considers any instance valid.
     """
     return lambda schema, registry: lambda instance: None
 

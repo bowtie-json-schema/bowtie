@@ -1106,16 +1106,15 @@ VALIDATE = click.option(
     ),
 )
 
-inflect_engine = InflectEngine()
+_inflect_engine = InflectEngine()
 
-POSSIBLE_DIALECT_SHORTNAMES = inflect_engine.join(sorted(Dialect.by_alias()))  # type: ignore[reportArgumentType]
-
+POSSIBLE_DIALECT_SHORTNAMES = _inflect_engine.join(sorted(Dialect.by_alias()))  # type: ignore[reportArgumentType]
 
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
     if list(dialects) == list(Dialect.known()):
         return "all known dialects"
 
-    return inflect_engine.join([dialect.pretty_name for dialect in dialects])  # type: ignore[reportArgumentType]
+    return _inflect_engine.join([dialect.pretty_name for dialect in dialects])  # type: ignore[reportArgumentType]
 
 
 def dialect_option(
@@ -1978,6 +1977,7 @@ def _trend_table_in_markdown_for(
         ]
 
     for dialect, report in dialects_trend.items():
+        test = "tests" if report.total_tests != 1 else "test"
         inner_table_rows: list[list[str]] = []
         if versions:
             for version, unsuccessful in report.latest_to_oldest():
@@ -1996,15 +1996,21 @@ def _trend_table_in_markdown_for(
             inner_table_columns,
             inner_table_rows,
         )
-        row_data = [dialect.pretty_name, inner_markdown_table]
+        row_data = [
+            dialect.pretty_name,
+            inner_markdown_table,
+            f"**{report.total_tests} {test} ran**",
+        ]
         rows_data.append(row_data)
 
-    final_content += f"## Trend Data of {id} versions:\n\n"
+    final_content = [f"## Trend Data of {id} versions:\n\n"]
     for _, row_data in enumerate(rows_data):
-        final_content += f"### Dialect: {row_data[0]}\n\n"
-        final_content += f"{row_data[1]}\n"
+        final_content.append(
+            f"### Dialect: {row_data[0]}\n"
+            f"{row_data[1]}\n\n{row_data[2]}",
+        )
 
-    return final_content
+    return final_content[0] + "\n\n".join(final_content[1:])
 
 
 class _VersionedReportsTar(click.File):
@@ -2115,17 +2121,19 @@ class _VersionedReportsTar(click.File):
                 with progress:
                     for version in versions:
                         for dialect in dialects:
-                            report_file = (
-                                f"./{id}/v{version}/{dialect.short_name}.json"
-                            )
                             progress.update(
                                 task,
                                 description=(
-                                    f"Attempting to parse: {report_file}"
+                                    f"Attempting to parse: "
+                                    f"v{version}/{dialect.short_name}.json"
                                 ),
                             )
                             try:
-                                report_content = tar.extractfile(report_file)
+                                report_content = (
+                                    tar.extractfile(
+                                        f"./{id}/v{version}/{dialect.short_name}.json",
+                                    )
+                                )
                             except KeyError:
                                 versioned_reports.append(
                                     (
@@ -2277,11 +2285,11 @@ def trend(
             serializable: dict[str, dict[str, dict[str, int]]] = {}
 
             def add_to_serializable(
-                uri: URL,
+                dialect: Dialect,
                 version: str,
                 unsuccessful: Unsuccessful,
             ):
-                serializable.setdefault(str(uri), {})[version] = {
+                serializable.setdefault(str(dialect.uri), {})[version] = {
                     "skipped": len(unsuccessful.skipped),
                     "errored": len(unsuccessful.errored),
                     "failed": len(unsuccessful.failed),
@@ -2290,12 +2298,12 @@ def trend(
             for dialect, report in dialects_trend.items():
                 if versions:
                     for version, unsuccessful in report.latest_to_oldest():
-                        add_to_serializable(dialect.uri, version, unsuccessful)
+                        add_to_serializable(dialect, version, unsuccessful)
                 else:
                     implementation = report.implementations[id]
                     version = implementation.version or "latest"
                     unsuccessful = report.unsuccessful(id)
-                    add_to_serializable(dialect.uri, version, unsuccessful)
+                    add_to_serializable(dialect, version, unsuccessful)
 
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
