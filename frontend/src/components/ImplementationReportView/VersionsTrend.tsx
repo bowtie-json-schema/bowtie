@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { FC, useContext, useEffect, useState } from "react";
 import Card from "react-bootstrap/Card";
 import Dropdown from "react-bootstrap/Dropdown";
 import {
@@ -28,10 +28,10 @@ import {
   prepareVersionsComplianceReport,
   Totals,
 } from "../../data/parseReportData";
+import { ThemeContext } from "../../context/ThemeContext";
 
 interface Props {
   implementation: Implementation;
-  versionsCompliance: NonNullable<ImplementationReport["versionsCompliance"]>;
 }
 
 interface TrendData extends Partial<Totals> {
@@ -39,58 +39,56 @@ interface TrendData extends Partial<Totals> {
   unsuccessfulTests: number;
 }
 
-const VersionsTrend: React.FC<Props> = ({
-  implementation,
-  versionsCompliance: initialVersionsCompliance,
-}) => {
+const VersionsTrend: FC<Props> = ({ implementation }) => {
+  const { isDarkMode } = useContext(ThemeContext);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDialect, setSelectedDialect] = useState(
-    initialVersionsCompliance.keys().next().value as Dialect,
-  );
-  const [versionsCompliance, setVersionsCompliance] = useState(
-    initialVersionsCompliance,
-  );
+  const [selectedDialect, setSelectedDialect] = useState<Dialect>();
+  const [versionsCompliance, setVersionsCompliance] = useState<
+    NonNullable<ImplementationReport["versionsCompliance"]>
+  >(new Map());
   const [trendData, setTrendData] = useState<TrendData[]>([]);
 
-  useEffect(() => {
+  const onDialectSelected = (dialectShortName: string | null) => {
     void (async () => {
       setIsLoading(true);
-
+      const dialect = Dialect.withName(dialectShortName!);
+      setSelectedDialect(dialect);
       try {
-        if (!versionsCompliance.has(selectedDialect)) {
-          const selectedDialectData =
-            await implementation.fetchVersionedReportsFor(
-              selectedDialect,
-              implementation.versions!,
-            );
-
+        if (!versionsCompliance.has(dialect)) {
+          const dialectData = await implementation.fetchVersionedReportsFor(
+            dialect,
+            implementation.versions!
+          );
           setVersionsCompliance((prev) =>
             new Map(prev).set(
-              selectedDialect,
-              prepareVersionsComplianceReport(selectedDialectData).get(
-                selectedDialect,
-              )!,
-            ),
+              dialect,
+              prepareVersionsComplianceReport(dialectData).get(dialect)!
+            )
           );
         }
-
-        setTrendData(
-          Array.from(versionsCompliance.get(selectedDialect)!)
-            .sort(([versionA], [versionB]) => semverCompare(versionA, versionB))
-            .map(([version, data]) => ({
-              version: `v${version}`,
-              unsuccessfulTests:
-                data.erroredTests! + data.failedTests! + data.skippedTests!,
-              ...data,
-            })),
-        );
       } catch (error) {
         setTrendData([]);
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [selectedDialect, implementation, versionsCompliance]);
+  };
+
+  useEffect(() => {
+    if (selectedDialect && versionsCompliance.has(selectedDialect)) {
+      setTrendData(
+        Array.from(versionsCompliance.get(selectedDialect)!)
+          .sort(([versionA], [versionB]) => semverCompare(versionA, versionB))
+          .map(([version, data]) => ({
+            version: `v${version}`,
+            unsuccessfulTests:
+              data.erroredTests! + data.failedTests! + data.skippedTests!,
+            ...data,
+          }))
+      );
+    }
+  }, [selectedDialect, versionsCompliance]);
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -98,17 +96,17 @@ const VersionsTrend: React.FC<Props> = ({
       <Card.Body className="p-3" style={{ height: "35rem" }}>
         <Card className="p-3 h-100">
           <div className="mb-4 d-flex justify-content-end">
-            <Dropdown
-              onSelect={(dialectShortName) =>
-                setSelectedDialect(Dialect.withName(dialectShortName!))
-              }
-            >
-              <Dropdown.Toggle variant="outline-dark">
-                {selectedDialect.prettyName}
+            <Dropdown onSelect={onDialectSelected}>
+              <Dropdown.Toggle
+                variant={isDarkMode ? "outline-light" : "outline-dark"}
+              >
+                {selectedDialect ? selectedDialect.prettyName : "Dialects"}
               </Dropdown.Toggle>
               <Dropdown.Menu>
                 {Dialect.newest_to_oldest()
-                  .filter((dialect) => dialect != selectedDialect)
+                  .filter(
+                    (dialect) => !selectedDialect || dialect !== selectedDialect
+                  )
                   .map((dialect) => (
                     <Dropdown.Item
                       key={dialect.shortName}
@@ -120,9 +118,14 @@ const VersionsTrend: React.FC<Props> = ({
               </Dropdown.Menu>
             </Dropdown>
           </div>
-          {isLoading ? (
+          {!selectedDialect ? (
+            <div className="d-flex justify-content-center align-items-center h-100">
+              Select a dialect from the dropdown you wish to see the versions
+              trend data for.
+            </div>
+          ) : isLoading ? (
             <LoadingAnimation />
-          ) : trendData.length === 0 ? (
+          ) : !trendData.length ? (
             <div className="d-flex justify-content-center align-items-center h-100">
               {`None of the versions of ${implementation.id} support ${selectedDialect.prettyName}.`}
             </div>
@@ -137,26 +140,36 @@ const VersionsTrend: React.FC<Props> = ({
                   bottom: 5,
                 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="version" />
-                <YAxis>
+                <CartesianGrid
+                  stroke={isDarkMode ? "#666" : "#ccc"}
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  stroke={isDarkMode ? "#ddd" : "#000"}
+                  dataKey="version"
+                />
+                <YAxis stroke={isDarkMode ? "#ddd" : "#000"}>
                   <Label
                     angle={-90}
                     position="insideLeft"
                     style={{
                       textAnchor: "middle",
-                      fill: "#212529",
+                      fill: isDarkMode ? "#ddd" : "#000",
                     }}
                     offset={9}
                   >
                     Total Unsuccessful Tests
                   </Label>
                 </YAxis>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip isDarkMode={isDarkMode!} />} />
                 <Legend
                   payload={
                     [
-                      { value: `${implementation.id} versions`, type: "line" },
+                      {
+                        value: `${implementation.id} versions`,
+                        type: "line",
+                        color: isDarkMode ? "#fff" : "#000",
+                      },
                     ] satisfies Payload[]
                   }
                 />
@@ -179,10 +192,15 @@ const CustomTooltip = ({
   active,
   payload,
   label,
-}: TooltipProps<ValueType, NameType>) => {
+  isDarkMode,
+}: TooltipProps<ValueType, NameType> & { isDarkMode: boolean }) => {
   if (active && payload?.length) {
     return (
-      <div className="border border-secondary rounded p-3 bg-white">
+      <div
+        className={`border border-secondary rounded p-3 ${
+          isDarkMode ? "bg-dark border-light" : "bg-white border-secondary"
+        }`}
+      >
         <span className="fw-bold mb-1">{label}</span>
         <span className="d-block mb-1">
           erroredTests:{" "}

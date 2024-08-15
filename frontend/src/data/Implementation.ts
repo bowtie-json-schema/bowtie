@@ -47,6 +47,7 @@ export default class Implementation
   readonly os?: string;
   readonly os_version?: string;
   readonly language_version?: string;
+
   readonly routePath: string;
   private _versions?: string[];
 
@@ -77,10 +78,6 @@ export default class Implementation
     this.routePath = `/implementations/${id}`;
   }
 
-  get versions() {
-    return this._versions ? [...this._versions] : undefined;
-  }
-
   static withId(id: string) {
     return this.all.get(id);
   }
@@ -98,20 +95,22 @@ export default class Implementation
     >;
     const parsedImplementations = new Map<string, Implementation>();
 
-    Object.entries(rawImplementations).forEach(([id, rawData]) => {
-      const existingImplementation = this.withId(id);
-      if (existingImplementation) {
-        parsedImplementations.set(id, existingImplementation);
-      } else {
-        parsedImplementations.set(id, new Implementation(id, rawData));
-      }
-    });
+    Object.entries(rawImplementations).forEach(([id, rawData]) =>
+      parsedImplementations.set(
+        id,
+        this.withId(id) ?? new Implementation(id, rawData)
+      )
+    );
 
     return parsedImplementations;
   }
 
   private directoryURI(baseURI: URI = siteURI) {
     return baseURI.clone().directory("implementations").filename(this.id);
+  }
+
+  get versions() {
+    return this._versions ? [...this._versions] : undefined;
   }
 
   async fetchVersions(baseURI: URI = siteURI) {
@@ -134,7 +133,7 @@ export default class Implementation
   async fetchVersionedReportsFor(
     dialect: Dialect,
     versions: string[],
-    baseURI: URI = siteURI,
+    baseURI: URI = siteURI
   ) {
     const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
 
@@ -151,7 +150,7 @@ export default class Implementation
               .segment(`v${version}`)
               .segment(dialect.shortName)
               .suffix("json")
-              .href(),
+              .href()
           );
 
           versionedReportsData
@@ -160,7 +159,7 @@ export default class Implementation
         } catch (err) {
           return;
         }
-      }),
+      })
     );
 
     return versionedReportsData;
@@ -172,7 +171,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
     );
   }
 
@@ -182,7 +181,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json"),
+        .suffix("json")
     );
   }
 

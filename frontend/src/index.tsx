@@ -15,7 +15,6 @@ import { MainContainer } from "./MainContainer";
 import {
   ImplementationReport,
   prepareDialectsComplianceReport,
-  prepareVersionsComplianceReport,
 } from "./data/parseReportData";
 
 const implementationReportViewDataLoader = async (implementationId: string) => {
@@ -28,22 +27,10 @@ const implementationReportViewDataLoader = async (implementationId: string) => {
 
   const dialectsCompliance = prepareDialectsComplianceReport(
     implementation.id,
-    allDialectReports,
+    allDialectReports
   );
 
-  const versions = await implementation.fetchVersions();
-  if (versions) {
-    const versionedReports = await implementation.fetchVersionedReportsFor(
-      Dialect.newest_to_oldest()[0],
-      versions,
-    );
-
-    return {
-      implementation,
-      dialectsCompliance,
-      versionsCompliance: prepareVersionsComplianceReport(versionedReports),
-    } satisfies ImplementationReport;
-  }
+  await implementation.fetchVersions();
 
   return {
     implementation,
@@ -111,6 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

@@ -1,3 +1,4 @@
+import { FC } from "react";
 import {
   useLoaderData,
   Link,
@@ -17,6 +18,10 @@ import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { EmbedBadgesContextType } from "./EmbedBadges";
 
+interface Props {
+  implementationReport: ImplementationReport;
+}
+
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
 
@@ -30,12 +35,9 @@ export const ImplementationReportView = () => {
   );
 };
 
-const ReportComponent: React.FC<{
-  implementationReport: ImplementationReport;
-}> = ({ implementationReport }) => {
+const ReportComponent: FC<Props> = ({ implementationReport }) => {
   const navigate = useNavigate();
-  const { implementation, dialectsCompliance, versionsCompliance } =
-    implementationReport;
+  const { implementation, dialectsCompliance } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -138,7 +140,7 @@ const ReportComponent: React.FC<{
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
@@ -152,11 +154,8 @@ const ReportComponent: React.FC<{
         implementation={implementation}
         dialectsCompliance={dialectsCompliance}
       />
-      {versionsCompliance && (
-        <VersionsTrend
-          implementation={implementation}
-          versionsCompliance={versionsCompliance}
-        />
+      {implementation.versions && (
+        <VersionsTrend implementation={implementation} />
       )}
     </Container>
   );
