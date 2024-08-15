@@ -119,6 +119,7 @@ def tar_from_directory(directory):
     fileobj.seek(0)
     return fileobj
 
+
 def tar_from_versioned_reports(
     tar_path: str,
     id: str,
@@ -146,6 +147,7 @@ def tar_from_versioned_reports(
             )
             report_info.size = len(report_bytes)
             tar.addfile(report_info, BytesIO(report_bytes))
+
 
 def image(name, fileobj):
     @pytest_asyncio.fixture(scope="module")
@@ -3070,14 +3072,14 @@ async def test_trend_json(tmp_path):
     assert (await command_validator("trend")).validated(jsonout) == {
         "https://json-schema.org/draft/2020-12/schema": {
             "2.0": {
-            "skipped": 0,
-            "errored": 0,
-            "failed": 0,
+                "skipped": 0,
+                "errored": 0,
+                "failed": 0,
             },
             "1.0": {
-            "skipped": 0,
-            "errored": 0,
-            "failed": 2,
+                "skipped": 0,
+                "errored": 0,
+                "failed": 2,
             },
         },
     }
@@ -3150,6 +3152,7 @@ async def test_trend_markdown(tmp_path):
         **2 tests ran**
         """,
     )
+
 
 @pytest.mark.asyncio
 @pytest.mark.containers
@@ -3267,6 +3270,7 @@ async def test_trend_valid_markdown(tmp_path):
             """
         ).strip()
     )
+
 
 @pytest.mark.asyncio
 async def test_validate_mismatched_dialect(tmp_path):

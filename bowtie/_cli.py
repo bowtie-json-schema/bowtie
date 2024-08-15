@@ -1110,6 +1110,7 @@ _inflect_engine = InflectEngine()
 
 POSSIBLE_DIALECT_SHORTNAMES = _inflect_engine.join(sorted(Dialect.by_alias()))  # type: ignore[reportArgumentType]
 
+
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
     if list(dialects) == list(Dialect.known()):
         return "all known dialects"
@@ -2006,8 +2007,7 @@ def _trend_table_in_markdown_for(
     final_content = [f"## Trend Data of {id} versions:\n\n"]
     for _, row_data in enumerate(rows_data):
         final_content.append(
-            f"### Dialect: {row_data[0]}\n"
-            f"{row_data[1]}\n\n{row_data[2]}",
+            f"### Dialect: {row_data[0]}\n" f"{row_data[1]}\n\n{row_data[2]}",
         )
 
     return final_content[0] + "\n\n".join(final_content[1:])
@@ -2129,10 +2129,8 @@ class _VersionedReportsTar(click.File):
                                 ),
                             )
                             try:
-                                report_content = (
-                                    tar.extractfile(
-                                        f"./{id}/v{version}/{dialect.short_name}.json",
-                                    )
+                                report_content = tar.extractfile(
+                                    f"./{id}/v{version}/{dialect.short_name}.json",
                                 )
                             except KeyError:
                                 versioned_reports.append(
