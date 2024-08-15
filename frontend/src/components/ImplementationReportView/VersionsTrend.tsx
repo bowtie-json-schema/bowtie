@@ -176,7 +176,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
                 <Line
                   type="linear"
                   dataKey="unsuccessfulTests"
-                  stroke="#f05f80"
+                  stroke={isDarkMode ? "#ff007f" : "#f05f80"}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
