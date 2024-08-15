@@ -3073,20 +3073,34 @@ async def test_trend_json(tmp_path):
         json=True,
     )
 
-    assert (await command_validator("trend")).validated(jsonout) == {
-        "https://json-schema.org/draft/2020-12/schema": {
-            "2.0": {
-                "skipped": 0,
-                "errored": 0,
-                "failed": 0,
-            },
-            "1.0": {
-                "skipped": 0,
-                "errored": 0,
-                "failed": 2,
-            },
-        },
-    }
+    assert (await command_validator("trend")).validated(jsonout) == [
+        [
+            "foo",
+            [
+                [
+                    "draft2020-12",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]
     assert stderr == ""
 
 

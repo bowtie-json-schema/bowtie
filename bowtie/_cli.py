@@ -2017,13 +2017,16 @@ def _trend_table_in_markdown_for(
         ]
         rows_data.append(row_data)
 
-    final_content = [f"## Trend Data of {id} versions:\n\n"]
+    final_content: list[str] = []
     for _, row_data in enumerate(rows_data):
         final_content.append(
             f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}",
         )
 
-    return final_content[0] + "\n\n".join(final_content[1:])
+    return (
+        f"## Trend Data of {id} versions:\n\n" +
+        "\n\n".join(final_content)
+    )
 
 
 class _VersionedReportsTar(click.File):
@@ -2293,29 +2296,42 @@ def trend(
 
     match format:
         case "json":
-            serializable: dict[str, dict[str, dict[str, int]]] = {}
-
-            def add_to_serializable(
-                dialect: Dialect,
-                version: str,
-                unsuccessful: Unsuccessful,
-            ):
-                serializable.setdefault(str(dialect.uri), {})[version] = {
-                    "skipped": len(unsuccessful.skipped),
-                    "errored": len(unsuccessful.errored),
-                    "failed": len(unsuccessful.failed),
-                }
-
-            for dialect, report in dialects_trend.items():
-                if versions:
-                    for version, unsuccessful in report.latest_to_oldest():
-                        add_to_serializable(dialect, version, unsuccessful)
-                else:
-                    implementation = report.implementations[id]
-                    version = implementation.version or "latest"
-                    unsuccessful = report.unsuccessful(id)
-                    add_to_serializable(dialect, version, unsuccessful)
-
+            serializable: Iterable[
+                tuple[
+                    ConnectableId,
+                    Iterable[tuple[str, Iterable[tuple[str, dict[str, int]]]]],
+                ]
+            ] = []
+            serializable.append(
+                (
+                    id,
+                    [
+                        (
+                            dialect.short_name,
+                            [
+                                (
+                                    version or "latest",
+                                    {
+                                        "failed": len(unsuccessful.failed),
+                                        "errored": len(unsuccessful.errored),
+                                        "skipped": len(unsuccessful.skipped),
+                                    },
+                                )
+                                for version, unsuccessful in (
+                                    report.latest_to_oldest() if versions else
+                                    [
+                                        (
+                                            report.implementations[id].version,
+                                            report.unsuccessful(id),
+                                        ),
+                                    ]
+                                )
+                            ],
+                        )
+                        for dialect, report in dialects_trend.items()
+                    ],
+                ),
+            )
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
             console.Console().print(
