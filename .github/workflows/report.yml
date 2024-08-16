@@ -126,12 +126,8 @@ jobs:
       - name: Validate the public API data against their schema(s)
         run: |
           VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
-          SUMMARY=$(echo "$VALIDATION" | bowtie summary --show failures --format json)
-          if [ $(echo "$SUMMARY" | \
-                 jq 'all(.[]; .[1].failed == 0 and .[1].errored == 0 and .[1].skipped == 0)') == false ]; then
-              echo "Implementations metadata file generated for json-schema.org is invalid under its JSON Schema"
-              exit 1
-          fi
+          echo "$VALIDATION" | bowtie summary --show failures --format markdown >> $GITHUB_STEP_SUMMARY
+
       - uses: actions/upload-artifact@v4
         with:
           name: api
