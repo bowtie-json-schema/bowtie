@@ -98,8 +98,8 @@ export default class Implementation
     Object.entries(rawImplementations).forEach(([id, rawData]) =>
       parsedImplementations.set(
         id,
-        this.withId(id) ?? new Implementation(id, rawData),
-      ),
+        this.withId(id) ?? new Implementation(id, rawData)
+      )
     );
 
     return parsedImplementations;
@@ -130,13 +130,14 @@ export default class Implementation
     }
   }
 
-  async fetchVersionedReportsFor(
-    dialect: Dialect,
-    versions: string[],
-    baseURI: URI = siteURI,
-  ) {
-    const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
+  async fetchVersionedReportsFor(dialect: Dialect, baseURI: URI = siteURI) {
+    const versions = this.versions;
+    if (!versions)
+      throw new ImplementationError(
+        `No versions metadata found for ${this.id} implementation.`
+      );
 
+    const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
     await Promise.all(
       versions.map(async (version) => {
         if (!versionedReportsData.has(dialect)) {
@@ -150,7 +151,7 @@ export default class Implementation
               .segment(`v${version}`)
               .segment(dialect.shortName)
               .suffix("json")
-              .href(),
+              .href()
           );
 
           versionedReportsData
@@ -159,7 +160,7 @@ export default class Implementation
         } catch (err) {
           return;
         }
-      }),
+      })
     );
 
     return versionedReportsData;
@@ -171,7 +172,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
     );
   }
 
@@ -181,7 +182,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json"),
+        .suffix("json")
     );
   }
 

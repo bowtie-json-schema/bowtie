@@ -92,7 +92,7 @@ const NavBar = () => {
                 </>
               )}
               <NavDropdown title="Dialects" id="dialect-dropdown">
-                {Dialect.newest_to_oldest().map((dialect) => (
+                {Dialect.newestToOldest().map((dialect) => (
                   <NavDropdown.Item
                     as={Link}
                     to={dialect.routePath}

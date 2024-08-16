@@ -14,7 +14,7 @@ import { ImplementationReportView } from "./components/ImplementationReportView/
 import { MainContainer } from "./MainContainer";
 import {
   ImplementationReport,
-  prepareDialectsComplianceReport,
+  prepareDialectsComplianceReportFor,
 } from "./data/parseReportData";
 
 const implementationReportViewDataLoader = async (implementationId: string) => {
@@ -25,9 +25,9 @@ const implementationReportViewDataLoader = async (implementationId: string) => {
   const implementation = Implementation.withId(implementationId);
   if (!implementation) return null;
 
-  const dialectsCompliance = prepareDialectsComplianceReport(
+  const dialectsCompliance = prepareDialectsComplianceReportFor(
     implementation.id,
-    allDialectReports,
+    allDialectReports
   );
 
   await implementation.fetchVersions();
@@ -43,9 +43,11 @@ const dialectReportViewDataLoader = async ({
 }: {
   params: Params<string>;
 }) => {
-  const draftName =
-    params?.draftName ?? Dialect.newest_to_oldest()[0].shortName;
-  const dialect = Dialect.withName(draftName);
+  const draftName = params?.draftName;
+  const dialect = draftName
+    ? Dialect.withName(draftName)
+    : Dialect.newestToOldest()[0];
+
   document.title = `Bowtie - ${dialect.prettyName}`;
 
   const [reportData, allImplementationsData] = await Promise.all([
@@ -98,6 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

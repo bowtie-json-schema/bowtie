@@ -1,11 +1,4 @@
-import {
-  FC,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Card from "react-bootstrap/Card";
 import Dropdown from "react-bootstrap/Dropdown";
 import {
@@ -31,7 +24,7 @@ import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import sortVersions from "../../data/sortVersions";
 import {
-  prepareVersionsComplianceReport,
+  prepareVersionsComplianceReportFor,
   Totals,
 } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -45,12 +38,12 @@ interface TrendData extends Partial<Totals> {
   unsuccessfulTests: number;
 }
 
-const VersionsTrend: FC<Props> = ({ implementation }) => {
+const VersionsTrend = ({ implementation }: Props) => {
   const { isDarkMode } = useContext(ThemeContext);
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(
-    Dialect.newest_to_oldest()[0],
+    Dialect.newestToOldest()[0]
   );
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
@@ -60,12 +53,12 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
     setIsLoading(true);
     try {
       const versionedReports = await implementation.fetchVersionedReportsFor(
-        selectedDialect,
-        implementation.versions!,
+        selectedDialect
       );
-
       const versionsCompliance =
-        prepareVersionsComplianceReport(versionedReports).get(selectedDialect)!;
+        prepareVersionsComplianceReportFor(versionedReports).get(
+          selectedDialect
+        )!;
 
       setDialectsTrendData((prev) =>
         new Map(prev).set(
@@ -77,8 +70,8 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
               unsuccessfulTests:
                 data.failedTests! + data.erroredTests! + data.skippedTests!,
               ...data,
-            })),
-        ),
+            }))
+        )
       );
     } catch (error) {
       setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
@@ -89,7 +82,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
 
   const shouldFetchDialectTrendData = useMemo(
     () => !dialectsTrendData.has(selectedDialect),
-    [selectedDialect, dialectsTrendData],
+    [selectedDialect, dialectsTrendData]
   );
 
   useEffect(() => {
@@ -100,16 +93,14 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
 
   const filteredDialects = useMemo(
     () =>
-      Dialect.newest_to_oldest().filter(
-        (dialect) => dialect != selectedDialect,
-      ),
-    [selectedDialect],
+      Dialect.newestToOldest().filter((dialect) => dialect != selectedDialect),
+    [selectedDialect]
   );
 
   const handleDialectSelect = useCallback(
     (shortName: string | null) =>
       setSelectedDialect(Dialect.withName(shortName!)),
-    [],
+    []
   );
 
   const legendPayload = useMemo(
@@ -121,7 +112,7 @@ const VersionsTrend: FC<Props> = ({ implementation }) => {
           color: isDarkMode ? "#fff" : "#000",
         },
       ] as Payload[],
-    [implementation.id, isDarkMode],
+    [implementation.id, isDarkMode]
   );
 
   return (

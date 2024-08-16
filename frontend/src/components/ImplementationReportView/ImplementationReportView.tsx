@@ -1,4 +1,3 @@
-import { FC } from "react";
 import {
   useLoaderData,
   Link,
@@ -35,7 +34,7 @@ export const ImplementationReportView = () => {
   );
 };
 
-const ReportComponent: FC<Props> = ({ implementationReport }) => {
+const ReportComponent = ({ implementationReport }: Props) => {
   const navigate = useNavigate();
   const { implementation, dialectsCompliance } = implementationReport;
 
@@ -140,7 +139,7 @@ const ReportComponent: FC<Props> = ({ implementationReport }) => {
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>

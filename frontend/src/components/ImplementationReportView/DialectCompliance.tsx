@@ -1,4 +1,3 @@
-import { FC } from "react";
 import { Link } from "react-router-dom";
 import Card from "react-bootstrap/Card";
 import Image from "react-bootstrap/Image";
@@ -12,10 +11,7 @@ interface Props {
   dialectsCompliance: ImplementationReport["dialectsCompliance"];
 }
 
-const DialectCompliance: FC<Props> = ({
-  implementation,
-  dialectsCompliance,
-}) => {
+const DialectCompliance = ({ implementation, dialectsCompliance }: Props) => {
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -49,7 +45,7 @@ const DialectCompliance: FC<Props> = ({
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
               .map(([dialect, result], index) => {
                 return (
