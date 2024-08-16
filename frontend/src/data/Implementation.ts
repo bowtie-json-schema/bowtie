@@ -98,8 +98,8 @@ export default class Implementation
     Object.entries(rawImplementations).forEach(([id, rawData]) =>
       parsedImplementations.set(
         id,
-        this.withId(id) ?? new Implementation(id, rawData)
-      )
+        this.withId(id) ?? new Implementation(id, rawData),
+      ),
     );
 
     return parsedImplementations;
@@ -134,7 +134,7 @@ export default class Implementation
     const versions = this.versions;
     if (!versions)
       throw new ImplementationError(
-        `No versions metadata found for ${this.id} implementation.`
+        `No versions metadata found for ${this.id} implementation.`,
       );
 
     const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
@@ -151,7 +151,7 @@ export default class Implementation
               .segment(`v${version}`)
               .segment(dialect.shortName)
               .suffix("json")
-              .href()
+              .href(),
           );
 
           versionedReportsData
@@ -160,7 +160,7 @@ export default class Implementation
         } catch (err) {
           return;
         }
-      })
+      }),
     );
 
     return versionedReportsData;
@@ -172,7 +172,7 @@ export default class Implementation
 
   versionsBadge(): URI {
     return badgeFor(
-      this.badgesIdSegment.clone().segment("supported_versions").suffix("json")
+      this.badgesIdSegment.clone().segment("supported_versions").suffix("json"),
     );
   }
 
@@ -182,7 +182,7 @@ export default class Implementation
         .clone()
         .segment("compliance")
         .segment(dialect.shortName)
-        .suffix("json")
+        .suffix("json"),
     );
   }
 
