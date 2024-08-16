@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { FC, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -18,11 +18,11 @@ interface Props {
   implementationResults: ImplementationResults;
 }
 
-const ImplementationRow = ({
+const ImplementationRow: FC<Props> = ({
   cases,
   implementation,
   implementationResults,
-}: Props) => {
+}) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
