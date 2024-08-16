@@ -79,10 +79,10 @@ jobs:
       - name: Generate Benchmark Report
         run: |
           bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > ${{ matrix.benchmark }}-file.json
-        
+
       - name: Store Unique Id for distinction
         run: echo "unique_id=$(uuidgen)" >> $GITHUB_ENV
-        
+
       - name: Upload Benchmark file as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -144,12 +144,11 @@ jobs:
         with:
           name: benchmark-report-${{ matrix.dialect }}
           path: ${{ matrix.dialect }}.json
-    
-          
+
   upload_benchmark_artifact:
     needs:
       - merge_benchmarks_into_single_report
-    
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
