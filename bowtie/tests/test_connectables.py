@@ -145,11 +145,11 @@ class TestDirect:
     def test_import(self):
         id = validated("direct:bowtie._direct_connectable:jsonschema")
 
-        from bowtie._direct_connectable import make_jsonschema
+        from bowtie._direct_connectable import jsonschema
 
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=Direct(connect=make_jsonschema()),
+            connector=Direct(connect=jsonschema()),
         )
 
 

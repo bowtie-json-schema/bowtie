@@ -144,7 +144,7 @@ def direct_implementation(
         ],
     ),
 )
-def make_jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
+def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     from jsonschema.validators import (
         validator_for,  # type: ignore[reportUnknownVariableType]
     )
@@ -198,7 +198,7 @@ def null(dialect: Dialect) -> SchemaCompiler[ValidationError]:
 
 
 IMPLEMENTATIONS = {
-    "python-jsonschema": make_jsonschema,
+    "python-jsonschema": jsonschema,
 }
 
 
