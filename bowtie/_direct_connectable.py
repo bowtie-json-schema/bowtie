@@ -245,7 +245,7 @@ class Direct(Generic[E_co]):
         It can be useful e.g. for simply testing whether something is valid
         JSON, or for disabling validation where it otherwise would happen.
         """
-        return cls(connect=null)
+        return cls(connect=null())
 
     def connect(
         self,

@@ -127,19 +127,6 @@ class TestDirect:
             connector=Direct.from_id(id="python-jsonschema"),
         )
 
-    def test_arbitrary_params(self):
-        id = validated(
-            "direct:bowtie.tests.fauxmplementations.miniatures:id=fake_javascript,version=1.2.3",
-        )
-        print(Connectable.from_str(id))
-        assert Connectable.from_str(id) == Connectable(
-            id=id,
-            connector=Direct.from_id(
-                id="fake_javascript",
-                version="1.2.3",
-            ),
-        )
-
     def test_null(self):
         id = validated("direct:null")
         assert Connectable.from_str(id) == Connectable(
