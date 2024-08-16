@@ -129,7 +129,7 @@ class TestDirect:
 
     def test_arbitrary_params(self):
         id = validated(
-            "direct:bowtie.tests.fauxmplementations.miniatures:id=fake_javascript,version=1.2.3"
+            "direct:bowtie.tests.fauxmplementations.miniatures:id=fake_javascript,version=1.2.3",
         )
         print(Connectable.from_str(id))
         assert Connectable.from_str(id) == Connectable(
