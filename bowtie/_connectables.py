@@ -122,6 +122,8 @@ class Connectable:
                 if len(args) == 1 and not kwargs:
                     connector = Connector(id=f"{id}:{args[0]}")
                 else:
+                    if "id" in kwargs:
+                        id = kwargs.pop("id")
                     connector = Connector(*args, id=id, **kwargs)
             else:
                 connector = Connector(id=id)

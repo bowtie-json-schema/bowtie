@@ -96,29 +96,33 @@ class Unconnection(Generic[E_co]):
 
 def direct_implementation(
     implicit_dialect_response: StartedDialect = StartedDialect.OK,
-    **kwargs: Any,
+    **decorator_kwargs: Any,
 ) -> Callable[
     [Callable[[Dialect], SchemaCompiler[E_co]]],
-    Callable[[], Unconnection[E_co]],
+    Callable[..., Callable[[], Unconnection[E_co]]],
 ]:
     def connect(
         fn: Callable[[Dialect], SchemaCompiler[E_co]],
-    ) -> Callable[[], Unconnection[E_co]]:
-        name = kwargs.pop("name", fn.__name__)
-        if "version" not in kwargs:
-            kwargs["version"] = metadata.version(name)
-        info = ImplementationInfo(
-            name=name,
-            os=platform.system(),
-            os_version=platform.release(),
-            language_version=platform.python_version(),
-            **kwargs,
-        )
-        return lambda: Unconnection(
-            compiler_for=fn,
-            info=info,
-            implicit_dialect_response=implicit_dialect_response,
-        )
+    ) -> Callable[..., Callable[[], Unconnection[E_co]]]:
+
+        def make_connect(**kwargs: Any):
+            name = decorator_kwargs.pop("name", fn.__name__)
+            if "version" not in decorator_kwargs:
+                decorator_kwargs["version"] = metadata.version(name)
+            info = ImplementationInfo(
+                name=name,
+                os=platform.system(),
+                os_version=platform.release(),
+                language_version=platform.python_version(),
+                **decorator_kwargs,
+            )
+            return lambda: Unconnection(
+                compiler_for=fn,
+                info=info,
+                implicit_dialect_response=implicit_dialect_response,
+            )
+
+        return make_connect
 
     return connect
 
@@ -222,16 +226,16 @@ class Direct(Generic[E_co]):
     kind = "direct"
 
     @classmethod
-    def from_id(cls, id: ConnectableId) -> Direct[Any]:
+    def from_id(cls, id: ConnectableId, **kwargs: Any) -> Direct[Any]:
         if "." in id and ":" in id:
-            connect = pkgutil.resolve_name(id)
+            make_connect = pkgutil.resolve_name(id)
         elif id == "null":
             return cls.null()
         else:
-            connect = IMPLEMENTATIONS.get(id)
-            if connect is None:
+            make_connect = IMPLEMENTATIONS.get(id)
+            if make_connect is None:
                 raise CannotConnect(kind=cls.kind, id=id)
-        return cls(connect=connect)
+        return cls(connect=make_connect(**kwargs))
 
     @classmethod
     def null(cls):
