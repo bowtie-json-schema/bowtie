@@ -1121,13 +1121,14 @@ _inflect_engine = InflectEngine()
 
 POSSIBLE_DIALECT_SHORTNAMES = _inflect_engine.join(sorted(Dialect.by_alias()))  # type: ignore[reportArgumentType]
 
-
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
-    if list(dialects) == list(Dialect.known()):
-        return "all known dialects"
-
-    return _inflect_engine.join([dialect.pretty_name for dialect in dialects])  # type: ignore[reportArgumentType]
-
+    return (
+        "all known dialects"
+        if list(dialects) == list(Dialect.known())
+        else _inflect_engine.join(
+            [dialect.pretty_name for dialect in dialects], # type: ignore[reportArgumentType]
+        )
+    )
 
 def dialect_option(
     default: Dialect | None = Dialect.latest(),
