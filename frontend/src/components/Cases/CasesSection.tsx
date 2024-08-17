@@ -5,17 +5,17 @@ import CaseItem from "./CaseItem";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const implementationsResults = Array.from(
-    reportData.implementationsResults.values(),
+    reportData.implementationsResults.values()
   );
   const implementations = Array.from(
-    reportData.implementationsResults.keys(),
+    reportData.implementationsResults.keys()
   ).map((id) => reportData.runMetadata.implementations.get(id)!);
 
   return (
     <Accordion id="cases">
-      {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
+      {Array.from(reportData.cases.entries()).map(([seq, caseData]) => (
         <CaseItem
-          key={index}
+          key={seq.toString()}
           seq={seq}
           caseData={caseData}
           implementations={implementations}

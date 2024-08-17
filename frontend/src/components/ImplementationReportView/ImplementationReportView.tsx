@@ -135,11 +135,11 @@ const ReportComponent = ({ implementationReport }: Props) => {
                   <td>
                     <ul>
                       {implementation.links.map(
-                        ({ description, url }, index: number) => (
+                        ({ description, url }, index) => (
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
-                        ),
+                        )
                       )}
                     </ul>
                   </td>
