@@ -45,11 +45,11 @@ const DialectCompliance = ({ implementation, dialectsCompliance }: Props) => {
                     b[1].failedTests! -
                     b[1].erroredTests! -
                     b[1].skippedTests! ||
-                  +b[0].firstPublicationDate - +a[0].firstPublicationDate,
+                  +b[0].firstPublicationDate - +a[0].firstPublicationDate
               )
-              .map(([dialect, result], index) => {
+              .map(([dialect, result]) => {
                 return (
-                  <tr key={index}>
+                  <tr key={dialect.uri}>
                     <td>{dialect.prettyName}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>

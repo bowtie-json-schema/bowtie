@@ -43,7 +43,7 @@ const VersionsTrend = ({ implementation }: Props) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(
-    Dialect.newestToOldest()[0],
+    Dialect.newestToOldest()[0]
   );
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
@@ -52,11 +52,12 @@ const VersionsTrend = ({ implementation }: Props) => {
   const fetchDialectTrendData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const versionedReports =
-        await implementation.fetchVersionedReportsFor(selectedDialect);
+      const versionedReports = await implementation.fetchVersionedReportsFor(
+        selectedDialect
+      );
       const versionsCompliance =
         prepareVersionsComplianceReportFor(versionedReports).get(
-          selectedDialect,
+          selectedDialect
         )!;
 
       setDialectsTrendData((prev) =>
@@ -69,8 +70,8 @@ const VersionsTrend = ({ implementation }: Props) => {
               unsuccessfulTests:
                 data.failedTests! + data.erroredTests! + data.skippedTests!,
               ...data,
-            })),
-        ),
+            }))
+        )
       );
     } catch (error) {
       setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
@@ -81,7 +82,7 @@ const VersionsTrend = ({ implementation }: Props) => {
 
   const shouldFetchDialectTrendData = useMemo(
     () => !dialectsTrendData.has(selectedDialect),
-    [selectedDialect, dialectsTrendData],
+    [selectedDialect, dialectsTrendData]
   );
 
   useEffect(() => {
@@ -93,13 +94,13 @@ const VersionsTrend = ({ implementation }: Props) => {
   const filteredDialects = useMemo(
     () =>
       Dialect.newestToOldest().filter((dialect) => dialect != selectedDialect),
-    [selectedDialect],
+    [selectedDialect]
   );
 
   const handleDialectSelect = useCallback(
     (shortName: string | null) =>
       setSelectedDialect(Dialect.withName(shortName!)),
-    [],
+    []
   );
 
   const legendPayload = useMemo(
@@ -111,7 +112,7 @@ const VersionsTrend = ({ implementation }: Props) => {
           color: isDarkMode ? "#fff" : "#000",
         },
       ] as Payload[],
-    [implementation.id, isDarkMode],
+    [implementation.id, isDarkMode]
   );
 
   return (
@@ -138,10 +139,9 @@ const VersionsTrend = ({ implementation }: Props) => {
               </Dropdown.Menu>
             </Dropdown>
           </div>
-          {isLoading ? (
+          {isLoading || !dialectsTrendData.has(selectedDialect) ? (
             <LoadingAnimation />
-          ) : !dialectsTrendData.has(selectedDialect) ||
-            !dialectsTrendData.get(selectedDialect)!.length ? (
+          ) : !dialectsTrendData.get(selectedDialect)!.length ? (
             <div className="d-flex justify-content-center align-items-center h-100">
               {`None of the versions of ${implementation.id} support ${selectedDialect.prettyName}.`}
             </div>
