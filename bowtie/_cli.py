@@ -1813,25 +1813,23 @@ async def download_and_parse_reports_for(
                     )
                     response = await client.get(str(url))
                     response.raise_for_status()
-                except httpx.HTTPStatusError:
-                    return (
-                        version,
-                        dialect,
-                        _report.Report.empty(dialect=dialect),
+                    progress.update(
+                        task,
+                        description=(
+                            f"Downloading and Parsing: "
+                            f"v{version} ({dialect.short_name}.json)"
+                        ),
                     )
+                except httpx.HTTPStatusError:
+                    report = _report.Report.empty(dialect=dialect)
+                    progress.update(task, advance=1)
+                    return version, dialect, report
                 else:
                     nonlocal actual_downloaded_files
                     actual_downloaded_files += 1
 
-                    progress.update(
-                        task,
-                        description=(
-                            f"Attempting to download and parse: "
-                            f"v{version}/{dialect.short_name}.json"
-                        ),
-                    )
                     report = _report.Report.from_serialized(
-                        response.iter_lines()
+                        response.iter_lines(),
                     )
                     progress.update(task, advance=1)
                     return version, dialect, report
@@ -1872,19 +1870,18 @@ async def download_and_parse_reports_for(
         async def download_and_parse_latest_report_for(dialect: Dialect):
             try:
                 response = await dialect.latest_report()
+                response.raise_for_status()
                 progress.update(
                     task,
                     description=(
-                        f"Attempting to download and parse: "
-                        f"{dialect.short_name}.json"
+                        f"Downloading and Parsing: "
+                        f"latest ({dialect.short_name}.json)"
                     ),
                 )
             except httpx.HTTPStatusError:
-                return (
-                    "latest",
-                    dialect,
-                    _report.Report.empty(dialect=dialect),
-                )
+                report = _report.Report.empty(dialect=dialect)
+                progress.update(task, advance=1)
+                return "latest", dialect, report
             else:
                 report = _report.Report.from_serialized(response.iter_lines())
                 progress.update(task, advance=1)
