@@ -10,6 +10,7 @@ describe("Dialect", () => {
       prettyName: "Draft 7",
       firstPublicationDate: new Date("2017-11-19"),
       routePath: "/dialects/draft7",
+      benchmarksRoutePath: '/benchmarks/draft7',
     });
   });
 });
