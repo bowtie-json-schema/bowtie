@@ -1830,8 +1830,8 @@ async def download_and_parse_reports_for(
                             f"v{version}/{dialect.short_name}.json"
                         ),
                     )
-                    report = (
-                        _report.Report.from_serialized(response.iter_lines())
+                    report = _report.Report.from_serialized(
+                        response.iter_lines()
                     )
                     progress.update(task, advance=1)
                     return version, dialect, report
