@@ -5,10 +5,10 @@ import CaseItem from "./CaseItem";
 
 const CasesSection = ({ reportData }: { reportData: ReportData }) => {
   const implementationsResults = Array.from(
-    reportData.implementationsResults.values()
+    reportData.implementationsResults.values(),
   );
   const implementations = Array.from(
-    reportData.implementationsResults.keys()
+    reportData.implementationsResults.keys(),
   ).map((id) => reportData.runMetadata.implementations.get(id)!);
 
   return (
