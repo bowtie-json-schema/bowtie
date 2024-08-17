@@ -3,6 +3,7 @@ import URI from "urijs";
 import siteURI from "./Site";
 import data from "../../../data/dialects.json";
 import { fromSerialized } from "./parseReportData";
+import { fromJSON } from "./parseBenchmarkData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -13,6 +14,7 @@ export default class Dialect {
   readonly uri: string;
   readonly firstPublicationDate: Date;
   readonly routePath: string;
+  readonly benchmarksRoutePath: string;
 
   private static all: Map<string, Dialect> = new Map<string, Dialect>();
 
@@ -32,6 +34,7 @@ export default class Dialect {
     this.uri = uri;
     this.firstPublicationDate = firstPublicationDate;
     this.routePath = `/dialects/${shortName}`;
+    this.benchmarksRoutePath = `/benchmarks/${shortName}`;
   }
 
   /** Sorting a dialect sorts by its publication date. */
@@ -45,6 +48,12 @@ export default class Dialect {
     const url = baseURI.clone().filename(this.shortName).suffix("json").href();
     const response = await fetch(url);
     return fromSerialized(await response.text());
+  }
+
+  async fetchBenchmarkReport(baseURI: URI = siteURI) {
+    const url = baseURI.clone().directory("benchmarks").filename(this.shortName).suffix("json").href();
+    const response = await fetch(url);
+    return fromJSON(await response.text());
   }
 
   static known(): Iterable<Dialect> {

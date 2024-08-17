@@ -5,6 +5,7 @@ import { createHashRouter, Params, RouterProvider } from "react-router-dom";
 
 import Dialect from "./data/Dialect";
 import DialectReportViewDataHandler from "./DialectReportViewDataHandler";
+import BenchmarkReportViewDataHandler from "./BenchmarkReportViewDataHandler";
 import ThemeContextProvider from "./context/ThemeContext";
 import Implementation from "./data/Implementation";
 import EmbedBadges from "./components/ImplementationReportView/EmbedBadges";
@@ -48,6 +49,22 @@ const dialectReportViewDataLoader = async ({
   return { reportData, allImplementationsData };
 };
 
+const benchmarkReportViewDataLoader = async ({
+  params,
+}: {
+  params: Params<string>;
+}) => {
+  const draftName = params?.draftName ?? "draft2020-12";
+  const dialect = Dialect.withName(draftName);
+  document.title = `Benchmarks - ${dialect.prettyName}`;
+
+  const [benchmarkReportData, allImplementationsData] = await Promise.all([
+    dialect.fetchBenchmarkReport(),
+    Implementation.fetchAllImplementationsData(),
+  ]);
+  return { benchmarkReportData, allImplementationsData };
+};
+
 const router = createHashRouter([
   {
     path: "/",
@@ -63,6 +80,16 @@ const router = createHashRouter([
         path: "/dialects/:draftName",
         Component: DialectReportViewDataHandler,
         loader: dialectReportViewDataLoader,
+      },
+      {
+        path: "/benchmarks/",
+        Component: BenchmarkReportViewDataHandler,
+        loader: benchmarkReportViewDataLoader,
+      },
+      {
+        path: "/benchmarks/:draftName",
+        Component: BenchmarkReportViewDataHandler,
+        loader: benchmarkReportViewDataLoader,
       },
       {
         path: "/local-report",

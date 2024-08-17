@@ -19,6 +19,7 @@ const NavBar = () => {
 
   const rootMatch = useMatch("/");
   const dialectsMatch = useMatch("/dialects/*");
+  const isBenchmarksPage = useMatch("/benchmarks/*");
   const isDialectPage = rootMatch ?? dialectsMatch;
 
   useEffect(() => {
@@ -32,9 +33,8 @@ const NavBar = () => {
     <Navbar
       expand="lg"
       sticky="top"
-      className={`mb-4 ${
-        isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
-      }`}
+      className={`mb-4 ${isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
+        }`}
     >
       <Container
         fluid
@@ -54,9 +54,8 @@ const NavBar = () => {
             </Link>
             <button
               type="button"
-              className={`btn d-flex align-items-center justify-content-center ${
-                isDarkMode ? "btn-light" : "btn-secondary"
-              } rounded me-1 p-2`}
+              className={`btn d-flex align-items-center justify-content-center ${isDarkMode ? "btn-light" : "btn-secondary"
+                } rounded me-1 p-2`}
               onClick={() => toggleDarkMode!()}
             >
               {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}
@@ -89,23 +88,49 @@ const NavBar = () => {
                       Details
                     </Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/benchmarks">
+                      Benchmarks
+                    </Link>
+                  </li>
+                  <NavDropdown title="Dialects" id="dialect-dropdown">
+                    {Dialect.newest_to_oldest().map((dialect) => (
+                      <NavDropdown.Item
+                        as={Link}
+                        to={dialect.routePath}
+                        key={dialect.shortName}
+                      >
+                        {dialect.prettyName}
+                      </NavDropdown.Item>
+                    ))}
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item as={Link} to="/local-report/">
+                      Upload a report
+                    </NavDropdown.Item>
+                  </NavDropdown>
                 </>
               )}
-              <NavDropdown title="Dialects" id="dialect-dropdown">
-                {Dialect.newest_to_oldest().map((dialect) => (
-                  <NavDropdown.Item
-                    as={Link}
-                    to={dialect.routePath}
-                    key={dialect.shortName}
-                  >
-                    {dialect.prettyName}
-                  </NavDropdown.Item>
-                ))}
-                <NavDropdown.Divider />
-                <NavDropdown.Item as={Link} to="/local-report/">
-                  Upload a report
-                </NavDropdown.Item>
-              </NavDropdown>
+              {isBenchmarksPage && (
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/">
+                      Dialect Test Reports
+                    </Link>
+                  </li>
+                  <NavDropdown title="Dialects" id="dialect-dropdown">
+                    {Dialect.newest_to_oldest().map((dialect) => (
+                      <NavDropdown.Item
+                        as={Link}
+                        to={dialect.benchmarksRoutePath}
+                        key={dialect.shortName}
+                      >
+                        {dialect.prettyName}
+                      </NavDropdown.Item>
+                    ))}
+                  </NavDropdown>
+                </>
+              )}
+
               <li className="nav-item d-block d-lg-none">
                 <a
                   href="https://github.com/bowtie-json-schema/bowtie/"

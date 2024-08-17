@@ -1,0 +1,37 @@
+import Accordion from "react-bootstrap/Accordion";
+import { BenchmarkGroupResult } from "../../data/parseBenchmarkData";
+import ListGroup from "react-bootstrap/ListGroup";
+import BenchmarkResult from "./BenchmarkResult";
+import Badge from "react-bootstrap/Badge";
+
+const BenchmarkTypeResultSection = ({
+  benchmarkType,
+  benchmarkResults,
+}: {
+  benchmarkType: string;
+  benchmarkResults: Array<BenchmarkGroupResult>;
+}) => {
+  return (
+    <ListGroup.Item
+      as="li"
+      className="d-flex justify-content-between align-items-start"
+    >
+      <div className="ms-2 me-auto">
+        <div className="fw-bold mb-4 mt-2 ">
+          Benchmark Type:{" "}
+          {benchmarkType.charAt(0).toUpperCase() + benchmarkType.slice(1)}
+        </div>
+        <Accordion id="benchmarks" className="mb-4">
+          {benchmarkResults.map((benchmarkResult) => (
+            <BenchmarkResult benchmarkResult={benchmarkResult} />
+          ))}
+        </Accordion>
+      </div>
+      <Badge bg="primary" className="mt-2" pill>
+        {benchmarkResults.length}
+      </Badge>
+    </ListGroup.Item>
+  );
+};
+
+export default BenchmarkTypeResultSection;
