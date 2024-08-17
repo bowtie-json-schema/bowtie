@@ -2284,10 +2284,8 @@ def trend(
     else:
         dialects_trend = {
             dialect: latest_report
-            for dialect in dialects
-            for _, _, latest_report in versioned_reports
+            for _, dialect, latest_report in versioned_reports
             if not latest_report.is_empty
-            and latest_report.metadata.dialect == dialect
             and latest_report.implementations.get(id)
         }
 
@@ -2298,8 +2296,7 @@ def trend(
                     ConnectableId,
                     Iterable[tuple[str, Iterable[tuple[str, dict[str, int]]]]],
                 ]
-            ] = []
-            serializable.append(
+            ] = [
                 (
                     id,
                     [
@@ -2329,7 +2326,7 @@ def trend(
                         for dialect, report in dialects_trend.items()
                     ],
                 ),
-            )
+            ]
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
             console.Console().print(
