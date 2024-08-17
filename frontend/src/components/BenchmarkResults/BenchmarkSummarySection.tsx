@@ -16,13 +16,13 @@ import { mean, prod, nthRoot, min, max } from "mathjs";
 const BenchmarkSummarySection = ({
   benchmarkResults,
 }: {
-  benchmarkResults: Array<BenchmarkGroupResult>;
+  benchmarkResults: BenchmarkGroupResult[];
 }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const textColor = isDarkMode ? "white" : "black";
 
   const benchmarkRankings = useMemo(() => {
-    let resultsForImplementation: Record<string, number[][]> = {};
+    const resultsForImplementation: Record<string, number[][]> = {};
 
     benchmarkResults.map((benchmarkGroupResult) => {
       benchmarkGroupResult.benchmarkResults.map((benchmarkResult) => {
@@ -46,22 +46,22 @@ const BenchmarkSummarySection = ({
       });
     });
 
-    let meanForImplementation: Record<string, number> = {};
+    const meanForImplementation: Record<string, number> = {};
 
     Object.entries(resultsForImplementation).map(
       ([implementationId, implementationResults]) => {
-        let means: Array<number> = implementationResults.map(
+        const means: number[] = implementationResults.map(
           (implementationResult) => {
             return mean(implementationResult);
           },
         );
-        let prodOfMeans = prod(means);
-        let geometricMean = nthRoot(prodOfMeans, means.length);
+        const prodOfMeans = prod(means);
+        const geometricMean = nthRoot(prodOfMeans, means.length);
         meanForImplementation[implementationId] = geometricMean as number;
       },
     );
 
-    let chartData: Array<Record<string, any>> = Object.entries(
+    let chartData: Record<string, string>[] = Object.entries(
       meanForImplementation,
     ).map(([implementationId, geometricMean]) => {
       return {

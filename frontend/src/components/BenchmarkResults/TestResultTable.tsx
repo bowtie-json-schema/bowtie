@@ -8,15 +8,15 @@ const TestResultTable = ({
   testResults,
   heading,
 }: {
-  testResults: Array<TestResult>;
+  testResults: TestResult[];
   heading: string;
 }) => {
   function geometricMean(values: number[]): number {
     if (values.length == 0) {
       return 1e9;
     }
-    let prodOfMeans = prod(values);
-    let geometricMean = nthRoot(prodOfMeans, values.length);
+    const prodOfMeans = prod(values);
+    const geometricMean = nthRoot(prodOfMeans, values.length);
     return geometricMean as number;
   }
 
@@ -30,9 +30,9 @@ const TestResultTable = ({
   }
 
   const sortedResultsForConnectable = useMemo(() => {
-    let resultsForConnectable: Record<
+    const resultsForConnectable: Record<
       string,
-      Array<[number, number, boolean]>
+      [number, number, boolean][]
     > = {};
 
     testResults[0].implementationResults.forEach(
@@ -52,19 +52,19 @@ const TestResultTable = ({
 
     const sortedConnectables = Object.entries(resultsForConnectable)
       .sort(
-        ([_, resultsA], [__, resultsB]) =>
+        ([, resultsA], [, resultsB]) =>
           Number(
             geometricMean(
               resultsA
-                .filter(([_, __, errored]) => !errored)
-                .map(([mean, _, __]) => mean),
+                .filter(([, , errored]) => !errored)
+                .map(([mean, , ]) => mean),
             ),
           ) -
           Number(
             geometricMean(
               resultsB
-                .filter(([_, __, errored]) => !errored)
-                .map(([mean, _, __]) => mean),
+                .filter(([, , errored]) => !errored)
+                .map(([mean, , ]) => mean),
             ),
           ),
       )
@@ -75,7 +75,7 @@ const TestResultTable = ({
         acc[key] = resultsForConnectable[key];
         return acc;
       },
-      {} as Record<string, Array<[number, number, boolean]>>,
+      {} as Record<string, [number, number, boolean][]>,
     );
   }, [testResults]);
 
@@ -91,7 +91,7 @@ const TestResultTable = ({
             <tr>
               <th>Implementation</th>
               {testResults.map((testResult) => (
-                <th>{testResult.description}</th>
+                <th key={testResult.description}>{testResult.description}</th>
               ))}
               <th>Geometric Mean of Time Taken</th>
             </tr>
@@ -99,9 +99,9 @@ const TestResultTable = ({
           <tbody>
             {Object.entries(sortedResultsForConnectable).map(
               ([implementationId, testResults], index) =>
-                testResults.filter(([_, __, errored]) => !errored).length >
+                testResults.filter(([, , errored]) => !errored).length >
                   0 && (
-                  <tr className={index == 0 ? "table-success" : ""}>
+                  <tr key={implementationId} className={index == 0 ? "table-success" : ""}>
                     <td>{implementationId}</td>
                     {testResults.map(([mean_value, std_dev, errored]) => (
                       <td
@@ -119,7 +119,7 @@ const TestResultTable = ({
                       {formatValue(
                         geometricMean(
                           testResults
-                            .filter(([_, __, errored]) => !errored)
+                            .filter(([, , errored]) => !errored)
                             .map(([mean]) => mean),
                         ),
                       )}
@@ -131,7 +131,7 @@ const TestResultTable = ({
         </Table>,
       ),
     );
-  }, [sortedResultsForConnectable]);
+  }, [testResults, sortedResultsForConnectable]);
 
   return (
     <Accordion.Item ref={schemaDisplayRef} eventKey={heading}>

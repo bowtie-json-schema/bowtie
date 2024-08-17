@@ -13,7 +13,7 @@ const DetailedBenchmarkResult = ({
 }: {
   benchmarkGroupResult: BenchmarkGroupResult;
 }) => {
-  let commonTestResults: Array<TestResult> = useMemo(() => {
+  const commonTestResults: TestResult[] = useMemo(() => {
     let commonTests = new Set(
       benchmarkGroupResult.benchmarkResults[0].testResults.map(
         (test) => test.description,
@@ -34,7 +34,7 @@ const DetailedBenchmarkResult = ({
     const commonTest = [...commonTests][0];
 
     const commonTestResults = benchmarkGroupResult.benchmarkResults.reduce<
-      Array<TestResult>
+      TestResult[]
     >((acc, benchmarkResult) => {
       const testResult = benchmarkResult.testResults.find(
         (test: TestResult) => test.description === commonTest,
@@ -48,8 +48,8 @@ const DetailedBenchmarkResult = ({
       return acc;
     }, []);
     return commonTestResults;
-  }, []);
-  let nonCommonBenchmarkResult = benchmarkGroupResult.benchmarkResults.at(-1);
+  }, [benchmarkGroupResult.benchmarkResults]);
+  const nonCommonBenchmarkResult = benchmarkGroupResult.benchmarkResults.at(-1);
 
   return (
     <>

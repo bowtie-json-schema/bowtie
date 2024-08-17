@@ -20,7 +20,7 @@ const BenchmarkResultsSection = ({
       acc[item.benchmarkType].push(item);
       return acc;
     },
-    {} as { [key: string]: BenchmarkGroupResult[] },
+    {} as Record<string, BenchmarkGroupResult[]>,
   );
 
   return (
@@ -30,6 +30,7 @@ const BenchmarkResultsSection = ({
         {Object.entries(resultsByBenchmarkType).map(
           ([benchmarkType, benchmarkResults]) => (
             <BenchmarkTypeResultSection
+              key={benchmarkType}
               benchmarkType={benchmarkType}
               benchmarkResults={benchmarkResults}
             />

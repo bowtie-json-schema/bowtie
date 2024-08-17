@@ -13,17 +13,17 @@ export const fromJSON = (json_data: string): BenchmarkReportData => {
   const json = JSON.parse(json_data) as Record<string, unknown>;
   return {
     metadata: parseBenchmarkMetadata(json.metadata as Record<string, unknown>),
-    results: parseBenchmarkResults(json.results as Array<Record<string, unknown>>),
+    results: parseBenchmarkResults(json.results as Record<string, unknown>[]),
   };
 };
 
 const parseBenchmarkMetadata = (rawMetadata: Record<string, unknown>) => {
   const system_metadata = rawMetadata.system_metadata as Record<string, unknown>;
 
-  let dialect = Dialect.forURI(rawMetadata.dialect as string);
-  let started = new Date(rawMetadata.started as string);
-  let implementations = new Map<string, Implementation>(
-    Object.entries(rawMetadata.implementations as RawImplementationData).map(([id, info]) => [
+  const dialect = Dialect.forURI(rawMetadata.dialect as string);
+  const started = new Date(rawMetadata.started as string);
+  const implementations = new Map<string, Implementation>(
+    Object.entries(rawMetadata.implementations as Record<string, RawImplementationData>).map(([id, info]) => [
       id,
       new Implementation(id, info),
     ]),
@@ -51,24 +51,24 @@ const parseBenchmarkMetadata = (rawMetadata: Record<string, unknown>) => {
   );
 }
 
-const parseBenchmarkResults = (rawResults: Array<Record<string, unknown>>) => {
-  let benchmarkGroupResults: Array<BenchmarkGroupResult> = [];
+const parseBenchmarkResults = (rawResults: Record<string, unknown>[]) => {
+  const benchmarkGroupResults: BenchmarkGroupResult[] = [];
   
   rawResults.forEach(benchmarkGroupResult => {
-    let benchmarkResults: Array<BenchmarkResult> = [];
+    const benchmarkResults: BenchmarkResult[] = [];
 
-    (benchmarkGroupResult.benchmark_results as Array<Record<string, unknown>>).forEach(benchmarkResult => {
-      let testResults: Array<TestResult> = [];
+    (benchmarkGroupResult.benchmark_results as Record<string, unknown>[]).forEach(benchmarkResult => {
+      const testResults: TestResult[] = [];
 
-      (benchmarkResult.test_results as Array<Record<string, unknown>>).forEach(testResult => {
-          let implementationResults: Array<ImplementationResult> = [];
+      (benchmarkResult.test_results as Record<string, unknown>[]).forEach(testResult => {
+          const implementationResults: ImplementationResult[] = [];
 
-          (testResult.connectable_results as Array<Record<string, unknown>>).forEach(implementationResult => {
+          (testResult.connectable_results as Record<string, unknown>[]).forEach(implementationResult => {
             implementationResults.push({
               implementationId: implementationResult.connectable_id as string,
               duration: implementationResult.duration as number,
               errored: implementationResult.errored as boolean,
-              values: implementationResult.values as Array<number>
+              values: implementationResult.values as number[]
             })
           })
           testResults.push({
@@ -98,7 +98,7 @@ const parseBenchmarkResults = (rawResults: Array<Record<string, unknown>>) => {
 
 export interface BenchmarkReportData {
   metadata: BenchmarkRunMetadata;
-  results: Array<BenchmarkGroupResult>;
+  results: BenchmarkGroupResult[];
 }
 
 /**
@@ -145,7 +145,7 @@ export interface BenchmarkSystemMetadata {
 export interface BenchmarkGroupResult {
   name: string;
   description: string;
-  benchmarkResults: Array<BenchmarkResult>;
+  benchmarkResults: BenchmarkResult[];
   benchmarkType: string;
   varyingParameter?: string;
 }
@@ -153,17 +153,17 @@ export interface BenchmarkGroupResult {
 export interface BenchmarkResult {
   name: string;
   description: string;
-  testResults: Array<TestResult>;
+  testResults: TestResult[];
 }
 
 export interface TestResult {
   description: string;
-  implementationResults: Array<ImplementationResult>;
+  implementationResults: ImplementationResult[];
 }
 
 export interface ImplementationResult {
   duration: number;
   errored: boolean;
-  values: Array<number>;
+  values: number[];
   implementationId: string;
 }

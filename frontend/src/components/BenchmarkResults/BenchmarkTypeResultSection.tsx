@@ -9,7 +9,7 @@ const BenchmarkTypeResultSection = ({
   benchmarkResults,
 }: {
   benchmarkType: string;
-  benchmarkResults: Array<BenchmarkGroupResult>;
+  benchmarkResults: BenchmarkGroupResult[];
 }) => {
   return (
     <ListGroup.Item
@@ -23,7 +23,7 @@ const BenchmarkTypeResultSection = ({
         </div>
         <Accordion id="benchmarks" className="mb-4">
           {benchmarkResults.map((benchmarkResult) => (
-            <BenchmarkResult benchmarkResult={benchmarkResult} />
+            <BenchmarkResult key={benchmarkResult.name} benchmarkResult={benchmarkResult} />
           ))}
         </Accordion>
       </div>
