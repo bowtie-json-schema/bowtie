@@ -1829,13 +1829,12 @@ async def download_and_parse_reports_for(
                             f"Attempting to download and parse: "
                             f"v{version}/{dialect.short_name}.json"
                         ),
-                        advance=1,
                     )
-                    return (
-                        version,
-                        dialect,
-                        _report.Report.from_serialized(response.iter_lines()),
+                    report = (
+                        _report.Report.from_serialized(response.iter_lines())
                     )
+                    progress.update(task, advance=1)
+                    return version, dialect, report
 
             with progress:
                 responses = await asyncio.gather(
@@ -1879,7 +1878,6 @@ async def download_and_parse_reports_for(
                         f"Attempting to download and parse: "
                         f"{dialect.short_name}.json"
                     ),
-                    advance=1,
                 )
             except httpx.HTTPStatusError:
                 return (
@@ -1888,11 +1886,9 @@ async def download_and_parse_reports_for(
                     _report.Report.empty(dialect=dialect),
                 )
             else:
-                return (
-                    "latest",
-                    dialect,
-                    _report.Report.from_serialized(response.iter_lines()),
-                )
+                report = _report.Report.from_serialized(response.iter_lines())
+                progress.update(task, advance=1)
+                return "latest", dialect, report
 
         with progress:
             responses = await asyncio.gather(
