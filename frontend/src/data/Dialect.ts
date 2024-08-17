@@ -51,7 +51,12 @@ export default class Dialect {
   }
 
   async fetchBenchmarkReport(baseURI: URI = siteURI) {
-    const url = baseURI.clone().directory("benchmarks").filename(this.shortName).suffix("json").href();
+    const url = baseURI
+      .clone()
+      .directory("benchmarks")
+      .filename(this.shortName)
+      .suffix("json")
+      .href();
     const response = await fetch(url);
     return fromJSON(await response.text());
   }

@@ -36,30 +36,40 @@ export const BenchmarkReportView = ({
     const filteredData = { ...benchmarkReportData };
     const selectedLanguages = params.getAll("language");
     const selectedTypes = params.getAll("benchmark_type");
-    const implementationNames = Array.from(benchmarkReportData.metadata.implementations)
-      .filter(([, implementationData]) => selectedLanguages.includes(implementationData.language))
+    const implementationNames = Array.from(
+      benchmarkReportData.metadata.implementations,
+    )
+      .filter(([, implementationData]) =>
+        selectedLanguages.includes(implementationData.language),
+      )
       .map(([implementationId]) => implementationId);
 
     filteredData.results = benchmarkReportData.results
-      .map(group => ({
+      .map((group) => ({
         ...group,
         benchmarkResults: group.benchmarkResults
-          .map(benchmark => ({
+          .map((benchmark) => ({
             ...benchmark,
             testResults: benchmark.testResults
-              .map(test => ({
+              .map((test) => ({
                 ...test,
                 implementationResults: test.implementationResults.filter(
-                  result => implementationNames.includes(result.implementationId) || implementationNames.length==0
-                )
+                  (result) =>
+                    implementationNames.includes(result.implementationId) ||
+                    implementationNames.length == 0,
+                ),
               }))
-              .filter(test => test.implementationResults.length > 0)
+              .filter((test) => test.implementationResults.length > 0),
           }))
-          .filter(benchmark => benchmark.testResults.length > 0)
+          .filter((benchmark) => benchmark.testResults.length > 0),
       }))
-      .filter(group => group.benchmarkResults.length>0 && (selectedTypes.length==0 || selectedTypes.includes(group.benchmarkType)));
+      .filter(
+        (group) =>
+          group.benchmarkResults.length > 0 &&
+          (selectedTypes.length == 0 ||
+            selectedTypes.includes(group.benchmarkType)),
+      );
     return filteredData;
-
   }, [benchmarkReportData, params]);
 
   return (
@@ -76,7 +86,9 @@ export const BenchmarkReportView = ({
         <BenchmarkSummarySection
           benchmarkResults={filteredBenchmarkReportData.results}
         />
-        <BenchmarkResultsSection benchmarkReportData={filteredBenchmarkReportData} />
+        <BenchmarkResultsSection
+          benchmarkReportData={filteredBenchmarkReportData}
+        />
       </div>
     </main>
   );

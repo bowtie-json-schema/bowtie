@@ -18,15 +18,17 @@ export const fromJSON = (json_data: string): BenchmarkReportData => {
 };
 
 const parseBenchmarkMetadata = (rawMetadata: Record<string, unknown>) => {
-  const system_metadata = rawMetadata.system_metadata as Record<string, unknown>;
+  const system_metadata = rawMetadata.system_metadata as Record<
+    string,
+    unknown
+  >;
 
   const dialect = Dialect.forURI(rawMetadata.dialect as string);
   const started = new Date(rawMetadata.started as string);
   const implementations = new Map<string, Implementation>(
-    Object.entries(rawMetadata.implementations as Record<string, RawImplementationData>).map(([id, info]) => [
-      id,
-      new Implementation(id, info),
-    ]),
+    Object.entries(
+      rawMetadata.implementations as Record<string, RawImplementationData>,
+    ).map(([id, info]) => [id, new Implementation(id, info)]),
   );
 
   const systemMetadata: BenchmarkSystemMetadata = {
@@ -36,65 +38,71 @@ const parseBenchmarkMetadata = (rawMetadata: Record<string, unknown>) => {
     perfVersion: system_metadata.perf_version as string,
     platform: system_metadata.platform as string,
     unit: system_metadata.unit as string,
-    cpuCount: system_metadata.cpu_count as number ?? undefined,
-    cpuModel: system_metadata.cpu_model as string ?? undefined,
-    cpuFreq: system_metadata.cpu_freq as string ?? undefined,
+    cpuCount: (system_metadata.cpu_count as number) ?? undefined,
+    cpuModel: (system_metadata.cpu_model as string) ?? undefined,
+    cpuFreq: (system_metadata.cpu_freq as string) ?? undefined,
   };
-  
 
   return new BenchmarkRunMetadata(
     dialect,
     implementations,
     rawMetadata.bowtie_version as string,
     started,
-    systemMetadata
+    systemMetadata,
   );
-}
+};
 
 const parseBenchmarkResults = (rawResults: Record<string, unknown>[]) => {
   const benchmarkGroupResults: BenchmarkGroupResult[] = [];
-  
-  rawResults.forEach(benchmarkGroupResult => {
+
+  rawResults.forEach((benchmarkGroupResult) => {
     const benchmarkResults: BenchmarkResult[] = [];
 
-    (benchmarkGroupResult.benchmark_results as Record<string, unknown>[]).forEach(benchmarkResult => {
+    (
+      benchmarkGroupResult.benchmark_results as Record<string, unknown>[]
+    ).forEach((benchmarkResult) => {
       const testResults: TestResult[] = [];
 
-      (benchmarkResult.test_results as Record<string, unknown>[]).forEach(testResult => {
+      (benchmarkResult.test_results as Record<string, unknown>[]).forEach(
+        (testResult) => {
           const implementationResults: ImplementationResult[] = [];
 
-          (testResult.connectable_results as Record<string, unknown>[]).forEach(implementationResult => {
-            implementationResults.push({
-              implementationId: implementationResult.connectable_id as string,
-              duration: implementationResult.duration as number,
-              errored: implementationResult.errored as boolean,
-              values: implementationResult.values as number[]
-            })
-          })
+          (testResult.connectable_results as Record<string, unknown>[]).forEach(
+            (implementationResult) => {
+              implementationResults.push({
+                implementationId: implementationResult.connectable_id as string,
+                duration: implementationResult.duration as number,
+                errored: implementationResult.errored as boolean,
+                values: implementationResult.values as number[],
+              });
+            },
+          );
           testResults.push({
             description: testResult.description as string,
-            implementationResults: implementationResults
-          })
-      })
+            implementationResults: implementationResults,
+          });
+        },
+      );
 
       benchmarkResults.push({
         name: benchmarkResult.name as string,
         description: benchmarkResult.description as string,
-        testResults: testResults
-      })
-    })
+        testResults: testResults,
+      });
+    });
 
     benchmarkGroupResults.push({
       name: benchmarkGroupResult.name as string,
       description: benchmarkGroupResult.description as string,
       benchmarkResults: benchmarkResults,
       benchmarkType: benchmarkGroupResult.benchmark_type as string,
-      varyingParameter: benchmarkGroupResult.varying_parameter as string || undefined
+      varyingParameter:
+        (benchmarkGroupResult.varying_parameter as string) || undefined,
     });
-  })
-  
-  return benchmarkGroupResults
-}
+  });
+
+  return benchmarkGroupResults;
+};
 
 export interface BenchmarkReportData {
   metadata: BenchmarkRunMetadata;
@@ -116,7 +124,7 @@ export class BenchmarkRunMetadata {
     implementations: Map<string, Implementation>,
     bowtieVersion: string,
     started: Date,
-    systemMetadata: BenchmarkSystemMetadata
+    systemMetadata: BenchmarkSystemMetadata,
   ) {
     this.dialect = dialect;
     this.implementations = implementations;

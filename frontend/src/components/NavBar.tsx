@@ -33,8 +33,9 @@ const NavBar = () => {
     <Navbar
       expand="lg"
       sticky="top"
-      className={`mb-4 ${isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
-        }`}
+      className={`mb-4 ${
+        isDarkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"
+      }`}
     >
       <Container
         fluid
@@ -54,8 +55,9 @@ const NavBar = () => {
             </Link>
             <button
               type="button"
-              className={`btn d-flex align-items-center justify-content-center ${isDarkMode ? "btn-light" : "btn-secondary"
-                } rounded me-1 p-2`}
+              className={`btn d-flex align-items-center justify-content-center ${
+                isDarkMode ? "btn-light" : "btn-secondary"
+              } rounded me-1 p-2`}
               onClick={() => toggleDarkMode!()}
             >
               {isDarkMode ? <MoonStarsFill size={20} /> : <Sun size={20} />}

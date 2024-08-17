@@ -30,10 +30,8 @@ const TestResultTable = ({
   }
 
   const sortedResultsForConnectable = useMemo(() => {
-    const resultsForConnectable: Record<
-      string,
-      [number, number, boolean][]
-    > = {};
+    const resultsForConnectable: Record<string, [number, number, boolean][]> =
+      {};
 
     testResults[0].implementationResults.forEach(
       (implementationResult, idx) => {
@@ -57,14 +55,14 @@ const TestResultTable = ({
             geometricMean(
               resultsA
                 .filter(([, , errored]) => !errored)
-                .map(([mean, , ]) => mean),
+                .map(([mean, ,]) => mean),
             ),
           ) -
           Number(
             geometricMean(
               resultsB
                 .filter(([, , errored]) => !errored)
-                .map(([mean, , ]) => mean),
+                .map(([mean, ,]) => mean),
             ),
           ),
       )
@@ -99,9 +97,11 @@ const TestResultTable = ({
           <tbody>
             {Object.entries(sortedResultsForConnectable).map(
               ([implementationId, testResults], index) =>
-                testResults.filter(([, , errored]) => !errored).length >
-                  0 && (
-                  <tr key={implementationId} className={index == 0 ? "table-success" : ""}>
+                testResults.filter(([, , errored]) => !errored).length > 0 && (
+                  <tr
+                    key={implementationId}
+                    className={index == 0 ? "table-success" : ""}
+                  >
                     <td>{implementationId}</td>
                     {testResults.map(([mean_value, std_dev, errored]) => (
                       <td
