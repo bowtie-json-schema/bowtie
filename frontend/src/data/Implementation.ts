@@ -137,9 +137,7 @@ export default class Implementation
         `No versions metadata found for ${this.id} implementation.`
       );
 
-    const versionedReportsData = new Map<Dialect, Map<string, ReportData>>();
-    versionedReportsData.set(dialect, new Map<string, ReportData>());
-
+    const versionedReportsData = new Map<string, ReportData>();
     await Promise.all(
       versions.map(async (version) => {
         try {
@@ -151,9 +149,10 @@ export default class Implementation
               .suffix("json")
               .href()
           );
-          versionedReportsData
-            .get(dialect)!
-            .set(version, fromSerialized(await response.text()));
+          versionedReportsData.set(
+            version,
+            fromSerialized(await response.text())
+          );
         } catch (err) {
           return;
         }
