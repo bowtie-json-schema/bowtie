@@ -99,17 +99,23 @@ const TestResultTable = ({
           <tbody>
             {Object.entries(sortedResultsForConnectable).map(
               ([implementationId, testResults], index) =>
-                testResults.filter(([, , errored]) => !errored).length >
-                0 && (
+                testResults.filter(([, , errored]) => !errored).length > 0 && (
                   <OverlayTrigger
                     placement="right"
                     key={`overlay-${implementationId}`}
-                    overlay={<Tooltip id="button-tooltip" className={index != 0 ? "d-none" : ""}>
-                      Fastest Implementation
-                    </Tooltip>}
-                    
+                    overlay={
+                      <Tooltip
+                        id="button-tooltip"
+                        className={index != 0 ? "d-none" : ""}
+                      >
+                        Fastest Implementation
+                      </Tooltip>
+                    }
                   >
-                    <tr key={implementationId} className={index == 0 ? "table-success" : ""}>
+                    <tr
+                      key={implementationId}
+                      className={index == 0 ? "table-success" : ""}
+                    >
                       <td>{implementationId}</td>
                       {testResults.map(([mean_value, std_dev, errored]) => (
                         <td
@@ -119,8 +125,8 @@ const TestResultTable = ({
                           {errored
                             ? "Errored"
                             : `${formatValue(mean_value)} ± ${formatValue(
-                              std_dev,
-                            )}`}
+                                std_dev,
+                              )}`}
                         </td>
                       ))}
                       <td>
