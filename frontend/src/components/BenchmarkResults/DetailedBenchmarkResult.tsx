@@ -13,6 +13,8 @@ const DetailedBenchmarkResult = ({
 }: {
   benchmarkGroupResult: BenchmarkGroupResult;
 }) => {
+  const nonCommonBenchmarkResult = benchmarkGroupResult.benchmarkResults.at(-1);
+
   const commonTestResults: TestResult[] = useMemo(() => {
     let commonTests = new Set(
       benchmarkGroupResult.benchmarkResults[0].testResults.map(
@@ -49,11 +51,10 @@ const DetailedBenchmarkResult = ({
     }, []);
     return commonTestResults;
   }, [benchmarkGroupResult.benchmarkResults]);
-  const nonCommonBenchmarkResult = benchmarkGroupResult.benchmarkResults.at(-1);
 
   return (
     <>
-      {benchmarkGroupResult.benchmarkResults.length > 1 && (
+      {benchmarkGroupResult.benchmarkResults.length > 0 && (
         <Card className="mx-auto mb-3">
           <Card.Header>Detailed Results</Card.Header>
           <Accordion className="p-3">

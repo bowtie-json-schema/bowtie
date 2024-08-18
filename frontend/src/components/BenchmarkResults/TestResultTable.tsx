@@ -3,6 +3,8 @@ import { mean, std, prod, nthRoot } from "mathjs";
 import Table from "react-bootstrap/Table";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Accordion from "react-bootstrap/Accordion";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
 
 const TestResultTable = ({
   testResults,
@@ -97,34 +99,41 @@ const TestResultTable = ({
           <tbody>
             {Object.entries(sortedResultsForConnectable).map(
               ([implementationId, testResults], index) =>
-                testResults.filter(([, , errored]) => !errored).length > 0 && (
-                  <tr
-                    key={implementationId}
-                    className={index == 0 ? "table-success" : ""}
+                testResults.filter(([, , errored]) => !errored).length >
+                0 && (
+                  <OverlayTrigger
+                    placement="right"
+                    key={`overlay-${implementationId}`}
+                    overlay={<Tooltip id="button-tooltip" className={index != 0 ? "d-none" : ""}>
+                      Fastest Implementation
+                    </Tooltip>}
+                    
                   >
-                    <td>{implementationId}</td>
-                    {testResults.map(([mean_value, std_dev, errored]) => (
-                      <td
-                        key={mean_value}
-                        className={errored ? "table-danger" : ""}
-                      >
-                        {errored
-                          ? "Errored"
-                          : `${formatValue(mean_value)} ± ${formatValue(
+                    <tr key={implementationId} className={index == 0 ? "table-success" : ""}>
+                      <td>{implementationId}</td>
+                      {testResults.map(([mean_value, std_dev, errored]) => (
+                        <td
+                          key={mean_value}
+                          className={errored ? "table-danger" : ""}
+                        >
+                          {errored
+                            ? "Errored"
+                            : `${formatValue(mean_value)} ± ${formatValue(
                               std_dev,
                             )}`}
+                        </td>
+                      ))}
+                      <td>
+                        {formatValue(
+                          geometricMean(
+                            testResults
+                              .filter(([, , errored]) => !errored)
+                              .map(([mean]) => mean),
+                          ),
+                        )}
                       </td>
-                    ))}
-                    <td>
-                      {formatValue(
-                        geometricMean(
-                          testResults
-                            .filter(([, , errored]) => !errored)
-                            .map(([mean]) => mean),
-                        ),
-                      )}
-                    </td>
-                  </tr>
+                    </tr>
+                  </OverlayTrigger>
                 ),
             )}
           </tbody>
