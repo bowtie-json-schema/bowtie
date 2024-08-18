@@ -23,11 +23,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import sortVersions from "../../data/sortVersions";
-import {
-  getTotals,
-  ImplementationResults,
-  Totals,
-} from "../../data/parseReportData";
+import { ImplementationResults, Totals } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
 interface Props {
@@ -44,7 +40,7 @@ const VersionsTrend = ({ implementation }: Props) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(
-    Dialect.newestToOldest()[0],
+    Dialect.newestToOldest()[0]
   );
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
@@ -53,8 +49,9 @@ const VersionsTrend = ({ implementation }: Props) => {
   const fetchDialectTrendData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const versionedReports =
-        await implementation.fetchVersionedReportsFor(selectedDialect);
+      const versionedReports = await implementation.fetchVersionedReportsFor(
+        selectedDialect
+      );
 
       setDialectsTrendData((prev) =>
         new Map(prev).set(
@@ -62,20 +59,21 @@ const VersionsTrend = ({ implementation }: Props) => {
           Array.from(versionedReports)
             .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
             .map(([version, data]) => {
-              const totals = getTotals(
+              const { failedTests, erroredTests, skippedTests } = (
                 data.implementationsResults.values().next()
-                  .value as ImplementationResults,
-              );
+                  .value as ImplementationResults
+              ).totals;
+
               return {
                 version: `v${version}`,
+                failedTests,
+                erroredTests,
+                skippedTests,
                 totalUnsuccessfulTests:
-                  totals.failedTests! +
-                  totals.erroredTests! +
-                  totals.skippedTests!,
-                ...totals,
+                  failedTests! + erroredTests! + skippedTests!,
               };
-            }),
-        ),
+            })
+        )
       );
     } catch (error) {
       setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
@@ -86,7 +84,7 @@ const VersionsTrend = ({ implementation }: Props) => {
 
   const shouldFetchDialectTrendData = useMemo(
     () => !dialectsTrendData.has(selectedDialect),
-    [selectedDialect, dialectsTrendData],
+    [selectedDialect, dialectsTrendData]
   );
 
   useEffect(() => {
@@ -98,13 +96,13 @@ const VersionsTrend = ({ implementation }: Props) => {
   const filteredDialects = useMemo(
     () =>
       Dialect.newestToOldest().filter((dialect) => dialect != selectedDialect),
-    [selectedDialect],
+    [selectedDialect]
   );
 
   const handleDialectSelect = useCallback(
     (shortName: string | null) =>
       setSelectedDialect(Dialect.withName(shortName!)),
-    [],
+    []
   );
 
   const legendPayload = useMemo(
@@ -116,7 +114,7 @@ const VersionsTrend = ({ implementation }: Props) => {
           color: isDarkMode ? "#fff" : "#000",
         },
       ] as Payload[],
-    [implementation.id, isDarkMode],
+    [implementation.id, isDarkMode]
   );
 
   return (
