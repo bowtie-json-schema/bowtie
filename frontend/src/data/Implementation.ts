@@ -151,7 +151,7 @@ export default class Implementation
           );
           versionedReportsData.set(
             version,
-            fromSerialized(await response.text())
+            fromSerialized(await response.text()),
           );
         } catch (err) {
           return;
