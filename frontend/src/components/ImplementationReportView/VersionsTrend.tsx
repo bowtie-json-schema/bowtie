@@ -24,7 +24,8 @@ import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import sortVersions from "../../data/sortVersions";
 import {
-  prepareVersionsComplianceReportFor,
+  getTotals,
+  ImplementationResults,
   Totals,
 } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -55,20 +56,26 @@ const VersionsTrend = ({ implementation }: Props) => {
       const versionedReports = await implementation.fetchVersionedReportsFor(
         selectedDialect
       );
-      const versionsCompliance =
-        prepareVersionsComplianceReportFor(versionedReports);
 
       setDialectsTrendData((prev) =>
         new Map(prev).set(
           selectedDialect,
-          Array.from(versionsCompliance)
+          Array.from(versionedReports)
             .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
-            .map(([version, data]) => ({
-              version: `v${version}`,
-              unsuccessfulTests:
-                data.failedTests! + data.erroredTests! + data.skippedTests!,
-              ...data,
-            }))
+            .map(([version, data]) => {
+              const totals = getTotals(
+                data.implementationsResults.values().next()
+                  .value as ImplementationResults
+              );
+              return {
+                version: `v${version}`,
+                unsuccessfulTests:
+                  totals.failedTests! +
+                  totals.erroredTests! +
+                  totals.skippedTests!,
+                ...totals,
+              };
+            })
         )
       );
     } catch (error) {

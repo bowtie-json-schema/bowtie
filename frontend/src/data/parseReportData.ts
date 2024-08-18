@@ -162,7 +162,7 @@ export const parseReportData = (
   };
 };
 
-const getTotals = (results: ImplementationResults) => ({
+export const getTotals = (results: ImplementationResults) => ({
   erroredTests: results.totals.erroredTests,
   skippedTests: results.totals.skippedTests,
   failedTests: results.totals.failedTests,
@@ -191,28 +191,6 @@ export const prepareDialectsComplianceReportFor = (
   }
 
   return dialectsCompliance;
-};
-
-/**
- * Prepare a versions compliance report using all the
- * versioned reports data that was fetched for an implementation.
- */
-export const prepareVersionsComplianceReportFor = (
-  versionedReports: Map<string, ReportData>
-): Map<string, Partial<Totals>> => {
-  const versionsCompliance = new Map<string, Partial<Totals>>();
-
-  for (const [version, versionReportData] of versionedReports.entries()) {
-    versionsCompliance.set(
-      version,
-      getTotals(
-        versionReportData.implementationsResults.values().next()
-          .value as ImplementationResults
-      )
-    );
-  }
-
-  return versionsCompliance;
 };
 
 export const calculateTotals = (data: ReportData): Totals => {
