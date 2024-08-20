@@ -83,7 +83,7 @@ const BenchmarkSummarySection = ({
       <ResponsiveContainer
         width="100%"
         // Either height or width something needs to be specified for recharts
-        height={min(max(150, benchmarkRankings.length * 75), 1000)}
+        height={min(max(150, benchmarkRankings.length * 45), 750)}
       >
         <BarChart
           data={benchmarkRankings}
