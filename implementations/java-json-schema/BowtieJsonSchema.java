@@ -10,14 +10,14 @@ import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 public class BowtieJsonSchema {
 
@@ -38,18 +38,23 @@ public class BowtieJsonSchema {
   static {
     MANIFEST_ATTRIBUTES = readManifestAttributes();
 
-    IMPLEMENTATION_VERSION = MANIFEST_ATTRIBUTES.getValue("Implementation-Version");
-    UNSUPPORTED = IMPLEMENTATION_VERSION.compareTo("1.7.0") >= 0
-        ? Map.of("$ref prevents a sibling $id from changing the base uri", RECOGNIZING_IDENTIFIERS)
-        : Map.of(
-            "$id inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS,
-            "$id inside an unknown keyword is not a real identifier", RECOGNIZING_IDENTIFIERS,
-            "$anchor inside an enum is not a real identifier", RECOGNIZING_IDENTIFIERS
-        );
+    IMPLEMENTATION_VERSION =
+        MANIFEST_ATTRIBUTES.getValue("Implementation-Version");
+    UNSUPPORTED =
+        IMPLEMENTATION_VERSION.compareTo("1.7.0") >= 0
+            ? Map.of("$ref prevents a sibling $id from changing the base uri",
+                     RECOGNIZING_IDENTIFIERS)
+            : Map.of("$id inside an enum is not a real identifier",
+                     RECOGNIZING_IDENTIFIERS,
+                     "$id inside an unknown keyword is not a real identifier",
+                     RECOGNIZING_IDENTIFIERS,
+                     "$anchor inside an enum is not a real identifier",
+                     RECOGNIZING_IDENTIFIERS);
   }
 
   private static Attributes readManifestAttributes() {
-    try (InputStream is = BowtieJsonSchema.class.getResourceAsStream("META-INF/MANIFEST.MF")) {
+    try (InputStream is = BowtieJsonSchema.class.getResourceAsStream(
+             "META-INF/MANIFEST.MF")) {
       return new Manifest(is).getMainAttributes();
     } catch (IOException e) {
       throw new RuntimeException("Failed to read manifest", e);
