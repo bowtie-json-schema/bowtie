@@ -57,7 +57,13 @@ def happy(id: str, **params: Any) -> Connector:
     """
     try:
         return Direct.from_id(id=id)
-    except CannotConnect:
+    except CannotConnect as err:
+        # FIXME: we seem to have trouble differentiating here between
+        #        'we know which implementation that is but something is still
+        #        wrong' and 'we don't know what implementation that is'.
+        #        Specifically, using .hint to check seems off.
+        if err.hint is not None:
+            raise
         return _containers.ConnectableImage(id=id, **params)
 
 
@@ -168,7 +174,12 @@ class ClickParam(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Connectable:
-        return Connectable.from_str(value)
+        try:
+            return Connectable.from_str(value)
+        except CannotConnect as err:
+            if err.hint is None:
+                raise
+            raise click.BadParameter(err.hint)
 
     def shell_complete(
         self,

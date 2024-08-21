@@ -166,6 +166,17 @@ class TestDirect:
             ),
         )
 
+    def test_import_missing_parameter(self):
+        """
+        The basic import syntax is direct:foo.bar:baz, not foo.bar.baz.
+        """
+        prefix, suffix = "direct:bowtie.tests.miniatures", "always_invalid"
+
+        Connectable.from_str(validated(f"{prefix}:{suffix}"))  # succeeds
+
+        with pytest.raises(CannotConnect, match=":always_invalid'"):
+            Connectable.from_str(invalidated(f"{prefix}.{suffix}"))
+
 
 class TestExplicitHappy:
     def test_known_direct(self):

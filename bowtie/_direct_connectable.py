@@ -259,10 +259,28 @@ class Direct(Generic[E_co]):
 
         try:
             wrapper = pkgutil.resolve_name(id)
-        except (ModuleNotFoundError, ValueError):
-            raise CannotConnect(kind=cls.kind, id=id)
+        except (ModuleNotFoundError, ValueError) as err:
+            raise CannotConnect(kind=cls.kind, id=id) from err
         else:
-            return cls(wraps=wrapper(**params))
+            # pkgutil.resolve_name supports foo.bar.baz in addition to
+            # foo.bar:baz. The latter has minor performance benefits, and in
+            # addition, in our case it's easy to accidentally forget
+            # *parameters* that foo.bar.baz takes, so here we disallow any
+            # import string which does not use the foo.bar:baz syntax even
+            # though it has succeeded.
+            if ":" not in id:
+                corrected = ":".join(id.rsplit(".", 1))
+                raise CannotConnect(
+                    kind=cls.kind,
+                    id=id,
+                    hint=(
+                        f"{id!r} is not a known 'named' direct connectable "
+                        "and instead appears to describe an object to "
+                        "import, but it is not well formed. "
+                        f"You may mean to use {corrected!r}."
+                    ),
+                )
+        return cls(wraps=wrapper(**params))
 
     @classmethod
     def null(cls):

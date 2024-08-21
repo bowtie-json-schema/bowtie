@@ -40,7 +40,7 @@
 
       "$anchor": "image",
 
-      "pattern": "^image:*"
+      "pattern": "^image:.+$"
     },
     "container": {
       "title": "External Container",
@@ -48,7 +48,7 @@
 
       "$anchor": "container",
 
-      "pattern": "^container:*"
+      "pattern": "^container:.+$"
     },
     "direct": {
       "title": "Direct Python Connection",
@@ -56,7 +56,16 @@
 
       "$anchor": "direct",
 
-      "pattern": "^direct:[^.]*"
+      "anyOf": [
+        {
+          "description": "A non-fully qualified named direct connectable. Bowtie will know which Python object this corresponds to.",
+          "pattern": "^direct:[^.]+$"
+        },
+        {
+          "description": "A fully qualified named import, which must name a module and object within it as a parameter.",
+          "pattern": "^direct:[^.]+(\\.[^.]+)*:[^.]+$"
+        }
+      ]
     },
     "happy": {
       "title": "Happy (Eyeballs) Connection",
@@ -64,7 +73,7 @@
 
       "$anchor": "happy",
 
-      "pattern": "^happy:[^.]*"
+      "pattern": "^happy:[^.]+$"
     }
   }
 }
