@@ -162,7 +162,7 @@ describe("parseReportData", () => {
         new Map([[testImplementation.id, testImplementation]]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -203,7 +203,7 @@ describe("parseReportData", () => {
     const lines = run(
       "bowtie",
       ["run", "-i", testImplementation.id, "-D", "7"],
-      cases.join("\n") + "\n",
+      cases.join("\n") + "\n"
     );
 
     const report = fromSerialized(lines);
@@ -214,7 +214,7 @@ describe("parseReportData", () => {
         new Map([[testImplementation.id, testImplementation]]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
-        {},
+        {}
       ),
       implementationsResults: new Map([
         [
@@ -291,7 +291,7 @@ describe("parseReportData", () => {
       const lines = run(
         "bowtie",
         ["run", "-i", testImplementation.id, "-D", dialect.shortName],
-        cases.join("\n") + "\n",
+        cases.join("\n") + "\n"
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
@@ -299,7 +299,7 @@ describe("parseReportData", () => {
 
     const dialectsCompliance = prepareDialectsComplianceReportFor(
       testImplementation.id,
-      allReportsData,
+      allReportsData
     );
 
     expect(dialectsCompliance).toStrictEqual(
@@ -328,7 +328,7 @@ describe("parseReportData", () => {
           Dialect.withName("draft3"),
           { erroredTests: 0, skippedTests: 0, failedTests: 4 },
         ],
-      ]),
+      ])
     );
   });
 });
