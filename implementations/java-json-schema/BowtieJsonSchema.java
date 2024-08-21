@@ -178,8 +178,9 @@ public class BowtieJsonSchema {
                                         );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
         } catch (NoSuchMethodException ex) {
-            IllegalStateException exception = new IllegalStateException("Neither withDefaultDialect nor withDialect method found", ex);
+            IllegalStateException exception = new IllegalStateException("Neither withDefaultDialect nor withDialect method found");
             exception.addSuppressed(e);
+            exception.addSuppressed(ex);
             throw exception;
         }
     }
