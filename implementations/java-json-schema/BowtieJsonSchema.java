@@ -36,19 +36,16 @@ public class BowtieJsonSchema {
 
   static {
     MANIFEST_ATTRIBUTES = readManifestAttributes();
-
-    String implementationVersion =
-        MANIFEST_ATTRIBUTES.getValue("Implementation-Version");
     UNSUPPORTED =
-        implementationVersion.compareTo("1.7.0") >= 0
+        "1.7.0".compareTo(MANIFEST_ATTRIBUTES.getValue("Implementation-Version")) <= 0
             ? Map.of("$ref prevents a sibling $id from changing the base uri",
-                     RECOGNIZING_IDENTIFIERS)
+                    RECOGNIZING_IDENTIFIERS)
             : Map.of("$id inside an enum is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS,
-                     "$id inside an unknown keyword is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS,
-                     "$anchor inside an enum is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS);
+                    RECOGNIZING_IDENTIFIERS,
+                    "$id inside an unknown keyword is not a real identifier",
+                    RECOGNIZING_IDENTIFIERS,
+                    "$anchor inside an enum is not a real identifier",
+                    RECOGNIZING_IDENTIFIERS);
   }
 
   private static Attributes readManifestAttributes() {
