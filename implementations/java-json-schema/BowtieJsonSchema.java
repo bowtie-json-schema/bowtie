@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.harrel.jsonschema.Dialects;
+import dev.harrel.jsonschema.Dialect;
 import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
@@ -142,43 +142,58 @@ public class BowtieJsonSchema {
     );
 
     try {
-      if (SpecificationVersion.DRAFT2020_12.getId().equals(dialectRequest.dialect())) {
+      if (getSpecificationVersionFor("DRAFT2020_12").getId().equals(dialectRequest.dialect())) {
         setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft2020Dialect"));
-      } else {
-        SpecificationVersion DRAFT2019SpecificationVersion = getSpecificationVersionFor("DRAFT2019_09");
-        if (DRAFT2019SpecificationVersion.getId().equals(dialectRequest.dialect())) {
-          setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft2019Dialect"));
-        } else {
-          SpecificationVersion DRAFT7SpecificationVersion = getSpecificationVersionFor("DRAFT7");
-          if (DRAFT7SpecificationVersion.getId().equals(dialectRequest.dialect())) {
-            setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
-          }
-        }
+      } else if (getSpecificationVersionFor("DRAFT2019_09").getId().equals(dialectRequest.dialect())) {
+        setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft2019Dialect"));
+      } else if (getSpecificationVersionFor("DRAFT7").getId().equals(dialectRequest.dialect())) {
+        setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
       }
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException("Failed to setDialect", e);
     } catch (Exception e) {
-      e.printStackTrace();
+      throw new RuntimeException("Failed to retrieve SpecificationVersion", e);
     }
 
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private <T> void setDialect(Class<T> dialectClass) throws Exception {
-    T dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
+  private void setDialect(Class<?> dialectClass) throws Exception {
+    Object dialectInstance;
     try {
-      Method withDefaultDialectMethod = validatorFactory
-                                          .getClass()
-                                          .getMethod("withDefaultDialect", Object.class);
-      withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
-    } catch (NoSuchMethodException | IllegalAccessException e) {
+      dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to create dialect instance", e);
+    }
+
+    try {
+        Method withDefaultDialectMethod = validatorFactory
+                                              .getClass()
+                                              .getMethod(
+                                                "withDefaultDialect", 
+                                                Dialect.class
+                                              );
+        withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
+    } catch (NoSuchMethodException e) {
         try {
-          Method withDialectMethod = validatorFactory
-                                        .getClass()
-                                        .getMethod("withDialect", Object.class);
-          withDialectMethod.invoke(validatorFactory, dialectInstance);
-        } catch (NoSuchMethodException | IllegalAccessException ex) {
-          throw new RuntimeException("Failed to setDialect", ex);
+            Method withDialectMethod = validatorFactory
+                                            .getClass()
+                                            .getMethod(
+                                              "withDialect", 
+                                              Dialect.class
+                                            );
+            withDialectMethod.invoke(validatorFactory, dialectInstance);
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(
+              "Failed to setDialect: Neither withDefaultDialect nor withDialect method found", 
+              ex
+            );
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to invoke withDialect method", ex);
         }
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to invoke withDefaultDialect method", e);
     }
   }
 
