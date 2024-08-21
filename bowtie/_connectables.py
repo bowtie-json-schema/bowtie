@@ -119,10 +119,9 @@ class Connectable:
             id, sep, raw_params = id.partition(":")
             if sep:
                 args, kwargs = _params(raw_params)
-                if len(args) == 1 and not kwargs:
-                    connector = Connector(id=f"{id}:{args[0]}")
-                else:
-                    connector = Connector(*args, id=id, **kwargs)
+                if len(args) == 1:
+                    id, args = f"{id}:{args[0]}", ()
+                connector = Connector(*args, id=id, **kwargs)
             else:
                 connector = Connector(id=id)
         elif "/" in kind:  # special case allowing foo/bar:baz, image w/repo

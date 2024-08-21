@@ -149,7 +149,21 @@ class TestDirect:
 
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=Direct(connect=jsonschema),
+            connector=Direct(wraps=jsonschema()),
+        )
+
+    def test_import_parameters(self):
+        id = validated(
+            "direct:bowtie.tests.miniatures:only_supports,dialect=draft7",
+        )
+
+        from bowtie.tests.miniatures import only_supports
+
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=Direct(
+                wraps=only_supports(dialect="draft7"),
+            ),
         )
 
 

@@ -548,7 +548,7 @@ async def test_nonurl_dialect():
 async def test_unsupported_known_dialect():
     async with run(
         "-i",
-        miniatures.only_draft3,
+        miniatures.only_supports + ",dialect=draft3",
         "--dialect",
         str(Dialect.by_short_name()["draft3"].uri),
         exit_code=-1,  # because no test cases ran
@@ -558,7 +558,7 @@ async def test_unsupported_known_dialect():
 
     async with run(
         "-i",
-        miniatures.only_draft3,
+        miniatures.only_supports + ",dialect=draft3",
         "--dialect",
         str(Dialect.by_short_name()["draft2020-12"].uri),
         exit_code=EX.CONFIG,
@@ -2284,7 +2284,7 @@ async def test_filter_implementations_by_dialect():
         "-i",
         miniatures.always_invalid,
         "-i",
-        miniatures.only_draft3,
+        miniatures.only_supports + ",dialect=draft3",
         "--supports-dialect",
         "202012",
     )
@@ -2435,7 +2435,11 @@ async def test_filter_dialects_latest_dialect():
 
 @pytest.mark.asyncio
 async def test_filter_dialects_supporting_implementation():
-    output = await bowtie("filter-dialects", "-i", miniatures.only_draft3)
+    output = await bowtie(
+        "filter-dialects",
+        "-i",
+        miniatures.only_supports + ",dialect=draft3",
+    )
     assert output == ("http://json-schema.org/draft-03/schema#\n", "")
 
 
@@ -2470,7 +2474,7 @@ async def test_filter_dialects_no_results():
     stdout, stderr = await bowtie(
         "filter-dialects",
         "-i",
-        miniatures.only_draft3,
+        miniatures.only_supports + ",dialect=draft3",
         "--boolean-schemas",
         exit_code=EX.DATAERR,
     )

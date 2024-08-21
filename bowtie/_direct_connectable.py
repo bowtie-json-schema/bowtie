@@ -94,17 +94,27 @@ class Unconnection(Generic[E_co]):
                 raise RuntimeError(f"Unknown message: {message!r}")
 
 
-def direct_implementation(
-    implicit_dialect_response: StartedDialect = StartedDialect.OK,
-    **kwargs: Any,
-) -> Callable[
-    [Callable[[Dialect], SchemaCompiler[E_co]]],
-    Callable[[], Unconnection[E_co]],
-]:
-    def connect(
-        fn: Callable[[Dialect], SchemaCompiler[E_co]],
-    ) -> Callable[[], Unconnection[E_co]]:
-        name = kwargs.pop("name", fn.__name__)
+@frozen
+class DirectImplementation(Generic[E_co]):
+
+    _compiler_for: Callable[[Dialect], SchemaCompiler[E_co]]
+    _info: ImplementationInfo
+    _implicit_dialect_response: StartedDialect
+
+    def __init__(
+        self,
+        compiler_for: Callable[[Dialect], SchemaCompiler[E_co]],
+        implicit_dialect_response: StartedDialect = StartedDialect.OK,
+        **kwargs: Any,
+    ):
+        object.__setattr__(self, "_compiler_for", compiler_for)
+        object.__setattr__(
+            self,
+            "_implicit_dialect_response",
+            implicit_dialect_response,
+        )
+
+        name = kwargs.pop("name", compiler_for.__name__)
         if "version" not in kwargs:
             kwargs["version"] = metadata.version(name)
         info = ImplementationInfo(
@@ -114,16 +124,28 @@ def direct_implementation(
             language_version=platform.python_version(),
             **kwargs,
         )
-        return lambda: Unconnection(
-            compiler_for=fn,
-            info=info,
-            implicit_dialect_response=implicit_dialect_response,
+        object.__setattr__(self, "_info", info)
+
+    def __call__(self):
+        return Unconnection(
+            compiler_for=self._compiler_for,
+            info=self._info,
+            implicit_dialect_response=self._implicit_dialect_response,
         )
 
-    return connect
+    @classmethod
+    def from_callable(
+        cls,
+        language: str = "python",
+        **kwargs: Any,
+    ):
+        def decorator(fn: Callable[[Dialect], SchemaCompiler[E_co]]):
+            return lambda: cls(compiler_for=fn, language=language, **kwargs)
+
+        return decorator
 
 
-@direct_implementation(
+@DirectImplementation.from_callable(
     language="python",
     homepage=URL.parse("https://python-jsonschema.readthedocs.io/"),
     documentation=URL.parse("https://python-jsonschema.readthedocs.io/"),
@@ -180,7 +202,14 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     return compile
 
 
-@direct_implementation(
+# pyright (at least 1.1.372) seems unable to see through this type if we try to
+# define it via DirectImplementation.from_callable. But I guess that's fine...
+def null(dialect: Dialect) -> SchemaCompiler[Never]:
+    return lambda _, __: lambda _: None
+
+
+NULL = DirectImplementation(
+    compiler_for=null,
     language="python",
     version=metadata.version("bowtie-json-schema"),
     homepage=HOMEPAGE,
@@ -189,12 +218,10 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     source=REPO,
     dialects=frozenset(Dialect.known()),
 )
-def null(dialect: Dialect) -> SchemaCompiler[Never]:
-    return lambda _, __: lambda _: None
 
 
-IMPLEMENTATIONS = {
-    "python-jsonschema": jsonschema,
+IMPLEMENTATIONS: dict[str, Callable[..., Callable[[], Unconnection[Any]]]] = {
+    "python-jsonschema": jsonschema,  # type: ignore[reportAssignmentType]  # pyright seems confused.
 }
 
 
@@ -217,21 +244,25 @@ class Direct(Generic[E_co]):
     functionaly should still ensure no networking takes place.
     """
 
-    _connect: Callable[[], Unconnection[E_co]] = field(alias="connect")
+    _wraps: Callable[[], Unconnection[E_co]] = field(alias="wraps")
 
     kind = "direct"
 
     @classmethod
-    def from_id(cls, id: ConnectableId) -> Direct[Any]:
-        if "." in id and ":" in id:
-            connect = pkgutil.resolve_name(id)
-        elif id == "null":
+    def from_id(cls, id: ConnectableId, **params: Any) -> Direct[Any]:
+        if id == "null":
             return cls.null()
+
+        wrapper = IMPLEMENTATIONS.get(id)
+        if wrapper is not None:
+            return cls(wraps=wrapper(**params))
+
+        try:
+            wrapper = pkgutil.resolve_name(id)
+        except (ModuleNotFoundError, ValueError):
+            raise CannotConnect(kind=cls.kind, id=id)
         else:
-            connect = IMPLEMENTATIONS.get(id)
-            if connect is None:
-                raise CannotConnect(kind=cls.kind, id=id)
-        return cls(connect=connect)
+            return cls(wraps=wrapper(**params))
 
     @classmethod
     def null(cls):
@@ -241,18 +272,18 @@ class Direct(Generic[E_co]):
         It can be useful e.g. for simply testing whether something is valid
         JSON, or for disabling validation where it otherwise would happen.
         """
-        return cls(connect=null)
+        return cls(wraps=NULL)
 
     def connect(
         self,
         **kwargs: Any,
     ) -> AbstractAsyncContextManager[Unconnection[E_co]]:
-        return nullcontext(self._connect())
+        return nullcontext(self._wraps())
 
     def registry(self, **kwargs: Any) -> ValidatorRegistry[E_co]:
         if "registry" not in kwargs:
             kwargs["registry"] = registry()
         return ValidatorRegistry(
-            compile=self._connect().compiler_for(Dialect.latest()),  # XXX
+            compile=self._wraps().compiler_for(Dialect.latest()),  # XXX
             **kwargs,
         )
