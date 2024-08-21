@@ -164,7 +164,7 @@ public class BowtieJsonSchema {
         Method withDefaultDialectMethod = validatorFactory
                                               .getClass()
                                               .getMethod(
-                                                "withDefaultDialect", 
+                                                "withDefaultDialect",
                                                 Dialect.class
                                               );
         withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
@@ -173,7 +173,7 @@ public class BowtieJsonSchema {
             Method withDialectMethod = validatorFactory
                                             .getClass()
                                             .getMethod(
-                                              "withDialect", 
+                                              "withDialect",
                                               Dialect.class
                                             );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
