@@ -171,7 +171,7 @@ public class BowtieJsonSchema {
         Method withDefaultDialectMethod = validatorFactory
                                               .getClass()
                                               .getMethod(
-                                                "withDefaultDialect", 
+                                                "withDefaultDialect",
                                                 Dialect.class
                                               );
         withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
@@ -180,13 +180,13 @@ public class BowtieJsonSchema {
             Method withDialectMethod = validatorFactory
                                             .getClass()
                                             .getMethod(
-                                              "withDialect", 
+                                              "withDialect",
                                               Dialect.class
                                             );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(
-              "Failed to setDialect: Neither withDefaultDialect nor withDialect method found", 
+              "Failed to setDialect: Neither withDefaultDialect nor withDialect method found",
               ex
             );
         } catch (Exception ex) {
