@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, Never
 import pkgutil
 import platform
 
@@ -189,7 +189,7 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     source=REPO,
     dialects=frozenset(Dialect.known()),
 )
-def null(dialect: Dialect) -> SchemaCompiler[ValidationError]:
+def null(dialect: Dialect) -> SchemaCompiler[Never]:
     return lambda _, __: lambda _: None
 
 
