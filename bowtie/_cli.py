@@ -1460,7 +1460,7 @@ def perf(
     "-t",
     "--benchmark-type",
     type=click.Choice(["default", "keyword"]),
-    default="default",
+    default=None,
     show_default=True,
     help=("Specify the type of benchmark to filter."),
 )
@@ -1477,7 +1477,7 @@ def perf(
 )
 def filter_benchmarks(
     dialect: Dialect,
-    benchmark_type: str,
+    benchmark_type: str | None,
     benchmark_names: Iterable[str],
 ):
     """

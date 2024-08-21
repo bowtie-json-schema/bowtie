@@ -2,10 +2,10 @@
 #    uv pip compile --no-cache --output-file /Users/julian/Development/bowtie/docs/requirements.txt docs/requirements.in
 aiodocker==0.22.2
     # via bowtie-json-schema
-aiohttp==3.9.5
-    # via
-    #   aiodocker
-    #   bowtie-json-schema
+aiohappyeyeballs==2.3.5
+    # via aiohttp
+aiohttp==3.10.3
+    # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
 alabaster==1.0.0
@@ -148,7 +148,7 @@ sniffio==1.3.1
     #   httpx
 snowballstemmer==2.2.0
     # via sphinx
-soupsieve==2.5
+soupsieve==2.6
     # via beautifulsoup4
 sphinx==8.0.2
     # via

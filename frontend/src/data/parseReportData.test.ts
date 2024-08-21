@@ -15,7 +15,7 @@ import {
 
 function miniature(name: string) {
   // Should match what's used in our backend integration tests obviously.
-  return `direct:bowtie.tests.fauxmplementations.miniatures:${name}`;
+  return `direct:bowtie.tests.miniatures:${name}`;
 }
 
 function bowtie(args: string[] = [], input?: string, status = 0) {
