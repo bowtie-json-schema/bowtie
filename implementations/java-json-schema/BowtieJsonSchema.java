@@ -150,9 +150,6 @@ public class BowtieJsonSchema {
         setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
       }
     } catch (Exception e) {
-      StringWriter stringWriter = new StringWriter();
-      PrintWriter printWriter = new PrintWriter(stringWriter);
-      e.printStackTrace(printWriter);
       throw new IllegalStateException("Failed to set dialect", e);
     }
 
@@ -164,24 +161,26 @@ public class BowtieJsonSchema {
     Object dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
 
     try {
-        Method withDefaultDialectMethod = validatorFactory
-                                              .getClass()
-                                              .getMethod(
-                                                "withDefaultDialect",
-                                                Dialect.class
-                                              );
-        withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
-    } catch (NoSuchMethodException e) {
-        try {
-            Method withDialectMethod = validatorFactory
+      Method withDefaultDialectMethod = validatorFactory
                                             .getClass()
                                             .getMethod(
-                                              "withDialect",
+                                              "withDefaultDialect",
                                               Dialect.class
                                             );
+      withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
+    } catch (NoSuchMethodException e) {
+        try {
+          Method withDialectMethod = validatorFactory
+                                        .getClass()
+                                        .getMethod(
+                                          "withDialect",
+                                          Dialect.class
+                                        );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
         } catch (NoSuchMethodException ex) {
-            throw new IllegalStateException("Neither withDefaultDialect nor withDialect method found", ex);
+            IllegalStateException exception = new IllegalStateException("Neither withDefaultDialect nor withDialect method found", ex);
+            exception.addSuppressed(e);
+            throw exception;
         }
     }
   }
