@@ -169,20 +169,13 @@ public class BowtieJsonSchema {
                                             );
       withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
     } catch (NoSuchMethodException e) {
-        try {
-          Method withDialectMethod = validatorFactory
-                                        .getClass()
-                                        .getMethod(
-                                          "withDialect",
-                                          Dialect.class
-                                        );
-            withDialectMethod.invoke(validatorFactory, dialectInstance);
-        } catch (NoSuchMethodException ex) {
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printWriter = new PrintWriter(stringWriter);
-            e.printStackTrace(printWriter);
-            ex.printStackTrace(printWriter);
-        }
+        Method withDialectMethod = validatorFactory
+                                      .getClass()
+                                      .getMethod(
+                                        "withDialect",
+                                        Dialect.class
+                                      );
+        withDialectMethod.invoke(validatorFactory, dialectInstance);
     }
   }
 
