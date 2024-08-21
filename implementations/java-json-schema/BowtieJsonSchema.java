@@ -26,7 +26,6 @@ public class BowtieJsonSchema {
   private static final Map<String, String> UNSUPPORTED;
 
   private static final Attributes MANIFEST_ATTRIBUTES;
-  private static final String IMPLEMENTATION_VERSION;
 
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
@@ -37,11 +36,10 @@ public class BowtieJsonSchema {
 
   static {
     MANIFEST_ATTRIBUTES = readManifestAttributes();
-
-    IMPLEMENTATION_VERSION =
-        MANIFEST_ATTRIBUTES.getValue("Implementation-Version");
     UNSUPPORTED =
-        IMPLEMENTATION_VERSION.compareTo("1.7.0") >= 0
+        MANIFEST_ATTRIBUTES
+            .getValue("Implementation-Version")
+            .compareTo("1.7.0") >= 0
             ? Map.of("$ref prevents a sibling $id from changing the base uri",
                      RECOGNIZING_IDENTIFIERS)
             : Map.of("$id inside an enum is not a real identifier",
@@ -112,7 +110,7 @@ public class BowtieJsonSchema {
       new Implementation(
         "java",
         fullName,
-        IMPLEMENTATION_VERSION,
+        MANIFEST_ATTRIBUTES.getValue("Implementation-Version"),
         Arrays.stream(SpecificationVersion.values()).map(SpecificationVersion::getId).toList(),
         "https://github.com/harrel56/json-schema",
         "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/harrel/jsonschema/package-summary.html",
