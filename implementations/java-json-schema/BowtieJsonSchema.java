@@ -178,7 +178,10 @@ public class BowtieJsonSchema {
                                         );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
         } catch (NoSuchMethodException ex) {
-            throw new IllegalStateException("Neither withDefaultDialect nor withDialect method found", e);
+            StringWriter stringWriter = new StringWriter();
+            PrintWriter printWriter = new PrintWriter(stringWriter);
+            e.printStackTrace(printWriter);
+            ex.printStackTrace(printWriter);
         }
     }
   }
