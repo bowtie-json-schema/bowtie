@@ -200,7 +200,7 @@ def typing(session):
     """
     Check Bowtie's codebase using pyright.
     """
-    session.install("pyright==1.1.372", f"{ROOT}[strategies]")
+    session.install("pyright", f"{ROOT}[strategies]")
     session.run("pyright", *session.posargs, BOWTIE)
 
 
