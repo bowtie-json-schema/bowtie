@@ -57,7 +57,7 @@ public class BowtieJsonSchema {
              "META-INF/MANIFEST.MF")) {
       return new Manifest(is).getMainAttributes();
     } catch (IOException e) {
-      throw new RuntimeException("Failed to read manifest", e);
+      throw new IllegalStateException("Failed to read manifest", e);
     }
   }
 
@@ -149,10 +149,8 @@ public class BowtieJsonSchema {
       } else if (getSpecificationVersionFor("DRAFT7").getId().equals(dialectRequest.dialect())) {
         setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
       }
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException("Failed to setDialect", e);
     } catch (Exception e) {
-      throw new RuntimeException("Failed to retrieve SpecificationVersion", e);
+      throw new IllegalStateException("Failed to set dialect", e);
     }
 
     DialectResponse dialectResponse = new DialectResponse(true);
@@ -160,12 +158,7 @@ public class BowtieJsonSchema {
   }
 
   private void setDialect(Class<?> dialectClass) throws Exception {
-    Object dialectInstance;
-    try {
-      dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to create dialect instance", e);
-    }
+    Object dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
 
     try {
         Method withDefaultDialectMethod = validatorFactory
@@ -185,15 +178,8 @@ public class BowtieJsonSchema {
                                             );
             withDialectMethod.invoke(validatorFactory, dialectInstance);
         } catch (NoSuchMethodException ex) {
-            throw new RuntimeException(
-              "Failed to setDialect: Neither withDefaultDialect nor withDialect method found", 
-              ex
-            );
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed to invoke withDialect method", ex);
+            throw new IllegalStateException("Neither withDefaultDialect nor withDialect method found", ex);
         }
-    } catch (Exception e) {
-        throw new RuntimeException("Failed to invoke withDefaultDialect method", e);
     }
   }
 
@@ -202,7 +188,7 @@ public class BowtieJsonSchema {
       Field draftField = SpecificationVersion.class.getDeclaredField(draftName);
       return (SpecificationVersion) draftField.get(null);
     } catch (NoSuchFieldException | IllegalAccessException e) {
-      throw new RuntimeException(
+      throw new IllegalStateException(
         "Failed to retrieve SpecificationVersion for: " + draftName, e
       );
     }
