@@ -150,6 +150,9 @@ public class BowtieJsonSchema {
         setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
       }
     } catch (Exception e) {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      e.printStackTrace(printWriter);
       throw new IllegalStateException("Failed to set dialect", e);
     }
 
