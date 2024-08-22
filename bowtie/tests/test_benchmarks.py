@@ -54,6 +54,26 @@ def invalid_benchmark():
 
 
 @pytest.fixture()
+def benchmark_report1():
+    file_path = (
+        Path(__file__).parent / "benchmarks/reports" / "benchmark_report1.json"
+    )
+    return _benchmarks.BenchmarkReport.from_dict(
+        json.loads(file_path.read_text()),
+    )
+
+
+@pytest.fixture()
+def benchmark_report2():
+    file_path = (
+        Path(__file__).parent / "benchmarks/reports" / "benchmark_report2.json"
+    )
+    return _benchmarks.BenchmarkReport.from_dict(
+        json.loads(file_path.read_text()),
+    )
+
+
+@pytest.fixture()
 def benchmarker_run_args():
     return {
         "runs": 1,
@@ -213,4 +233,21 @@ class TestBenchmarker:
         _benchmarks.Benchmarker.from_input(
             valid_single_benchmark.serializable(),
             **benchmarker_run_args,
+        )
+
+
+class TestBenchmarkReport:
+
+    def test_merge_benchmark_reports(
+        self, benchmark_report1, benchmark_report2,
+    ):
+        merged_report = _benchmarks.BenchmarkReport.merge(
+            [benchmark_report1, benchmark_report2],
+        )
+        assert (
+            len(merged_report.results.items())
+            ==
+            len(benchmark_report1.results.items())
+            +
+            len(benchmark_report2.results.items())
         )

@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "implementations": {
+      "python-jsonschema": {
+        "name": "jsonschema",
+        "language": "python",
+        "homepage": "https://python-jsonschema.readthedocs.io/",
+        "issues": "https://github.com/python-jsonschema/jsonschema/issues",
+        "source": "https://github.com/python-jsonschema/jsonschema",
+        "dialects": [
+          "https://json-schema.org/draft/2020-12/schema",
+          "https://json-schema.org/draft/2019-09/schema",
+          "http://json-schema.org/draft-07/schema#",
+          "http://json-schema.org/draft-06/schema#",
+          "http://json-schema.org/draft-04/schema#",
+          "http://json-schema.org/draft-03/schema#"
+        ],
+        "version": "4.23.0",
+        "language_version": "3.11.9",
+        "os": "Darwin",
+        "os_version": "23.1.0",
+        "documentation": "https://python-jsonschema.readthedocs.io/",
+        "links": []
+      }
+    },
+    "num_runs": 2,
+    "num_values": 2,
+    "num_warmups": 2,
+    "num_loops": 2,
+    "system_metadata": {
+      "boot_time": "2024-06-18 21:27:52",
+      "cpu_count": 2,
+      "hostname": "random",
+      "load_avg_1min": 2,
+      "loops": 2,
+      "perf_version": "2",
+      "platform": "random",
+      "unit": "random"
+    },
+    "bowtie_version": "random",
+    "dialect": "https://json-schema.org/draft/2020-12/schema",
+    "started": "2024-08-22T15:19:20.099860+00:00"
+  },
+  "results": [
+    {
+      "name": "Benchmark Group 2",
+      "benchmark_type": "default",
+      "description": "A benchmark for validation of the Draft2020-12 MetaSchema.",
+      "benchmark_results": [
+        {
+          "name": "Benchmark 1",
+          "description": "A benchmark for validation of the Draft2020-12 MetaSchema.",
+          "test_results": [
+            {
+              "description": "Test 1",
+              "connectable_results": [
+                {
+                  "connectable_id": "python-jsonschema",
+                  "duration": 0,
+                  "values": [
+                    0
+                  ],
+                  "errored": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "varying_parameter": null
+    }
+  ]
+}

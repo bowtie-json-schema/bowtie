@@ -105,30 +105,15 @@ def get_benchmark_files(
     return files
 
 
-def merge_benchmark_report_jsons(
-    benchmark_reports: list[Path],
+def combine_benchmark_reports(
+    benchmark_report_files: list[Path],
 ) -> BenchmarkReport:
-    benchmark_metadata: BenchmarkMetadata | None = None
-    benchmark_results: dict[str, BenchmarkGroupResult] = dict()
-    for report in benchmark_reports:
-        report_data = json.loads(report.read_text())
-        benchmark_report = BenchmarkReport.from_dict(
-            report_data,
+    return BenchmarkReport.merge([
+        BenchmarkReport.from_dict(
+            json.loads(report_file.read_text())
         )
-        benchmark_metadata = (
-            benchmark_report.metadata
-            if benchmark_metadata is None
-            else benchmark_metadata
-        )
-        benchmark_results.update(benchmark_report.results)
-
-    if benchmark_metadata is None:
-        raise ValueError("Benchmark metadata cannot be empty!")
-
-    return BenchmarkReport(
-        metadata=benchmark_metadata,
-        results=benchmark_results,
-    )
+        for report_file in benchmark_report_files
+    ])
 
 
 def _load_benchmark_group_from_file(
@@ -534,6 +519,18 @@ class BenchmarkReport:
             results={
                 r.get("name"): BenchmarkGroupResult.from_dict(r)
                 for r in data["results"]
+            },
+        )
+
+    @classmethod
+    def merge(
+        cls, benchmark_reports: list[BenchmarkReport]
+    ) -> BenchmarkReport:
+        return BenchmarkReport(
+            metadata=benchmark_reports[0].metadata,
+            results={
+                k: v for report in benchmark_reports
+                for k, v in report.results.items()
             },
         )
 

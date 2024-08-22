@@ -1467,28 +1467,6 @@ def filter_benchmarks(
         console.Console().file.write(f"{file}\n")
 
 
-@subcommand
-@click.option(
-    "-r",
-    "--report",
-    "benchmark_report_files",
-    type=str,
-    multiple=True,
-    required=True,
-    help="Merge multiple benchmark reports into one.",
-)
-def merge_benchmark_reports(
-    benchmark_report_files: Iterable[str],
-):
-    """
-    Merge benchmark reports and output the merged report.
-    """
-    merged_benchmark_report = _benchmarks.merge_benchmark_report_jsons(
-        [Path(filename) for filename in benchmark_report_files],
-    )
-    console.Console().print_json(data=merged_benchmark_report.serializable())
-
-
 LANGUAGE_ALIASES = {
     "cpp": "c++",
     "js": "javascript",
