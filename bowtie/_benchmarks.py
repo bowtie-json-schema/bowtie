@@ -108,12 +108,14 @@ def get_benchmark_files(
 def combine_benchmark_reports(
     benchmark_report_files: list[Path],
 ) -> BenchmarkReport:
-    return BenchmarkReport.merge([
-        BenchmarkReport.from_dict(
-            json.loads(report_file.read_text())
-        )
-        for report_file in benchmark_report_files
-    ])
+    return BenchmarkReport.merge(
+        [
+            BenchmarkReport.from_dict(
+                json.loads(report_file.read_text()),
+            )
+            for report_file in benchmark_report_files
+        ]
+    )
 
 
 def _load_benchmark_group_from_file(
@@ -524,12 +526,14 @@ class BenchmarkReport:
 
     @classmethod
     def merge(
-        cls, benchmark_reports: list[BenchmarkReport]
+        cls,
+        benchmark_reports: list[BenchmarkReport],
     ) -> BenchmarkReport:
         return BenchmarkReport(
             metadata=benchmark_reports[0].metadata,
             results={
-                k: v for report in benchmark_reports
+                k: v
+                for report in benchmark_reports
                 for k, v in report.results.items()
             },
         )

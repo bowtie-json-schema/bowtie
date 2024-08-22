@@ -57,9 +57,7 @@
                 {
                   "connectable_id": "python-jsonschema",
                   "duration": 0,
-                  "values": [
-                    0
-                  ],
+                  "values": [0],
                   "errored": false
                 }
               ]

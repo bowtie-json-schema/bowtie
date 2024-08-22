@@ -239,15 +239,13 @@ class TestBenchmarker:
 class TestBenchmarkReport:
 
     def test_merge_benchmark_reports(
-        self, benchmark_report1, benchmark_report2,
+        self,
+        benchmark_report1,
+        benchmark_report2,
     ):
         merged_report = _benchmarks.BenchmarkReport.merge(
             [benchmark_report1, benchmark_report2],
         )
-        assert (
-            len(merged_report.results.items())
-            ==
-            len(benchmark_report1.results.items())
-            +
-            len(benchmark_report2.results.items())
-        )
+        assert len(merged_report.results.items()) == len(
+            benchmark_report1.results.items()
+        ) + len(benchmark_report2.results.items())
