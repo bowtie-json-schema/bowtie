@@ -120,7 +120,7 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
-    Map<String, Dialect> dialectsMap = Arrays.stream(Dialects.class.getClasses())
+    ConcurrentHashMap<String, Dialect> dialectsMap = Arrays.stream(Dialects.class.getClasses())
             .filter(Dialect.class::isAssignableFrom)
             .map(clazz -> {
                 try {
@@ -133,8 +133,6 @@ public class BowtieJsonSchema {
               Collectors.toMap(
                 dialect -> dialect.getSpecificationVersion().getId(),
                 Function.identity(),
-                (existing, replacement) -> existing,
-                ConcurrentHashMap::new
             ));
 
     try {
