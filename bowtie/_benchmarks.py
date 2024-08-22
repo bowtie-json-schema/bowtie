@@ -63,14 +63,6 @@ benchmark_validated, benchmark_invalidated = (
     benchmark_validator.invalidated,
 )
 
-benchmark_report_validator = (
-    Direct.from_id("python-jsonschema")
-    .registry()
-    .for_uri(
-        URL.parse("tag:bowtie.report,2024:benchmark_report"),
-    )
-)
-
 
 def get_benchmark_files(
     benchmark_type: str | None,
@@ -120,7 +112,6 @@ def merge_benchmark_report_jsons(
     benchmark_results: dict[str, BenchmarkGroupResult] = dict()
     for report in benchmark_reports:
         report_data = json.loads(report.read_text())
-        benchmark_report_validator.validated(report_data)
         benchmark_report = BenchmarkReport.from_dict(
             report_data,
         )
