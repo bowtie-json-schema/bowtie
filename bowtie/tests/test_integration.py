@@ -2597,9 +2597,9 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "-i",
         "direct:null",
         "-i",
-        "direct:bowtie.tests.miniatures:by_version_and_dialect,version=1.0,dialect=draft2020-12",
+        miniatures.by_version_and_dialect + ",version=1.0,dialect=draft2020-12",
         "-i",
-        "direct:bowtie.tests.miniatures:by_version_and_dialect,version=2.0,dialect=draft2020-12",
+        miniatures.by_version_and_dialect + ",version=2.0,dialect=draft2020-12",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -2614,20 +2614,37 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        exit_code=EX.DATAERR
     )
     assert stderr == ""
-    assert stdout == dedent(
-        """\
-        # Bowtie Failures Summary
+    assert stdout in {
+        dedent(
+            """\
+            # Bowtie Failures Summary
 
-        | Implementation | Skips | Errors | Failures |
-        |:----------------:|:-:|:-:|:-:|
-        | foo 2.0 (python) | 0 | 0 | 0 |
-        | foo 1.0 (python) | 0 | 0 | 2 |
+            | Implementation | Skips | Errors | Failures |
+            |:----------------:|:-:|:-:|:-:|
+            | foo 2.0 (python) | 0 | 0 | 0 |
+            |  null (python)   | 0 | 0 | 0 |
+            | foo 1.0 (python) | 0 | 0 | 2 |
 
-        **2 tests ran**
-        """,
-    )
+            **2 tests ran**
+            """,
+        ),
+        dedent(
+            """\
+            # Bowtie Failures Summary
+
+            | Implementation | Skips | Errors | Failures |
+            |:----------------:|:-:|:-:|:-:|
+            |  null (python)   | 0 | 0 | 0 |
+            | foo 2.0 (python) | 0 | 0 | 0 |
+            | foo 1.0 (python) | 0 | 0 | 2 |
+
+            **2 tests ran**
+            """,
+        ),
+    }
 
 
 @pytest.mark.asyncio
