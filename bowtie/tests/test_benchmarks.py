@@ -247,5 +247,5 @@ class TestBenchmarkReport:
             [benchmark_report1, benchmark_report2],
         )
         assert len(merged_report.results.items()) == len(
-            benchmark_report1.results.items()
+            benchmark_report1.results.items(),
         ) + len(benchmark_report2.results.items())

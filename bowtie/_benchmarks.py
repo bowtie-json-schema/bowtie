@@ -114,7 +114,7 @@ def combine_benchmark_reports(
                 json.loads(report_file.read_text()),
             )
             for report_file in benchmark_report_files
-        ]
+        ],
     )
 
 
