@@ -147,7 +147,6 @@ def foo_v1(dialect: Dialect):
         return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
     elif dialect == Dialect.by_alias()["2019"]:
         return lambda schema, registry: lambda instance: None
-
     return lambda schema, registry: lambda instance: None
 
 
@@ -161,7 +160,6 @@ def foo_v2(dialect: Dialect):
         return lambda schema, registry: lambda instance: None
     elif dialect == Dialect.by_alias()["2019"]:
         return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
-
     return lambda schema, registry: lambda instance: None
 
 
@@ -175,19 +173,10 @@ def by_version_and_dialect(version: str):
     The validity result of instances should not be relied on.
     """
     if version == "1.0":
-        return fake(
-            name="foo",
-            version=version,
-        )(foo_v1)()
+        return fake(name="foo", version=version)(foo_v1)()
     elif version == "2.0":
-        return fake(
-            name="foo",
-            version=version,
-        )(foo_v2)()
-    else:
-        return fake(
-            name="foo",
-        )(null)()
+        return fake(name="foo", version=version)(foo_v2)()
+    return fake(name="foo")(null)()
 
 
 def naively_correct(schema, registry):
