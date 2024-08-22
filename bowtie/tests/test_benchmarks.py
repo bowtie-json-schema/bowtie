@@ -1,11 +1,11 @@
 from pathlib import Path
+from textwrap import dedent
 import json
 import uuid
 
 import pytest
 
-from bowtie import _benchmarks
-from bowtie._benchmarks import BenchmarkGroup
+from bowtie import _benchmarks, benchmarks
 from bowtie._cli import EX
 from bowtie._core import Dialect, TestCase
 from bowtie._direct_connectable import Direct
@@ -16,22 +16,22 @@ validators = Direct.from_id("python-jsonschema").registry()
 benchmark_report_validator = validators.for_uri(
     "tag:bowtie.report,2024:benchmark_report",
 )
-benchmark_report_validated, benchmark_report_invalidated = (
-    benchmark_report_validator.validated,
-    benchmark_report_validator.invalidated,
-)
+benchmark_validator = validators.for_uri("tag:bowtie.report,2024:benchmarks")
 
-benchmark_validator = validators.for_uri(
-    "tag:bowtie.report,2024:benchmarks",
-)
-benchmark_validated, benchmark_invalidated = (
-    benchmark_validator.validated,
-    benchmark_validator.invalidated,
-)
 
-bowtie_dir = Path(__file__).parent.parent
-default_benchmarks_dir = bowtie_dir / "benchmarks"
-keyword_benchmarks_dir = bowtie_dir / "benchmarks/keywords"
+def collect_benchmarks(directory):
+    return sorted(
+        path
+        for path in directory.iterdir()
+        if path.suffix == ".json"
+        or path.suffix == ".py"
+        and path.name != "__init__.py"
+    )
+
+
+BENCHMARKS_DIR = Path(benchmarks.__file__).parent
+BENCHMARK_PATHS = collect_benchmarks(BENCHMARKS_DIR)
+KEYWORD_BENCHMARK_PATHS = collect_benchmarks(BENCHMARKS_DIR / "keywords")
 
 DIRECT_CONNECTABLE = "python-jsonschema"
 
@@ -67,48 +67,32 @@ def benchmarker_run_args():
     }
 
 
-def _iterate_over_benchmark_dir(directory):
-    if not directory.exists():
-        return
-    for file in directory.iterdir():
-        if file.suffix in (".json", ".py") and file.name != "__init__.py":
-            yield file
-
-
 def _validate_benchmark_file(file, module):
-    data = _benchmarks._load_benchmark_group_from_file(
-        file,
-        module,
-    ).serializable()
-    if data:
-        benchmark_validated(data)
+    data = _benchmarks._load_benchmark_group_from_file(file, module)
+    assert benchmark_validator.is_valid(data.serializable())
 
 
 class TestBenchmarkFormat:
 
     def test_validate_single_benchmark(self, valid_single_benchmark):
-        assert benchmark_validated(valid_single_benchmark.serializable())
+        assert benchmark_validator.is_valid(
+            valid_single_benchmark.serializable(),
+        )
 
     def test_validate_benchmark_group(self, valid_benchmark_group):
-        assert benchmark_validated(valid_benchmark_group.serializable())
+        assert benchmark_validator.is_valid(
+            valid_benchmark_group.serializable(),
+        )
 
-    @pytest.mark.parametrize(
-        "benchmark_file",
-        _iterate_over_benchmark_dir(default_benchmarks_dir),
-        ids=lambda f: str(f),
-    )
-    def test_validate_default_benchmark_format(self, benchmark_file):
+    @pytest.mark.parametrize("path", BENCHMARK_PATHS, ids=str)
+    def test_validate_default_benchmark_format(self, path):
         benchmark_module = "bowtie.benchmarks"
-        _validate_benchmark_file(benchmark_file, benchmark_module)
+        _validate_benchmark_file(path, benchmark_module)
 
-    @pytest.mark.parametrize(
-        "benchmark_file",
-        _iterate_over_benchmark_dir(default_benchmarks_dir / "keywords"),
-        ids=lambda f: str(f),
-    )
-    def test_validate_keyword_benchmark_format(self, benchmark_file):
+    @pytest.mark.parametrize("path", KEYWORD_BENCHMARK_PATHS, ids=str)
+    def test_validate_keyword_benchmark_format(self, path):
         benchmark_module = "bowtie.benchmarks.keywords"
-        _validate_benchmark_file(benchmark_file, benchmark_module)
+        _validate_benchmark_file(path, benchmark_module)
 
 
 class TestLoadBenchmark:
@@ -125,7 +109,7 @@ class TestLoadBenchmark:
         benchmark = valid_single_benchmark.benchmark_with_diff_tests(
             tests=valid_single_benchmark.tests * 10,
         )
-        assert benchmark_validated(benchmark.serializable())
+        assert benchmark_validator.is_valid(benchmark.serializable())
 
     def test_load_single_benchmark_group_from_dict(
         self,
@@ -133,22 +117,20 @@ class TestLoadBenchmark:
     ):
         benchmark = valid_single_benchmark.serializable()
         benchmark["benchmark_type"] = "test"
-        benchmark_group = BenchmarkGroup.from_dict(
-            benchmark,
-        )
+        benchmark_group = _benchmarks.BenchmarkGroup.from_dict(benchmark)
 
-        assert benchmark_validated(benchmark_group.serializable())
+        assert benchmark_validator.is_valid(benchmark_group.serializable())
 
     def test_load_benchmark_group_from_dict(self, valid_benchmark_group):
         benchmark_json = valid_benchmark_group.serializable()
-        benchmark_group = BenchmarkGroup.from_dict(
+        benchmark_group = _benchmarks.BenchmarkGroup.from_dict(
             benchmark_json,
             uri=valid_benchmark_group.uri,
         )
 
         serializable = benchmark_group.serializable()
 
-        assert benchmark_validated(serializable)
+        assert benchmark_validator.is_valid(serializable)
         assert valid_benchmark_group.serializable() == serializable
 
     def test_load_single_benchmark_group_from_json(
@@ -160,8 +142,8 @@ class TestLoadBenchmark:
         single_benchmark_json = valid_single_benchmark.serializable()
         single_benchmark_json["benchmark_type"] = "test"
         tmp_path.write_text(json.dumps(single_benchmark_json))
-        benchmark_group = BenchmarkGroup.from_file(tmp_path)
-        assert benchmark_validated(benchmark_group.serializable())
+        benchmark_group = _benchmarks.BenchmarkGroup.from_file(tmp_path)
+        assert benchmark_validator.is_valid(benchmark_group.serializable())
 
     def test_load_benchmark_group_from_json(
         self,
@@ -174,13 +156,17 @@ class TestLoadBenchmark:
         benchmark_group_json["uri"] = str(tmp_path.absolute().as_uri())
         tmp_path.write_text(json.dumps(benchmark_group_json))
 
-        loaded_benchmark_group = BenchmarkGroup.from_file(tmp_path)
+        loaded_benchmark_group = _benchmarks.BenchmarkGroup.from_file(tmp_path)
 
-        assert loaded_benchmark_group.serializable() == benchmark_group_json
-        assert benchmark_validated(loaded_benchmark_group.serializable())
+        assert (
+            benchmark_validator.validated(
+                loaded_benchmark_group.serializable(),
+            )
+            == benchmark_group_json
+        )
 
     def test_load_benchmark_groups_from_folder(self):
-        benchmark_groups = BenchmarkGroup.from_folder(
+        benchmark_groups = _benchmarks.BenchmarkGroup.from_folder(
             Path(__file__).parent / "benchmarks",
             module="bowtie.tests.benchmarks",
         )
@@ -188,7 +174,7 @@ class TestLoadBenchmark:
         valid_count = 0
 
         for benchmark_group in benchmark_groups:
-            assert benchmark_validated(benchmark_group.serializable())
+            assert benchmark_validator.is_valid(benchmark_group.serializable())
             valid_count += 1
 
         assert valid_count == valid_benchmarks_for_test
@@ -197,8 +183,6 @@ class TestLoadBenchmark:
 class TestBenchmarker:
 
     def test_default_benchmarker(self, benchmarker_run_args):
-        if not default_benchmarks_dir.exists():
-            return
         _benchmarks.Benchmarker.from_default_benchmarks(**benchmarker_run_args)
 
     @pytest.mark.parametrize(
@@ -207,17 +191,7 @@ class TestBenchmarker:
         ids=lambda param: param.short_name,
     )
     def test_keywords_benchmarker(self, dialect, benchmarker_run_args):
-        dialect_keyword_benchmarks_dir = (
-            keyword_benchmarks_dir / dialect.short_name
-        )
-
-        if not dialect_keyword_benchmarks_dir.exists():
-            return
-
-        _benchmarks.Benchmarker.for_keywords(
-            dialect,
-            **benchmarker_run_args,
-        )
+        _benchmarks.Benchmarker.for_keywords(dialect, **benchmarker_run_args)
 
     def test_test_cases_benchmarker(
         self,
@@ -281,7 +255,7 @@ class TestBenchmarkRun:
             exit_code=0,
             json=True,
         )
-        benchmark_report_validated(stdout)
+        assert benchmark_report_validator.is_valid(stdout)
 
     @pytest.mark.asyncio
     async def test_benchmark_run_pretty_output(
@@ -326,29 +300,34 @@ class TestBenchmarkRun:
             exit_code=0,
         )
 
-        expected_data1 = """
-# Benchmark Summary
-## Benchmark Group: benchmark
-Benchmark File: None
+        assert (
+            dedent(
+                """\
+            # Benchmark Summary
+            ## Benchmark Group: benchmark
+            Benchmark File: None
 
 
-Benchmark: Tests with benchmark
+            Benchmark: Tests with benchmark
 
-| Test Name | python-jsonschema |
-        """.strip()
+            | Test Name | python-jsonschema |
+            """,
+            )
+            in stdout
+        )
 
-        expected_data2 = """
-## Benchmark Metadata
+        assert (
+            dedent(
+                """\
+            ## Benchmark Metadata
 
-Runs: 3
-Values: 2
-Warmups: 1
-        """.strip()
-
-        # Cant verify the whole output as it would be dynamic
-        # with differing values
-        assert expected_data1 in stdout
-        assert expected_data2 in stdout
+            Runs: 3
+            Values: 2
+            Warmups: 1
+            """,
+            )
+            in stdout
+        )
 
     @pytest.mark.asyncio
     async def test_benchmark_run_varying_param_markdown(
@@ -373,35 +352,44 @@ Warmups: 1
             exit_code=0,
         )
 
-        expected_data1 = """
-# Benchmark Summary
-## Benchmark Group: benchmark
-Benchmark File: None
+        assert (
+            dedent(
+                """\
+            # Benchmark Summary
+            ## Benchmark Group: benchmark
+            Benchmark File: None
 
-Benchmark: Tests with varying Array Size
+            Benchmark: Tests with varying Array Size
 
-| Test Name | python-jsonschema |
-            """.strip()
+            | Test Name | python-jsonschema |
+            """,
+            ).strip("\n")
+            in stdout
+        )
 
-        expected_data2 = """
-Benchmark: Tests with benchmark 2
+        assert (
+            dedent(
+                """\
+            Benchmark: Tests with benchmark 2
 
-| Test Name | python-jsonschema |
- """.strip()
+            | Test Name | python-jsonschema |
+            """,
+            )
+            in stdout
+        )
 
-        expected_data3 = """
-    ## Benchmark Metadata
+        assert (
+            dedent(
+                """\
+            ## Benchmark Metadata
 
-Runs: 3
-Values: 2
-Warmups: 1
-            """.strip()
-
-        # Cant verify the whole output as it would be dynamic
-        # with differing values
-        assert expected_data1 in stdout
-        assert expected_data2 in stdout
-        assert expected_data3 in stdout
+            Runs: 3
+            Values: 2
+            Warmups: 1
+            """,
+            )
+            in stdout
+        )
 
     @pytest.mark.asyncio
     async def test_invalid_benchmark_run(self, invalid_benchmark, tmp_path):
