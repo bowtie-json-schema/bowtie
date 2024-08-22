@@ -168,7 +168,7 @@ def by_version_and_dialect(version: str):
     An implementation whose behaviour changes based on its version and dialect.
 
     Use this by passing a connectable parameter, e.g. via
-    ``direct:miniatures:by_version_and_dialect,version=1.0,dialect=draft2020-12``.
+    ``direct:miniatures:by_version_and_dialect,version=1.0``.
 
     The validity result of instances should not be relied on.
     """
