@@ -163,12 +163,12 @@ def foo_v2(dialect: Dialect):
     return lambda schema, registry: lambda instance: None
 
 
-def by_version_and_dialect(version: str):
+def by_version(version: str):
     """
-    An implementation whose behaviour changes based on its version and dialect.
+    An implementation whose behaviour changes based on its version.
 
     Use this by passing a connectable parameter, e.g. via
-    ``direct:miniatures:by_version_and_dialect,version=1.0``.
+    ``direct:miniatures:by_version,version=1.0``.
 
     The validity result of instances should not be relied on.
     """
