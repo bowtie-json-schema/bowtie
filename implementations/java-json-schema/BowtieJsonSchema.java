@@ -11,7 +11,6 @@ import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -36,15 +35,6 @@ public class BowtieJsonSchema {
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
   private boolean started;
-
-  private static Attributes readManifestAttributes() {
-    try (InputStream is = BowtieJsonSchema.class.getResourceAsStream(
-             "META-INF/MANIFEST.MF")) {
-      return new Manifest(is).getMainAttributes();
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to read manifest", e);
-    }
-  }
 
   public static void main(String[] args) {
     BufferedReader reader =
