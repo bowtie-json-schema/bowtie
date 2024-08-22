@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.harrel.jsonschema.Dialect;
+import dev.harrel.jsonschema.Dialects;
 import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
@@ -15,6 +16,8 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -23,9 +26,9 @@ public class BowtieJsonSchema {
 
   private static final String RECOGNIZING_IDENTIFIERS =
       "Determining if a specific location is a schema or not is not supported.";
-  private static final Map<String, String> UNSUPPORTED;
-
-  private static final Attributes MANIFEST_ATTRIBUTES;
+  private static final Map<String, String> UNSUPPORTED =
+      Map.of("$ref prevents a sibling $id from changing the base uri",
+             RECOGNIZING_IDENTIFIERS);
 
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
@@ -33,21 +36,6 @@ public class BowtieJsonSchema {
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private final PrintStream output;
   private boolean started;
-
-  static {
-    MANIFEST_ATTRIBUTES = readManifestAttributes();
-    UNSUPPORTED =
-        "1.7.0".compareTo(
-            MANIFEST_ATTRIBUTES.getValue("Implementation-Version")) <= 0
-            ? Map.of("$ref prevents a sibling $id from changing the base uri",
-                     RECOGNIZING_IDENTIFIERS)
-            : Map.of("$id inside an enum is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS,
-                     "$id inside an unknown keyword is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS,
-                     "$anchor inside an enum is not a real identifier",
-                     RECOGNIZING_IDENTIFIERS);
-  }
 
   private static Attributes readManifestAttributes() {
     try (InputStream is = BowtieJsonSchema.class.getResourceAsStream(
@@ -100,16 +88,19 @@ public class BowtieJsonSchema {
       );
     }
 
+    InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
+    var attributes = new Manifest(is).getMainAttributes();
+
     String fullName = "%s.%s".formatted(
-      MANIFEST_ATTRIBUTES.getValue("Implementation-Group"),
-      MANIFEST_ATTRIBUTES.getValue("Implementation-Name")
+      attributes.getValue("Implementation-Group"),
+      attributes.getValue("Implementation-Name")
     );
     StartResponse startResponse = new StartResponse(
       1,
       new Implementation(
         "java",
         fullName,
-        MANIFEST_ATTRIBUTES.getValue("Implementation-Version"),
+        attributes.getValue("Implementation-Version"),
         Arrays.stream(SpecificationVersion.values()).map(SpecificationVersion::getId).toList(),
         "https://github.com/harrel56/json-schema",
         "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/harrel/jsonschema/package-summary.html",
@@ -120,8 +111,8 @@ public class BowtieJsonSchema {
         Runtime.version().toString(),
         List.of(
             new Link("https://harrel.dev", "Group homepage"),
-            new Link(createMavenUrl("Implementation"), "Maven Central - implementation"),
-            new Link(createMavenUrl("Provider"), "Maven Central - used JSON provider")
+            new Link(createMavenUrl("Implementation", attributes), "Maven Central - implementation"),
+            new Link(createMavenUrl("Provider", attributes), "Maven Central - used JSON provider")
         )
       )
     );
@@ -138,14 +129,13 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
+    Map<String, Dialect> dialectsMap = Arrays.stream(Dialects.class.getClasses())
+            .filter(Dialect.class::isAssignableFrom)
+            .map(Dialect.class::cast)
+            .collect(Collectors.toMap(dialect -> dialect.getSpecificationVersion().getId(), Function.identity()));
+
     try {
-      if (getSpecificationVersionFor("DRAFT2020_12").getId().equals(dialectRequest.dialect())) {
-        setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft2020Dialect"));
-      } else if (getSpecificationVersionFor("DRAFT2019_09").getId().equals(dialectRequest.dialect())) {
-        setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft2019Dialect"));
-      } else if (getSpecificationVersionFor("DRAFT7").getId().equals(dialectRequest.dialect())) {
-        setDialect(Class.forName("dev.harrel.jsonschema.Dialects$Draft7Dialect"));
-      }
+      setDialectFor(dialectsMap.get(dialectRequest.dialect()));
     } catch (Exception e) {
       throw new IllegalStateException("Failed to set dialect", e);
     }
@@ -154,36 +144,12 @@ public class BowtieJsonSchema {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void setDialect(Class<?> dialectClass) throws Exception {
-    Object dialectInstance = dialectClass.getDeclaredConstructor().newInstance();
-
+  private void setDialectFor(Dialect dialect) throws Exception {
     try {
-      Method withDefaultDialectMethod = validatorFactory
-                                            .getClass()
-                                            .getMethod(
-                                              "withDefaultDialect",
-                                              Dialect.class
-                                            );
-      withDefaultDialectMethod.invoke(validatorFactory, dialectInstance);
+      Method withDefaultDialectMethod = validatorFactory.getClass().getMethod("withDefaultDialect", Dialect.class);
+      withDefaultDialectMethod.invoke(validatorFactory, dialect);
     } catch (NoSuchMethodException e) {
-        Method withDialectMethod = validatorFactory
-                                      .getClass()
-                                      .getMethod(
-                                        "withDialect",
-                                        Dialect.class
-                                      );
-        withDialectMethod.invoke(validatorFactory, dialectInstance);
-    }
-  }
-
-  private SpecificationVersion getSpecificationVersionFor(String draftName) throws Exception {
-    try {
-      Field draftField = SpecificationVersion.class.getDeclaredField(draftName);
-      return (SpecificationVersion) draftField.get(null);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      throw new IllegalStateException(
-        "Failed to retrieve SpecificationVersion for: " + draftName, e
-      );
+      validatorFactory.withDialect(dialect);
     }
   }
 
@@ -240,11 +206,11 @@ public class BowtieJsonSchema {
       }
     }
 
-  private String createMavenUrl(String prefix) {
+  private String createMavenUrl(String prefix, Attributes attributes) {
       return "https://mvnrepository.com/artifact/%s/%s/%s".formatted(
-              MANIFEST_ATTRIBUTES.getValue(prefix + "-Group"),
-              MANIFEST_ATTRIBUTES.getValue(prefix + "-Name"),
-              MANIFEST_ATTRIBUTES.getValue(prefix + "-Version")
+              attributes.getValue(prefix + "-Group"),
+              attributes.getValue(prefix + "-Name"),
+              attributes.getValue(prefix + "-Version")
       );
   }
 
