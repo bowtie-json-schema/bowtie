@@ -121,13 +121,19 @@ public class BowtieJsonSchema {
 
     Map<String, Dialect> dialectsMap = Arrays.stream(Dialects.class.getClasses())
             .filter(Dialect.class::isAssignableFrom)
-            .map(Dialect.class::cast)
+            .map(clazz -> {
+                try {
+                    return (Dialect) clazz.getDeclaredConstructor().newInstance();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to instantiate Dialect", e);
+                }
+            })
             .collect(Collectors.toMap(dialect -> dialect.getSpecificationVersion().getId(), Function.identity()));
 
     try {
       setDialectFor(dialectsMap.get(dialectRequest.dialect()));
     } catch (Exception e) {
-      throw new IllegalStateException("Failed to set dialect", e);
+      throw new IllegalStateException("Failed to set Dialect", e);
     }
 
     DialectResponse dialectResponse = new DialectResponse(true);
