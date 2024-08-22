@@ -63,6 +63,14 @@ benchmark_validated, benchmark_invalidated = (
     benchmark_validator.invalidated,
 )
 
+benchmark_report_validator = (
+    Direct.from_id("python-jsonschema")
+    .registry()
+    .for_uri(
+        URL.parse("tag:bowtie.report,2024:benchmark_report"),
+    )
+)
+
 
 def get_benchmark_files(
     benchmark_type: str | None,
@@ -103,6 +111,33 @@ def get_benchmark_files(
         ]
 
     return files
+
+
+def merge_benchmark_report_jsons(
+    benchmark_reports: list[Path],
+) -> BenchmarkReport:
+    benchmark_metadata: BenchmarkMetadata | None = None
+    benchmark_results: dict[str, BenchmarkGroupResult] = dict()
+    for report in benchmark_reports:
+        report_data = json.loads(report.read_text())
+        benchmark_report_validator.validated(report_data)
+        benchmark_report = BenchmarkReport.from_dict(
+            report_data,
+        )
+        benchmark_metadata = (
+            benchmark_report.metadata
+            if benchmark_metadata is None
+            else benchmark_metadata
+        )
+        benchmark_results.update(benchmark_report.results)
+
+    if benchmark_metadata is None:
+        raise ValueError("Benchmark metadata cannot be empty!")
+
+    return BenchmarkReport(
+        metadata=benchmark_metadata,
+        results=benchmark_results,
+    )
 
 
 def _load_benchmark_group_from_file(
@@ -350,6 +385,19 @@ class BenchmarkGroupResult:
     def serializable(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BenchmarkGroupResult:
+        return cls(
+            name=data["name"],
+            benchmark_type=data["benchmark_type"],
+            description=data["description"],
+            benchmark_results=[
+                BenchmarkResult.from_dict(result)
+                for result in data["benchmark_results"]
+            ],
+            varying_parameter=data.get("varying_parameter"),
+        )
+
 
 @frozen
 class BenchmarkResult:
@@ -360,6 +408,17 @@ class BenchmarkResult:
     def serializable(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BenchmarkResult:
+        return cls(
+            name=data["name"],
+            description=data["description"],
+            test_results=[
+                TestResult.from_dict(result)
+                for result in data["test_results"]
+            ],
+        )
+
 
 @frozen
 class TestResult:
@@ -368,6 +427,16 @@ class TestResult:
 
     def serializable(self):
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TestResult:
+        return cls(
+            description=data["description"],
+            connectable_results=[
+                ConnectableResult.from_dict(result)
+                for result in data["connectable_results"]
+            ],
+        )
 
 
 @frozen
@@ -379,6 +448,15 @@ class ConnectableResult:
 
     def serializable(self):
         return asdict(self, filter=lambda _, v: v is not None)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ConnectableResult:
+        return cls(
+            connectable_id=data["connectable_id"],
+            duration=data["duration"],
+            values=data["values"],
+            errored=data.get("errored", False),
+        )
 
 
 @frozen
@@ -420,6 +498,26 @@ class BenchmarkMetadata:
         )
         return as_dict
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BenchmarkMetadata:
+        return cls(
+            dialect=Dialect.from_str(data["dialect"]),
+            implementations={
+                id: ImplementationInfo.from_dict(**info)
+                for id, info in data["implementations"].items()
+            },
+            num_runs=data["num_runs"],
+            num_values=data["num_values"],
+            num_warmups=data["num_warmups"],
+            num_loops=data["num_loops"],
+            system_metadata=data.get("system_metadata", {}),
+            bowtie_version=data.get(
+                "bowtie_version",
+                importlib.metadata.version("bowtie-json-schema"),
+            ),
+            started=datetime.fromisoformat(data["started"]),
+        )
+
 
 @frozen
 class BenchmarkReport:
@@ -435,6 +533,19 @@ class BenchmarkReport:
             for _, benchmark_group_result in self.results.items()
         ]
         return as_dict
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+    ) -> BenchmarkReport:
+        return cls(
+            metadata=BenchmarkMetadata.from_dict(data["metadata"]),
+            results={
+                r.get("name"): BenchmarkGroupResult.from_dict(r)
+                for r in data["results"]
+            },
+        )
 
 
 @frozen
