@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -128,7 +129,13 @@ public class BowtieJsonSchema {
                     throw new IllegalStateException("Failed to instantiate Dialect", e);
                 }
             })
-            .collect(Collectors.toMap(dialect -> dialect.getSpecificationVersion().getId(), Function.identity()));
+            .collect(
+              Collectors.toMap(
+                dialect -> dialect.getSpecificationVersion().getId(), 
+                Function.identity(),
+                (existing, replacement) -> existing,
+                ConcurrentHashMap::new
+            ));
 
     try {
       setDialectFor(dialectsMap.get(dialectRequest.dialect()));
