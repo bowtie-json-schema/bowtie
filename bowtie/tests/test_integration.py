@@ -3529,7 +3529,7 @@ class TestBenchmarkRun:
             Benchmark: Tests with benchmark
 
             | Test Name | direct:python-jsonschema |
-        """
+        """,
         ).strip()
 
         expected_data2 = dedent(
@@ -3539,7 +3539,7 @@ class TestBenchmarkRun:
             Runs: 3
             Values: 2
             Warmups: 1
-        """
+        """,
         ).strip()
 
         # Cant verify the whole output as it would be dynamic
@@ -3579,7 +3579,7 @@ class TestBenchmarkRun:
             Benchmark: Tests with varying Array Size
 
             | Test Name | direct:python-jsonschema |
-        """
+        """,
         ).strip()
 
         expected_data2 = dedent(
@@ -3587,7 +3587,7 @@ class TestBenchmarkRun:
             Benchmark: Tests with benchmark 2
 
             | Test Name | direct:python-jsonschema |
-        """
+        """,
         ).strip()
 
         expected_data3 = dedent(
@@ -3597,7 +3597,7 @@ class TestBenchmarkRun:
             Runs: 3
             Values: 2
             Warmups: 1
-        """
+        """,
         ).strip()
 
         # Cant verify the whole output as it would be dynamic
