@@ -131,7 +131,7 @@ public class BowtieJsonSchema {
             })
             .collect(
               Collectors.toMap(
-                dialect -> dialect.getSpecificationVersion().getId(), 
+                dialect -> dialect.getSpecificationVersion().getId(),
                 Function.identity(),
                 (existing, replacement) -> existing,
                 ConcurrentHashMap::new
