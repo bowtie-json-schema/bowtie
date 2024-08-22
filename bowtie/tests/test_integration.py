@@ -2597,11 +2597,9 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "-i",
         "direct:null",
         "-i",
-        miniatures.by_version_and_dialect
-        + ",version=1.0,dialect=draft2020-12",
+        miniatures.by_version_and_dialect + ",version=1.0",
         "-i",
-        miniatures.by_version_and_dialect
-        + ",version=2.0,dialect=draft2020-12",
+        miniatures.by_version_and_dialect + ",version=2.0",
         "--expect",
         "valid",
         tmp_path / "schema.json",

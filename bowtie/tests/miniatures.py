@@ -143,9 +143,9 @@ def foo_v1(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    if dialect == Dialect.by_short_name()["draft2020-12"]:
+    if dialect == Dialect.by_alias()["2020"]:
         return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
-    elif dialect == Dialect.by_short_name()["draft2019-09"]:
+    elif dialect == Dialect.by_alias()["2019"]:
         return lambda schema, registry: lambda instance: None
 
     return lambda schema, registry: lambda instance: None
@@ -157,15 +157,15 @@ def foo_v2(dialect: Dialect):
 
     The validity result of instances should not be relied on.
     """
-    if dialect == Dialect.by_short_name()["draft2020-12"]:
+    if dialect == Dialect.by_alias()["2020"]:
         return lambda schema, registry: lambda instance: None
-    elif dialect == Dialect.by_short_name()["draft2019-09"]:
+    elif dialect == Dialect.by_alias()["2019"]:
         return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
     return lambda schema, registry: lambda instance: None
 
 
-def by_version_and_dialect(version: str, dialect: str):
+def by_version_and_dialect(version: str):
     """
     An implementation whose behaviour changes based on its version and dialect.
 
@@ -178,14 +178,16 @@ def by_version_and_dialect(version: str, dialect: str):
         return fake(
             name="foo",
             version=version,
-            dialects=frozenset([Dialect.by_short_name()[dialect]]),
         )(foo_v1)()
     elif version == "2.0":
         return fake(
             name="foo",
             version=version,
-            dialects=frozenset([Dialect.by_short_name()[dialect]]),
         )(foo_v2)()
+    else:
+        return fake(
+            name="foo",
+        )(null)()
 
 
 def naively_correct(schema, registry):
