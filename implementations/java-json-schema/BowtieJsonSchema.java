@@ -124,15 +124,17 @@ public class BowtieJsonSchema {
             .filter(Dialect.class::isAssignableFrom)
             .map(clazz -> {
                 try {
-                    return (Dialect) clazz.getDeclaredConstructor().newInstance();
+                    return (Dialect) clazz.getConstructor().newInstance();
                 } catch (Exception e) {
                     throw new IllegalStateException("Failed to instantiate Dialect", e);
                 }
             })
             .collect(
-              Collectors.toMap(
+              Collectors.toConcurrentMap(
                 dialect -> dialect.getSpecificationVersion().getId(),
                 Function.identity(),
+                (existing, replacement) -> existing,
+                ConcurrentHashMap::new
             ));
 
     try {
