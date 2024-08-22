@@ -136,6 +136,7 @@ def links(dialect: Dialect):
     """
     return lambda schema, registry: lambda instance: None
 
+
 def foo_v1(dialect: Dialect):
     """
     Claims to be in version 1.0 and changes its behaviour based on the dialect.
@@ -149,6 +150,7 @@ def foo_v1(dialect: Dialect):
 
     return lambda schema, registry: lambda instance: None
 
+
 def foo_v2(dialect: Dialect):
     """
     Claims to be in version 2.0 and changes its behaviour based on the dialect.
@@ -161,6 +163,7 @@ def foo_v2(dialect: Dialect):
         return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
 
     return lambda schema, registry: lambda instance: None
+
 
 def by_version_and_dialect(version: str, dialect: str):
     """
@@ -183,6 +186,7 @@ def by_version_and_dialect(version: str, dialect: str):
             version=version,
             dialects=frozenset([Dialect.by_short_name()[dialect]]),
         )(foo_v2)()
+
 
 def naively_correct(schema, registry):
     """
