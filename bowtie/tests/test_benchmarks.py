@@ -6,7 +6,6 @@ import pytest
 from bowtie import _benchmarks, benchmarks
 from bowtie._core import Dialect, TestCase
 from bowtie._direct_connectable import Direct
-from bowtie.tests.test_integration import bowtie
 
 validators = Direct.from_id("python-jsonschema").registry()
 

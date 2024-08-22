@@ -3519,7 +3519,8 @@ class TestBenchmarkRun:
             exit_code=0,
         )
 
-        expected_data1 = dedent("""
+        expected_data1 = dedent(
+            """
             # Benchmark Summary
             ## Benchmark Group: benchmark
             Benchmark File: None
@@ -3528,15 +3529,18 @@ class TestBenchmarkRun:
             Benchmark: Tests with benchmark
 
             | Test Name | direct:python-jsonschema |
-        """).strip()
+        """
+        ).strip()
 
-        expected_data2 = dedent("""
+        expected_data2 = dedent(
+            """
             ## Benchmark Metadata
 
             Runs: 3
             Values: 2
             Warmups: 1
-        """).strip()
+        """
+        ).strip()
 
         # Cant verify the whole output as it would be dynamic
         # with differing values
@@ -3566,7 +3570,8 @@ class TestBenchmarkRun:
             exit_code=0,
         )
 
-        expected_data1 = dedent("""
+        expected_data1 = dedent(
+            """
             # Benchmark Summary
             ## Benchmark Group: benchmark
             Benchmark File: None
@@ -3574,21 +3579,26 @@ class TestBenchmarkRun:
             Benchmark: Tests with varying Array Size
 
             | Test Name | direct:python-jsonschema |
-        """).strip()
+        """
+        ).strip()
 
-        expected_data2 = dedent("""
+        expected_data2 = dedent(
+            """
             Benchmark: Tests with benchmark 2
 
             | Test Name | direct:python-jsonschema |
-        """).strip()
+        """
+        ).strip()
 
-        expected_data3 = dedent("""
+        expected_data3 = dedent(
+            """
             ## Benchmark Metadata
 
             Runs: 3
             Values: 2
             Warmups: 1
-        """).strip()
+        """
+        ).strip()
 
         # Cant verify the whole output as it would be dynamic
         # with differing values
