@@ -5,8 +5,8 @@ name: Collect New Benchmark Results
 on:
   workflow_dispatch:
   schedule:
-    # Every Monday at 00:00 UTC
-    - cron: "0 0 * * 1"
+    # Every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
 
 permissions:
   contents: read
