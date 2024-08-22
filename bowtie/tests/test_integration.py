@@ -3419,3 +3419,239 @@ class TestImplicitDialectSupport:
         )
         assert not Report.from_serialized(stdout.splitlines()).is_empty
         assert stderr == ""
+
+
+class TestBenchmarkRun:
+
+    DIRECT_CONNECTABLE_PYTHON = "direct:python-jsonschema"
+
+    benchmark_report_validator = VALIDATORS.for_uri(
+        "tag:bowtie.report,2024:benchmark_report",
+    )
+
+    @pytest.fixture()
+    def valid_single_benchmark(self):
+        from bowtie.tests.benchmarks import valid_single_benchmark
+
+        return valid_single_benchmark.get_benchmark()
+
+    @pytest.fixture()
+    def invalid_benchmark(self):
+        from bowtie.tests.benchmarks import invalid_benchmark
+
+        return invalid_benchmark.get_benchmark()
+
+    @pytest.mark.asyncio
+    async def test_nonexistent_benchmark_run(self):
+        random_name = "non-existent-benchmark.py"
+        _, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-b",
+            random_name,
+            exit_code=EX.DATAERR,
+        )
+        assert "Benchmark File not found" in stderr
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_json_output(
+        self,
+        valid_single_benchmark,
+        tmp_path,
+    ):
+        tmp_path.joinpath("benchmark.json").write_text(
+            _json.dumps(valid_single_benchmark.serializable()),
+        )
+        stdout, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-q",
+            "--format",
+            "json",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+            json=True,
+        )
+        self.benchmark_report_validator.validated(stdout)
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_pretty_output(
+        self,
+        valid_single_benchmark,
+        tmp_path,
+    ):
+        tmp_path.joinpath("benchmark.json").write_text(
+            _json.dumps(valid_single_benchmark.serializable()),
+        )
+        stdout, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-q",
+            "--format",
+            "pretty",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+        )
+
+        # FIXME: We don't assert against the exact output yet, as it's a WIP
+        assert stdout, stderr
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_markdown_output(
+        self,
+        valid_single_benchmark,
+        tmp_path,
+    ):
+        tmp_path.joinpath("benchmark.json").write_text(
+            _json.dumps(valid_single_benchmark.serializable()),
+        )
+        stdout, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-q",
+            "--format",
+            "markdown",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+        )
+
+        expected_data1 = dedent(
+            """
+            # Benchmark Summary
+            ## Benchmark Group: benchmark
+            Benchmark File: None
+
+
+            Benchmark: Tests with benchmark
+
+            | Test Name | direct:python-jsonschema |
+        """
+        ).strip()
+
+        expected_data2 = dedent(
+            """
+            ## Benchmark Metadata
+
+            Runs: 3
+            Values: 2
+            Warmups: 1
+        """
+        ).strip()
+
+        # Cant verify the whole output as it would be dynamic
+        # with differing values
+        assert expected_data1 in stdout
+        assert expected_data2 in stdout
+
+    @pytest.mark.asyncio
+    async def test_benchmark_run_varying_param_markdown(
+        self,
+        tmp_path,
+    ):
+        from bowtie.tests.benchmarks import benchmark_with_varying_parameter
+
+        tmp_path.joinpath("benchmark.json").write_text(
+            _json.dumps(
+                benchmark_with_varying_parameter.get_benchmark().serializable(),
+            ),
+        )
+        stdout, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-q",
+            "--format",
+            "markdown",
+            tmp_path / "benchmark.json",
+            exit_code=0,
+        )
+
+        expected_data1 = dedent(
+            """
+            # Benchmark Summary
+            ## Benchmark Group: benchmark
+            Benchmark File: None
+
+            Benchmark: Tests with varying Array Size
+
+            | Test Name | direct:python-jsonschema |
+        """
+        ).strip()
+
+        expected_data2 = dedent(
+            """
+            Benchmark: Tests with benchmark 2
+
+            | Test Name | direct:python-jsonschema |
+        """
+        ).strip()
+
+        expected_data3 = dedent(
+            """
+            ## Benchmark Metadata
+
+            Runs: 3
+            Values: 2
+            Warmups: 1
+        """
+        ).strip()
+
+        # Cant verify the whole output as it would be dynamic
+        # with differing values
+        assert expected_data1 in stdout
+        assert expected_data2 in stdout
+        assert expected_data3 in stdout
+
+    @pytest.mark.asyncio
+    async def test_invalid_benchmark_run(self, invalid_benchmark, tmp_path):
+        tmp_path.joinpath("benchmark.json").write_text(
+            _json.dumps(invalid_benchmark),
+        )
+        _, stderr = await bowtie(
+            "perf",
+            "-i",
+            self.DIRECT_CONNECTABLE_PYTHON,
+            "-q",
+            "--format",
+            "json",
+            tmp_path / "benchmark.json",
+            exit_code=1,
+        )
+
+
+class TestFilterBenchmarks:
+
+    @pytest.mark.asyncio
+    async def test_default_benchmarks(self):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks",
+            exit_code=0,
+        )
+        assert stderr == ""
+
+    @pytest.mark.asyncio
+    async def test_keyword_benchmarks(self):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks",
+            "-t",
+            "keyword",
+            exit_code=0,
+        )
+        assert stderr == ""
+
+    @pytest.mark.asyncio
+    async def test_filtering_by_name(self):
+        stdout, stderr = await bowtie(
+            "filter-benchmarks",
+            "-t",
+            "keyword",
+            "-n",
+            "random-nonexistent-name",
+            exit_code=0,
+        )
+        assert stdout == ""
+        assert stderr == ""
