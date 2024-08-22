@@ -405,8 +405,7 @@ class BenchmarkResult:
             name=data["name"],
             description=data["description"],
             test_results=[
-                TestResult.from_dict(result)
-                for result in data["test_results"]
+                TestResult.from_dict(result) for result in data["test_results"]
             ],
         )
 
