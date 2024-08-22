@@ -136,26 +136,53 @@ def links(dialect: Dialect):
     """
     return lambda schema, registry: lambda instance: None
 
-
-@fake(name="versioned", version="1.0")
-def version_1(dialect: Dialect):
+def foo_v1(dialect: Dialect):
     """
-    An implementation which claims to be in version 1.0.
+    Claims to be in version 1.0 and changes its behaviour based on the dialect.
 
     The validity result of instances should not be relied on.
     """
+    if dialect == Dialect.by_short_name()["draft2020-12"]:
+        return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
+    elif dialect == Dialect.by_short_name()["draft2019-09"]:
+        return lambda schema, registry: lambda instance: None
+
     return lambda schema, registry: lambda instance: None
 
-
-@fake(name="versioned", version="2.0")
-def version_2(dialect: Dialect):
+def foo_v2(dialect: Dialect):
     """
-    An implementation which claims to be in version 2.0.
+    Claims to be in version 2.0 and changes its behaviour based on the dialect.
 
     The validity result of instances should not be relied on.
     """
+    if dialect == Dialect.by_short_name()["draft2020-12"]:
+        return lambda schema, registry: lambda instance: None
+    elif dialect == Dialect.by_short_name()["draft2019-09"]:
+        return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
+
     return lambda schema, registry: lambda instance: None
 
+def by_version_and_dialect(version: str, dialect: str):
+    """
+    An implementation whose behaviour changes based on its version and dialect.
+
+    Use this by passing a connectable parameter, e.g. via
+    ``direct:miniatures:by_version_and_dialect,version=1.0,dialect=draft2020-12``.
+
+    The validity result of instances should not be relied on.
+    """
+    if version == "1.0":
+        return fake(
+            name="foo",
+            version=version,
+            dialects=frozenset([Dialect.by_short_name()[dialect]]),
+        )(foo_v1)()
+    elif version == "2.0":
+        return fake(
+            name="foo",
+            version=version,
+            dialects=frozenset([Dialect.by_short_name()[dialect]]),
+        )(foo_v2)()
 
 def naively_correct(schema, registry):
     """
