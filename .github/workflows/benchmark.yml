@@ -39,7 +39,6 @@ jobs:
       - name: Collect Benchmark Files
         id: benchmarks
         run: |
-          results=()
           dialects='${{ needs.dialects.outputs.dialects }}'
           dialects=$(echo $dialects | jq -r '.[]')
           results=()
@@ -56,7 +55,6 @@ jobs:
           done
           final_json="$(jq -sc '.' <<< "${results[@]}")"
           final_json=$(echo "$final_json" | jq -c '{ "include": . }')
-          echo $final_json >> $GITHUB_STEP_SUMMARY
           echo "dialect_benchmarks=$final_json" >> $GITHUB_OUTPUT
 
   run_benchmarks:
