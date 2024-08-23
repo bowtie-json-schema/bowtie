@@ -15,7 +15,7 @@ import {
 
 function miniature(name: string) {
   // Should match what's used in our backend integration tests obviously.
-  return `direct:bowtie.tests.fauxmplementations.miniatures:${name}`;
+  return `direct:bowtie.tests.miniatures:${name}`;
 }
 
 function bowtie(args: string[] = [], input?: string, status = 0) {
@@ -30,6 +30,7 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
     error.message =
       error.message +
       `
+      ran: bowtie ${args.join(" ")}
       stdout contained:
 
         ${result.stdout?.toString()}
@@ -37,6 +38,10 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
       stderr contained:
 
         ${result.stderr?.toString()}
+
+      stdin contained:
+
+        ${input?.toString()}
     `;
     throw error;
   }

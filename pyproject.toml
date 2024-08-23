@@ -115,7 +115,7 @@ strict = ["**/*.py"]
 exclude = [
     "**/tests/__init__.py",
     "**/tests/conftest.py",
-    "**/tests/fauxmplementations/miniatures.py",
+    "**/tests/miniatures.py",
     "**/tests/test_*.py",
     "**/bowtie/benchmarks/*",
     "**/tests/benchmarks/*",
