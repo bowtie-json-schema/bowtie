@@ -105,10 +105,10 @@ def get_benchmark_files(
     return files
 
 
-def combine_benchmark_reports(
-    benchmark_report_files: list[Path],
-) -> BenchmarkReport:
-    return BenchmarkReport.merge(
+def combine_benchmark_reports_to_serialized(
+    benchmark_report_files: Iterable[Path],
+) -> str:
+    merged_report = BenchmarkReport.merge(
         [
             BenchmarkReport.from_dict(
                 **json.loads(report_file.read_text()),
@@ -116,6 +116,7 @@ def combine_benchmark_reports(
             for report_file in benchmark_report_files
         ],
     )
+    return json.dumps(merged_report.serializable())
 
 
 def _load_benchmark_group_from_file(
