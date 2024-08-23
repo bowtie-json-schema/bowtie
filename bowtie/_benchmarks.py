@@ -524,8 +524,7 @@ class BenchmarkReport:
         return cls(
             metadata=BenchmarkMetadata.from_dict(**metadata),
             results={
-                r["name"]: BenchmarkGroupResult.from_dict(**r)
-                for r in results
+                r["name"]: BenchmarkGroupResult.from_dict(**r) for r in results
             },
         )
 
