@@ -364,16 +364,17 @@ class BenchmarkGroupResult:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> BenchmarkGroupResult:
+    def from_dict(
+        cls,
+        benchmark_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> BenchmarkGroupResult:
         return cls(
-            name=data["name"],
-            benchmark_type=data["benchmark_type"],
-            description=data["description"],
             benchmark_results=[
-                BenchmarkResult.from_dict(result)
-                for result in data["benchmark_results"]
+                BenchmarkResult.from_dict(**result)
+                for result in benchmark_results
             ],
-            varying_parameter=data.get("varying_parameter"),
+            **kwargs,
         )
 
 
@@ -387,13 +388,16 @@ class BenchmarkResult:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> BenchmarkResult:
+    def from_dict(
+        cls,
+        test_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> BenchmarkResult:
         return cls(
-            name=data["name"],
-            description=data["description"],
             test_results=[
-                TestResult.from_dict(result) for result in data["test_results"]
+                TestResult.from_dict(**result) for result in test_results
             ],
+            **kwargs,
         )
 
 
@@ -406,13 +410,17 @@ class TestResult:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> TestResult:
+    def from_dict(
+        cls,
+        connectable_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> TestResult:
         return cls(
-            description=data["description"],
             connectable_results=[
-                ConnectableResult.from_dict(result)
-                for result in data["connectable_results"]
+                ConnectableResult.from_dict(**result)
+                for result in connectable_results
             ],
+            **kwargs,
         )
 
 
@@ -427,12 +435,9 @@ class ConnectableResult:
         return asdict(self, filter=lambda _, v: v is not None)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> ConnectableResult:
+    def from_dict(cls, **kwargs: Any) -> ConnectableResult:
         return cls(
-            connectable_id=data["connectable_id"],
-            duration=data["duration"],
-            values=data["values"],
-            errored=data.get("errored", False),
+            **kwargs,
         )
 
 
@@ -476,23 +481,22 @@ class BenchmarkMetadata:
         return as_dict
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> BenchmarkMetadata:
+    def from_dict(
+        cls,
+        dialect: str,
+        implementations: dict[str, dict[str, Any]],
+        started: str | None = None,
+        **kwargs: Any,
+    ) -> BenchmarkMetadata:
+        if started is not None:
+            kwargs["started"] = datetime.fromisoformat(started)
         return cls(
-            dialect=Dialect.from_str(data["dialect"]),
+            dialect=Dialect.from_str(dialect),
             implementations={
-                id: ImplementationInfo.from_dict(**info)
-                for id, info in data["implementations"].items()
+                id: ImplementationInfo.from_dict(**data)
+                for id, data in implementations.items()
             },
-            num_runs=data["num_runs"],
-            num_values=data["num_values"],
-            num_warmups=data["num_warmups"],
-            num_loops=data["num_loops"],
-            system_metadata=data.get("system_metadata", {}),
-            bowtie_version=data.get(
-                "bowtie_version",
-                importlib.metadata.version("bowtie-json-schema"),
-            ),
-            started=datetime.fromisoformat(data["started"]),
+            **kwargs,
         )
 
 
@@ -517,9 +521,9 @@ class BenchmarkReport:
         data: dict[str, Any],
     ) -> BenchmarkReport:
         return cls(
-            metadata=BenchmarkMetadata.from_dict(data["metadata"]),
+            metadata=BenchmarkMetadata.from_dict(**data["metadata"]),
             results={
-                r.get("name"): BenchmarkGroupResult.from_dict(r)
+                r["name"]: BenchmarkGroupResult.from_dict(**r)
                 for r in data["results"]
             },
         )
