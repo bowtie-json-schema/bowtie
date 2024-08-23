@@ -30,6 +30,7 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
     error.message =
       error.message +
       `
+      ran: bowtie ${args.join(" ")}
       stdout contained:
 
         ${result.stdout?.toString()}
@@ -37,6 +38,10 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
       stderr contained:
 
         ${result.stderr?.toString()}
+
+      stdin contained:
+
+        ${input?.toString()}
     `;
     throw error;
   }
