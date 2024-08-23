@@ -43,12 +43,14 @@ jobs:
           dialects=$(echo $dialects | jq -r '.[]')
           results=()
 
+          idx=0
           for dialect in $dialects; do
             output=$(bowtie filter-benchmarks -D "$dialect")
 
             if [ -n "$output" ]; then
               while IFS= read -r line; do
-                json_result=$(jq -nc --arg p "$dialect" --arg o "$line" '{ dialect: $p, benchmark: $o }')
+                idx=$((idx + 1))
+                json_result=$(jq -nc --arg id "$idx" --arg p "$dialect" --arg o "$line" '{ id: $id|tonumber, dialect: $p, benchmark: $o }')
                 results+=("$json_result")
               done <<< "$output"
             fi
@@ -75,16 +77,13 @@ jobs:
 
       - name: Generate Benchmark Report
         run: |
-          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > ${{ matrix.benchmark }}-file.json
-
-      - name: Store Unique Id for distinction
-        run: echo "unique_id=$(uuidgen)" >> $GITHUB_ENV
+          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > benchmark-file-${{ matrix.id }}.json
 
       - name: Upload Benchmark file as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-file-${{ matrix.dialect }}-${{ env.unique_id }}
-          path: ${{ matrix.benchmark }}-file.json
+          name: benchmark-file-${{ matrix.dialect }}-${{ matrix.id }}
+          path: benchmark-file-${{ matrix.id }}.json
 
   merge_benchmarks_into_single_report:
     needs:
