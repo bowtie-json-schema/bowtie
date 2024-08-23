@@ -120,7 +120,7 @@ jobs:
                   Path("benchmarks-${{ matrix.dialect }}").iterdir()
               )
           )
-          
+
           EOF
 
       - name: Upload final Benchmark Report for dialect
