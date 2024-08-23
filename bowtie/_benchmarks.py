@@ -111,7 +111,7 @@ def combine_benchmark_reports(
     return BenchmarkReport.merge(
         [
             BenchmarkReport.from_dict(
-                json.loads(report_file.read_text()),
+                **json.loads(report_file.read_text()),
             )
             for report_file in benchmark_report_files
         ],
@@ -518,13 +518,14 @@ class BenchmarkReport:
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any],
+        metadata: dict[str, Any],
+        results: list[dict[str, Any]],
     ) -> BenchmarkReport:
         return cls(
-            metadata=BenchmarkMetadata.from_dict(**data["metadata"]),
+            metadata=BenchmarkMetadata.from_dict(**metadata),
             results={
                 r["name"]: BenchmarkGroupResult.from_dict(**r)
-                for r in data["results"]
+                for r in results
             },
         )
 
