@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from bowtie import _benchmarks, benchmarks
-from bowtie._core import Dialect, TestCase
+from bowtie import HOMEPAGE, REPO, _benchmarks, benchmarks
+from bowtie._core import Dialect, ImplementationInfo, TestCase
 from bowtie._direct_connectable import Direct
 
 validators = Direct.from_id("python-jsonschema").registry()
@@ -51,26 +51,6 @@ def invalid_benchmark():
     from bowtie.tests.benchmarks import invalid_benchmark
 
     return invalid_benchmark.get_benchmark()
-
-
-@pytest.fixture()
-def benchmark_report1():
-    file_path = (
-        Path(__file__).parent / "benchmarks/reports" / "benchmark_report1.json"
-    )
-    return _benchmarks.BenchmarkReport.from_dict(
-        json.loads(file_path.read_text()),
-    )
-
-
-@pytest.fixture()
-def benchmark_report2():
-    file_path = (
-        Path(__file__).parent / "benchmarks/reports" / "benchmark_report2.json"
-    )
-    return _benchmarks.BenchmarkReport.from_dict(
-        json.loads(file_path.read_text()),
-    )
 
 
 @pytest.fixture()
@@ -240,12 +220,71 @@ class TestBenchmarkReport:
 
     def test_merge_benchmark_reports(
         self,
-        benchmark_report1,
-        benchmark_report2,
     ):
+        benchmark_metadata = _benchmarks.BenchmarkMetadata(
+            implementations={
+                "foo": ImplementationInfo(
+                    name="foo",
+                    language="blub",
+                    homepage=HOMEPAGE,
+                    issues=REPO / "issues",
+                    source=REPO,
+                    dialects=frozenset([Dialect.latest()]),
+                ),
+            },
+            dialect=Dialect.latest(),
+            num_runs=1,
+            num_loops=1,
+            num_values=1,
+            num_warmups=1,
+        )
+
+        benchmark_results = [
+            _benchmarks.BenchmarkResult(
+                name="benchmark1",
+                description="test",
+                test_results=[
+                    _benchmarks.TestResult(
+                        description="test",
+                        connectable_results=[
+                            _benchmarks.ConnectableResult(
+                                connectable_id="foo",
+                                duration=1.0,
+                                values=[1.0],
+                                errored=False,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+        benchmark_report1 = _benchmarks.BenchmarkReport(
+            metadata=benchmark_metadata,
+            results={
+                "benchmark_group_1": _benchmarks.BenchmarkGroupResult(
+                    name="benchmark_group_1",
+                    description="test",
+                    benchmark_type="test",
+                    benchmark_results=benchmark_results,
+                ),
+            },
+        )
+        benchmark_report2 = _benchmarks.BenchmarkReport(
+            metadata=benchmark_metadata,
+            results={
+                "benchmark_group_2": _benchmarks.BenchmarkGroupResult(
+                    name="benchmark_group_2",
+                    description="test",
+                    benchmark_type="test",
+                    benchmark_results=benchmark_results,
+                ),
+            },
+        )
         merged_report = _benchmarks.BenchmarkReport.merge(
             [benchmark_report1, benchmark_report2],
         )
         assert len(merged_report.results.items()) == len(
             benchmark_report1.results.items(),
         ) + len(benchmark_report2.results.items())
+        assert "benchmark_group_1" in merged_report.results
+        assert "benchmark_group_2" in merged_report.results
