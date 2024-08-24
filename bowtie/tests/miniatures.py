@@ -159,7 +159,7 @@ def has_bugs_by_versions(version: str):
                     if dialect == Dialect.by_alias()["2019"]
                     else (lambda schema, registry: lambda instance: None)
                 )
-            )
+            ),
         )()
     elif version == "2.0":
         return fake(
@@ -176,7 +176,7 @@ def has_bugs_by_versions(version: str):
                     if dialect == Dialect.by_alias()["2019"]
                     else (lambda schema, registry: lambda instance: None)
                 )
-            )
+            ),
         )()
     return fake(name="buggy")(null)()
 
