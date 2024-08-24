@@ -2627,9 +2627,9 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "-i",
         "direct:null",
         "-i",
-        miniatures.foo_v1,
+        miniatures.has_bugs_by_versions + ",version=1.0",
         "-i",
-        miniatures.foo_v2,
+        miniatures.has_bugs_by_versions + ",version=2.0",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -2653,10 +2653,10 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
             # Bowtie Failures Summary
 
             | Implementation | Skips | Errors | Failures |
-            |:----------------:|:-:|:-:|:-:|
-            |  null (python)   | 0 | 0 | 0 |
-            | foo 2.0 (python) | 0 | 0 | 0 |
-            | foo 1.0 (python) | 0 | 0 | 2 |
+            |:------------------:|:-:|:-:|:-:|
+            | buggy 2.0 (python) | 0 | 0 | 0 |
+            |   null (python)    | 0 | 0 | 0 |
+            | buggy 1.0 (python) | 0 | 0 | 2 |
 
             **2 tests ran**
             """,
@@ -2666,10 +2666,10 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
             # Bowtie Failures Summary
 
             | Implementation | Skips | Errors | Failures |
-            |:----------------:|:-:|:-:|:-:|
-            | foo 2.0 (python) | 0 | 0 | 0 |
-            |  null (python)   | 0 | 0 | 0 |
-            | foo 1.0 (python) | 0 | 0 | 2 |
+            |:------------------:|:-:|:-:|:-:|
+            |   null (python)    | 0 | 0 | 0 |
+            | buggy 2.0 (python) | 0 | 0 | 0 |
+            | buggy 1.0 (python) | 0 | 0 | 2 |
 
             **2 tests ran**
             """,

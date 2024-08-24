@@ -137,24 +137,50 @@ def links(dialect: Dialect):
     return lambda schema, registry: lambda instance: None
 
 
-@fake(name="foo", version="1.0")
-def foo_v1(dialect: Dialect):
+def has_bugs_by_versions(version: str):
     """
-    An implementation that claims to be named 'foo' and to be in version 1.0.
+    A buggy implementation whose behaviour changes based on its versions.
+
+    Use this by passing a connectable parameter, e.g. via
+    ``direct:miniatures:has_bugs_by_versions,version=1.0``.
 
     Always considers any instance invalid.
     """
-    return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
-
-
-@fake(name="foo", version="2.0")
-def foo_v2(dialect: Dialect):
-    """
-    An implementation that claims to be named 'foo' and to be in version 2.0.
-
-    Always considers any instance valid.
-    """
-    return lambda schema, registry: lambda instance: None
+    if version == "1.0":
+        return fake(
+            name="buggy",
+            version=version,
+        )(
+            lambda dialect: (
+                (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
+                if dialect == Dialect.by_alias()["2020"]
+                else (
+                    (lambda schema, registry: lambda instance: None)
+                    if dialect == Dialect.by_alias()["2019"]
+                    else (lambda schema, registry: lambda instance: None)
+                )
+            ),
+        )()
+    elif version == "2.0":
+        return fake(
+            name="buggy",
+            version=version,
+        )(
+            lambda dialect: (
+                (lambda schema, registry: lambda instance: None)
+                if dialect == Dialect.by_alias()["2020"]
+                else (
+                    (
+                        lambda schema, registry: (
+                            lambda instance: ARBITRARILY_INVALID
+                        )
+                    )
+                    if dialect == Dialect.by_alias()["2019"]
+                    else (lambda schema, registry: lambda instance: None)
+                )
+            ),
+        )()
+    return fake(name="buggy")(null)()
 
 
 def naively_correct(schema, registry):
