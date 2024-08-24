@@ -3049,7 +3049,6 @@ async def test_trend_no_id_directory(tmp_path):
     assert "Couldn't find a 'foo' directory" in stderr
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.containers
 async def test_trend_no_versions_subdirs(tmp_path):
