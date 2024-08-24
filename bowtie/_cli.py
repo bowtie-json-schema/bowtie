@@ -1817,7 +1817,7 @@ async def download_and_parse_reports_for(
                         task,
                         description=(
                             f"Downloading and Parsing: "
-                            f"v{version} ({dialect.short_name}.json)"
+                            f"v{version}/{dialect.short_name}.json"
                         ),
                     )
                 except httpx.HTTPStatusError:
@@ -1875,7 +1875,7 @@ async def download_and_parse_reports_for(
                     task,
                     description=(
                         f"Downloading and Parsing: "
-                        f"latest ({dialect.short_name}.json)"
+                        f"latest/{dialect.short_name}.json"
                     ),
                 )
             except httpx.HTTPStatusError:
@@ -2132,7 +2132,7 @@ class _VersionedReportsTar(click.File):
                             progress.update(
                                 task,
                                 description=(
-                                    f"Attempting to parse: "
+                                    f"Parsing: "
                                     f"v{version}/{dialect.short_name}.json"
                                 ),
                             )
