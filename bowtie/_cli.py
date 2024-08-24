@@ -2267,7 +2267,7 @@ def trend(
         )
         dialects_trend = {
             dialect: combined_versions_report
-            for dialect in dialects
+            for dialect in sorted(dialects)
             if (
                 combined_versions_report := combine_versioned_reports_for(
                     [report for _, _, report in versioned_reports],

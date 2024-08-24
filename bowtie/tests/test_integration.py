@@ -3118,27 +3118,6 @@ async def test_trend_json(tmp_path):
             "buggy",
             [
                 [
-                    "draft2020-12",
-                    [
-                        [
-                            "2.0",
-                            {
-                                "failed": 0,
-                                "errored": 0,
-                                "skipped": 0,
-                            },
-                        ],
-                        [
-                            "1.0",
-                            {
-                                "failed": 2,
-                                "errored": 0,
-                                "skipped": 0,
-                            },
-                        ],
-                    ],
-                ],
-                [
                     "draft2019-09",
                     [
                         [
@@ -3153,6 +3132,27 @@ async def test_trend_json(tmp_path):
                             "1.0",
                             {
                                 "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
+                [
+                    "draft2020-12",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 2,
                                 "errored": 0,
                                 "skipped": 0,
                             },
@@ -3270,8 +3270,8 @@ async def test_trend_valid_markdown(tmp_path):
         id="buggy",
         versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[
-            ("1.0", Dialect.by_short_name()["2019"], buggy_v1_2019_stdout),
-            ("2.0", Dialect.by_short_name()["2019"], buggy_v2_2019_stdout),
+            ("1.0", Dialect.by_short_name()["draft2019-09"], buggy_v1_2019_stdout),
+            ("2.0", Dialect.by_short_name()["draft2019-09"], buggy_v2_2019_stdout),
         ],
     )
 
