@@ -144,7 +144,7 @@ def has_bugs_by_versions(version: str):
     Use this by passing a connectable parameter, e.g. via
     ``direct:miniatures:has_bugs_by_versions,version=1.0``.
 
-    Always considers any instance invalid.
+    The validity result of instances should not be relied on.
     """
     if version == "1.0":
         return fake(
