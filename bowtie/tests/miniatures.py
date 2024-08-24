@@ -139,10 +139,10 @@ def links(dialect: Dialect):
 
 def has_bugs_by_versions(version: str):
     """
-    A buggy implementation whose behaviour changes based on its version.
+    A buggy implementation whose behaviour changes based on its versions.
 
     Use this by passing a connectable parameter, e.g. via
-    ``direct:miniatures:by_version,version=1.0``.
+    ``direct:miniatures:has_bugs_by_versions,version=1.0``.
 
     The validity result of instances should not be relied on.
     """
