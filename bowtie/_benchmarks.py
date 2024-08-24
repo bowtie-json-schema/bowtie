@@ -105,6 +105,20 @@ def get_benchmark_files(
     return files
 
 
+def combine_benchmark_reports_to_serialized(
+    benchmark_report_files: Iterable[Path],
+) -> str:
+    merged_report = BenchmarkReport.merge(
+        [
+            BenchmarkReport.from_dict(
+                **json.loads(report_file.read_text()),
+            )
+            for report_file in benchmark_report_files
+        ],
+    )
+    return json.dumps(merged_report.serializable())
+
+
 def _load_benchmark_group_from_file(
     file: Path,
     module: str | None = None,
@@ -350,6 +364,20 @@ class BenchmarkGroupResult:
     def serializable(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(
+        cls,
+        benchmark_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> BenchmarkGroupResult:
+        return cls(
+            benchmark_results=[
+                BenchmarkResult.from_dict(**result)
+                for result in benchmark_results
+            ],
+            **kwargs,
+        )
+
 
 @frozen
 class BenchmarkResult:
@@ -360,6 +388,19 @@ class BenchmarkResult:
     def serializable(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(
+        cls,
+        test_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> BenchmarkResult:
+        return cls(
+            test_results=[
+                TestResult.from_dict(**result) for result in test_results
+            ],
+            **kwargs,
+        )
+
 
 @frozen
 class TestResult:
@@ -368,6 +409,20 @@ class TestResult:
 
     def serializable(self):
         return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls,
+        connectable_results: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> TestResult:
+        return cls(
+            connectable_results=[
+                ConnectableResult.from_dict(**result)
+                for result in connectable_results
+            ],
+            **kwargs,
+        )
 
 
 @frozen
@@ -379,6 +434,12 @@ class ConnectableResult:
 
     def serializable(self):
         return asdict(self, filter=lambda _, v: v is not None)
+
+    @classmethod
+    def from_dict(cls, **kwargs: Any) -> ConnectableResult:
+        return cls(
+            **kwargs,
+        )
 
 
 @frozen
@@ -420,6 +481,25 @@ class BenchmarkMetadata:
         )
         return as_dict
 
+    @classmethod
+    def from_dict(
+        cls,
+        dialect: str,
+        implementations: dict[str, dict[str, Any]],
+        started: str | None = None,
+        **kwargs: Any,
+    ) -> BenchmarkMetadata:
+        if started is not None:
+            kwargs["started"] = datetime.fromisoformat(started)
+        return cls(
+            dialect=Dialect.from_str(dialect),
+            implementations={
+                id: ImplementationInfo.from_dict(**data)
+                for id, data in implementations.items()
+            },
+            **kwargs,
+        )
+
 
 @frozen
 class BenchmarkReport:
@@ -435,6 +515,33 @@ class BenchmarkReport:
             for _, benchmark_group_result in self.results.items()
         ]
         return as_dict
+
+    @classmethod
+    def from_dict(
+        cls,
+        metadata: dict[str, Any],
+        results: list[dict[str, Any]],
+    ) -> BenchmarkReport:
+        return cls(
+            metadata=BenchmarkMetadata.from_dict(**metadata),
+            results={
+                r["name"]: BenchmarkGroupResult.from_dict(**r) for r in results
+            },
+        )
+
+    @classmethod
+    def merge(
+        cls,
+        benchmark_reports: list[BenchmarkReport],
+    ) -> BenchmarkReport:
+        return BenchmarkReport(
+            metadata=benchmark_reports[0].metadata,
+            results={
+                k: v
+                for report in benchmark_reports
+                for k, v in report.results.items()
+            },
+        )
 
 
 @frozen

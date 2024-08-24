@@ -481,7 +481,7 @@ class DialectRunner:
             seq=run.seq,
             implementation=self.implementation,
             expected=expected,
-            result=result,
+            result=result,  # type: ignore[reportUnknownArgumentType]  # pyright seems confused
         )
 
 

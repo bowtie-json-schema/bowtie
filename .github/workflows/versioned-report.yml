@@ -4,6 +4,11 @@ name: Collect New Versioned Test Results
 
 on:
   workflow_dispatch:
+    inputs:
+      implementation:
+        description: The name of an implementation.
+        required: false
+        type: string
 
 jobs:
   list-implementations:
@@ -19,13 +24,29 @@ jobs:
       - name: List all Bowtie Supported Implementations having a "matrix-versions.json" file
         id: implementations-matrix
         run: |
-          IMPLEMENTATIONS=$(bowtie filter-implementations --format json | jq -r '.[]')
+          implementation=${{ inputs.implementation }}
+          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
           MATRIX="[]"
-          for impl in $IMPLEMENTATIONS; do
-            if [ -f "implementations/$impl/matrix-versions.json" ]; then
-              MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
+          if [ -n "$implementation" ]; then
+            if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
+              if [ -f "implementations/$implementation/matrix-versions.json" ]; then
+                MATRIX=$(echo $MATRIX | jq --arg impl "$implementation" '. + [$impl]')
+              else
+                echo "No \`matrix-versions.json\` file found for implementation ('$implementation')."
+                exit 1
+              fi
+            else
+              echo "No such implementation ('$implementation') found. Please provide a correct implementation name."
+              echo "To see a list of all Bowtie supported implementations, run \`bowtie filter-implementations\`."
+              exit 1
             fi
-          done
+          else
+            for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
+              if [ -f "implementations/$impl/matrix-versions.json" ]; then
+                MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
+              fi
+            done
+          fi
           echo "implementations=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   regenerate-versioned-reports:
@@ -74,8 +95,8 @@ jobs:
         run: docker images
         if: always()
 
-      # This unfortunately can go wrong if e.g. we ever run out of memory above.
-      # Probably we should also atomically move files into place.
+      # FIXME: We ignore for now as now this exits unsuccessfully if there
+      #        are *test* failures
       - name: Check that all Generated Versioned Reports of ${{ matrix.implementation }} are Valid
         run: |
           impl=${{ matrix.implementation }}
@@ -88,6 +109,7 @@ jobs:
               done
             fi
           done
+        continue-on-error: true
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,7 +126,22 @@ jobs:
         with:
           path: implementations
 
+      - name: Download latest versioned test reports
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: versioned-report.yml
+          branch: main
+          name: implementations
+          path: latest-implementations
+        if: ${{ inputs.implementation != null }}
+
+      - name: Prepare artifact for upload
+        run: |
+          rm -rf "latest-implementations/${{ inputs.implementation }}"
+          cp -r "implementations/${{ inputs.implementation }}" "latest-implementations/"
+        if: ${{ inputs.implementation != null }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: implementations
-          path: implementations
+          path: ${{ inputs.implementation != null && 'latest-implementations' || 'implementations' }}
