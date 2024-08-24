@@ -44,29 +44,24 @@ public class BowtieJsonSchema {
     new BowtieJsonSchema(System.out).run(reader);
   }
 
-  public BowtieJsonSchema(PrintStream output) { 
+  public BowtieJsonSchema(PrintStream output) {
     this.output = output;
-    this.dialectsMap = Arrays
-                          .stream(Dialects.class.getClasses())
-                          .filter(Dialect.class::isAssignableFrom)
-                          .map(clazz -> {
-                              try {
-                                  return (Dialect) clazz.getConstructor().newInstance();
-                              } catch (Exception e) {
-                                  throw new IllegalStateException(
-                                    "Failed to instantiate Dialect", e
-                                  );
-                              }
-                          })
-                          .collect(
-                            Collectors.collectingAndThen(
-                              Collectors.toMap(
-                                dialect -> dialect.getSpecificationVersion().getId(),
-                                Function.identity()
-                              ),
-                              Collections::unmodifiableMap
-                            )
-                          );
+    this.dialectsMap =
+        Arrays.stream(Dialects.class.getClasses())
+            .filter(Dialect.class ::isAssignableFrom)
+            .map(clazz -> {
+              try {
+                return (Dialect)clazz.getConstructor().newInstance();
+              } catch (Exception e) {
+                throw new IllegalStateException("Failed to instantiate Dialect",
+                                                e);
+              }
+            })
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(dialect
+                                 -> dialect.getSpecificationVersion().getId(),
+                                 Function.identity()),
+                Collections::unmodifiableMap));
   }
 
   private void run(BufferedReader reader) {
