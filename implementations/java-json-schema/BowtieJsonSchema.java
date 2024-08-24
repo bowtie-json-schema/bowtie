@@ -13,10 +13,10 @@ import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -30,6 +30,7 @@ public class BowtieJsonSchema {
       Map.of("$ref prevents a sibling $id from changing the base uri",
              RECOGNIZING_IDENTIFIERS);
 
+  private final Map<String, Dialect> dialectsMap;
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
@@ -43,7 +44,30 @@ public class BowtieJsonSchema {
     new BowtieJsonSchema(System.out).run(reader);
   }
 
-  public BowtieJsonSchema(PrintStream output) { this.output = output; }
+  public BowtieJsonSchema(PrintStream output) { 
+    this.output = output;
+    this.dialectsMap = Arrays
+                          .stream(Dialects.class.getClasses())
+                          .filter(Dialect.class::isAssignableFrom)
+                          .map(clazz -> {
+                              try {
+                                  return (Dialect) clazz.getConstructor().newInstance();
+                              } catch (Exception e) {
+                                  throw new IllegalStateException(
+                                    "Failed to instantiate Dialect", e
+                                  );
+                              }
+                          })
+                          .collect(
+                            Collectors.collectingAndThen(
+                              Collectors.toMap(
+                                dialect -> dialect.getSpecificationVersion().getId(),
+                                Function.identity()
+                              ),
+                              Collections::unmodifiableMap
+                            )
+                          );
+  }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
@@ -120,25 +144,8 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
-    ConcurrentHashMap<String, Dialect> dialectsMap = Arrays.stream(Dialects.class.getClasses())
-            .filter(Dialect.class::isAssignableFrom)
-            .map(clazz -> {
-                try {
-                    return (Dialect) clazz.getConstructor().newInstance();
-                } catch (Exception e) {
-                    throw new IllegalStateException("Failed to instantiate Dialect", e);
-                }
-            })
-            .collect(
-              Collectors.toConcurrentMap(
-                dialect -> dialect.getSpecificationVersion().getId(),
-                Function.identity(),
-                (existing, replacement) -> existing,
-                ConcurrentHashMap::new
-            ));
-
     try {
-      setDialectFor(dialectsMap.get(dialectRequest.dialect()));
+      setDialectFor(this.dialectsMap.get(dialectRequest.dialect()));
     } catch (Exception e) {
       throw new IllegalStateException("Failed to set Dialect", e);
     }
