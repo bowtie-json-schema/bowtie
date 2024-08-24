@@ -136,36 +136,9 @@ def links(dialect: Dialect):
     """
     return lambda schema, registry: lambda instance: None
 
-
-def foo_v1(dialect: Dialect):
+def has_bugs_by_versions(version: str):
     """
-    Claims to be in version 1.0 and changes its behaviour based on the dialect.
-
-    The validity result of instances should not be relied on.
-    """
-    if dialect == Dialect.by_alias()["2020"]:
-        return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
-    elif dialect == Dialect.by_alias()["2019"]:
-        return lambda schema, registry: lambda instance: None
-    return lambda schema, registry: lambda instance: None
-
-
-def foo_v2(dialect: Dialect):
-    """
-    Claims to be in version 2.0 and changes its behaviour based on the dialect.
-
-    The validity result of instances should not be relied on.
-    """
-    if dialect == Dialect.by_alias()["2020"]:
-        return lambda schema, registry: lambda instance: None
-    elif dialect == Dialect.by_alias()["2019"]:
-        return lambda schema, registry: lambda instance: ARBITRARILY_INVALID
-    return lambda schema, registry: lambda instance: None
-
-
-def by_version(version: str):
-    """
-    An implementation whose behaviour changes based on its version.
+    A buggy implementation whose behaviour changes based on its version.
 
     Use this by passing a connectable parameter, e.g. via
     ``direct:miniatures:by_version,version=1.0``.
@@ -173,10 +146,28 @@ def by_version(version: str):
     The validity result of instances should not be relied on.
     """
     if version == "1.0":
-        return fake(name="foo", version=version)(foo_v1)()
+        return fake(
+            name="buggy",
+            version=version,
+        )(lambda dialect: (
+            (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
+            if dialect == Dialect.by_alias()["2020"] else
+            (lambda schema, registry: lambda instance: None)
+            if dialect == Dialect.by_alias()["2019"] else
+            (lambda schema, registry: lambda instance: None)
+        ))()
     elif version == "2.0":
-        return fake(name="foo", version=version)(foo_v2)()
-    return fake(name="foo")(null)()
+        return fake(
+            name="buggy",
+            version=version,
+        )(lambda dialect: (
+            (lambda schema, registry: lambda instance: None)
+            if dialect == Dialect.by_alias()["2020"] else
+            (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
+            if dialect == Dialect.by_alias()["2019"] else
+            (lambda schema, registry: lambda instance: None)
+        ))()
+    return fake(name="buggy")(null)()
 
 
 def naively_correct(schema, registry):
