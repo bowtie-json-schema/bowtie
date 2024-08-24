@@ -149,8 +149,33 @@ class TestDirect:
 
         assert Connectable.from_str(id) == Connectable(
             id=id,
-            connector=Direct(connect=jsonschema),
+            connector=Direct(wraps=jsonschema()),
         )
+
+    def test_import_parameters(self):
+        id = validated(
+            "direct:bowtie.tests.miniatures:only_supports,dialect=draft7",
+        )
+
+        from bowtie.tests.miniatures import only_supports
+
+        assert Connectable.from_str(id) == Connectable(
+            id=id,
+            connector=Direct(
+                wraps=only_supports(dialect="draft7"),
+            ),
+        )
+
+    def test_import_missing_parameter(self):
+        """
+        The basic import syntax is direct:foo.bar:baz, not foo.bar.baz.
+        """
+        prefix, suffix = "direct:bowtie.tests.miniatures", "always_invalid"
+
+        Connectable.from_str(validated(f"{prefix}:{suffix}"))  # succeeds
+
+        with pytest.raises(CannotConnect, match=":always_invalid'"):
+            Connectable.from_str(invalidated(f"{prefix}.{suffix}"))
 
 
 class TestExplicitHappy:

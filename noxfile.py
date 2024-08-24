@@ -200,7 +200,7 @@ def typing(session):
     """
     Check Bowtie's codebase using pyright.
     """
-    session.install("pyright==1.1.372", f"{ROOT}[strategies]")
+    session.install("pyright", f"{ROOT}[strategies]")
     session.run("pyright", *session.posargs, BOWTIE)
 
 
@@ -435,7 +435,7 @@ def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.install("-r", REQUIREMENTS["main"], ROOT)
+    session.install("-r", REQUIREMENTS["main"], "-e", ROOT)
     pnpm(session.run, "install-test", "--frozen-lockfile")
 
 

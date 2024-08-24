@@ -9,15 +9,14 @@ from url import URL
 from bowtie import HOMEPAGE, REPO
 from bowtie._commands import StartedDialect
 from bowtie._core import Dialect, Link
-from bowtie._direct_connectable import direct_implementation
+from bowtie._direct_connectable import DirectImplementation, null
 
 ARBITRARILY_INVALID = ExceptionGroup("Not valid!", [ZeroDivisionError()])
 
 
 def fake(**kwargs):
-    return direct_implementation(
+    return DirectImplementation.from_callable(
         **{
-            "language": "python",
             "homepage": HOMEPAGE,
             "source": REPO,
             "issues": REPO / "issues",
@@ -48,14 +47,19 @@ def always_wrong(dialect: Dialect):
     )
 
 
-@fake(dialects=frozenset([Dialect.by_short_name()["draft3"]]))
-def only_draft3(dialect: Dialect):
+def only_supports(dialect: str):
     """
-    Claims to only support Draft 3.
+    Claims to only support the dialect provided in its (sole) parameter.
+
+    Use this by passing a connectable parameter, e.g. via
+    ``direct:miniatures:only_supports,dialect=draft4``.
 
     The validity result of instances should not be relied on.
     """
-    return lambda schema, registry: lambda instance: None
+    return fake(
+        name="only_supports",
+        dialects=frozenset([Dialect.by_short_name()[dialect]]),
+    )(null)()
 
 
 @fake()
