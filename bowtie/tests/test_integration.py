@@ -3043,7 +3043,7 @@ async def test_trend_no_id_directory(tmp_path):
         versioned_reports=[],
     )
 
-    stdout, stderr = await bowtie(
+    _, stderr = await bowtie(
         "trend",
         "-i",
         "foo",
@@ -3051,8 +3051,7 @@ async def test_trend_no_id_directory(tmp_path):
         exit_code=EX.DATAERR,
     )
 
-    assert stdout == ""
-    assert "Couldn't find a 'foo' directory" in stderr
+    assert "Couldn't find a 'foo' directory" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -3067,7 +3066,7 @@ async def test_trend_no_matrix_versions_file(tmp_path):
         versioned_reports=[],
     )
 
-    stdout, stderr = await bowtie(
+    _, stderr = await bowtie(
         "trend",
         "-i",
         "buggy",
@@ -3075,8 +3074,7 @@ async def test_trend_no_matrix_versions_file(tmp_path):
         exit_code=EX.DATAERR,
     )
 
-    assert stdout == ""
-    assert "Couldn't find a 'matrix-versions.json' file" in stderr
+    assert "Couldn't find a 'matrix-versions.json' file" in stderr, stderr
 
 
 @pytest.mark.asyncio
@@ -3087,11 +3085,11 @@ async def test_trend_no_versions_subdirs(tmp_path):
     tar_from_versioned_reports(
         tar_path=tar_path,
         id="buggy",
-        versions=frozenset(["1.0"]),
+        versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[],
     )
 
-    stdout, stderr = await bowtie(
+    _, stderr = await bowtie(
         "trend",
         "-i",
         "buggy",
@@ -3099,8 +3097,33 @@ async def test_trend_no_versions_subdirs(tmp_path):
         exit_code=EX.DATAERR,
     )
 
-    assert stdout == ""
-    assert "Couldn't find any versions sub-directories" in stderr
+    assert "Couldn't find any versions sub-directories" in stderr, stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_trend_no_versions_support(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[
+            ("1.0", Dialect.by_alias()["2020"], "report_placeholder"),
+        ],
+    )
+
+    stdout, _ = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        "--dialect",
+        "7",
+        tar_path,
+    )
+
+    assert stdout.strip() == "None of the versions of 'buggy' support Draft 7."
 
 
 @pytest.mark.asyncio
@@ -3204,27 +3227,6 @@ async def test_trend_json(tmp_path):
             "buggy",
             [
                 [
-                    "draft2019-09",
-                    [
-                        [
-                            "2.0",
-                            {
-                                "failed": 2,
-                                "errored": 0,
-                                "skipped": 0,
-                            },
-                        ],
-                        [
-                            "1.0",
-                            {
-                                "failed": 0,
-                                "errored": 0,
-                                "skipped": 0,
-                            },
-                        ],
-                    ],
-                ],
-                [
                     "draft2020-12",
                     [
                         [
@@ -3239,6 +3241,27 @@ async def test_trend_json(tmp_path):
                             "1.0",
                             {
                                 "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
+                [
+                    "draft2019-09",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 0,
                                 "errored": 0,
                                 "skipped": 0,
                             },

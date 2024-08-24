@@ -2054,25 +2054,14 @@ class _VersionedReportsTar(click.File):
                     )
                     ctx.exit(EX.DATAERR)
 
-                matrix_versions_found = False
                 versions: frozenset[str] = frozenset()
-                for member in members:
-                    if (
-                        member.name.removeprefix(f"./{id}/")
-                        == "matrix-versions.json"
-                    ):
-                        matrix_versions_found = True
-                        try:
-                            versions_content = tar.extractfile(member.name)
-                            if versions_content:
-                                versions = json.load(versions_content)
-                        except KeyError:
-                            STDERR.print(
-                                f"Failed to extract matrix-versions.json file "
-                                f"from {id} directory of {input.name}.",
-                            )
-                            ctx.exit(EX.DATAERR)
-                if not matrix_versions_found:
+                try:
+                    versions_content = tar.extractfile(
+                        f"./{id}/matrix-versions.json",
+                    )
+                    if versions_content:
+                        versions = json.load(versions_content)
+                except KeyError:
                     STDERR.print(
                         f"Couldn't find a 'matrix-versions.json' file in {id} "
                         f"directory of {input.name}.",
@@ -2256,7 +2245,7 @@ def trend(
 
     if all(report.is_empty for _, _, report in versioned_reports):
         click.echo(
-            f"None of the versions of {id} "
+            f"None of the versions of '{id}' "
             f"support {pretty_names_str_for(dialects)}.",
         )
         return
@@ -2267,7 +2256,7 @@ def trend(
         )
         dialects_trend = {
             dialect: combined_versions_report
-            for dialect in sorted(dialects)
+            for dialect in sorted(dialects, reverse=True)
             if (
                 combined_versions_report := combine_versioned_reports_for(
                     [report for _, _, report in versioned_reports],
