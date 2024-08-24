@@ -435,7 +435,7 @@ def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.install("-r", REQUIREMENTS["main"], ROOT)
+    session.install("-r", REQUIREMENTS["main"], "-e", ROOT)
     pnpm(session.run, "install-test", "--frozen-lockfile")
 
 
