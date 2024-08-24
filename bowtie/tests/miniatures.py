@@ -171,7 +171,9 @@ def has_bugs_by_versions(version: str):
                 if dialect == Dialect.by_alias()["2020"]
                 else (
                     (
-                        lambda schema, registry: lambda instance: ARBITRARILY_INVALID
+                        lambda schema, registry: (
+                            lambda instance: ARBITRARILY_INVALID
+                        )
                     )
                     if dialect == Dialect.by_alias()["2019"]
                     else (lambda schema, registry: lambda instance: None)
