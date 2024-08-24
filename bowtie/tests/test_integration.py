@@ -3270,8 +3270,16 @@ async def test_trend_valid_markdown(tmp_path):
         id="buggy",
         versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[
-            ("1.0", Dialect.by_short_name()["draft2019-09"], buggy_v1_2019_stdout),
-            ("2.0", Dialect.by_short_name()["draft2019-09"], buggy_v2_2019_stdout),
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v1_2019_stdout,
+            ),
+            (
+                "2.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v2_2019_stdout,
+            ),
         ],
     )
 
