@@ -19,7 +19,7 @@
   "dependencies": {
     "@testing-library/react": "^16.0.0",
     "bootstrap": "^5.3.3",
-    "dayjs": "^1.11.12",
+    "dayjs": "^1.11.13",
     "mathjs": "^13.0.3",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.4",
