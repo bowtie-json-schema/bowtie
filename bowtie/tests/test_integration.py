@@ -121,7 +121,7 @@ def tar_from_directory(directory):
 
 
 def tar_from_versioned_reports(
-    tar_path: str,
+    tar_path: Path,
     id: str,
     versions: frozenset[str],
     versioned_reports: Iterable[tuple[str, Dialect, str]],
