@@ -3024,6 +3024,7 @@ async def test_suite_not_a_suite_directory(tmp_path):
     )
     assert "does not contain" in stderr, stderr
 
+
 @pytest.mark.asyncio
 @pytest.mark.containers
 async def test_trend_no_id_directory(tmp_path):
