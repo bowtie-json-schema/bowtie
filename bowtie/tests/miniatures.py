@@ -136,6 +136,7 @@ def links(dialect: Dialect):
     """
     return lambda schema, registry: lambda instance: None
 
+
 def has_bugs_by_versions(version: str):
     """
     A buggy implementation whose behaviour changes based on its version.
@@ -149,24 +150,34 @@ def has_bugs_by_versions(version: str):
         return fake(
             name="buggy",
             version=version,
-        )(lambda dialect: (
-            (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
-            if dialect == Dialect.by_alias()["2020"] else
-            (lambda schema, registry: lambda instance: None)
-            if dialect == Dialect.by_alias()["2019"] else
-            (lambda schema, registry: lambda instance: None)
-        ))()
+        )(
+            lambda dialect: (
+                (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
+                if dialect == Dialect.by_alias()["2020"]
+                else (
+                    (lambda schema, registry: lambda instance: None)
+                    if dialect == Dialect.by_alias()["2019"]
+                    else (lambda schema, registry: lambda instance: None)
+                )
+            )
+        )()
     elif version == "2.0":
         return fake(
             name="buggy",
             version=version,
-        )(lambda dialect: (
-            (lambda schema, registry: lambda instance: None)
-            if dialect == Dialect.by_alias()["2020"] else
-            (lambda schema, registry: lambda instance: ARBITRARILY_INVALID)
-            if dialect == Dialect.by_alias()["2019"] else
-            (lambda schema, registry: lambda instance: None)
-        ))()
+        )(
+            lambda dialect: (
+                (lambda schema, registry: lambda instance: None)
+                if dialect == Dialect.by_alias()["2020"]
+                else (
+                    (
+                        lambda schema, registry: lambda instance: ARBITRARILY_INVALID
+                    )
+                    if dialect == Dialect.by_alias()["2019"]
+                    else (lambda schema, registry: lambda instance: None)
+                )
+            )
+        )()
     return fake(name="buggy")(null)()
 
 
