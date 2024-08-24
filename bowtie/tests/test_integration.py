@@ -3024,6 +3024,53 @@ async def test_suite_not_a_suite_directory(tmp_path):
     )
     assert "does not contain" in stderr, stderr
 
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_trend_no_id_directory(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(),
+        versioned_reports=[],
+    )
+
+    stdout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "foo",
+        tar_path,
+        exit_code=EX.DATAERR,
+    )
+
+    assert stdout == ""
+    assert "Couldn't find a 'foo' directory" in stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_trend_no_versions_subdirs(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(),
+        versioned_reports=[],
+    )
+
+    stdout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        str(tar_path),
+        exit_code=EX.DATAERR,
+    )
+
+    assert stdout == ""
+    assert "Couldn't find any versions sub-directories" in stderr
+
 
 @pytest.mark.asyncio
 @pytest.mark.containers
