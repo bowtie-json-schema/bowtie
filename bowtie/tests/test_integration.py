@@ -3032,10 +3032,24 @@ async def test_trend_json(tmp_path):
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
 
-    foo_v1_stdout, _ = await bowtie(
+    buggy_v1_2020_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v1,
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "--dialect",
+        "https://json-schema.org/draft/2020-12/schema",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+    buggy_v1_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "-D",
+        "https://json-schema.org/draft/2019-09/schema",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3043,10 +3057,24 @@ async def test_trend_json(tmp_path):
         tmp_path / "two.json",
     )
 
-    foo_v2_stdout, _ = await bowtie(
+    buggy_v2_2020_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v2,
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "--dialect",
+        "2020",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+    buggy_v2_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "-D",
+        "2019",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3057,20 +3085,28 @@ async def test_trend_json(tmp_path):
     tar_path = tmp_path / "versioned_reports.tar"
     tar_from_versioned_reports(
         tar_path=tar_path,
-        id="foo",
+        id="buggy",
         versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[
-            ("1.0", Dialect.by_short_name()["draft2020-12"], foo_v1_stdout),
-            ("2.0", Dialect.by_short_name()["draft2020-12"], foo_v2_stdout),
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2020-12"],
+                buggy_v1_2020_stdout,
+            ),
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v1_2019_stdout,
+            ),
+            ("2.0", Dialect.by_alias()["2020"], buggy_v2_2020_stdout),
+            ("2.0", Dialect.by_alias()["2019"], buggy_v2_2019_stdout),
         ],
     )
 
     jsonout, stderr = await bowtie(
         "trend",
         "-i",
-        "foo",
-        "-D",
-        "2020",
+        "buggy",
         str(tar_path),
         "--format",
         "json",
@@ -3079,7 +3115,7 @@ async def test_trend_json(tmp_path):
 
     assert (await command_validator("trend")).validated(jsonout) == [
         [
-            "foo",
+            "buggy",
             [
                 [
                     "draft2020-12",
@@ -3102,6 +3138,27 @@ async def test_trend_json(tmp_path):
                         ],
                     ],
                 ],
+                [
+                    "draft2019-09",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
             ],
         ],
     ]
@@ -3115,10 +3172,10 @@ async def test_trend_markdown(tmp_path):
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
 
-    foo_v1_stdout, _ = await bowtie(
+    buggy_v1_2020_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v1,
+        miniatures.has_bugs_by_versions + ",version=1.0",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3126,10 +3183,10 @@ async def test_trend_markdown(tmp_path):
         tmp_path / "two.json",
     )
 
-    foo_v2_stdout, _ = await bowtie(
+    buggy_v2_2020_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v2,
+        miniatures.has_bugs_by_versions + ",version=2.0",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3140,20 +3197,18 @@ async def test_trend_markdown(tmp_path):
     tar_path = tmp_path / "versioned_reports.tar"
     tar_from_versioned_reports(
         tar_path=tar_path,
-        id="foo",
+        id="buggy",
         versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[
-            ("1.0", Dialect.by_short_name()["draft2020-12"], foo_v1_stdout),
-            ("2.0", Dialect.by_short_name()["draft2020-12"], foo_v2_stdout),
+            ("1.0", Dialect.by_alias()["2020"], buggy_v1_2020_stdout),
+            ("2.0", Dialect.by_alias()["2020"], buggy_v2_2020_stdout),
         ],
     )
 
     stdout, stderr = await bowtie(
         "trend",
         "-i",
-        "foo",
-        "-D",
-        "2020",
+        "buggy",
         str(tar_path),
         "--format",
         "markdown",
@@ -3162,7 +3217,7 @@ async def test_trend_markdown(tmp_path):
     assert stderr == ""
     assert stdout == dedent(
         """
-        ## Trend Data of foo versions:
+        ## Trend Data of buggy versions:
 
         ### Dialect: Draft 2020-12
 
@@ -3183,10 +3238,12 @@ async def test_trend_valid_markdown(tmp_path):
     tmp_path.joinpath("one.json").write_text("12")
     tmp_path.joinpath("two.json").write_text("37")
 
-    foo_v1_stdout, _ = await bowtie(
+    buggy_v1_2019_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v1,
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "--dialect",
+        "201909",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3194,10 +3251,12 @@ async def test_trend_valid_markdown(tmp_path):
         tmp_path / "two.json",
     )
 
-    foo_v2_stdout, _ = await bowtie(
+    buggy_v2_2019_stdout, _ = await bowtie(
         "validate",
         "-i",
-        miniatures.foo_v2,
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "-D",
+        "draft201909",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -3208,20 +3267,20 @@ async def test_trend_valid_markdown(tmp_path):
     tar_path = tmp_path / "versioned_reports.tar"
     tar_from_versioned_reports(
         tar_path=tar_path,
-        id="foo",
+        id="buggy",
         versions=frozenset(["1.0", "2.0"]),
         versioned_reports=[
-            ("1.0", Dialect.by_short_name()["draft2020-12"], foo_v1_stdout),
-            ("2.0", Dialect.by_short_name()["draft2020-12"], foo_v2_stdout),
+            ("1.0", Dialect.by_short_name()["2019"], buggy_v1_2019_stdout),
+            ("2.0", Dialect.by_short_name()["2019"], buggy_v2_2019_stdout),
         ],
     )
 
     stdout, stderr = await bowtie(
         "trend",
         "-i",
-        "foo",
+        "buggy",
         "-D",
-        "2020",
+        "2019-09",
         str(tar_path),
         "--format",
         "markdown",
