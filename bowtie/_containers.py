@@ -207,7 +207,7 @@ def _float_or_none(value: str | float | None) -> float | None:
 class ConnectableImage:
 
     _id: str = field(
-        converter=lambda value: (
+        converter=lambda value: (  # type: ignore[reportUnknownArgumentType]
             value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
         ),
         alias="id",
