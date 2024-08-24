@@ -131,6 +131,12 @@ def tar_from_versioned_reports(
         root_info.type = tarfile.DIRTYPE
         tar.addfile(root_info)
 
+        if not versions:
+            empty_file_info = tarfile.TarInfo(f"./{id}/.keep")
+            empty_file_info.size = 0
+            tar.addfile(empty_file_info, BytesIO(b""))
+            return
+
         matrix_versions = _json.dumps(list(versions)).encode("utf-8")
         matrix_info = tarfile.TarInfo(f"./{id}/matrix-versions.json")
         matrix_info.size = len(matrix_versions)
@@ -3048,6 +3054,29 @@ async def test_trend_no_id_directory(tmp_path):
     assert stdout == ""
     assert "Couldn't find a 'foo' directory" in stderr
 
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_trend_no_matrix_versions_file(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(),
+        versioned_reports=[],
+    )
+
+    stdout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        tar_path,
+        exit_code=EX.DATAERR,
+    )
+
+    assert stdout == ""
+    assert "Couldn't find a 'matrix-versions.json' file" in stderr
+
 
 @pytest.mark.asyncio
 @pytest.mark.containers
@@ -3057,7 +3086,7 @@ async def test_trend_no_versions_subdirs(tmp_path):
     tar_from_versioned_reports(
         tar_path=tar_path,
         id="buggy",
-        versions=frozenset(),
+        versions=frozenset(["1.0"]),
         versioned_reports=[],
     )
 
