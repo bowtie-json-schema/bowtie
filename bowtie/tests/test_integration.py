@@ -3024,7 +3024,6 @@ async def test_suite_not_a_suite_directory(tmp_path):
     )
     assert "does not contain" in stderr, stderr
 
-
 @pytest.mark.asyncio
 @pytest.mark.containers
 async def test_trend_no_id_directory(tmp_path):
@@ -3065,7 +3064,7 @@ async def test_trend_no_versions_subdirs(tmp_path):
         "trend",
         "-i",
         "buggy",
-        str(tar_path),
+        tar_path,
         exit_code=EX.DATAERR,
     )
 
@@ -3146,8 +3145,16 @@ async def test_trend_json(tmp_path):
                 Dialect.by_short_name()["draft2019-09"],
                 buggy_v1_2019_stdout,
             ),
-            ("2.0", Dialect.by_alias()["2020"], buggy_v2_2020_stdout),
-            ("2.0", Dialect.by_alias()["2019"], buggy_v2_2019_stdout),
+            (
+                "2.0",
+                Dialect.by_alias()["2020"],
+                buggy_v2_2020_stdout,
+            ),
+            (
+                "2.0",
+                Dialect.by_alias()["2019"],
+                buggy_v2_2019_stdout,
+            ),
         ],
     )
 
@@ -3155,7 +3162,7 @@ async def test_trend_json(tmp_path):
         "trend",
         "-i",
         "buggy",
-        str(tar_path),
+        tar_path,
         "--format",
         "json",
         json=True,
@@ -3243,6 +3250,7 @@ async def test_trend_markdown(tmp_path):
     )
 
     tar_path = tmp_path / "versioned_reports.tar"
+
     tar_from_versioned_reports(
         tar_path=tar_path,
         id="buggy",
@@ -3257,7 +3265,7 @@ async def test_trend_markdown(tmp_path):
         "trend",
         "-i",
         "buggy",
-        str(tar_path),
+        tar_path,
         "--format",
         "markdown",
     )
@@ -3313,6 +3321,7 @@ async def test_trend_valid_markdown(tmp_path):
     )
 
     tar_path = tmp_path / "versioned_reports.tar"
+
     tar_from_versioned_reports(
         tar_path=tar_path,
         id="buggy",
@@ -3337,7 +3346,7 @@ async def test_trend_valid_markdown(tmp_path):
         "buggy",
         "-D",
         "2019-09",
-        str(tar_path),
+        tar_path,
         "--format",
         "markdown",
     )
