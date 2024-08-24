@@ -154,7 +154,8 @@ export default class Implementation
             version,
             fromSerialized(await response.text())
           );
-        } catch (err) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
           return;
         }
       })
