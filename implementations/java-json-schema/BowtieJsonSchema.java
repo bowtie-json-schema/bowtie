@@ -11,7 +11,6 @@ import dev.harrel.jsonschema.SpecificationVersion;
 import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -151,10 +150,13 @@ public class BowtieJsonSchema {
 
   private void setDialectFor(Dialect dialect) throws Exception {
     try {
-      Method withDefaultDialectMethod = validatorFactory.getClass().getMethod("withDefaultDialect", Dialect.class);
-      withDefaultDialectMethod.invoke(validatorFactory, dialect);
+      validatorFactory
+          .getClass()
+          .getMethod("withDefaultDialect", Dialect.class)
+          .invoke(validatorFactory, dialect);
     } catch (NoSuchMethodException e) {
-      validatorFactory.withDialect(dialect);
+      validatorFactory
+          .withDialect(dialect);
     }
   }
 
