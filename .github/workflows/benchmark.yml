@@ -107,13 +107,16 @@ jobs:
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v2
+
       - name: Install Bowtie
         run: |
-          pip install -e .
+          uv pip install --system .
 
       - name: Merge Benchmark Reports for a dialect
         run: |
