@@ -106,8 +106,17 @@ jobs:
           path: benchmarks-${{ matrix.dialect }}/
           merge-multiple: true
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v2
+
       - name: Install Bowtie
-        uses: ./
+        run: |
+          uv pip install --system .
 
       - name: Merge Benchmark Reports for a dialect
         run: |
