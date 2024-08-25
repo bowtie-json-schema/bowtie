@@ -106,8 +106,14 @@ jobs:
           path: benchmarks-${{ matrix.dialect }}/
           merge-multiple: true
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
       - name: Install Bowtie
-        uses: ./
+        run: |
+          pip install -e .
 
       - name: Merge Benchmark Reports for a dialect
         run: |
