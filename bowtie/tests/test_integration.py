@@ -3032,7 +3032,6 @@ async def test_suite_not_a_suite_directory(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_no_id_directory(tmp_path):
     tar_path = tmp_path / "versioned-reports.tar"
 
@@ -3055,7 +3054,6 @@ async def test_trend_no_id_directory(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_no_matrix_versions_file(tmp_path):
     tar_path = tmp_path / "versioned-reports.tar"
 
@@ -3078,7 +3076,6 @@ async def test_trend_no_matrix_versions_file(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_no_versions_subdirs(tmp_path):
     tar_path = tmp_path / "versioned-reports.tar"
 
@@ -3101,7 +3098,6 @@ async def test_trend_no_versions_subdirs(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_no_versions_support(tmp_path):
     tar_path = tmp_path / "versioned-reports.tar"
 
@@ -3127,7 +3123,6 @@ async def test_trend_no_versions_support(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_json(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
@@ -3275,7 +3270,6 @@ async def test_trend_json(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
@@ -3342,7 +3336,6 @@ async def test_trend_markdown(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.containers
 async def test_trend_valid_markdown(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("one.json").write_text("12")
