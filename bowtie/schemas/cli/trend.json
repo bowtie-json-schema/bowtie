@@ -36,7 +36,7 @@
                     "$ref": "tag:bowtie.report,2024:models:implementation:version"
                   },
                   {
-                    "$ref": "tag:bowtie.report,2024:cli:summary:unsuccessfulTests"
+                    "$ref": "tag:bowtie.report,2024:models:unsuccessfulTests"
                   }
                 ]
               }
