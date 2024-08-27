@@ -77,7 +77,30 @@
         "unevaluatedItems": false,
         "prefixItems": [
           { "$ref": "tag:bowtie.report,2024:models:implementation:id" },
-          { "$ref": "tag:bowtie.report,2024:models:unsuccessfulTests" }
+          {
+            "description": "Unsuccessful tests for a specific implementation.",
+
+            "type": "object",
+
+            "additionalProperties": false,
+            "required": ["failed", "errored", "skipped"],
+            "properties": {
+              "failed": { "$ref": "#count" },
+              "errored": { "$ref": "#count" },
+              "skipped": { "$ref": "#count" }
+            },
+
+            "$defs": {
+              "count": {
+                "description": "The total number of tests with a specific outcome.",
+
+                "$anchor": "count",
+
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
         ]
       }
     }
