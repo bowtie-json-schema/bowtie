@@ -1,0 +1,26 @@
+{
+  "description": "Unsuccessful tests for a specific implementation.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:models:unsuccessfulTests",
+
+  "type": "object",
+  "required": ["failed", "errored", "skipped"],
+  "properties": {
+    "failed": { "$ref": "#count" },
+    "errored": { "$ref": "#count" },
+    "skipped": { "$ref": "#count" }
+  },
+
+  "$defs": {
+    "count": {
+      "description": "The total number of tests with a specific outcome.",
+
+      "$anchor": "count",
+
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}
