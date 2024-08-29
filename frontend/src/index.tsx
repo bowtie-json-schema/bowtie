@@ -27,7 +27,7 @@ const implementationReportViewDataLoader = async (implementationId: string) => {
 
   const dialectsCompliance = prepareDialectsComplianceReportFor(
     implementation.id,
-    allDialectReports,
+    allDialectReports
   );
 
   await implementation.fetchVersions();
@@ -44,9 +44,7 @@ const dialectReportViewDataLoader = async ({
   params: Params<string>;
 }) => {
   const draftName = params?.draftName;
-  const dialect = draftName
-    ? Dialect.withName(draftName)
-    : Dialect.newestToOldest()[0];
+  const dialect = draftName ? Dialect.withName(draftName) : Dialect.latest();
 
   document.title = `Bowtie - ${dialect.prettyName}`;
 
@@ -100,6 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <BowtieVersionContextProvider>
         <RouterProvider router={router} />
       </BowtieVersionContextProvider>
-    </ThemeContextProvider>,
+    </ThemeContextProvider>
   );
 });

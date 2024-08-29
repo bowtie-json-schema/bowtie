@@ -20,7 +20,7 @@ export default class Dialect {
     shortName: string,
     prettyName: string,
     uri: string,
-    firstPublicationDate: Date,
+    firstPublicationDate: Date
   ) {
     if (Dialect.all.has(shortName)) {
       throw new DialectError(`A "${shortName}" dialect already exists.`);
@@ -51,8 +51,8 @@ export default class Dialect {
     const allReports = new Map<Dialect, ReportData>();
     await Promise.all(
       Array.from(Dialect.known()).map(async (dialect) =>
-        allReports.set(dialect, await dialect.fetchReport()),
-      ),
+        allReports.set(dialect, await dialect.fetchReport())
+      )
     );
     return allReports;
   }
@@ -65,6 +65,10 @@ export default class Dialect {
     return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
   }
 
+  static latest(): Dialect {
+    return Dialect.newestToOldest()[0];
+  }
+
   static withName(shortName: string): Dialect {
     const dialect = Dialect.all.get(shortName);
     if (!dialect) {
@@ -75,7 +79,7 @@ export default class Dialect {
 
   static forURI(uri: string): Dialect {
     const dialect = Array.from(Dialect.all.values()).find(
-      (dialect) => dialect.uri === uri,
+      (dialect) => dialect.uri === uri
     );
     if (!dialect) {
       throw new DialectError(`A ${uri} dialect does not exist.`);
@@ -101,6 +105,6 @@ for (const each of data) {
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(each.firstPublicationDate)
   );
 }
