@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import (
-    Iterable,
-)
+from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from datetime import date
 from functools import cache
