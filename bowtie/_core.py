@@ -67,6 +67,7 @@ GITHUB_API = URL.parse("https://api.github.com/")
 ORG_API = GITHUB_API / "orgs" / "bowtie-json-schema"
 CONTAINER_PACKAGES_API = ORG_API / "packages" / "container"
 
+
 @frozen
 class Dialect:
     """
@@ -576,11 +577,7 @@ class Implementation:
                             page.as_dict()["metadata"]["container"]["tags"],
                         )
                         versions.update(  # type: ignore[reportUnknownMemberType]
-                            [
-                                tag
-                                for tag in tags
-                                if "." in tag
-                            ],
+                            [tag for tag in tags if "." in tag],
                         )
                     except KeyError:
                         continue
@@ -855,6 +852,7 @@ def convert_table_to_markdown(
 
     return f"\n{header}\n{separator}\n{body}"
 
+
 def version_key(reverse: bool):
     def key_func(version: str):
         parts = version.split(".")
@@ -868,4 +866,5 @@ def version_key(reverse: bool):
                 value = part
             result.append(value)
         return result
+
     return key_func
