@@ -561,10 +561,10 @@ class Implementation:
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
         versions = SortedSet(
-            key=lambda version: (  # type: ignore[reportUnknownLambdaType]
+            key=lambda tag: (  # type: ignore[reportUnknownLambdaType]
                 [
                     -int(part) if part.isdigit() else part
-                    for part in cast(str, version).split(".")
+                    for part in cast(str, tag).split(".")
                 ]
             ),
         )
