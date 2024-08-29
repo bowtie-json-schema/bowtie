@@ -1641,7 +1641,9 @@ def latest_report(dialect: Dialect):
     "--versions",
     "show_versions",
     is_flag=True,
-    help="Show all versions of an implementation that its harness can build.",
+    help=(
+        "Also show all versions of this implementation which Bowtie supports."
+    ),
 )
 async def info(
     start: Starter,
@@ -1654,18 +1656,16 @@ async def info(
     serializable: dict[ConnectableId, dict[str, Any]] = {}
 
     async for _, each in start():
-        metadata = [
-            (k, v)
-            for k, v in {
-                **each.info.serializable(),
-                **(
-                    {"versions": list(await each.get_versions())}
-                    if show_versions
-                    else {}
+        metadata = [(k, v) for k, v in each.info.serializable().items() if v]
+        if show_versions:
+            versions = await each.get_versions()
+            metadata.append(
+                (
+                    "versions",
+                    list(versions) if versions else [each.info.version],
                 ),
-            }.items()
-            if v
-        ]
+            )
+
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",

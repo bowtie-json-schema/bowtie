@@ -20,7 +20,7 @@ from url import URL
 import httpx
 import referencing_loaders
 
-from bowtie import CONTAINER_PACKAGES_API, HOMEPAGE
+from bowtie import HOMEPAGE
 from bowtie._commands import (
     START_V1,
     CaseErrored,
@@ -48,9 +48,6 @@ if TYPE_CHECKING:
     )
     from typing import Self
 
-    from github3.session import (  # type: ignore[reportMissingTypeStubs]
-        GitHubSession,
-    )
     from referencing import Specification
     from referencing.jsonschema import Schema, SchemaRegistry
     from rich.console import RenderableType
@@ -66,6 +63,9 @@ if TYPE_CHECKING:
     from bowtie._registry import ValidatorRegistry
     from bowtie._report import Reporter
 
+GITHUB_API = URL.parse("https://api.github.com/")
+ORG_API = GITHUB_API / "orgs" / "bowtie-json-schema"
+CONTAINER_PACKAGES_API = ORG_API / "packages" / "container"
 
 @frozen
 class Dialect:
@@ -552,65 +552,42 @@ class Implementation:
         from github3.models import (  # type: ignore[reportMissingTypeStubs]
             GitHubCore,
         )
-        from github3.structs import (  # type: ignore[reportMissingTypeStubs]
-            GitHubIterator,
-        )
         from sortedcontainers import (  # type: ignore[reportMissingTypeStubs]
             SortedSet,
         )
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
-        versions = SortedSet(
-            key=lambda tag: (  # type: ignore[reportUnknownLambdaType]
-                [
-                    -int(part) if part.isdigit() else part
-                    for part in cast(str, tag).split(".")
-                ]
-            ),
-        )
+        versions = SortedSet(key=version_key(reverse=True))
 
         try:
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
 
-            class _TagsWrapper(GitHubCore):
-                def __init__(
-                    self,
-                    page: dict[str, Any],
-                    session: GitHubSession,
-                ):
-                    super().__init__(page, session)  # type: ignore[reportUnknownMemberType]
-                    self.tags = (
-                        page.get(
-                            "metadata",
-                            {},
-                        )
-                        .get(
-                            "container",
-                            {},
-                        )
-                        .get(
-                            "tags",
-                            [],
-                        )
-                    )
-
-            for page in GitHubIterator(  # type: ignore[reportUnknownVariableType]
-                count=-1,
-                url=str(url),
-                cls=_TagsWrapper,
-                session=gh.session,
+            for pages in (
+                gh._iter(  # type: ignore[reportPrivateUsage]
+                    count=-1,
+                    url=str(url),
+                    cls=GitHubCore,
+                ),
             ):
-                versions.update(  # type: ignore[reportUnknownMemberType]
-                    [
-                        tag
-                        for tag in cast(Iterable[str], page.tags)  # type: ignore[reportUnknownMemberType]
-                        if "." in tag
-                    ],
-                )
-
-            return cast(frozenset[str], versions)
+                for page in cast(Iterable[GitHubCore], pages):
+                    try:
+                        tags = cast(
+                            Iterable[str],
+                            page.as_dict()["metadata"]["container"]["tags"],
+                        )
+                        versions.update(  # type: ignore[reportUnknownMemberType]
+                            [
+                                tag
+                                for tag in tags
+                                if "." in tag
+                            ],
+                        )
+                    except KeyError:
+                        continue
         except GitHubError:
-            return cast(frozenset[str], versions)
+            pass
+        else:
+            return versions
 
     async def validate(
         self,
@@ -877,3 +854,18 @@ def convert_table_to_markdown(
     body = "\n".join(body)
 
     return f"\n{header}\n{separator}\n{body}"
+
+def version_key(reverse: bool):
+    def key_func(version: str):
+        parts = version.split(".")
+        result: Iterable[int | str] = []
+        for part in parts:
+            if part.isdigit():
+                value = int(part)
+                if reverse:
+                    value = -value
+            else:
+                value = part
+            result.append(value)
+        return result
+    return key_func
