@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import (
+    Iterable,
+)
 from contextlib import asynccontextmanager
 from datetime import date
 from functools import cache
@@ -8,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
+import os
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
@@ -16,7 +20,7 @@ from url import URL
 import httpx
 import referencing_loaders
 
-from bowtie import HOMEPAGE
+from bowtie import CONTAINER_PACKAGES_API, HOMEPAGE
 from bowtie._commands import (
     START_V1,
     CaseErrored,
@@ -38,13 +42,15 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Callable,
-        Iterable,
         Mapping,
         Sequence,
         Set,
     )
     from typing import Self
 
+    from github3.session import (  # type: ignore[reportMissingTypeStubs]
+        GitHubSession,
+    )
     from referencing import Specification
     from referencing.jsonschema import Schema, SchemaRegistry
     from rich.console import RenderableType
@@ -537,6 +543,69 @@ class Implementation:
         Does the implementation support (all of) the given dialect(s)?
         """
         return self.info.dialects.issuperset(dialects)
+
+    async def get_versions(self):
+        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+            GitHubError,
+        )
+        from github3.models import (  # type: ignore[reportMissingTypeStubs]
+            GitHubCore,
+        )
+        from github3.structs import (  # type: ignore[reportMissingTypeStubs]
+            GitHubIterator,
+        )
+        from sortedcontainers import (  # type: ignore[reportMissingTypeStubs]
+            SortedSet,
+        )
+
+        url = CONTAINER_PACKAGES_API / self.id / "versions"
+        versions = SortedSet(
+            key=lambda version: ( # type: ignore[reportUnknownLambdaType]
+                [
+                    -int(part) if part.isdigit() else part
+                    for part in cast(str, version).split(".")
+                ]
+            ),
+        )
+
+        try:
+            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+
+            class _TagsWrapper(GitHubCore):
+                def __init__(
+                    self,
+                    page: dict[str, Any],
+                    session: GitHubSession,
+                ):
+                    super().__init__(page, session) # type: ignore[reportUnknownMemberType]
+                    self.tags = (
+                        page.get(
+                                "metadata", {},
+                            ).get(
+                                "container", {},
+                            ).get(
+                                "tags", [],
+                            )
+                    )
+
+            for page in GitHubIterator(  # type: ignore[reportUnknownVariableType]
+                count=-1,
+                url=str(url),
+                cls=_TagsWrapper,
+                session=gh.session,
+            ):
+                versions.update( # type: ignore[reportUnknownMemberType]
+                    [
+                        tag
+                        for tag in cast(Iterable[str], page.tags) # type: ignore[reportUnknownMemberType]
+                        if "." in tag
+                    ],
+                )
+
+            return cast(frozenset[str], versions)
+        except GitHubError:
+            return cast(frozenset[str], versions)
 
     async def validate(
         self,
