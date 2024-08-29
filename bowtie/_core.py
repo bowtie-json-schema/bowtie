@@ -561,7 +561,7 @@ class Implementation:
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
         versions = SortedSet(
-            key=lambda version: ( # type: ignore[reportUnknownLambdaType]
+            key=lambda version: (  # type: ignore[reportUnknownLambdaType]
                 [
                     -int(part) if part.isdigit() else part
                     for part in cast(str, version).split(".")
@@ -578,15 +578,20 @@ class Implementation:
                     page: dict[str, Any],
                     session: GitHubSession,
                 ):
-                    super().__init__(page, session) # type: ignore[reportUnknownMemberType]
+                    super().__init__(page, session)  # type: ignore[reportUnknownMemberType]
                     self.tags = (
                         page.get(
-                                "metadata", {},
-                            ).get(
-                                "container", {},
-                            ).get(
-                                "tags", [],
-                            )
+                            "metadata",
+                            {},
+                        )
+                        .get(
+                            "container",
+                            {},
+                        )
+                        .get(
+                            "tags",
+                            [],
+                        )
                     )
 
             for page in GitHubIterator(  # type: ignore[reportUnknownVariableType]
@@ -595,10 +600,10 @@ class Implementation:
                 cls=_TagsWrapper,
                 session=gh.session,
             ):
-                versions.update( # type: ignore[reportUnknownMemberType]
+                versions.update(  # type: ignore[reportUnknownMemberType]
                     [
                         tag
-                        for tag in cast(Iterable[str], page.tags) # type: ignore[reportUnknownMemberType]
+                        for tag in cast(Iterable[str], page.tags)  # type: ignore[reportUnknownMemberType]
                         if "." in tag
                     ],
                 )
