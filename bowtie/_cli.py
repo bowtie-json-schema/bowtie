@@ -1660,8 +1660,7 @@ async def info(
                 **each.info.serializable(),
                 **(
                     {"versions": list(await each.get_versions())}
-                    if show_versions
-                    else {}
+                    if show_versions else {}
                 ),
             }.items()
             if v
