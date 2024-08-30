@@ -42,7 +42,6 @@ import structlog.typing
 
 from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
-from bowtie._connectables import Connectable
 from bowtie._core import (
     Dialect,
     Example,
@@ -76,7 +75,7 @@ if TYPE_CHECKING:
     from referencing.jsonschema import SchemaResource
 
     from bowtie._commands import AnyTestResult, SeqResult
-    from bowtie._connectables import ConnectableId
+    from bowtie._connectables import Connectable, ConnectableId
     from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
 
@@ -2037,7 +2036,10 @@ class _VersionedReportsTar(click.File):
     ) -> tuple[frozenset[str], Iterable[tuple[str, Dialect, _report.Report]]]:
         input = super().convert(value, param, ctx)
 
-        connectable = cast(Connectable, ctx.params.get("connectable"))
+        connectable = cast(
+            _connectables.Connectable,
+            ctx.params.get("connectable"),
+        )
         id = connectable.to_terse()
 
         dialects = cast(Iterable[Dialect] | None, ctx.params.get("dialects"))

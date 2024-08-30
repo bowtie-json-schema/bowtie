@@ -298,16 +298,9 @@ class Report:
             versioned_report
             for versioned_report in versioned_reports
             if versioned_report.metadata.dialect == dialect
+            and not versioned_report.is_empty
         ]
         if not versioned_reports:
-            return cls.empty(dialect=dialect)
-
-        cases: HashTrieMap[Seq, TestCase] = HashTrieMap()
-        for versioned_report in versioned_reports:
-            if not versioned_report.is_empty:
-                cases = versioned_report._cases
-                break
-        if not cases:
             return cls.empty(dialect=dialect)
 
         results: HashTrieMap[
@@ -317,18 +310,17 @@ class Report:
         implementations: dict[ConnectableId, ImplementationInfo] = {}
 
         for versioned_report in versioned_reports:
-            if not versioned_report.is_empty:
-                ((version_id, version_info),) = (
-                    versioned_report.metadata.implementations.items()
-                )
-                implementations[version_id] = version_info
-                results = results.insert(
-                    version_id,
-                    versioned_report._results[version_id],
-                )
+            ((version_id, version_info),) = (
+                versioned_report.metadata.implementations.items()
+            )
+            implementations[version_id] = version_info
+            results = results.insert(
+                version_id,
+                versioned_report._results[version_id],
+            )
 
         return cls(
-            cases=cases,
+            cases=versioned_reports[0]._cases,
             results=results,
             metadata=RunMetadata(
                 implementations=implementations,
