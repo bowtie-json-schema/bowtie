@@ -3054,7 +3054,7 @@ async def test_trend_no_id_directory(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_trend_no_matrix_versions_file(tmp_path):
+async def test_trend_no_versions_found(tmp_path):
     tar_path = tmp_path / "versioned-reports.tar"
 
     tar_from_versioned_reports(
@@ -3072,7 +3072,7 @@ async def test_trend_no_matrix_versions_file(tmp_path):
         exit_code=EX.DATAERR,
     )
 
-    assert "Couldn't find a 'matrix-versions.json' file" in stderr, stderr
+    assert "No versions found" in stderr, stderr
 
 
 @pytest.mark.asyncio

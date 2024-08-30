@@ -2065,8 +2065,9 @@ class _VersionedReportsTar(click.File):
                         versions = json.load(versions_content)
                 except KeyError:
                     STDERR.print(
-                        f"Couldn't find a 'matrix-versions.json' file in {id} "
-                        f"directory of {input.name}.",
+                        "No versions found (couldn't find a "
+                        "'matrix-versions.json' file in ",
+                        f"{id} directory of {input.name}."
                     )
                     ctx.exit(EX.DATAERR)
 
