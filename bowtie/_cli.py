@@ -2012,13 +2012,12 @@ def _trend_table_in_markdown_for(
         ]
         rows_data.append(row_data)
 
-    final_content: Iterable[str] = []
-    for _, row_data in enumerate(rows_data):
-        final_content.append(
-            f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}",
-        )
-
-    return f"## Trend Data of {id} versions:\n\n" + "\n\n".join(final_content)
+    return f"## Trend Data of {id} versions:\n\n" + "\n\n".join(
+        [
+            f"### Dialect: {row_data[0]}\n{row_data[1]}\n\n{row_data[2]}"
+            for row_data in rows_data
+        ],
+    )
 
 
 class _VersionedReportsTar(click.File):
