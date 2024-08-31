@@ -2037,7 +2037,8 @@ class _VersionedReportsTar(click.File):
         input = super().convert(value, param, ctx)
 
         id = cast(
-            _connectables.Connectable, ctx.params.get("connectable"),
+            _connectables.Connectable,
+            ctx.params.get("connectable"),
         ).to_terse()
 
         try:
@@ -2099,9 +2100,13 @@ class _VersionedReportsTar(click.File):
                     console=console.Console(),
                     transient=True,
                 )
-                dialects = cast(
-                    Iterable[Dialect] | None, ctx.params.get("dialects"),
-                ) or Dialect.known()
+                dialects = (
+                    cast(
+                        Iterable[Dialect] | None,
+                        ctx.params.get("dialects"),
+                    )
+                    or Dialect.known()
+                )
                 pretty_names_str = pretty_names_str_for(dialects)
                 total_files = len(versions) * len(list(dialects))
                 task = progress.add_task(
