@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from fnmatch import fnmatch
 from functools import wraps
+from io import TextIOWrapper
 from pathlib import Path
 from pprint import pformat
 from statistics import mean, median, quantiles
@@ -2036,13 +2037,9 @@ class _VersionedReportsTar(click.File):
     ) -> tuple[frozenset[str], Iterable[tuple[str, Dialect, _report.Report]]]:
         input = super().convert(value, param, ctx)
 
-        connectable = cast(
-            _connectables.Connectable,
-            ctx.params.get("connectable"),
-        )
-        id = connectable.to_terse()
-
-        dialects = cast(Iterable[Dialect] | None, ctx.params.get("dialects"))
+        id = cast(
+            _connectables.Connectable, ctx.params.get("connectable"),
+        ).to_terse()
 
         try:
             with tarfile.open(fileobj=input) as tar:
@@ -2061,8 +2058,6 @@ class _VersionedReportsTar(click.File):
                     versions_content = tar.extractfile(
                         f"./{id}/matrix-versions.json",
                     )
-                    if versions_content:
-                        versions = json.load(versions_content)
                 except KeyError:
                     STDERR.print(
                         "No versions detected (couldn't find a "
@@ -2070,6 +2065,9 @@ class _VersionedReportsTar(click.File):
                         f"{id} directory of {input.name}.)",
                     )
                     ctx.exit(EX.DATAERR)
+                else:
+                    if versions_content:
+                        versions = frozenset(json.load(versions_content))
 
                 versions_dirs = [
                     member.name
@@ -2102,7 +2100,9 @@ class _VersionedReportsTar(click.File):
                     console=console.Console(),
                     transient=True,
                 )
-                dialects = dialects or Dialect.known()
+                dialects = cast(
+                    Iterable[Dialect] | None, ctx.params.get("dialects"),
+                ) or Dialect.known()
                 pretty_names_str = pretty_names_str_for(dialects)
                 total_files = len(versions) * len(list(dialects))
                 task = progress.add_task(
@@ -2147,7 +2147,10 @@ class _VersionedReportsTar(click.File):
                                             version,
                                             dialect,
                                             _report.Report.from_serialized(
-                                                cast(IO[Any], report_content),
+                                                TextIOWrapper(
+                                                    report_content,
+                                                    encoding="utf-8",
+                                                ),
                                             ),
                                         ),
                                     )
