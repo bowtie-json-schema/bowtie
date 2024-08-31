@@ -543,7 +543,7 @@ class Implementation:
         """
         return self.info.dialects.issuperset(dialects)
 
-    async def get_versions(self):
+    async def get_versions(self) -> frozenset[zip[tuple[str, ...]]]:
         from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
         from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
             GitHubError,
@@ -577,7 +577,9 @@ class Implementation:
             versions.add(self.info.version)
 
         return frozenset(
-            sorted(versions, key=sortable_version_key, reverse=True),
+            zip(
+                *zip(sorted(versions, key=sortable_version_key, reverse=True)),
+            ),
         )
 
     async def validate(
