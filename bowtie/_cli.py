@@ -2117,7 +2117,7 @@ class _VersionedReportsTar(click.File):
                     total=total_files,
                 )
 
-                actual_parsed_files = [0]
+                actual_parsed_files = 0
                 versioned_reports: Iterable[
                     tuple[str, Dialect, _report.Report]
                 ] = []
@@ -2158,7 +2158,7 @@ class _VersionedReportsTar(click.File):
                                             ),
                                         ),
                                     )
-                                    actual_parsed_files[0] += 1
+                                    actual_parsed_files += 1
                             progress.update(task, advance=1)
                     progress.update(
                         task,
@@ -2167,8 +2167,8 @@ class _VersionedReportsTar(click.File):
                             f"of {id} for {pretty_names_str} found in "
                             f"{input.name}"
                         ),
-                        completed=actual_parsed_files[0],
-                        total=actual_parsed_files[0],
+                        completed=actual_parsed_files,
+                        total=actual_parsed_files,
                     )
                     return versions, versioned_reports
         except tarfile.TarError:
