@@ -1658,9 +1658,7 @@ async def info(
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
         if show_versions:
-            metadata.append(
-                ("versions", next(iter(await each.get_versions()))),
-            )
+            metadata.append(("versions", await each.get_versions()))
 
         metadata.sort(
             key=lambda kv: (

@@ -543,7 +543,7 @@ class Implementation:
         """
         return self.info.dialects.issuperset(dialects)
 
-    async def get_versions(self) -> frozenset[zip[tuple[str, ...]]]:
+    async def get_versions(self) -> Iterable[str]:
         from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
         from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
             GitHubError,
@@ -553,8 +553,6 @@ class Implementation:
         )
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
-        versions: Set[str] = set()
-
         pages: list[GitHubCore] = []
         try:
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
@@ -562,6 +560,9 @@ class Implementation:
         except GitHubError:
             pass
 
+        versions: Set[str] = (
+            {self.info.version} if self.info.version else set()
+        )
         for page in pages:
             try:
                 tags = cast(
@@ -573,14 +574,7 @@ class Implementation:
             else:
                 versions.update([tag for tag in tags if "." in tag])
 
-        if not versions and self.info.version:
-            versions.add(self.info.version)
-
-        return frozenset(
-            zip(
-                *zip(sorted(versions, key=sortable_version_key, reverse=True)),
-            ),
-        )
+        return sorted(versions, key=sortable_version_key, reverse=True)
 
     async def validate(
         self,
