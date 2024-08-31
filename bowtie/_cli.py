@@ -1709,7 +1709,7 @@ async def info(
         click.echo(json.dumps(output, indent=2))
 
 
-async def download_versions_of(id: ConnectableId) -> Set[str]:
+async def download_versions_of(id: ConnectableId) -> frozenset[str]:
     progress = Progress(
         TextColumn("[bold blue]{task.description}"),
         SpinnerColumn(finished_text=""),
@@ -2108,13 +2108,12 @@ class _VersionedReportsTar(click.File):
                     or Dialect.known()
                 )
                 pretty_names_str = pretty_names_str_for(dialects)
-                total_files = len(versions) * len(list(dialects))
                 task = progress.add_task(
                     description=(
                         f"Preparing to parse all versioned reports of "
                         f"{id} for {pretty_names_str} found in {input.name}"
                     ),
-                    total=total_files,
+                    total=len(versions) * len(list(dialects)),
                 )
 
                 actual_parsed_files = 0
