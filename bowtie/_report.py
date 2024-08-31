@@ -13,7 +13,7 @@ from url import URL
 import structlog.stdlib
 
 from bowtie._commands import Seq, SeqCase, SeqResult, Unsuccessful
-from bowtie._core import Dialect, TestCase, version_key
+from bowtie._core import Dialect, TestCase, sortable_version_key
 from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
@@ -379,8 +379,9 @@ class Report:
         ]
         unsuccessful.sort(
             key=lambda version_compliance: (
-                version_key(reverse=True)(version_compliance[0])
+                sortable_version_key(version_compliance[0])
             ),
+            reverse=True,
         )
         return unsuccessful
 

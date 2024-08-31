@@ -551,38 +551,35 @@ class Implementation:
         from github3.models import (  # type: ignore[reportMissingTypeStubs]
             GitHubCore,
         )
-        from sortedcontainers import (  # type: ignore[reportMissingTypeStubs]
-            SortedSet,
-        )
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
-        versions = SortedSet(key=version_key(reverse=True))
+        versions: Set[str] = set()
 
+        pages: list[GitHubCore] = []
         try:
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-
-            for pages in (
-                gh._iter(  # type: ignore[reportPrivateUsage]
-                    count=-1,
-                    url=str(url),
-                    cls=GitHubCore,
-                ),
-            ):
-                for page in cast(Iterable[GitHubCore], pages):
-                    try:
-                        tags = cast(
-                            Iterable[str],
-                            page.as_dict()["metadata"]["container"]["tags"],
-                        )
-                        versions.update(  # type: ignore[reportUnknownMemberType]
-                            [tag for tag in tags if "." in tag],
-                        )
-                    except KeyError:
-                        continue
+            pages = gh._iter(count=-1, url=str(url), cls=GitHubCore) # type: ignore[reportPrivateUsage]
         except GitHubError:
             pass
-        else:
-            return versions
+
+        for page in pages:
+            try:
+                tags = cast(
+                    Iterable[str],
+                    page.as_dict()["metadata"]["container"]["tags"],
+                )
+            except KeyError:
+                continue
+            else:
+                versions.update([tag for tag in tags if "." in tag])
+
+        if not versions and self.info.version:
+            versions.add(self.info.version)
+
+        return frozenset(
+            sorted(versions, key=sortable_version_key, reverse=True),
+        )
+
 
     async def validate(
         self,
@@ -851,18 +848,12 @@ def convert_table_to_markdown(
     return f"\n{header}\n{separator}\n{body}"
 
 
-def version_key(reverse: bool):
-    def key_func(version: str):
-        parts = version.split(".")
-        result: Iterable[int | str] = []
-        for part in parts:
-            if part.isdigit():
-                value = int(part)
-                if reverse:
-                    value = -value
-            else:
-                value = part
-            result.append(value)
-        return result
-
-    return key_func
+def sortable_version_key(version: str):
+    """
+    Generate a sortable key for version strings like "1.2.3".
+    """
+    parts = version.split(".")
+    return [
+        int(part) if part.isdigit() else part
+        for part in parts
+    ]
