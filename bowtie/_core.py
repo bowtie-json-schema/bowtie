@@ -558,7 +558,7 @@ class Implementation:
         pages: list[GitHubCore] = []
         try:
             gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
-            pages = gh._iter(count=-1, url=str(url), cls=GitHubCore) # type: ignore[reportPrivateUsage]
+            pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
         except GitHubError:
             pass
 
@@ -579,7 +579,6 @@ class Implementation:
         return frozenset(
             sorted(versions, key=sortable_version_key, reverse=True),
         )
-
 
     async def validate(
         self,
@@ -853,7 +852,4 @@ def sortable_version_key(version: str):
     Generate a sortable key for version strings like "1.2.3".
     """
     parts = version.split(".")
-    return [
-        int(part) if part.isdigit() else part
-        for part in parts
-    ]
+    return [int(part) if part.isdigit() else part for part in parts]
