@@ -66,7 +66,7 @@ export default class Dialect {
   }
 
   static latest(): Dialect {
-    let dialects = this.newest_to_oldest();
+    const dialects = this.newest_to_oldest();
     if (!dialects.length) {
       throw new DialectError("Known dialects list empty.");
     }
