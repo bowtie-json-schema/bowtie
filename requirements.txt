@@ -16,7 +16,7 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   httpcore
     #   httpx
@@ -43,7 +43,7 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.0
+httpx==0.27.2
     # via bowtie-json-schema (pyproject.toml)
 idna==3.8
     # via
@@ -91,7 +91,7 @@ referencing-loaders==2024.5.2
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.3
     # via github3-py
-rich==13.7.1
+rich==13.8.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
@@ -119,5 +119,5 @@ url-py==0.11.3
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.2.2
     # via requests
-yarl==1.9.4
+yarl==1.9.7
     # via aiohttp
