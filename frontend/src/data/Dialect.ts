@@ -65,6 +65,14 @@ export default class Dialect {
     return Dialect.all.values();
   }
 
+  static latest(): Dialect {
+    let dialects = this.newest_to_oldest();
+    if (!dialects.length) {
+      throw new DialectError("Known dialects list empty.");
+    }
+    return this.newest_to_oldest()[0];
+  }
+
   static newest_to_oldest(): Dialect[] {
     return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
   }

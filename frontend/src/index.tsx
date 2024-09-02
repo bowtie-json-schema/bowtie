@@ -38,7 +38,7 @@ const dialectReportViewDataLoader = async ({
 }: {
   params: Params<string>;
 }) => {
-  const draftName = params?.draftName ?? "draft2020-12";
+  const draftName = params?.draftName ?? Dialect.latest().shortName;
   const dialect = Dialect.withName(draftName);
   document.title = `Bowtie - ${dialect.prettyName}`;
 
@@ -54,7 +54,7 @@ const benchmarkReportViewDataLoader = async ({
 }: {
   params: Params<string>;
 }) => {
-  const draftName = params?.draftName ?? "draft2020-12";
+  const draftName = params?.draftName ?? Dialect.latest().shortName;
   const dialect = Dialect.withName(draftName);
   document.title = `Benchmarks - ${dialect.prettyName}`;
 
