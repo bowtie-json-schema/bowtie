@@ -1,5 +1,8 @@
 import Card from "react-bootstrap/Card";
-import { BenchmarkGroupResult } from "../../data/parseBenchmarkData";
+import {
+  BenchmarkGroupResult,
+  geometricMean as gMean,
+} from "../../data/parseBenchmarkData";
 import {
   BarChart,
   Bar,
@@ -11,7 +14,7 @@ import {
 } from "recharts";
 import { useContext, useMemo } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
-import { mean, prod, nthRoot, min, max } from "mathjs";
+import { mean, min, max } from "mathjs";
 
 const BenchmarkSummarySection = ({
   benchmarkResults,
@@ -55,8 +58,7 @@ const BenchmarkSummarySection = ({
             return mean(implementationResult);
           },
         );
-        const prodOfMeans = prod(means);
-        const geometricMean = nthRoot(prodOfMeans, means.length);
+        const geometricMean = gMean(means);
         meanForImplementation[implementationId] = geometricMean as number;
       },
     );

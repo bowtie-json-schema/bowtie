@@ -1,5 +1,5 @@
-import { TestResult } from "../../data/parseBenchmarkData";
-import { mean, std, prod, nthRoot } from "mathjs";
+import { geometricMean, TestResult } from "../../data/parseBenchmarkData";
+import { mean, std } from "mathjs";
 import Table from "react-bootstrap/Table";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Accordion from "react-bootstrap/Accordion";
@@ -13,15 +13,6 @@ const TestResultTable = ({
   testResults: TestResult[];
   heading: string;
 }) => {
-  function geometricMean(values: number[]): number {
-    if (values.length == 0) {
-      return 1e9;
-    }
-    const prodOfMeans = prod(values);
-    const geometricMean = nthRoot(prodOfMeans, values.length);
-    return geometricMean as number;
-  }
-
   function formatValue(value: number): string {
     if (value * 1000 < 1) {
       return `${Math.round(value * 1000 * 1000)}us`;

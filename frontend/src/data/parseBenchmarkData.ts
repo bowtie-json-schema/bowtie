@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-
+import { prod, nthRoot } from "mathjs";
 import Dialect from "./Dialect";
 import Implementation, { RawImplementationData } from "./Implementation";
 
@@ -174,4 +174,13 @@ export interface ImplementationResult {
   errored: boolean;
   values: number[];
   implementationId: string;
+}
+
+export function geometricMean(values: number[]): number {
+  if (values.length == 0) {
+    return 1e9;
+  }
+  const prodOfMeans = prod(values);
+  const geometricMean = nthRoot(prodOfMeans, values.length);
+  return geometricMean as number;
 }
