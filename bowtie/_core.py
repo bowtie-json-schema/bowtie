@@ -552,7 +552,7 @@ class Implementation:
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
 
-        gh = _github()
+        gh = github()
         pages: list[GitHubCore] = []
         with suppress(GitHubError):
             pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
@@ -848,7 +848,7 @@ def sortable_version_key(version: str):
     return [int(part) if part.isdigit() else part for part in parts]
 
 
-def _github():
+def github():
     """
     Construct a GitHub client, optionally looking for a token.
 

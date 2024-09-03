@@ -19,7 +19,7 @@ import click
 import rich
 
 from bowtie import GITHUB
-from bowtie._core import Dialect, TestCase, _github
+from bowtie._core import Dialect, TestCase, github
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -68,7 +68,7 @@ class ClickParam(click.ParamType):
                 NotFoundError,
             )
 
-            gh = _github()
+            gh = github()
             org, repo_name, *rest = value.path_segments
             repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
