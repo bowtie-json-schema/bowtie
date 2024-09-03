@@ -544,7 +544,6 @@ class Implementation:
         return self.info.dialects.issuperset(dialects)
 
     async def get_versions(self) -> Iterable[str]:
-        from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
         from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
             GitHubError,
         )
@@ -553,9 +552,10 @@ class Implementation:
         )
 
         url = CONTAINER_PACKAGES_API / self.id / "versions"
+
+        gh = _github()
         pages: list[GitHubCore] = []
         try:
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
             pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
         except GitHubError:
             pass
@@ -849,3 +849,14 @@ def sortable_version_key(version: str):
     """
     parts = version.split(".")
     return [int(part) if part.isdigit() else part for part in parts]
+
+
+def _github():
+    """
+    Construct a GitHub client, optionally looking for a token.
+
+    This extra behavior is just useful in GitHub actions workflows, and
+    presumably if ``github3.py`` was more active would be default behavior.
+    """
+    from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+    return GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
