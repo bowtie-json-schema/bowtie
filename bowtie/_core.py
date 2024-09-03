@@ -18,7 +18,7 @@ from url import URL
 import httpx
 import referencing_loaders
 
-from bowtie import HOMEPAGE
+from bowtie import HOMEPAGE, ORG_NAME
 from bowtie._commands import (
     START_V1,
     CaseErrored,
@@ -61,8 +61,7 @@ if TYPE_CHECKING:
     from bowtie._registry import ValidatorRegistry
     from bowtie._report import Reporter
 
-GITHUB_API = URL.parse("https://api.github.com/")
-ORG_API = GITHUB_API / "orgs" / "bowtie-json-schema"
+ORG_API = URL.parse("https://api.github.com/orgs/") / ORG_NAME
 CONTAINER_PACKAGES_API = ORG_API / "packages" / "container"
 
 
