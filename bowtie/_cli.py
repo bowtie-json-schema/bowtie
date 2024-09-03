@@ -1638,12 +1638,9 @@ def latest_report(dialect: Dialect):
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()
 @click.option(
-    "--versions",
+    "--versions/--no-versions",
     "show_versions",
-    is_flag=True,
-    help=(
-        "Also show all versions of this implementation which Bowtie supports."
-    ),
+    help="Also show all implementation versions which Bowtie supports.",
 )
 async def info(
     start: Starter,
