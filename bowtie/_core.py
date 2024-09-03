@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import date
 from functools import cache
 from importlib.resources import files
@@ -555,10 +555,8 @@ class Implementation:
 
         gh = _github()
         pages: list[GitHubCore] = []
-        try:
+        with suppress(GitHubError):
             pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
-        except GitHubError:
-            pass
 
         versions: Set[str] = (
             {self.info.version} if self.info.version else set()
@@ -859,4 +857,5 @@ def _github():
     presumably if ``github3.py`` was more active would be default behavior.
     """
     from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+
     return GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
