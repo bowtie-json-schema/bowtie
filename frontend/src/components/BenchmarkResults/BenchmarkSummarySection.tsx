@@ -59,7 +59,7 @@ const BenchmarkSummarySection = ({
           },
         );
         const geometricMean = gMean(means);
-        meanForImplementation[implementationId] = geometricMean as number;
+        meanForImplementation[implementationId] = geometricMean;
       },
     );
 
