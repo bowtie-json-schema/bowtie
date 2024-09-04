@@ -298,8 +298,8 @@ class Report:
             versioned_report
             for versioned_report in versioned_reports
             if versioned_report.metadata.dialect == dialect
+            and not versioned_report.is_empty
         ]
-
         if not versioned_reports:
             return cls.empty(dialect=dialect)
 
@@ -314,8 +314,10 @@ class Report:
                 versioned_report.metadata.implementations.items()
             )
             implementations[version_id] = version_info
-            (version_results,) = versioned_report._results.values()
-            results = results.insert(version_id, version_results)
+            results = results.insert(
+                version_id,
+                versioned_report._results[version_id],
+            )
 
         return cls(
             cases=versioned_reports[0]._cases,

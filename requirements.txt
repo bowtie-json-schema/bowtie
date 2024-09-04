@@ -51,6 +51,8 @@ idna==3.8
     #   httpx
     #   requests
     #   yarl
+inflect==7.3.1
+    # via bowtie-json-schema (pyproject.toml)
 jsonschema==4.23.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-lexer==0.2.1
@@ -63,6 +65,8 @@ markdown-it-py==3.0.0
     #   rich
 mdurl==0.1.2
     # via markdown-it-py
+more-itertools==10.4.0
+    # via inflect
 multidict==6.0.5
     # via
     #   aiohttp
@@ -111,8 +115,12 @@ sniffio==1.3.1
     #   httpx
 structlog==24.4.0
     # via bowtie-json-schema (pyproject.toml)
+typeguard==4.3.0
+    # via inflect
 typing-extensions==4.12.2
-    # via rich-click
+    # via
+    #   rich-click
+    #   typeguard
 uritemplate==4.1.1
     # via github3-py
 url-py==0.11.3
