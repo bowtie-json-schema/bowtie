@@ -48,7 +48,7 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   rich-click
-cryptography==43.0.0
+cryptography==43.0.1
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -92,6 +92,10 @@ idna==3.8
     #   httpx
     #   requests
     #   yarl
+inflect==7.3.1
+    # via
+    #   -r requirements.txt
+    #   bowtie-json-schema
 iniconfig==2.0.0
     # via pytest
 jsonschema==4.23.0
@@ -117,6 +121,10 @@ mdurl==0.1.2
     # via
     #   -r requirements.txt
     #   markdown-it-py
+more-itertools==10.4.0
+    # via
+    #   -r requirements.txt
+    #   inflect
 multidict==6.0.5
     # via
     #   -r requirements.txt
@@ -213,10 +221,15 @@ structlog==24.4.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
+typeguard==4.3.0
+    # via
+    #   -r requirements.txt
+    #   inflect
 typing-extensions==4.12.2
     # via
     #   -r requirements.txt
     #   rich-click
+    #   typeguard
 uritemplate==4.1.1
     # via
     #   -r requirements.txt
@@ -229,7 +242,7 @@ urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   requests
-yarl==1.9.7
+yarl==1.9.8
     # via
     #   -r requirements.txt
     #   aiohttp

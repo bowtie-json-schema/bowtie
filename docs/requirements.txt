@@ -37,7 +37,7 @@ click==8.1.7
     # via
     #   rich-click
     #   sphinx-click
-cryptography==43.0.0
+cryptography==43.0.1
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema
@@ -70,6 +70,8 @@ idna==3.8
     #   yarl
 imagesize==1.4.1
     # via sphinx
+inflect==7.3.1
+    # via bowtie-json-schema
 jinja2==3.1.4
     # via sphinx
 jsonschema==4.23.0
@@ -88,6 +90,8 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
+more-itertools==10.4.0
+    # via inflect
 multidict==6.0.5
     # via
     #   aiohttp
@@ -192,8 +196,12 @@ sphinxext-opengraph==0.9.1
     # via -r docs/requirements.in
 structlog==24.4.0
     # via bowtie-json-schema
+typeguard==4.3.0
+    # via inflect
 typing-extensions==4.12.2
-    # via rich-click
+    # via
+    #   rich-click
+    #   typeguard
 uritemplate==4.1.1
     # via github3-py
 url-py==0.11.3
@@ -202,5 +210,5 @@ url-py==0.11.3
     #   bowtie-json-schema
 urllib3==2.2.2
     # via requests
-yarl==1.9.7
+yarl==1.9.8
     # via aiohttp

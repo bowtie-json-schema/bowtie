@@ -127,5 +127,5 @@ url-py==0.11.3
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.2.2
     # via requests
-yarl==1.9.7
+yarl==1.9.8
     # via aiohttp
