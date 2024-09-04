@@ -48,6 +48,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-tsdoc": "^0.3.0",
     "jsdom": "^24.1.1",
+    "recharts": "2.13.0-alpha.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",

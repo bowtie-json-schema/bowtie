@@ -1,3 +1,4 @@
+import { platform, release } from "node:os";
 import { join } from "node:path";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -10,16 +11,11 @@ import {
   RunMetadata,
   ReportData,
   fromSerialized,
-  prepareImplementationReport,
+  prepareDialectsComplianceReportFor,
 } from "./parseReportData";
 
-function miniature(name: string) {
-  // Should match what's used in our backend integration tests obviously.
-  return `direct:bowtie.tests.miniatures:${name}`;
-}
-
-function bowtie(args: string[] = [], input?: string, status = 0) {
-  const result = spawnSync("bowtie", args, { input });
+function run(command: string, args: string[] = [], input?: string, status = 0) {
+  const result = spawnSync(command, args, { input });
 
   try {
     expect(result.status).toStrictEqual(status);
@@ -46,6 +42,28 @@ function bowtie(args: string[] = [], input?: string, status = 0) {
     throw error;
   }
   return result.stdout.toString();
+}
+
+function miniature(name: string): Implementation {
+  const id = `direct:bowtie.tests.miniatures:${name}`;
+
+  // Should match what's used in our backend integration tests obviously.
+  return (
+    Implementation.withId(id) ??
+    new Implementation(id, {
+      name,
+      version: "v1.0.0",
+      dialects: Array.from(Dialect.known()).map((dialect) => dialect.uri),
+      homepage: "https://bowtie.report/",
+      issues: "https://github.com/bowtie-json-schema/bowtie/issues",
+      source: "https://github.com/bowtie-json-schema/bowtie",
+      os: platform(),
+      os_version: release(),
+      language: "python",
+      language_version: run("python", ["--version"]).split(" ")[1],
+      links: [],
+    })
+  );
 }
 
 const testCases = {
@@ -118,7 +136,7 @@ describe("parseReportData", () => {
   test("parses reports", async () => {
     let lines: string;
 
-    const id = miniature("always_invalid");
+    const testImplementation = miniature("always_invalid");
     const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
     try {
@@ -128,46 +146,32 @@ describe("parseReportData", () => {
       const instance = join(tempdir, "instance.json");
       await writeFile(instance, "37");
 
-      lines = bowtie(["validate", "-i", id, schema, instance]);
+      lines = run("bowtie", [
+        "validate",
+        "-i",
+        testImplementation.id,
+        schema,
+        instance,
+      ]);
     } finally {
       await rm(tempdir, { recursive: true });
     }
 
     const report = fromSerialized(lines);
 
-    const metadata = report.runMetadata.implementations.get(id)!;
     const testCase = report.cases.get(1);
 
     expect(report).toStrictEqual({
       runMetadata: new RunMetadata(
         Dialect.withName("draft2020-12"),
-        new Map([
-          [
-            id,
-            new Implementation(id, {
-              name: "always_invalid",
-              version: metadata.version,
-              dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri,
-              ),
-              homepage: metadata.homepage,
-              issues: metadata.issues,
-              source: metadata.source,
-              os: metadata.os,
-              os_version: metadata.os_version,
-              language: "python",
-              language_version: metadata.language_version,
-              links: metadata.links,
-            }),
-          ],
-        ]),
+        new Map([[testImplementation.id, testImplementation]]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
         {},
       ),
       implementationsResults: new Map([
         [
-          id,
+          testImplementation.id,
           {
             totals: {
               erroredTests: 0,
@@ -198,45 +202,28 @@ describe("parseReportData", () => {
   });
 
   test("parses reports with multiple test cases", () => {
-    const id = miniature("always_invalid");
+    const testImplementation = miniature("always_invalid");
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
 
-    const lines = bowtie(["run", "-i", id, "-D", "7"], cases.join("\n") + "\n");
+    const lines = run(
+      "bowtie",
+      ["run", "-i", testImplementation.id, "-D", "7"],
+      cases.join("\n") + "\n",
+    );
 
     const report = fromSerialized(lines);
-
-    const metadata = report.runMetadata.implementations.get(id)!;
 
     expect(report).toStrictEqual({
       runMetadata: new RunMetadata(
         Dialect.withName("draft7"),
-        new Map([
-          [
-            id,
-            new Implementation(id, {
-              name: "always_invalid",
-              version: metadata.version,
-              dialects: Array.from(Dialect.known()).map(
-                (dialect) => dialect.uri,
-              ),
-              homepage: metadata.homepage,
-              issues: metadata.issues,
-              source: metadata.source,
-              os: metadata.os,
-              os_version: metadata.os_version,
-              language: "python",
-              language_version: metadata.language_version,
-              links: metadata.links,
-            }),
-          ],
-        ]),
+        new Map([[testImplementation.id, testImplementation]]),
         report.runMetadata.bowtieVersion,
         report.runMetadata.started,
         {},
       ),
       implementationsResults: new Map([
         [
-          id,
+          testImplementation.id,
           {
             totals: {
               erroredTests: 0,
@@ -301,41 +288,27 @@ describe("parseReportData", () => {
   });
 
   test("prepares a summarized implementation report using all the dialect reports", () => {
-    const id = miniature("always_invalid");
+    const testImplementation = miniature("always_invalid");
     const cases = Object.values(testCases).map((each) => JSON.stringify(each));
     const allReportsData = new Map<Dialect, ReportData>();
 
     for (const dialect of Dialect.known()) {
-      const lines = bowtie(
-        ["run", "-i", id, "-D", dialect.shortName],
+      const lines = run(
+        "bowtie",
+        ["run", "-i", testImplementation.id, "-D", dialect.shortName],
         cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);
       allReportsData.set(dialect, report);
     }
 
-    const implementationReport = prepareImplementationReport(
-      id,
+    const dialectsCompliance = prepareDialectsComplianceReportFor(
+      testImplementation.id,
       allReportsData,
     );
 
-    const metadata = implementationReport!.implementation;
-
-    expect(implementationReport).toStrictEqual({
-      implementation: new Implementation(id, {
-        name: "always_invalid",
-        version: metadata.version,
-        dialects: Array.from(Dialect.known()).map((dialect) => dialect.uri),
-        homepage: metadata.homepage,
-        issues: metadata.issues,
-        source: metadata.source,
-        os: metadata.os,
-        os_version: metadata.os_version,
-        language: "python",
-        language_version: metadata.language_version,
-        links: metadata.links,
-      }),
-      dialectCompliance: new Map([
+    expect(dialectsCompliance).toStrictEqual(
+      new Map([
         [
           Dialect.withName("draft2020-12"),
           { erroredTests: 0, skippedTests: 0, failedTests: 4 },
@@ -361,6 +334,6 @@ describe("parseReportData", () => {
           { erroredTests: 0, skippedTests: 0, failedTests: 4 },
         ],
       ]),
-    });
+    );
   });
 });

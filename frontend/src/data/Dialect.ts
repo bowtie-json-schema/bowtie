@@ -2,7 +2,7 @@ import URI from "urijs";
 
 import siteURI from "./Site";
 import data from "../../../data/dialects.json";
-import { fromSerialized } from "./parseReportData";
+import { fromSerialized, ReportData } from "./parseReportData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -47,12 +47,26 @@ export default class Dialect {
     return fromSerialized(await response.text());
   }
 
+  static async fetchAllReports() {
+    const allReports = new Map<Dialect, ReportData>();
+    await Promise.all(
+      Array.from(Dialect.known()).map(async (dialect) =>
+        allReports.set(dialect, await dialect.fetchReport()),
+      ),
+    );
+    return allReports;
+  }
+
   static known(): Iterable<Dialect> {
     return Dialect.all.values();
   }
 
-  static newest_to_oldest(): Dialect[] {
+  static newestToOldest(): Dialect[] {
     return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
+  }
+
+  static latest(): Dialect {
+    return Dialect.newestToOldest()[0];
   }
 
   static withName(shortName: string): Dialect {

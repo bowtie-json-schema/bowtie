@@ -13,23 +13,29 @@ import { DragAndDrop } from "./components/DragAndDrop/DragAndDrop";
 import { ImplementationReportView } from "./components/ImplementationReportView/ImplementationReportView";
 import { MainContainer } from "./MainContainer";
 import {
-  ReportData,
-  prepareImplementationReport,
+  ImplementationReport,
+  prepareDialectsComplianceReportFor,
 } from "./data/parseReportData";
 
-const implementationReportViewDataLoader = async (
-  langImplementation: string,
-) => {
-  document.title = `Bowtie - ${langImplementation}`;
-  const allReportsData = new Map<Dialect, ReportData>();
-  const promises = [];
-  for (const dialect of Dialect.known()) {
-    promises.push(
-      dialect.fetchReport().then((data) => allReportsData.set(dialect, data)),
-    );
-  }
-  await Promise.all(promises);
-  return prepareImplementationReport(langImplementation, allReportsData);
+const implementationReportViewDataLoader = async (implementationId: string) => {
+  document.title = `Bowtie - ${implementationId}`;
+
+  const allDialectReports = await Dialect.fetchAllReports();
+
+  const implementation = Implementation.withId(implementationId);
+  if (!implementation) return null;
+
+  const dialectsCompliance = prepareDialectsComplianceReportFor(
+    implementation.id,
+    allDialectReports,
+  );
+
+  await implementation.fetchVersions();
+
+  return {
+    implementation,
+    dialectsCompliance,
+  } satisfies ImplementationReport;
 };
 
 const dialectReportViewDataLoader = async ({
@@ -37,8 +43,9 @@ const dialectReportViewDataLoader = async ({
 }: {
   params: Params<string>;
 }) => {
-  const draftName = params?.draftName ?? "draft2020-12";
-  const dialect = Dialect.withName(draftName);
+  const draftName = params?.draftName;
+  const dialect = draftName ? Dialect.withName(draftName) : Dialect.latest();
+
   document.title = `Bowtie - ${dialect.prettyName}`;
 
   const [reportData, allImplementationsData] = await Promise.all([

@@ -1,16 +1,17 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import Card from "react-bootstrap/Card";
 import Image from "react-bootstrap/Image";
 import Table from "react-bootstrap/Table";
 
 import { ImplementationReport } from "../../data/parseReportData";
+import Implementation from "../../data/Implementation";
 
-const DialectCompliance: React.FC<{
-  implementationReport: ImplementationReport;
-}> = ({ implementationReport }) => {
-  const { implementation, dialectCompliance } = implementationReport;
+interface Props {
+  implementation: Implementation;
+  dialectsCompliance: ImplementationReport["dialectsCompliance"];
+}
 
+const DialectCompliance = ({ implementation, dialectsCompliance }: Props) => {
   return (
     <Card className="mx-auto mb-3 col-md-9">
       <Card.Header>Compliance</Card.Header>
@@ -35,7 +36,7 @@ const DialectCompliance: React.FC<{
             </tr>
           </thead>
           <tbody className="table-group-divider">
-            {Array.from(dialectCompliance.entries())
+            {Array.from(dialectsCompliance.entries())
               .sort(
                 (a, b) =>
                   a[1].failedTests! +
@@ -46,9 +47,9 @@ const DialectCompliance: React.FC<{
                     b[1].skippedTests! ||
                   +b[0].firstPublicationDate - +a[0].firstPublicationDate,
               )
-              .map(([dialect, result], index) => {
+              .map(([dialect, result]) => {
                 return (
-                  <tr key={index}>
+                  <tr key={dialect.uri}>
                     <td>{dialect.prettyName}</td>
                     <td className="text-center">{result.failedTests}</td>
                     <td className="text-center">{result.skippedTests}</td>
