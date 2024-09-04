@@ -19,8 +19,7 @@ const BenchmarkTypeResultSection = ({
     >
       <div className="ms-2 me-auto">
         <div className="fw-bold mb-4 mt-2 ">
-          Benchmark Type:{" "}
-          {titleCase(benchmarkType)}
+          Benchmark Type: {titleCase(benchmarkType)}
         </div>
         <Accordion id="benchmarks" className="mb-4">
           {benchmarkResults.map((benchmarkResult) => (

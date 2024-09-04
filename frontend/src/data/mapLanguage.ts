@@ -7,5 +7,4 @@ const langMap: Record<string, string> = {
   typescript: "TypeScript",
 };
 
-export const mapLanguage = (lang: string) =>
-  langMap[lang] ?? titleCase(lang);
+export const mapLanguage = (lang: string) => langMap[lang] ?? titleCase(lang);
