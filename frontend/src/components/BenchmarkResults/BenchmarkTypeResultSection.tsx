@@ -3,6 +3,7 @@ import { BenchmarkGroupResult } from "../../data/parseBenchmarkData";
 import ListGroup from "react-bootstrap/ListGroup";
 import BenchmarkResult from "./BenchmarkResult";
 import Badge from "react-bootstrap/Badge";
+import { titleCase } from "title-case";
 
 const BenchmarkTypeResultSection = ({
   benchmarkType,
@@ -19,7 +20,7 @@ const BenchmarkTypeResultSection = ({
       <div className="ms-2 me-auto">
         <div className="fw-bold mb-4 mt-2 ">
           Benchmark Type:{" "}
-          {benchmarkType.charAt(0).toUpperCase() + benchmarkType.slice(1)}
+          {titleCase(benchmarkType)}
         </div>
         <Accordion id="benchmarks" className="mb-4">
           {benchmarkResults.map((benchmarkResult) => (
