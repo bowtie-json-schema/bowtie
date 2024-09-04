@@ -1662,9 +1662,15 @@ def latest_report(dialect: Dialect):
 
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()
+@click.option(
+    "--versions/--no-versions",
+    "show_versions",
+    help="Also show all implementation versions which Bowtie supports.",
+)
 async def info(
     start: Starter,
     format: _F,
+    show_versions: bool,
 ):
     """
     Show information about a supported implementation.
@@ -1673,12 +1679,16 @@ async def info(
 
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
+        if show_versions:
+            metadata.append(("versions", await each.get_versions()))
+
         metadata.sort(
             key=lambda kv: (
                 kv[0] != "name",
                 kv[0] != "language",
                 kv[0] != "version",
                 kv[0] == "links",
+                kv[0] == "versions",
                 kv[0] == "dialects",
                 kv[0],
             ),

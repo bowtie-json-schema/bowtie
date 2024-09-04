@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+from collections.abc import Iterable
+from contextlib import asynccontextmanager, suppress
 from datetime import date
 from functools import cache
 from importlib.resources import files
@@ -8,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 from uuid import uuid4
 import json
+import os
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
 from referencing.jsonschema import EMPTY_REGISTRY, specification_with
@@ -16,7 +18,7 @@ from url import URL
 import httpx
 import referencing_loaders
 
-from bowtie import HOMEPAGE
+from bowtie import HOMEPAGE, ORG_NAME
 from bowtie._commands import (
     START_V1,
     CaseErrored,
@@ -38,7 +40,6 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Callable,
-        Iterable,
         Mapping,
         Sequence,
         Set,
@@ -59,6 +60,9 @@ if TYPE_CHECKING:
     from bowtie._connectables import ConnectableId
     from bowtie._registry import ValidatorRegistry
     from bowtie._report import Reporter
+
+ORG_API = URL.parse("https://api.github.com/orgs/") / ORG_NAME
+CONTAINER_PACKAGES_API = ORG_API / "packages" / "container"
 
 
 @frozen
@@ -538,6 +542,37 @@ class Implementation:
         """
         return self.info.dialects.issuperset(dialects)
 
+    async def get_versions(self) -> Iterable[str]:
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+            GitHubError,
+        )
+        from github3.models import (  # type: ignore[reportMissingTypeStubs]
+            GitHubCore,
+        )
+
+        url = CONTAINER_PACKAGES_API / self.id / "versions"
+
+        gh = github()
+        pages: list[GitHubCore] = []
+        with suppress(GitHubError):
+            pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
+
+        versions: Set[str] = (
+            {self.info.version} if self.info.version else set()
+        )
+        for page in pages:
+            try:
+                tags = cast(
+                    Iterable[str],
+                    page.as_dict()["metadata"]["container"]["tags"],
+                )
+            except KeyError:
+                continue
+            else:
+                versions.update([tag for tag in tags if "." in tag])
+
+        return sorted(versions, key=sortable_version_key, reverse=True)
+
     async def validate(
         self,
         dialect: Dialect,
@@ -803,3 +838,23 @@ def convert_table_to_markdown(
     body = "\n".join(body)
 
     return f"\n{header}\n{separator}\n{body}"
+
+
+def sortable_version_key(version: str):
+    """
+    Generate a sortable key for version strings like "1.2.3".
+    """
+    parts = version.split(".")
+    return [int(part) if part.isdigit() else part for part in parts]
+
+
+def github():
+    """
+    Construct a GitHub client, optionally looking for a token.
+
+    This extra behavior is just useful in GitHub actions workflows, and
+    presumably if ``github3.py`` was more active would be default behavior.
+    """
+    from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+
+    return GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
