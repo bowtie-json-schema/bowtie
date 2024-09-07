@@ -13,9 +13,9 @@ const CasesSection = ({ reportData }: { reportData: ReportData }) => {
 
   return (
     <Accordion id="cases">
-      {Array.from(reportData.cases.entries()).map(([seq, caseData], index) => (
+      {Array.from(reportData.cases.entries()).map(([seq, caseData]) => (
         <CaseItem
-          key={index}
+          key={seq.toString()}
           seq={seq}
           caseData={caseData}
           implementations={implementations}

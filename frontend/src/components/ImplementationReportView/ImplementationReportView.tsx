@@ -12,9 +12,14 @@ import Button from "react-bootstrap/Button";
 
 import DialectCompliance from "./DialectCompliance";
 import LoadingAnimation from "../LoadingAnimation";
+import VersionsTrend from "./VersionsTrend";
 import { ImplementationReport } from "../../data/parseReportData";
 import { mapLanguage } from "../../data/mapLanguage";
 import { EmbedBadgesContextType } from "./EmbedBadges";
+
+interface Props {
+  implementationReport: ImplementationReport;
+}
 
 export const ImplementationReportView = () => {
   const implementationReport = useLoaderData() as ImplementationReport | null;
@@ -29,11 +34,9 @@ export const ImplementationReportView = () => {
   );
 };
 
-const ReportComponent: React.FC<{
-  implementationReport: ImplementationReport;
-}> = ({ implementationReport }) => {
+const ReportComponent = ({ implementationReport }: Props) => {
   const navigate = useNavigate();
-  const { implementation } = implementationReport;
+  const { implementation, dialectsCompliance } = implementationReport;
 
   return (
     <Container className="p-4">
@@ -132,7 +135,7 @@ const ReportComponent: React.FC<{
                   <td>
                     <ul>
                       {implementation.links.map(
-                        ({ description, url }, index: number) => (
+                        ({ description, url }, index) => (
                           <li key={index}>
                             <Link to={url ?? ""}>{description}</Link>
                           </li>
@@ -146,7 +149,13 @@ const ReportComponent: React.FC<{
           </Table>
         </Card.Body>
       </Card>
-      <DialectCompliance implementationReport={implementationReport} />
+      <DialectCompliance
+        implementation={implementation}
+        dialectsCompliance={dialectsCompliance}
+      />
+      {implementation.versions && (
+        <VersionsTrend implementation={implementation} />
+      )}
     </Container>
   );
 };

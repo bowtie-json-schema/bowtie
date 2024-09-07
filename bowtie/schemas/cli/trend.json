@@ -1,0 +1,49 @@
+{
+  "title": "bowtie trend",
+  "description": "Trend data of supported implementation(s), emitted by `bowtie trend --format json`.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "tag:bowtie.report,2024:cli:trend",
+
+  "type": "array",
+
+  "unevaluatedItems": false,
+  "items": {
+    "type": "array",
+
+    "unevaluatedItems": false,
+    "prefixItems": [
+      { "$ref": "tag:bowtie.report,2024:models:implementation:id" },
+      {
+        "type": "array",
+
+        "items": {
+          "type": "array",
+
+          "unevaluatedItems": false,
+          "prefixItems": [
+            { "$ref": "tag:bowtie.report,2024:models:dialect:shortName" },
+            {
+              "type": "array",
+
+              "items": {
+                "type": "array",
+
+                "unevaluatedItems": false,
+                "prefixItems": [
+                  {
+                    "$ref": "tag:bowtie.report,2024:models:implementation:version"
+                  },
+                  {
+                    "$ref": "tag:bowtie.report,2024:models:unsuccessfulTests"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

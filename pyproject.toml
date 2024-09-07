@@ -52,6 +52,7 @@ dependencies = [
   "diagnostic",
   "github3.py",
   "httpx",
+  "inflect",
   "jsonschema>=4.19.0",
   "jsonschema_lexer",
   "pyperf",

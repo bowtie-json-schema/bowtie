@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.harrel.jsonschema.Dialect;
 import dev.harrel.jsonschema.Dialects;
 import dev.harrel.jsonschema.SchemaResolver;
 import dev.harrel.jsonschema.SpecificationVersion;
@@ -11,11 +12,14 @@ import dev.harrel.jsonschema.Validator;
 import dev.harrel.jsonschema.ValidatorFactory;
 import java.io.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 public class BowtieJsonSchema {
 
@@ -25,6 +29,7 @@ public class BowtieJsonSchema {
       Map.of("$ref prevents a sibling $id from changing the base uri",
              RECOGNIZING_IDENTIFIERS);
 
+  private final Map<String, Dialect> dialectsMap;
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
@@ -38,7 +43,25 @@ public class BowtieJsonSchema {
     new BowtieJsonSchema(System.out).run(reader);
   }
 
-  public BowtieJsonSchema(PrintStream output) { this.output = output; }
+  public BowtieJsonSchema(PrintStream output) {
+    this.output = output;
+    this.dialectsMap =
+        Arrays.stream(Dialects.class.getClasses())
+            .filter(Dialect.class ::isAssignableFrom)
+            .map(clazz -> {
+              try {
+                return (Dialect)clazz.getConstructor().newInstance();
+              } catch (Exception e) {
+                throw new IllegalStateException("Failed to instantiate Dialect",
+                                                e);
+              }
+            })
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(dialect
+                                 -> dialect.getSpecificationVersion().getId(),
+                                 Function.identity()),
+                Collections::unmodifiableMap));
+  }
 
   private void run(BufferedReader reader) {
     reader.lines().forEach(this::handle);
@@ -115,16 +138,26 @@ public class BowtieJsonSchema {
       DialectRequest.class
     );
 
-    // well, setting default dialect shouldn't be necessary but why not
-    if (SpecificationVersion.DRAFT2020_12.getId().equals(dialectRequest.dialect())) {
-        validatorFactory.withDefaultDialect(new Dialects.Draft2020Dialect());
-    } else if (SpecificationVersion.DRAFT2019_09.getId().equals(dialectRequest.dialect())) {
-        validatorFactory.withDefaultDialect(new Dialects.Draft2019Dialect());
-    } else if (SpecificationVersion.DRAFT7.getId().equals(dialectRequest.dialect())) {
-      validatorFactory.withDefaultDialect(new Dialects.Draft7Dialect());
+    try {
+      setDialectFor(this.dialectsMap.get(dialectRequest.dialect()));
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to set Dialect", e);
     }
+
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
+  }
+
+  private void setDialectFor(Dialect dialect) throws Exception {
+    try {
+      validatorFactory
+          .getClass()
+          .getMethod("withDefaultDialect", Dialect.class)
+          .invoke(validatorFactory, dialect);
+    } catch (NoSuchMethodException e) {
+      validatorFactory
+          .withDialect(dialect);
+    }
   }
 
   private void run(JsonNode node) throws JsonProcessingException {

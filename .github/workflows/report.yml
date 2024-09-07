@@ -9,6 +9,9 @@ on:
         type: string
         required: false
         default: ""
+      report_benchmark_artifact_in_scope:
+        required: false
+        type: boolean
   workflow_dispatch:
   schedule:
     # Every 6 hours, at 15 past the hour
@@ -155,6 +158,23 @@ jobs:
           pattern: report-*
           path: site/
           merge-multiple: true
+
+      - name: Include Benchmark Report from local artifact
+        uses: actions/download-artifact@v4
+        if: inputs.report_benchmark_artifact_in_scope == true
+        with:
+          name: benchmarks
+          path: site/benchmarks
+
+      # if called as a separate workflow
+      - name: Download latest Benchmark Report
+        if: inputs.report_benchmark_artifact_in_scope == false
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: benchmark.yml
+          branch: main
+          name: benchmarks
+          path: site/benchmarks
 
       - name: Include our UI data
         uses: actions/download-artifact@v4

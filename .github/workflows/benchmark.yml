@@ -1,0 +1,168 @@
+# This workflow is the main workflow for regenerating the benchmarks data needed for Bowtie's UI.
+# It runs all benchmarks over Bowtie's supported implementations, publishing the benchmark reports for use in the frontend.
+name: Collect New Benchmark Results
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  dialects:
+    runs-on: ubuntu-latest
+    outputs:
+      dialects: ${{ steps.dialects-matrix.outputs.dialects }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect supported dialects
+        id: dialects-matrix
+        run: |
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+
+  benchmark_files:
+    needs: dialects
+    runs-on: ubuntu-latest
+    outputs:
+      dialect_benchmarks: ${{ steps.benchmarks.outputs.dialect_benchmarks }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Collect Benchmark Files
+        id: benchmarks
+        run: |
+          dialects='${{ needs.dialects.outputs.dialects }}'
+          dialects=$(echo $dialects | jq -r '.[]')
+          results=()
+
+          idx=0
+          for dialect in $dialects; do
+            output=$(bowtie filter-benchmarks -D "$dialect")
+
+            if [ -n "$output" ]; then
+              while IFS= read -r line; do
+                idx=$((idx + 1))
+                json_result=$(jq -nc --arg id "$idx" --arg p "$dialect" --arg o "$line" '{ id: $id|tonumber, dialect: $p, benchmark: $o }')
+                results+=("$json_result")
+              done <<< "$output"
+            fi
+          done
+          final_json="$(jq -sc '.' <<< "${results[@]}")"
+          final_json=$(echo "$final_json" | jq -c '{ "include": . }')
+          echo "dialect_benchmarks=$final_json" >> $GITHUB_OUTPUT
+
+  run_benchmarks:
+    needs: benchmark_files
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.benchmark_files.outputs.dialect_benchmarks) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Install pyperf dependency
+        run: |
+          python -m pip install pyperf
+
+      - name: Generate Benchmark Report
+        run: |
+          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > benchmark-file-${{ matrix.id }}.json
+
+      - name: Upload Benchmark file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-file-${{ matrix.dialect }}-${{ matrix.id }}
+          path: benchmark-file-${{ matrix.id }}.json
+
+  merge_benchmarks_into_single_report:
+    needs:
+      - dialects
+      - run_benchmarks
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dialect: ${{ fromJson(needs.dialects.outputs.dialects) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Benchmark Reports for a dialect
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-file-${{ matrix.dialect }}-*
+          path: benchmarks-${{ matrix.dialect }}/
+          merge-multiple: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v2
+
+      - name: Install Bowtie
+        run: |
+          uv pip install --system .
+
+      - name: Merge Benchmark Reports for a dialect
+        run: |
+          python - <<EOF
+          from pathlib import Path
+          from bowtie._benchmarks import combine_benchmark_reports_to_serialized as combine
+
+          Path("${{ matrix.dialect }}.json").write_text(
+              combine(
+                  Path("benchmarks-${{ matrix.dialect }}").iterdir()
+              )
+          )
+
+          EOF
+
+      - name: Upload final Benchmark Report for dialect
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-${{ matrix.dialect }}
+          path: ${{ matrix.dialect }}.json
+
+  upload_benchmark_artifact:
+    needs:
+      - merge_benchmarks_into_single_report
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Benchmarks folder
+        run: mkdir benchmarks
+
+      - name: Include New Benchmark Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-report-*
+          path: benchmarks/
+          merge-multiple: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: benchmarks
+
+  regenerate-reports:
+    needs: upload_benchmark_artifact
+    uses: ./.github/workflows/report.yml
+    with:
+      report_benchmark_artifact_in_scope: true

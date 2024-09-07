@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -117,6 +118,41 @@ def tar_from_directory(directory):
             tar.add(file, file.name)
     fileobj.seek(0)
     return fileobj
+
+
+def tar_from_versioned_reports(
+    tar_path: Path,
+    id: str,
+    versions: frozenset[str],
+    versioned_reports: Iterable[tuple[str, Dialect, str]],
+):
+    with tarfile.TarFile(name=tar_path, mode="w") as tar:
+        root_info = tarfile.TarInfo(f"./{id}")
+        root_info.type = tarfile.DIRTYPE
+        tar.addfile(root_info)
+
+        if not versions:
+            empty_file_info = tarfile.TarInfo(f"./{id}/.keep")
+            empty_file_info.size = 0
+            tar.addfile(empty_file_info, BytesIO(b""))
+            return
+
+        matrix_versions = _json.dumps(list(versions)).encode("utf-8")
+        matrix_info = tarfile.TarInfo(f"./{id}/matrix-versions.json")
+        matrix_info.size = len(matrix_versions)
+        tar.addfile(matrix_info, BytesIO(matrix_versions))
+
+        for version, dialect, stdout in versioned_reports:
+            version_info = tarfile.TarInfo(f"./{id}/v{version}")
+            version_info.type = tarfile.DIRTYPE
+            tar.addfile(version_info)
+
+            report_bytes = stdout.encode("utf-8")
+            report_info = tarfile.TarInfo(
+                f"./{id}/v{version}/{dialect.short_name}.json",
+            )
+            report_info.size = len(report_bytes)
+            tar.addfile(report_info, BytesIO(report_bytes))
 
 
 def image(name, fileobj):
@@ -2597,9 +2633,9 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "-i",
         "direct:null",
         "-i",
-        miniatures.version_1,
+        miniatures.has_bugs_by_versions + ",version=1.0",
         "-i",
-        miniatures.version_2,
+        miniatures.has_bugs_by_versions + ",version=2.0",
         "--expect",
         "valid",
         tmp_path / "schema.json",
@@ -2614,6 +2650,7 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
         "--show",
         "failures",
         stdin=validate_stdout,
+        exit_code=EX.DATAERR,
     )
     assert stderr == ""
     assert stdout in {
@@ -2622,10 +2659,10 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
             # Bowtie Failures Summary
 
             | Implementation | Skips | Errors | Failures |
-            |:----------------------:|:-:|:-:|:-:|
-            |     null (python)      | 0 | 0 | 0 |
-            | versioned 2.0 (python) | 0 | 0 | 0 |
-            | versioned 1.0 (python) | 0 | 0 | 0 |
+            |:------------------:|:-:|:-:|:-:|
+            | buggy 2.0 (python) | 0 | 0 | 0 |
+            |   null (python)    | 0 | 0 | 0 |
+            | buggy 1.0 (python) | 0 | 0 | 2 |
 
             **2 tests ran**
             """,
@@ -2635,10 +2672,10 @@ async def test_summary_show_failures_markdown_different_versions(tmp_path):
             # Bowtie Failures Summary
 
             | Implementation | Skips | Errors | Failures |
-            |:----------------------:|:-:|:-:|:-:|
-            |     null (python)      | 0 | 0 | 0 |
-            | versioned 1.0 (python) | 0 | 0 | 0 |
-            | versioned 2.0 (python) | 0 | 0 | 0 |
+            |:------------------:|:-:|:-:|:-:|
+            |   null (python)    | 0 | 0 | 0 |
+            | buggy 2.0 (python) | 0 | 0 | 0 |
+            | buggy 1.0 (python) | 0 | 0 | 2 |
 
             **2 tests ran**
             """,
@@ -2992,6 +3029,440 @@ async def test_suite_not_a_suite_directory(tmp_path):
         exit_code=2,  # comes from click
     )
     assert "does not contain" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_trend_no_id_directory(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(),
+        versioned_reports=[],
+    )
+
+    _, stderr = await bowtie(
+        "trend",
+        "-i",
+        "foo",
+        tar_path,
+        exit_code=EX.DATAERR,
+    )
+
+    assert "Couldn't find a 'foo' directory" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_trend_no_versions_detected(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(),
+        versioned_reports=[],
+    )
+
+    _, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        tar_path,
+        exit_code=EX.DATAERR,
+    )
+
+    assert "No versions detected" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_trend_no_versions_subdirs(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[],
+    )
+
+    _, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        tar_path,
+        exit_code=EX.DATAERR,
+    )
+
+    assert "Couldn't find any versions sub-directories" in stderr, stderr
+
+
+@pytest.mark.asyncio
+async def test_trend_no_versions_support(tmp_path):
+    tar_path = tmp_path / "versioned-reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[
+            ("1.0", Dialect.by_alias()["2020"], "report_placeholder"),
+        ],
+    )
+
+    stdout, _ = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        "--dialect",
+        "7",
+        tar_path,
+    )
+
+    assert stdout.strip() == "None of the versions of 'buggy' support Draft 7."
+
+
+@pytest.mark.asyncio
+async def test_trend_json(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    buggy_v1_2020_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "--dialect",
+        "https://json-schema.org/draft/2020-12/schema",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+    buggy_v1_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "-D",
+        "https://json-schema.org/draft/2019-09/schema",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    buggy_v2_2020_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "--dialect",
+        "2020",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+    buggy_v2_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "-D",
+        "2019",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    tar_path = tmp_path / "versioned_reports.tar"
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2020-12"],
+                buggy_v1_2020_stdout,
+            ),
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v1_2019_stdout,
+            ),
+            (
+                "2.0",
+                Dialect.by_alias()["2020"],
+                buggy_v2_2020_stdout,
+            ),
+            (
+                "2.0",
+                Dialect.by_alias()["2019"],
+                buggy_v2_2019_stdout,
+            ),
+        ],
+    )
+
+    jsonout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        tar_path,
+        "--format",
+        "json",
+        json=True,
+    )
+
+    assert (await command_validator("trend")).validated(jsonout) == [
+        [
+            "buggy",
+            [
+                [
+                    "draft2020-12",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
+                [
+                    "draft2019-09",
+                    [
+                        [
+                            "2.0",
+                            {
+                                "failed": 2,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                        [
+                            "1.0",
+                            {
+                                "failed": 0,
+                                "errored": 0,
+                                "skipped": 0,
+                            },
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]
+    assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_trend_markdown(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    buggy_v1_2020_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    buggy_v2_2020_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    tar_path = tmp_path / "versioned_reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[
+            ("1.0", Dialect.by_alias()["2020"], buggy_v1_2020_stdout),
+            ("2.0", Dialect.by_alias()["2020"], buggy_v2_2020_stdout),
+        ],
+    )
+
+    stdout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        tar_path,
+        "--format",
+        "markdown",
+    )
+
+    assert stderr == ""
+    assert stdout == dedent(
+        """
+        ## Trend Data of buggy versions:
+
+        ### Dialect: Draft 2020-12
+
+        | Version | Skips | Errors | Failures |
+        |:---:|:-:|:-:|:-:|
+        | 2.0 | 0 | 0 | 0 |
+        | 1.0 | 0 | 0 | 2 |
+
+        **2 tests ran**
+        """,
+    )
+
+
+@pytest.mark.asyncio
+async def test_trend_valid_markdown(tmp_path):
+    tmp_path.joinpath("schema.json").write_text("{}")
+    tmp_path.joinpath("one.json").write_text("12")
+    tmp_path.joinpath("two.json").write_text("37")
+
+    buggy_v1_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=1.0",
+        "--dialect",
+        "201909",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    buggy_v2_2019_stdout, _ = await bowtie(
+        "validate",
+        "-i",
+        miniatures.has_bugs_by_versions + ",version=2.0",
+        "-D",
+        "draft201909",
+        "--expect",
+        "valid",
+        tmp_path / "schema.json",
+        tmp_path / "one.json",
+        tmp_path / "two.json",
+    )
+
+    tar_path = tmp_path / "versioned_reports.tar"
+
+    tar_from_versioned_reports(
+        tar_path=tar_path,
+        id="buggy",
+        versions=frozenset(["1.0", "2.0"]),
+        versioned_reports=[
+            (
+                "1.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v1_2019_stdout,
+            ),
+            (
+                "2.0",
+                Dialect.by_short_name()["draft2019-09"],
+                buggy_v2_2019_stdout,
+            ),
+        ],
+    )
+
+    stdout, stderr = await bowtie(
+        "trend",
+        "-i",
+        "buggy",
+        "-D",
+        "2019-09",
+        tar_path,
+        "--format",
+        "markdown",
+    )
+    parsed_markdown = MarkdownIt("gfm-like", {"linkify": False}).parse(stdout)
+    tokens = SyntaxTreeNode(parsed_markdown).pretty(indent=2)
+
+    assert stderr == ""
+    assert (
+        tokens
+        == (
+            """
+        <root>
+  <heading>
+    <inline>
+      <text>
+  <heading>
+    <inline>
+      <text>
+  <table>
+    <thead>
+      <tr>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+        <th style='text-align:center'>
+          <inline>
+            <text>
+    <tbody>
+      <tr>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+      <tr>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+        <td style='text-align:center'>
+          <inline>
+            <text>
+  <paragraph>
+    <inline>
+      <text>
+      <strong>
+        <text>
+      <text>
+            """
+        ).strip()
+    )
 
 
 @pytest.mark.asyncio

@@ -132,7 +132,21 @@ const NavBar = () => {
                   </NavDropdown>
                 </>
               )}
-
+              <NavDropdown title="Dialects" id="dialect-dropdown">
+                {Dialect.newestToOldest().map((dialect) => (
+                  <NavDropdown.Item
+                    as={Link}
+                    to={dialect.routePath}
+                    key={dialect.shortName}
+                  >
+                    {dialect.prettyName}
+                  </NavDropdown.Item>
+                ))}
+                <NavDropdown.Divider />
+                <NavDropdown.Item as={Link} to="/local-report/">
+                  Upload a report
+                </NavDropdown.Item>
+              </NavDropdown>
               <li className="nav-item d-block d-lg-none">
                 <a
                   href="https://github.com/bowtie-json-schema/bowtie/"

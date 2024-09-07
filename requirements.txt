@@ -2,9 +2,9 @@
 #    uv pip compile --no-cache --output-file /Users/julian/Development/bowtie/requirements.txt pyproject.toml
 aiodocker==0.22.2
     # via bowtie-json-schema (pyproject.toml)
-aiohappyeyeballs==2.3.7
+aiohappyeyeballs==2.4.0
     # via aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.5
     # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
@@ -16,7 +16,7 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   httpcore
     #   httpx
@@ -27,7 +27,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via rich-click
-cryptography==43.0.0
+cryptography==43.0.1
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
@@ -43,14 +43,16 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.0
+httpx==0.27.2
     # via bowtie-json-schema (pyproject.toml)
-idna==3.7
+idna==3.8
     # via
     #   anyio
     #   httpx
     #   requests
     #   yarl
+inflect==7.3.1
+    # via bowtie-json-schema (pyproject.toml)
 jsonschema==4.23.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-lexer==0.2.1
@@ -63,6 +65,8 @@ markdown-it-py==3.0.0
     #   rich
 mdurl==0.1.2
     # via markdown-it-py
+more-itertools==10.4.0
+    # via inflect
 multidict==6.0.5
     # via
     #   aiohttp
@@ -91,7 +95,7 @@ referencing-loaders==2024.5.2
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.3
     # via github3-py
-rich==13.7.1
+rich==13.8.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
@@ -111,13 +115,17 @@ sniffio==1.3.1
     #   httpx
 structlog==24.4.0
     # via bowtie-json-schema (pyproject.toml)
+typeguard==4.3.0
+    # via inflect
 typing-extensions==4.12.2
-    # via rich-click
+    # via
+    #   rich-click
+    #   typeguard
 uritemplate==4.1.1
     # via github3-py
 url-py==0.11.3
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.2.2
     # via requests
-yarl==1.9.4
+yarl==1.9.8
     # via aiohttp

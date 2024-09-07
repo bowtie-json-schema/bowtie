@@ -11,7 +11,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 import json
-import os
 import zipfile
 
 from diagnostic import DiagnosticError
@@ -20,7 +19,7 @@ import click
 import rich
 
 from bowtie import GITHUB
-from bowtie._core import Dialect, TestCase
+from bowtie._core import Dialect, TestCase, github
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -65,12 +64,11 @@ class ClickParam(click.ParamType):
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
-            from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
             from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
                 NotFoundError,
             )
 
-            gh = GitHub(token=os.environ.get("GITHUB_TOKEN", ""))
+            gh = github()
             org, repo_name, *rest = value.path_segments
             repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
