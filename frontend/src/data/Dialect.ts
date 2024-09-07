@@ -75,20 +75,12 @@ export default class Dialect {
     return Dialect.all.values();
   }
 
-  static latest(): Dialect {
-    const dialects = this.newest_to_oldest();
-    if (!dialects.length) {
-      throw new DialectError("Known dialects list empty.");
-    }
-    return this.newest_to_oldest()[0];
-  }
-
-  static newest_to_oldest(): Dialect[] {
+  static newestToOldest(): Dialect[] {
     return Array.from(Dialect.known()).sort((d1, d2) => d1.compare(d2));
   }
 
   static latest(): Dialect {
-    return Dialect.newestToOldest()[0];
+    return this.newestToOldest()[0];
   }
 
   static withName(shortName: string): Dialect {

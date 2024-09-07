@@ -57,9 +57,6 @@ export default class Implementation
   >();
 
   constructor(id: string, rawData: RawImplementationData) {
-    if (Implementation.all.has(id)) {
-      throw new ImplementationError(`A "${id}" implementation already exists.`);
-    }
     Implementation.all.set(id, this);
 
     this.id = id;
