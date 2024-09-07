@@ -60,7 +60,7 @@ export default class Dialect {
     const response = await fetch(url);
     return fromJSON(await response.text());
   }
-  
+
   static async fetchAllReports() {
     const allReports = new Map<Dialect, ReportData>();
     await Promise.all(
