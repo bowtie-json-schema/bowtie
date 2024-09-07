@@ -74,8 +74,6 @@ describe("parseBenchmarkReportData", () => {
         await rm(tempdir, { recursive: true });
       }
       const benchmarkReport = fromJSON(output);
-      console.log(benchmarkReport);
-
       const reportMetadata = benchmarkReport.metadata;
       const reportResults = benchmarkReport.results;
       const implementationMetadata = reportMetadata.implementations.get(id)!;
@@ -92,6 +90,7 @@ describe("parseBenchmarkReportData", () => {
                 dialects: Array.from(Dialect.known()).map(
                   (dialect) => dialect.uri,
                 ),
+                documentation: implementationMetadata.documentation,
                 homepage: implementationMetadata.homepage,
                 issues: implementationMetadata.issues,
                 source: implementationMetadata.source,
