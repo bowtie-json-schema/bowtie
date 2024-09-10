@@ -1,3 +1,5 @@
+import { titleCase } from "title-case";
+
 const langMap: Record<string, string> = {
   dotnet: ".NET",
   javascript: "JavaScript",
@@ -5,5 +7,4 @@ const langMap: Record<string, string> = {
   typescript: "TypeScript",
 };
 
-export const mapLanguage = (lang: string) =>
-  langMap[lang] ?? lang.charAt(0).toUpperCase().concat(lang.substring(1));
+export const mapLanguage = (lang: string) => langMap[lang] ?? titleCase(lang);

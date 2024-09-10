@@ -39,9 +39,7 @@ const VersionsTrend = ({ implementation }: Props) => {
   const { isDarkMode } = useContext(ThemeContext);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDialect, setSelectedDialect] = useState(
-    Dialect.newestToOldest()[0],
-  );
+  const [selectedDialect, setSelectedDialect] = useState(Dialect.latest());
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
   >(new Map());
