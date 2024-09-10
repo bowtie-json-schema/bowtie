@@ -1,0 +1,33 @@
+{
+  "name": "justinrainbow/bowtie-json-schema-test-harness",
+  "description": "These sources contains the test harness implementation for Bowtie",
+  "license": "MIT",
+  "require": {
+    "justinrainbow/json-schema": "dev-master"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.10"
+  },
+  "autoload": {
+    "psr-4": {
+      "JsonRainbow\\": "./src"
+    }
+  },
+  "config": {
+    "lock": false,
+    "sort-packages": true
+  },
+  "scripts": {
+    "code-style": "phpcs . --ignore=*/vendor/* --standard=PSR12",
+    "build-container": "docker build . -t localhost/php-justinrainbow-json-schema",
+    "run-interactive-container": "docker run --rm -it localhost/php-justinrainbow-json-schema",
+    "run-suite-draft3": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft3",
+    "run-suite-draft4": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft4"
+  },
+  "scripts-descriptions": {
+    "build-container": "Build the container imsage using Docker.",
+    "run-interactive-container": "Run the container interactivly",
+    "run-suite-draft3": "Run the test suite for draft-3 againt the test harness",
+    "run-suite-draft4": "Run the test suite for draft-4 againt the test harness"
+  }
+}

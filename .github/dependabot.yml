@@ -123,6 +123,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "composer"
+    directory: "/implementations/php-justinrainbow-json-schema"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "cargo"
     directory: "/implementations/rust-jsonschema"
     schedule:
@@ -239,6 +244,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/php-opis-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/php-justinrainbow-json-schema"
     schedule:
       interval: "daily"
 
