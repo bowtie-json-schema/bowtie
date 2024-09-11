@@ -75,26 +75,6 @@ const NavBar = () => {
             <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-baseline">
               {isDialectPage && (
                 <>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "run-info" }}>
-                      Run Info
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "summary" }}>
-                      Summary
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to={{ hash: "cases" }}>
-                      Details
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/benchmarks">
-                      Benchmarks
-                    </Link>
-                  </li>
                   <NavDropdown title="Dialects" id="dialect-dropdown">
                     {Dialect.newestToOldest().map((dialect) => (
                       <NavDropdown.Item
@@ -110,6 +90,11 @@ const NavBar = () => {
                       Upload a report
                     </NavDropdown.Item>
                   </NavDropdown>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/benchmarks">
+                      Benchmarks
+                    </Link>
+                  </li>
                 </>
               )}
               {isBenchmarksPage && (
@@ -140,7 +125,7 @@ const NavBar = () => {
                   target="_blank"
                 >
                   <span className="navbar-text">
-                    {version && `Bowtie v ${version}`}
+                    {version && <small>Bowtie v{version}</small>}
                   </span>
                 </a>
               </li>
