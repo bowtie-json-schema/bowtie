@@ -126,6 +126,15 @@ def tests(session):
         session.run("pytest", *session.posargs, BOWTIE)
 
 
+@session()
+def xdist(session):
+    """
+    Run Bowtie's test suite in parallel.
+    """
+    session.install("-r", REQUIREMENTS["tests"], "pytest-xdist")
+    session.run("pytest", "-n", "auto", *session.posargs, BOWTIE)
+
+
 @session(python=SUPPORTED)
 def audit(session):
     """

@@ -183,7 +183,7 @@ class TestBenchmarker:
 
     @pytest.mark.parametrize(
         "dialect",
-        Dialect.known(),
+        sorted(Dialect.known()),
         ids=lambda param: param.short_name,
     )
     def test_keywords_benchmarker(self, dialect, benchmarker_run_args):
