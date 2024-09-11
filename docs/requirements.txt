@@ -29,7 +29,7 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
@@ -70,7 +70,7 @@ idna==3.8
     #   yarl
 imagesize==1.4.1
     # via sphinx
-inflect==7.3.1
+inflect==7.4.0
     # via bowtie-json-schema
 jinja2==3.1.4
     # via sphinx
@@ -90,9 +90,9 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.4.0
+more-itertools==10.5.0
     # via inflect
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
@@ -132,7 +132,7 @@ requests==2.32.3
     # via
     #   github3-py
     #   sphinx
-rich==13.8.0
+rich==13.8.1
     # via
     #   bowtie-json-schema
     #   diagnostic
@@ -210,5 +210,5 @@ url-py==0.11.3
     #   bowtie-json-schema
 urllib3==2.2.2
     # via requests
-yarl==1.9.8
+yarl==1.11.1
     # via aiohttp

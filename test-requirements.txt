@@ -36,7 +36,7 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via
     #   -r requirements.txt
     #   cryptography
@@ -81,7 +81,7 @@ httpx==0.27.2
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.111.2
+hypothesis==6.112.0
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -92,7 +92,7 @@ idna==3.8
     #   httpx
     #   requests
     #   yarl
-inflect==7.3.1
+inflect==7.4.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -121,11 +121,11 @@ mdurl==0.1.2
     # via
     #   -r requirements.txt
     #   markdown-it-py
-more-itertools==10.4.0
+more-itertools==10.5.0
     # via
     #   -r requirements.txt
     #   inflect
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -161,7 +161,7 @@ pyperf==2.7.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
@@ -190,7 +190,7 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   github3-py
-rich==13.8.0
+rich==13.8.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -242,7 +242,7 @@ urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   requests
-yarl==1.9.8
+yarl==1.11.1
     # via
     #   -r requirements.txt
     #   aiohttp
