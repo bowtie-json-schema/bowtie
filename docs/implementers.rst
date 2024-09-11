@@ -453,7 +453,7 @@ Here's an implementation of the ``run`` command to add to our harness implementa
       return { seq = request.seq, results = results }
     end,
 
-We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` number alongside results for each test.
+We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` alongside results for each test.
 The results are indicated positionally as shown above, meaning the first result in the results array should be the result for the first test in the input array.
 
 If we run ``bowtie`` again, we see::
@@ -470,6 +470,11 @@ If we run ``bowtie`` again, we see::
 where we've now successfully run some inputted test cases.
 The output we see now contains the results returned by the Lua implementation and is ready to be piped into `bowtie summary <cli:summary>`.
 Hooray!
+
+.. note:: Pay no attention to the man behind the curtain!
+
+   The ``seq`` parameter has no public type other than "JSON value".
+   In other words, when writing your harness, you should make no assumption whatsoever about what kind of value it is!
 
 Step 4: Resolving References
 ----------------------------
