@@ -23,7 +23,7 @@ import LoadingAnimation from "../LoadingAnimation";
 import Dialect from "../../data/Dialect";
 import Implementation from "../../data/Implementation";
 import sortVersions from "../../data/sortVersions";
-import { ImplementationResults, Totals } from "../../data/parseReportData";
+import { Totals } from "../../data/parseReportData";
 import { ThemeContext } from "../../context/ThemeContext";
 
 interface Props {
@@ -56,10 +56,8 @@ const VersionsTrend = ({ implementation }: Props) => {
           Array.from(versionedReports)
             .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
             .map(([version, data]) => {
-              const { failedTests, erroredTests, skippedTests } = (
-                data.implementationsResults.values().next()
-                  .value as ImplementationResults
-              ).totals;
+              const { failedTests, erroredTests, skippedTests } =
+                data.implementationsResults.values().next().value!.totals;
 
               return {
                 version: `v${version}`,
