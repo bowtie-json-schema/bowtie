@@ -62,7 +62,7 @@ describe("parseBenchmarkReportData", () => {
       const benchmark_string: string = JSON.stringify(valid_sample_benchmark);
       let output: string;
 
-      const id = "python-jsonschema";
+      const id = "direct:null";
       const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
       try {
@@ -85,7 +85,7 @@ describe("parseBenchmarkReportData", () => {
             [
               id,
               new Implementation(id, {
-                name: "jsonschema",
+                name: "null",
                 version: implementationMetadata.version,
                 dialects: Array.from(Dialect.known()).map(
                   (dialect) => dialect.uri,
