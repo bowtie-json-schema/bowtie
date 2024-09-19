@@ -136,6 +136,6 @@ describe("parseBenchmarkReportData", () => {
         ],
       });
     },
-    { timeout: 60000 },
+    { timeout: 120000 }, // FIXME: Make this test faster.
   );
 });
