@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 backtrace = "0.3"
-jsonschema = "0.20"
+jsonschema = "0.21"
 serde_json = "1.0"
 url = "2.5.2"
 os_info = "3.8.2"
