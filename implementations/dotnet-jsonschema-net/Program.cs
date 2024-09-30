@@ -27,7 +27,7 @@ var unsupportedTests =
                                "always invalid, but naive implementations may raise an overflow error")] =
                                  "System.Decimal does not support large values like 1e308" };
 
-while (cmdSource.GetNextCommand() is {} line && line != "")
+while (cmdSource.GetNextCommand() is { } line && line != "")
 {
     var root = JsonNode.Parse(line);
     var cmd = root["cmd"].GetValue<string>();

@@ -72,13 +72,12 @@ public class BowtieJsonSchema {
       JsonNode node = objectMapper.readTree(data);
       String cmd = node.get("cmd").asText();
       switch (cmd) {
-        case "start" -> start(node);
-        case "dialect" -> dialect(node);
-        case "run" -> run(node);
-        case "stop" -> System.exit(0);
-        default -> throw new IllegalArgumentException(
-          "Unknown cmd [%s]".formatted(cmd)
-        );
+      case "start" -> start(node);
+      case "dialect" -> dialect(node);
+      case "run" -> run(node);
+      case "stop" -> System.exit(0);
+      default ->
+        throw new IllegalArgumentException("Unknown cmd [%s]".formatted(cmd));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -87,44 +86,37 @@ public class BowtieJsonSchema {
 
   private void start(JsonNode node) throws IOException {
     started = true;
-    StartRequest startRequest = objectMapper.treeToValue(
-      node,
-      StartRequest.class
-    );
+    StartRequest startRequest =
+        objectMapper.treeToValue(node, StartRequest.class);
     if (startRequest.version() != 1) {
       throw new IllegalArgumentException(
-        "Unsupported IHOP version [%d]".formatted(startRequest.version())
-      );
+          "Unsupported IHOP version [%d]".formatted(startRequest.version()));
     }
 
     InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
     var attributes = new Manifest(is).getMainAttributes();
 
-    String fullName = "%s.%s".formatted(
-      attributes.getValue("Implementation-Group"),
-      attributes.getValue("Implementation-Name")
-    );
+    String fullName =
+        "%s.%s".formatted(attributes.getValue("Implementation-Group"),
+                            attributes.getValue("Implementation-Name"));
     StartResponse startResponse = new StartResponse(
-      1,
-      new Implementation(
-        "java",
-        fullName,
-        attributes.getValue("Implementation-Version"),
-        Arrays.stream(SpecificationVersion.values()).map(SpecificationVersion::getId).toList(),
-        "https://github.com/harrel56/json-schema",
-        "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/harrel/jsonschema/package-summary.html",
-        "https://github.com/harrel56/json-schema/issues",
-        "https://github.com/harrel56/json-schema",
-        System.getProperty("os.name"),
-        System.getProperty("os.version"),
-        Runtime.version().toString(),
-        List.of(
-            new Link("https://harrel.dev", "Group homepage"),
-            new Link(createMavenUrl("Implementation", attributes), "Maven Central - implementation"),
-            new Link(createMavenUrl("Provider", attributes), "Maven Central - used JSON provider")
-        )
-      )
-    );
+        1, new Implementation(
+               "java", fullName, attributes.getValue("Implementation-Version"),
+               Arrays.stream(SpecificationVersion.values())
+                   .map(SpecificationVersion::getId)
+                   .toList(),
+               "https://github.com/harrel56/json-schema",
+               "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/" +
+               "harrel/jsonschema/package-summary.html",
+               "https://github.com/harrel56/json-schema/issues",
+               "https://github.com/harrel56/json-schema",
+               System.getProperty("os.name"), System.getProperty("os.version"),
+               Runtime.version().toString(),
+               List.of(new Link("https://harrel.dev", "Group homepage"),
+                       new Link(createMavenUrl("Implementation", attributes),
+                                "Maven Central - implementation"),
+                       new Link(createMavenUrl("Provider", attributes),
+                                "Maven Central - used JSON provider"))));
     output.println(objectMapper.writeValueAsString(startResponse));
   }
 
@@ -133,10 +125,8 @@ public class BowtieJsonSchema {
       throw new IllegalArgumentException("Not started!");
     }
 
-    DialectRequest dialectRequest = objectMapper.treeToValue(
-      node,
-      DialectRequest.class
-    );
+    DialectRequest dialectRequest =
+        objectMapper.treeToValue(node, DialectRequest.class);
 
     try {
       setDialectFor(this.dialectsMap.get(dialectRequest.dialect()));
@@ -150,13 +140,11 @@ public class BowtieJsonSchema {
 
   private void setDialectFor(Dialect dialect) throws Exception {
     try {
-      validatorFactory
-          .getClass()
+      validatorFactory.getClass()
           .getMethod("withDefaultDialect", Dialect.class)
           .invoke(validatorFactory, dialect);
     } catch (NoSuchMethodException e) {
-      validatorFactory
-          .withDialect(dialect);
+      validatorFactory.withDialect(dialect);
     }
   }
 
@@ -168,11 +156,8 @@ public class BowtieJsonSchema {
 
     if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
       RunSkippedResponse response = new RunSkippedResponse(
-        runRequest.seq(),
-        true,
-        UNSUPPORTED.get(runRequest.testCase().description()),
-        null
-      );
+          runRequest.seq(), true,
+          UNSUPPORTED.get(runRequest.testCase().description()), null);
       output.println(objectMapper.writeValueAsString(response));
       return;
     }
@@ -180,45 +165,38 @@ public class BowtieJsonSchema {
     try {
 
       if (runRequest.testCase().registry() != null) {
-        validatorFactory.withSchemaResolver(new RegistrySchemaResolver(runRequest.testCase().registry()));
+        validatorFactory.withSchemaResolver(
+            new RegistrySchemaResolver(runRequest.testCase().registry()));
       }
 
-      List<TestResult> results = runRequest
-        .testCase()
-        .tests()
-        .stream()
-        .map(test -> {
-          Validator.Result result = validatorFactory.validate(
-            runRequest.testCase().schema(),
-            test.instance()
-          );
-          return new TestResult(result.isValid());
-        })
-        .toList();
-        output.println(
-          objectMapper.writeValueAsString(
-            new RunResponse(runRequest.seq(), results)
-          )
-        );
-      } catch (Exception e) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        e.printStackTrace(printWriter);
-        RunErroredResponse response = new RunErroredResponse(
-          runRequest.seq(),
-          true,
-          new ErrorContext(e.getMessage(), stackTraceToString(e))
-        );
-        output.println(objectMapper.writeValueAsString(response));
-      }
+      List<TestResult> results =
+          runRequest.testCase()
+              .tests()
+              .stream()
+              .map(test -> {
+                Validator.Result result = validatorFactory.validate(
+                    runRequest.testCase().schema(), test.instance());
+                return new TestResult(result.isValid());
+              })
+              .toList();
+      output.println(objectMapper.writeValueAsString(
+          new RunResponse(runRequest.seq(), results)));
+    } catch (Exception e) {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      e.printStackTrace(printWriter);
+      RunErroredResponse response = new RunErroredResponse(
+          runRequest.seq(), true,
+          new ErrorContext(e.getMessage(), stackTraceToString(e)));
+      output.println(objectMapper.writeValueAsString(response));
     }
+  }
 
   private String createMavenUrl(String prefix, Attributes attributes) {
-      return "https://mvnrepository.com/artifact/%s/%s/%s".formatted(
-              attributes.getValue(prefix + "-Group"),
-              attributes.getValue(prefix + "-Name"),
-              attributes.getValue(prefix + "-Version")
-      );
+    return "https://mvnrepository.com/artifact/%s/%s/%s".formatted(
+        attributes.getValue(prefix + "-Group"),
+        attributes.getValue(prefix + "-Name"),
+        attributes.getValue(prefix + "-Version"));
   }
 
   private String stackTraceToString(Exception e) {
@@ -232,16 +210,17 @@ public class BowtieJsonSchema {
     private final Map<String, JsonNode> registry;
 
     RegistrySchemaResolver(JsonNode registryNode) {
-      this.registry = objectMapper.convertValue(registryNode, new TypeReference<>() {});
+      this.registry =
+          objectMapper.convertValue(registryNode, new TypeReference<>() {});
     }
 
     @Override
     public SchemaResolver.Result resolve(String uri) {
       return Optional.ofNullable(registry.get(uri))
-                .map(Result::fromProviderNode)
-                .orElse(SchemaResolver.Result.empty());
-      }
+          .map(Result::fromProviderNode)
+          .orElse(SchemaResolver.Result.empty());
     }
+  }
 }
 
 record StartRequest(int version) {}
@@ -256,29 +235,26 @@ record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
 
 record RunResponse(JsonNode seq, List<TestResult> results) {}
 
-record RunSkippedResponse(JsonNode seq, boolean skipped, String message, String issue_url) {}
+record RunSkippedResponse(JsonNode seq, boolean skipped, String message,
+                          String issue_url) {}
 
-record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {}
+record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {
+}
 
 record ErrorContext(String message, String traceback) {}
 
-record Implementation(String language,
-                      String name,
-                      String version,
-                      List<String> dialects,
-                      String homepage,
-                      String documentation,
-                      String issues,
-                      String source,
-                      String os,
-                      String os_version,
-                      String language_version,
+record Implementation(String language, String name, String version,
+                      List<String> dialects, String homepage,
+                      String documentation, String issues, String source,
+                      String os, String os_version, String language_version,
                       List<Link> links) {}
 
 record Link(String url, String description) {}
 
-record TestCase(String description, String comment, JsonNode schema, JsonNode registry, List<Test> tests) {}
+record TestCase(String description, String comment, JsonNode schema,
+                JsonNode registry, List<Test> tests) {}
 
-record Test(String description, String comment, JsonNode instance, boolean valid) {}
+record Test(String description, String comment, JsonNode instance,
+            boolean valid) {}
 
 record TestResult(boolean valid) {}
