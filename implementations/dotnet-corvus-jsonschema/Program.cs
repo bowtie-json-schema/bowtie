@@ -108,7 +108,7 @@ static JsonSchemaTypeBuilder CreateTypeBuilder()
     return builder;
 }
 
-while (cmdSource.GetNextCommand() is {} line && line != string.Empty)
+while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 {
     var root = JsonNode.Parse(line);
 
@@ -453,65 +453,55 @@ internal class TestDocumentResolver : IDocumentResolver
     }
 }
 
-internal class MissingCommand
-(JsonNode root) : Exception
+internal class MissingCommand(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingTest
-(JsonNode tests) : Exception
+internal class MissingTest(JsonNode tests) : Exception
 {
     public JsonNode Tests { get; } = tests;
 }
 
-internal class MissingCase
-(JsonNode root) : Exception
+internal class MissingCase(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingSchema
-(JsonNode testCase) : Exception
+internal class MissingSchema(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTestDescription
-(JsonNode testInstance) : Exception
+internal class MissingTestDescription(JsonNode testInstance) : Exception
 {
     public JsonNode TestInstance { get; } = testInstance;
 }
 
-internal class MissingDialect
-(JsonNode root) : Exception
+internal class MissingDialect(JsonNode root) : Exception
 {
     public JsonNode Root { get; } = root;
 }
 
-internal class MissingTestCaseDescription
-(JsonNode testCase) : Exception
+internal class MissingTestCaseDescription(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class MissingTests
-(JsonNode testCase) : Exception
+internal class MissingTests(JsonNode testCase) : Exception
 {
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class UnknownCommand
-(string? message) : Exception(message) { }
+internal class UnknownCommand(string? message) : Exception
+(message) { }
 
-internal class MissingVersion
-(JsonNode command) : Exception
+internal class MissingVersion(JsonNode command) : Exception
 {
     public JsonNode Command { get; } = command;
 }
 
-internal class UnknownVersion
-(JsonNode version) : Exception
+internal class UnknownVersion(JsonNode version) : Exception
 {
     public JsonNode Version { get; } = version;
 }
@@ -528,13 +518,12 @@ internal class ConsoleCommandSource : ICommandSource
     }
 }
 
-internal class FileCommandSource
-(string fileName) : ICommandSource
+internal class FileCommandSource(string fileName) : ICommandSource
 {
     private readonly string[] fileContents = File.ReadAllLines(fileName);
     private int line;
 
-    public string ? GetNextCommand()
+    public string? GetNextCommand()
     {
         if (this.line < this.fileContents.Length)
         {

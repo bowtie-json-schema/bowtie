@@ -52,13 +52,12 @@ public class BowtieJsonSchemaValidator {
       JsonNode node = objectMapper.readTree(data);
       String cmd = node.get("cmd").asText();
       switch (cmd) {
-        case "start" -> start(node);
-        case "dialect" -> dialect(node);
-        case "run" -> run(node);
-        case "stop" -> System.exit(0);
-        default -> throw new IllegalArgumentException(
-          "Unknown cmd [%s]".formatted(cmd)
-        );
+      case "start" -> start(node);
+      case "dialect" -> dialect(node);
+      case "run" -> run(node);
+      case "stop" -> System.exit(0);
+      default ->
+        throw new IllegalArgumentException("Unknown cmd [%s]".formatted(cmd));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -67,39 +66,29 @@ public class BowtieJsonSchemaValidator {
 
   private void start(JsonNode node) throws IOException {
     started = true;
-    StartRequest startRequest = objectMapper.treeToValue(
-      node,
-      StartRequest.class
-    );
+    StartRequest startRequest =
+        objectMapper.treeToValue(node, StartRequest.class);
     if (startRequest.version() != 1) {
       throw new IllegalArgumentException(
-        "Unsupported IHOP version [%d]".formatted(startRequest.version())
-      );
+          "Unsupported IHOP version [%d]".formatted(startRequest.version()));
     }
 
     InputStream is = getClass().getResourceAsStream("META-INF/MANIFEST.MF");
     var attributes = new Manifest(is).getMainAttributes();
 
     StartResponse startResponse = new StartResponse(
-      1,
-      new Implementation(
-        "java",
-        attributes.getValue("Implementation-Name"),
-        attributes.getValue("Implementation-Version"),
-        List.of(
-          "http://json-schema.org/draft-04/schema#",
-          "http://json-schema.org/draft-03/schema#"
-        ),
-        "https://github.com/java-json-tools/json-schema-validator",
-        "https://github.com/java-json-tools/json-schema-validator",
-        "https://github.com/java-json-tools/json-schema-validator/issues",
-        "https://github.com/java-json-tools/json-schema-validator",
-        System.getProperty("os.name"),
-        System.getProperty("os.version"),
-        Runtime.version().toString(),
-        List.of()
-      )
-    );
+        1,
+        new Implementation(
+            "java", attributes.getValue("Implementation-Name"),
+            attributes.getValue("Implementation-Version"),
+            List.of("http://json-schema.org/draft-04/schema#",
+                    "http://json-schema.org/draft-03/schema#"),
+            "https://github.com/java-json-tools/json-schema-validator",
+            "https://github.com/java-json-tools/json-schema-validator",
+            "https://github.com/java-json-tools/json-schema-validator/issues",
+            "https://github.com/java-json-tools/json-schema-validator",
+            System.getProperty("os.name"), System.getProperty("os.version"),
+            Runtime.version().toString(), List.of()));
     output.println(objectMapper.writeValueAsString(startResponse));
   }
 
@@ -108,13 +97,14 @@ public class BowtieJsonSchemaValidator {
       throw new IllegalArgumentException("Not started!");
     }
 
-    DialectRequest dialectRequest = objectMapper.treeToValue(
-      node,
-      DialectRequest.class
-    );
+    DialectRequest dialectRequest =
+        objectMapper.treeToValue(node, DialectRequest.class);
 
-    SchemaVersion schemaVersion = getVersionFromDialect(dialectRequest.dialect());
-    validationConfiguration = ValidationConfiguration.newBuilder().setDefaultVersion(schemaVersion).freeze();
+    SchemaVersion schemaVersion =
+        getVersionFromDialect(dialectRequest.dialect());
+    validationConfiguration = ValidationConfiguration.newBuilder()
+                                  .setDefaultVersion(schemaVersion)
+                                  .freeze();
 
     DialectResponse dialectResponse = new DialectResponse(true);
     output.println(objectMapper.writeValueAsString(dialectResponse));
@@ -126,51 +116,50 @@ public class BowtieJsonSchemaValidator {
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     try {
-      final LoadingConfigurationBuilder builder = LoadingConfiguration.newBuilder();
+      final LoadingConfigurationBuilder builder =
+          LoadingConfiguration.newBuilder();
 
       if (runRequest.testCase().registry() != null) {
         runRequest.testCase().registry().fields().forEachRemaining(
-          entry -> builder.preloadSchema(entry.getKey(), entry.getValue())
-        );
+            entry -> builder.preloadSchema(entry.getKey(), entry.getValue()));
       }
 
-      JsonSchemaFactory factory = JsonSchemaFactory.newBuilder().setLoadingConfiguration(builder.freeze()).setValidationConfiguration(validationConfiguration).freeze();
+      JsonSchemaFactory factory =
+          JsonSchemaFactory.newBuilder()
+              .setLoadingConfiguration(builder.freeze())
+              .setValidationConfiguration(validationConfiguration)
+              .freeze();
       final JsonValidator validator;
 
       validator = factory.getValidator();
-      List<Record> results = runRequest
-        .testCase()
-        .tests()
-        .stream()
-        .map(test -> {
-          try {
-            ProcessingReport report = validator.validate(runRequest.testCase().schema(), test.instance());
-            return new TestResult(report.isSuccess());
-          } catch (ProcessingException e) {
-            return new TestErrored(
-              true,
-              new ErrorContext(e.getMessage(), stackTraceToString(e))
-            );
-          }
-        })
-        .toList();
-        output.println(
-          objectMapper.writeValueAsString(
-            new RunResponse(runRequest.seq(), results)
-          )
-        );
-      } catch (Exception e) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        e.printStackTrace(printWriter);
-        RunErroredResponse response = new RunErroredResponse(
-          runRequest.seq(),
-          true,
-          new ErrorContext(e.getMessage(), stackTraceToString(e))
-        );
-        output.println(objectMapper.writeValueAsString(response));
-      }
+      List<Record> results =
+          runRequest.testCase()
+              .tests()
+              .stream()
+              .map(test -> {
+                try {
+                  ProcessingReport report = validator.validate(
+                      runRequest.testCase().schema(), test.instance());
+                  return new TestResult(report.isSuccess());
+                } catch (ProcessingException e) {
+                  return new TestErrored(
+                      true,
+                      new ErrorContext(e.getMessage(), stackTraceToString(e)));
+                }
+              })
+              .toList();
+      output.println(objectMapper.writeValueAsString(
+          new RunResponse(runRequest.seq(), results)));
+    } catch (Exception e) {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      e.printStackTrace(printWriter);
+      RunErroredResponse response = new RunErroredResponse(
+          runRequest.seq(), true,
+          new ErrorContext(e.getMessage(), stackTraceToString(e)));
+      output.println(objectMapper.writeValueAsString(response));
     }
+  }
 
   private String stackTraceToString(Exception e) {
     StringWriter stringWriter = new StringWriter();
@@ -191,30 +180,27 @@ record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
 
 record RunResponse(JsonNode seq, List<Record> results) {}
 
-record RunSkippedResponse(JsonNode seq, boolean skipped, String message, String issue_url) {}
+record RunSkippedResponse(JsonNode seq, boolean skipped, String message,
+                          String issue_url) {}
 
-record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {}
+record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {
+}
 
 record ErrorContext(String message, String traceback) {}
 
-record Implementation(String language,
-                      String name,
-                      String version,
-                      List<String> dialects,
-                      String homepage,
-                      String documentation,
-                      String issues,
-                      String source,
-                      String os,
-                      String os_version,
-                      String language_version,
+record Implementation(String language, String name, String version,
+                      List<String> dialects, String homepage,
+                      String documentation, String issues, String source,
+                      String os, String os_version, String language_version,
                       List<Link> links) {}
 
 record Link(String url, String description) {}
 
-record TestCase(String description, String comment, JsonNode schema, JsonNode registry, List<Test> tests) {}
+record TestCase(String description, String comment, JsonNode schema,
+                JsonNode registry, List<Test> tests) {}
 
-record Test(String description, String comment, JsonNode instance, boolean valid) {}
+record Test(String description, String comment, JsonNode instance,
+            boolean valid) {}
 
 record TestResult(boolean valid) {}
 record TestErrored(boolean errored, ErrorContext context) {}
