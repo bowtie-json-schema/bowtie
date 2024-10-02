@@ -106,8 +106,8 @@ public class BowtieJsonSchema {
                    .map(SpecificationVersion::getId)
                    .toList(),
                "https://github.com/harrel56/json-schema",
-               "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/" +
-               "harrel/jsonschema/package-summary.html",
+               "https://javadoc.io/doc/dev.harrel/json-schema/latest/dev/"
+                   + "harrel/jsonschema/package-summary.html",
                "https://github.com/harrel56/json-schema/issues",
                "https://github.com/harrel56/json-schema",
                System.getProperty("os.name"), System.getProperty("os.version"),
