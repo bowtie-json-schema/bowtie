@@ -1,23 +1,20 @@
-use std::{collections::HashMap, io, process, sync::Arc};
+use std::{collections::HashMap, io, process};
 
 use backtrace::Backtrace;
 use serde_json::{json, Result};
-use url::Url;
 
-use jsonschema::{Draft, JSONSchema, SchemaResolver, SchemaResolverError};
+use jsonschema::{Draft, Retrieve, Uri};
 
-struct InMemoryResolver {
+struct InMemoryRetriever {
     registry: serde_json::Value,
 }
 
-impl SchemaResolver for InMemoryResolver {
-    fn resolve(
+impl Retrieve for InMemoryRetriever {
+    fn retrieve(
         &self,
-        _root_schema: &serde_json::Value,
-        url: &Url,
-        _original_reference: &str,
-    ) -> core::result::Result<Arc<serde_json::Value>, SchemaResolverError> {
-        Ok(Arc::new(self.registry[url.to_string()].to_owned()))
+        uri: &Uri<&str>,
+    ) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.registry[uri.as_str()].to_owned())
     }
 }
 
@@ -46,7 +43,7 @@ fn main() -> Result<()> {
     ]);
 
     let mut started = false;
-    let mut options = JSONSchema::options();
+    let mut options = jsonschema::options();
     let mut compiler = options.with_draft(Draft::Draft202012);
 
     for line in io::stdin().lines() {
@@ -88,7 +85,7 @@ fn main() -> Result<()> {
                     panic!("Not started!")
                 };
                 let dialect = request["dialect"].as_str().expect("Bad dialect!");
-                options = JSONSchema::options();
+                options = jsonschema::options();
                 compiler = options.with_draft(*dialects.get(dialect).expect("No such draft!"));
                 let response = json!({"ok": true});
                 println!("{}", response);
@@ -100,12 +97,12 @@ fn main() -> Result<()> {
                 let case = &request["case"];
 
                 let registry = &case["registry"];
-                let resolver = InMemoryResolver {
+                let retriever = InMemoryRetriever {
                     registry: registry.to_owned(),
                 };
-                compiler = compiler.with_resolver(resolver);
+                compiler = compiler.with_retriever(retriever);
 
-                let response = match compiler.compile(&case["schema"]) {
+                let response = match compiler.build(&case["schema"]) {
                     Ok(compiled) => {
                         let results: Vec<_> = case["tests"]
                             .as_array()
