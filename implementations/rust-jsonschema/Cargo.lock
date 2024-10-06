@@ -104,7 +104,6 @@ dependencies = [
  "os_info",
  "rustc_version_runtime",
  "serde_json",
- "url",
 ]
 
 [[package]]
