@@ -548,9 +548,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.22.1"
+version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee125f3020f2c62555291f30af8f06d128414242b3cbc18b191bb6524a837909"
+checksum = "0762f81b67c46ac403497420b7f4ae457f6cdbef499d24f101bf4a63c35ddea1"
 dependencies = [
  "ahash",
  "anyhow",
@@ -567,6 +567,7 @@ dependencies = [
  "percent-encoding",
  "referencing",
  "regex",
+ "regex-syntax",
  "reqwest",
  "serde",
  "serde_json",
@@ -828,9 +829,9 @@ dependencies = [
 
 [[package]]
 name = "referencing"
-version = "0.22.1"
+version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd12ec181a7cb896617f1d08b3f8aeb193a88b3a3716b407d7cc06a255eafb0e"
+checksum = "43fda277062a68f002ee482f8319d2fcc84be5ff11669cacd74db7ca01f7f36a"
 dependencies = [
  "ahash",
  "fluent-uri",
