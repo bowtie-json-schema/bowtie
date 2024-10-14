@@ -5,7 +5,7 @@ Validator registries, likely for eventual upstreaming into referencing.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY, Schema, SchemaRegistry
@@ -15,12 +15,14 @@ if TYPE_CHECKING:
     from url import URL
 
 
-E_co = TypeVar("E_co", bound=Exception, covariant=True)
-Validate = Callable[[Any], ExceptionGroup[E_co] | None]
-SchemaCompiler = Callable[[Schema, SchemaRegistry], Validate[E_co]]
+type Validate[E: Exception] = Callable[[Any], ExceptionGroup[E] | None]
+type SchemaCompiler[E: Exception] = Callable[
+    [Schema, SchemaRegistry],
+    Validate[E],
+]
 
 
-class Invalid(ExceptionGroup[E_co]):
+class Invalid[E: Exception](ExceptionGroup[E]):
     """
     An instance is not valid under a schema.
     """
@@ -37,18 +39,18 @@ class UnexpectedlyValid(Exception):
 
 
 @frozen
-class Validator(Generic[E_co]):
+class Validator[E: Exception]:
     """
     A compiled schema, ready to validate instances.
     """
 
-    validate: Validate[E_co]
-    _registry: ValidatorRegistry[E_co] = field(alias="registry")
+    validate: Validate[E]
+    _registry: ValidatorRegistry[E] = field(alias="registry")
 
     def __rmatmul__(
         self,
         resources: SchemaResource | Iterable[SchemaResource],
-    ) -> Validator[E_co]:
+    ) -> Validator[E]:
         return evolve(self, registry=resources @ self._registry)
 
     def is_valid(self, instance: Any):
@@ -67,15 +69,15 @@ class Validator(Generic[E_co]):
 
 
 @frozen
-class ValidatorRegistry(Generic[E_co]):
+class ValidatorRegistry[E: Exception]:
 
-    _compile: SchemaCompiler[E_co] = field(alias="compile")
+    _compile: SchemaCompiler[E] = field(alias="compile")
     _registry: SchemaRegistry = field(default=EMPTY_REGISTRY, alias="registry")
 
     def __rmatmul__(
         self,
         resources: SchemaResource | Iterable[SchemaResource],
-    ) -> ValidatorRegistry[E_co]:
+    ) -> ValidatorRegistry[E]:
         return evolve(self, registry=resources @ self._registry)
 
     def schema(self, uri: URL) -> Schema:
@@ -84,15 +86,15 @@ class ValidatorRegistry(Generic[E_co]):
         """
         return self._registry.resolver().lookup(str(uri)).contents
 
-    def for_uri(self, uri: URL) -> Validator[E_co]:
+    def for_uri(self, uri: URL) -> Validator[E]:
         """
         Return a `Validator` using the schema at the given URI.
         """
         return self.for_schema(self.schema(uri))
 
-    def for_schema(self, schema: Schema) -> Validator[E_co]:
+    def for_schema(self, schema: Schema) -> Validator[E]:
         """
         Return a `Validator` using the given schema.
         """
-        validate: Validate[E_co] = self._compile(schema, self._registry)
+        validate: Validate[E] = self._compile(schema, self._registry)
         return Validator(validate=validate, registry=self)

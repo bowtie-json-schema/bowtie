@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Generic, Never
+from typing import TYPE_CHECKING, Any, Never
 import pkgutil
 import platform
 
@@ -17,7 +17,7 @@ from url import URL
 from bowtie import DOCS, HOMEPAGE, REPO
 from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
 from bowtie._core import Dialect, ImplementationInfo, registry
-from bowtie._registry import E_co, Invalid, SchemaCompiler, ValidatorRegistry
+from bowtie._registry import Invalid, SchemaCompiler, ValidatorRegistry
 from bowtie.exceptions import CannotConnect
 
 if TYPE_CHECKING:
@@ -40,10 +40,10 @@ def not_yet_connected(schema: Schema, registry: SchemaRegistry):
 
 
 @mutable
-class Unconnection(Generic[E_co]):
+class Unconnection[E: Exception]:
 
     _info: ImplementationInfo = field(repr=lambda i: i.id, alias="info")
-    compiler_for: Callable[[Dialect], SchemaCompiler[E_co]] = field(
+    compiler_for: Callable[[Dialect], SchemaCompiler[E]] = field(
         repr=False,
         alias="compiler_for",
     )
@@ -54,7 +54,7 @@ class Unconnection(Generic[E_co]):
     )
 
     _current_dialect: Dialect = Dialect.latest()
-    _compile: SchemaCompiler[E_co] = not_yet_connected
+    _compile: SchemaCompiler[E] = not_yet_connected
 
     async def request(self, message: Message) -> Message:
         """
@@ -95,15 +95,15 @@ class Unconnection(Generic[E_co]):
 
 
 @frozen
-class DirectImplementation(Generic[E_co]):
+class DirectImplementation[E: Exception]:
 
-    _compiler_for: Callable[[Dialect], SchemaCompiler[E_co]]
+    _compiler_for: Callable[[Dialect], SchemaCompiler[E]]
     _info: ImplementationInfo
     _implicit_dialect_response: StartedDialect
 
     def __init__(
         self,
-        compiler_for: Callable[[Dialect], SchemaCompiler[E_co]],
+        compiler_for: Callable[[Dialect], SchemaCompiler[E]],
         implicit_dialect_response: StartedDialect = StartedDialect.OK,
         **kwargs: Any,
     ):
@@ -139,7 +139,7 @@ class DirectImplementation(Generic[E_co]):
         language: str = "python",
         **kwargs: Any,
     ):
-        def decorator(fn: Callable[[Dialect], SchemaCompiler[E_co]]):
+        def decorator(fn: Callable[[Dialect], SchemaCompiler[E]]):
             return lambda: cls(compiler_for=fn, language=language, **kwargs)
 
         return decorator
@@ -226,7 +226,7 @@ IMPLEMENTATIONS: dict[str, Callable[..., Callable[[], Unconnection[Any]]]] = {
 
 
 @frozen(kw_only=True)
-class Direct(Generic[E_co]):
+class Direct[E: Exception]:
     """
     A direct connectable connects by simply importing some Python object.
 
@@ -244,7 +244,7 @@ class Direct(Generic[E_co]):
     functionaly should still ensure no networking takes place.
     """
 
-    _wraps: Callable[[], Unconnection[E_co]] = field(alias="wraps")
+    _wraps: Callable[[], Unconnection[E]] = field(alias="wraps")
 
     kind = "direct"
 
@@ -290,15 +290,15 @@ class Direct(Generic[E_co]):
         It can be useful e.g. for simply testing whether something is valid
         JSON, or for disabling validation where it otherwise would happen.
         """
-        return cls(wraps=NULL)
+        return cls(wraps=NULL)  # type: ignore[reportArgumentType]
 
     def connect(
         self,
         **kwargs: Any,
-    ) -> AbstractAsyncContextManager[Unconnection[E_co]]:
+    ) -> AbstractAsyncContextManager[Unconnection[E]]:
         return nullcontext(self._wraps())
 
-    def registry(self, **kwargs: Any) -> ValidatorRegistry[E_co]:
+    def registry(self, **kwargs: Any) -> ValidatorRegistry[E]:
         if "registry" not in kwargs:
             kwargs["registry"] = registry()
         return ValidatorRegistry(

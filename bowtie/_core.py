@@ -6,7 +6,7 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 from uuid import uuid4
 import json
 import os
@@ -257,9 +257,6 @@ class Restarted(Exception):
     """
 
 
-R = TypeVar("R")
-
-
 @frozen
 class Link:
     description: str
@@ -380,12 +377,12 @@ class HarnessClient:
         for each in self._if_replaying:
             await self.request(each)  # TODO: response assert?
 
-    async def transition(self, cmd: Command[R]) -> tuple[Self, R | None]:
+    async def transition[R](self, cmd: Command[R]) -> tuple[Self, R | None]:
         response = await self.request(cmd)
         harness = evolve(self, if_replaying=[*self._if_replaying, cmd])
         return harness, response
 
-    async def request(self, cmd: Command[R]) -> R | None:
+    async def request[R](self, cmd: Command[R]) -> R | None:
         """
         Send a given command to the implementation and return its response.
         """
