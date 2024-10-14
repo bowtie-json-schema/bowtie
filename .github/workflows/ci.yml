@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up nox
-        uses: wntrblm/nox@2024.04.15
+        uses: wntrblm/nox@2024.10.09
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -70,7 +70,7 @@ jobs:
       - name: Set up uv
         uses: hynek/setup-cached-uv@v2
       - name: Set up nox
-        uses: wntrblm/nox@2024.04.15
+        uses: wntrblm/nox@2024.10.09
 
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}"
@@ -88,7 +88,7 @@ jobs:
       - name: Set up uv
         uses: hynek/setup-cached-uv@v2
       - name: Set up nox
-        uses: wntrblm/nox@2024.04.15
+        uses: wntrblm/nox@2024.10.09
 
       - name: Ensure containers don't work
         run: sudo apt-get purge docker podman
@@ -113,7 +113,7 @@ jobs:
       - name: Set up uv
         uses: hynek/setup-cached-uv@v2
       - name: Set up nox
-        uses: wntrblm/nox@2024.04.15
+        uses: wntrblm/nox@2024.10.09
 
       - name: Run nox
         run: nox -s tests-3.12 -- coverage github
@@ -160,7 +160,7 @@ jobs:
       - name: Set up uv
         uses: hynek/setup-cached-uv@v2
       - name: Set up nox
-        uses: wntrblm/nox@2024.04.15
+        uses: wntrblm/nox@2024.10.09
       - name: Install dependencies
         run: uv pip install --system build
 
