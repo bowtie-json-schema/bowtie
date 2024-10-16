@@ -1,6 +1,9 @@
 #include <sourcemeta/jsontoolkit/json.h>
 #include <sourcemeta/jsontoolkit/jsonschema.h>
 
+#include <sourcemeta/blaze/compiler.h>
+#include <sourcemeta/blaze/evaluator.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -10,6 +13,7 @@
 
 int main() {
   using namespace sourcemeta::jsontoolkit;
+  using namespace sourcemeta::blaze;
   bool started{false};
   std::optional<std::string> default_dialect{std::nullopt};
 
@@ -31,14 +35,14 @@ int main() {
       response.assign("version", JSON{1});
       auto implementation{JSON::make_object()};
       implementation.assign("language", JSON{"c++"});
-      implementation.assign("version", JSON{JSONTOOLKIT_VERSION});
-      implementation.assign("name", JSON{"jsontoolkit"});
+      implementation.assign("version", JSON{BLAZE_VERSION});
+      implementation.assign("name", JSON{"blaze"});
       implementation.assign("homepage",
-                            JSON{"https://github.com/sourcemeta/jsontoolkit"});
-      implementation.assign(
-          "issues", JSON{"https://github.com/sourcemeta/jsontoolkit/issues"});
+                            JSON{"https://github.com/sourcemeta/blaze"});
+      implementation.assign("issues",
+                            JSON{"https://github.com/sourcemeta/blaze/issues"});
       implementation.assign("source",
-                            JSON{"https://github.com/sourcemeta/jsontoolkit"});
+                            JSON{"https://github.com/sourcemeta/blaze"});
       implementation.assign(
           "dialects", JSON{JSON{"https://json-schema.org/draft/2020-12/schema"},
                            JSON{"https://json-schema.org/draft/2019-09/schema"},
@@ -77,9 +81,9 @@ int main() {
       }
 
       try {
-        const auto schema_template{
-            compile(message.at("case").at("schema"), default_schema_walker,
-                    resolver, default_schema_compiler, default_dialect)};
+        const auto schema_template{compile(
+            message.at("case").at("schema"), default_schema_walker, resolver,
+            default_schema_compiler, Mode::FastValidation, default_dialect)};
 
         auto response{JSON::make_object()};
         response.assign("seq", message.at("seq"));

@@ -119,7 +119,7 @@ jobs:
         with:
           filters: |
             impl:
-              - 'implementations/${{ matrix.image }}/**'
+            - added|modified: 'implementations/${{ matrix.image }}/**'
         if: ${{ !inputs.implementation }}
 
       - name: Install qemu
