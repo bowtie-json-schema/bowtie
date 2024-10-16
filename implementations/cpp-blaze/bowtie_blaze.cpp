@@ -39,8 +39,8 @@ int main() {
       implementation.assign("name", JSON{"blaze"});
       implementation.assign("homepage",
                             JSON{"https://github.com/sourcemeta/blaze"});
-      implementation.assign(
-          "issues", JSON{"https://github.com/sourcemeta/blaze/issues"});
+      implementation.assign("issues",
+                            JSON{"https://github.com/sourcemeta/blaze/issues"});
       implementation.assign("source",
                             JSON{"https://github.com/sourcemeta/blaze"});
       implementation.assign(
