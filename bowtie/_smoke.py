@@ -277,7 +277,7 @@ class DialectResults:
     An indication of whether each claimed supported dialect works.
     """
 
-    _dialects: HashTrieMap[Dialect, Sequence[tuple[TestCase, SeqResult]]] = (  # type: ignore[reportAssignmentType]
+    _dialects: HashTrieMap[Dialect, Sequence[tuple[TestCase, SeqResult]]] = (
         HashTrieMap()
     )
     latest_successful: Dialect | None = None
