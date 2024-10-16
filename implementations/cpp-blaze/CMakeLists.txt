@@ -8,7 +8,7 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 add_executable(bowtie_blaze bowtie_blaze.cpp)
-target_compile_definitions(bowtie_blaze 
+target_compile_definitions(bowtie_blaze
   PRIVATE BLAZE_VERSION="${GIT_COMMIT_HASH}")
 
 target_link_libraries(bowtie_blaze

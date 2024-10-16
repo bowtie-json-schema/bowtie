@@ -81,10 +81,9 @@ int main() {
       }
 
       try {
-        const auto schema_template{
-            compile(message.at("case").at("schema"), default_schema_walker,
-                    resolver, default_schema_compiler, Mode::FastValidation, 
-                    default_dialect)};
+        const auto schema_template{compile(
+            message.at("case").at("schema"), default_schema_walker, resolver,
+            default_schema_compiler, Mode::FastValidation, default_dialect)};
 
         auto response{JSON::make_object()};
         response.assign("seq", message.at("seq"));
