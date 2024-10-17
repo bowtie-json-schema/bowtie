@@ -14,5 +14,6 @@ RUN cmake -S /tmp -B /tmp/build -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_SHARED
 RUN cmake --build /tmp/build --config Release --parallel 4
 
 FROM alpine:3.20
+RUN apk add --no-cache libstdc++ libgcc
 COPY --from=builder /tmp/build/bowtie_blaze /usr/local/bin/bowtie
 CMD [ "bowtie" ]
