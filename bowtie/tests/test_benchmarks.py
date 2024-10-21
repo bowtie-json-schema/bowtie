@@ -32,28 +32,28 @@ KEYWORD_BENCHMARK_PATHS = collect_benchmarks(BENCHMARKS_DIR / "keywords")
 DIRECT_CONNECTABLE = "python-jsonschema"
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_single_benchmark():
     from bowtie.tests.benchmarks import valid_single_benchmark
 
     return valid_single_benchmark.get_benchmark()
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_benchmark_group(valid_single_benchmark):
     from bowtie.tests.benchmarks import valid_benchmark_group
 
     return valid_benchmark_group.get_benchmark()
 
 
-@pytest.fixture()
+@pytest.fixture
 def invalid_benchmark():
     from bowtie.tests.benchmarks import invalid_benchmark
 
     return invalid_benchmark.get_benchmark()
 
 
-@pytest.fixture()
+@pytest.fixture
 def benchmarker_run_args():
     return {
         "runs": 1,

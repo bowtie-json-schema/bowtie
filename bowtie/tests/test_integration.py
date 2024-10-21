@@ -3900,13 +3900,13 @@ class TestBenchmarkRun:
         "tag:bowtie.report,2024:benchmark_report",
     )
 
-    @pytest.fixture()
+    @pytest.fixture
     def valid_single_benchmark(self):
         from bowtie.tests.benchmarks import valid_single_benchmark
 
         return valid_single_benchmark.get_benchmark()
 
-    @pytest.fixture()
+    @pytest.fixture
     def invalid_benchmark(self):
         from bowtie.tests.benchmarks import invalid_benchmark
 
