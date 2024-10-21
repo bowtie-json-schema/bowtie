@@ -27,7 +27,7 @@ charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via rich-click
-cryptography==43.0.1
+cryptography==43.0.3
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
@@ -73,7 +73,7 @@ multidict==6.1.0
     #   yarl
 propcache==0.2.0
     # via yarl
-psutil==6.0.0
+psutil==6.1.0
     # via pyperf
 pycparser==2.22
     # via cffi
@@ -129,5 +129,5 @@ url-py==0.12.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.2.3
     # via requests
-yarl==1.15.3
+yarl==1.15.5
     # via aiohttp
