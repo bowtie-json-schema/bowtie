@@ -58,6 +58,7 @@ const valid_sample_benchmark = {
 describe("parseBenchmarkReportData", () => {
   test(
     "parses benchmark reports",
+    { timeout: 120000 }, // FIXME: Make this test faster.
     async () => {
       const benchmark_string: string = JSON.stringify(valid_sample_benchmark);
       let output: string;
@@ -136,6 +137,5 @@ describe("parseBenchmarkReportData", () => {
         ],
       });
     },
-    { timeout: 120000 }, // FIXME: Make this test faster.
   );
 });
