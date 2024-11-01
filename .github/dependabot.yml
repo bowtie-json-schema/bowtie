@@ -50,6 +50,7 @@ updates:
 
   # ignore: cpp-valijson - builds its repository's HEAD
   # ignore: cpp-blaze - builds its repository's HEAD
+  # ignore: cpp-jsoncons - No Dependabot support
 
   - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-jsonschema-net"
@@ -189,6 +190,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-blaze"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/cpp-jsoncons"
     schedule:
       interval: "daily"
 
