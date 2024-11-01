@@ -97,14 +97,14 @@ referencing-loaders==2024.5.2
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.3
     # via github3-py
-rich==13.9.3
+rich==13.9.4
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
 rich-click==1.8.3
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.20.0
+rpds-py==0.20.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
@@ -125,9 +125,9 @@ typing-extensions==4.12.2
     #   typeguard
 uritemplate==4.1.1
     # via github3-py
-url-py==0.12.0
+url-py==0.13.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.2.3
     # via requests
-yarl==1.16.0
+yarl==1.17.1
     # via aiohttp
