@@ -46,15 +46,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bowtie
-        uses: ./
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
-      - id: images-matrix
+      - name: Calculate which impages to build
+        id: images-matrix
         run: |
           implementation=${{ inputs.implementation }}
           version=${{ inputs.version }}
           matrix_versions_file="implementations/$implementation/matrix-versions.json"
-          IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
+          IMPLEMENTATIONS=$(uvx --from . --python 3.13 bowtie filter-implementations --format json)
           MATRIX="[]"
           if [ -n "$implementation" ]; then
             if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
@@ -161,19 +164,15 @@ jobs:
           podman --remote info
           echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
 
-      - name: Install Bowtie
-        uses: ./
-        if: |
-          (
-            (steps.changes.outputs.impl == 'true')
-            || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
-            || (inputs.implementation)
-          )
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Smoke Test
         run: |
-          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
-          bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
+          uvx --from . --python 3.13 bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
+          uvx --from . --python 3.13 bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
         # We special case python-fastjsonschema, which unfortunately does not
         # pass the smoke test, as it has multiple issues handling simple
         # schemas using the `not` keyword.
