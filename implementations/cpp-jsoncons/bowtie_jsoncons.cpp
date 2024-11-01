@@ -109,6 +109,7 @@ int main() {
       } catch (const std::exception &error) {
         // Report any errors during compilation or validation
         json response;
+        response["seq"] = message.at("seq");
         response["errored"] = true;
         json context;
         context["message"] = error.what();
