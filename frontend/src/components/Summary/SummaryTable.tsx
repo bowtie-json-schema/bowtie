@@ -95,55 +95,6 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
             />
           ))}
       </tbody>
-      <tfoot>
-        <tr>
-          <th scope="row" colSpan={2}>
-            total
-          </th>
-          <OverlayTrigger
-            placement="left-end"
-            overlay={
-              <Popover style={{ border: "1px solid var(--bs-primary)" }}>
-                <Popover.Body>
-                  <Container className="p-0">
-                    <Row className="d-flex flex-column gap-2">
-                      <Col>
-                        <h6 className="fw-bold mb-0">
-                          total failed:&nbsp;
-                          <span className="fw-normal">
-                            {totals.failedTests}
-                          </span>
-                        </h6>
-                      </Col>
-                      <Col>
-                        <h6 className="fw-bold mb-0">
-                          total errored:&nbsp;
-                          <span className="fw-normal">
-                            {totals.erroredTests}
-                          </span>
-                        </h6>
-                      </Col>
-                      <Col>
-                        <h6 className="fw-bold mb-0">
-                          total skipped:&nbsp;
-                          <span className="fw-normal">
-                            {totals.skippedTests}
-                          </span>
-                        </h6>
-                      </Col>
-                    </Row>
-                  </Container>
-                </Popover.Body>
-              </Popover>
-            }
-          >
-            <td scope="row" colSpan={4} className="text-center">
-              {totals.failedTests + totals.erroredTests + totals.skippedTests}
-            </td>
-          </OverlayTrigger>
-          <td></td>
-        </tr>
-      </tfoot>
     </Table>
   );
 };
