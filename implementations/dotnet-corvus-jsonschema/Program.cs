@@ -11,8 +11,7 @@ ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new F
 
 bool started = false;
 
-var unsupportedTests = new Dictionary<(string, string), string> {
-};
+var unsupportedTests = new Dictionary<(string, string), string> {};
 
 var builders = new Dictionary<string, (Func<IVocabulary>, bool)> {
     ["https://json-schema.org/draft/2020-12/schema"] =
@@ -132,7 +131,10 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 
             string testDescription = string.Empty;
 
-            var schema = JsonSchema.FromText(schemaText, fakeURI, new JsonSchema.Options(additionalDocumentResolver: resolver, fallbackVocabulary: defaultVocabulary, alwaysAssertFormat: validateFormat, allowFileSystemAndHttpResolution: false));
+            var schema = JsonSchema.FromText(
+                schemaText, fakeURI,
+                new JsonSchema.Options(additionalDocumentResolver: resolver, fallbackVocabulary: defaultVocabulary,
+                                       alwaysAssertFormat: validateFormat, allowFileSystemAndHttpResolution: false));
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
 
             try
