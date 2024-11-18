@@ -36,7 +36,7 @@
     "@testing-library/react": "^16.0.1",
     "bootstrap": "^5.3.3",
     "dayjs": "^1.11.13",
-    "mathjs": "^13.2.1",
+    "mathjs": "^13.2.2",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.5",
     "react-bootstrap-icons": "^1.11.4",
@@ -48,7 +48,7 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
+    "@eslint/js": "^9.15.0",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
@@ -56,7 +56,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.25",
     "@vitejs/plugin-react": "^4.3.3",
-    "eslint": "^9.14.0",
+    "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-tsdoc": "^0.3.0",
@@ -65,9 +65,9 @@
     "recharts": "2.13.0-alpha.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.13.0",
-    "vite": "^5.4.10",
+    "typescript-eslint": "^8.14.0",
+    "vite": "^5.4.11",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.5"
   }
 }
