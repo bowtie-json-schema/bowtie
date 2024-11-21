@@ -1,4 +1,4 @@
-FROM gradle:8.11.0-jdk17 AS builder
+FROM gradle:8.11.1-jdk17 AS builder
 ARG IMPLEMENTATION_VERSION
 COPY BowtieJsonSchema.java /opt/app/BowtieJsonSchema.java
 COPY build.gradle /opt/app/build.gradle
