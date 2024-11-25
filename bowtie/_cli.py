@@ -2557,10 +2557,8 @@ async def _run(
                 got_result(result=result)
                 unsucessful += result.unsuccessful()
                 time_taken_by_implementations += perf_counter_ns() - st_time
-                if (
-                    max_fail
-                    and len(unsucessful.failed) >= max_fail
-                    or (max_error and len(unsucessful.errored) >= max_error)
+                if (max_fail and len(unsucessful.failed) >= max_fail) or (
+                    max_error and len(unsucessful.errored) >= max_error
                 ):
                     should_stop = True
 

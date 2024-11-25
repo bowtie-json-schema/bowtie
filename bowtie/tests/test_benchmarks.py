@@ -20,8 +20,7 @@ def collect_benchmarks(directory):
         path
         for path in directory.iterdir()
         if path.suffix == ".json"
-        or path.suffix == ".py"
-        and path.name != "__init__.py"
+        or (path.suffix == ".py" and path.name != "__init__.py")
     )
 
 
