@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     import aiodocker.containers
-    import aiodocker.stream  # noqa: TCH004 ??? no it's not?
+    import aiodocker.stream  # noqa: TC004 ??? no it's not?
 
     from bowtie._commands import Message
 

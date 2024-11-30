@@ -411,12 +411,12 @@ class Report:
         for id, implementation in self.implementations.items():
             unsuccessful = self.unsuccessful(id)
             passed = self.total_tests - unsuccessful.total
-            percentage = 100 * (passed / self.total_tests)
-            r, g, b = 100 - int(percentage), int(percentage), 0
+            percentage = int(100 * (passed / self.total_tests))
+            r, g, b = 100 - percentage, percentage, 0
             yield implementation, Badge(
                 schemaVersion=1,
                 label=self.metadata.dialect.pretty_name,
-                message="%d%% Passing" % int(percentage),
+                message=f"{percentage}% Passing",
                 color=f"{r:02x}{g:02x}{b:02x}",
             )
 

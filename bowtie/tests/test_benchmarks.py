@@ -19,9 +19,7 @@ def collect_benchmarks(directory):
     return sorted(
         path
         for path in directory.iterdir()
-        if path.suffix == ".json"
-        or path.suffix == ".py"
-        and path.name != "__init__.py"
+        if path.suffix in {".json", ".py"} and path.name != "__init__.py"
     )
 
 
