@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import Badge from "react-bootstrap/Badge";
 import Card from "react-bootstrap/Card";
 import { X } from "react-bootstrap-icons";

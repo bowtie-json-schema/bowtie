@@ -1,4 +1,4 @@
-import { useNavigation, useOutlet } from "react-router-dom";
+import { useNavigation, useOutlet } from "react-router";
 
 import LoadingAnimation from "./components/LoadingAnimation";
 import NavBar from "./components/NavBar";

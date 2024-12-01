@@ -4,7 +4,7 @@ import {
   Navigate,
   Outlet,
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import Table from "react-bootstrap/Table";
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export const ImplementationReportView = () => {
-  const implementationReport = useLoaderData() as ImplementationReport | null;
+  const implementationReport: ImplementationReport | null = useLoaderData();
 
   return implementationReport === null ? (
     // FIXME: Probably redirect to /implementations if/when that's a thing.
@@ -48,7 +48,11 @@ const ReportComponent = ({ implementationReport }: Props) => {
             </span>
             <span>{implementation.name}</span>
           </span>
-          <Button variant="info" size="sm" onClick={() => navigate("badges")}>
+          <Button
+            variant="info"
+            size="sm"
+            onClick={() => void navigate("badges")}
+          >
             Badges
           </Button>
           <Outlet context={implementation satisfies EmbedBadgesContextType} />
