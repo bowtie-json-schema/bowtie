@@ -22,7 +22,7 @@
   "engines": {
     "node": ">=21.0.0"
   },
-  "packageManager": "pnpm@9.12.3",
+  "packageManager": "pnpm@9.14.4",
   "scripts": {
     "start": "vite --no-clearScreen",
     "build": "tsc && vite build",
@@ -38,7 +38,7 @@
     "dayjs": "^1.11.13",
     "mathjs": "^14.0.0",
     "react": "^18.3.1",
-    "react-bootstrap": "^2.10.5",
+    "react-bootstrap": "^2.10.6",
     "react-bootstrap-icons": "^1.11.4",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
@@ -48,26 +48,26 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
+    "@eslint/js": "^9.16.0",
     "@types/eslint__js": "^8.42.3",
-    "@types/node": "^22.9.1",
+    "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.25",
-    "@vitejs/plugin-react": "^4.3.3",
-    "eslint": "^9.15.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.16.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-tsdoc": "^0.3.0",
-    "jiti": "^2.4.0",
+    "jiti": "^2.4.1",
     "jsdom": "^25.0.1",
     "recharts": "2.13.0-alpha.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0",
     "vite": "^5.4.11",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^2.1.5"
+    "vitest": "^2.1.6"
   }
 }
