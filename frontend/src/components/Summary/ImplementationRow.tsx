@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
@@ -33,7 +33,7 @@ const ImplementationRow = ({
         scope="row"
         style={{ cursor: "pointer" }}
         className="align-middle p-0"
-        onClick={() => navigate(implementation.routePath)}
+        onClick={() => void navigate(implementation.routePath)}
       >
         <span
           className={`text-decoration-underline ${

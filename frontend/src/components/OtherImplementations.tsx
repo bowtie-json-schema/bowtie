@@ -5,7 +5,7 @@ import Overlay from "react-bootstrap/Overlay";
 import Popover from "react-bootstrap/Popover";
 import Row from "react-bootstrap/Row";
 import { InfoCircle } from "react-bootstrap-icons";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 
 import { mapLanguage } from "../data/mapLanguage";
 import Dialect from "../data/Dialect";

@@ -1,7 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./global.css";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, Params, RouterProvider } from "react-router-dom";
+import { createHashRouter, Params, RouterProvider } from "react-router";
 
 import Dialect from "./data/Dialect";
 import DialectReportViewDataHandler from "./DialectReportViewDataHandler";

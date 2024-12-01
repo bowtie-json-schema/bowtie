@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 
 import BowtieInfoSection from "./components/BowtieInfo/BowtieInfoSection";
 import Implementation from "./data/Implementation";
@@ -14,7 +14,7 @@ interface LoaderData {
 
 const BenchmarkReportViewDataHandler = () => {
   const { setVersion } = useContext(BowtieVersionContext);
-  const loaderData: LoaderData = useLoaderData() as LoaderData;
+  const loaderData: LoaderData = useLoaderData();
 
   useEffect(
     () => setVersion!(loaderData.benchmarkReportData.metadata.bowtieVersion),
