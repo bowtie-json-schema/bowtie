@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@cfworker/json-schema": "^3.0.0"
+    "@cfworker/json-schema": "^4.0.2"
   }
 }
