@@ -1,4 +1,4 @@
-FROM alpine:3.20 AS builder
+FROM alpine:3.21 AS builder
 
 RUN apk add --update-cache git build-base cmake ninja ninja-build curl zip unzip pkgconf && \
     rm -rf /var/cache/apk/*
@@ -18,7 +18,7 @@ RUN vcpkg install
 RUN cmake -S /tmp -B /tmp/build -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_SHARED_LIBS:BOOL=OFF
 RUN cmake --build /tmp/build --config Release --parallel 4
 
-FROM alpine:3.20
+FROM alpine:3.21
 RUN apk add --no-cache libstdc++ libgcc
 COPY --from=builder /tmp/build/bowtie_jsoncons /usr/local/bin/bowtie
 CMD [ "bowtie" ]
