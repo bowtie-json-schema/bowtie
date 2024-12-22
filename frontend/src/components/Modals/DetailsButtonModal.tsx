@@ -21,7 +21,7 @@ export const DetailsButtonModal = ({
   implementationResults: ImplementationResults;
   implementation: Implementation;
 }) => {
-  const failedResults: JSX.Element[] = [];
+  const failedResults: React.JSX.Element[] = [];
   Array.from(implementationResults.caseResults.entries()).forEach(
     ([seq, results]) => {
       const caseData = cases.get(seq)!;

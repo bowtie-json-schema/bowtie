@@ -21,7 +21,7 @@ import {
 interface CaseProps {
   seq: number;
   caseData: Case;
-  schemaDisplayRef?: RefObject<HTMLDivElement>;
+  schemaDisplayRef?: RefObject<HTMLDivElement | null>;
   implementations: Implementation[];
   implementationsResults: ImplementationResults[];
 }
