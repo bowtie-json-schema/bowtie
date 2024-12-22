@@ -144,7 +144,7 @@ rich==13.9.4
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.5
+rich-click==1.8.4
     # via bowtie-json-schema
 rpds-py==0.22.3
     # via
