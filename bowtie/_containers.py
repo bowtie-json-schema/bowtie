@@ -86,7 +86,7 @@ class Stream:
             await self._stream.write_in(message.encode())
         except aiodocker.exceptions.DockerError as err:
             raise _ClosedStream(self._container) from err
-        except AttributeError:
+        except (AssertionError, AttributeError):
             raise _ClosedStream(self._container) from None
 
     async def receive(self) -> str:
