@@ -47,7 +47,15 @@ describe.each(testCases)(
 
     const testName = valid == undefined ? state : `${state} expected ${valid}`;
     test(testName, () => {
-      const { container } = render(<CaseResultSvg result={testCaseData} />);
+      const { container } = render(
+        <table>
+          <tbody>
+            <tr>
+              <CaseResultSvg result={testCaseData} />
+            </tr>
+          </tbody>
+        </table>,
+      );
       const renderedSvg = container.querySelector("svg");
 
       expect(renderedSvg).not.toBeNull();
