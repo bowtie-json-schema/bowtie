@@ -370,6 +370,11 @@ async def run(*args, **kwargs):
 
         try:
             report = Report.from_serialized(stdout.splitlines())
+        except _json.JSONDecodeError:
+            pytest.fail(
+                f"stdout had invalid JSON: {stdout!r}\n\n"
+                f"stderr had {stderr}",
+            )
         except EmptyReport:
             results = []
         except InvalidReport as err:
