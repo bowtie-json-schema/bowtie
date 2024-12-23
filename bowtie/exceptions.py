@@ -141,8 +141,9 @@ class StartupFailed(Exception):
         )
         if self.stderr:
             from rich.panel import Panel
+            from rich.text import Text
 
-            yield Panel(self.stderr, title="stderr")
+            yield Panel(Text(self.stderr), title="stderr")
 
 
 @frozen
