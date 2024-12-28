@@ -40,7 +40,7 @@ cffi==1.17.1
     # via
     #   -r requirements.txt
     #   cryptography
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via
     #   -r requirements.txt
     #   requests
@@ -81,7 +81,7 @@ httpx==0.28.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.122.6
+hypothesis==6.123.2
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -92,7 +92,7 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-inflect==7.4.0
+inflect==7.5.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -238,7 +238,7 @@ uritemplate==4.1.1
     # via
     #   -r requirements.txt
     #   github3-py
-url-py==0.13.0
+url-py==0.14.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema

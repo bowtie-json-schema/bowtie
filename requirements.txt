@@ -23,7 +23,7 @@ certifi==2024.12.14
     #   requests
 cffi==1.17.1
     # via cryptography
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via rich-click
@@ -51,7 +51,7 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-inflect==7.4.0
+inflect==7.5.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema==4.23.0
     # via bowtie-json-schema (pyproject.toml)
@@ -125,7 +125,7 @@ typing-extensions==4.12.2
     #   typeguard
 uritemplate==4.1.1
     # via github3-py
-url-py==0.13.0
+url-py==0.14.1
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.3.0
     # via requests
