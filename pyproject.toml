@@ -21,7 +21,8 @@ name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
 requires-python = ">=3.12"
 readme = "README.rst"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = [
     "validation",
     "data validation",
@@ -35,7 +36,6 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.12",
