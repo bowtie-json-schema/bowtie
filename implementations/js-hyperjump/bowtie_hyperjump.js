@@ -2,6 +2,7 @@ import readline from "readline/promises";
 import os from "os";
 import process from "process";
 import { createRequire } from "node:module";
+import * as semver from "semver";
 const packageJson = createRequire(import.meta.url)(
   "./node_modules/@hyperjump/json-schema/package.json",
 );
@@ -14,7 +15,7 @@ var unregisterSchema;
 var getRetrievalURI;
 
 await (async () => {
-  if (hyperjump_version >= "1.7.0") {
+  if (semver.satisfies(hyperjump_version, ">=1.7.0")) {
     await Promise.all([
       import("@hyperjump/json-schema/draft-2019-09"),
       import("@hyperjump/json-schema/draft-07"),
@@ -40,7 +41,7 @@ await (async () => {
     getRetrievalURI = (_, __, args) =>
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
   } else {
-    if (hyperjump_version >= "1.0.0") {
+    if (semver.satisfies(hyperjump_version, ">=1.0.0")) {
       await Promise.all([
         import("@hyperjump/json-schema/draft-2019-09"),
         import("@hyperjump/json-schema/draft-07"),
@@ -60,7 +61,7 @@ await (async () => {
 
         return await JsonSchema.validate(retrievalURI);
       };
-    } else if (hyperjump_version >= "0.18.0") {
+    } else if (semver.satisfies(hyperjump_version, ">=0.18.0")) {
       const JsonSchema = await import("@hyperjump/json-schema");
 
       registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
