@@ -3,12 +3,11 @@ import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 
 const NotFound = () => {
-
   const { isDarkMode } = useContext(ThemeContext);
-  
+
   return (
     <div className="vh-100 d-flex flex-column align-items-center justify-content-center">
-      <h1 
+      <h1
         className={`display-4 fw-bold mb-4 ${isDarkMode ? "text-info" : "text-secondary"}`}
       >
         404 Not Found
@@ -20,7 +19,7 @@ const NotFound = () => {
         Go To Home
       </Link>
     </div>
-  )
-}
+  );
+};
 
 export default NotFound;
