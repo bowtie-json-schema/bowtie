@@ -17,6 +17,7 @@ import {
   ImplementationReport,
   prepareDialectsComplianceReportFor,
 } from "./data/parseReportData";
+import NotFound from "./components/NotFound";
 
 const implementationReportViewDataLoader = async (implementationId: string) => {
   document.title = `Bowtie - ${implementationId}`;
@@ -115,6 +116,10 @@ const router = createHashRouter([
         ],
       },
     ],
+  },
+  {
+    path: "*",
+    Component: NotFound,
   },
 ]);
 
