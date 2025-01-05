@@ -14,7 +14,7 @@ const NotFound = () => {
         404 Not Found
       </h1>
       <p className="fs-5 text-muted mb-4 text-center">
-        Sorry, the page you're looking for doesn't exist.
+        Sorry, the page you&apos;re looking for doesn&apos;t exist.
       </p>
       <Link to="/" className="btn btn-primary btn-lg px-4 py-2 shadow-sm">
         Go To Home
