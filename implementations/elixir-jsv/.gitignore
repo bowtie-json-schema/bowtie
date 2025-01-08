@@ -3,6 +3,9 @@
 # Revert global gitignore
 !lib
 
+# We always want fresh deps
+mix.lock
+
 
 # Elixir generic .gitignore
 
