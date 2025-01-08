@@ -33,25 +33,12 @@ defmodule BowtieJSV do
   end
 
   defp handle_raw_command(json, state) do
-    with {:ok, cmd} <- JSON.decode(json) do
-      handle_command(cmd, state)
-    end
+    cmd = JSON.decode!(json)
+    handle_command(cmd, state)
   end
 
   defp handle_command(%{"cmd" => "start", "version" => 1}, state) do
-    start_response = %{
-      version: 1,
-      implementation: %{
-        language: "elixir",
-        name: "jsv",
-        source: "https://github.com/lud/jsv",
-        homepage: "https://github.com/lud/jsv",
-        issues: "https://github.com/lud/jsv/issues",
-        dialects: @dialects
-      }
-    }
-
-    {:reply, start_response, state}
+    {:reply, start_response(), state}
   end
 
   defp handle_command(%{"cmd" => "stop"}, _state) do
@@ -59,7 +46,6 @@ defmodule BowtieJSV do
   end
 
   defp handle_command(%{"cmd" => "dialect", "dialect" => dialect}, state) do
-    true = dialect in @dialects
     {:reply, %{ok: true}, Map.put(state, :default_dialect, dialect)}
   end
 
@@ -88,5 +74,26 @@ defmodule BowtieJSV do
       resolver: {BowtieJSV.Resolver, registry: registry},
       default_meta: state.default_dialect
     )
+  end
+
+  defp start_response do
+    %{
+      version: 1,
+      implementation: %{
+        language: "elixir",
+        name: "jsv",
+        version: jsv_vsn(),
+        dialects: @dialects,
+        documentation: "https://hexdocs.pm/jsv/",
+        homepage: "https://github.com/lud/jsv",
+        issues: "https://github.com/lud/jsv/issues",
+        source: "https://github.com/lud/jsv"
+      }
+    }
+  end
+
+  defp jsv_vsn do
+    {:ok, jsv_vsn} = :application.get_key(:jsv, :vsn)
+    List.to_string(jsv_vsn)
   end
 end
