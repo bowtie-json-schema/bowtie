@@ -14,19 +14,18 @@ defmodule BowtieJSV do
     IO.puts(:stderr, msg)
   end
 
-  def debug_value(value, label) do
+  def debug(value, label) do
     IO.inspect(:stderr, value, label: label)
   end
 
   defp loop_lines(state) do
-    debug("loop")
-
     case IO.read(:stdio, :line) do
       :eof ->
         debug("EOF received")
 
       line ->
         {:reply, resp, state} = handle_raw_command(line, state)
+        debug(resp, "resp")
         IO.puts(JSON.encode!(resp))
         loop_lines(state)
     end
@@ -35,6 +34,8 @@ defmodule BowtieJSV do
   defp handle_raw_command(json, state) do
     cmd = JSON.decode!(json)
     handle_command(cmd, state)
+  rescue
+    e -> {:reply, errored(e, __STACKTRACE__), state}
   end
 
   defp handle_command(%{"cmd" => "start", "version" => 1}, state) do
@@ -52,19 +53,11 @@ defmodule BowtieJSV do
   defp handle_command(%{"cmd" => "run", "seq" => tseq, "case" => tcase}, state) do
     %{"schema" => raw_schema, "tests" => tests} = tcase
     registry = Map.get(tcase, "registry")
-    debug_value(tcase, "tcase")
+    debug(tcase, "tcase")
 
     root = build_schema(raw_schema, registry, state)
 
-    results =
-      Enum.map(tests, fn test ->
-        %{"instance" => data} = test
-
-        case JSV.validate(data, root) do
-          {:ok, _} -> %{valid: true}
-          {:error, verr} -> %{valid: false, output: JSV.normalize_error(verr)}
-        end
-      end)
+    results = Enum.map(tests, fn test -> run_test(test, root) end)
 
     {:reply, %{seq: tseq, results: results}, state}
   end
@@ -74,6 +67,17 @@ defmodule BowtieJSV do
       resolver: {BowtieJSV.Resolver, registry: registry},
       default_meta: state.default_dialect
     )
+  end
+
+  defp run_test(test, root) do
+    %{"instance" => data} = test
+
+    case JSV.validate(data, root) do
+      {:ok, _} -> %{valid: true}
+      {:error, verr} -> %{valid: false, output: JSV.normalize_error(verr)}
+    end
+  rescue
+    e -> errored(e, __STACKTRACE__)
   end
 
   defp start_response do
@@ -95,5 +99,15 @@ defmodule BowtieJSV do
   defp jsv_vsn do
     {:ok, jsv_vsn} = :application.get_key(:jsv, :vsn)
     List.to_string(jsv_vsn)
+  end
+
+  defp errored(e, stacktrace) do
+    %{
+      errored: true,
+      context: %{
+        message: Exception.message(e),
+        traceback: Exception.format_stacktrace(stacktrace)
+      }
+    }
   end
 end

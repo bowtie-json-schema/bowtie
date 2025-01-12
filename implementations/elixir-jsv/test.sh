@@ -6,6 +6,14 @@ docker build --progress plain -t localhost/jsv-bowtie .
 docker run --rm -i localhost/jsv-bowtie <<EOF
 {"cmd": "start", "version": 1}
 {"cmd": "dialect", "dialect": "https://json-schema.org/draft/2020-12/schema" }
+{"cmd": "run", "seq": 11, "case": {"description": "test case 2", "schemaxxx": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }}
+{"cmd": "run", "seq": 11, "case": {"description": "test case 2", "schema": {"format": "fail_if_uppercase"}, "tests": [{"description": "not uppercase", "instance": "hello"}, {"description": "is uppercase", "instance": "HELLO"}] }}
+{"cmd": "stop"}
+EOF
+
+docker run --rm -i localhost/jsv-bowtie <<EOF
+{"cmd": "start", "version": 1}
+{"cmd": "dialect", "dialect": "https://json-schema.org/draft/2020-12/schema" }
 {"cmd": "run", "seq": 11, "case": {"description": "test case 1", "schema": {}, "tests": [{"description": "a test", "instance": {}}] }}
 {"cmd": "run", "seq": 11, "case": {"description": "test case 2", "schema": {"const": 37}, "tests": [{"description": "not 37", "instance": {}}, {"description": "is 37", "instance": 37}] }}
 {"cmd": "stop"}
