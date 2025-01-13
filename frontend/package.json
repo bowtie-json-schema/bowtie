@@ -28,7 +28,7 @@
     "build": "tsc && vite build",
     "bundle-visualizer": "vite-bundle-visualizer",
     "preview": "vite preview",
-    "lint": "eslint --flag unstable_ts_config --max-warnings 0 src",
+    "lint": "eslint --max-warnings 0 src",
     "test": "vitest run",
     "watch-test": "vitest watch"
   },
