@@ -79,7 +79,7 @@ psutil==6.1.1
     # via pyperf
 pycparser==2.22
     # via cffi
-pygments==2.19.0
+pygments==2.19.1
     # via
     #   jsonschema-lexer
     #   rich
