@@ -65,7 +65,7 @@ markdown-it-py==3.0.0
     #   rich
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.5.0
+more-itertools==10.6.0
     # via inflect
 multidict==6.1.0
     # via
@@ -104,7 +104,7 @@ rich==13.9.4
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.5
+rich-click==1.8.4
     # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.22.3
     # via
