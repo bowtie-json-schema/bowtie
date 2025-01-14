@@ -59,7 +59,12 @@ defmodule BowtieJSV do
 
     {:reply, %{seq: tseq, results: results}, state}
   rescue
-    e -> {:reply, errored(e, __STACKTRACE__, %{seq: tseq}), state}
+    e -> {:reply, %{
+      errored: true,
+      seq: tseq,
+      message: Exception.message(e),
+      traceback: Exception.format_stacktrace(__STACKTRACE__),
+    }, state}
   end
 
   defp build_schema(raw_schema, registry, state) do
@@ -74,10 +79,8 @@ defmodule BowtieJSV do
 
     case JSV.validate(data, root) do
       {:ok, _} -> %{valid: true}
-      {:error, verr} -> %{valid: false, output: JSV.normalize_error(verr)}
+      {:error, _} -> %{valid: false}
     end
-  rescue
-    e -> errored(e, __STACKTRACE__)
   end
 
   defp start_response do
@@ -99,17 +102,5 @@ defmodule BowtieJSV do
   defp jsv_vsn do
     {:ok, jsv_vsn} = :application.get_key(:jsv, :vsn)
     List.to_string(jsv_vsn)
-  end
-
-  defp errored(e, stacktrace, additional_data \\ %{}) do
-    errorred_payload = %{
-      errored: true,
-      context: %{
-        message: Exception.message(e),
-        traceback: Exception.format_stacktrace(stacktrace)
-      }
-    }
-
-    Map.merge(errorred_payload, additional_data)
   end
 end
