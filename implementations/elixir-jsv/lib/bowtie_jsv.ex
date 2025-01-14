@@ -4,7 +4,7 @@ defmodule BowtieJSV do
     "https://json-schema.org/draft/2020-12/schema"
   ]
 
-  def main(_argv) do
+  def run() do
     debug("starting")
     loop_lines(%{})
     debug("finished")
