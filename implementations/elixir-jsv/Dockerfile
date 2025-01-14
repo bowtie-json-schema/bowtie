@@ -1,7 +1,6 @@
-# Builder image ------------------------------------------------------------- #
-FROM elixir:1.18-alpine
+FROM elixir:1.18-alpine AS builder
 
-WORKDIR /app
+WORKDIR /opt/app
 
 # Install Elixir package manager
 RUN mix local.hex --force && mix local.rebar --force
@@ -17,10 +16,9 @@ COPY lib lib
 ENV MIX_ENV=prod
 RUN mix compile && mix release --overwrite
 
-# Runner image -------------------------------------------------------------- #
-FROM alpine
+FROM alpine:3.21
 
-RUN apk update && apk add --no-cache openssl ncurses-libs libstdc++
-COPY --from=0 /app/_build/prod/rel/bowtie_jsv /bowtie_jsv
+RUN apk add --no-cache openssl ncurses-libs libstdc++
+COPY --from=builder /opt/app/_build/prod/rel/bowtie_jsv /opt/app/bowtie_jsv
 
-ENTRYPOINT [ "/bowtie_jsv/bin/bowtie_jsv", "start" ]
+ENTRYPOINT [ "/opt/app/bowtie_jsv/bin/bowtie_jsv", "start" ]
