@@ -23,12 +23,14 @@ jobs:
       noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up nox
-        uses: wntrblm/nox@2024.10.09
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
-            nox --list-sessions --json | jq '[.[].session]'
+            uvx nox --list-sessions --json | jq '[.[].session]'
           )
 
   ci:
@@ -57,23 +59,25 @@ jobs:
             3.13
           allow-prereleases: true
 
-      - uses: actions/setup-node@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
         with:
           node-version-file: frontend/package.json
         if: startsWith(matrix.noxenv, 'ui')
-      - uses: pnpm/action-setup@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
           run_install: false
         if: startsWith(matrix.noxenv, 'ui')
 
       - name: Set up uv
-        uses: hynek/setup-cached-uv@v2
-      - name: Set up nox
-        uses: wntrblm/nox@2024.10.09
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Run nox
-        run: nox -s "${{ matrix.noxenv }}"
+        run: uvx nox -s "${{ matrix.noxenv }}"
 
   containerless:
     runs-on: ubuntu-latest
@@ -81,20 +85,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
       - name: Set up uv
-        uses: hynek/setup-cached-uv@v2
-      - name: Set up nox
-        uses: wntrblm/nox@2024.10.09
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Ensure containers don't work
         run: sudo apt-get purge docker podman
 
       - name: Run nox
-        run: nox -s tests-3.13 -- -m 'not containers'
+        run: uvx nox -s tests-3.13 -- -m 'not containers'
 
   coverage:
     runs-on: ubuntu-latest
@@ -104,19 +104,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-          allow-prereleases: true
-
       - name: Set up uv
-        uses: hynek/setup-cached-uv@v2
-      - name: Set up nox
-        uses: wntrblm/nox@2024.10.09
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Run nox
-        run: nox -s tests-3.13 -- coverage github
+        run: uvx nox -s tests-3.13 -- coverage github
 
   automerge:
     needs: ci
@@ -153,19 +147,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Set up uv
-        uses: hynek/setup-cached-uv@v2
-      - name: Set up nox
-        uses: wntrblm/nox@2024.10.09
-      - name: Install dependencies
-        run: uv pip install --system build
 
-      - name: Create packages
-        run: python -m build .
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Build our distributions
+        run: uv run --with 'build[uv]' -m build --installer=uv
 
       - name: Generate attestation for wheels
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
