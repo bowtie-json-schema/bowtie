@@ -6,6 +6,7 @@ _templates
 
 /frontend/node_modules
 /frontend/build
+/frontend/test-results
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
