@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { useContext } from "react";
+
 import { ThemeContext } from "../context/ThemeContext";
 
 const NotFound = () => {
@@ -10,7 +11,7 @@ const NotFound = () => {
       <h1
         className={`display-4 fw-bold mb-4 ${isDarkMode ? "text-info" : "text-secondary"}`}
       >
-        404 Not Found
+        Page Not Found
       </h1>
       <p className="fs-5 text-muted mb-4 text-center">
         Sorry, the page you&apos;re looking for doesn&apos;t exist.
