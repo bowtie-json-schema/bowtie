@@ -34,8 +34,6 @@ defmodule BowtieJSV do
   defp handle_raw_command(json, state) do
     cmd = JSON.decode!(json)
     handle_command(cmd, state)
-  rescue
-    e -> {:reply, errored(e, __STACKTRACE__), state}
   end
 
   defp handle_command(%{"cmd" => "start", "version" => 1}, state) do
@@ -60,6 +58,8 @@ defmodule BowtieJSV do
     results = Enum.map(tests, fn test -> run_test(test, root) end)
 
     {:reply, %{seq: tseq, results: results}, state}
+  rescue
+    e -> {:reply, errored(e, __STACKTRACE__, %{seq: tseq}), state}
   end
 
   defp build_schema(raw_schema, registry, state) do
@@ -101,13 +101,15 @@ defmodule BowtieJSV do
     List.to_string(jsv_vsn)
   end
 
-  defp errored(e, stacktrace) do
-    %{
+  defp errored(e, stacktrace, additional_data \\ %{}) do
+    errorred_payload = %{
       errored: true,
       context: %{
         message: Exception.message(e),
         traceback: Exception.format_stacktrace(stacktrace)
       }
     }
+
+    Map.merge(errorred_payload, additional_data)
   end
 end
