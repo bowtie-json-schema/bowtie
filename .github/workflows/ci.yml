@@ -159,6 +159,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
