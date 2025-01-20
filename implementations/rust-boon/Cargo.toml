@@ -10,4 +10,4 @@ os_info = "3.9.2"
 rustc_version_runtime = "0.3.0"
 
 [build-dependencies]
-cargo-lock = "10.0"
+cargo-lock = "10.1"
