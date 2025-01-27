@@ -10,7 +10,7 @@ aiosignal==1.3.2
     # via aiohttp
 anyio==4.8.0
     # via httpx
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   aiohttp
@@ -89,7 +89,7 @@ pyperf==2.8.1
     # via bowtie-json-schema (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via github3-py
-referencing==0.36.1
+referencing==0.36.2
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
