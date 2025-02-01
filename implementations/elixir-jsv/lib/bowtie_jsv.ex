@@ -11,17 +11,27 @@ defmodule BowtieJSV do
   end
 
   def debug(msg) do
-    IO.puts(:stderr, msg)
+    if debug?(),
+      do: IO.puts(:stderr, msg),
+      else: :ok
   end
 
   def debug(value, label) do
-    IO.inspect(:stderr, value, label: label)
+    if debug?(),
+      do: IO.inspect(:stderr, value, label: label),
+      else: :ok
+  end
+
+  defp debug? do
+    System.get_env("JSV_DEBUG") == "true"
   end
 
   defp loop_lines(state) do
     case IO.read(:stdio, :line) do
       :eof ->
         debug("EOF received")
+        Process.sleep(100)
+        loop_lines(state)
 
       line ->
         {:reply, resp, state} = handle_raw_command(line, state)
@@ -59,12 +69,7 @@ defmodule BowtieJSV do
 
     {:reply, %{seq: tseq, results: results}, state}
   rescue
-    e -> {:reply, %{
-      errored: true,
-      seq: tseq,
-      message: Exception.message(e),
-      traceback: Exception.format_stacktrace(__STACKTRACE__),
-    }, state}
+    e -> {:reply, errored(e, __STACKTRACE__, %{seq: tseq}), state}
   end
 
   defp build_schema(raw_schema, registry, state) do
@@ -81,6 +86,8 @@ defmodule BowtieJSV do
       {:ok, _} -> %{valid: true}
       {:error, _} -> %{valid: false}
     end
+  rescue
+    e -> errored(e, __STACKTRACE__)
   end
 
   defp start_response do
@@ -102,5 +109,17 @@ defmodule BowtieJSV do
   defp jsv_vsn do
     {:ok, jsv_vsn} = :application.get_key(:jsv, :vsn)
     List.to_string(jsv_vsn)
+  end
+
+  defp errored(e, stacktrace, additional_data \\ %{}) do
+    errorred_payload = %{
+      errored: true,
+      context: %{
+        message: Exception.message(e),
+        traceback: Exception.format_stacktrace(stacktrace)
+      }
+    }
+
+    Map.merge(errorred_payload, additional_data)
   end
 end
