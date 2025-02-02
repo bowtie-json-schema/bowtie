@@ -4,42 +4,67 @@ defmodule BowtieJSV do
     "https://json-schema.org/draft/2020-12/schema"
   ]
 
+  def main(_argv), do: run()
+
   def run() do
     debug("starting")
-    loop_lines(%{})
-    debug("finished")
+
+    IO.stream(:stdio, :line)
+    |> Stream.each(&debug(&1, "[input]"))
+    |> Stream.transform(init(), fn input, state ->
+      {output, state} = loop(input, state)
+      {[output], state}
+    end)
+    |> Stream.map(&JSON.encode!/1)
+    |> Stream.each(&debug(&1, "[output]"))
+    |> Enum.each(&IO.puts/1)
+  end
+
+  def init do
+    %{}
+  end
+
+  defp loop(line, state) do
+    {:reply, resp, state} = handle_raw_command(line, state)
+
+    {resp, state}
   end
 
   def debug(msg) do
-    if debug?(),
-      do: IO.puts(:stderr, msg),
-      else: :ok
+    if debug?() do
+      IO.puts(:stderr, msg)
+    end
+
+    if log?() do
+      log_to_file(msg)
+    end
+
+    :ok
   end
 
   def debug(value, label) do
-    if debug?(),
-      do: IO.inspect(:stderr, value, label: label),
-      else: :ok
-  end
-
-  defp debug? do
-    System.get_env("JSV_DEBUG") == "true"
-  end
-
-  defp loop_lines(state) do
-    case IO.read(:stdio, :line) do
-      :eof ->
-        debug("EOF received")
-        Process.sleep(100)
-        loop_lines(state)
-
-      line ->
-        {:reply, resp, state} = handle_raw_command(line, state)
-        debug(resp, "resp")
-        IO.puts(JSON.encode!(resp))
-        loop_lines(state)
+    if debug?() do
+      IO.inspect(:stderr, value, label: label)
     end
+
+    if log?() do
+      log_to_file([label, ": ", inspect(value)])
+    end
+
+    :ok
   end
+
+  defp log_to_file(msg) do
+    msg =
+      msg
+      |> List.wrap()
+      |> Enum.map(fn b when is_binary(b) -> b end)
+
+    File.write!("/var/log/jsv/debug.log", [msg, "\n"], [:append])
+  end
+
+  defp debug?, do: System.get_env("JSV_DEBUG") == "true"
+  defp log?, do: System.get_env("JSV_LOG") == "true"
 
   defp handle_raw_command(json, state) do
     cmd = JSON.decode!(json)

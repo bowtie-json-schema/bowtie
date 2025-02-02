@@ -1,4 +1,4 @@
-FROM elixir:1.18-alpine AS builder
+FROM elixir:1.18-otp-27-alpine AS builder
 
 WORKDIR /opt/app
 
@@ -14,11 +14,13 @@ COPY lib lib
 
 # Generate a production release
 ENV MIX_ENV=prod
-RUN mix compile && mix release --overwrite
+RUN mix compile && mix escript.build
 
-FROM alpine:3.21
+FROM erlang:27-alpine
 
 RUN apk add --no-cache openssl ncurses-libs libstdc++
-COPY --from=builder /opt/app/_build/prod/rel/bowtie_jsv /opt/app/bowtie_jsv
+COPY --from=builder /opt/app/bowtie_jsv /opt/app/bowtie_jsv
 
-ENTRYPOINT [ "/opt/app/bowtie_jsv/bin/bowtie_jsv", "start" ]
+RUN mkdir -p /var/log/jsv
+
+ENTRYPOINT [ "/opt/app/bowtie_jsv" ]
