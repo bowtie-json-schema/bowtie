@@ -99,11 +99,6 @@ const NavBar = () => {
               )}
               {isBenchmarksPage && (
                 <>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/">
-                      Dialect Test Reports
-                    </Link>
-                  </li>
                   <NavDropdown title="Dialects" id="dialect-dropdown">
                     {Dialect.newestToOldest().map((dialect) => (
                       <NavDropdown.Item
@@ -115,6 +110,11 @@ const NavBar = () => {
                       </NavDropdown.Item>
                     ))}
                   </NavDropdown>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/">
+                      Dialect Test Reports
+                    </Link>
+                  </li>
                 </>
               )}
               <li className="nav-item d-block d-lg-none">
