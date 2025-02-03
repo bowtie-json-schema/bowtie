@@ -8,12 +8,10 @@ defmodule BowtieJSV.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      escript: [main_module: BowtieJSV, name: "bowtie_jsv", include_priv_for: [:jsv]],
-      releases: [
-        bowtie_jsv: [
-          include_executables_for: [:unix],
-          include_erts: true
-        ]
+      escript: [
+        main_module: BowtieJSV,
+        name: "bowtie_jsv",
+        include_priv_for: [:jsv]
       ]
     ]
   end
@@ -21,8 +19,7 @@ defmodule BowtieJSV.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
-      mod: {BowtieJSV.App, []}
+      extra_applications: [:logger]
     ]
   end
 
