@@ -81,7 +81,7 @@ int main() {
         if (message.at("case").contains("registry")) {
             for (const auto &[key, value] :
                  message.at("case").at("registry").object_range()) {
-              std::cout << "key: " key << ", value: " << value << "\n";
+              std::cout << "key: " << key << ", value: " << value << "\n";
             }
 
           // TODO implement registry
