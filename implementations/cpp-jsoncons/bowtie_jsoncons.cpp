@@ -79,6 +79,11 @@ int main() {
                message.at("case").at("tests").is_array());
 
         if (message.at("case").contains("registry")) {
+            for (const auto &[key, value] :
+                 message.at("case").at("registry").as_object()) {
+              std::cout << "key: " key << ", value: " << value << "\n";
+            }
+
           // TODO implement registry
         }
 
