@@ -72,7 +72,7 @@ int main() {
       assert(message.at("case").contains("schema"));
 
       const auto schema = message.at("case").at("schema");
-     
+
       try {
         // Compile the schema and validate test cases
         assert(message.at("case").contains("tests") &&
@@ -96,8 +96,9 @@ int main() {
           }
           return jsoncons::json::null();
         };
-              
-        const auto compiled = jsonschema::make_json_schema(schema, resolver, options);
+
+        const auto compiled =
+            jsonschema::make_json_schema(schema, resolver, options);
 
         json response;
         response["seq"] = message.at("seq");
