@@ -12,7 +12,8 @@ using namespace jsoncons;
 
 int main() {
   bool started{false};
-  std::optional<std::string> default_dialect{std::nullopt};
+
+  jsonschema::evaluation_options options{};
 
   std::string line;
   while (std::getline(std::cin, line)) {
@@ -59,7 +60,7 @@ int main() {
       // Set the dialect and respond
       assert(started);
       assert(message.contains("dialect") && message.at("dialect").is_string());
-      default_dialect = message.at("dialect").as<std::string>();
+      options.default_version(message.at("dialect").as<std::string>());
 
       json response;
       response["ok"] = true;
@@ -71,7 +72,7 @@ int main() {
       assert(message.at("case").contains("schema"));
 
       const auto schema = message.at("case").at("schema");
-
+     
       try {
         // Compile the schema and validate test cases
         assert(message.at("case").contains("tests") &&
@@ -87,8 +88,6 @@ int main() {
               schema_registry.emplace(uri.path(), value);
             }
           }
-
-          // TODO implement registry
         }
         auto resolver = [&](const jsoncons::uri &uri) {
           auto it = schema_registry.find(uri.path());
@@ -97,7 +96,8 @@ int main() {
           }
           return jsoncons::json::null();
         };
-        const auto compiled = jsonschema::make_json_schema(schema, resolver);
+              
+        const auto compiled = jsonschema::make_json_schema(schema, resolver, options);
 
         json response;
         response["seq"] = message.at("seq");
