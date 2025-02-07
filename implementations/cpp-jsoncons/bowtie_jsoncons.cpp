@@ -74,13 +74,30 @@ int main() {
 
       try {
         // Compile the schema and validate test cases
-        const auto compiled = jsonschema::make_json_schema(schema);
         assert(message.at("case").contains("tests") &&
                message.at("case").at("tests").is_array());
 
+        std::unordered_map<std::string, jsoncons::json> schema_registry;
         if (message.at("case").contains("registry")) {
+          for (const auto &[key, value] :
+               message.at("case").at("registry").object_range()) {
+            std::error_code ec;
+            auto uri = jsoncons::uri::parse(key, ec);
+            if (!ec) {
+              schema_registry.emplace(uri.path(), value);
+            }
+          }
+
           // TODO implement registry
         }
+        auto resolver = [&](const jsoncons::uri &uri) {
+          auto it = schema_registry.find(uri.path());
+          if (it != schema_registry.end()) {
+            return it->second;
+          }
+          return jsoncons::json::null();
+        };
+        const auto compiled = jsonschema::make_json_schema(schema, resolver);
 
         json response;
         response["seq"] = message.at("seq");
