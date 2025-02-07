@@ -77,7 +77,7 @@ int main() {
         assert(message.at("case").contains("tests") &&
                message.at("case").at("tests").is_array());
 
-        std::map<jsoncons::uri,jsoncons::json> schema_registry;
+        std::unordered_map<std::string,jsoncons::json> schema_registry;
         if (message.at("case").contains("registry")) {
             for (const auto &[key, value] :
                  message.at("case").at("registry").object_range()) {
@@ -85,7 +85,7 @@ int main() {
                 auto uri = jsoncons::uri::parse(key, ec);
                 if (!ec)
                 {
-                    schema_registry.emplace(key, value);
+                    schema_registry.emplace(uri.path(), value);
                 }
             }
 
@@ -93,7 +93,7 @@ int main() {
         }
         auto resolver =[&](const jsoncons::uri& uri)
             {
-                auto it = schema_registry.find(uri.base());
+                auto it = schema_registry.find(uri.path());
                 if (it != schema_registry.end())
                 {
                     return it->second;
