@@ -1660,6 +1660,61 @@ def latest_report(dialect: Dialect):
     asyncio.run(write(dialect.latest_report()))
 
 
+def _info_links_table_for(metadata: dict[str, Any]):
+    links = Table(
+        Column(style="cyan bold"),
+        box=box.ROUNDED,
+        show_header=False,
+        border_style="bright_black",
+    )
+
+    links.add_row("homepage", metadata["homepage"])
+    links.add_row("source", metadata["source"])
+    links.add_row("issues", metadata["issues"])
+
+    if "documentation" in metadata:
+        links.add_row("documentation", metadata["documentation"])
+
+    for link in metadata.get("links", []):
+        links.add_row(link["description"], link["url"])
+
+    return links
+
+
+def _info_table_for(metadata: dict[str, Any]):
+    table = Table(
+        Column(style="cyan bold"),
+        box=box.ROUNDED,
+        show_header=False,
+        border_style="bright_black",
+    )
+
+    table.add_row(
+        "implementation",
+        f"{metadata["name"]} {metadata.get("version", "")}",
+    )
+    table.add_row(
+        "language",
+        f"{metadata["language"]} {metadata.get("language_version", "")}",
+    )
+    table.add_row(
+        "dialects",
+        "\n".join(
+            Dialect.from_str(dialect).pretty_name
+            for dialect in cast(list[str], metadata.get("dialects"))
+        ),
+    )
+    table.add_row("links", _info_links_table_for(metadata))
+
+    if "os" in metadata:
+        table.caption = Text(
+            f"Ran on {metadata["os"]} {metadata.get("os_version", "")}",
+            style="bright_black",
+        )
+
+    return table
+
+
 @implementation_subcommand()  # type: ignore[reportArgumentType]
 @format_option()
 @click.option(
@@ -1676,6 +1731,7 @@ async def info(
     Show information about a supported implementation.
     """
     serializable: dict[ConnectableId, dict[str, Any]] = {}
+    out = console.Console()
 
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
@@ -1698,11 +1754,8 @@ async def info(
             case "json":
                 serializable[each.id] = dict(metadata)
             case "pretty":
-                click.echo(
-                    "\n".join(
-                        f"{k}: {json.dumps(v, indent=2)}" for k, v in metadata
-                    ),
-                )
+                table = _info_table_for(dict(metadata))
+                out.print(table, "\n")
             case "markdown":
                 click.echo(
                     "\n".join(
