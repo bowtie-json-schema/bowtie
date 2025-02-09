@@ -117,13 +117,15 @@ class DirectImplementation[E: Exception]:
         name = kwargs.pop("name", compiler_for.__name__)
         if "version" not in kwargs:
             kwargs["version"] = metadata.version(name)
-        info = ImplementationInfo(
-            name=name,
-            os=platform.system(),
-            os_version=platform.release(),
-            language_version=platform.python_version(),
-            **kwargs,
-        )
+
+        for key, default in [
+            ("language_version", platform.python_version()),
+            ("os", platform.system()),
+            ("os_version", platform.release()),
+        ]:
+            kwargs.setdefault(key, default)
+
+        info = ImplementationInfo(name, **kwargs)
         object.__setattr__(self, "_info", info)
 
     def __call__(self):

@@ -2002,28 +2002,26 @@ async def test_info_pretty():
         "--format",
         "pretty",
         "-i",
-        miniatures.always_invalid,
+        miniatures.fake_language_and_os,
     )
     assert stdout == dedent(
-        f"""\
-        name: "always_invalid"
-        language: "python"
-        version: "v1.0.0"
-        homepage: "https://bowtie.report/"
-        issues: "https://github.com/bowtie-json-schema/bowtie/issues"
-        language_version: "{platform.python_version()}"
-        os: "{platform.system()}"
-        os_version: "{platform.release()}"
-        source: "https://github.com/bowtie-json-schema/bowtie"
-        dialects: [
-          "https://json-schema.org/draft/2020-12/schema",
-          "https://json-schema.org/draft/2019-09/schema",
-          "http://json-schema.org/draft-07/schema#",
-          "http://json-schema.org/draft-06/schema#",
-          "http://json-schema.org/draft-04/schema#",
-          "http://json-schema.org/draft-03/schema#"
-        ]
-        """,
+        """\
+        ╭────────────────┬─────────────────────────────────────────────────────────────╮
+        │ implementation │ fake_language_and_os v1.0.0                                 │
+        │ language       │ python 1.2.3                                                │
+        │ dialects       │ Draft 2020-12                                               │
+        │                │ Draft 2019-09                                               │
+        │                │ Draft 7                                                     │
+        │                │ Draft 6                                                     │
+        │                │ Draft 4                                                     │
+        │                │ Draft 3                                                     │
+        ├────────────────┼─────────────────────────────────────────────────────────────┤
+        │ links          │ homepage https://bowtie.report/                             │
+        │                │ source   https://github.com/bowtie-json-schema/bowtie       │
+        │                │ issues   https://github.com/bowtie-json-schema/bowtie/iss…  │
+        ╰────────────────┴─────────────────────────────────────────────────────────────╯
+                                       Ran on Linux 4.5.6                               \n\n
+        """,  # noqa: E501
     )
     assert stderr == ""
 
@@ -2237,39 +2235,30 @@ async def test_info_json_multiple_implementations():
 
 
 @pytest.mark.asyncio
-async def test_info_links():
+async def test_info_pretty_links():
     stdout, stderr = await bowtie(
         "info",
         "--format",
         "pretty",
         "-i",
-        miniatures.links,
+        miniatures.fake_language_and_os_with_links,
     )
     assert stdout == dedent(
-        f"""\
-        name: "links"
-        language: "python"
-        version: "v1.0.0"
-        homepage: "urn:example"
-        issues: "urn:example"
-        language_version: "{platform.python_version()}"
-        os: "{platform.system()}"
-        os_version: "{platform.release()}"
-        source: "urn:example"
-        dialects: [
-          "http://json-schema.org/draft-07/schema#"
-        ]
-        links: [
-          {{
-            "description": "foo",
-            "url": "urn:example:foo"
-          }},
-          {{
-            "description": "bar",
-            "url": "urn:example:bar"
-          }}
-        ]
-        """,
+        """\
+        ╭────────────────┬─────────────────────────────────────────────────────────────╮
+        │ implementation │ fake_language_and_os_with_links v1.0.0                      │
+        │ language       │ python 1.2.3                                                │
+        │ dialects       │ Draft 2020-12                                               │
+        │                │ Draft 7                                                     │
+        ├────────────────┼─────────────────────────────────────────────────────────────┤
+        │ links          │ homepage https://bowtie.report/                             │
+        │                │ source   https://github.com/bowtie-json-schema/bowtie       │
+        │                │ issues   https://github.com/bowtie-json-schema/bowtie/iss…  │
+        │                │ foo      urn:example:bar                                    │
+        │                │ hello    urn:example:world                                  │
+        ╰────────────────┴─────────────────────────────────────────────────────────────╯
+                                       Ran on Linux 4.5.6                               \n\n
+        """,  # noqa: E501
     )
     assert stderr == ""
 
