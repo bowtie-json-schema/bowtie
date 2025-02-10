@@ -7,7 +7,7 @@ edition = "2021"
 backtrace = "0.3"
 jsonschema = "0.28.3"
 serde_json = "1.0"
-os_info = "3.9.2"
+os_info = "3.10.0"
 rustc_version_runtime = "0.3.0"
 
 [build-dependencies]
