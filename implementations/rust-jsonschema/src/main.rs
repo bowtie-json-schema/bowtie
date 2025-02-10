@@ -12,7 +12,7 @@ struct InMemoryRetriever {
 impl Retrieve for InMemoryRetriever {
     fn retrieve(
         &self,
-        uri: &Uri<&str>,
+        uri: &Uri<String>,
     ) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.registry[uri.as_str()].to_owned())
     }
