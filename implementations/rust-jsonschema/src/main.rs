@@ -12,7 +12,7 @@ struct InMemoryRetriever {
 impl Retrieve for InMemoryRetriever {
     fn retrieve(
         &self,
-        uri: &Uri<&str>,
+        uri: &Uri<String>,
     ) -> std::result::Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.registry[uri.as_str()].to_owned())
     }
@@ -43,8 +43,7 @@ fn main() -> Result<()> {
     ]);
 
     let mut started = false;
-    let mut options = jsonschema::options();
-    let mut compiler = options.with_draft(Draft::Draft202012);
+    let mut options = jsonschema::options().with_draft(Draft::Draft202012);
 
     for line in io::stdin().lines() {
         let request: serde_json::Value = serde_json::from_str(&line.expect("No input!"))?;
@@ -85,8 +84,8 @@ fn main() -> Result<()> {
                     panic!("Not started!")
                 };
                 let dialect = request["dialect"].as_str().expect("Bad dialect!");
-                options = jsonschema::options();
-                compiler = options.with_draft(*dialects.get(dialect).expect("No such draft!"));
+                options = jsonschema::options()
+                    .with_draft(*dialects.get(dialect).expect("No such draft!"));
                 let response = json!({"ok": true});
                 println!("{}", response);
             }
@@ -100,9 +99,9 @@ fn main() -> Result<()> {
                 let retriever = InMemoryRetriever {
                     registry: registry.to_owned(),
                 };
-                compiler = compiler.with_retriever(retriever);
+                options = options.with_retriever(retriever);
 
-                let response = match compiler.build(&case["schema"]) {
+                let response = match options.build(&case["schema"]) {
                     Ok(compiled) => {
                         let results: Vec<_> = case["tests"]
                             .as_array()
