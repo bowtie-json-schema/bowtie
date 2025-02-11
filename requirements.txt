@@ -27,7 +27,7 @@ charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via rich-click
-cryptography==44.0.0
+cryptography==44.0.1
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
