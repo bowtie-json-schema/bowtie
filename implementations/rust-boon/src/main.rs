@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         "version": env!("BOON_VERSION"),
                         "documentation": "https://docs.rs/boon",
                         "homepage": "https://github.com/santhosh-tekuri/boon",
-                        "issues": "htps://github.com/santhosh-tekuri/boon/issues",
+                        "issues": "https://github.com/santhosh-tekuri/boon/issues",
                         "source": "https://github.com/santhosh-tekuri/boon",
                         "dialects": [
                             "https://json-schema.org/draft/2020-12/schema",
