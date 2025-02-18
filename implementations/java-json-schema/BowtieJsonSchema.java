@@ -22,13 +22,6 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 public class BowtieJsonSchema {
-
-  private static final String RECOGNIZING_IDENTIFIERS =
-      "Determining if a specific location is a schema or not is not supported.";
-  private static final Map<String, String> UNSUPPORTED =
-      Map.of("$ref prevents a sibling $id from changing the base uri",
-             RECOGNIZING_IDENTIFIERS);
-
   private final Map<String, Dialect> dialectsMap;
   private final ValidatorFactory validatorFactory = new ValidatorFactory();
 
@@ -153,14 +146,6 @@ public class BowtieJsonSchema {
       throw new IllegalArgumentException("Not started!");
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
-
-    if (UNSUPPORTED.containsKey(runRequest.testCase().description())) {
-      RunSkippedResponse response = new RunSkippedResponse(
-          runRequest.seq(), true,
-          UNSUPPORTED.get(runRequest.testCase().description()), null);
-      output.println(objectMapper.writeValueAsString(response));
-      return;
-    }
 
     try {
 
