@@ -155,7 +155,7 @@ rich==13.9.4
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.5
+rich-click==1.8.4
     # via bowtie-json-schema
 roman-numerals-py==3.0.0
     # via sphinx
