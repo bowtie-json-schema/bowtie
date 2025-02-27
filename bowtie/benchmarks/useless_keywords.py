@@ -31,12 +31,12 @@ def get_benchmark():
             schema=dict(
                 [
                     ("not", {"const": 42}),
-                    *((str(i), i) for i in range(num_useless_keywords)),
+                    *((str(i), i) for i in range(num_useless_keywords // 2)),
                     ("type", "integer"),
                     *(
                         (str(i), i)
                         for i in range(
-                            num_useless_keywords,
+                            num_useless_keywords // 2,
                             num_useless_keywords,
                         )
                     ),
