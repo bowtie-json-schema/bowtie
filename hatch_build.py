@@ -113,7 +113,7 @@ class BowtieDataIncluder(BuildHookInterface):
                 headers={
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
-                    "Authorization": f"Bearer {gh_token}",
+                    "Authorization": f"Token {gh_token}",
                 },
             )
 
