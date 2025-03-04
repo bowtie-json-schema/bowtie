@@ -76,10 +76,11 @@ class BowtieDataIncluder(BuildHookInterface):
             return known_local
 
         try:
-            packages = BowtieDataIncluder._collect_packages(gh_token)
+            packages = self._collect_packages(gh_token)
         except requests.HTTPError as e:
             self.app.display_error(
                 f"fallback to using local implementations: "
+                f"params={e.request.params}"
                 f"{e.response.text}",
             )
             return known_local
@@ -97,8 +98,7 @@ class BowtieDataIncluder(BuildHookInterface):
 
         return packages
 
-    @staticmethod
-    def _collect_packages(gh_token):
+    def _collect_packages(self, gh_token):
         packages = []
         page = 1
         while True:
@@ -120,6 +120,7 @@ class BowtieDataIncluder(BuildHookInterface):
             with response:
                 response.raise_for_status()
                 payload = response.json()
+                self.app.display_info(f"{payload}")
 
             packages.extend(p["name"] for p in payload)
             page += 1
