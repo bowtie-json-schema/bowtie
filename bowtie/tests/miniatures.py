@@ -88,6 +88,46 @@ def fake_javascript(dialect: Dialect):
     return lambda schema, registry: lambda instance: None
 
 
+@fake(
+    language="python",
+    language_version="1.2.3",
+    os="Linux",
+    os_version="4.5.6",
+)
+def fake_language_and_os(dialect: Dialect):
+    """
+    An implementation with a static language and os.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: None
+
+
+@fake(
+    language="python",
+    language_version="1.2.3",
+    os="Linux",
+    os_version="4.5.6",
+    dialects=frozenset(
+        [
+            Dialect.by_short_name()["draft2020-12"],
+            Dialect.by_short_name()["draft7"],
+        ],
+    ),
+    links=[
+        Link(description="foo", url=URL.parse("urn:example:bar")),
+        Link(description="hello", url=URL.parse("urn:example:world")),
+    ],
+)
+def fake_language_and_os_with_links(dialect: Dialect):
+    """
+    An implementation with a static language and os.
+
+    The validity result of instances should not be relied on.
+    """
+    return lambda schema, registry: lambda instance: None
+
+
 @fake()
 def passes_smoke(dialect: Dialect):
     """
