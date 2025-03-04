@@ -59,7 +59,7 @@ class BowtieDataIncluder(BuildHookInterface):
         self.known_implementations().unlink()
 
     def _known_implementations_from_packages_api(
-        self, known_local: list[str]
+        self, known_local: list[str],
     ) -> list[str]:
         """
         Collects available implementation using GitHub packages API.
@@ -79,7 +79,7 @@ class BowtieDataIncluder(BuildHookInterface):
         except requests.HTTPError as e:
             self.app.display_error(
                 f"fallback to using local implementations: "
-                f"{e.response.text}"
+                f"{e.response.text}",
             )
             return known_local
 
@@ -88,7 +88,7 @@ class BowtieDataIncluder(BuildHookInterface):
         if not packages_set.issuperset(local_set):
             self.app.display_warning(
                 f"local implementations contain additional implementations: "
-                f"{local_set.difference(packages_set)}"
+                f"{local_set.difference(packages_set)}",
             )
             # return local implementation until fully migrated to packages API
             # https://github.com/bowtie-json-schema/bowtie/issues/1849
