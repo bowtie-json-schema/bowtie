@@ -25,9 +25,9 @@ class BowtieDataIncluder(BuildHookInterface):
         return Path(self.directory) / "known_implementations.json"
 
     def initialize(
-            self,
-            version: str,
-            build_data: dict[str, Any],
+        self,
+        version: str,
+        build_data: dict[str, Any],
     ) -> None:
         """
         Tell Hatchling to store data we'll need at runtime within the package.
@@ -48,10 +48,10 @@ class BowtieDataIncluder(BuildHookInterface):
         build_data["force_include"][str(out)] = target_path
 
     def finalize(
-            self,
-            version: str,
-            build_data: dict[str, Any],
-            artifact_path: str,
+        self,
+        version: str,
+        build_data: dict[str, Any],
+        artifact_path: str,
     ) -> None:
         """
         Clean up any generated temporary files.
@@ -59,7 +59,8 @@ class BowtieDataIncluder(BuildHookInterface):
         self.known_implementations().unlink()
 
     def _known_implementations_from_packages_api(
-            self, known_local: list[str]) -> list[str]:
+        self, known_local: list[str]
+    ) -> list[str]:
         """
         Collects available implementation using GitHub packages API.
         """
@@ -76,8 +77,10 @@ class BowtieDataIncluder(BuildHookInterface):
         try:
             packages = BowtieDataIncluder._collect_packages(gh_token)
         except requests.HTTPError as e:
-            self.app.display_error(f"fallback to using local implementations: "
-                                   f"{e.response.text}")
+            self.app.display_error(
+                f"fallback to using local implementations: "
+                f"{e.response.text}"
+            )
             return known_local
 
         packages_set = set(packages)
@@ -85,7 +88,8 @@ class BowtieDataIncluder(BuildHookInterface):
         if not packages_set.issuperset(local_set):
             self.app.display_warning(
                 f"local implementations contain additional implementations: "
-                f"{local_set.difference(packages_set)}")
+                f"{local_set.difference(packages_set)}"
+            )
             # return local implementation until fully migrated to packages API
             # https://github.com/bowtie-json-schema/bowtie/issues/1849
             return known_local
