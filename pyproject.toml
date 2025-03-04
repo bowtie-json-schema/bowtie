@@ -12,6 +12,9 @@ exclude = [".github"]
 packages = ["bowtie"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
+dependencies = [
+  "requests"
+]
 
 [tool.hatch.build.targets.wheel.force-include]
 data = "bowtie/data"
