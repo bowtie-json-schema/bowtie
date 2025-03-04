@@ -59,7 +59,8 @@ class BowtieDataIncluder(BuildHookInterface):
         self.known_implementations().unlink()
 
     def _known_implementations_from_packages_api(
-        self, known_local: list[str],
+        self,
+        known_local: list[str],
     ) -> list[str]:
         """
         Collects available implementation using GitHub packages API.
