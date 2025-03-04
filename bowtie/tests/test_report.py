@@ -8,7 +8,9 @@ from bowtie._core import Dialect, Example, ImplementationInfo, TestCase
 from bowtie._report import Report, RunMetadata
 from bowtie.hypothesis import dialects, implementations, known_dialects
 
-TestCase.__test__ = False  # frigging py.test
+# Make pytest ignore these classes matching Test*
+TestCase.__test__ = False
+TestResult.__test__ = False
 
 
 DIALECT_2020, DIALECT_2019 = (

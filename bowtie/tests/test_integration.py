@@ -35,9 +35,10 @@ from bowtie._direct_connectable import IMPLEMENTATIONS as KNOWN_DIRECT, Direct
 from bowtie._report import EmptyReport, InvalidReport, Report
 from bowtie.tests import miniatures as _miniatures
 
-Test.__test__ = TestCase.__test__ = TestResult.__test__ = (
-    False  # frigging py.test
-)
+# Make pytest ignore these classes matching Test*
+Test.__test__ = False
+TestCase.__test__ = False
+TestResult.__test__ = False
 
 
 HERE = Path(__file__).parent
