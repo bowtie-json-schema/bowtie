@@ -168,6 +168,8 @@ jobs:
           enable-cache: true
 
       - name: Build our distributions
+        env:
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
       - name: Generate attestation for wheels
