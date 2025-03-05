@@ -7,6 +7,9 @@ from bowtie import HOMEPAGE, REPO, _benchmarks, benchmarks
 from bowtie._core import Dialect, ImplementationInfo, TestCase
 from bowtie._direct_connectable import Direct
 
+# Make pytest ignore this class matching Test*
+TestCase.__test__ = False
+
 validators = Direct.from_id("python-jsonschema").registry()
 
 benchmark_report_validator = validators.for_uri(
