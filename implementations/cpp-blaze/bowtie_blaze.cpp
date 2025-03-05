@@ -1,5 +1,5 @@
-#include <sourcemeta/jsontoolkit/json.h>
-#include <sourcemeta/jsontoolkit/jsonschema.h>
+#include <sourcemeta/core/json.h>
+#include <sourcemeta/core/jsonschema.h>
 
 #include <sourcemeta/blaze/compiler.h>
 #include <sourcemeta/blaze/evaluator.h>
@@ -12,14 +12,15 @@
 #include <utility>
 
 int main() {
-  using namespace sourcemeta::jsontoolkit;
+  using namespace sourcemeta::core;
   using namespace sourcemeta::blaze;
   bool started{false};
   std::optional<std::string> default_dialect{std::nullopt};
+  sourcemeta::blaze::Evaluator evaluator;
 
   std::string line;
   while (std::getline(std::cin, line)) {
-    const JSON message{parse(line)};
+    const JSON message{parse_json(line)};
 
     assert(message.defines("cmd"));
     assert(message.at("cmd").is_string());
@@ -70,19 +71,19 @@ int main() {
       assert(message.at("case").defines("tests") &&
              message.at("case").at("tests").is_array());
 
-      sourcemeta::jsontoolkit::MapSchemaResolver resolver{
-          sourcemeta::jsontoolkit::official_resolver};
+      sourcemeta::core::SchemaMapResolver resolver{
+          sourcemeta::core::schema_official_resolver};
       if (message.at("case").defines("registry")) {
         assert(message.at("case").at("registry").is_object());
-        for (const auto &[key, value] :
+        for (const auto &pair :
              message.at("case").at("registry").as_object()) {
-          resolver.add(value, default_dialect, key);
+          resolver.add(pair.second, default_dialect, pair.first);
         }
       }
 
       try {
         const auto schema_template{compile(
-            message.at("case").at("schema"), default_schema_walker, resolver,
+            message.at("case").at("schema"), schema_official_walker, resolver,
             default_schema_compiler, Mode::FastValidation, default_dialect)};
 
         auto response{JSON::make_object()};
@@ -91,7 +92,7 @@ int main() {
 
         for (const auto &test : message.at("case").at("tests").as_array()) {
           assert(test.defines("instance"));
-          const bool valid{evaluate(schema_template, test.at("instance"))};
+          const bool valid{evaluator.validate(schema_template, test.at("instance"))};
           auto test_result{JSON::make_object()};
           test_result.assign("valid", JSON{valid});
           response.at("results").push_back(std::move(test_result));

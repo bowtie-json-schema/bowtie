@@ -5,7 +5,7 @@ RUN apk add --no-cache cmake g++ git make
 RUN git clone https://github.com/sourcemeta/blaze.git /tmp/blaze
 
 # Pin a specific commit for stable builds
-RUN git -C /tmp/blaze checkout 43cac42dc486be24addbc2cd0aa646d18e2000f5
+RUN git -C /tmp/blaze checkout 0424f5765c4c18162a7f7ed8354134e680f6664e
 
 COPY CMakeLists.txt /tmp/CMakeLists.txt
 COPY bowtie_blaze.cpp /tmp/bowtie_blaze.cpp
