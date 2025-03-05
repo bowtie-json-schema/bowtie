@@ -156,7 +156,6 @@ jobs:
       contents: write
       id-token: write
       attestations: write
-      packages: read
 
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +169,7 @@ jobs:
 
       - name: Build our distributions
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
       - name: Generate attestation for wheels
