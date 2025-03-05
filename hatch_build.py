@@ -79,8 +79,7 @@ class BowtieDataIncluder(BuildHookInterface):
             packages = self._collect_packages(gh_token)
         except requests.HTTPError as e:
             self.app.display_error(
-                f"fallback to using local implementations: "
-                f"params={e.request.params}"
+                f"fallback to using local implementations: {e}"
                 f"{e.response.text}",
             )
             return known_local
