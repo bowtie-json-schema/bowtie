@@ -170,7 +170,7 @@ jobs:
 
       - name: Build our distributions
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
       - name: Generate attestation for wheels
