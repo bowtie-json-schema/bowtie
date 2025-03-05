@@ -75,8 +75,7 @@ int main() {
           sourcemeta::core::schema_official_resolver};
       if (message.at("case").defines("registry")) {
         assert(message.at("case").at("registry").is_object());
-        for (const auto &pair :
-             message.at("case").at("registry").as_object()) {
+        for (const auto &pair : message.at("case").at("registry").as_object()) {
           resolver.add(pair.second, default_dialect, pair.first);
         }
       }
@@ -92,7 +91,8 @@ int main() {
 
         for (const auto &test : message.at("case").at("tests").as_array()) {
           assert(test.defines("instance"));
-          const bool valid{evaluator.validate(schema_template, test.at("instance"))};
+          const bool valid{
+              evaluator.validate(schema_template, test.at("instance"))};
           auto test_result{JSON::make_object()};
           test_result.assign("valid", JSON{valid});
           response.at("results").push_back(std::move(test_result));
