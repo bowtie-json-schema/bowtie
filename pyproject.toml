@@ -13,7 +13,7 @@ packages = ["bowtie"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 dependencies = [
-  "requests"
+  "github3.py"
 ]
 
 [tool.hatch.build.targets.wheel.force-include]
