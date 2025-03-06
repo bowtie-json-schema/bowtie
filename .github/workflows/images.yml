@@ -51,8 +51,12 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Calculate which impages to build
+      - name: Calculate which images to build
         id: images-matrix
+        env:
+          # The token is required because bowtie is built during the step,
+          # and we need access to packages to collect known implementations
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
         run: |
           implementation=${{ inputs.implementation }}
           version=${{ inputs.version }}
