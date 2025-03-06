@@ -9,8 +9,10 @@ from typing import Any
 import json
 import os
 
+from github3.exceptions import GitHubException
+from github3.session import GitHubSession
+from github3.structs import GitHubIterator
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
-import requests
 
 
 class BowtieDataIncluder(BuildHookInterface):
@@ -77,12 +79,15 @@ class BowtieDataIncluder(BuildHookInterface):
 
         try:
             packages = self._collect_packages(gh_token)
-        except requests.HTTPError as e:
+        except GitHubException as e:
             self.app.display_error(
-                f"fallback to using local implementations: {e} "
-                f"({e.response.text})",
+                f"fallback to using local implementations: {e}",
             )
             return known_local
+
+        self.app.display_debug(
+            f"Collected {len(packages)} package(s): {packages}",
+        )
 
         packages_set = set(packages)
         local_set = set(known_local)
@@ -97,32 +102,17 @@ class BowtieDataIncluder(BuildHookInterface):
 
         return packages
 
-    def _collect_packages(self, gh_token):
-        packages = []
-        page = 1
-        while True:
-            # https://docs.github.com/en/rest/packages/packages?apiVersion=2022-11-28#list-packages-for-an-organization
-            response = requests.get(
-                timeout=10,
-                url="https://api.github.com/orgs/bowtie-json-schema/packages",
-                params={
-                    "package_type": "container",
-                    "page": page,
-                },
-                headers={
-                    "Accept": "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                    "Authorization": f"Token {gh_token}",
-                },
-            )
-
-            with response:
-                response.raise_for_status()
-                payload = response.json()
-                self.app.display_info(f"{payload}")
-
-            packages.extend(p["name"] for p in payload)
-            page += 1
-            if not payload:
-                break
-        return packages
+    @staticmethod
+    def _collect_packages(gh_token) -> list[str]:
+        session = GitHubSession()
+        session.token_auth(gh_token)
+        packages_iter = GitHubIterator(
+            count=-1,
+            url="https://api.github.com/orgs/bowtie-json-schema/packages",
+            cls=dict,
+            session=session,
+            params={
+                "package_type": "container",
+            },
+        )
+        return [p["name"] for p in packages_iter]
