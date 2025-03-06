@@ -81,6 +81,8 @@ jobs:
           enable-cache: true
 
       - name: Run nox
+        env:
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
         run: uvx nox -s "${{ matrix.noxenv }}"
 
       - name: Upload Playwright Report
@@ -106,6 +108,8 @@ jobs:
         run: sudo apt-get purge docker podman
 
       - name: Run nox
+        env:
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
         run: uvx nox -s tests-3.13 -- -m 'not containers'
 
   coverage:
