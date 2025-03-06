@@ -2,7 +2,7 @@
 #    uv pip compile --no-cache --output-file /Users/julian/Development/bowtie/requirements.txt pyproject.toml
 aiodocker==0.24.0
     # via bowtie-json-schema (pyproject.toml)
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.5.0
     # via aiohttp
 aiohttp==3.11.13
     # via aiodocker
@@ -85,7 +85,7 @@ pygments==2.19.1
     #   rich
 pyjwt==2.10.1
     # via github3-py
-pyperf==2.8.1
+pyperf==2.9.0
     # via bowtie-json-schema (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via github3-py
@@ -104,7 +104,7 @@ rich==13.9.4
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.6
+rich-click==1.8.4
     # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.23.1
     # via

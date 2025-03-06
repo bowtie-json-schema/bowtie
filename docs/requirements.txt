@@ -2,7 +2,7 @@
 #    uv pip compile --no-cache --output-file /Users/julian/Development/bowtie/docs/requirements.txt docs/requirements.in
 aiodocker==0.24.0
     # via bowtie-json-schema
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.5.0
     # via aiohttp
 aiohttp==3.11.13
     # via aiodocker
@@ -39,7 +39,7 @@ click==8.1.8
     # via
     #   rich-click
     #   sphinx-click
-cryptography==44.0.1
+cryptography==44.0.2
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema
@@ -75,7 +75,7 @@ imagesize==1.4.1
     # via sphinx
 inflect==7.5.0
     # via bowtie-json-schema
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   myst-parser
     #   sphinx
@@ -131,7 +131,7 @@ pygments-github-lexers==0.0.5
     # via -r docs/requirements.in
 pyjwt==2.10.1
     # via github3-py
-pyperf==2.8.1
+pyperf==2.9.0
     # via bowtie-json-schema
 python-dateutil==2.9.0.post0
     # via github3-py
@@ -172,7 +172,7 @@ snowballstemmer==2.2.0
     # via sphinx
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==8.2.1
+sphinx==8.2.3
     # via
     #   -r docs/requirements.in
     #   furo
@@ -193,7 +193,7 @@ sphinx-copybutton==0.5.2
     # via -r docs/requirements.in
 sphinx-json-schema-spec==2025.1.1
     # via -r docs/requirements.in
-sphinx-substitution-extensions==2025.2.19
+sphinx-substitution-extensions==2025.3.3
     # via -r docs/requirements.in
 sphinx-tabs==3.4.7
     # via -r docs/requirements.in
