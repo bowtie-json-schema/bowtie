@@ -9,7 +9,6 @@ from typing import Any
 import json
 import os
 
-from github3.exceptions import GitHubException
 from github3.session import GitHubSession
 from github3.structs import GitHubIterator
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
@@ -70,20 +69,15 @@ class BowtieDataIncluder(BuildHookInterface):
         gh_token = os.getenv("GITHUB_TOKEN")
 
         if not gh_token:
-            self.app.display_warning(
+            raise _TokenNotProvidedException(
                 "GITHUB_TOKEN env variable was not provided. "
-                "It will be REQUIRED in the future "
-                "to collect known implementations",
+                "It is REQUIRED to collect known implementations. "
+                "Obtain GitHub Personal Access Token following instructions: "
+                "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens."
+                " Required token scope: 'read:packages'",
             )
-            return known_local
 
-        try:
-            packages = self._collect_packages(gh_token)
-        except GitHubException as e:
-            self.app.display_error(
-                f"fallback to using local implementations: {e}",
-            )
-            return known_local
+        packages = self._collect_packages(gh_token)
 
         self.app.display_debug(
             f"Collected {len(packages)} package(s): {packages}",
@@ -116,3 +110,6 @@ class BowtieDataIncluder(BuildHookInterface):
             },
         )
         return [p["name"] for p in packages_iter]
+
+class _TokenNotProvidedException(Exception):
+    pass
