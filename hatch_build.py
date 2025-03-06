@@ -111,5 +111,6 @@ class BowtieDataIncluder(BuildHookInterface):
         )
         return [p["name"] for p in packages_iter]
 
+
 class _TokenNotProvidedException(Exception):
     pass
