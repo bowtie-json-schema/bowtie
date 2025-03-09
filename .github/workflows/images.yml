@@ -56,7 +56,7 @@ jobs:
         env:
           # The token is required because bowtie is built during the step,
           # and we need access to packages to collect known implementations
-          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           implementation=${{ inputs.implementation }}
           version=${{ inputs.version }}
