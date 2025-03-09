@@ -9,8 +9,7 @@ from typing import Any
 import json
 import os
 
-from github3.session import GitHubSession
-from github3.structs import GitHubIterator
+from github3 import GitHub, login
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
@@ -40,7 +39,10 @@ class BowtieDataIncluder(BuildHookInterface):
         path = Path(__file__).parent.joinpath("implementations")
         known = [d.name for d in path.iterdir() if not d.name.startswith(".")]
 
-        known = self._known_implementations_from_packages_api(known)
+        known = self._known_implementations_from_github(known)
+
+        self.app.display_info(f"{len(known)} known implementation(s)")
+        self.app.display_debug(f"Known implementations: {known}")
 
         target_path = "bowtie/data/known_implementations.json"
 
@@ -59,58 +61,50 @@ class BowtieDataIncluder(BuildHookInterface):
         """
         self.known_implementations().unlink()
 
-    def _known_implementations_from_packages_api(
+    def _known_implementations_from_github(
         self,
         known_local: list[str],
     ) -> list[str]:
         """
-        Collects available implementation using GitHub packages API.
+        Collects available implementation using GitHub repositories API.
+
+        The method uses GitHub repositories API to filter our repositories
+        marked with 'bowtie-harness' topic.
         """
         gh_token = os.getenv("GITHUB_TOKEN")
 
         if not gh_token:
-            raise _TokenNotProvidedException(
-                "GITHUB_TOKEN env variable was not provided. "
-                "It is REQUIRED to collect known implementations. "
-                "Obtain GitHub Personal Access Token following instructions: "
-                "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens."
-                " Required token scope: 'read:packages'",
+            self.app.display_warning(
+                "GITHUB_TOKEN is not provided. "
+                "You can reach the GitHub rate limit",
             )
 
-        packages = self._collect_packages(gh_token)
+        # once all harnesses are moved we should report an error
+        # if collected list is empty
+        harnesses = self._collect_harnesses(gh_token)
 
         self.app.display_debug(
-            f"Collected {len(packages)} package(s): {packages}",
+            f"Collected {len(harnesses)} harness(es): {harnesses}",
         )
 
-        packages_set = set(packages)
+        harnesses_set = set(harnesses)
         local_set = set(known_local)
-        if not packages_set.issuperset(local_set):
-            self.app.display_warning(
-                f"local implementations contain additional implementations: "
-                f"{local_set.difference(packages_set)}",
-            )
-            # return local implementation until fully migrated to packages API
-            # https://github.com/bowtie-json-schema/bowtie/issues/1849
+        if harnesses_set.issubset(local_set):
             return known_local
 
-        return packages
+        # join with local implementation until fully migrated to packages API
+        # https://github.com/bowtie-json-schema/bowtie/issues/1849
+        all_harnesses = list(local_set.union(harnesses_set))
+        # sorting is done just to simplify debugging
+        # if some harnesses are missed for some reason
+        all_harnesses.sort()
+        return all_harnesses
 
     @staticmethod
-    def _collect_packages(gh_token) -> list[str]:
-        session = GitHubSession()
-        session.token_auth(gh_token)
-        packages_iter = GitHubIterator(
-            count=-1,
-            url="https://api.github.com/orgs/bowtie-json-schema/packages",
-            cls=dict,
-            session=session,
-            params={
-                "package_type": "container",
-            },
-        )
-        return [p["name"] for p in packages_iter]
-
-
-class _TokenNotProvidedException(Exception):
-    pass
+    def _collect_harnesses(gh_token) -> list[str]:
+        gh = login(token=gh_token) if gh_token else GitHub()
+        org = gh.organization("bowtie-json-schema")
+        repositories = org.repositories()
+        def is_harness(repo) -> bool:
+            return "bowtie-harness" in repo.topics().names
+        return [repo.name for repo in repositories if is_harness(repo)]
