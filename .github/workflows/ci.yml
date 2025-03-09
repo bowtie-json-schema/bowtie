@@ -82,7 +82,7 @@ jobs:
 
       - name: Run nox
         env:
-          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uvx nox -s "${{ matrix.noxenv }}"
 
       - name: Upload Playwright Report
@@ -109,7 +109,7 @@ jobs:
 
       - name: Run nox
         env:
-          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uvx nox -s tests-3.13 -- -m 'not containers'
 
   coverage:
@@ -173,7 +173,7 @@ jobs:
 
       - name: Build our distributions
         env:
-          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
       - name: Generate attestation for wheels
