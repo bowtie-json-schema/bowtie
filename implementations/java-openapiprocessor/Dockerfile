@@ -1,4 +1,4 @@
-FROM gradle:8.12.1-jdk17 AS builder
+FROM gradle:8.13-jdk17 AS builder
 WORKDIR /opt/app
 COPY . .
 RUN gradle installDist --no-daemon
