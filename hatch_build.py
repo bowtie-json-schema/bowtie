@@ -105,6 +105,8 @@ class BowtieDataIncluder(BuildHookInterface):
         gh = login(token=gh_token) if gh_token else GitHub()
         org = gh.organization("bowtie-json-schema")
         repositories = org.repositories()
+
         def is_harness(repo) -> bool:
             return "bowtie-harness" in repo.topics().names
+
         return [repo.name for repo in repositories if is_harness(repo)]
