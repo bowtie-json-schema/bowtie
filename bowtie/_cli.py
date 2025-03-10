@@ -88,6 +88,7 @@ class _EX:
 
 EX = _EX()
 
+STDOUT = console.Console()
 STDERR = console.Console(stderr=True)
 
 STARTUP_ERRORS = (CannotConnect, NoSuchImplementation, StartupFailed)
@@ -676,10 +677,10 @@ def summary(report: _report.Report, format: _F, show: str):
             click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
         case "pretty":
             table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
-            console.Console().print(table)
+            STDOUT.print(table)
         case "markdown":
             table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
-            console.Console().print(table)
+            STDOUT.print(table)
 
     return exit_code
 
@@ -1489,7 +1490,7 @@ def filter_benchmarks(
         dialect=dialect,
     )
     for file in files:
-        console.Console().file.write(f"{file}\n")
+        STDOUT.file.write(f"{file}\n")
 
 
 LANGUAGE_ALIASES = {
@@ -1732,7 +1733,6 @@ async def info(
     Show information about a supported implementation.
     """
     serializable: dict[ConnectableId, dict[str, Any]] = {}
-    out = console.Console()
 
     async for _, each in start():
         metadata = [(k, v) for k, v in each.info.serializable().items() if v]
@@ -1756,7 +1756,7 @@ async def info(
                 serializable[each.id] = dict(metadata)
             case "pretty":
                 table = _info_table_for(dict(metadata))
-                out.print(table, "\n")
+                STDOUT.print(table, "\n")
             case "markdown":
                 click.echo(
                     "\n".join(
@@ -1785,7 +1785,7 @@ async def download_versions_of(id: ConnectableId) -> frozenset[str]:
         DownloadColumn(),
         "•",
         TimeElapsedColumn(),
-        console=console.Console(),
+        console=STDOUT,
         transient=True,
     )
     task = progress.add_task(
@@ -1845,7 +1845,7 @@ async def download_and_parse_reports_for(
         MofNCompleteColumn(),
         "•",
         TimeElapsedColumn(),
-        console=console.Console(),
+        console=STDOUT,
         transient=True,
     )
 
@@ -2161,7 +2161,7 @@ class _VersionedReportsTar(click.File):
                     MofNCompleteColumn(),
                     "•",
                     TimeElapsedColumn(),
-                    console=console.Console(),
+                    console=STDOUT,
                     transient=True,
                 )
                 dialects = (
@@ -2386,11 +2386,11 @@ def trend(
             ]
             click.echo(json.dumps(serializable, indent=2))
         case "pretty":
-            console.Console().print(
+            STDOUT.print(
                 _trend_table_for(id, versions, dialects_trend),
             )
         case "markdown":
-            console.Console().print(
+            STDOUT.print(
                 _trend_table_in_markdown_for(id, versions, dialects_trend),
             )
 
@@ -2424,11 +2424,10 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
             output = {id: result.serializable() for id, _, result in results}
             echo(json.dumps(output, indent=2))
         case [(_, _, result)], "pretty":
-            console.Console().print(result)
+            STDOUT.print(result)
         case _, "pretty":
-            out = console.Console()
             for _, _, each in results:
-                out.print(each)
+                STDOUT.print(each)
         case _, "markdown":
             for _, info, result in results:
                 echo(f"# {info.name} ({info.language})\n")
