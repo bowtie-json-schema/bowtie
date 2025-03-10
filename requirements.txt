@@ -104,7 +104,7 @@ rich==13.9.4
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.4
+rich-click==1.8.8
     # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.23.1
     # via
