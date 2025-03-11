@@ -1,4 +1,6 @@
-FROM golang:1.24-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /usr/src/app
 
@@ -7,7 +9,7 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -v -o bowtie-jsonschema
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o bowtie-jsonschema
 
 FROM gcr.io/distroless/base-debian10
 COPY --from=builder /usr/src/app/bowtie-jsonschema /usr/local/bin/
