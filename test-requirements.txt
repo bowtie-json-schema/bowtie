@@ -81,7 +81,7 @@ httpx==0.28.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.127.8
+hypothesis==6.128.2
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -201,7 +201,7 @@ rich==13.9.4
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.4
+rich-click==1.8.8
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
