@@ -136,7 +136,9 @@ jobs:
             || (inputs.implementation)
           )
           && !startsWith(matrix.image, 'dotnet-')
+          && !startsWith(matrix.image, 'go-')
         # See https://devblogs.microsoft.com/dotnet/improving-multiplatform-container-support/ for why not .NET
+        # See https://docs.docker.com/build/building/multi-platform/#cross-compiling-a-go-application for why not Golang
 
       - name: Build
         id: build_image

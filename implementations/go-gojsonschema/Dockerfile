@@ -1,4 +1,6 @@
-FROM golang:1.20-buster AS builder
+FROM --platform=$BUILDPLATFORM golang:1.20-buster AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /usr/src/app
 
@@ -7,7 +9,7 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -v -o bowtie-gojsonschema
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o bowtie-gojsonschema
 
 FROM gcr.io/distroless/base-debian10
 COPY --from=builder /usr/src/app/bowtie-gojsonschema /usr/local/bin/
