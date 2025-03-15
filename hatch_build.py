@@ -71,11 +71,12 @@ class BowtieDataIncluder(BuildHookInterface):
         The method uses GitHub repositories API to filter our repositories
         marked with 'bowtie-harness' topic.
         """
-        gh_token = os.getenv("GITHUB_TOKEN")
+        gh_token = os.getenv("BUILD_GITHUB_TOKEN",
+                             default=os.getenv("GITHUB_TOKEN"))
 
         if not gh_token:
             self.app.display_warning(
-                "GITHUB_TOKEN is not provided. "
+                "neither BUILD_GITHUB_TOKEN nor GITHUB_TOKEN are provided. "
                 "You can reach the GitHub rate limit",
             )
 
