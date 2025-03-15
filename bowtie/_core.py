@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from contextlib import asynccontextmanager, suppress
 from datetime import date
 from functools import cache
@@ -40,6 +39,7 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Callable,
+        Iterable,
         Mapping,
         Sequence,
         Set,
@@ -76,7 +76,7 @@ class Dialect:
     short_name: str = field(repr=False)
     first_publication_date: date = field(repr=False)
     aliases: Set[str] = field(
-        default=cast(frozenset[str], frozenset()),
+        default=cast("frozenset[str]", frozenset()),
         repr=False,
     )
     has_boolean_schemas: bool = field(default=True, repr=False)
@@ -560,7 +560,7 @@ class Implementation:
         for page in pages:
             try:
                 tags = cast(
-                    Iterable[str],
+                    "Iterable[str]",
                     page.as_dict()["metadata"]["container"]["tags"],
                 )
             except KeyError:

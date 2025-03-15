@@ -1702,7 +1702,7 @@ def _info_table_for(metadata: dict[str, Any]):
         "dialects",
         "\n".join(
             Dialect.from_str(dialect).pretty_name
-            for dialect in cast(list[str], metadata.get("dialects"))
+            for dialect in cast("list[str]", metadata.get("dialects"))
         ),
         end_section=True,
     )
@@ -2101,7 +2101,7 @@ class _VersionedReportsTar(click.File):
         input = super().convert(value, param, ctx)
 
         id = cast(
-            _connectables.Connectable,
+            "_connectables.Connectable",
             ctx.params.get("connectable"),
         ).to_terse()
 
@@ -2166,7 +2166,7 @@ class _VersionedReportsTar(click.File):
                 )
                 dialects = (
                     cast(
-                        Iterable[Dialect] | None,
+                        "Iterable[Dialect] | None",
                         ctx.params.get("dialects"),
                     )
                     or Dialect.known()
