@@ -71,8 +71,9 @@ class BowtieDataIncluder(BuildHookInterface):
         The method uses GitHub repositories API to filter our repositories
         marked with 'bowtie-harness' topic.
         """
-        gh_token = os.getenv("BUILD_GITHUB_TOKEN",
-                             default=os.getenv("GITHUB_TOKEN"))
+        gh_token = os.getenv(
+            "BUILD_GITHUB_TOKEN", default=os.getenv("GITHUB_TOKEN")
+        )
 
         if not gh_token:
             self.app.display_warning(
@@ -106,6 +107,8 @@ class BowtieDataIncluder(BuildHookInterface):
         gh = login(token=gh_token) if gh_token else GitHub()
         org = gh.organization("bowtie-json-schema")
         repositories = org.repositories()
+
         def is_harness(repo) -> bool:
             return "bowtie-harness" in repo.topics().names
+
         return [repo.name for repo in repositories if is_harness(repo)]
