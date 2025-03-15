@@ -72,7 +72,8 @@ class BowtieDataIncluder(BuildHookInterface):
         marked with 'bowtie-harness' topic.
         """
         gh_token = os.getenv(
-            "BUILD_GITHUB_TOKEN", default=os.getenv("GITHUB_TOKEN")
+            "BUILD_GITHUB_TOKEN",
+            default=os.getenv("GITHUB_TOKEN"),
         )
 
         if not gh_token:
