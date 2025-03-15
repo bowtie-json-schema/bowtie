@@ -103,4 +103,4 @@ def get_benchmark():
 
 
 def _format_properties_as_instance(properties):
-    return {key: 1000 for key in properties}
+    return dict.fromkeys(properties, 1000)
