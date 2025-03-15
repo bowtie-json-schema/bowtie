@@ -176,6 +176,20 @@ jobs:
           BUILD_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
+        # this is temporal step to make sure we don't lose any of the implementations during migration
+        # remove once all implementations are successfully migrated to separate repos
+      - name: Collect known implementations
+        env:
+          BUILD_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXPECTED_IMPL_COUNT: 32
+        run: |
+          impl_count=$(uvx --from . --python 3.13 bowtie filter-implementations --format plain | wc -l)
+          if [ $impl_count -lt $EXPECTED_IMPL_COUNT ]; then
+            echo "bowtie collected less implementations than expected: $impl_count instead of $EXPECTED_IMPL_COUNT" >> $GITHUB_STEP_SUMMARY
+            uvx --from . --python 3.13 bowtie filter-implementations --format plain >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
       - name: Generate attestation for wheels
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: actions/attest-build-provenance@v2
