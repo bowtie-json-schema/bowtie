@@ -93,6 +93,7 @@ class BowtieDataIncluder(BuildHookInterface):
         harnesses_set = set(harnesses)
         local_set = set(known_local)
         if harnesses_set.issubset(local_set):
+            known_local.sort()
             return known_local
 
         # join with local implementation until fully migrated to packages API
