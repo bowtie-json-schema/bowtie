@@ -98,11 +98,9 @@ class BowtieDataIncluder(BuildHookInterface):
 
         # join with local implementation until fully migrated to packages API
         # https://github.com/bowtie-json-schema/bowtie/issues/1849
-        all_harnesses = list(local_set.union(harnesses_set))
         # sorting is done just to simplify debugging
         # if some harnesses are missed for some reason
-        all_harnesses.sort()
-        return all_harnesses
+        return sorted(local_set | harnesses_set)
 
     @staticmethod
     def _collect_harnesses(gh_token) -> list[str]:
