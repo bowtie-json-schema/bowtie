@@ -176,7 +176,7 @@ jobs:
           BUILD_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --frozen --with 'build[uv]' -m build --installer=uv
 
-        # this is temporal step to make sure we don't lose any of the implementations during migration
+        # this is temporary step to make sure we don't lose any of the implementations during migration
         # remove once all implementations are successfully migrated to separate repos
       - name: Collect known implementations
         env:
