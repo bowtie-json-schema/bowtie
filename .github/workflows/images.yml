@@ -68,7 +68,7 @@ jobs:
           if [ -n "$implementation" ]; then
             if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
               if [ ! -d "$implementations_dir/$implementation" ]; then
-                echo "Implementation $implementation was moved from bowtie repository to $GITHUB_URL/$implementation. Please build it from its own repository"
+                echo "Implementation $implementation was moved from bowtie repository to '$GITHUB_URL/$implementation'. Please build it from its own repository"
                 exit 1
               fi
               if [ -f "$matrix_versions_file" ]; then
@@ -100,7 +100,7 @@ jobs:
                 if [ -d "$implementations_dir/$impl" ]; then
                   MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
                 else
-                  echo "Implementation $implementation was moved from bowtie repository to $GITHUB_URL/$impl. Skip the implementation"
+                  echo "Implementation $implementation was moved from bowtie repository to '$GITHUB_URL/$impl'. Skip the implementation"
                 fi
               done
             fi
