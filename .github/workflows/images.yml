@@ -60,11 +60,16 @@ jobs:
         run: |
           implementation=${{ inputs.implementation }}
           version=${{ inputs.version }}
-          matrix_versions_file="implementations/$implementation/matrix-versions.json"
+          implementations_dir=implementations
+          matrix_versions_file="$implementations_dir/$implementation/matrix-versions.json"
           IMPLEMENTATIONS=$(uvx --from . --python 3.13 bowtie filter-implementations --format json)
           MATRIX="[]"
           if [ -n "$implementation" ]; then
             if echo "$IMPLEMENTATIONS" | jq -e --arg impl "$implementation" 'index($impl) != null' > /dev/null; then
+              if [ ! -d "$implementations_dir/$implementation" ]; then
+                echo "Implementation $implementation was moved from bowtie repository. Please build it from its own repository"
+                exit 1
+              fi
               if [ -f "$matrix_versions_file" ]; then
                 versions=$(cat "$matrix_versions_file" | jq -c)
                 if [ -n "$version" ]; then
@@ -91,7 +96,11 @@ jobs:
               exit 1
             else
               for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
-                MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+                if [ -d "$implementations_dir/$impl" ]; then
+                  MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [{"image": $impl, "version": "latest"}]')
+                else
+                  echo "Implementation $impl was moved from bowtie repository. Skip the implementation"
+                fi
               done
             fi
           fi
