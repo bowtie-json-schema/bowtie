@@ -164,11 +164,6 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "gradle"
-    directory: "/implementations/kotlin-kmp-json-schema-validator"
-    schedule:
-      interval: "daily"
-
   - package-ecosystem: "mix"
     directory: "/implementations/elixir-jsv"
     schedule:
@@ -315,11 +310,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-jsonschemafriend"
-    schedule:
-      interval: "daily"
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/kotlin-kmp-json-schema-validator"
     schedule:
       interval: "daily"
 
