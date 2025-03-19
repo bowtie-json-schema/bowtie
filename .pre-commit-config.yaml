@@ -110,12 +110,6 @@ repos:
   - repo: https://github.com/dustinsand/pre-commit-jvm
     rev: v0.11.0
     hooks:
-      - name: ktlint (java/kotlin implementations)
-        id: ktlint
-        args: [--format]
-      - name: detekt (java/kotlin implementations)
-        id: detekt
-        args: ["--build-upon-default-config"]
       - name: pmd (java implementations)
         id: pmd
         args:
