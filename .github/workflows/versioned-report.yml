@@ -99,6 +99,7 @@ jobs:
           MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
           if [ ! -f $MATRIX_VERSIONS_FILE ]; then
             echo "Dump versions for remote test harness $impl"
+            mkdir $(dirname "$MATRIX_VERSIONS_FILE")
             gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
