@@ -123,7 +123,7 @@ class RunMetadata:
         eq=False,
         repr=False,
     )
-    metadata: Mapping[str, Any] = field(factory=dict, repr=False)
+    metadata: Mapping[str, Any] = field(factory=dict, repr=False)  # type: ignore[reportUnknownVariableType]
     started: datetime = field(
         factory=lambda: datetime.now(UTC),
         eq=False,
