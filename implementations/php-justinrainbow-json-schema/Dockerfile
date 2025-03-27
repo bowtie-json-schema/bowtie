@@ -14,6 +14,7 @@ WORKDIR /usr/src/json-schema
 
 COPY ./src ./src
 COPY ./bootstrap.php .
+COPY composer.* .
 COPY --from=builder /usr/src/json-schema/vendor /usr/src/json-schema/vendor
 
 CMD ["php", "bootstrap.php"]
