@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3e2ee31589b118772604899641d9642a",
+    "content-hash": "30df81926ed35486d084c89adbd0ad28",
     "packages": [
         {
             "name": "justinrainbow/json-schema",
-            "version": "dev-master",
+            "version": "6.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jsonrainbow/json-schema.git",
-                "reference": "76ba104c5c80d14f10b7820c85b2118cb1055b53"
+                "reference": "c9f00dec766a67bf82c277b71d71d254357db92c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/76ba104c5c80d14f10b7820c85b2118cb1055b53",
-                "reference": "76ba104c5c80d14f10b7820c85b2118cb1055b53",
+                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/c9f00dec766a67bf82c277b71d71d254357db92c",
+                "reference": "c9f00dec766a67bf82c277b71d71d254357db92c",
                 "shasum": ""
             },
             "require": {
@@ -33,7 +33,6 @@
                 "phpstan/phpstan": "^1.12",
                 "phpunit/phpunit": "^8.5"
             },
-            "default-branch": true,
             "bin": [
                 "bin/validate-json"
             ],
@@ -78,9 +77,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jsonrainbow/json-schema/issues",
-                "source": "https://github.com/jsonrainbow/json-schema/tree/master"
+                "source": "https://github.com/jsonrainbow/json-schema/tree/6.3.1"
             },
-            "time": "2025-03-25T18:55:43+00:00"
+            "time": "2025-03-18T19:03:56+00:00"
         },
         {
             "name": "marc-mabe/php-enum",
@@ -244,9 +243,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "justinrainbow/json-schema": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {},
