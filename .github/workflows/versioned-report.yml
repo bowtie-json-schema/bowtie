@@ -3,6 +3,9 @@
 name: Collect New Versioned Test Results
 
 on:
+  schedule:
+    # every Sunday at 23:30 UTC (45 minutes before a report workflow is scheduled)
+    - cron: "30 23 * * 0"
   workflow_dispatch:
     inputs:
       implementation:
