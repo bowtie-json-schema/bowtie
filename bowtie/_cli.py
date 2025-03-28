@@ -852,9 +852,12 @@ def _validation_results_table_in_markdown(
         rows_data.append(row_data)
 
     for idx, row_data in enumerate(rows_data):
-        final_content += f"### {idx+1}. Schema:\n {row_data[0]}\n\n"
+        final_content += (
+            f"### {idx+1}. Schema:\n ```json\n{row_data[0]}\n```\n\n"
+        )
         final_content += "### Results:"
         final_content += row_data[1]
+        final_content += "\n"
 
     return final_content
 
