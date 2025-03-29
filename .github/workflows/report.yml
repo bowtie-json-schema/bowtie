@@ -19,8 +19,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: "pages"
@@ -198,6 +196,9 @@ jobs:
           path: site
 
   redeploy-frontend:
+    permissions:
+      pages: write
+      id-token: write
     needs: site
     uses: ./.github/workflows/ui.yml
     with:
