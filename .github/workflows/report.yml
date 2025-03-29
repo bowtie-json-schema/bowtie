@@ -19,8 +19,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: "pages"
@@ -55,6 +53,8 @@ jobs:
           version: ${{ inputs.bowtie-version }}
 
       - name: Generate a New Report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
 
@@ -196,6 +196,9 @@ jobs:
           path: site
 
   redeploy-frontend:
+    permissions:
+      pages: write
+      id-token: write
     needs: site
     uses: ./.github/workflows/ui.yml
     with:
