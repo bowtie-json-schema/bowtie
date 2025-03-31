@@ -107,13 +107,19 @@ class TestHarness
     {
         $this->debug('Running test case');
 
-        $schemaStorage = new SchemaStorage();
-        $validator = new Validator(new Factory($schemaStorage));
-
         $results = [];
 
+        $schemaStorage = new SchemaStorage();
+        $validator = new Validator(new Factory($schemaStorage));
+        $schemaStorage->addSchema('internal://mySchema', $request->case->schema);
+
+        if (isset($request->case->registry)) {
+            foreach ($request->case->registry as $id => $schema) {
+                $schemaStorage->addSchema($id, $schema);
+            }
+        }
+
         foreach ($request->case->tests as $test) {
-            $schemaStorage->addSchema('internal://mySchema', $test);
             try {
                 $validator->validate(
                     $test->instance,
