@@ -71,7 +71,7 @@ multidict==6.2.0
     # via
     #   aiohttp
     #   yarl
-propcache==0.3.0
+propcache==0.3.1
     # via
     #   aiohttp
     #   yarl
@@ -99,14 +99,14 @@ referencing-loaders==2025.1.1
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.3
     # via github3-py
-rich==13.9.4
+rich==14.0.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
 rich-click==1.8.8
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
