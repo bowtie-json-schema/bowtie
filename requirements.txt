@@ -67,7 +67,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.6.0
     # via inflect
-multidict==6.2.0
+multidict==6.3.2
     # via
     #   aiohttp
     #   yarl
@@ -119,7 +119,7 @@ structlog==25.2.0
     # via bowtie-json-schema (pyproject.toml)
 typeguard==4.4.2
     # via inflect
-typing-extensions==4.12.2
+typing-extensions==4.13.1
     # via
     #   rich-click
     #   typeguard
@@ -129,5 +129,5 @@ url-py==0.14.1
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.3.0
     # via requests
-yarl==1.18.3
+yarl==1.19.0
     # via aiohttp
