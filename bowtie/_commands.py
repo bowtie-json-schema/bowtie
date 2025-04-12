@@ -32,9 +32,9 @@ Message = dict[str, Any]
 
 @frozen
 class Unsuccessful:
-    failed: list[TestResult] = field(factory=list)
-    errored: list[ErroredTest] = field(factory=list)
-    skipped: list[SkippedTest] = field(factory=list)
+    failed: list[TestResult] = field(factory=list["TestResult"])
+    errored: list[ErroredTest] = field(factory=list["ErroredTest"])
+    skipped: list[SkippedTest] = field(factory=list["SkippedTest"])
 
     def __add__(self, other: Unsuccessful):
         return Unsuccessful(
@@ -250,7 +250,7 @@ class SkippedTest:
 
 @frozen
 class ErroredTest:
-    context: dict[str, Any] = field(factory=dict)
+    context: dict[str, Any] = field(factory=dict[str, "Any"])
 
     errored: bool = field(init=False, default=True)
     skipped: bool = False

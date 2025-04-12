@@ -452,7 +452,10 @@ class BenchmarkMetadata:
     num_values: int
     num_warmups: int
     num_loops: int
-    system_metadata: dict[str, Any] = field(factory=dict, repr=False)
+    system_metadata: dict[str, Any] = field(
+        factory=dict[str, "Any"],
+        repr=False,
+    )
 
     bowtie_version: str = field(
         default=importlib.metadata.version("bowtie-json-schema"),
@@ -505,7 +508,7 @@ class BenchmarkMetadata:
 class BenchmarkReport:
     metadata: BenchmarkMetadata
     results: dict[Benchmark_Group_Name, BenchmarkGroupResult] = field(
-        factory=dict,
+        factory=dict[Benchmark_Group_Name, BenchmarkGroupResult],
     )
 
     def serializable(self):
@@ -552,7 +555,7 @@ class BenchmarkReporter:
     _quiet: bool = field(alias="quiet", default=False)
     _format: str = field(alias="format", default="pretty")
     _benchmark_group_uri: dict[str, URL | None] = field(
-        factory=dict,
+        factory=dict[str, URL | None],
     )
     _mean_threshold: float = field(alias="mean_threshold", default=0.10)
 
