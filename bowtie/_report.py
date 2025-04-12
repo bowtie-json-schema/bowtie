@@ -233,7 +233,7 @@ class Report:
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**validator.validated(header))
 
-        results: HashTrieMap[
+        results: HashTrieMap[  # type: ignore[reportUnknownVariableType] # pyright cannot infer the type returned by HashTrieMap.fromkeys
             ConnectableId,
             HashTrieMap[Seq, SeqResult],
         ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]

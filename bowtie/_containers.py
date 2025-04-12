@@ -65,7 +65,7 @@ class Stream:
         repr=False,
         alias="read_timeout_sec",
     )
-    _buffer: deque[bytes] = field(factory=deque, alias="buffer")
+    _buffer: deque[bytes] = field(factory=deque[bytes], alias="buffer")
     _last: bytes = b""
 
     @classmethod
