@@ -104,7 +104,7 @@ const BenchmarkSummarySection = ({
           />
           <YAxis
             label={
-              // Handling case when the label wont fit because of too few rows
+              // Handling case when the label won't fit because of too few rows
               benchmarkRankings.length > 5
                 ? {
                     value: "Implementation Name",
