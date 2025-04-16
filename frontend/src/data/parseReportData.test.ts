@@ -47,7 +47,7 @@ function run(command: string, args: string[] = [], input?: string, status = 0) {
 function miniature(name: string): Implementation {
   const id = `direct:bowtie.tests.miniatures:${name}`;
 
-  // Should match what's used in our backend integration tests obviously.
+  // Should match what's used in our backend integration tests, obviously.
   return (
     Implementation.withId(id) ??
     new Implementation(id, {
