@@ -8,5 +8,5 @@ RUN apk add --no-cache luajit luajit-dev pcre-dev gcc libc-dev curl git make cma
     luarocks install jsonschema && \
     apk del luajit-dev gcc git libc-dev curl make cmake
 WORKDIR /usr/src/myapp
-COPY json.lua bowtie_jsonschema.lua .
+COPY json.lua bowtie_jsonschema.lua ./
 CMD ["luajit", "bowtie_jsonschema.lua"]
