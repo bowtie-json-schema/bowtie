@@ -33,7 +33,7 @@ diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
 docutils==0.21.2
     # via diagnostic
-frozenlist==1.5.0
+frozenlist==1.6.0
     # via
     #   aiohttp
     #   aiosignal
@@ -129,5 +129,5 @@ url-py==0.14.1
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.4.0
     # via requests
-yarl==1.19.0
+yarl==1.20.0
     # via aiohttp
