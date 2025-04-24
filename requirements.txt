@@ -39,7 +39,7 @@ frozenlist==1.6.0
     #   aiosignal
 github3-py==4.0.1
     # via bowtie-json-schema (pyproject.toml)
-h11==0.14.0
+h11==0.16.0
     # via httpcore
 httpcore==1.0.8
     # via httpx
