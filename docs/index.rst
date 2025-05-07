@@ -74,6 +74,6 @@ which should give you a working Bowtie installation, which you can check via:
 Further usage details of the command-line interface can be found `here <cli>`.
 
 ..footer:: sh
-#GitHub: maxgrillasca09@gmail.com  
-#Git: maxgrillasca09@gmail.com 
-#Author:Max Grillasca 
+#GitHub: maxgrillasca09@gmail.com
+#Git: maxgrillasca09@gmail.com
+#Author:Max Grillasca
