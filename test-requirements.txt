@@ -44,7 +44,7 @@ charset-normalizer==3.4.2
     # via
     #   -r requirements.txt
     #   requests
-click==8.1.8
+click==8.2.0
     # via
     #   -r requirements.txt
     #   rich-click
@@ -81,7 +81,7 @@ httpx==0.28.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.131.9
+hypothesis==6.131.17
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -134,7 +134,7 @@ packaging==25.0
     # via pytest
 pexpect==4.9.0
     # via -r test-requirements.in
-pluggy==1.5.0
+pluggy==1.6.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -205,7 +205,7 @@ rich-click==1.8.8
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-rpds-py==0.24.0
+rpds-py==0.25.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -238,7 +238,7 @@ uritemplate==4.1.1
     # via
     #   -r requirements.txt
     #   github3-py
-url-py==0.14.1
+url-py==0.15.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema

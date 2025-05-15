@@ -106,7 +106,7 @@ rich==14.0.0
     #   rich-click
 rich-click==1.8.8
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.24.0
+rpds-py==0.25.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
@@ -125,7 +125,7 @@ typing-extensions==4.13.2
     #   typeguard
 uritemplate==4.1.1
     # via github3-py
-url-py==0.14.1
+url-py==0.15.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.4.0
     # via requests
