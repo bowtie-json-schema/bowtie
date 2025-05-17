@@ -56,7 +56,7 @@ jobs:
                 versions=$(gh api \
                   -H "Accept: application/vnd.github+json" \
                   -H "X-GitHub-Api-Version: 2022-11-28" \
-                  /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/v | jq -c)
+                  /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c)
 
                 if [ "$versions" != "[]" ]; then
                   MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
@@ -103,7 +103,7 @@ jobs:
             gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/v | jq -c '[ .[].ref | ltrimstr("refs/tags/v")] + ["latest"]' > $MATRIX_VERSIONS_FILE
+              /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ] + ["latest"]' > $MATRIX_VERSIONS_FILE
           fi
           cp $MATRIX_VERSIONS_FILE $impl
           for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
