@@ -16,7 +16,7 @@ COPY lib lib
 ENV MIX_ENV=prod
 RUN mix compile && mix escript.build
 
-FROM erlang:27-alpine
+FROM erlang:28-alpine
 
 RUN apk add --no-cache openssl ncurses-libs libstdc++
 COPY --from=builder /opt/app/bowtie_jsv /opt/app/bowtie_jsv
