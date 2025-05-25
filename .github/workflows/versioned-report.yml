@@ -107,7 +107,7 @@ jobs:
           fi
           cp $MATRIX_VERSIONS_FILE $impl
           for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
-            if [ "$version" == "latest" ]; then
+            if [ "$version" = "latest" ]; then
               version=$(bowtie info \
                 --implementation image:$impl:$version \
                 --format json | jq -r '.version // empty')
