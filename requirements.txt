@@ -25,9 +25,9 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.2
     # via requests
-click==8.2.0
+click==8.2.1
     # via rich-click
-cryptography==45.0.2
+cryptography==45.0.3
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
@@ -67,7 +67,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.7.0
     # via inflect
-multidict==6.4.3
+multidict==6.4.4
     # via
     #   aiohttp
     #   yarl
@@ -104,9 +104,9 @@ rich==14.0.0
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.8
+rich-click==1.8.9
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.25.0
+rpds-py==0.25.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
