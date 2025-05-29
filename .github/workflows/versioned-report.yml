@@ -13,6 +13,8 @@ on:
         required: false
         type: string
 
+env:
+  GH_ORGANIZATION: ${{ github.repository_owner }}
 jobs:
   list-implementations:
     runs-on: ubuntu-latest
@@ -26,6 +28,8 @@ jobs:
 
       - name: List all Bowtie Supported Implementations having a "matrix-versions.json" file
         id: implementations-matrix
+        env:
+          GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
         run: |
           implementation=${{ inputs.implementation }}
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
@@ -47,6 +51,16 @@ jobs:
             for impl in $(echo "$IMPLEMENTATIONS" | jq -r '.[]'); do
               if [ -f "implementations/$impl/matrix-versions.json" ]; then
                 MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
+              elif [ ! -d "implementations/$impl" ]; then
+                echo "Collecting versions for remote impl $impl"
+                versions=$(gh api \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "X-GitHub-Api-Version: 2022-11-28" \
+                  /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c)
+
+                if [ "$versions" != "[]" ]; then
+                  MATRIX=$(echo $MATRIX | jq --arg impl "$impl" '. + [$impl]')
+                fi
               fi
             done
           fi
@@ -78,11 +92,26 @@ jobs:
 
       - name: Generate New Versioned Reports for all Supported Dialects of ${{ matrix.implementation }}
         id: generate-new-versioned-report
+        env:
+          GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
         run: |
           impl=${{ matrix.implementation }}
           MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
+          if [ ! -f $MATRIX_VERSIONS_FILE ]; then
+            echo "Dump versions for remote test harness $impl"
+            mkdir -p $(dirname "$MATRIX_VERSIONS_FILE")
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ] + ["latest"]' > $MATRIX_VERSIONS_FILE
+          fi
           cp $MATRIX_VERSIONS_FILE $impl
           for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
+            if [ "$version" = "latest" ]; then
+              version=$(bowtie info \
+                --implementation image:$impl:$version \
+                --format json | jq -r '.version // empty')
+            fi
             SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
             if [ -n "$SUPPORTED_DIALECTS" ]; then
               mkdir "$impl/v$version"
