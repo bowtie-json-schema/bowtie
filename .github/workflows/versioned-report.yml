@@ -100,14 +100,14 @@ jobs:
           if [ ! -f $MATRIX_VERSIONS_FILE ]; then
             echo "Dump versions for remote test harness $impl"
             mkdir -p $(dirname "$MATRIX_VERSIONS_FILE")
-            tagged_version=$(gh api \
+            tagged_versions=$(gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ]')
             latest_version=$(bowtie info \
                 --implementation image:$impl \
                 --format json | jq -r '.version // empty')
-            echo $tagged_version | jq -c --arg latest "$latest_version" '. + [$latest]' > $MATRIX_VERSIONS_FILE
+            echo $tagged_versions | jq -c --arg latest "$latest_version" '. + [$latest]' > $MATRIX_VERSIONS_FILE
           fi
           cp $MATRIX_VERSIONS_FILE $impl
           for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
