@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from jsonschema_specifications import REGISTRY as SPECIFICATIONS
-from url.url import URL
+from url import URL
 
 from bowtie._benchmarks import BenchmarkGroup
 from bowtie._core import Dialect

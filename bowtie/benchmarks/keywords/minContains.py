@@ -1,7 +1,7 @@
 from pathlib import Path
 import uuid
 
-from url.url import URL
+from url import URL
 
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 from bowtie._core import Dialect

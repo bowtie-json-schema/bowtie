@@ -2,7 +2,7 @@ from pathlib import Path
 import random
 import string
 
-from url.url import URL
+from url import URL
 
 from bowtie._benchmarks import Benchmark, BenchmarkGroup
 from bowtie._core import Dialect
