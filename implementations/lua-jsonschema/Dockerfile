@@ -1,4 +1,4 @@
-FROM alpine:3.21
+FROM alpine:3.22
 RUN apk add --no-cache luajit luajit-dev pcre-dev gcc libc-dev curl git make cmake && \
     wget 'https://luarocks.org/releases/luarocks-3.9.2.tar.gz' && \
     tar -xf luarocks-3.9.2.tar.gz && rm luarocks-3.9.2.tar.gz && \
