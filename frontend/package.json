@@ -45,7 +45,7 @@
     "@testing-library/react": "^16.3.0",
     "bootstrap": "^5.3.6",
     "dayjs": "^1.11.13",
-    "mathjs": "^14.5.1",
+    "mathjs": "^14.5.2",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
