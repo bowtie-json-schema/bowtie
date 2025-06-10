@@ -97,7 +97,7 @@ referencing==0.36.2
     #   referencing-loaders
 referencing-loaders==2025.1.1
     # via bowtie-json-schema (pyproject.toml)
-requests==2.32.3
+requests==2.32.4
     # via github3-py
 rich==14.0.0
     # via
