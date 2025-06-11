@@ -8,7 +8,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -r requirements.txt
     #   aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.12
     # via
     #   -r requirements.txt
     #   aiodocker
@@ -44,11 +44,11 @@ charset-normalizer==3.4.2
     # via
     #   -r requirements.txt
     #   requests
-click==8.2.0
+click==8.2.1
     # via
     #   -r requirements.txt
     #   rich-click
-cryptography==44.0.3
+cryptography==45.0.4
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -60,7 +60,7 @@ docutils==0.21.2
     # via
     #   -r requirements.txt
     #   diagnostic
-frozenlist==1.6.0
+frozenlist==1.7.0
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -81,7 +81,7 @@ httpx==0.28.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.131.17
+hypothesis==6.135.6
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -98,7 +98,7 @@ inflect==7.5.0
     #   bowtie-json-schema
 iniconfig==2.1.0
     # via pytest
-jsonschema==4.23.0
+jsonschema==4.24.0
     # via
     #   -r requirements.txt
     #   -r test-requirements.in
@@ -125,7 +125,7 @@ more-itertools==10.7.0
     # via
     #   -r requirements.txt
     #   inflect
-multidict==6.4.3
+multidict==6.4.4
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -138,7 +138,7 @@ pluggy==1.6.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.3.1
+propcache==0.3.2
     # via
     #   -r requirements.txt
     #   aiohttp
@@ -157,6 +157,7 @@ pygments==2.19.1
     # via
     #   -r requirements.txt
     #   jsonschema-lexer
+    #   pytest
     #   rich
 pyjwt==2.10.1
     # via
@@ -166,7 +167,7 @@ pyperf==2.9.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-pytest==8.3.5
+pytest==8.4.0
     # via
     #   -r test-requirements.in
     #   pytest-asyncio
@@ -191,7 +192,7 @@ referencing-loaders==2025.1.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r requirements.txt
     #   github3-py
@@ -201,11 +202,11 @@ rich==14.0.0
     #   bowtie-json-schema
     #   diagnostic
     #   rich-click
-rich-click==1.8.8
+rich-click==1.8.9
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-rpds-py==0.25.0
+rpds-py==0.25.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
@@ -221,20 +222,20 @@ sniffio==1.3.1
     #   anyio
 sortedcontainers==2.4.0
     # via hypothesis
-structlog==25.3.0
+structlog==25.4.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-typeguard==4.4.2
+typeguard==4.4.3
     # via
     #   -r requirements.txt
     #   inflect
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   -r requirements.txt
     #   rich-click
     #   typeguard
-uritemplate==4.1.1
+uritemplate==4.2.0
     # via
     #   -r requirements.txt
     #   github3-py
@@ -246,7 +247,7 @@ urllib3==2.4.0
     # via
     #   -r requirements.txt
     #   requests
-yarl==1.20.0
+yarl==1.20.1
     # via
     #   -r requirements.txt
     #   aiohttp
