@@ -16,7 +16,7 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.4.26
+certifi==2025.6.15
     # via
     #   httpcore
     #   httpx
