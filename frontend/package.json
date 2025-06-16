@@ -57,7 +57,7 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@playwright/test": "^1.53.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.8",
