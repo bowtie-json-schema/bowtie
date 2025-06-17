@@ -8,7 +8,6 @@ from bowtie._core import Dialect
 
 
 def get_benchmark():
-
     name = "minContains"
     benchmark_type = "keyword"
     description = (
@@ -23,13 +22,14 @@ def get_benchmark():
     while array_length <= max_array_length:
         array = [uuid.uuid4().hex for _ in range(array_length)]
 
-        both_at_first = [1, 1] + array[:-2]
-        both_at_middle = (
-            array[1 : array_length // 2]
-            + [1, 1]
-            + array[array_length // 2 : -1]
-        )
-        both_at_last = array[:-2] + [1, 1]
+        both_at_first = [1, 1, *array[:-2]]
+        both_at_middle = [
+            *array[1 : array_length // 2],
+            1,
+            1,
+            *array[array_length // 2 : -1],
+        ]
+        both_at_last = [*array[:-2], 1, 1]
         invalid = array
 
         tests = (

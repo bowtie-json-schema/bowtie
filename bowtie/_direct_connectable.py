@@ -41,7 +41,6 @@ def not_yet_connected(schema: Schema, registry: SchemaRegistry):
 
 @mutable
 class Unconnection[E: Exception]:
-
     _info: ImplementationInfo = field(repr=lambda i: i.id, alias="info")
     compiler_for: Callable[[Dialect], SchemaCompiler[E]] = field(
         repr=False,
@@ -96,7 +95,6 @@ class Unconnection[E: Exception]:
 
 @frozen
 class DirectImplementation[E: Exception]:
-
     _compiler_for: Callable[[Dialect], SchemaCompiler[E]]
     _info: ImplementationInfo
     _implicit_dialect_response: StartedDialect
@@ -165,7 +163,7 @@ class DirectImplementation[E: Exception]:
     ),
 )
 def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
-    from jsonschema.validators import validator_for
+    from jsonschema.validators import validator_for  # noqa: PLC0415
 
     # FIXME: python-jsonschema/jsonschema#1011
     def to_group(error: ValidationError) -> ValidationError | Invalid[Any]:

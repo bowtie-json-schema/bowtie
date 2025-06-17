@@ -11,7 +11,7 @@ from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
 from time import perf_counter_ns
-from typing import IO, TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, cast
+from typing import IO, TYPE_CHECKING, Any, Literal, Protocol, cast
 import asyncio
 import json
 import logging
@@ -268,10 +268,7 @@ def main(log_level: str):
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
 
-P = ParamSpec("P")
-
-
-def subcommand(fn: Callable[P, int | None]):
+def subcommand[**P](fn: Callable[P, int | None]):
     """
     Define a Bowtie subcommand which returns its exit code.
     """
@@ -287,7 +284,6 @@ def subcommand(fn: Callable[P, int | None]):
 
 
 class Starter(Protocol):
-
     connectables: Iterable[Connectable]
 
     def __call__(
@@ -853,7 +849,7 @@ def _validation_results_table_in_markdown(
 
     for idx, row_data in enumerate(rows_data):
         final_content += (
-            f"### {idx+1}. Schema:\n ```json\n{row_data[0]}\n```\n\n"
+            f"### {idx + 1}. Schema:\n ```json\n{row_data[0]}\n```\n\n"
         )
         final_content += "### Results:"
         final_content += row_data[1]
@@ -1210,7 +1206,6 @@ def fail_fast(fn: FC) -> FC:
 
 
 class JSON(click.File):
-
     name = "JSON"
 
     def convert(
@@ -1695,11 +1690,11 @@ def _info_table_for(metadata: dict[str, Any]):
 
     table.add_row(
         "implementation",
-        f"{metadata["name"]} [grey58]{metadata.get("version", "")}[/grey58]",
+        f"{metadata['name']} [grey58]{metadata.get('version', '')}[/grey58]",
     )
     table.add_row(
         "language",
-        f"{metadata["language"]} [grey58]{metadata.get("language_version", "")}[/grey58]",  # noqa: E501
+        f"{metadata['language']} [grey58]{metadata.get('language_version', '')}[/grey58]",  # noqa: E501
     )
     table.add_row(
         "dialects",
@@ -1713,7 +1708,7 @@ def _info_table_for(metadata: dict[str, Any]):
 
     if "os" in metadata:
         table.caption = Text(
-            f"Ran on {metadata["os"]} {metadata.get("os_version", "")}",
+            f"Ran on {metadata['os']} {metadata.get('os_version', '')}",
             style="bright_black",
         )
 

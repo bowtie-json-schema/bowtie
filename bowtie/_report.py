@@ -138,7 +138,7 @@ class RunMetadata:
         started: str | None = None,
         **kwargs: Any,
     ) -> RunMetadata:
-        from bowtie._core import ImplementationInfo
+        from bowtie._core import ImplementationInfo  # noqa: PLC0415
 
         if started is not None:
             kwargs["started"] = datetime.fromisoformat(started)
@@ -170,7 +170,7 @@ class RunMetadata:
 
 
 @frozen(eq=False)
-class Report:
+class Report:  # noqa: PLW1641
     r"""
     A Bowtie report, containing (amongst other things) results about cases run.
 
@@ -413,11 +413,14 @@ class Report:
             passed = self.total_tests - unsuccessful.total
             percentage = int(100 * (passed / self.total_tests))
             r, g, b = 100 - percentage, percentage, 0
-            yield implementation, Badge(
-                schemaVersion=1,
-                label=self.metadata.dialect.pretty_name,
-                message=f"{percentage}% Passing",
-                color=f"{r:02x}{g:02x}{b:02x}",
+            yield (
+                implementation,
+                Badge(
+                    schemaVersion=1,
+                    label=self.metadata.dialect.pretty_name,
+                    message=f"{percentage}% Passing",
+                    color=f"{r:02x}{g:02x}{b:02x}",
+                ),
             )
 
 

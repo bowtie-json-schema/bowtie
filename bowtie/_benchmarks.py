@@ -749,9 +749,7 @@ class BenchmarkReporter:
             STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
     def _print_results_table(self):
-
         def _format_value(value: float) -> str:
-
             if value * 1000 < 1:
                 return f"{round(value * 1000 * 1000)}us"
             elif value < 1:
@@ -1219,7 +1217,6 @@ class Benchmarker:
         quiet: bool,
         format: str,
     ):
-
         acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
         compatible_connectables: list[Connectable] = []
         incompatible_connectables: list[Connectable] = []

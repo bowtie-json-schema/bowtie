@@ -114,12 +114,12 @@ class Result:
         console: Console,
         options: ConsoleOptions,
     ) -> RenderResult:
-        from rich import box
-        from rich.console import Group
-        from rich.json import JSON
-        from rich.panel import Panel
-        from rich.table import Column, Table
-        from rich.text import Text
+        from rich import box  # noqa: PLC0415
+        from rich.console import Group  # noqa: PLC0415
+        from rich.json import JSON  # noqa: PLC0415
+        from rich.panel import Panel  # noqa: PLC0415
+        from rich.table import Column, Table  # noqa: PLC0415
+        from rich.text import Text  # noqa: PLC0415
 
         epilog = Table.grid(padding=2, pad_edge=True)
 
@@ -293,7 +293,7 @@ class DialectResults:
         )
 
     def __rich__(self):
-        from rich.table import Column, Table
+        from rich.table import Column, Table  # noqa: PLC0415
 
         table = Table.grid(Column("Name", justify="right"))
         ordered = sorted(self._dialects.items(), reverse=True)

@@ -84,9 +84,9 @@ class Runner:
         schema = case["schema"]
         try:
             Validator = validator_for(schema, self._DefaultValidator)
-            assert (
-                Validator is not None
-            ), "No dialect sent and schema is missing $schema."
+            assert Validator is not None, (
+                "No dialect sent and schema is missing $schema."
+            )
 
             if use_referencing_library:
                 registry = referencing.Registry().with_contents(

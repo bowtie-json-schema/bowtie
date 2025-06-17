@@ -16,7 +16,6 @@ def get_benchmark():
     array_length = 1000
     benchmarks = []
     while array_length <= max_array_length:
-
         start = [37] + [0] * (array_length - 1)
         middle = [0] * (array_length // 2) + [37] + [0] * (array_length // 2)
         end = [0] * (array_length - 1) + [37]

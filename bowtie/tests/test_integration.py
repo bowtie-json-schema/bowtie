@@ -104,8 +104,7 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
             jsonout = _json.loads(stdout)
         except _json.JSONDecodeError:
             pytest.fail(
-                f"stdout had invalid JSON: {stdout!r}\n\n"
-                f"stderr had {stderr}",
+                f"stdout had invalid JSON: {stdout!r}\n\nstderr had {stderr}",
             )
         return jsonout, stderr
 
@@ -373,8 +372,7 @@ async def run(*args, **kwargs):
             report = Report.from_serialized(stdout.splitlines())
         except _json.JSONDecodeError:
             pytest.fail(
-                f"stdout had invalid JSON: {stdout!r}\n\n"
-                f"stderr had {stderr}",
+                f"stdout had invalid JSON: {stdout!r}\n\nstderr had {stderr}",
             )
         except EmptyReport:
             results = []
@@ -3888,7 +3886,6 @@ class TestImplicitDialectSupport:
 
 
 class TestBenchmarkRun:
-
     DIRECT_CONNECTABLE_PYTHON = "direct:python-jsonschema"
 
     benchmark_report_validator = VALIDATORS.for_uri(
@@ -4090,7 +4087,6 @@ class TestBenchmarkRun:
 
 
 class TestFilterBenchmarks:
-
     @pytest.mark.asyncio
     async def test_default_benchmarks(self):
         stdout, stderr = await bowtie(

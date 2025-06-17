@@ -5,6 +5,7 @@ Check that lintsonschema's schema matches the "real" one.
 This is the most straightforward way to keep things in sync that I can think
 of. For why, see #521.
 """
+
 from pathlib import Path
 import sys
 

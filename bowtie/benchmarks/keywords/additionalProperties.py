@@ -26,11 +26,11 @@ def get_benchmark():
 
         middle_index = len(allowed_properties) // 2
         invalid_at_first = [uuid.uuid4().hex, *allowed_properties]
-        invalid_at_middle = (
-            allowed_properties[:middle_index]
-            + [uuid.uuid4().hex]
-            + allowed_properties[middle_index:]
-        )
+        invalid_at_middle = [
+            *allowed_properties[:middle_index],
+            uuid.uuid4().hex,
+            *allowed_properties[middle_index:],
+        ]
         invalid_at_last = [*allowed_properties, uuid.uuid4().hex]
         valid = allowed_properties
 

@@ -22,11 +22,13 @@ def get_benchmark():
     while array_length <= max_array_length:
         array = [uuid.uuid4().hex for _ in range(array_length)]
 
-        invalid_at_first = [1] + array[:-1]
-        invalid_at_middle = (
-            array[: array_length // 2] + [1] + array[array_length // 2 : -1]
-        )
-        invalid_at_last = array[:-1] + [1]
+        invalid_at_first = [1, *array[:-1]]
+        invalid_at_middle = [
+            *array[: array_length // 2],
+            1,
+            *array[array_length // 2 : -1],
+        ]
+        invalid_at_last = [*array[:-1], 1]
         valid = array
 
         tests = (

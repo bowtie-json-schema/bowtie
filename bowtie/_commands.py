@@ -118,7 +118,10 @@ def validated(validator: Validator[Any], instance: Any):
 
 
 @dataclass_transform(frozen_default=True)
-def command[R](Response: Callable[..., R], name: str = "") -> Callable[
+def command[R](
+    Response: Callable[..., R],
+    name: str = "",
+) -> Callable[
     [type],
     type[Command[R]],
 ]:

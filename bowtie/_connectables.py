@@ -31,7 +31,6 @@ class UnknownConnector(Exception):
 
 
 class Connector(Protocol):
-
     kind: str
 
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...

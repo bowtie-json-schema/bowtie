@@ -70,7 +70,6 @@ def _validate_benchmark_file(file, module):
 
 
 class TestBenchmarkFormat:
-
     def test_validate_single_benchmark(self, valid_single_benchmark):
         assert benchmark_validator.is_valid(
             valid_single_benchmark.serializable(),
@@ -93,7 +92,6 @@ class TestBenchmarkFormat:
 
 
 class TestLoadBenchmark:
-
     def test_benchmark_set_dialect(self, valid_single_benchmark):
         benchmark_json = valid_single_benchmark.serializable()
         benchmark_json["schema"]["$schema"] = Dialect.latest().serializable()
@@ -178,7 +176,6 @@ class TestLoadBenchmark:
 
 
 class TestBenchmarker:
-
     def test_default_benchmarker(self, benchmarker_run_args):
         _benchmarks.Benchmarker.from_default_benchmarks(**benchmarker_run_args)
 
@@ -218,7 +215,6 @@ class TestBenchmarker:
 
 
 class TestBenchmarkReport:
-
     def test_merge_benchmark_reports(
         self,
     ):

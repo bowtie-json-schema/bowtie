@@ -70,7 +70,6 @@ class Validator[E: Exception]:
 
 @frozen
 class ValidatorRegistry[E: Exception]:
-
     _compile: SchemaCompiler[E] = field(alias="compile")
     _registry: SchemaRegistry = field(default=EMPTY_REGISTRY, alias="registry")
 

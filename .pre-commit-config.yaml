@@ -20,8 +20,9 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.12.0"
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0
     hooks:
@@ -41,12 +42,6 @@ repos:
         language: python
         pass_filenames: false
         entry: .pre-commit-hooks/check-lintsonschema-schema
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
-      - name: black (python implementations & bowtie internals)
-        id: black
-        args: ["--line-length", "79"]
   - repo: https://github.com/doublify/pre-commit-rust
     rev: "v1.0"
     hooks:

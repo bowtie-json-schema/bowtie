@@ -163,6 +163,7 @@ ignore = [
   "PLR0915",
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
+  "PT028",  # gets very confused by functions named test* which are not tests
   "PYI025",  # No, importing it as Set is fine.
   "RET501",  # Returning None explicitly is *definitely* fine
   "RET502",  # Returning None implicitly is fine
@@ -190,6 +191,6 @@ from-first = true
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["ANN", "D100", "S101", "T201"]
 "docs/*" = ["ANN", "D", "INP001"]
-"bowtie/tests/*" = ["ANN", "D", "DTZ011", "RUF012", "S", "INP"]
+"bowtie/tests/*" = ["ANN", "D", "DTZ011", "PLC0415", "RUF012", "S", "INP"]
 "bowtie/benchmarks/*" = ["ANN", "D", "DTZ011", "RUF012", "S", "INP", "E501"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]

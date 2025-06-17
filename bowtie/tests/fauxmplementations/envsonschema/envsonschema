@@ -45,6 +45,7 @@ Here's a short description of the minilanguage:
 
 Any other words are ignored.
 """
+
 from dataclasses import dataclass
 import io
 import json

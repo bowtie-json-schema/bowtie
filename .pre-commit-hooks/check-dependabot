@@ -2,6 +2,7 @@
 """
 Check that all implementations are registered with dependabot.
 """
+
 from pathlib import Path
 import sys
 

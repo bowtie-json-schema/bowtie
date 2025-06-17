@@ -205,7 +205,6 @@ def _float_or_none(value: str | float | None) -> float | None:
 
 @frozen(kw_only=True)
 class ConnectableImage:
-
     _id: str = field(
         converter=lambda value: (
             value if "/" in value else f"{IMAGE_REPOSITORY}/{value}"
@@ -345,7 +344,6 @@ async def start_container(docker: Docker, image_name: str):
 
 @frozen(kw_only=True)
 class ConnectableContainer:
-
     _id: str = field(alias="id")
 
     #: An explicit timeout to wait for each implementation to respond

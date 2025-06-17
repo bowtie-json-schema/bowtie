@@ -159,7 +159,6 @@ class Dialect:
         hasBooleanSchemas: bool = True,
         **kwargs: Any,
     ) -> Self:
-
         for each in "top", "bottom":
             if each in kwargs:
                 kwargs[f"{each}_schema"] = kwargs.pop(each)
@@ -214,7 +213,7 @@ class Dialect:
         """
         Create a validator in this dialect which allows all instances.
         """
-        from bowtie._direct_connectable import Direct
+        from bowtie._direct_connectable import Direct  # noqa: PLC0415
 
         validators = Direct.from_id("python-jsonschema").registry()
         return validators.for_schema(self.top_schema)
@@ -223,7 +222,7 @@ class Dialect:
         """
         Create a validator in this dialect which does not allow any instances.
         """
-        from bowtie._direct_connectable import Direct
+        from bowtie._direct_connectable import Direct  # noqa: PLC0415
 
         validators = Direct.from_id("python-jsonschema").registry()
         return validators.for_schema(self.bottom_schema)
@@ -540,10 +539,10 @@ class Implementation:
         return self.info.dialects.issuperset(dialects)
 
     async def get_versions(self) -> Iterable[str]:
-        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
             GitHubError,
         )
-        from github3.models import (  # type: ignore[reportMissingTypeStubs]
+        from github3.models import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
             GitHubCore,
         )
 
@@ -618,7 +617,7 @@ class Implementation:
         """
         Smoke test this implementation.
         """
-        from bowtie import _smoke
+        from bowtie import _smoke  # noqa: PLC0415
 
         return _smoke.test(self)
 
@@ -646,10 +645,10 @@ class Example:
         return Test(**asdict(self), valid=valid)
 
     def syntax(self) -> RenderableType:
-        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
             JsonLexer,
         )
-        from rich.syntax import Syntax
+        from rich.syntax import Syntax  # noqa: PLC0415
 
         return Syntax(
             json.dumps(self.instance),
@@ -688,10 +687,10 @@ class Test:
         return self.valid
 
     def syntax(self) -> RenderableType:
-        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]
+        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
             JsonLexer,
         )
-        from rich.syntax import Syntax
+        from rich.syntax import Syntax  # noqa: PLC0415
 
         return Syntax(
             json.dumps(self.instance),
@@ -767,8 +766,8 @@ class TestCase:
         return as_dict
 
     def syntax(self, dialect: Dialect) -> RenderableType:
-        from jsonschema_lexer import JSONSchemaLexer
-        from rich.syntax import Syntax
+        from jsonschema_lexer import JSONSchemaLexer  # noqa: PLC0415
+        from rich.syntax import Syntax  # noqa: PLC0415
 
         return Syntax(
             json.dumps(self.schema, indent=2),
@@ -852,6 +851,8 @@ def github():
     This extra behavior is just useful in GitHub actions workflows, and
     presumably if ``github3.py`` was more active would be default behavior.
     """
-    from github3 import GitHub  # type: ignore[reportMissingTypeStubs]
+    from github3 import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+        GitHub,
+    )
 
     return GitHub(token=os.environ.get("GITHUB_TOKEN", ""))

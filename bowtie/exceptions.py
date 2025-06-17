@@ -113,11 +113,14 @@ class StartupFailed(Exception):
     ) -> RenderResult:
         cause = self.__cause__
         if cause is None:
-            root_causes, hint = [], (
-                "If you are developing a new harness, check if stderr "
-                "(shown below) contains harness-specific information "
-                "which can help. Otherwise, you may have an issue with your "
-                "local container setup (podman, docker, etc.)."
+            root_causes, hint = (
+                [],
+                (
+                    "If you are developing a new harness, check if stderr "
+                    "(shown below) contains harness-specific information "
+                    "which can help. Otherwise, you may have an issue with "
+                    "your local container setup (podman, docker, etc.)."
+                ),
             )
         else:
             root_causes: Iterable[Exception] = getattr(
@@ -140,8 +143,8 @@ class StartupFailed(Exception):
             hint_stmt=hint,
         )
         if self.stderr:
-            from rich.panel import Panel
-            from rich.text import Text
+            from rich.panel import Panel  # noqa: PLC0415
+            from rich.text import Text  # noqa: PLC0415
 
             yield Panel(Text(self.stderr), title="stderr")
 

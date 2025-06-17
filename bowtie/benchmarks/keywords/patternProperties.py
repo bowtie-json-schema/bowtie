@@ -30,13 +30,15 @@ def get_benchmark():
 
         invalid_at_first = [
             (_random_string(), "string"),
-        ] + property_value_pairs[1:]
-        invalid_at_middle = (
-            property_value_pairs[: num_properties // 2]
-            + [(_random_string(), "string")]
-            + property_value_pairs[num_properties // 2 : -1]
-        )
-        invalid_at_last = property_value_pairs[1:] + [
+            *property_value_pairs[1:],
+        ]
+        invalid_at_middle = [
+            *property_value_pairs[: num_properties // 2],
+            (_random_string(), "string"),
+            *property_value_pairs[num_properties // 2 : -1],
+        ]
+        invalid_at_last = [
+            *property_value_pairs[1:],
             (_random_string(), "string"),
         ]
         valid = property_value_pairs
