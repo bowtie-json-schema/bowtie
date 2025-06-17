@@ -165,9 +165,7 @@ class DirectImplementation[E: Exception]:
     ),
 )
 def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
-    from jsonschema.validators import (
-        validator_for,  # type: ignore[reportUnknownVariableType]
-    )
+    from jsonschema.validators import validator_for
 
     # FIXME: python-jsonschema/jsonschema#1011
     def to_group(error: ValidationError) -> ValidationError | Invalid[Any]:
@@ -187,15 +185,15 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
         schema: Schema,
         registry: SchemaRegistry,
     ) -> Callable[[Any], Invalid[ValidationError] | None]:
-        DialectValidator: type[Validator] = validator_for(  # type: ignore[reportUnknownVariableType]
+        DialectValidator: type[Validator] = validator_for(
             schema,
             default=validator_for({"$schema": str(dialect.uri)}),
         )
         validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
 
         def validate(instance: Any) -> Invalid[Any] | None:
-            errors = validator.iter_errors(instance)  # type: ignore[reportUnknownMemberType]
-            exceptions: list[Exception] = [to_group(each) for each in errors]  # type: ignore[reportUnknownArgumentType]
+            errors = validator.iter_errors(instance)
+            exceptions = [to_group(each) for each in errors]
             if exceptions:
                 return Invalid("Not valid.", exceptions)
 
