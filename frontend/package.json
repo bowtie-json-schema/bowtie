@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@testing-library/react": "^16.3.0",
-    "bootstrap": "^5.3.6",
+    "bootstrap": "^5.3.7",
     "dayjs": "^1.11.13",
     "mathjs": "^14.5.2",
     "react": "^19.1.0",
@@ -57,15 +57,15 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@playwright/test": "^1.53.0",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.25",
     "@vitejs/plugin-react": "^4.5.2",
-    "eslint": "^9.28.0",
+    "eslint": "^9.29.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-tsdoc": "^0.4.0",
@@ -74,10 +74,10 @@
     "recharts": "2.15.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.0",
+    "typescript-eslint": "^8.34.1",
     "vite": "^6.3.5",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.4"
   },
   "resolutions": {
     "prismjs": "^1.30.0"
