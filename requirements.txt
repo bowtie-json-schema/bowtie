@@ -127,7 +127,7 @@ uritemplate==4.2.0
     # via github3-py
 url-py==0.15.0
     # via bowtie-json-schema (pyproject.toml)
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
 yarl==1.20.1
     # via aiohttp
