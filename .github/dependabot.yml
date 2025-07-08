@@ -169,6 +169,11 @@ updates:
     schedule:
       interval: daily
 
+  - package-ecosystem: "swift"
+    directory: "/implementations/swift-swift-json-schema"
+    schedule:
+      interval: "daily"
+
   # ignore: scala-mjs-validator - Dependabot doesn't support Scala.
   # ignore: scala-rc-circe-json-validator - Dependabot doesn't support Scala.
 
@@ -332,6 +337,11 @@ updates:
     directory: "/implementations/elixir-jsv"
     schedule:
       interval: daily
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/swift-swift-json-schema"
+    schedule:
+      interval: "daily"
 
   - package-ecosystem: "docker"
     directory: "/bowtie/tests/fauxmplementations/envsonschema"

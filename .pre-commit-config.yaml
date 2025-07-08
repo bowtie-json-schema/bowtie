@@ -1,6 +1,7 @@
 ci:
   skip:
     - clippy # doesn't seem to run in pre-commit.ci
+    - swift-format # timesout in pre-commit.ci
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -113,4 +114,13 @@ repos:
             "implementations/.java-implementations-pmd-ruleset.xml",
             "-d",
             "implementations",
+          ]
+  - repo: https://github.com/swiftlang/swift-format
+    rev: 601.0.0
+    hooks:
+      - name: swift-format (swift implementations)
+        id: swift-format
+        args:
+          [
+            "implementations/swift-swift-json-schema/Sources"
           ]

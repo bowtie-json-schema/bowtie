@@ -159,3 +159,10 @@ cython_debug/
 .idea/
 .vscode/
 .vs/
+
+# Mac
+.DS_Store
+
+# Swift
+.build/
+.swiftpm/
