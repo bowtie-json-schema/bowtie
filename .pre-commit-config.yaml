@@ -121,6 +121,6 @@ repos:
         id: swiftlint
         args:
           [
-            "implementations/swift-json-schema-validator/Sources",
+            "implementations/swift-swift-json-schema/Sources",
             "--strict"
           ]

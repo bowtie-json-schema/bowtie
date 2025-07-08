@@ -1,7 +1,7 @@
 import Foundation
 import JSONSchema
 
-setLineBufferedStdout()
+setLineBufferedOutput()
 
 func main() throws {
   log("Starting BowtieJSONSchema")

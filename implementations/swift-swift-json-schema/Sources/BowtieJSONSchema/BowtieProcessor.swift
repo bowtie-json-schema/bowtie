@@ -56,15 +56,29 @@ struct BowtieProcessor {
     let rawTestSchema = run.testCase.schema
     let schema: Schema
     do {
-      schema = try Schema(rawSchema: rawTestSchema, context: .init(dialect: .draft2020_12, remoteSchema: run.testCase.registry ?? [:]))
+      schema = try Schema(
+        rawSchema: rawTestSchema,
+        context: .init(
+          dialect: .draft2020_12,
+          remoteSchema: run.testCase.registry ?? [:]
+        )
+      )
     } catch {
       log("Error: \(error)")
-      try write(RunResponse.executionError(.init(seq: identifier, errored: true, context: .init(message: error.localizedDescription, traceback: nil))))
+      try write(
+        RunResponse.executionError(
+          .init(
+            seq: identifier,
+            errored: true,
+            context: .init(message: error.localizedDescription, traceback: nil)
+          )
+        )
+      )
       return
     }
 
     let testResults = run.testCase.tests
-      .map { test in  
+      .map { test in
         let instance = test.instance
         let result = schema.validate(instance)
         return TestResult.executed(.init(valid: result.isValid))

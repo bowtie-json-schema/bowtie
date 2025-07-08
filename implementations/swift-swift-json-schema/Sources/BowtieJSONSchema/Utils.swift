@@ -1,11 +1,10 @@
 import Foundation
 
-// MARK: Standard Out
-
-func setLineBufferedStdout() {
+func setLineBufferedOutput() {
   FileHandle.standardOutput.synchronizeFile()
   FileHandle.standardError.synchronizeFile()
 }
+
 /// Writes to standard error for logging in Bowtie.
 func log(_ message: String) {
   FileHandle.standardError.write("\(message)\n".data(using: .utf8)!)

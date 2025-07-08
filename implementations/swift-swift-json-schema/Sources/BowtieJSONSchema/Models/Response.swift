@@ -7,18 +7,25 @@ struct StartResponse: Encodable {
 
   struct Implementation: Encodable {
     let language: String  = "swift"
-    let name: String = "swift-json-schema"
+    let name = "swift-json-schema"
     let version: String?
     let dialects: Set<String>
-    let homepage: String = "https://github.com/ajevans99/swift-json-schema"
-    let issues: String = "https://github.com/ajevans99/swift-json-schema/issues"
-    let source: String = "https://github.com/ajevans99/swift-json-schema"
-    // swiftlint:disable:next line_length
-    let documentation: String? = "https://swiftpackageindex.com/ajevans99/swift-json-schema/main/documentation/jsonschema"
+    let homepage = "https://github.com/ajevans99/swift-json-schema"
+    let issues = "https://github.com/ajevans99/swift-json-schema/issues"
+    let source = "https://github.com/ajevans99/swift-json-schema"
+    let documentation = "https://swiftpackageindex.com/ajevans99/swift-json-schema/main/documentation/jsonschema"
     // swiftlint:disable:next identifier_name
-    let os: String? = "Ubuntu"
-    let osVersion: String? = ProcessInfo.processInfo.operatingSystemVersionString
-    let languageVersion: String? = {
+    let os: String = {
+#if os(Linux)
+    return "Linux"
+#elseif os(macOS)
+    return "macOS"
+#else
+    return "Unknown"
+#endif
+    }()
+    let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+    let languageVersion: String = {
 #if swift(>=6.0)
       return "6.0 or later"
 #elseif swift(>=5.10)
@@ -52,7 +59,7 @@ enum RunResponse: Encodable {
   }
 
   private enum CodingKeys: String, CodingKey {
-    case type, seq
+    case seq
     case results, skipped, message, errored, context
   }
 
@@ -62,14 +69,11 @@ enum RunResponse: Encodable {
 
     switch self {
     case .result(let result):
-      // try container.encode("result", forKey: .type)
       try container.encode(result.results, forKey: .results)
     case .skipped(let skipped):
-      // try container.encode("skipped", forKey: .type)
       try container.encode(skipped.skipped, forKey: .skipped)
       try container.encode(skipped.message, forKey: .message)
     case .executionError(let error):
-      // try container.encode("errored", forKey: .type)
       try container.encode(error.errored, forKey: .errored)
       try container.encode(error.context, forKey: .context)
     }

@@ -170,7 +170,7 @@ updates:
       interval: daily
 
   - package-ecosystem: "swift"
-    directory: "/implementations/swift-json-schema-validator"
+    directory: "/implementations/swift-swift-json-schema"
     schedule:
       interval: "daily"
 
