@@ -7,7 +7,7 @@ func setLineBufferedOutput() {
 
 /// Writes to standard error for logging in Bowtie.
 func log(_ message: String) {
-  FileHandle.standardError.write("\(message)\n".data(using: .utf8)!)
+  FileHandle.standardError.write(Data("\(message)\n".utf8))
 }
 
 // MARK: JSON
