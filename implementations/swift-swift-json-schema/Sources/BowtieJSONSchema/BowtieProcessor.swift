@@ -9,7 +9,7 @@ struct BowtieProcessor {
   }
 
   private var didStart = false
-  private var currentDialect: String?
+  private var currentDialect: JSONSchema.Dialect?
 
   private let encoder: JSONEncoder
   private let decoder: JSONDecoder
@@ -45,7 +45,12 @@ struct BowtieProcessor {
   mutating func handleDialect(_ dialect: Dialect) throws {
     assert(didStart)
     log("Dialect: \(dialect.dialect)")
-    try write(DialectResponse(ok: Constants.supportedDialects.contains(dialect.dialect)))
+    guard let dialect = JSONSchema.Dialect(rawValue: dialect.dialect) else {
+      try write(DialectResponse(ok: false))
+      return
+    }
+    currentDialect = dialect
+    try write(DialectResponse(ok: true))
   }
 
   mutating func handleRun(_ run: Run) throws {
@@ -59,7 +64,7 @@ struct BowtieProcessor {
       schema = try Schema(
         rawSchema: rawTestSchema,
         context: .init(
-          dialect: .draft2020_12,
+          dialect: currentDialect ?? .draft2020_12,
           remoteSchema: run.testCase.registry ?? [:]
         )
       )
