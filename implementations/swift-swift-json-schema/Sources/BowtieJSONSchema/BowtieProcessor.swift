@@ -37,7 +37,7 @@ struct BowtieProcessor {
     didStart = true
     let response = StartResponse(
       version: start.version,
-      implementation: .init(version: jsonSchemaVersion, dialects: Constants.supportedDialects)
+      implementation: .init(dialects: Constants.supportedDialects)
     )
     try write(response)
   }
@@ -102,7 +102,6 @@ struct BowtieProcessor {
 extension BowtieProcessor {
   private func write<E: Encodable>(_ value: E) throws {
     let output = try encoder.encodeToString(value) + "\n"
-    FileHandle.standardOutput.write(output.data(using: .utf8)!)
-    FileHandle.standardOutput.synchronizeFile()
+    FileHandle.standardOutput.write(Data(output.utf8))
   }
 }
