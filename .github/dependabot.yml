@@ -339,6 +339,11 @@ updates:
       interval: daily
 
   - package-ecosystem: "docker"
+    directory: "/implementations/swift-swift-json-schema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
     directory: "/bowtie/tests/fauxmplementations/envsonschema"
     schedule:
       interval: "daily"
