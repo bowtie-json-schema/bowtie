@@ -21,7 +21,6 @@ let package = Package(
       name: "BowtieJSONSchema",
       dependencies: [
         .product(name: "JSONSchema", package: "swift-json-schema"),
-//        .product(name: "JSONSchemaBuilder", package: "swift-json-schema"),
       ]
     )
   ]

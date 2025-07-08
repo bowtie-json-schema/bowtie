@@ -11,7 +11,7 @@ struct Dialect: Decodable {
 struct TestCase: Codable {
   let description: String
   let comment: String?
-  let schema: Schema
+  let schema: JSONValue
   let registry: [String: JSONValue]?
   let tests: [Test]
 

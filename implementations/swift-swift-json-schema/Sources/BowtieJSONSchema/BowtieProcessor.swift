@@ -37,7 +37,7 @@ struct BowtieProcessor {
     didStart = true
     let response = StartResponse(
       version: start.version,
-      implementation: .init(version: "0.3.0", dialects: Constants.supportedDialects)
+      implementation: .init(version: jsonSchemaVersion, dialects: Constants.supportedDialects)
     )
     try write(response)
   }
@@ -45,7 +45,7 @@ struct BowtieProcessor {
   mutating func handleDialect(_ dialect: Dialect) throws {
     assert(didStart)
     log("Dialect: \(dialect.dialect)")
-    try write(DialectResponse(ok: true))
+    try write(DialectResponse(ok: Constants.supportedDialects.contains(dialect.dialect)))
   }
 
   mutating func handleRun(_ run: Run) throws {
@@ -53,20 +53,20 @@ struct BowtieProcessor {
     let identifier = run.seq
     log("Schema: \(run.testCase.schema)")
 
-    guard run.testCase.registry == nil else {
-      let response = RunResponse.skipped(
-        .init(seq: identifier, skipped: true, message: "Registry not yet supported. $refs are not supported.")
-      )
-      try write(response)
+    let rawTestSchema = run.testCase.schema
+    let schema: Schema
+    do {
+      schema = try Schema(rawSchema: rawTestSchema, context: .init(dialect: .draft2020_12, remoteSchema: run.testCase.registry ?? [:]))
+    } catch {
+      log("Error: \(error)")
+      try write(RunResponse.executionError(.init(seq: identifier, errored: true, context: .init(message: error.localizedDescription, traceback: nil))))
       return
     }
 
-    let testSchema = run.testCase.schema
-
     let testResults = run.testCase.tests
-      .map { test in
+      .map { test in  
         let instance = test.instance
-        let result = testSchema.validate(instance)
+        let result = schema.validate(instance)
         return TestResult.executed(.init(valid: result.isValid))
       }
 
@@ -82,6 +82,8 @@ struct BowtieProcessor {
 
 extension BowtieProcessor {
   private func write<E: Encodable>(_ value: E) throws {
-    FileHandle.standardOutput.write(try encoder.encodeToString(value).data(using: .utf8)!)
+    let output = try encoder.encodeToString(value) + "\n"
+    FileHandle.standardOutput.write(output.data(using: .utf8)!)
+    FileHandle.standardOutput.synchronizeFile()
   }
 }

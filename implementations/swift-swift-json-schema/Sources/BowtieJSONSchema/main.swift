@@ -12,13 +12,8 @@ func main() throws {
 
   var bowtieProcess = BowtieProcessor(encoder: encoder, decoder: decoder)
 
-  let input = FileHandle.standardInput
-  let inputData = input.readDataToEndOfFile()
-  guard let inputString = String(data: inputData, encoding: .utf8) else {
-    throw NSError(domain: "BowtieJSONSchema", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to read input"])
-  }
-
-  for line in inputString.components(separatedBy: .newlines) where !line.isEmpty {
+  while let line = readLine(strippingNewline: true) {
+    guard !line.isEmpty else { continue }
     let command = try decoder.decode(Command.self, from: line.data(using: .utf8)!)
     try bowtieProcess.handle(command: command)
   }
