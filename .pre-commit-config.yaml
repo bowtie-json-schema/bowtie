@@ -114,13 +114,12 @@ repos:
             "-d",
             "implementations",
           ]
-  - repo: https://github.com/realm/SwiftLint
-    rev: 0.59.0
+  - repo: https://github.com/swiftlang/swift-format
+    rev: 601.0.0
     hooks:
-      - name: swiftlint (swift implementations)
-        id: swiftlint
+      - name: swift-format (swift implementations)
+        id: swift-format
         args:
           [
-            "implementations/swift-swift-json-schema/Sources",
-            "--strict"
+            "implementations/swift-swift-json-schema/Sources"
           ]

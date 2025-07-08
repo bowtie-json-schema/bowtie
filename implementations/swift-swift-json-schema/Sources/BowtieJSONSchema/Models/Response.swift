@@ -6,33 +6,34 @@ struct StartResponse: Encodable {
   let implementation: Implementation
 
   struct Implementation: Encodable {
-    let language: String  = "swift"
+    let language: String = "swift"
     let name = "swift-json-schema"
     let version: String?
     let dialects: Set<String>
     let homepage = "https://github.com/ajevans99/swift-json-schema"
     let issues = "https://github.com/ajevans99/swift-json-schema/issues"
     let source = "https://github.com/ajevans99/swift-json-schema"
-    let documentation = "https://swiftpackageindex.com/ajevans99/swift-json-schema/main/documentation/jsonschema"
+    let documentation =
+      "https://swiftpackageindex.com/ajevans99/swift-json-schema/main/documentation/jsonschema"
     // swiftlint:disable:next identifier_name
     let os: String = {
-#if os(Linux)
-    return "Linux"
-#elseif os(macOS)
-    return "macOS"
-#else
-    return "Unknown"
-#endif
+      #if os(Linux)
+        return "Linux"
+      #elseif os(macOS)
+        return "macOS"
+      #else
+        return "Unknown"
+      #endif
     }()
     let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
     let languageVersion: String = {
-#if swift(>=6.0)
-      return "6.0 or later"
-#elseif swift(>=5.10)
-      return "5.10"
-#else
-      return "Earlier than 5.10"
-#endif
+      #if swift(>=6.0)
+        return "6.0 or later"
+      #elseif swift(>=5.10)
+        return "5.10"
+      #else
+        return "Earlier than 5.10"
+      #endif
     }()
   }
 }

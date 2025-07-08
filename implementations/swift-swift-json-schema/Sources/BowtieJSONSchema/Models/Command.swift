@@ -28,7 +28,8 @@ struct Run: Decodable {
   let testCase: TestCase
 
   private enum CodingKeys: String, CodingKey {
-    case seq, testCase = "case"
+    case seq
+    case testCase = "case"
   }
 }
 
