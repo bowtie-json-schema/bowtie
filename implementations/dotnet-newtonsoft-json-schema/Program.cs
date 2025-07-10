@@ -6,10 +6,9 @@ using Newtonsoft.Json.Schema;
 ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new FileCommandSource(args[0]);
 
 bool started = false;
-var unsupportedTests = new Dictionary<(string, string), string> { };
+var unsupportedTests = new Dictionary<(string, string), string> {};
 
-var supportedSchemaVersions = new Dictionary<SchemaVersion, string>
-{
+var supportedSchemaVersions = new Dictionary<SchemaVersion, string> {
     { SchemaVersion.Draft3, "http://json-schema.org/draft-03/schema#" },
     { SchemaVersion.Draft4, "http://json-schema.org/draft-04/schema#" },
     { SchemaVersion.Draft6, "http://json-schema.org/draft-06/schema#" },
@@ -39,23 +38,21 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             }
 
             started = true;
-            var startResult = new JsonObject
-            {
+            var startResult = new JsonObject {
                 ["version"] = 1,
-                ["implementation"] = new JsonObject
-                {
-                    ["language"] = "dotnet",
-                    ["name"] = "JsonSchema.Net",
-                    ["version"] = GetLibVersion(),
-                    ["homepage"] = "https://www.newtonsoft.com/jsonschema",
-                    ["documentation"] = "https://www.newtonsoft.com/jsonschema/help",
-                    ["issues"] = "https://github.com/JamesNK/Newtonsoft.Json.Schema/issues",
-                    ["source"] = "https://github.com/JamesNK/Newtonsoft.Json.Schema",
-                    ["dialects"] = new JsonArray(supportedSchemaVersions.OrderBy(x => x.Key).Select(x => (JsonNode)x.Value).ToArray()),
-                    ["os"] = Environment.OSVersion.Platform.ToString(),
-                    ["os_version"] = Environment.OSVersion.Version.ToString(),
-                    ["language_version"] = Environment.Version.ToString()
-                },
+                ["implementation"] =
+                    new JsonObject { ["language"] = "dotnet", ["name"] = "JsonSchema.Net",
+                                     ["version"] = GetLibVersion(),
+                                     ["homepage"] = "https://www.newtonsoft.com/jsonschema",
+                                     ["documentation"] = "https://www.newtonsoft.com/jsonschema/help",
+                                     ["issues"] = "https://github.com/JamesNK/Newtonsoft.Json.Schema/issues",
+                                     ["source"] = "https://github.com/JamesNK/Newtonsoft.Json.Schema",
+                                     ["dialects"] = new JsonArray(supportedSchemaVersions.OrderBy(x => x.Key)
+                                                                      .Select(x => (JsonNode)x.Value)
+                                                                      .ToArray()),
+                                     ["os"] = Environment.OSVersion.Platform.ToString(),
+                                     ["os_version"] = Environment.OSVersion.Version.ToString(),
+                                     ["language_version"] = Environment.Version.ToString() },
             };
             Console.WriteLine(startResult.ToJsonString());
             break;
@@ -130,7 +127,8 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                         throw new MissingTest(tests);
                     }
 
-                    string? nullableTestDescription = test["description"]?.GetValue<string>() ?? throw new MissingTestDescription(test);
+                    string? nullableTestDescription =
+                        test["description"]?.GetValue<string>() ?? throw new MissingTestDescription(test);
                     testDescription = nullableTestDescription;
 
                     string? testInstance = test["instance"]?.ToJsonString() ?? "null";
@@ -139,8 +137,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                     results.Add(new JsonObject { ["valid"] = validationResult });
                 }
 
-                var runResult = new JsonObject
-                {
+                var runResult = new JsonObject {
                     ["seq"] = root["seq"]?.DeepClone(),
                     ["results"] = results,
                 };
@@ -149,25 +146,20 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             }
             catch (Exception) when (unsupportedTests.TryGetValue((testCaseDescription, testDescription), out string? message))
             {
-                var skipResult = new JsonObject
-                {
-                    ["seq"] = root["seq"]?.DeepClone(),
-                    ["skipped"] = true,
-                    ["message"] = message
-                };
+                var skipResult =
+                    new JsonObject { ["seq"] = root["seq"]?.DeepClone(), ["skipped"] = true, ["message"] = message };
                 Console.WriteLine(skipResult.ToJsonString());
             }
             catch (Exception e)
             {
-                var errorResult = new JsonObject
-                {
+                var errorResult = new JsonObject {
                     ["seq"] = root["seq"]?.DeepClone(),
                     ["errored"] = true,
-                    ["context"] = new JsonObject
-                    {
-                        ["message"] = e.ToString(),
-                        ["traceback"] = Environment.StackTrace,
-                    },
+                    ["context"] =
+                        new JsonObject {
+                            ["message"] = e.ToString(),
+                            ["traceback"] = Environment.StackTrace,
+                        },
                 };
                 Console.WriteLine(errorResult.ToJsonString());
             }
@@ -193,7 +185,8 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 
 static string GetLibVersion()
 {
-    AssemblyInformationalVersionAttribute? attribute = typeof(JSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+    AssemblyInformationalVersionAttribute? attribute =
+        typeof(JSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
     return attribute!.InformationalVersion;
 }
 
@@ -242,9 +235,8 @@ internal class MissingTests(JsonNode testCase) : Exception
     public JsonNode TestCase { get; } = testCase;
 }
 
-internal class UnknownCommand(string? message) : Exception(message)
-{
-}
+internal class UnknownCommand(string? message) : Exception
+(message) { }
 
 internal class MissingVersion(JsonNode command) : Exception
 {
