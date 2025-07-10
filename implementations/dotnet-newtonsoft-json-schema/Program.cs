@@ -93,7 +93,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             string schemaText = testCase["schema"]?.ToJsonString() ?? throw new MissingSchema(testCase);
 
             JsonNode? registry = testCase["registry"];
-            var resolver = new JSchemaPreloadedResolver();
+            var resolver = new JSchemaPreloadedResolver(new JSchemaUrlResolver());
             if (registry is not null)
             {
                 foreach ((string key, JsonNode? value) in registry.AsObject())
