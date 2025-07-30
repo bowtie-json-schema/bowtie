@@ -4,7 +4,7 @@ aiodocker==0.24.0
     # via bowtie-json-schema (pyproject.toml)
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.12.15
     # via aiodocker
 aiosignal==1.4.0
     # via aiohttp
@@ -16,7 +16,7 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.6.15
+certifi==2025.7.14
     # via
     #   httpcore
     #   httpx
@@ -31,7 +31,7 @@ cryptography==45.0.5
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.21.2
+docutils==0.22
     # via diagnostic
 frozenlist==1.7.0
     # via
@@ -53,7 +53,7 @@ idna==3.10
     #   yarl
 inflect==7.5.0
     # via bowtie-json-schema (pyproject.toml)
-jsonschema==4.24.0
+jsonschema==4.25.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-lexer==0.3.0
     # via bowtie-json-schema (pyproject.toml)
@@ -99,7 +99,7 @@ referencing-loaders==2025.1.1
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.4
     # via github3-py
-rich==14.0.0
+rich==14.1.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
@@ -125,7 +125,7 @@ typing-extensions==4.14.1
     #   typeguard
 uritemplate==4.2.0
     # via github3-py
-url-py==0.16.1
+url-py==0.17.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.5.0
     # via requests
