@@ -69,6 +69,11 @@ updates:
         patterns:
           - "Microsoft.Extensions.*"
 
+  - package-ecosystem: "nuget"
+    directory: "/implementations/dotnet-newtonsoft-json-schema"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "gomod"
     directory: "/implementations/go-jsonschema"
     schedule:
@@ -210,6 +215,11 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/dotnet-corvus-jsonschema"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/dotnet-newtonsoft-json-schema"
     schedule:
       interval: "daily"
 
