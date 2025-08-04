@@ -19,7 +19,7 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.12.5"
+    rev: "v0.12.7"
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
@@ -116,7 +116,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-6.1.1-RELEASE
+    rev: swift-DEVELOPMENT-SNAPSHOT-2025-08-02-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
