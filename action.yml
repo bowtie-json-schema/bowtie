@@ -21,24 +21,16 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v5
-      id: localpython
+    - uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc # v6.4.3
       with:
-        python-version: "3.12 - 3.13"
-        update-environment: false
+        python-version: 3.13
 
-    - name: "Install latest Bowtie"
+    - name: Install latest Bowtie
       if: inputs.version == ''
-      run: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema
+      run: uv tool install bowtie-json-schema
       shell: bash
 
     - name: "Install Bowtie ${{ inputs.version }}"
       if: inputs.version != ''
-      uses: nick-fields/retry@v3
-      with:
-        timeout_minutes: 10
-        max_attempts: ${{ inputs.installation-attempts }}
-        retry_wait_seconds: ${{ inputs.installation-wait-seconds }}
-        shell: bash
-        command: pipx install --python "${{ steps.localpython.outputs.python-path }}" bowtie-json-schema==${{ inputs.version }}
-        retry_on: error
+      run: uv tool install bowtie-json-schema==${{ inputs.version }}
+      shell: bash
