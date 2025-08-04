@@ -59,16 +59,13 @@ Bowtie is written in Python, and uses a container runtime to execute JSON Schema
 If you have no previous container runtime installed (e.g. Docker), follow the `installation instructions for podman <https://podman.io/docs/installation>`_ specific to your operating system.
 Ensure you've started a Podman VM if you are on macOS.
 
-Then follow the `pipx installation process <https://pipx.pypa.io/stable/installation/>`_ to install ``pipx``, and finally use it to install Bowtie via:
+Then follow the `uv installation process <https://docs.astral.sh/uv/getting-started/installation/>`_ to install ``uv``, and finally use it to run Bowtie via:
 
 .. code:: sh
 
-    pipx install bowtie-json-schema
+    uvx --from bowtie-json-schema bowtie --help
 
-which should give you a working Bowtie installation, which you can check via:
-
-.. code:: sh
-
-    bowtie --help
+which should show you Bowtie's help by invoking its command line interface.
+You can install it so it is runnable via simply ``bowtie`` by using ``uv tool install bowtie-json-schema``.
 
 Further usage details of the command-line interface can be found `here <cli>`.
