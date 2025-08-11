@@ -153,7 +153,7 @@ jobs:
     needs: regenerate-versioned-reports
     steps:
       - name: Download all uploaded artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: implementations
 
