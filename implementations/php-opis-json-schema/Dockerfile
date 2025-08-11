@@ -7,7 +7,7 @@ RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --opti
 COPY bowtieJsonSchema.php .
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
 
-FROM php:8.5.0alpha2-fpm-alpine
+FROM php:8.5.0alpha4-fpm-alpine
 
 WORKDIR /usr/src/myapp
 
