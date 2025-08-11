@@ -8,7 +8,7 @@ aiohttp==3.12.15
     # via aiodocker
 aiosignal==1.4.0
     # via aiohttp
-anyio==4.9.0
+anyio==4.10.0
     # via httpx
 attrs==25.3.0
     # via
@@ -23,11 +23,11 @@ certifi==2025.8.3
     #   requests
 cffi==1.17.1
     # via cryptography
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via rich-click
-cryptography==45.0.5
+cryptography==45.0.6
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
@@ -106,7 +106,7 @@ rich==14.1.0
     #   rich-click
 rich-click==1.8.9
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
