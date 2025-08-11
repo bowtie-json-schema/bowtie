@@ -153,14 +153,14 @@ jobs:
         run: mkdir site
 
       - name: Include New Reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: report-*
           path: site/
           merge-multiple: true
 
       - name: Include Benchmark Report from local artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         if: inputs.report_benchmark_artifact_in_scope == true
         with:
           name: benchmarks
@@ -177,12 +177,12 @@ jobs:
           path: site/benchmarks
 
       - name: Include our UI data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: implementations
           path: site/
       - name: Include our public API data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: api
           path: site/api
