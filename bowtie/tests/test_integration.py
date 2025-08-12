@@ -179,7 +179,7 @@ def fauxmplementation(name):
     return image(name=name, fileobj=fileobj)
 
 
-def strimplementation(name, contents, files={}, base="alpine:3.19"):
+def strimplementation(name, contents, files={}, base="alpine:3.22"):
     """
     A fake implementation built from the given Dockerfile contents.
     """
