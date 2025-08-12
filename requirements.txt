@@ -59,7 +59,7 @@ jsonschema-lexer==0.3.0
     # via bowtie-json-schema (pyproject.toml)
 jsonschema-specifications==2025.4.1
     # via jsonschema
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via
     #   diagnostic
     #   rich
@@ -67,7 +67,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.7.0
     # via inflect
-multidict==6.6.3
+multidict==6.6.4
     # via
     #   aiohttp
     #   yarl

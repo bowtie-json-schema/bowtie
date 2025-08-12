@@ -12,7 +12,7 @@ aiosignal==1.4.0
     # via aiohttp
 alabaster==1.0.0
     # via sphinx
-anyio==4.9.0
+anyio==4.10.0
     # via httpx
 attrs==25.3.0
     # via
@@ -28,20 +28,20 @@ beautifulsoup4==4.13.4
     # via furo
 bowtie-json-schema @ file:.
     # via -r docs/requirements.in
-certifi==2025.7.14
+certifi==2025.8.3
     # via
     #   httpcore
     #   httpx
     #   requests
 cffi==1.17.1
     # via cryptography
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via
     #   rich-click
     #   sphinx-click
-cryptography==45.0.5
+cryptography==45.0.6
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema
@@ -97,13 +97,13 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==3.0.2
     # via jinja2
-mdit-py-plugins==0.4.2
+mdit-py-plugins==0.5.0
     # via myst-parser
 mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.7.0
     # via inflect
-multidict==6.6.3
+multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
@@ -162,7 +162,7 @@ rich-click==1.8.9
     # via bowtie-json-schema
 roman-numerals-py==3.1.0
     # via sphinx
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   bowtie-json-schema
     #   jsonschema
@@ -214,7 +214,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 sphinxcontrib-spelling==8.0.1
     # via -r docs/requirements.in
-sphinxext-opengraph==0.10.0
+sphinxext-opengraph==0.12.0
     # via -r docs/requirements.in
 structlog==25.4.0
     # via bowtie-json-schema
