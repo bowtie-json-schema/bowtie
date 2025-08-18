@@ -19,13 +19,13 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.12.8"
+    rev: "v0.12.9"
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.33.3
     hooks:
       - name: ensure bowtie's own schemas are valid
         id: check-metaschema
@@ -116,7 +116,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2025-08-11-a
+    rev: swift-DEVELOPMENT-SNAPSHOT-2025-08-16-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
