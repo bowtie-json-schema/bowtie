@@ -19,7 +19,7 @@ jobs:
     outputs:
       dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Collect supported dialects
         id: dialects-matrix
         run: |
@@ -31,7 +31,7 @@ jobs:
     outputs:
       dialect_benchmarks: ${{ steps.benchmarks.outputs.dialect_benchmarks }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
@@ -66,7 +66,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.benchmark_files.outputs.dialect_benchmarks) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
@@ -97,7 +97,7 @@ jobs:
         dialect: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download Benchmark Reports for a dialect
         uses: actions/download-artifact@v5
@@ -144,7 +144,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Create Benchmarks folder
         run: mkdir benchmarks
