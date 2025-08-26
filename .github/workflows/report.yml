@@ -30,7 +30,7 @@ jobs:
     outputs:
       dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Collect supported dialects
         id: dialects-matrix
         run: |
@@ -45,7 +45,7 @@ jobs:
         version: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
@@ -79,7 +79,7 @@ jobs:
   generate-implementation-metadata:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
@@ -143,7 +143,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Bowtie
         uses: ./
         with:

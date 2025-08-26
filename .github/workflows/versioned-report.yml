@@ -21,7 +21,7 @@ jobs:
     outputs:
       implementations: ${{ steps.implementations-matrix.outputs.implementations }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
@@ -75,14 +75,14 @@ jobs:
         implementation: ${{ fromJson(needs.list-implementations.outputs.implementations) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Bowtie
         uses: ./
 
         # just so that we don't get rate limited (429)
       - name: Checkout JSON Schema Test Suite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: json-schema-org/JSON-Schema-Test-Suite
           path: json-schema-test-suite
