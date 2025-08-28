@@ -72,7 +72,7 @@ jobs:
         if: startsWith(matrix.noxenv, 'ui')
 
       - name: Install playwright browsers
-        run: pnpm --dir frontend exec playwright install --with-deps
+        run: pnpm --dir frontend dlx playwright install --with-deps
         if: matrix.noxenv == 'ui(tests)'
 
       - name: Set up uv
