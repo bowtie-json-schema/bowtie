@@ -231,18 +231,19 @@ record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {
 
 record ErrorContext(String message, String traceback) {}
 
-record Implementation(String language, String name, String version,
-                      List<String> dialects, String homepage,
-                      String documentation, String issues, String source,
-                      String os, String os_version, String language_version,
-                      List<Link> links) {}
+record
+    Implementation(String language, String name, String version,
+                   List<String> dialects, String homepage, String documentation,
+                   String issues, String source, String os, String os_version,
+                   String language_version, List<Link> links) {}
 
 record Link(String url, String description) {}
 
 record TestCase(String description, String comment, JsonNode schema,
                 JsonNode registry, List<Test> tests) {}
 
-record Test(String description, String comment, JsonNode instance,
-            boolean valid) {}
+record
+    Test(String description, String comment, JsonNode instance, boolean valid) {
+}
 
 record TestResult(boolean valid) {}

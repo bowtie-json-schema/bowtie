@@ -187,7 +187,8 @@ record Link(String url, String description) {}
 record TestCase(String description, String comment, JsonNode schema,
                 JsonNode registry, List<Test> tests) {}
 
-record Test(String description, String comment, JsonNode instance,
-            boolean valid) {}
+record
+    Test(String description, String comment, JsonNode instance, boolean valid) {
+}
 
 record TestResult(boolean valid) {}
