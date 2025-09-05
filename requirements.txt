@@ -106,7 +106,7 @@ rich==14.1.0
     #   rich-click
 rich-click==1.8.9
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.27.0
+rpds-py==0.27.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema
@@ -119,7 +119,7 @@ structlog==25.4.0
     # via bowtie-json-schema (pyproject.toml)
 typeguard==4.4.4
     # via inflect
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   rich-click
     #   typeguard
