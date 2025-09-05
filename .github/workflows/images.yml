@@ -227,7 +227,7 @@ jobs:
           )
 
       - name: Generate attestation for images
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
