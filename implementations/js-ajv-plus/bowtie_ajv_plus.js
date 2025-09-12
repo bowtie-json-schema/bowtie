@@ -38,7 +38,7 @@ const cmds = {
       version: 1,
       implementation: {
         language: "javascript",
-        name: "@theflashlabs/ajv-plus",
+        name: "theflashlabs-ajv-plus",
         version: ajv_version,
         homepage: "https://github.com/theflashlabs/ajv-plus",
         documentation: "https://github.com/theflashlabs/ajv-plus",
