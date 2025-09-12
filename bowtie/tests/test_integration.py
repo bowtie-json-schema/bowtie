@@ -484,7 +484,7 @@ async def test_suite(tmp_path):
         ),
     )
 
-    stdout, stderr = await bowtie(
+    stdout, _stderr = await bowtie(
         "suite",
         "-i",
         miniatures.always_invalid,
@@ -1723,7 +1723,7 @@ class TestSmoke:
 
     @pytest.mark.asyncio
     async def test_pretty_multiple(self):
-        stdout, stderr = await bowtie(
+        stdout, _stderr = await bowtie(
             "smoke",
             "--format",
             "pretty",
@@ -2939,7 +2939,7 @@ async def test_badges(envsonschema, tmp_path):
 
     site.joinpath("draft2020-12.json").write_text(run_stdout)
 
-    stdout, stderr = await bowtie("badges", "--site", site)
+    _stdout, _stderr = await bowtie("badges", "--site", site)
 
     badges = site / "badges"
     assert {path.relative_to(badges) for path in badges.rglob("*")} == {
@@ -3573,7 +3573,7 @@ async def test_validate_set_dialect_from_schema(tmp_path):
     )
     tmp_path.joinpath("instance.json").write_text("12")
 
-    stdout, stderr = await bowtie(
+    stdout, _stderr = await bowtie(
         "validate",
         "-i",
         ARBITRARY,
@@ -3589,7 +3589,7 @@ async def test_validate_specify_dialect(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("instance.json").write_text("12")
 
-    stdout, stderr = await bowtie(
+    stdout, _stderr = await bowtie(
         "validate",
         "-i",
         ARBITRARY,
@@ -3614,7 +3614,7 @@ async def test_statistics_pretty(envsonschema):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
-    run_stdout, run_stderr = await bowtie(
+    run_stdout, _run_stderr = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -3668,7 +3668,7 @@ async def test_statistics_json(envsonschema):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
-    run_stdout, run_stderr = await bowtie(
+    run_stdout, _run_stderr = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -3711,7 +3711,7 @@ async def test_statistics_markdown(envsonschema):
         {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
         {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
     """  # noqa: E501
-    run_stdout, run_stderr = await bowtie(
+    run_stdout, _run_stderr = await bowtie(
         "run",
         "-i",
         envsonschema,
@@ -3926,7 +3926,7 @@ class TestBenchmarkRun:
         tmp_path.joinpath("benchmark.json").write_text(
             _json.dumps(valid_single_benchmark.serializable()),
         )
-        stdout, stderr = await bowtie(
+        stdout, _stderr = await bowtie(
             "perf",
             "-i",
             self.DIRECT_CONNECTABLE_PYTHON,
@@ -3971,7 +3971,7 @@ class TestBenchmarkRun:
         tmp_path.joinpath("benchmark.json").write_text(
             _json.dumps(valid_single_benchmark.serializable()),
         )
-        stdout, stderr = await bowtie(
+        stdout, _stderr = await bowtie(
             "perf",
             "-i",
             self.DIRECT_CONNECTABLE_PYTHON,
@@ -4022,7 +4022,7 @@ class TestBenchmarkRun:
                 benchmark_with_varying_parameter.get_benchmark().serializable(),
             ),
         )
-        stdout, stderr = await bowtie(
+        stdout, _stderr = await bowtie(
             "perf",
             "-i",
             self.DIRECT_CONNECTABLE_PYTHON,
@@ -4074,7 +4074,7 @@ class TestBenchmarkRun:
         tmp_path.joinpath("benchmark.json").write_text(
             _json.dumps(invalid_benchmark),
         )
-        _, stderr = await bowtie(
+        _, _stderr = await bowtie(
             "perf",
             "-i",
             self.DIRECT_CONNECTABLE_PYTHON,
@@ -4089,7 +4089,7 @@ class TestBenchmarkRun:
 class TestFilterBenchmarks:
     @pytest.mark.asyncio
     async def test_default_benchmarks(self):
-        stdout, stderr = await bowtie(
+        _stdout, stderr = await bowtie(
             "filter-benchmarks",
             exit_code=0,
         )
@@ -4097,7 +4097,7 @@ class TestFilterBenchmarks:
 
     @pytest.mark.asyncio
     async def test_keyword_benchmarks(self):
-        stdout, stderr = await bowtie(
+        _stdout, stderr = await bowtie(
             "filter-benchmarks",
             "-t",
             "keyword",
