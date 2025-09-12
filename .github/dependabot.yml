@@ -90,6 +90,11 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
+    directory: "/implementations/js-ajv-plus"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
     directory: "/implementations/js-hyperjump"
     schedule:
       interval: "daily"
