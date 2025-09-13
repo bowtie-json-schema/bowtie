@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ajevans99/swift-json-schema.git",
       "state" : {
-        "revision" : "4e088dccb75cd19c2ffb15f9902850d7e8be0f77",
-        "version" : "0.8.1"
+        "revision" : "52c251dc90e25f98dc06fc7e491d746f5f021d00",
+        "version" : "0.9.0"
       }
     },
     {
