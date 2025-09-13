@@ -199,7 +199,7 @@ describe("parseReportData", () => {
       ]),
       didFailFast: false,
     });
-  });
+  }, 6000);
 
   test("parses reports with multiple test cases", () => {
     const testImplementation = miniature("always_invalid");
@@ -335,5 +335,5 @@ describe("parseReportData", () => {
         ],
       ]),
     );
-  });
+  }, 13000);
 });

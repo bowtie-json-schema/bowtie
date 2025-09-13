@@ -38,7 +38,7 @@
     "lint": "eslint --max-warnings 0 src",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "test": "vitest run; pnpm exec playwright install; playwright test",
+    "test": "vitest run; playwright test",
     "watch-test": "vitest watch"
   },
   "dependencies": {
