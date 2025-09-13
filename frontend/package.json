@@ -37,7 +37,7 @@
     "preview": "vite preview",
     "lint": "eslint --max-warnings 0 src",
     "test:unit": "vitest run",
-    "test:e2e": "pnpm exec playwright install; playwright test",
+    "test:e2e": "pnpm exec playwright install --with-deps; playwright test",
     "test": "pnpm test:unit && pnpm test:e2e",
     "watch-test": "vitest watch"
   },
