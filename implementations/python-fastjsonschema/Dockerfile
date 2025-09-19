@@ -1,4 +1,4 @@
-FROM python:3.14.0rc2-alpine
+FROM python:3.14.0rc3-alpine
 WORKDIR /usr/src/myapp
 RUN python3 -m pip install fastjsonschema
 COPY bowtie_fastjsonschema.py .
