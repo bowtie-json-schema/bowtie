@@ -1,3 +1,3 @@
-FROM python:3.14.0rc2-alpine
+FROM python:3.14.0rc3-alpine
 COPY envsonschema /usr/local/bin
 CMD ["/usr/local/bin/envsonschema"]
