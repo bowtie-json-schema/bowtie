@@ -25,13 +25,13 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via rich-click
-cryptography==45.0.7
+cryptography==46.0.1
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.22
+docutils==0.22.2
     # via diagnostic
 frozenlist==1.7.0
     # via
@@ -75,7 +75,7 @@ propcache==0.3.2
     # via
     #   aiohttp
     #   yarl
-psutil==7.0.0
+psutil==7.1.0
     # via pyperf
 pycparser==2.23
     # via cffi
@@ -104,7 +104,7 @@ rich==14.1.0
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.9
+rich-click==1.9.1
     # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.27.1
     # via
