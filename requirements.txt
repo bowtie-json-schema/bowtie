@@ -8,7 +8,7 @@ aiohttp==3.12.15
     # via aiodocker
 aiosignal==1.4.0
     # via aiohttp
-anyio==4.10.0
+anyio==4.11.0
     # via httpx
 attrs==25.3.0
     # via
@@ -16,7 +16,7 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.8.3
+certifi==2025.10.5
     # via
     #   httpcore
     #   httpx
@@ -25,13 +25,13 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via rich-click
-cryptography==45.0.7
+cryptography==46.0.2
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.22
+docutils==0.22.2
     # via diagnostic
 frozenlist==1.7.0
     # via
@@ -71,11 +71,11 @@ multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
-propcache==0.3.2
+propcache==0.4.0
     # via
     #   aiohttp
     #   yarl
-psutil==7.0.0
+psutil==7.1.0
     # via pyperf
 pycparser==2.23
     # via cffi
@@ -104,7 +104,7 @@ rich==14.1.0
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
     #   rich-click
-rich-click==1.8.9
+rich-click==1.9.2
     # via bowtie-json-schema (pyproject.toml)
 rpds-py==0.27.1
     # via
@@ -129,5 +129,5 @@ url-py==0.18.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.5.0
     # via requests
-yarl==1.20.1
+yarl==1.21.0
     # via aiohttp
