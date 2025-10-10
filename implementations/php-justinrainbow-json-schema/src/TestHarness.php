@@ -106,7 +106,7 @@ class TestHarness
 
     private function run(stdClass $request): array
     {
-        $this->debug('Running test case');
+        $this->debug('Running test case with seq: %d', $request->seq);
 
         $results = [];
 
@@ -120,7 +120,7 @@ class TestHarness
             }
         }
 
-        foreach ($request->case->tests as $test) {
+        foreach ($request->case->tests as $index => $test) {
             try {
                 $validator->validate(
                     $test->instance,
@@ -128,6 +128,7 @@ class TestHarness
                 );
                 $results[] =  ['valid' => $validator->isValid()];
             } catch (Throwable $e) {
+                $this->debug('Test case with seq: %d, test index: %d has thrown an exception: %s', $request->seq, $index, $e->getMessage());
                 $results[] = [
                     'errored' => true,
                     'context' => [
