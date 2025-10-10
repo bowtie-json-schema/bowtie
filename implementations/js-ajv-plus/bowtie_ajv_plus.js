@@ -64,12 +64,12 @@ const cmds = {
 
     // For some reason ajv's process for Draft 6 is different, so split.
     if (args.dialect !== "http://json-schema.org/draft-06/schema#") {
-      ajv = new DRAFTS[args.dialect]({ strict: false });
+      ajv = new DRAFTS[args.dialect]();
     } else {
       const Ajv = require("@theflashlabs/ajv-plus");
       const draft6MetaSchema = require("@theflashlabs/ajv-plus/dist/refs/json-schema-draft-06.json");
 
-      ajv = new Ajv({ strict: false });
+      ajv = new Ajv();
       ajv.addMetaSchema(draft6MetaSchema);
     }
     return { ok: true };
