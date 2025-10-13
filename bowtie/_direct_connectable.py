@@ -187,7 +187,7 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
             schema,
             default=validator_for({"$schema": str(dialect.uri)}),
         )
-        validator: Validator = DialectValidator(schema, registry=registry)  # type: ignore[reportUnknownVariableType]
+        validator: Validator = DialectValidator(schema, registry=registry)
 
         def validate(instance: Any) -> Invalid[Any] | None:
             errors = validator.iter_errors(instance)
