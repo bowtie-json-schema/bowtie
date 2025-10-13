@@ -131,8 +131,8 @@ def audit(session):
     """
     Audit Python dependencies for vulnerabilities.
     """
-    session.install("pip-audit", "-r", REQUIREMENTS["main"])
-    session.run("python", "-m", "pip_audit")
+    session.install("pip-audit")
+    session.run("python", "-m", "pip_audit", "-r", REQUIREMENTS["main"])
 
 
 @session(tags=["build"])
