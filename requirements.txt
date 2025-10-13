@@ -4,19 +4,19 @@ aiodocker==0.24.0
     # via bowtie-json-schema (pyproject.toml)
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.15
+aiohttp==3.13.0
     # via aiodocker
 aiosignal==1.4.0
     # via aiohttp
-anyio==4.10.0
+anyio==4.11.0
     # via httpx
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.8.3
+certifi==2025.10.5
     # via
     #   httpcore
     #   httpx
@@ -25,15 +25,15 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via rich-click
-cryptography==45.0.7
+cryptography==46.0.2
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.22
+docutils==0.22.2
     # via diagnostic
-frozenlist==1.7.0
+frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
@@ -45,7 +45,7 @@ httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via bowtie-json-schema (pyproject.toml)
-idna==3.10
+idna==3.11
     # via
     #   anyio
     #   httpx
@@ -67,15 +67,15 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.8.0
     # via inflect
-multidict==6.6.4
+multidict==6.7.0
     # via
     #   aiohttp
     #   yarl
-propcache==0.3.2
+propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-psutil==7.0.0
+psutil==7.1.0
     # via pyperf
 pycparser==2.23
     # via cffi
@@ -99,7 +99,7 @@ referencing-loaders==2025.1.1
     # via bowtie-json-schema (pyproject.toml)
 requests==2.32.5
     # via github3-py
-rich==14.1.0
+rich==14.2.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   diagnostic
@@ -129,5 +129,5 @@ url-py==0.18.0
     # via bowtie-json-schema (pyproject.toml)
 urllib3==2.5.0
     # via requests
-yarl==1.20.1
+yarl==1.22.0
     # via aiohttp
