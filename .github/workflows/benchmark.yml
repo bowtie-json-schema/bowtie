@@ -71,10 +71,6 @@ jobs:
       - name: Install Bowtie
         uses: ./
 
-      - name: Install pyperf dependency
-        run: |
-          python -m pip install pyperf
-
       - name: Generate Benchmark Report
         run: |
           bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > benchmark-file-${{ matrix.id }}.json
