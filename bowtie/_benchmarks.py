@@ -11,6 +11,7 @@ import json
 import os
 import statistics
 import subprocess
+import sys
 import tempfile
 
 from attrs import asdict, field, frozen
@@ -1438,6 +1439,8 @@ class Benchmarker:
         stdout_fd = "1"
 
         output, err = await self._run_subprocess(
+            sys.executable,
+            "-m",
             "pyperf",
             "command",
             "--pipe",
