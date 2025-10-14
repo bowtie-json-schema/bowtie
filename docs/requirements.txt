@@ -35,7 +35,7 @@ certifi==2025.10.5
     #   requests
 cffi==2.0.0
     # via cryptography
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 click==8.3.0
     # via
@@ -140,7 +140,7 @@ python-dateutil==2.9.0.post0
     # via github3-py
 pyyaml==6.0.3
     # via myst-parser
-referencing==0.36.2
+referencing==0.37.0
     # via
     #   bowtie-json-schema
     #   jsonschema
