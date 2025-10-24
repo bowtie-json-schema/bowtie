@@ -140,7 +140,7 @@ python-dateutil==2.9.0.post0
     # via github3-py
 pyyaml==6.0.3
     # via myst-parser
-referencing==0.36.2
+referencing==0.35.1
     # via
     #   bowtie-json-schema
     #   jsonschema
