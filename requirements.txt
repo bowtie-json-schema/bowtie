@@ -89,7 +89,7 @@ pyperf==2.9.0
     # via bowtie-json-schema (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via github3-py
-referencing==0.37.0
+referencing==0.35.1
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema

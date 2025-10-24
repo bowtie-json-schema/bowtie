@@ -59,7 +59,7 @@ dependencies = [
   "jsonschema>=4.19.0",
   "jsonschema_lexer",
   "pyperf",
-  "referencing>=0.31.0",
+  "referencing>=0.31.0,<0.37.0",
   "referencing-loaders>=2024.5.2",
   "rich",
   "rich-click>=1.8.0,<1.8.10",
