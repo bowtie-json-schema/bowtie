@@ -1,6 +1,5 @@
-import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
 import { CloudArrowUpFill } from "react-bootstrap-icons";
-import { useLocation } from "react-router";
 
 import styles from "./DragAndDrop.module.css";
 import Implementation from "../../data/Implementation";
@@ -8,18 +7,10 @@ import { DialectReportView } from "../../DialectReportView";
 import { ReportData, parseReportData } from "../../data/parseReportData";
 
 export const DragAndDrop = () => {
-  const location = useLocation();
-
   const [dragActive, setDragActive] = useState(false);
   const [invalidFile, setInvalidFile] = useState(false);
   const [lines, setLines] = useState<ReportData | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setLines(null);
-    setDragActive(false);
-    setInvalidFile(false);
-  }, [location.key]);
 
   const handleDragEnter = function (e: DragEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Overlay from "react-bootstrap/Overlay";
@@ -18,7 +18,12 @@ interface Props {
 export const OtherImplementations = ({ otherImplementationsData }: Props) => {
   const [showPopover, setShowPopover] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
   const popoverTimeoutRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    setTarget(overlayRef.current);
+  }, []);
 
   return (
     <div
@@ -38,7 +43,7 @@ export const OtherImplementations = ({ otherImplementationsData }: Props) => {
         <Overlay
           placement="left-end"
           show={showPopover}
-          target={overlayRef.current}
+          target={target}
           transition={false}
         >
           {(props) => (

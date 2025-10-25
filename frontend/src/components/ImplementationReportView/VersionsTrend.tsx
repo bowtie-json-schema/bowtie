@@ -10,14 +10,9 @@ import {
   Tooltip,
   Legend,
   Line,
-  TooltipProps,
   Label,
 } from "recharts";
-import {
-  NameType,
-  ValueType,
-} from "recharts/types/component/DefaultTooltipContent";
-import { Payload } from "recharts/types/component/DefaultLegendContent";
+
 
 import LoadingAnimation from "../LoadingAnimation";
 import Dialect from "../../data/Dialect";
@@ -101,17 +96,7 @@ const VersionsTrend = ({ implementation }: Props) => {
     [],
   );
 
-  const legendPayload = useMemo(
-    () =>
-      [
-        {
-          value: `${implementation.id} versions`,
-          type: "line",
-          color: isDarkMode ? "#fff" : "#000",
-        },
-      ] as Payload[],
-    [implementation.id, isDarkMode],
-  );
+
 
   return (
     <Card className="mx-auto mb-3 col-md-9">
@@ -176,8 +161,9 @@ const VersionsTrend = ({ implementation }: Props) => {
                   </Label>
                 </YAxis>
                 <Tooltip content={<CustomTooltip isDarkMode={isDarkMode!} />} />
-                <Legend payload={legendPayload} />
+                <Legend />
                 <Line
+                  name={`${implementation.id} versions`}
                   type="linear"
                   dataKey="totalUnsuccessfulTests"
                   stroke="#ff007f"
@@ -192,12 +178,19 @@ const VersionsTrend = ({ implementation }: Props) => {
   );
 };
 
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-  isDarkMode,
-}: TooltipProps<ValueType, NameType> & { isDarkMode: boolean }) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string | number;
+  isDarkMode: boolean;
+}
+
+interface TooltipPayload {
+  payload: TrendData;
+}
+
+const CustomTooltip = (props: CustomTooltipProps) => {
+  const { active, payload, label, isDarkMode } = props;
   if (active && payload?.length) {
     return (
       <div
@@ -209,19 +202,19 @@ const CustomTooltip = ({
         <span className="d-block mb-1">
           erroredTests:{" "}
           <span className="fw-semibold">
-            {(payload[0].payload as TrendData).erroredTests}
+            {payload[0].payload.erroredTests}
           </span>
         </span>
         <span className="d-block mb-1">
           failedTests:{" "}
           <span className="fw-semibold">
-            {(payload[0].payload as TrendData).failedTests}
+            {payload[0].payload.failedTests}
           </span>
         </span>
         <span className="d-block mb-1">
           skippedTests:{" "}
           <span className="fw-semibold">
-            {(payload[0].payload as TrendData).skippedTests}
+            {payload[0].payload.skippedTests}
           </span>
         </span>
       </div>
