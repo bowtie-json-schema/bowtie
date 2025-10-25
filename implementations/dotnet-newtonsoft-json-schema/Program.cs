@@ -41,7 +41,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
             var startResult = new JsonObject {
                 ["version"] = 1,
                 ["implementation"] =
-                    new JsonObject { ["language"] = "dotnet", ["name"] = "JsonSchema.Net",
+                    new JsonObject { ["language"] = "dotnet", ["name"] = "Newtonsoft-Json-Schema",
                                      ["version"] = GetLibVersion(),
                                      ["homepage"] = "https://www.newtonsoft.com/jsonschema",
                                      ["documentation"] = "https://www.newtonsoft.com/jsonschema/help",
