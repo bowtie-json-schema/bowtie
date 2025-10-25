@@ -175,6 +175,19 @@ jobs:
           branch: main
           name: benchmarks
           path: site/benchmarks
+        continue-on-error: true
+
+      - name: Fallback for missing benchmarks
+        if: steps.download_benchmark.outcome == 'failure'
+        run: |
+          mkdir -p ./site/benchmarks
+          cd site/benchmarks
+          curl -O https://bowtie.report/benchmarks/draft3.json
+          curl -O https://bowtie.report/benchmarks/draft4.json
+          curl -O https://bowtie.report/benchmarks/draft6.json
+          curl -O https://bowtie.report/benchmarks/draft7.json
+          curl -O https://bowtie.report/benchmarks/draft2019-09.json
+          curl -O https://bowtie.report/benchmarks/draft2020-12.json
 
       - name: Include our UI data
         uses: actions/download-artifact@v5
