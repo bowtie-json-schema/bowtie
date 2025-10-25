@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from textwrap import dedent
 from zipfile import ZipFile
 import os
+import platform
 import shlex
 import tarfile
 
@@ -344,6 +345,10 @@ def develop_harness(session):
     For "real" versions of harnesses, rely on the built version from GitHub
     packages.
     """
+    oci_build = os.environ.get("CONTAINER_BUILD")
+    if oci_build is None:
+        oci_build = "container" if platform.system() == "Darwin" else "podman"
+
     for each in session.posargs:
         each, has_version, version = each.partition("@")
         build_args = [
@@ -353,16 +358,17 @@ def develop_harness(session):
         tag = f":{version}" if has_version else ""
 
         name = Path(each).name
-        session.run(
-            "podman",
-            "build",
-            "-f",
-            IMPLEMENTATIONS / name / "Dockerfile",
-            "-t",
-            f"ghcr.io/bowtie-json-schema/{name}{tag}",
-            *build_args if has_version else [],
-            external=True,
-        )
+        with session.chdir(IMPLEMENTATIONS / name):
+            session.run(
+                oci_build,
+                "build",
+                "-f",
+                IMPLEMENTATIONS / name / "Dockerfile",
+                "-t",
+                f"ghcr.io/bowtie-json-schema/{name}{tag}",
+                *build_args if has_version else [],
+                external=True,
+            )
         session.run("bowtie", "smoke", "--quiet", "-i", name, external=True)
 
 
