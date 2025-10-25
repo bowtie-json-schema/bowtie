@@ -22,7 +22,7 @@ data = "bowtie/data"
 [project]
 name = "bowtie-json-schema"
 description = "A meta-validator for the JSON Schema specification."
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 readme = "README.rst"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -41,8 +41,8 @@ classifiers = [
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",

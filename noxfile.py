@@ -38,7 +38,7 @@ REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
 ]
 
 
-SUPPORTED = ["3.12", "3.13"]
+SUPPORTED = ["3.13", "3.14"]
 LATEST = SUPPORTED[-1]
 
 nox.options.default_venv_backend = "uv|virtualenv"
