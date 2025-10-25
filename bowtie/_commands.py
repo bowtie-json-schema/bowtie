@@ -71,7 +71,7 @@ class SeqCase:
         if schema_without_dialect:
             runner.schema_without_dialect(self.case.schema)
 
-        run = Run(seq=self.seq, case=self.case.without_expected_results())
+        run = Run(seq=self.seq, case=self.case.without_expected_results())  # type: ignore[reportCallIssue]
         return runner.validate(run, expected=self.case.expected_results())
 
     def serializable(self):
@@ -117,7 +117,6 @@ def validated(validator: Validator[Any], instance: Any):
     return instance
 
 
-@dataclass_transform(frozen_default=True)
 def command[R](
     Response: Callable[..., R],
     name: str = "",
@@ -125,6 +124,7 @@ def command[R](
     [type],
     type[Command[R]],
 ]:
+    @dataclass_transform(frozen_default=True, field_specifiers=(field,))
     def _command(cls: type) -> type[Command[R]]:
         nonlocal name
         if not name:
@@ -160,7 +160,7 @@ class Start:
     version: int
 
 
-START_V1 = Start(version=1)
+START_V1 = Start(version=1)  # type: ignore[reportCallIssue]
 
 
 @frozen

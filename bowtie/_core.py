@@ -452,17 +452,17 @@ class DialectRunner:
         expected: Sequence[bool | None],
     ) -> SeqResult:
         try:
-            response: tuple[Seq, int, AnyCaseResult] | None = (
-                await self._harness.request(run)  # type: ignore[reportArgumentType]
-            )
+            response: (
+                tuple[Seq, int, AnyCaseResult] | None
+            ) = await self._harness.request(run)
             if response is None:
                 result = CaseErrored.uncaught()
             else:
                 seq, length, result = response
-                if seq != run.seq:
+                if seq != run.seq:  # type: ignore[reportUnknownMemberType]
                     result = CaseErrored.uncaught(
                         message="mismatched seq",
-                        expected=run.seq,
+                        expected=run.seq,  # type: ignore[reportUnknownMemberType]
                         got=seq,
                         response=result,
                     )
@@ -478,10 +478,10 @@ class DialectRunner:
         except InvalidResponse as error:
             result = CaseErrored.uncaught(response=error.contents)
         return SeqResult(
-            seq=run.seq,
+            seq=run.seq,  # type: ignore[reportUnknownMemberType]
             implementation=self.implementation,
             expected=expected,
-            result=result,  # type: ignore[reportUnknownArgumentType]  # pyright seems confused
+            result=result,
         )
 
 
@@ -519,7 +519,7 @@ class Implementation:
         _harness = HarnessClient(**kwargs)
 
         try:
-            harness, started = await _harness.transition(START_V1)  # type: ignore[reportArgumentType]
+            harness, started = await _harness.transition(START_V1)
         except ProtocolError as err:
             raise StartupFailed(id=id) from err
         except GotStderr as err:
@@ -528,7 +528,7 @@ class Implementation:
             if started is None:
                 raise StartupFailed(id=id)
 
-        info = ImplementationInfo.from_dict(**started.implementation)  # type: ignore[reportUnknownArgumentType]
+        info = ImplementationInfo.from_dict(**started.implementation)
 
         yield cls(harness=harness, id=id, info=info, reporter=reporter)
 
