@@ -4,7 +4,7 @@ aiodocker==0.24.0
     # via bowtie-json-schema (pyproject.toml)
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.0
+aiohttp==3.13.1
     # via aiodocker
 aiosignal==1.4.0
     # via aiohttp
@@ -27,7 +27,7 @@ charset-normalizer==3.4.4
     # via requests
 click==8.3.0
     # via rich-click
-cryptography==46.0.2
+cryptography==46.0.3
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
@@ -75,7 +75,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-psutil==7.1.0
+psutil==7.1.2
     # via pyperf
 pycparser==2.23
     # via cffi
@@ -106,7 +106,7 @@ rich==14.2.0
     #   rich-click
 rich-click==1.8.9
     # via bowtie-json-schema (pyproject.toml)
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   bowtie-json-schema (pyproject.toml)
     #   jsonschema

@@ -8,7 +8,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -r requirements.txt
     #   aiohttp
-aiohttp==3.13.0
+aiohttp==3.13.1
     # via
     #   -r requirements.txt
     #   aiodocker
@@ -48,7 +48,7 @@ click==8.3.0
     # via
     #   -r requirements.txt
     #   rich-click
-cryptography==46.0.2
+cryptography==46.0.3
     # via
     #   -r requirements.txt
     #   pyjwt
@@ -81,7 +81,7 @@ httpx==0.28.1
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-hypothesis==6.140.4
+hypothesis==6.142.3
     # via -r test-requirements.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -96,7 +96,7 @@ inflect==7.5.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 jsonschema==4.25.1
     # via
@@ -143,7 +143,7 @@ propcache==0.4.1
     #   -r requirements.txt
     #   aiohttp
     #   yarl
-psutil==7.1.0
+psutil==7.1.2
     # via
     #   -r requirements.txt
     #   pyperf
@@ -206,7 +206,7 @@ rich-click==1.8.9
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   -r requirements.txt
     #   bowtie-json-schema
