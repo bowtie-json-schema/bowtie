@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "pip"
     directory: "/"
@@ -15,6 +17,8 @@ updates:
       bowtie-dependencies:
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "pip"
     directory: "/docs"
@@ -24,6 +28,8 @@ updates:
       bowtie-dependencies:
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "frontend"
@@ -33,11 +39,15 @@ updates:
       frontend-dependencies:
         patterns:
           - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
 
   # Dependabot for Implementations (Harnesses)
   # ------------------------------------------
@@ -56,6 +66,8 @@ updates:
     directory: "/implementations/dotnet-jsonschema-net"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-corvus-jsonschema"
@@ -68,56 +80,78 @@ updates:
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-newtonsoft-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gomod"
     directory: "/implementations/go-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gomod"
     directory: "/implementations/go-gojsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-ajv"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-ajv-plus"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-hyperjump"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-schemasafe"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   # ignore: lua-jsonschema - installs the latest (unpinned) version
   # ignore: python-fastjsonschema - installs the latest (unpinned) version
@@ -128,61 +162,85 @@ updates:
     directory: "/implementations/ruby-json_schemer"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "composer"
     directory: "/implementations/php-opis-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "composer"
     directory: "/implementations/php-justinrainbow-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "cargo"
     directory: "/implementations/rust-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "cargo"
     directory: "/implementations/rust-boon"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-json-tools-json-schema-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-openapiprocessor"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "gradle"
     directory: "/implementations/java-jsonschemafriend"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "mix"
     directory: "/implementations/elixir-jsv"
     schedule:
       interval: daily
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "swift"
     directory: "/implementations/swift-swift-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   # ignore: scala-mjs-validator - Dependabot doesn't support Scala.
   # ignore: scala-rc-circe-json-validator - Dependabot doesn't support Scala.
@@ -197,178 +255,250 @@ updates:
     directory: "/implementations/clojure-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-valijson"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-blaze"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-jsoncons"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/dotnet-jsonschema-net"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/dotnet-corvus-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/dotnet-newtonsoft-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/go-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/go-gojsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-ajv"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-ajv-plus"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-hyperjump"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-schemasafe"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/lua-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/php-opis-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/php-justinrainbow-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/python-fastjsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/python-jschon"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/python-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/ruby-json_schemer"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/rust-jsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/rust-boon"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-tools-json-schema-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-networknt-json-schema-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-openapiprocessor"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-jsonschemafriend"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/scala-mjs-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/scala-rc-circe-json-validator"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/ts-vscode-json-languageservice"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/elixir-jsv"
     schedule:
       interval: daily
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/implementations/swift-swift-json-schema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/bowtie/tests/fauxmplementations/envsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "docker"
     directory: "/bowtie/tests/fauxmplementations/lintsonschema"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
