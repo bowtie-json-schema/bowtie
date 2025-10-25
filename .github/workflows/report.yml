@@ -175,6 +175,7 @@ jobs:
           branch: main
           name: benchmarks
           path: site/benchmarks
+        id: download_benchmark
         continue-on-error: true
 
       - name: Fallback for missing benchmarks
