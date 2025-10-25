@@ -186,23 +186,32 @@ def test_cases(
     )
 
 
+error_context_optional = fixed_dictionaries(
+    {},
+    optional=dict(
+        message=text(min_size=1, max_size=50),
+        traceback=text(min_size=1, max_size=50),
+        foo=text(),
+    ),
+)
+error_contexts = builds(
+    lambda d1, d2: d1 | d2,
+    error_context_optional,
+    dictionaries(
+        text().filter(lambda k: k not in {"message", "traceback", "foo"}),
+        text() | integers(),
+        max_size=4,
+    ),
+)
+
+
 successful_tests = sampled_from(
     [
         _commands.TestResult.VALID,
         _commands.TestResult.INVALID,
     ],
 )
-errored_tests = builds(
-    _commands.ErroredTest,
-    context=fixed_dictionaries(
-        {},
-        optional=dict(
-            message=text(min_size=1, max_size=50),
-            traceback=text(min_size=1, max_size=50),
-            foo=text(),
-        ),
-    ),
-)
+errored_tests = builds(_commands.ErroredTest, context=error_context_optional)
 skipped_tests = builds(
     _commands.SkippedTest,
     message=text(min_size=1, max_size=50) | none(),
@@ -221,10 +230,7 @@ def case_results(min_tests=1, max_tests=10):
     )
 
 
-def errored_cases(
-    context=dictionaries(keys=text(), values=text() | integers(), max_size=5),
-    caught=booleans(),
-):
+def errored_cases(context=error_contexts, caught=booleans()):
     """
     A test case which errored (caught or otherwise).
     """
