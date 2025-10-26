@@ -1087,7 +1087,7 @@ SET_SCHEMA = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: _set_schema if v else _do_nothing,  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, v: _set_schema if v else _do_nothing,
     is_flag=True,
     show_default=True,
     default=False,
@@ -1104,7 +1104,7 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, v: (
         Direct.from_id("python-jsonschema" if v else "null").registry()
     ),
     is_flag=True,
@@ -1159,7 +1159,7 @@ def fail_fast(fn: FC) -> FC:
     # Both are these are needed because parsing is order dependent :/
     def disallow_fail_fast(
         ctx: click.Context,
-        _,
+        _: click.Parameter,
         value: int | None,
     ) -> int | None:
         if ctx.params.get("fail_fast"):
@@ -1170,7 +1170,7 @@ def fail_fast(fn: FC) -> FC:
 
     def disallow_max_fail(
         ctx: click.Context,
-        _,
+        _: click.Parameter,
         value: int | None,
     ) -> int | None:
         if value and ctx.params.get("max_fail", 1) != 1:
@@ -1267,7 +1267,7 @@ def run(
     show_choices=True,
     default="any",
     type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, value: (
         None if value == "any" else value == "valid"
     ),
     help=(
@@ -1360,9 +1360,9 @@ def _set_benchmarker_callable(
     "--keywords",
     "-k",
     "keywords",
-    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (
         _set_benchmarker_callable(
-            ctx,  # type: ignore[reportUnknownArgumentType]
+            ctx,
             value,
             _benchmarks.Benchmarker.for_keywords,
         )
@@ -1378,9 +1378,9 @@ def _set_benchmarker_callable(
     "-b",
     "--benchmark-file",
     "benchmark_files",
-    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (
         _set_benchmarker_callable(
-            ctx,  # type: ignore[reportUnknownArgumentType]
+            ctx,
             value,
             _benchmarks.Benchmarker.for_benchmark_files,
         )
@@ -1395,9 +1395,9 @@ def _set_benchmarker_callable(
     "--test-suite",
     "-t",
     "test_suite",
-    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (
         _set_benchmarker_callable(
-            ctx,  # type: ignore[reportUnknownArgumentType]
+            ctx,
             value,
             _benchmarks.Benchmarker.from_test_cases,
         )
@@ -1410,9 +1410,9 @@ def _set_benchmarker_callable(
     "benchmark",
     type=JSON(),
     required=False,
-    callback=lambda ctx, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda ctx, __, value: (
         _set_benchmarker_callable(
-            ctx,  # type: ignore[reportUnknownArgumentType]
+            ctx,
             value,
             _benchmarks.Benchmarker.from_input,
         )
@@ -1513,7 +1513,7 @@ KNOWN_LANGUAGES = {
     "-d",
     "dialects",
     type=_Dialect(),
-    default=frozenset(),
+    default=cast("frozenset[Dialect]", frozenset()),
     metavar="URI_OR_NAME",
     multiple=True,
     help=(
@@ -1527,13 +1527,10 @@ KNOWN_LANGUAGES = {
     "-l",
     "languages",
     type=click.Choice(sorted(KNOWN_LANGUAGES), case_sensitive=False),
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, value: (
         KNOWN_LANGUAGES
         if not value
-        else frozenset(
-            LANGUAGE_ALIASES.get(each, each)  # type: ignore[reportUnknownArgumentType]
-            for each in value  # type: ignore[reportUnknownArgumentType]
-        )
+        else frozenset(LANGUAGE_ALIASES.get(each, each) for each in value)
     ),
     multiple=True,
     metavar="LANGUAGE",
