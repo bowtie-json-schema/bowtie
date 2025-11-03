@@ -142,7 +142,7 @@ jobs:
           done
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.implementation }}
           path: |
@@ -172,7 +172,7 @@ jobs:
           cp -r "implementations/${{ inputs.implementation }}" "latest-implementations/"
         if: ${{ inputs.implementation != null }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: implementations
           path: ${{ inputs.implementation != null && 'latest-implementations' || 'implementations' }}
