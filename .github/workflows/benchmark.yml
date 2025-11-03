@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download Benchmark Reports for a dialect
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: benchmark-file-${{ matrix.dialect }}-*
           path: benchmarks-${{ matrix.dialect }}/
@@ -148,7 +148,7 @@ jobs:
         run: mkdir benchmarks
 
       - name: Include New Benchmark Reports
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: benchmark-report-*
           path: benchmarks/
