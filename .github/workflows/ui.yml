@@ -42,7 +42,7 @@ jobs:
       - name: Build the UI
         run: pnpm run --dir frontend build --base=${{ github.repository_owner == 'bowtie-json-schema' && '/' || '/bowtie' }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: frontend-build
           path: frontend/build
