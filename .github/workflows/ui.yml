@@ -54,14 +54,14 @@ jobs:
       - name: Create _site directory
         run: mkdir _site
       - name: Download frontend build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: frontend-build
           path: _site
 
       # if called from report workflow
       - name: Download test report from local artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         if: inputs.report_artifact_in_scope == true
         with:
           name: site
