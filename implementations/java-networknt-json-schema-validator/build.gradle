@@ -19,7 +19,7 @@ repositories {
 def harnessImplementation = [
     group: 'com.networknt',
     name: 'json-schema-validator',
-    version: '1.5.9'
+    version: '2.0.0'
 ]
 
 dependencies {
