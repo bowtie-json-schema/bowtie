@@ -62,7 +62,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=2024.5.2",
   "rich",
-  "rich-click>=1.8.0,<1.9.4",
+  "rich-click>=1.8.0,<1.9.5",
   "rpds.py>=0.18.0",
   "structlog",
   "url.py>=0.11.3",
