@@ -19,7 +19,7 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.2"
+    rev: "v0.14.4"
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
@@ -91,14 +91,14 @@ repos:
         id: rubocop
         args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v2.3.0
+    rev: v2.3.1
     hooks:
       - name: stylua (lua implementations)
         id: stylua
         exclude: .*/json.lua
         args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v21.1.2
+    rev: v21.1.5
     hooks:
       - name: clang-format (c/c++/c#/java implementations)
         id: clang-format
@@ -116,7 +116,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: 602.0.0
+    rev: swift-DEVELOPMENT-SNAPSHOT-2025-11-03-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
