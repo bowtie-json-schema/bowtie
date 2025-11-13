@@ -35,45 +35,45 @@ local skipped1 = {
   ['in-place applicator siblings, anyOf has unevaluated'] = 'TODO', -- unevaluatedProperties
 }
 
--- stylua: ignore start
 local skipped2 = setmetatable({
-    ['additionalProperties being false does not allow other properties'] = { -- additionalProperties
-        ['ignores arrays'] = 'array and object are both represented by a Lua table',
-    },
-    ['contains keyword validation'] = { -- contains
-        ['not array is valid'] = 'array and object are both represented by a Lua table',
-    },
-    ['maxProperties validation'] = { -- maxProperties
-        ['ignores arrays'] = 'array and object are both represented by a Lua table',
-    },
-    ['minProperties validation'] = { -- minProperties
-        ['ignores arrays'] = 'array and object are both represented by a Lua table',
-    },
-    ['regexes are not anchored by default and are case sensitive'] = { -- patternProperties
-        ['recognized members are accounted for'] = 'in a table, a `nil` value means that the key does not exist',
-    },
-    ['required validation'] = { -- required
-        ['ignores arrays'] = 'array and object are both represented by a Lua table',
-    },
-    ['required properties whose names are Javascript object property names'] = { -- required
-        ['ignores arrays'] = 'array and object are both represented by a Lua table',
-    },
-    ['object type matches objects'] = { -- type
-        ['an array is not an object'] = 'array and object are both represented by a Lua table',
-    },
-    ['array type matches arrays'] = { -- type
-        ['an object is not an array'] = 'array and object are both represented by a Lua table',
-    },
-    ['uniqueItems with an array of items and additionalItems=false'] = { -- uniqueItems
-        ['extra items are invalid even if unique'] = 'in a table, a `nil` value means that the key does not exist',
-    },
-    ['uniqueItems=false with an array of items and additionalItems=false'] = { -- uniqueItems
-        ['extra items are invalid even if unique'] = 'in a table, a `nil` value means that the key does not exist',
-    },
+  ['additionalProperties being false does not allow other properties'] = { -- additionalProperties
+    ['ignores arrays'] = 'array and object are both represented by a Lua table',
+  },
+  ['contains keyword validation'] = { -- contains
+    ['not array is valid'] = 'array and object are both represented by a Lua table',
+  },
+  ['maxProperties validation'] = { -- maxProperties
+    ['ignores arrays'] = 'array and object are both represented by a Lua table',
+  },
+  ['minProperties validation'] = { -- minProperties
+    ['ignores arrays'] = 'array and object are both represented by a Lua table',
+  },
+  ['regexes are not anchored by default and are case sensitive'] = { -- patternProperties
+    ['recognized members are accounted for'] = 'in a table, a `nil` value means that the key does not exist',
+  },
+  ['required validation'] = { -- required
+    ['ignores arrays'] = 'array and object are both represented by a Lua table',
+  },
+  ['required properties whose names are Javascript object property names'] = { -- required
+    ['ignores arrays'] = 'array and object are both represented by a Lua table',
+  },
+  ['object type matches objects'] = { -- type
+    ['an array is not an object'] = 'array and object are both represented by a Lua table',
+  },
+  ['array type matches arrays'] = { -- type
+    ['an object is not an array'] = 'array and object are both represented by a Lua table',
+  },
+  ['uniqueItems with an array of items and additionalItems=false'] = { -- uniqueItems
+    ['extra items are invalid even if unique'] = 'in a table, a `nil` value means that the key does not exist',
+  },
+  ['uniqueItems=false with an array of items and additionalItems=false'] = { -- uniqueItems
+    ['extra items are invalid even if unique'] = 'in a table, a `nil` value means that the key does not exist',
+  },
 }, {
-    __index = function () return {} end,
+  __index = function()
+    return {}
+  end,
 })
--- stylua: ignore end
 
 local function exec(cmd)
   local f = io.popen(cmd)
