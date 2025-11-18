@@ -2,6 +2,7 @@ const path = require("path");
 const readline = require("readline");
 const os = require("os");
 const process = require("process");
+const addFormats = require("ajv-formats")
 
 const ajv_version = require(
   path.join(path.dirname(path.dirname(require.resolve("ajv"))), "package.json"),
@@ -62,12 +63,14 @@ const cmds = {
     // For some reason ajv's process for Draft 6 is different, so split.
     if (args.dialect !== "http://json-schema.org/draft-06/schema#") {
       ajv = new DRAFTS[args.dialect]();
+      addFormats(ajv);
     } else {
       const Ajv = require("ajv");
       const draft6MetaSchema = require("ajv/dist/refs/json-schema-draft-06.json");
 
       ajv = new Ajv();
       ajv.addMetaSchema(draft6MetaSchema);
+      addFormats(ajv);
     }
     return { ok: true };
   },
