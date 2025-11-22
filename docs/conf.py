@@ -74,16 +74,6 @@ rst_prolog = f"""
     :alt: Open in GitHub Codespaces
     :target: https://codespaces.new{REPO.path}
 
-.. |gitpod| image:: https://gitpod.io/button/open-in-gitpod.svg
-    :alt: Open in Gitpod
-    :target: https://gitpod.io/#{REPO}
-
-.. |gitpod-badge| image:: https://img.shields.io/badge/Gitpod-try_Bowtie-blue?logo=gitpod
-    :alt: Open in Gitpod
-    :target: https://gitpod.io/#{REPO}
-    :height: 32px
-
-
 .. _official test suite: https://github.com/json-schema-org/JSON-Schema-Test-Suite
 """  # noqa: E501, RUF100
 
@@ -112,7 +102,6 @@ def entire_domain(host):
 linkcheck_ignore = [
     entire_domain("img.shields.io"),
     f"{GITHUB}.*#.*",
-    "https://gitpod.io/.*#.*",
     str(REPO / "actions"),
     str(REPO / "workflows/CI/badge.svg"),
 ]

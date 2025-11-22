@@ -1,8 +1,8 @@
 .. _bowtie:
 
-========================================
-Bowtie |codespaces-badge| |gitpod-badge|
-========================================
+=========================
+Bowtie |codespaces-badge|
+=========================
 
 Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-schema.org/>`_, by which we mean it coordinates executing *other* `validator implementations <https://json-schema.org/implementations>`_, collecting and reporting on their results.
 
@@ -35,11 +35,9 @@ Installation
 
    You can use Bowtie immediately without installing it!
 
-   Both :github:`GitHub Codespaces <features/codespaces>` and `GitPod <https://gitpod.io/>`_ can provide you with an immediate, fully-working cloud environment with Bowtie and all of its supported implementations installed into it:
+   :github:`GitHub Codespaces <features/codespaces>` can provide you with an immediate, fully-working cloud environment with Bowtie and all of its supported implementations installed into it:
 
    |codespaces|
-
-   |gitpod|
 
 
 Via Homebrew (macOS or Linuxbrew)
