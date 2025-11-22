@@ -171,7 +171,7 @@ def cases_from(
     dialect: Dialect,
 ) -> Iterable[TestCase]:
     for path in paths:
-        if _stem(path) in {"refRemote", "dynamicRef", "vocabulary"}:
+        if path.stem in {"refRemote", "dynamicRef", "vocabulary"}:
             registry = remotes_in(remotes, dialect=dialect)
         else:
             registry = {}
@@ -215,9 +215,3 @@ def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
         return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
     return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-
-
-def _stem(path: _P) -> str:  # Missing on < 3.11
-    if hasattr(path, "stem"):
-        return path.stem
-    return Path(path.at).stem  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
