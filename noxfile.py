@@ -1,12 +1,13 @@
 from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from textwrap import dedent
 from zipfile import ZipFile
 import os
 import platform
 import shlex
+import subprocess
 import tarfile
 
 import nox
@@ -21,28 +22,10 @@ IMPLEMENTATIONS = ROOT / "implementations"
 UI = ROOT / "frontend"
 UI_NEEDS_INSTALL = not UI.joinpath("node_modules").is_dir()
 
-REQUIREMENTS = dict(
-    main=ROOT / "requirements.txt",
-    docs=DOCS / "requirements.txt",
-    tests=ROOT / "test-requirements.txt",
-)
-REQUIREMENTS_IN = [  # this is actually ordered, as files depend on each other
-    (
-        (
-            ROOT / "pyproject.toml"
-            if path.absolute() == REQUIREMENTS["main"].absolute()
-            else path.parent / f"{path.stem}.in"
-        ),
-        path,
-    )
-    for path in REQUIREMENTS.values()
-]
-
-
 SUPPORTED = ["3.13", "3.14"]
 LATEST = SUPPORTED[-1]
 
-nox.options.default_venv_backend = "uv|virtualenv"
+nox.options.default_venv_backend = "uv"
 nox.options.sessions = []
 
 
@@ -83,7 +66,13 @@ def tests(session):
     """
     Run Bowtie's test suite.
     """
-    session.install("-r", REQUIREMENTS["tests"])
+    session.run_install(
+        "uv",
+        "sync",
+        "--group=test",
+        f"--python={session.virtualenv.location}",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
@@ -133,7 +122,14 @@ def audit(session):
     Audit Python dependencies for vulnerabilities.
     """
     session.install("pip-audit")
-    session.run("python", "-m", "pip_audit", "-r", REQUIREMENTS["main"])
+    with NamedTemporaryFile() as tmpfile:
+        subprocess.run(
+            ["uv", "pip", "freeze"],  # noqa: S607
+            cwd=ROOT,
+            check=True,
+            stdout=tmpfile,
+        )
+        session.run("python", "-m", "pip_audit", "-r", tmpfile.name)
 
 
 @session(tags=["build"])
@@ -141,9 +137,15 @@ def build(session):
     """
     Build Bowtie (via a PEP517 builder), and check the built artifact is valid.
     """
-    session.install("build", "twine")
+    session.install("build[uv]", "twine")
     with TemporaryDirectory() as tmpdir:
-        session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
+        session.run(
+            "pyproject-build",
+            "--installer=uv",
+            ROOT,
+            "--outdir",
+            tmpdir,
+        )
         session.run("twine", "check", "--strict", tmpdir + "/*")
 
         schemas = frozenset(SCHEMAS.rglob("*.json"))
@@ -201,7 +203,14 @@ def typing(session):
     """
     Check Bowtie's codebase using pyright.
     """
-    session.install("pyright>=1.1.407", f"{ROOT}[strategies]")
+    session.run_install(
+        "uv",
+        "sync",
+        "--extra=strategies",
+        "--group=typing",
+        f"--python={session.virtualenv.location}",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     session.run("pyright", *session.posargs, BOWTIE)
 
 
@@ -223,7 +232,13 @@ def docs(session, builder):
     """
     Build Bowtie's documentation.
     """
-    session.install("-r", REQUIREMENTS["docs"])
+    session.run_install(
+        "uv",
+        "sync",
+        "--group=docs",
+        f"--python={session.virtualenv.location}",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         argv = ["-n", "-T", "-W"]
@@ -264,7 +279,12 @@ def benchmark(fn):
     @session(default=False, tags=["perf"], name=f"bench({name})")
     @wraps(fn)
     def _benchmark(session):
-        session.install("-r", REQUIREMENTS["main"], ROOT)
+        session.run_install(
+            "uv",
+            "sync",
+            f"--python={session.virtualenv.location}",
+            env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+        )
         bowtie = Path(session.bin) / "bowtie"
         hyperfine_args, command = fn(session=session, bowtie=bowtie)
         session.run("hyperfine", *hyperfine_args, command, external=True)
@@ -372,23 +392,6 @@ def develop_harness(session):
         session.run("bowtie", "smoke", "--quiet", "-i", name, external=True)
 
 
-@session(default=False)
-def requirements(session):
-    """
-    Update bowtie's requirements.txt files.
-    """
-    if session.venv_backend == "uv":
-        cmd = ["uv", "pip", "compile", "--no-cache"]
-    else:
-        session.install("pip-tools")
-        cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
-
-    for each, out in REQUIREMENTS_IN:
-        # otherwise output files end up with silly absolute path comments...
-        relative = each.relative_to(ROOT)
-        session.run(*cmd, "--upgrade", "--output-file", out, relative)
-
-
 @session(default=False, python=False)
 def ui(session):
     """
@@ -441,7 +444,13 @@ def ui_tests(session):
     """
     Run the UI tests.
     """
-    session.install("-r", REQUIREMENTS["main"], "-e", ROOT)
+    session.run_install(
+        "uv",
+        "sync",
+        "--group=test",
+        f"--python={session.virtualenv.location}",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     pnpm(session.run, "install-test", "--frozen-lockfile")
 
 
