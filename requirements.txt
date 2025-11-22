@@ -16,7 +16,7 @@ attrs==25.4.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.10.5
+certifi==2025.11.12
     # via
     #   httpcore
     #   httpx
@@ -31,7 +31,7 @@ cryptography==46.0.3
     # via pyjwt
 diagnostic==2.1.0
     # via bowtie-json-schema (pyproject.toml)
-docutils==0.22.2
+docutils==0.22.3
     # via diagnostic
 frozenlist==1.8.0
     # via
