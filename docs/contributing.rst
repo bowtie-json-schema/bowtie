@@ -8,14 +8,14 @@ Thanks for considering contributing to Bowtie, it'd be very much appreciated!
 Installation
 ------------
 
-If you're going to work on Bowtie itself, you likely will want to install it using Python's `editable install functionality <pip:editable-installs>`, as well as to install Bowtie's testing dependencies e.g. by running:
+If you're going to work on Bowtie itself, you will want to install it along with its testing dependencies by running:
 
 .. code:: sh
 
-    $ uv pip install -r test-requirements.txt -e .
+    $ uv sync --group=test
 
 within a checkout of the Bowtie repository.
-This will allow you to make changes to files within Bowtie and see results without reinstalling it repeatedly.
+``uv`` will automatically install the package in `editable mode <https://docs.astral.sh/uv/concepts/projects/sync/#editable-installation>`_ so that changes are immediately visible if you edit Bowtie's source.
 
 
 Running the Tests
@@ -30,9 +30,9 @@ Once you have done so, you can run:
 
 .. code:: sh
 
-    $ nox -s tests-3.11
+    $ nox -s tests-3.13
 
-to run the tests using Python 3.11 (or any other version you'd like).
+to run the tests using Python 3.13 (or any other version you'd like).
 
 There are additional environments which you can have a look through by running ``nox -l``.
 Before submitting a PR you may want to run the full suite of tests by running ``nox`` with no arguments to run all of them.

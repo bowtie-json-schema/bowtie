@@ -124,7 +124,6 @@ autosectionlabel_prefix_document = True
 intersphinx_mapping = {
     "click": ("https://click.palletsprojects.com", None),
     "nox": ("https://nox.thea.codes/en/stable/", None),
-    "pip": ("https://pip.pypa.io/en/stable/", None),
     "podman": ("https://docs.podman.io/en/latest", None),
     "python": ("https://docs.python.org/", None),
     "sphinx": ("https://www.sphinx-doc.org", None),
