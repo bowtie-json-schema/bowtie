@@ -81,6 +81,34 @@ Issues = "https://github.com/bowtie-json-schema/bowtie/issues/"
 Funding = "https://github.com/sponsors/Julian"
 Source = "https://github.com/bowtie-json-schema/bowtie"
 
+[dependency-groups]
+docs = [
+    "furo>=2025.9.25",
+    "pygments-github-lexers>=0.0.5",
+    "sphinx>5",
+    "sphinx-click>=6.1.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-json-schema-spec>=2025.1.1",
+    "sphinx-substitution-extensions>=2025.1.2",
+    "sphinx-tabs>=3.4.7",
+    "sphinxcontrib-spelling>5",
+    "sphinxext-opengraph>=0.13.0",
+    "url-py>=0.18.0",
+]
+test = [
+    "hypothesis>=6.142.4",
+    "jsonschema>=4.25.1",
+    "markdown-it-py>=4.0.0",
+    "pexpect>=4.9.0",
+    "pytest>=9.0.1",
+    "pytest-asyncio==0.21.2",
+    "pytest-icdiff>=0.9",
+    "python-dateutil>=2.9.0.post0",
+]
+typing = [
+    "pyright>=1.1.407",
+]
+
 [tool.coverage.html]
 show_contexts = true
 skip_covered = false
