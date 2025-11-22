@@ -96,7 +96,7 @@ repos:
       - name: stylua (lua implementations)
         id: stylua
         exclude: .*/json.lua
-        args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
+        args: ["--config-path", "implementations/.lua-implementations-stylua.toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v21.1.5
     hooks:

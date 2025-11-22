@@ -154,6 +154,7 @@ updates:
       default-days: 7
 
   # ignore: lua-jsonschema - installs the latest (unpinned) version
+  # ignore: lua-schema - installs the latest (unpinned) version
   # ignore: python-fastjsonschema - installs the latest (unpinned) version
   # ignore: python-jschon - installs the latest (unpinned) version
   # ignore: python-jsonschema - installs the latest (unpinned) version
@@ -358,6 +359,13 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/lua-jsonschema"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/lua-schema"
     schedule:
       interval: "daily"
     cooldown:

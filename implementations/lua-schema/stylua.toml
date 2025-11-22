@@ -1,6 +1,0 @@
-column_width = 80
-indent_type = "Spaces"
-indent_width = 4
-quote_style = "ForceSingle"
-call_parentheses = "Always"
-space_after_function_names = "Definitions"
