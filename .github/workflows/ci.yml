@@ -51,13 +51,6 @@ jobs:
       - name: Install dependencies
         run: brew install enchant podman
         if: runner.os == 'macOS'
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: |
-            3.13
-            3.14
-          allow-prereleases: true
 
       - name: Install Node
         uses: actions/setup-node@v6
@@ -81,6 +74,14 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: |
+            3.13
+            3.14
+        if: startsWith(matrix.noxenv, 'audit')
 
       - name: Run nox
         env:
