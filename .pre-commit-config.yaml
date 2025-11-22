@@ -116,7 +116,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2025-11-03-a
+    rev: 602.0.0
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
