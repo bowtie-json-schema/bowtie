@@ -48,6 +48,12 @@ local skipped2 = setmetatable({
   ['minProperties validation'] = { -- minProperties
     ['ignores arrays'] = 'array and object are both represented by a Lua table',
   },
+  ['by small number'] = { -- multipleOf
+    ['0.0075 is multiple of 0.0001'] = 'Lua modulo',
+  },
+  ['small multiple of large integer'] = { -- multipleOf
+    ['any integer is a multiple of 1e-8'] = 'Lua modulo',
+  },
   ['regexes are not anchored by default and are case sensitive'] = { -- patternProperties
     ['recognized members are accounted for'] = 'in a table, a `nil` value means that the key does not exist',
   },
@@ -62,6 +68,9 @@ local skipped2 = setmetatable({
   },
   ['array type matches arrays'] = { -- type
     ['an object is not an array'] = 'array and object are both represented by a Lua table',
+  },
+  ['uniqueItems validation'] = { -- uniqueItems
+    ['non-unique heterogeneous types are invalid'] = 'not a Lua sequence',
   },
   ['uniqueItems with an array of items and additionalItems=false'] = { -- uniqueItems
     ['extra items are invalid even if unique'] = 'in a table, a `nil` value means that the key does not exist',
