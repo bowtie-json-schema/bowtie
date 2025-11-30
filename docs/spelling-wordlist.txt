@@ -40,5 +40,6 @@ javascript
 js
 kotlin
 lua
+perl
 php
 scala
