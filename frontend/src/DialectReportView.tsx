@@ -23,7 +23,7 @@ export const DialectReportView = ({
     for (const each of reportData.runMetadata.implementations.values()) {
       langs.add(each.language);
     }
-    return Array.from(langs);
+    return Array.from(langs).sort();
   }, [reportData]);
 
   const filteredReportData = useMemo(() => {
