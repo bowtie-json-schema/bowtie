@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.AbsoluteIri;
+import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
-import com.networknt.schema.Error;
 import com.networknt.schema.resource.InputStreamSource;
 import com.networknt.schema.resource.ResourceLoader;
 import java.io.*;
@@ -121,18 +121,23 @@ public class BowtieJsonSchemaValidator {
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     try {
-      SchemaRegistry schemaRegistry = SchemaRegistry
-        .withDefaultDialect(versionFlag,
-          builder -> builder.schemaIdResolvers(schemaIdResolvers -> schemaIdResolvers
-            .mapPrefix("https://json-schema.org", "classpath:")
-            .mapPrefix("http://json-schema.org", "classpath:"))
-            .resourceLoaders(resourceLoaders -> {
-              if (runRequest.testCase().registry() != null) {
-                CustomResourceLoader resourceLoader =
-                  new CustomResourceLoader(runRequest.testCase().registry());
-                  resourceLoaders.add(resourceLoader);
-              }
-            }));
+      SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
+          versionFlag,
+          builder
+          -> builder
+                 .schemaIdResolvers(
+                     schemaIdResolvers
+                     -> schemaIdResolvers
+                            .mapPrefix("https://json-schema.org", "classpath:")
+                            .mapPrefix("http://json-schema.org", "classpath:"))
+                 .resourceLoaders(resourceLoaders -> {
+                   if (runRequest.testCase().registry() != null) {
+                     CustomResourceLoader resourceLoader =
+                         new CustomResourceLoader(
+                             runRequest.testCase().registry());
+                     resourceLoaders.add(resourceLoader);
+                   }
+                 }));
       List<TestResult> results =
           runRequest.testCase()
               .tests()
@@ -140,8 +145,7 @@ public class BowtieJsonSchemaValidator {
               .map(test -> {
                 Schema jsonSchema =
                     schemaRegistry.getSchema(runRequest.testCase().schema());
-                List<Error> errors =
-                    jsonSchema.validate(test.instance());
+                List<Error> errors = jsonSchema.validate(test.instance());
                 boolean isValid = errors == null || errors.isEmpty();
                 return new TestResult(isValid);
               })
