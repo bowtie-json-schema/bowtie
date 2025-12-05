@@ -5,42 +5,38 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.AbsoluteIri;
-import com.networknt.schema.JsonMetaSchema;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.JsonSchemaVersion;
-import com.networknt.schema.SchemaValidatorsConfig;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import com.networknt.schema.resource.InputStreamSource;
-import com.networknt.schema.resource.SchemaLoader;
+import com.networknt.schema.resource.ResourceLoader;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.Manifest;
 
 public class BowtieJsonSchemaValidator {
 
-  private SpecVersion.VersionFlag getVersionFromDialect(String dialect) {
+  private SpecificationVersion getVersionFromDialect(String dialect) {
     switch (dialect) {
     case "https://json-schema.org/draft/2020-12/schema":
-      return SpecVersion.VersionFlag.V202012;
+      return SpecificationVersion.DRAFT_2020_12;
     case "https://json-schema.org/draft/2019-09/schema":
-      return SpecVersion.VersionFlag.V201909;
+      return SpecificationVersion.DRAFT_2019_09;
     case "http://json-schema.org/draft-07/schema#":
-      return SpecVersion.VersionFlag.V7;
+      return SpecificationVersion.DRAFT_7;
     case "http://json-schema.org/draft-06/schema#":
-      return SpecVersion.VersionFlag.V6;
+      return SpecificationVersion.DRAFT_6;
     case "http://json-schema.org/draft-04/schema#":
-      return SpecVersion.VersionFlag.V4;
+      return SpecificationVersion.DRAFT_4;
     default:
       throw new IllegalArgumentException("Unsupported value" + dialect);
     }
   }
 
-  private SpecVersion.VersionFlag versionFlag;
+  private SpecificationVersion versionFlag;
 
   private final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -125,38 +121,31 @@ public class BowtieJsonSchemaValidator {
     }
     RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
     try {
-
-      final JsonSchemaFactory factory;
-      JsonSchemaVersion jsonSchemaVersion =
-          JsonSchemaFactory.checkVersion(versionFlag);
-      JsonMetaSchema metaSchema = jsonSchemaVersion.getInstance();
-      JsonSchemaFactory.Builder factoryBuilder =
-          JsonSchemaFactory.builder()
-              .schemaMappers(
-                  schemaMappers
-                  -> schemaMappers
-                         .mapPrefix("https://json-schema.org", "classpath:")
-                         .mapPrefix("http://json-schema.org", "classpath:"))
-              .defaultMetaSchemaIri(metaSchema.getIri())
-              .addMetaSchema(metaSchema);
-
-      if (runRequest.testCase().registry() != null) {
-        CustomSchemaLoader schemaLoader =
-            new CustomSchemaLoader(runRequest.testCase().registry());
-        factoryBuilder.schemaLoaders(
-            schemaLoaders -> schemaLoaders.add(schemaLoader));
-      }
-      factory = factoryBuilder.build();
+      SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
+          versionFlag,
+          builder
+          -> builder
+                 .schemaIdResolvers(
+                     schemaIdResolvers
+                     -> schemaIdResolvers
+                            .mapPrefix("https://json-schema.org", "classpath:")
+                            .mapPrefix("http://json-schema.org", "classpath:"))
+                 .resourceLoaders(resourceLoaders -> {
+                   if (runRequest.testCase().registry() != null) {
+                     CustomResourceLoader resourceLoader =
+                         new CustomResourceLoader(
+                             runRequest.testCase().registry());
+                     resourceLoaders.add(resourceLoader);
+                   }
+                 }));
       List<TestResult> results =
           runRequest.testCase()
               .tests()
               .stream()
               .map(test -> {
-                SchemaValidatorsConfig config = new SchemaValidatorsConfig();
-                JsonSchema jsonSchema =
-                    factory.getSchema(runRequest.testCase().schema(), config);
-                Set<ValidationMessage> errors =
-                    jsonSchema.validate(test.instance());
+                Schema jsonSchema =
+                    schemaRegistry.getSchema(runRequest.testCase().schema());
+                List<Error> errors = jsonSchema.validate(test.instance());
                 boolean isValid = errors == null || errors.isEmpty();
                 return new TestResult(isValid);
               })
@@ -180,17 +169,17 @@ public class BowtieJsonSchemaValidator {
     return stringWriter.toString();
   }
 
-  class CustomSchemaLoader implements SchemaLoader {
+  class CustomResourceLoader implements ResourceLoader {
 
     private final Map<String, JsonNode> registry;
 
-    CustomSchemaLoader(JsonNode registryNode) {
+    CustomResourceLoader(JsonNode registryNode) {
       this.registry =
           objectMapper.convertValue(registryNode, new TypeReference<>() {});
     }
 
     @Override
-    public InputStreamSource getSchema(AbsoluteIri iri) {
+    public InputStreamSource getResource(AbsoluteIri iri) {
       String iriString = iri.toString();
 
       if (registry.containsKey(iriString)) {
