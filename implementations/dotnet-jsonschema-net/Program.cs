@@ -22,8 +22,7 @@ var drafts = new Dictionary<string, Dialect> {
     { "http://json-schema.org/draft-06/schema#", Dialect.Draft06 },
 };
 
-var unsupportedTests =
-    new Dictionary<(string, string), string>();
+var unsupportedTests = new Dictionary<(string, string), string>();
 
 while (cmdSource.GetNextCommand() is { } line && line != "")
 {
@@ -68,15 +67,9 @@ while (cmdSource.GetNextCommand() is { } line && line != "")
                 throw new NotStarted();
             }
 
-            buildOptions = new()
-            {
-                SchemaRegistry = new(),
-                Dialect = drafts[root["dialect"]!.GetValue<string>()]
-            };
-            evaluationOptions = new EvaluationOptions
-            {
-                // for local debugging, change this to Verbose
-                OutputFormat = OutputFormat.Flag
+            buildOptions = new() { SchemaRegistry = new(), Dialect = drafts[root["dialect"]!.GetValue<string>()] };
+            evaluationOptions = new EvaluationOptions {// for local debugging, change this to Verbose
+                                                       OutputFormat = OutputFormat.Flag
             };
 
             var dialectResult = new JsonObject {
