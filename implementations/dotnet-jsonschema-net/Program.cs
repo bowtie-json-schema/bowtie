@@ -12,20 +12,18 @@ using Json.Schema;
 ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new FileCommandSource(args[0]);
 
 bool started = false;
-var options = new EvaluationOptions();
+BuildOptions? buildOptions = null;
+var evaluationOptions = new EvaluationOptions();
 
-var drafts = new Dictionary<string, SpecVersion> {
-    { "https://json-schema.org/draft/2020-12/schema", SpecVersion.Draft202012 },
-    { "https://json-schema.org/draft/2019-09/schema", SpecVersion.Draft201909 },
-    { "http://json-schema.org/draft-07/schema#", SpecVersion.Draft7 },
-    { "http://json-schema.org/draft-06/schema#", SpecVersion.Draft6 },
+var drafts = new Dictionary<string, Dialect> {
+    { "https://json-schema.org/draft/2020-12/schema", Dialect.Draft202012 },
+    { "https://json-schema.org/draft/2019-09/schema", Dialect.Draft201909 },
+    { "http://json-schema.org/draft-07/schema#", Dialect.Draft07 },
+    { "http://json-schema.org/draft-06/schema#", Dialect.Draft06 },
 };
 
 var unsupportedTests =
-    new Dictionary<(string, string),
-                   string> { [("float division = inf",
-                               "always invalid, but naive implementations may raise an overflow error")] =
-                                 "System.Decimal does not support large values like 1e308" };
+    new Dictionary<(string, string), string>();
 
 while (cmdSource.GetNextCommand() is { } line && line != "")
 {
@@ -69,9 +67,17 @@ while (cmdSource.GetNextCommand() is { } line && line != "")
             {
                 throw new NotStarted();
             }
-            options = new EvaluationOptions { EvaluateAs = drafts[root["dialect"].GetValue<string>()],
-                                              // for local debugging, change this to Verbose
-                                              OutputFormat = OutputFormat.Flag };
+
+            buildOptions = new()
+            {
+                SchemaRegistry = new(),
+                Dialect = drafts[root["dialect"]!.GetValue<string>()]
+            };
+            evaluationOptions = new EvaluationOptions
+            {
+                // for local debugging, change this to Verbose
+                OutputFormat = OutputFormat.Flag
+            };
 
             var dialectResult = new JsonObject {
                 ["ok"] = true,
@@ -86,20 +92,26 @@ while (cmdSource.GetNextCommand() is { } line && line != "")
             }
 
             var testCase = root["case"];
-            var seq = root["seq"].DeepClone();
-            var testCaseDescription = testCase["description"].GetValue<string>();
+            var seq = root["seq"]!.DeepClone();
+            var testCaseDescription = testCase!["description"]!.GetValue<string>();
             string? testDescription = null;
-            var schemaText = testCase["schema"];
+            var schemaText = JsonSerializer.SerializeToElement(testCase["schema"]);
 
-            JsonNode? nullableRegistry = testCase["registry"];
+            buildOptions!.SchemaRegistry = new();
+
+            var nullableRegistry = testCase["registry"];
             if (nullableRegistry is not null)
             {
                 var registry = nullableRegistry.AsObject().ToDictionary(x => new Uri(x.Key), x => x.Value);
-                options.SchemaRegistry.Fetch = uri => registry[uri].Deserialize<JsonSchema>();
+                buildOptions.SchemaRegistry.Fetch = (uri, _) =>
+                {
+                    var element = JsonSerializer.SerializeToElement(registry[uri]);
+                    return JsonSchema.Build(element, buildOptions);
+                };
             }
 
-            var schema = schemaText.Deserialize<JsonSchema>();
-            var tests = testCase["tests"].AsArray();
+            var schema = JsonSchema.Build(schemaText, buildOptions);
+            var tests = testCase["tests"]!.AsArray();
 
             try
             {
@@ -107,8 +119,9 @@ while (cmdSource.GetNextCommand() is { } line && line != "")
 
                 foreach (var test in tests)
                 {
-                    testDescription = test["description"].GetValue<string>();
-                    var validationResult = schema.Evaluate(test["instance"], options);
+                    testDescription = test!["description"]!.GetValue<string>();
+                    var instance = JsonSerializer.SerializeToElement(test["instance"]);
+                    var validationResult = schema.Evaluate(instance, evaluationOptions);
                     var testResult = JsonSerializer.SerializeToNode(validationResult);
                     results.Add(testResult);
                 }
