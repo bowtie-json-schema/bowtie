@@ -13,26 +13,8 @@ local skipped1 = {
   ['allOf with base schema'] = 'in a table, a `nil` value means that the key does not exist', -- allOf
   ['const with null'] = 'in a table, a `nil` value means that the key does not exist', -- const
   ['contains with null instance elements'] = 'in a table, a `nil` value means that the key does not exist', -- contains
-  ['A $dynamicRef resolves to the first $dynamicAnchor still in scope that is encountered when the schema is evaluated'] = 'TODO dyn', --dynamicRef
-  ["A $dynamicRef with intermediate scopes that don't include a matching $dynamicAnchor does not affect dynamic scope resolution"] = 'TODO dyn', --dynamicRef
-  ['An $anchor with the same name as a $dynamicAnchor is not used for dynamic scope resolution'] = 'TODO dyn', --dynamicRef
-  ['A $dynamicRef without a matching $dynamicAnchor in the same schema resource behaves like a normal $ref to $anchor'] = 'TODO dyn', --dynamicRef
-  ['A $dynamicRef with a non-matching $dynamicAnchor in the same schema resource behaves like a normal $ref to $anchor'] = 'TODO dyn', --dynamicRef
-  ['A $dynamicRef that initially resolves to a schema without a matching $dynamicAnchor behaves like a normal $ref to $anchor'] = 'TODO dyn', --dynamicRef
-  ['multiple dynamic paths to the $dynamicRef keyword'] = 'TODO dyn', --dynamicRef
-  ['after leaving a dynamic scope, it is not used by a $dynamicRef'] = 'TODO dyn', --dynamicRef
-  ['$dynamicRef skips over intermediate resources - direct reference'] = 'TODO dyn', --dynamicRef
   ['heterogeneous enum-with-null validation'] = 'in a table, a `nil` value means that the key does not exist', -- enum
   ['items and subitems'] = 'in a table, a `nil` value means that the key does not exist', -- items
-  ['ref creates new scope when adjacent to keywords'] = 'TODO', -- ref
-  ['order of evaluation: $id and $ref on nested schema'] = 'TODO', -- ref
-  ['$ref with $recursiveAnchor'] = 'TODO', -- ref
-  ['unevaluatedItems with $recursiveRef'] = 'TODO', -- unevaluatedItems
-  ['unevaluatedItems with $dynamicRef'] = 'TODO', -- unevaluatedItems
-  ['unevaluatedProperties with $recursiveRef'] = 'TODO', -- unevaluatedProperties
-  ['unevaluatedProperties with $dynamicRef'] = 'TODO', -- unevaluatedProperties
-  ['in-place applicator siblings, allOf has unevaluated'] = 'TODO', -- unevaluatedProperties
-  ['in-place applicator siblings, anyOf has unevaluated'] = 'TODO', -- unevaluatedProperties
 }
 
 local skipped2 = setmetatable({
