@@ -71,7 +71,7 @@ jobs:
           bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: report-${{ matrix.version }}
           path: ${{ matrix.version }}.json
@@ -89,7 +89,7 @@ jobs:
       - name: Regenerate data needed by the UI
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: implementations
           path: implementations.json
@@ -131,7 +131,7 @@ jobs:
           VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
           echo "$VALIDATION" | bowtie summary --show failures --format markdown >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: api
           path: api
@@ -204,7 +204,7 @@ jobs:
       - name: Generate Badges
         run: bowtie badges
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: site
           path: site
