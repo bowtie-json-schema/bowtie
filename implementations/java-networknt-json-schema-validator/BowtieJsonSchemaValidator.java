@@ -1,9 +1,9 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
@@ -38,8 +38,10 @@ public class BowtieJsonSchemaValidator {
 
   private SpecificationVersion versionFlag;
 
-  private final ObjectMapper objectMapper = new ObjectMapper().configure(
-      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private final ObjectMapper objectMapper = JsonMapper.builder()
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+      .build();
   private final PrintStream output;
   private boolean started;
 
@@ -58,7 +60,7 @@ public class BowtieJsonSchemaValidator {
   private void handle(String data) {
     try {
       JsonNode node = objectMapper.readTree(data);
-      String cmd = node.get("cmd").asText();
+      String cmd = node.get("cmd").asString();
       switch (cmd) {
       case "start" -> start(node);
       case "dialect" -> dialect(node);
@@ -102,7 +104,7 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(startResponse));
   }
 
-  private void dialect(JsonNode node) throws JsonProcessingException {
+  private void dialect(JsonNode node) {
     if (!started) {
       throw new IllegalArgumentException("Not started!");
     }
@@ -115,7 +117,7 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void run(JsonNode node) throws JsonProcessingException {
+  private void run(JsonNode node) {
     if (!started) {
       throw new IllegalArgumentException("Not started!");
     }
