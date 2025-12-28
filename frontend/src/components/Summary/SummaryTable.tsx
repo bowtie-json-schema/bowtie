@@ -32,7 +32,7 @@ const SummaryTable = ({ reportData }: { reportData: ReportData }) => {
               colSpan={4}
               className="table-bordered text-center details-required"
             >
-            unsuccessful
+              unsuccessful
             </th>
           </StatusLegend>
         </tr>
