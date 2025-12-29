@@ -1,9 +1,4 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
@@ -16,6 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class BowtieJsonSchemaValidator {
 
@@ -38,10 +38,11 @@ public class BowtieJsonSchemaValidator {
 
   private SpecificationVersion versionFlag;
 
-  private final ObjectMapper objectMapper = JsonMapper.builder()
-      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-      .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
-      .build();
+  private final ObjectMapper objectMapper =
+      JsonMapper.builder()
+          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+          .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+          .build();
   private final PrintStream output;
   private boolean started;
 
