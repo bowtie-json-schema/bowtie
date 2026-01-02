@@ -4005,7 +4005,7 @@ class TestBenchmarkRun:
         """,
         ).strip()
 
-        # Cant verify the whole output as it would be dynamic
+        # Can't verify the whole output as it would be dynamic
         # with differing values
         assert expected_data1 in stdout
         assert expected_data2 in stdout
@@ -4063,7 +4063,7 @@ class TestBenchmarkRun:
         """,
         ).strip()
 
-        # Cant verify the whole output as it would be dynamic
+        # Can't verify the whole output as it would be dynamic
         # with differing values
         assert expected_data1 in stdout
         assert expected_data2 in stdout
