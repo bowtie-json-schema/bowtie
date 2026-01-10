@@ -87,7 +87,11 @@ class _EX:
 
     def __getattr__(self, attr: str) -> int:
         unix_attr = f"EX_{attr}"
-        return getattr(os, unix_attr) if hasattr(os, unix_attr) else self._CODES.get(attr, 1)
+        return (
+            getattr(os, unix_attr)
+            if hasattr(os, unix_attr)
+            else self._CODES.get(attr, 1)
+        )
 
 
 EX = _EX()
