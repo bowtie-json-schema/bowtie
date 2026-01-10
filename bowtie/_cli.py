@@ -82,8 +82,12 @@ if TYPE_CHECKING:
 
 
 class _EX:
+    # Windows fallback for Unix exit codes (only codes actually used)
+    _CODES = {"CONFIG": 78, "DATAERR": 65, "NOINPUT": 66}
+
     def __getattr__(self, attr: str) -> int:
-        return getattr(os, f"EX_{attr}", 1)  # Windows fallbacks...
+        unix_attr = f"EX_{attr}"
+        return getattr(os, unix_attr) if hasattr(os, unix_attr) else self._CODES.get(attr, 1)
 
 
 EX = _EX()
