@@ -1,0 +1,32 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11304.174 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "implementations", "implementations", "{960B990D-B96C-8BF2-4DC4-C97CD8288A26}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet-jsonschema-net", "dotnet-jsonschema-net", "{3F2F89C3-6A39-6831-A3AF-69635760E928}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bowtie_json_everything", "implementations\dotnet-jsonschema-net\bowtie_json_everything.csproj", "{6AC8F935-7C77-3683-EBE4-A88750E370A4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6AC8F935-7C77-3683-EBE4-A88750E370A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AC8F935-7C77-3683-EBE4-A88750E370A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AC8F935-7C77-3683-EBE4-A88750E370A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AC8F935-7C77-3683-EBE4-A88750E370A4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3F2F89C3-6A39-6831-A3AF-69635760E928} = {960B990D-B96C-8BF2-4DC4-C97CD8288A26}
+		{6AC8F935-7C77-3683-EBE4-A88750E370A4} = {3F2F89C3-6A39-6831-A3AF-69635760E928}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {90D18247-24A6-4644-BD69-C791785F3199}
+	EndGlobalSection
+EndGlobal

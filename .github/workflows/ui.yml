@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -42,7 +42,7 @@ jobs:
       - name: Build the UI
         run: pnpm run --dir frontend build --base=${{ github.repository_owner == 'bowtie-json-schema' && '/' || '/bowtie' }}
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: frontend-build
           path: frontend/build
@@ -54,14 +54,14 @@ jobs:
       - name: Create _site directory
         run: mkdir _site
       - name: Download frontend build
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: frontend-build
           path: _site
 
       # if called from report workflow
       - name: Download test report from local artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         if: inputs.report_artifact_in_scope == true
         with:
           name: site
@@ -70,7 +70,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest test report
         if: inputs.report_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: report.yml
           branch: main
@@ -78,7 +78,7 @@ jobs:
           path: _site
 
       - name: Download latest versioned test reports
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: versioned-report.yml
           branch: main

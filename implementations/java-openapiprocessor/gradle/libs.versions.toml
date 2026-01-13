@@ -1,7 +1,7 @@
 [versions]
 validator = "2025.5"
 
-kotlin = "2.2.20"
+kotlin = "2.3.0"
 build-jdk = "11"
 
 [libraries]
@@ -14,7 +14,7 @@ jackson-bom = "com.fasterxml.jackson:jackson-bom:2.20.1"
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
 
-logback = "ch.qos.logback:logback-classic:1.5.21"
+logback = "ch.qos.logback:logback-classic:1.5.23"
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

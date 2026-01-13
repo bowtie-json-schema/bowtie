@@ -71,7 +71,7 @@ jobs:
           bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: report-${{ matrix.version }}
           path: ${{ matrix.version }}.json
@@ -89,7 +89,7 @@ jobs:
       - name: Regenerate data needed by the UI
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: implementations
           path: implementations.json
@@ -131,7 +131,7 @@ jobs:
           VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
           echo "$VALIDATION" | bowtie summary --show failures --format markdown >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: api
           path: api
@@ -153,14 +153,14 @@ jobs:
         run: mkdir site
 
       - name: Include New Reports
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: report-*
           path: site/
           merge-multiple: true
 
       - name: Include Benchmark Report from local artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         if: inputs.report_benchmark_artifact_in_scope == true
         with:
           name: benchmarks
@@ -169,7 +169,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest Benchmark Report
         if: inputs.report_benchmark_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: benchmark.yml
           branch: main
@@ -191,12 +191,12 @@ jobs:
           curl -O https://bowtie.report/benchmarks/draft2020-12.json
 
       - name: Include our UI data
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: implementations
           path: site/
       - name: Include our public API data
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: api
           path: site/api
@@ -204,7 +204,7 @@ jobs:
       - name: Generate Badges
         run: bowtie badges
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: site
           path: site

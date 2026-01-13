@@ -5,7 +5,7 @@ STARTED = false
 
 io.stdout:setvbuf 'no'
 
-local handle = io.popen 'luarocks show jsonschema --mversion'
+local handle = io.popen 'luarocks-5.1 show jsonschema --mversion'
 local jsonschema_version = handle:read '*a'
 handle:close()
 

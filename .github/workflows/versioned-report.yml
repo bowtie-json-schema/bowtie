@@ -142,7 +142,7 @@ jobs:
           done
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.implementation }}
           path: |
@@ -153,12 +153,12 @@ jobs:
     needs: regenerate-versioned-reports
     steps:
       - name: Download all uploaded artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: implementations
 
       - name: Download latest versioned test reports
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: versioned-report.yml
           branch: main
@@ -172,7 +172,7 @@ jobs:
           cp -r "implementations/${{ inputs.implementation }}" "latest-implementations/"
         if: ${{ inputs.implementation != null }}
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: implementations
           path: ${{ inputs.implementation != null && 'latest-implementations' || 'implementations' }}
