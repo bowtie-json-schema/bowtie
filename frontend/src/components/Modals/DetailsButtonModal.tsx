@@ -127,10 +127,10 @@ const DetailItem = ({
             <strong>Result:</strong> {message}
           </div>
           <div className="d-flex justify-content-end">
-            <Button 
-              size="sm" 
-              variant="outline-primary" 
-              onClick={handleJump} 
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={handleJump}
             >
               Jump to Case
             </Button>
