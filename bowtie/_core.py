@@ -559,7 +559,7 @@ class Implementation:
                 try:
                     tags = cast(
                         "Iterable[str]",
-                        page.as_dict()["metadata"]["container"]["tags"],
+                        page.as_dict()["metadata"]["container"]["tags"],  # type: ignore[reportUnknownMemberType]
                     )
                 except KeyError:
                     continue
