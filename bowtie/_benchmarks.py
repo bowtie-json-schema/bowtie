@@ -206,7 +206,7 @@ class BowtieRunError(BenchmarkError):
             note_stmt=self.error_stack,
             causes=[],
             hint_stmt=(
-                "Some internal error has occured while running the Benchmark "
+                "Some internal error has occurred while running the Benchmark "
                 f"with {self.connectable_id}. (Probably some error with "
                 "the harness)"
             ),
