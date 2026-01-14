@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
-import pytest
 from github3.exceptions import GitHubError
+import pytest
 
 from bowtie._core import Implementation, ImplementationInfo
 
