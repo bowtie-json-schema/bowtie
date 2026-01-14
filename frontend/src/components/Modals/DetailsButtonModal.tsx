@@ -58,7 +58,7 @@ export const DetailsButtonModal = ({
     },
   );
   return (
-    <Modal show={show} onHide={handleClose} fullscreen={true}>
+    <Modal show={show} onHide={handleClose} fullscreen={true} restoreFocus={false}>
       <Modal.Header closeButton>
         <Modal.Title>
           <label className="me-1">Unsuccessful Tests:</label>
@@ -100,15 +100,19 @@ const DetailItem = ({
   handleClose: () => void;
 }) => {
   const handleJump = () => {
-    handleClose();
+    handleClose(); 
     setTimeout(() => {
       const element = document.getElementById(`case-${seq}`);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.documentElement.style.scrollBehavior = 'auto';
+        element.scrollIntoView({ behavior: 'auto', block: 'center' });
+        document.documentElement.style.scrollBehavior = '';
         element.classList.add("border-primary", "border-2");
-        setTimeout(() => element.classList.remove("border-primary", "border-2"), 2000);
+        setTimeout(() => {
+          element.classList.remove("border-primary", "border-2");
+        }, 2000);
       }
-    }, 100);
+    }, 50);
   };
   return (
     <Col>
