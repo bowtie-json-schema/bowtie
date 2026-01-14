@@ -124,7 +124,7 @@ const CaseItem = ({
     );
   }, [seq, caseData, implementations, implementationsResults]);
   return (
-    <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()}>
+    <Accordion.Item ref={schemaDisplayRef} eventKey={seq.toString()} id={`case-${seq}`}>
       <Accordion.Header>{caseData.description}</Accordion.Header>
       <Accordion.Body>{content}</Accordion.Body>
     </Accordion.Item>

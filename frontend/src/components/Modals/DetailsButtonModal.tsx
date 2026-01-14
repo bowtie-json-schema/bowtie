@@ -44,6 +44,8 @@ export const DetailsButtonModal = ({
         failedResults.push(
           <DetailItem
             key={`${seq}-${i}`}
+            seq = {seq}
+            handleClose={handleClose}
             title={caseData.description}
             description={caseData.tests[i].description}
             schema={caseData.schema}
@@ -56,7 +58,7 @@ export const DetailsButtonModal = ({
     },
   );
   return (
-    <Modal show={show} onHide={handleClose} fullscreen={true}>
+    <Modal show={show} onHide={handleClose} fullscreen={true} restoreFocus={false}>
       <Modal.Header closeButton>
         <Modal.Title>
           <label className="me-1">Unsuccessful Tests:</label>
@@ -85,6 +87,8 @@ const DetailItem = ({
   schema,
   instance,
   borderClass,
+  seq,
+  handleClose,
 }: {
   title: string;
   description: string;
@@ -92,7 +96,24 @@ const DetailItem = ({
   schema: Record<string, unknown> | boolean;
   instance: unknown;
   borderClass: string;
+  seq: number;
+  handleClose: () => void;
 }) => {
+  const handleJump = () => {
+    handleClose();
+    setTimeout(() => {
+      const element = document.getElementById(`case-${seq}`);
+      if (element) {
+        document.documentElement.style.scrollBehavior = 'auto';
+        element.scrollIntoView({ behavior: 'auto', block: 'center' });
+        document.documentElement.style.scrollBehavior = '';
+        element.classList.add("border-primary", "border-2");
+        setTimeout(() => {
+          element.classList.remove("border-primary", "border-2");
+        }, 2000);
+      }
+    }, 50);
+  };
   return (
     <Col>
       <Card className={`mb-3 ${borderClass}`}>
@@ -105,8 +126,19 @@ const DetailItem = ({
           </Card.Text>
           <SchemaDisplay schema={schema} instance={instance} />
         </Card.Body>
-        <Card.Footer className="text-muted text-center">
-          <span>Result: {message}</span>
+        <Card.Footer className="text-muted">
+          <div className="mb-2 text-wrap" style={{ wordBreak: "break-word" }}>
+            <strong>Result:</strong> {message}
+          </div>
+          <div className="d-flex justify-content-end">
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={handleJump}
+            >
+              Jump to Case
+            </Button>
+          </div>
         </Card.Footer>
       </Card>
     </Col>
