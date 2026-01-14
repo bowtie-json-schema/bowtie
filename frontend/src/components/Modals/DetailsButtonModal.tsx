@@ -100,7 +100,7 @@ const DetailItem = ({
   handleClose: () => void;
 }) => {
   const handleJump = () => {
-    handleClose(); 
+    handleClose();
     setTimeout(() => {
       const element = document.getElementById(`case-${seq}`);
       if (element) {
