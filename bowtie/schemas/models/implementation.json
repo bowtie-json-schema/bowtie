@@ -29,7 +29,11 @@
 
       "$id": "tag:bowtie.report,2024:models:implementation:version",
 
-      "type": "string"
+      "type": "string",
+
+      "not" : {
+        "pattern": "(?i)(^|[^a-z])(master|main|trunk)([^a-z]|$)"
+      }
     },
     "dialects": {
       "description": "A list of JSON Schema dialects (URIs) which the implementation understands. When running test cases, this list will be consulted before sending them to the implementation (and any unsupported dialects will be skipped).",
