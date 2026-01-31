@@ -177,7 +177,8 @@ def test_root_schema():
                 "homepage": "https://example.com",
                 "issues": "https://example.com/issues",
                 "source": "https://example.com/source",
-                "version": "remaster-edition",  # master is part of another word
+                "version": "remaster-edition",  # master is part of another 
+                # word
             },
         ),
         (
@@ -209,6 +210,6 @@ def test_root_schema():
 def test_implementation_version_disallows_branch_names(valid, instance):
     registry = Direct.from_id("python-jsonschema").registry()
     validator = registry.for_uri(
-        "tag:bowtie.report,2024:models:implementation"
+        "tag:bowtie.report,2024:models:implementation",
     )
     assert validator.is_valid(instance) == valid, validator.validate(instance)
