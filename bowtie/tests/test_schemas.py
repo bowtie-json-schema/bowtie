@@ -177,7 +177,7 @@ def test_root_schema():
                 "homepage": "https://example.com",
                 "issues": "https://example.com/issues",
                 "source": "https://example.com/source",
-                "version": "remaster-edition",  # master is part of another 
+                "version": "remaster-edition",  # master is part of another
                 # word
             },
         ),
