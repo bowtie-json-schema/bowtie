@@ -154,62 +154,24 @@ def test_root_schema():
 
 
 @pytest.mark.parametrize(
-    "valid, instance",
+    "valid, version",
     [
-        (
-            True,
-            {
-                "name": "TestImpl",
-                "language": "python",
-                "dialects": ["https://json-schema.org/draft/2020-12/schema"],
-                "homepage": "https://example.com",
-                "issues": "https://example.com/issues",
-                "source": "https://example.com/source",
-                "version": "1.0.0",
-            },
-        ),
-        (
-            True,
-            {
-                "name": "TestImpl",
-                "language": "python",
-                "dialects": ["https://json-schema.org/draft/2020-12/schema"],
-                "homepage": "https://example.com",
-                "issues": "https://example.com/issues",
-                "source": "https://example.com/source",
-                "version": "remaster-edition",  # master is part of another
-                # word
-            },
-        ),
-        (
-            False,
-            {
-                "name": "TestImpl",
-                "language": "python",
-                "dialects": ["https://json-schema.org/draft/2020-12/schema"],
-                "homepage": "https://example.com",
-                "issues": "https://example.com/issues",
-                "source": "https://example.com/source",
-                "version": "master",
-            },
-        ),
-        (
-            False,
-            {
-                "name": "TestImpl",
-                "language": "python",
-                "dialects": ["https://json-schema.org/draft/2020-12/schema"],
-                "homepage": "https://example.com",
-                "issues": "https://example.com/issues",
-                "source": "https://example.com/source",
-                "version": "trunk-latest",
-            },
-        ),
-    ],
+        (True, "1.0.0"),
+        (True, "remaster-edition"), # 'master' is part of another word
+        (False, "master"),
+        (False, "trunk_latest"),
+    ]
 )
-def test_implementation_version_disallows_branch_names(valid, instance):
+def test_implementation_version_disallows_branch_names(valid, version):
+    instance = {
+        "name": "TestImpl",
+        "language": "python",
+        "dialects": ["https://json-schema.org/draft/2020-12/schema"],
+        "homepage": "https://example.com",
+        "issues": "https://example.com/issues",
+        "source": "https://example.com/source",
+        "version": version,
+    }
     registry = Direct.from_id("python-jsonschema").registry()
-    validator = registry.for_uri(
-        "tag:bowtie.report,2024:models:implementation",
-    )
+    validator = registry.for_uri("tag:bowtie.report,2024:models:implementation",)
     assert validator.is_valid(instance) == valid, validator.validate(instance)
