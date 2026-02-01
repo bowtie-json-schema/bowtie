@@ -32,7 +32,7 @@
       "type": "string",
 
       "not" : {
-        "pattern": "(?i)(^|[^a-z])(master|main|trunk)([^a-z]|$)"
+        "pattern": "(^|[^A-Za-z])(master|main|trunk)([^A-Za-z]|$)"
       }
     },
     "dialects": {
