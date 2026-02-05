@@ -42,8 +42,8 @@ def always_wrong(dialect: Dialect):
     """
     Tries (naively) to always get the absolute wrong answer.
     """
-    return lambda schema, registry: lambda instance: (
-        naively_incorrect(schema, registry, instance)
+    return lambda schema, registry: (
+        lambda instance: naively_incorrect(schema, registry, instance)
     )
 
 
@@ -70,10 +70,12 @@ def incorrectly_claims_draft7(dialect: Dialect):
     Otherwise attempts to crudely pass the smoke test.
     """
     if dialect == dialect.by_short_name()["draft7"]:
-        return lambda schema, registry: lambda instance: (
-            naively_correct(schema, registry)(instance)
-            if registry
-            else naively_incorrect(schema, registry, instance)
+        return lambda schema, registry: (
+            lambda instance: (
+                naively_correct(schema, registry)(instance)
+                if registry
+                else naively_incorrect(schema, registry, instance)
+            )
         )
     return naively_correct
 

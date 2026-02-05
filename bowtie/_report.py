@@ -380,8 +380,8 @@ class Report:  # noqa: PLW1641
             if implementation.version is not None
         ]
         unsuccessful.sort(
-            key=lambda version_compliance: (
-                sortable_version_key(version_compliance[0])
+            key=lambda version_compliance: sortable_version_key(
+                version_compliance[0],
             ),
             reverse=True,
         )

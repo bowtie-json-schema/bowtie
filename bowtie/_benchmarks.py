@@ -788,19 +788,17 @@ class BenchmarkReporter:
             sorted_connectables = sorted(
                 results_for_connectable.keys(),
                 key=(
-                    lambda connectable_id: (
-                        geometric_mean(
-                            [
-                                result_mean
-                                for (
-                                    result_mean,
-                                    _,
-                                    errored,
-                                ) in results_for_connectable[connectable_id]
-                                if not errored
-                            ]
-                            or [1e9],
-                        )
+                    lambda connectable_id: geometric_mean(
+                        [
+                            result_mean
+                            for (
+                                result_mean,
+                                _,
+                                errored,
+                            ) in results_for_connectable[connectable_id]
+                            if not errored
+                        ]
+                        or [1e9],
                     )
                 ),
             )
@@ -1338,7 +1336,7 @@ class Benchmarker:
 
                                     if run_needed:
                                         lines = (
-                                            Path(
+                                            Path(  # noqa: ASYNC240
                                                 fp.name,
                                             )
                                             .read_text()
@@ -1400,7 +1398,7 @@ class Benchmarker:
             delete=True,
         ) as fp:
             path = Path(fp.name)
-            path.write_text(json.dumps(benchmark_dict))
+            path.write_text(json.dumps(benchmark_dict))  # noqa: ASYNC240
             return await self._pyperf_benchmark_command(
                 "bowtie",
                 "run",
