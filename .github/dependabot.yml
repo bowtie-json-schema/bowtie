@@ -217,6 +217,13 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: "gradle"
+    directory: "/implementations/java-sjf4j"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: "mix"
     directory: "/implementations/elixir-jsv"
     schedule:
