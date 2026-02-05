@@ -65,7 +65,7 @@ public class BowtieSjf4jValidator {
     var attributes = new Manifest(is).getMainAttributes();
 
     String fullName =
-        "%s:%s".formatted(attributes.getValue("Implementation-Group"),
+        "%s-%s".formatted(attributes.getValue("Implementation-Group"),
                             attributes.getValue("Implementation-Name"));
     StartResponse startResponse = new StartResponse(
         1, new Implementation(
