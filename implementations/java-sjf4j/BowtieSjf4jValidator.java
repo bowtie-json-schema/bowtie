@@ -144,14 +144,14 @@ record DialectRequest(String dialect) {}
 
 record DialectResponse(boolean ok) {}
 
-record RunRequest(int seq, @NodeProperty("case") TestCase testCase) {}
+record RunRequest(Object seq, @NodeProperty("case") TestCase testCase) {}
 
-record RunResponse(int seq, List<TestResult> results) {}
+record RunResponse(Object seq, List<TestResult> results) {}
 
-record RunSkippedResponse(int seq, boolean skipped, String message,
+record RunSkippedResponse(Object seq, boolean skipped, String message,
                           String issue_url) {}
 
-record RunErroredResponse(int seq, boolean errored, ErrorContext context) {}
+record RunErroredResponse(Object seq, boolean errored, ErrorContext context) {}
 
 record ErrorContext(String message, String traceback) {}
 

@@ -1,4 +1,0 @@
-{"cmd":"start","version":1}
-{"cmd":"dialect","dialect":"https://json-schema.org/draft/2020-12/schema"}
-{ "cmd":"run", "seq":1, "case":{ "schema":{"type":"integer"}, "tests":[ {"instance":1,"valid":true}, {"instance":"x","valid":false} ] } }
-{ "cmd": "run", "seq": 1, "case": { "schema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "$defs": { "positiveInteger": { "type": "integer", "minimum": 1 } }, "type": "object", "properties": { "count": { "$ref": "#/$defs/positiveInteger" } }, "required": ["count"] }, "tests": [ { "instance": { "count": 1 }, "valid": true }, { "instance": { "count": 0 }, "valid": false }, { "instance": {}, "valid": false }, { "instance": { "count": "1" }, "valid": false } ] } }
