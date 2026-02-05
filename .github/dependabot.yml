@@ -465,6 +465,13 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
+    directory: "/implementations/java-sjf4j"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
     directory: "/implementations/scala-mjs-validator"
     schedule:
       interval: "daily"
