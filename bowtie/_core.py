@@ -755,8 +755,9 @@ class TestCase:
     def serializable(self) -> Message:
         as_dict = asdict(
             self,
-            filter=lambda k, v: k.name != "registry"
-            and (k.name != "comment" or v is not None),
+            filter=lambda k, v: (
+                k.name != "registry" and (k.name != "comment" or v is not None)
+            ),
         )
         if self.registry:
             # FIXME: Via python-jsonschema/referencing#16

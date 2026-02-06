@@ -1104,9 +1104,9 @@ VALIDATE = click.option(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: (
-        Direct.from_id("python-jsonschema" if v else "null").registry()
-    ),
+    callback=lambda _, __, v: Direct.from_id(
+        "python-jsonschema" if v else "null",
+    ).registry(),
     is_flag=True,
     help=(
         "When speaking to implementations (provided via -i), validate "
@@ -1267,9 +1267,7 @@ def run(
     show_choices=True,
     default="any",
     type=click.Choice(["valid", "invalid", "any"], case_sensitive=False),
-    callback=lambda _, __, value: (
-        None if value == "any" else value == "valid"
-    ),
+    callback=lambda _, __, value: None if value == "any" else value == "valid",
     help=(
         "Expect the given input to be considered valid or invalid, "
         "or else (with 'any') to allow either result."
@@ -1360,12 +1358,10 @@ def _set_benchmarker_callable(
     "--keywords",
     "-k",
     "keywords",
-    callback=lambda ctx, __, value: (
-        _set_benchmarker_callable(
-            ctx,
-            value,
-            _benchmarks.Benchmarker.for_keywords,
-        )
+    callback=lambda ctx, __, value: _set_benchmarker_callable(
+        ctx,
+        value,
+        _benchmarks.Benchmarker.for_keywords,
     ),
     is_flag=True,
     show_default=True,
@@ -1378,12 +1374,10 @@ def _set_benchmarker_callable(
     "-b",
     "--benchmark-file",
     "benchmark_files",
-    callback=lambda ctx, __, value: (
-        _set_benchmarker_callable(
-            ctx,
-            value,
-            _benchmarks.Benchmarker.for_benchmark_files,
-        )
+    callback=lambda ctx, __, value: _set_benchmarker_callable(
+        ctx,
+        value,
+        _benchmarks.Benchmarker.for_benchmark_files,
     ),
     multiple=True,
     help=(
@@ -1395,12 +1389,10 @@ def _set_benchmarker_callable(
     "--test-suite",
     "-t",
     "test_suite",
-    callback=lambda ctx, __, value: (
-        _set_benchmarker_callable(
-            ctx,
-            value,
-            _benchmarks.Benchmarker.from_test_cases,
-        )
+    callback=lambda ctx, __, value: _set_benchmarker_callable(
+        ctx,
+        value,
+        _benchmarks.Benchmarker.from_test_cases,
     ),
     type=_suite.ClickParam(),
     default=None,
@@ -1410,12 +1402,10 @@ def _set_benchmarker_callable(
     "benchmark",
     type=JSON(),
     required=False,
-    callback=lambda ctx, __, value: (
-        _set_benchmarker_callable(
-            ctx,
-            value,
-            _benchmarks.Benchmarker.from_input,
-        )
+    callback=lambda ctx, __, value: _set_benchmarker_callable(
+        ctx,
+        value,
+        _benchmarks.Benchmarker.from_input,
     ),
 )
 def perf(
@@ -2255,7 +2245,7 @@ class _VersionedReportsTar(click.File):
     "-D",
     "dialects",
     multiple=True,
-    default=lambda: Dialect.known(),
+    default=Dialect.known,
     type=_Dialect(),
     metavar="URI_OR_NAME",
     help=(

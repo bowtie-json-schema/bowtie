@@ -255,7 +255,7 @@ class ConnectableImage:
                         ),
                     ) from err
 
-                stack.push_async_callback(container.delete, force=True)  # type: ignore[reportUnknownMemberType]
+                stack.push_async_callback(container.delete, force=True)
                 create = start_container
 
                 try:

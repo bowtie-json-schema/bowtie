@@ -56,8 +56,9 @@ object_schemas = dictionaries(
     keys=text(),
     values=recursive(
         none() | booleans() | floats() | text(printable),
-        lambda children: lists(children)
-        | dictionaries(text(printable), children),
+        lambda children: (
+            lists(children) | dictionaries(text(printable), children)
+        ),
         max_leaves=3,
     ),
     max_size=5,

@@ -85,7 +85,7 @@ Source = "https://github.com/bowtie-json-schema/bowtie"
 docs = [
     "furo>=2025.9.25",
     "pygments-github-lexers>=0.0.5",
-    "sphinx>5",
+    "sphinx~=8.2",
     "sphinx-click>=6.1.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-json-schema-spec>=2025.1.1",
