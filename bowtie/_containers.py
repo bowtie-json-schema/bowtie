@@ -294,38 +294,42 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
 
-            status, data, *_ = err.args
-            if data.get("cause") == "image not known":
-                raise NoSuchImplementation(image_name) from err
+            if len(err.args) == 1:
+                if "403 Forbidden" in err.args[0]:
+                    raise NoSuchImplementation(image_name) from err
+            else:
+                status, data, *_ = err.args
+                if data.get("cause") == "image not known":
+                    raise NoSuchImplementation(image_name) from err
 
-            message = ghcr = data.get("message", "")
+                message = ghcr = data.get("message", "")
 
-            if status == 500:  # noqa: PLR2004
-                try:
-                    # GitHub Registry saying an image doesn't exist as
-                    # reported within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no good way to detect this specific case
-                    no_image = message.endswith('/latest": denied')
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImplementation(image_name)
+                if status == 500:  # noqa: PLR2004
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported within GitHub Actions' version of Podman...
+                        # This is some crazy string like:
+                        #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
+                        # with seemingly no other indication elsewhere and
+                        # obviously no good way to detect this specific case
+                        no_image = message.endswith('/latest": denied')
+                    except Exception:  # noqa: BLE001, S110
+                        pass
+                    else:
+                        if no_image:
+                            raise NoSuchImplementation(image_name)
 
-                try:
-                    # GitHub Registry saying an image doesn't exist as
-                    # reported locally via podman on macOS...
+                    try:
+                        # GitHub Registry saying an image doesn't exist as
+                        # reported locally via podman on macOS...
 
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(ghcr).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImplementation(image_name)
+                        # message will be ... a JSON string !?! ...
+                        error = json.loads(ghcr).get("message", "")
+                    except Exception:  # noqa: BLE001, S110
+                        pass  # nonJSON / missing key
+                    else:
+                        if "403 (forbidden)" in error.casefold():
+                            raise NoSuchImplementation(image_name)
 
             raise StartupFailed(id=image_name, data=data) from err
         return await start_container(docker=docker, image_name=image_name)
