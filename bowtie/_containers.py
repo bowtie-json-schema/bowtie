@@ -295,6 +295,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
             # machine parseable.
 
             if len(err.args) == 1:
+                data = {}
                 if "403 Forbidden" in err.args[0]:
                     raise NoSuchImplementation(image_name) from err
             else:
