@@ -306,7 +306,7 @@ class SeqResult:
     """
     A result along with its corresponding metadata.
 
-    Contains the implementation an test case it corresponds to.
+    Contains the implementation and test case it corresponds to.
 
     Knows how long the result was *supposed* to be, and what the expected
     validation results were supposed to be if that information was provided at
