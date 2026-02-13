@@ -310,7 +310,6 @@ class Result:
 
         for _dialect, cases_and_results in self._dialects.failures:
             for case, seq_result in cases_and_results:
-
                 for i in range(len(case.tests)):
                     result = seq_result.result.result_for(i)
                     if not result.errored:
