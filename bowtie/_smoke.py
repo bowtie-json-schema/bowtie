@@ -127,7 +127,43 @@ class Result:
 
         prefix = f"{self.id} [dim]seems to"
         if failures:
-            title = f"{prefix} be [/][b red]broken!"
+            if self.all_tests_errored:
+                title = f"{prefix} be [/][b red]critical errors!"
+
+                explanation = Text(
+                    "Every single test resulted in an error, which indicates the harness " 
+                    "cannot execute properly.\n\n "
+                    "Possible causes:\n"
+                    "• Incorrect installation or missing dependencies\n"
+                    "• Configuration problems\n"
+                    "• The harness not properly implementing the Bowtie protocol\n"
+                )
+
+                explanation_panel = Panel(
+                    explanation,
+                    title="[yellow]Diagnostic Information",
+                    padding=1,
+                )
+
+            elif self.is_completely_broken:
+                title = f"{prefix} be [/][b red] completely broken!"
+
+                explanation = Text(
+                    "This harness failed every single test across all supported dialects.\n\n"
+                    "Possible causes:\n"
+                    "• The harness is not properly reading or processing test cases\n"
+                    "• Incorrect validator logic\n"
+                )
+
+                explanation_panel = Panel(
+                    explanation,
+                    title="[yellow]Diagnostic Information",
+                    padding=1,
+                )
+
+            else:
+                title = f"{prefix} be [/][b red]broken!"
+                explanation_panel = None
 
             for dialect, cases_and_results in failures:
                 first = cases_and_results[0][0]
@@ -165,6 +201,11 @@ class Result:
 
                     subtable.add_row(case.syntax(dialect), instances)
                 epilog.add_row(subtable)
+
+            if explanation_panel is not None:
+                epilog.add_row("")
+                epilog.add_row(explanation_panel)
+
         elif self._ref:
             title = f"{prefix} be [/][b yellow]partially broken!"
 
@@ -242,6 +283,39 @@ class Result:
         # We treat referencing failures as soft failures, since so many
         # implementations have issues :( Perhaps this will change.
         return not self._dialects.failures
+
+    @cached_property
+    def is_completely_broken(self) -> bool:
+        """
+        Check if the harness failed ALL tests across ALL dialects
+        """
+        if not self._dialects.failures:
+            return False
+
+        total_dialects = len(self._dialects._dialects)
+        failed_dialects = len(self._dialects.failures)
+
+        return total_dialects == failed_dialects and total_dialects > 0
+    
+    @cached_property
+    def all_tests_errored(self) -> bool:
+        """
+        Check if every single test resulted in an error (not just wrong validation)
+        """
+        if not self._dialects.failures:
+            return False
+        
+        for dialect, cases_and_results in self._dialects.failures:
+            for case, seq_result in cases_and_results:
+                if hasattr(seq_result.result, 'errored') and seq_result.result.errored:
+                    continue
+
+                for i in range(len(case.tests)):
+                    result = seq_result.result.result_for(i)
+                    if not result.errored:
+                        return False
+                    
+        return True
 
     def serializable(self) -> dict[str, Any]:
         if self.success:
