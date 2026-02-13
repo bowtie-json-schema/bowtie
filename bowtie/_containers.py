@@ -294,6 +294,7 @@ async def start_container_maybe_pull(docker: Docker, image_name: str):
             # This craziness can go wrong in various ways, none of them
             # machine parseable.
 
+            data: dict[str, str]
             if len(err.args) == 1:
                 status, data = err.status, {}
 
