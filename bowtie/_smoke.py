@@ -290,7 +290,7 @@ class Result:
     @cached_property
     def is_completely_broken(self) -> bool:
         """
-        Check if the harness failed ALL tests across ALL dialects
+        Check if the harness failed ALL tests across ALL dialects.
         """
         if not self._dialects.failures:
             return False
@@ -303,7 +303,8 @@ class Result:
     @cached_property
     def all_tests_errored(self) -> bool:
         """
-        Check if every single test resulted in an error (not just wrong validation)
+        Check if every single test resulted in an error 
+        (not just wrong validation).
         """
         if not self._dialects.failures:
             return False
