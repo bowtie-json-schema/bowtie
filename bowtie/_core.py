@@ -549,23 +549,21 @@ class Implementation:
         url = CONTAINER_PACKAGES_API / self.id / "versions"
 
         gh = github()
-        pages: list[GitHubCore] = []
-        with suppress(GitHubError):
-            pages = gh._iter(count=-1, url=str(url), cls=GitHubCore)  # type: ignore[reportPrivateUsage]
-
+        
         versions: Set[str] = (
             {self.info.version} if self.info.version else set()
         )
-        for page in pages:
-            try:
-                tags = cast(
-                    "Iterable[str]",
-                    page.as_dict()["metadata"]["container"]["tags"],
-                )
-            except KeyError:
-                continue
-            else:
-                versions.update([tag for tag in tags if "." in tag])
+        with suppress(GitHubError):
+            for page in gh._iter(count=-1, url=str(url), cls=GitHubCore):  # type: ignore[reportPrivateUsage]
+                try:
+                    tags = cast(
+                        "Iterable[str]",
+                        page.as_dict()["metadata"]["container"]["tags"],  # type: ignore[reportUnknownMemberType]
+                    )
+                except KeyError:
+                    continue
+                else:
+                    versions.update([tag for tag in tags if "." in tag])
 
         return sorted(versions, key=sortable_version_key, reverse=True)
 
