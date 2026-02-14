@@ -70,7 +70,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest test report
         if: inputs.report_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v12
+        uses: dawidd6/action-download-artifact@v14
         with:
           workflow: report.yml
           branch: main
@@ -78,7 +78,7 @@ jobs:
           path: _site
 
       - name: Download latest versioned test reports
-        uses: dawidd6/action-download-artifact@v12
+        uses: dawidd6/action-download-artifact@v14
         with:
           workflow: versioned-report.yml
           branch: main

@@ -158,7 +158,7 @@ jobs:
           path: implementations
 
       - name: Download latest versioned test reports
-        uses: dawidd6/action-download-artifact@v12
+        uses: dawidd6/action-download-artifact@v14
         with:
           workflow: versioned-report.yml
           branch: main
