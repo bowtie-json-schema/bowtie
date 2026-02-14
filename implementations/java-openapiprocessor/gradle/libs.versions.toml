@@ -1,7 +1,7 @@
 [versions]
 validator = "2026.1"
 
-kotlin = "2.3.0"
+kotlin = "2.3.10"
 build-jdk = "11"
 
 [libraries]
