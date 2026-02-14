@@ -549,7 +549,7 @@ class Implementation:
         url = CONTAINER_PACKAGES_API / self.id / "versions"
 
         gh = github()
-        
+
         versions: Set[str] = (
             {self.info.version} if self.info.version else set()
         )
