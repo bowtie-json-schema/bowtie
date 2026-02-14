@@ -169,7 +169,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest Benchmark Report
         if: inputs.report_benchmark_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v12
+        uses: dawidd6/action-download-artifact@v14
         with:
           workflow: benchmark.yml
           branch: main
