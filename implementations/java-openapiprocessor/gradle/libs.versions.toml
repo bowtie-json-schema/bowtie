@@ -14,7 +14,7 @@ jackson-bom = "com.fasterxml.jackson:jackson-bom:2.21.0"
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
 
-logback = "ch.qos.logback:logback-classic:1.5.26"
+logback = "ch.qos.logback:logback-classic:1.5.28"
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
