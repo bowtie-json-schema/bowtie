@@ -56,7 +56,7 @@ For example:
 .. code:: yaml
 
     - name: Smoke Test a Bowtie Implementation
-    run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
+      run: bowtie smoke -i go-jsonschema --format markdown >> $GITHUB_STEP_SUMMARY
 
 .. seealso::
 
