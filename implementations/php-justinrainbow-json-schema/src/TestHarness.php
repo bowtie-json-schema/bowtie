@@ -82,6 +82,7 @@ class TestHarness
                 'source' => 'https://github.com/jsonrainbow/json-schema',
                 'issues' => 'https://github.com/jsonrainbow/json-schema/issues',
                 'dialects' => [
+                    'http://json-schema.org/draft-07/schema#',
                     'http://json-schema.org/draft-06/schema#',
                     'http://json-schema.org/draft-04/schema#',
                     'http://json-schema.org/draft-03/schema#',
