@@ -303,7 +303,8 @@ class Result:
     @cached_property
     def all_tests_errored(self) -> bool:
         """
-        Check if every single test resulted in an error
+        Check if every single test resulted in an error.
+        
         (not just wrong validation).
         """
         if not self._dialects.failures:
