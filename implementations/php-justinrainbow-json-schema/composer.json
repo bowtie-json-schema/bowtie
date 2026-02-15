@@ -3,7 +3,7 @@
   "description": "These sources contains the test harness implementation for Bowtie",
   "license": "MIT",
   "require": {
-    "justinrainbow/json-schema": "^6.6"
+    "justinrainbow/json-schema": "^6.7"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^4.0"

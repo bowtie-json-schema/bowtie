@@ -8,7 +8,7 @@ COPY composer.* .
 RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --optimize-autoloader
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
 
-FROM php:8.5.0RC2-alpine
+FROM php:8.5-cli-alpine3.22
 
 WORKDIR /usr/src/json-schema
 
