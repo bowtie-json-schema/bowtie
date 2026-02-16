@@ -1,21 +1,24 @@
 import pytest
 
-from bowtie._smoke import Result, DialectResults
-from bowtie._commands import SeqResult, CaseResult, TestResult, ErroredTest
+from bowtie._commands import CaseResult, ErroredTest, SeqResult, TestResult
 from bowtie._core import Dialect, Test, TestCase
+from bowtie._smoke import DialectResults, Result
+
 
 @pytest.fixture
 def draft202012():
     return Dialect.by_short_name()["draft2020-12"]
 
+
 @pytest.fixture
 def draft7():
     return Dialect.by_short_name()["draft7"]
 
+
 @pytest.fixture
 def sample_failure():
     case = TestCase(
-        description='test',
+        description="test",
         schema={"type": "string"},
         tests=[Test(description="test", instance=37, valid=True)],
     )
@@ -29,7 +32,9 @@ def sample_failure():
 
 
 class TestSmokeResult:
-    def test_is_completely_broken_all_failures(self, draft202012, draft7, sample_failure):
+    def test_is_completely_broken_all_failures(
+        self, draft202012, draft7, sample_failure,
+    ):
         dialects = DialectResults()
         dialects = dialects.with_result(draft202012, [sample_failure])
         dialects = dialects.with_result(draft7, [sample_failure])
@@ -38,7 +43,9 @@ class TestSmokeResult:
 
         assert result.is_completely_broken is True
 
-    def test_is_completely_broken_some_success(self, draft202012, draft7, sample_failure):
+    def test_is_completely_broken_some_success(
+        self, draft202012, draft7, sample_failure,
+    ):
         dialects = DialectResults()
         dialects = dialects.with_result(draft202012, [])
         dialects = dialects.with_result(draft7, [sample_failure])
@@ -69,11 +76,13 @@ class TestSmokeResult:
                 results=[
                     ErroredTest(context={"message": "error 1"}),
                     ErroredTest(context={"message": "error 2"}),
-                ]
+                ],
             ),
             expected=[True, True],
         )
-        dialects = DialectResults().with_result(draft202012, [(case, seq_result)])
+        dialects = DialectResults().with_result(
+            draft202012, [(case, seq_result)],
+        )
         result = Result(id="test-impl", dialects=dialects, ref=None)
 
         assert result.all_tests_errored is True
