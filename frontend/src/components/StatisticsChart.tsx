@@ -78,7 +78,7 @@ export const StatisticsChart = ({ reportData }: { reportData: ReportData }) => {
             <ReferenceLine y={meanScore} stroke="#8c8c8c" strokeDasharray="2 2" />
             
             <Scatter data={chartData}>
-              {chartData.map((entry, index) => (
+              {chartData.map((_, index) => (
                 <Cell key={index} fill="grey" />
               ))}
             </Scatter>
