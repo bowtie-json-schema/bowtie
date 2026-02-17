@@ -22,7 +22,7 @@ export const StatisticsChart = ({ reportData }: { reportData: ReportData }) => {
     const failed = totals.failedTests ?? 0;
     const errored = totals.erroredTests ?? 0;
     const skipped = totals.skippedTests ?? 0;
-    
+
     const successCount = totalTests - (failed + errored + skipped);
     const score = (successCount / totalTests) * 100;
 
@@ -44,19 +44,19 @@ export const StatisticsChart = ({ reportData }: { reportData: ReportData }) => {
       <h4 className="text-center mb-4" >
         Compliance Chart
       </h4>
-      
+
       <div style={{ width: "100%", height: 450 }}>
         <ResponsiveContainer>
           <ScatterChart margin={{ top: 10, right: 30, bottom: 0, left: 0 }}>
-            <XAxis type="number" dataKey="x" hide/> 
-            <YAxis 
-              type="number" 
-              dataKey="y" 
+            <XAxis type="number" dataKey="x" hide/>
+            <YAxis
+              type="number"
+              dataKey="y"
               domain={['auto', 'auto']}
-              tick={{ fill: "currentColor", fontSize: 15 }} 
+              tick={{ fill: "currentColor", fontSize: 15 }}
             />
-            
-            <Tooltip 
+
+            <Tooltip
               content={({ active, payload }) => {
                 if (active && payload?.length) {
                   const item = payload[0] as { payload: { name: string; y: number } };
@@ -71,12 +71,12 @@ export const StatisticsChart = ({ reportData }: { reportData: ReportData }) => {
                 return null;
               }}
             />
-            
+
             <ReferenceLine y={q25} stroke="#096dd9" strokeDasharray="3 3"/>
             <ReferenceLine y={medianScore} stroke="#389e0d" />
             <ReferenceLine y={q75} stroke="#cf1322" strokeDasharray="3 3"/>
             <ReferenceLine y={meanScore} stroke="#8c8c8c" strokeDasharray="2 2" />
-            
+
             <Scatter data={chartData}>
               {chartData.map((_, index) => (
                 <Cell key={index} fill="grey" />
@@ -86,7 +86,7 @@ export const StatisticsChart = ({ reportData }: { reportData: ReportData }) => {
         </ResponsiveContainer>
       </div>
 
-      <div className="d-flex justify-content-center mt-3 p-2 border mx-auto" 
+      <div className="d-flex justify-content-center mt-3 p-2 border mx-auto"
            style={{ maxWidth: "550px" }}>
         <div className="mx-3 d-flex align-items-center">
           <div style={{ width: 12, height: 2, borderTop: "2px dashed #cf1322", marginRight: 5 }}></div>
