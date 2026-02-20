@@ -26,7 +26,11 @@
   "pnpm": {
     "auditConfig": {
       "ignoreGhsas": [
-        "GHSA-67mh-4wv8-2f99"
+        "GHSA-3ppc-4f35-3m26",
+        "GHSA-2g4f-4pwh-qvx6"
+      ],
+      "ignoreCves": [
+        "GHSA-3ppc-4f35-3m26"
       ]
     },
     "onlyBuiltDependencies": [
@@ -45,30 +49,30 @@
     "watch-test": "vitest watch"
   },
   "dependencies": {
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "bootstrap": "^5.3.8",
     "dayjs": "^1.11.19",
-    "mathjs": "^15.1.0",
-    "react": "^19.2.3",
+    "mathjs": "^15.1.1",
+    "react": "^19.2.4",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
-    "react-dom": "^19.2.3",
-    "react-router": "^7.12.0",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.13.0",
     "react-syntax-highlighter": "^16.1.0",
-    "recharts": "^3.6.0",
+    "recharts": "^3.7.0",
     "title-case": "^4.3.2",
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@playwright/test": "^1.57.0",
-    "@types/node": "^25.0.9",
-    "@types/react": "^19.2.8",
+    "@eslint/js": "^9.39.3",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.26",
-    "@vitejs/plugin-react": "^5.1.2",
-    "eslint": "^9.39.2",
+    "@vitejs/plugin-react": "^5.1.4",
+    "eslint": "^9.39.3",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-tsdoc": "^0.5.0",
@@ -76,10 +80,10 @@
     "jsdom": "^27.4.0",
     "recharts": "3.6.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.0",
+    "typescript-eslint": "^8.56.0",
     "vite": "^7.3.1",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   },
   "resolutions": {
     "prismjs": "^1.30.0"
