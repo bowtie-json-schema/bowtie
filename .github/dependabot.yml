@@ -146,6 +146,7 @@ updates:
   # ignore: python-fastjsonschema - installs the latest (unpinned) version
   # ignore: python-jschon - installs the latest (unpinned) version
   # ignore: python-jsonschema - installs the latest (unpinned) version
+  # ignore: python-jsu - installs the latest (unpinned) version
 
   - package-ecosystem: "bundler"
     directory: "/implementations/ruby-json_schemer"
@@ -410,6 +411,13 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/python-jsonschema"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/python-jsu"
     schedule:
       interval: "daily"
     cooldown:
