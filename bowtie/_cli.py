@@ -162,7 +162,7 @@ _OPTION_GROUPS = {
                 (
                     "Basic Options",
                     ["implementation", "quiet", "format", "failures-only"],
-                )
+                ),
             ],
         ),
         (
