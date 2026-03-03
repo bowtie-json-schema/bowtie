@@ -41,22 +41,30 @@ def test_commands_are_sorted_into_bins():
     stdout = result.stdout.decode().strip()
     assert not any("─ Commands ─" in i for i in stdout.splitlines()), stdout
 
+
 def test_smoke_failures_only_suppresses_success():
     """
     Ensure --failures-only suppresses success output in pretty format.
     """
     result = subprocess.run(
         [
-            sys.executable, "-m", "bowtie", "smoke", 
-            "-i", "python-jsonschema", 
-            "--failures-only", 
-            "--format", "pretty"
+            sys.executable,
+            "-m",
+            "bowtie",
+            "smoke",
+            "-i",
+            "python-jsonschema",
+            "--failures-only",
+            "--format",
+            "pretty",
         ],
         capture_output=True,
         check=True,
     )
     stdout = result.stdout.decode()
-    
+
     # Verify the implementation name is NOT in the output,
     # proving the success report was skipped, while the command still succeeded.
-    assert "python-jsonschema" not in stdout, f"Output should have been suppressed, but got: {stdout}"
+    assert "python-jsonschema" not in stdout, (
+        f"Output should have been suppressed, but got: {stdout}"
+    )

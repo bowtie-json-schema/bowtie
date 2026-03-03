@@ -156,7 +156,15 @@ _OPTION_GROUPS = {
             ],
         ),
         ("info", [("Basic Options", ["implementation", "format"])]),
-        ("smoke", [("Basic Options", ["implementation", "quiet", "format", "failures-only"])]),
+        (
+            "smoke",
+            [
+                (
+                    "Basic Options",
+                    ["implementation", "quiet", "format", "failures-only"],
+                )
+            ],
+        ),
         (
             "filter-dialects",
             [
@@ -2397,8 +2405,8 @@ def trend(
 )
 @format_option()
 async def smoke(
-    start: Starter, 
-    format: _F, 
+    start: Starter,
+    format: _F,
     echo: Callable[..., None],
     failures_only: bool,
 ) -> int:
