@@ -64,7 +64,8 @@ def test_smoke_failures_only_suppresses_success():
     stdout = result.stdout.decode()
 
     # Verify the implementation name is NOT in the output,
-    # proving the success report was skipped, while the command still succeeded.
+    # proving the success report was skipped,
+    # while the command still succeeded.
     assert "python-jsonschema" not in stdout, (
         f"Output should have been suppressed, but got: {stdout}"
     )
