@@ -19,6 +19,7 @@ docker build --no-cache --build-arg JMC=dev --build-arg JSU=dev -t docker.io/zx8
 docker image ls zx80/python-jsu
 docker run --rm --entrypoint /bin/sh -it zx80/python-jsu
 bowtie smoke -i docker.io/zx80/python-jsu
+Use --failures-only to suppress output for implementations that pass.
 
 for version in 7 6 4 3 2019 2020 ; do
   echo "# version $version"

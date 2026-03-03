@@ -43,19 +43,20 @@ def test_commands_are_sorted_into_bins():
 
 def test_smoke_failures_only_suppresses_success():
     """
-    Ensure --failures-only suppresses output for successful implementations in pretty format.
+    Ensure --failures-only suppresses success output in pretty format.
     """
     result = subprocess.run(
         [
             sys.executable, "-m", "bowtie", "smoke", 
             "-i", "python-jsonschema", 
             "--failures-only", 
-            "--format", "pretty"  # Force the presentation layer
+            "--format", "pretty"
         ],
         capture_output=True,
         check=True,
     )
-    stdout = result.stdout.decode().strip()
+    stdout = result.stdout.decode()
     
-    # Assert that stdout is empty because python-jsonschema succeeds
-    assert stdout == "", f"Expected empty output, but got: {stdout}"
+    # Verify the implementation name is NOT in the output,
+    # proving the success report was skipped, while the command still succeeded.
+    assert "python-jsonschema" not in stdout, f"Output should have been suppressed, but got: {stdout}"

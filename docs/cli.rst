@@ -94,7 +94,7 @@ E.g., to verify the Golang ``jsonschema`` implementation is functioning, you can
 
    $ bowtie smoke -i go-jsonschema
 
-
+To suppress output for successful implementations and only see details for those that fail the smoke test, use the --failures-only flag.
 Connectables
 ------------
 
