@@ -156,7 +156,7 @@ _OPTION_GROUPS = {
             ],
         ),
         ("info", [("Basic Options", ["implementation", "format"])]),
-        ("smoke", [("Basic Options", ["implementation", "quiet", "format"])]),
+        ("smoke", [("Basic Options", ["implementation", "quiet", "format", "failures-only"])]),
         (
             "filter-dialects",
             [
@@ -2380,20 +2380,28 @@ def trend(
             )
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
 @click.option(
     "-q",
     "--quiet",
     "echo",
-    # I have no idea why Click makes this so hard, but no combination of:
-    #     type, default, is_flag, flag_value, nargs, ...
-    # makes this work without doing it manually with callback.
     callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]
     is_flag=True,
     help="Don't print any output, just exit with nonzero status on failure.",
 )
+@click.option(
+    "--failures-only",
+    is_flag=True,
+    default=False,
+    help="Only show output for implementations that fail the smoke test.",
+)
 @format_option()
-async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
+async def smoke(
+    start: Starter, 
+    format: _F, 
+    echo: Callable[..., None],
+    failures_only: bool,
+) -> int:
     """
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
@@ -2409,12 +2417,17 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
             output = {id: result.serializable() for id, _, result in results}
             echo(json.dumps(output, indent=2))
         case [(_, _, result)], "pretty":
-            STDOUT.print(result)
+            if not failures_only or not result.success:
+                STDOUT.print(result)
         case _, "pretty":
             for _, _, each in results:
-                STDOUT.print(each)
+                if not failures_only or not each.success:
+                    STDOUT.print(each)
         case _, "markdown":
             for _, info, result in results:
+                if failures_only and result.success:
+                    continue
+
                 echo(f"# {info.name} ({info.language})\n")
 
                 if result.success:
@@ -2462,8 +2475,6 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None]) -> int:
                             )
                             echo(output)
 
-                            # FIXME: This will be nicer if/when Unsuccessful
-                            #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
                                 if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]

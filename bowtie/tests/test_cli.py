@@ -40,3 +40,22 @@ def test_commands_are_sorted_into_bins():
     )
     stdout = result.stdout.decode().strip()
     assert not any("─ Commands ─" in i for i in stdout.splitlines()), stdout
+
+def test_smoke_failures_only_suppresses_success():
+    """
+    Ensure --failures-only suppresses output for successful implementations in pretty format.
+    """
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "bowtie", "smoke", 
+            "-i", "python-jsonschema", 
+            "--failures-only", 
+            "--format", "pretty"  # Force the presentation layer
+        ],
+        capture_output=True,
+        check=True,
+    )
+    stdout = result.stdout.decode().strip()
+    
+    # Assert that stdout is empty because python-jsonschema succeeds
+    assert stdout == "", f"Expected empty output, but got: {stdout}"
