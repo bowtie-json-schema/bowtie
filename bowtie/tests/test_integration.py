@@ -1993,6 +1993,45 @@ class TestSmoke:
         )
         assert stdout == "", stderr
 
+    @pytest.mark.asyncio
+    async def test_completely_broken_shows_enhanced_message(self):
+        stdout, _ = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.always_wrong,
+            exit_code=EX.DATAERR,
+        )
+        assert "completely broken" in stdout.lower()
+
+    @pytest.mark.asyncio
+    async def test_success_message_unchanged(self):
+        stdout, _ = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.passes_smoke,
+            exit_code=EX.OK,
+        )
+        assert "work" in stdout.lower()
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
+    async def test_json_format_unchanged_with_complete_failure(self):
+        jsonout, _ = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.always_wrong,
+            json=True,
+            exit_code=EX.DATAERR,
+        )
+        validated = (await command_validator("smoke")).validated(jsonout)
+        assert not validated["success"]
+
 
 @pytest.mark.asyncio
 async def test_info_pretty():

@@ -33,7 +33,10 @@ def sample_failure():
 
 class TestSmokeResult:
     def test_is_completely_broken_all_failures(
-        self, draft202012, draft7, sample_failure,
+        self,
+        draft202012,
+        draft7,
+        sample_failure,
     ):
         dialects = DialectResults()
         dialects = dialects.with_result(draft202012, [sample_failure])
@@ -44,7 +47,10 @@ class TestSmokeResult:
         assert result.is_completely_broken is True
 
     def test_is_completely_broken_some_success(
-        self, draft202012, draft7, sample_failure,
+        self,
+        draft202012,
+        draft7,
+        sample_failure,
     ):
         dialects = DialectResults()
         dialects = dialects.with_result(draft202012, [])
@@ -52,13 +58,13 @@ class TestSmokeResult:
 
         result = Result(id="test-impl", dialects=dialects, ref=None)
 
-        assert result.is_completely_broken is False
+        assert not result.is_completely_broken
 
     def test_all_tests_errored_false_when_no_failures(self, draft202012):
         dialects = DialectResults().with_result(draft202012, [])
         result = Result(id="test-impl", dialects=dialects, ref=None)
 
-        assert result.all_tests_errored is False
+        assert not result.all_tests_errored
 
     def test_all_tests_errored_true(self, draft202012):
         case = TestCase(
@@ -81,7 +87,8 @@ class TestSmokeResult:
             expected=[True, True],
         )
         dialects = DialectResults().with_result(
-            draft202012, [(case, seq_result)],
+            draft202012,
+            [(case, seq_result)],
         )
         result = Result(id="test-impl", dialects=dialects, ref=None)
 
