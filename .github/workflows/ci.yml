@@ -195,7 +195,7 @@ jobs:
 
       - name: Generate attestation for wheels
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: "dist/*.whl"
 
