@@ -7,6 +7,7 @@ import Implementation from "./data/Implementation.ts";
 import { ReportData } from "./data/parseReportData.ts";
 import { FilterSection } from "./components/FilterSection.tsx";
 import { useSearchParams } from "./hooks/useSearchParams.ts";
+import { StatisticsChart } from "./components/StatisticsChart";
 
 export const DialectReportView = ({
   reportData,
@@ -66,6 +67,7 @@ export const DialectReportView = ({
           reportData={filteredReportData}
           otherImplementationsData={filteredOtherImplementationsData}
         />
+        <StatisticsChart reportData={filteredReportData} />
         <CasesSection reportData={filteredReportData} />
       </div>
     </main>
