@@ -156,7 +156,15 @@ _OPTION_GROUPS = {
             ],
         ),
         ("info", [("Basic Options", ["implementation", "format"])]),
-        ("smoke", [("Basic Options", ["implementation", "quiet", "failures-only", "format"])]),
+        (
+            "smoke",
+            [
+                (
+                    "Basic Options",
+                    ["implementation", "quiet", "failures-only", "format"],
+                )
+            ],
+        ),
         (
             "filter-dialects",
             [
@@ -2398,7 +2406,9 @@ def trend(
     help="Only show output for implementations that fail.",
 )
 @format_option()
-async def smoke(start: Starter, format: _F, echo: Callable[..., None], failures_only: bool) -> int:
+async def smoke(
+    start: Starter, format: _F, echo: Callable[..., None], failures_only: bool
+) -> int:
     """
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
@@ -2407,11 +2417,11 @@ async def smoke(start: Starter, format: _F, echo: Callable[..., None], failures_
         async for _, implementation in start()
     ]
     display_results = results
-    if failures_only and format != "json":  # keep json unfiltered for machine use
+    if (
+        failures_only and format != "json"
+    ):  # keep json unfiltered for machine use
         display_results = [
-            (id, info, r)
-            for id, info, r in results
-            if not r.success
+            (id, info, r) for id, info, r in results if not r.success
         ]
 
     match results, format:
