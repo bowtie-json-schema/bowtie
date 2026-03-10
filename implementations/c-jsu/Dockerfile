@@ -22,7 +22,7 @@ RUN if [ "$JSU" ] ; then jsu="git+https://github.com/zx80/json-schema-utils@$JSU
 
 # c-specific setup
 # NOTE avoid unavailable re2 C wrapper that needs to be installed from sources
-RUN apk add gcc musl-dev jansson jansson-dev pcre2 pcre2-dev
+RUN apk add gcc musl musl-dev jansson jansson-dev pcre2 pcre2-dev
 
 COPY bowtie_jsu_compile.py .
 CMD ["python3", "./bowtie_jsu_compile.py", "C", "--regex-engine", "pcre2"]
