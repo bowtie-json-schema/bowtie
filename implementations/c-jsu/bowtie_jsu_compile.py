@@ -9,6 +9,7 @@ then the generated validator script or executable to validate each test.
 """
 
 from pathlib import Path
+import dotenv
 import hashlib
 import json
 import os
@@ -71,12 +72,7 @@ class Runner:
     def __init__(self, language: str = "python", options: list[str] = []):
 
         # setup environment
-        if ENV.exists():
-            with Path.open(ENV) as env:
-                for line in env:
-                    if line.startswith("export ") and "=" in line:
-                        var, val = line[7:].rstrip().split("=", 1)
-                        os.environ[var] = val
+        dotenv.load_dotenv(ENV)
 
         # setup language
         self.language: str = language.lower()

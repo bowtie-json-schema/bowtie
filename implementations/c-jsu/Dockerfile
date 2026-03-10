@@ -11,7 +11,7 @@ WORKDIR /usr/src/myapp
 ARG JMC
 ARG JSU
 
-RUN apk add git py3-pip py3-re2 icu-data-full
+RUN apk add git py3-pip py3-re2 py3-dotenv icu-data-full
 
 # force install, otherwise it would require a virtual environment
 RUN pip install --break-system-packages jsonschema-specifications
