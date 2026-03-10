@@ -204,10 +204,7 @@ class Runner:
 
         assert "dialect" in req, "dialect command expects a dialect"
 
-        try:
-            self.version = VERSIONS[req["dialect"]]
-        except KeyError:  # unknown version
-            self.version = 0
+        self.version = VERSIONS[req["dialect"]]
 
         return {"ok": True}
 
