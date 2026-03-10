@@ -9,10 +9,8 @@ then the generated validator script or executable to validate each test.
 """
 
 from pathlib import Path
-import dotenv
 import hashlib
 import json
-import os
 import platform
 import shutil
 import subprocess
@@ -20,6 +18,7 @@ import sys
 import traceback
 
 from jsonschema_specifications import REGISTRY
+import dotenv
 
 type JsonObject = dict[str, Json]
 type JsonArray = list[Json]
