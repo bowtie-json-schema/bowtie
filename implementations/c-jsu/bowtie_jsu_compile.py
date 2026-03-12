@@ -170,7 +170,7 @@ class Runner:
         elif "PASS" in ps.stdout:
             return True
         else:
-            raise RunnerError(f"unexpected validation output: {ps.output}")
+            raise RunnerError(f"unexpected validation output: {ps.stdout}")
 
     def cmd_start(self, req: JsonObject) -> JsonObject:
         """Respond to start with various meta data about the implementation."""
