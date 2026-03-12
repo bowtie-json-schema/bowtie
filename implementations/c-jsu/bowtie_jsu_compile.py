@@ -48,11 +48,13 @@ TMP: Path = Path(__file__).parent / "work"
 # environment variables
 ENV: Path = Path(__file__).parent / ".env"
 
+
 def get_version(cmd: list[str]) -> str:
     """Run external command and return first non empty output line."""
     ps = subprocess.run(cmd, text=True, capture_output=True, check=True)  # noqa: S603
     lines = list(filter(lambda s: s != "", ps.stdout.split("\n")))
     return lines[0]
+
 
 def json_file(filename: str, data: Json) -> Path:
     """Put JSON data into a temporary file."""
@@ -67,7 +69,6 @@ class RunnerError(Exception):
 
 
 class Runner:
-
     def __init__(self, language: str = "python", options: list[str] = []):
 
         # setup environment
@@ -126,13 +127,14 @@ class Runner:
         # compiler call prefix missing version, output file and input schema
         self.jsu_compile = [
             "jsu-compile",
-                "--cache", str(CACHE),
-                "--no-fix",        # do not try to fix the schema
-                "--no-strict",     # accept any odd looking schema
-                "--no-reporting",  # do not generate location reporting code
-                "--loose",         # ints are floats, floats may be ints
-                # next options may override the above defaults
-                *options,
+            "--cache",
+            str(CACHE),
+            "--no-fix",  # do not try to fix the schema
+            "--no-strict",  # accept any odd looking schema
+            "--no-reporting",  # do not generate location reporting code
+            "--loose",  # ints are floats, floats may be ints
+            # next options may override the above defaults
+            *options,
         ]
         self.jsu_version = get_version(["jsu-compile", "--version"])
 
@@ -146,9 +148,11 @@ class Runner:
 
         jsu_compile = [
             *self.jsu_compile,
-                "--schema-version", str(self.version or 7),
-                "-o", str(output_file),
-                    str(schema_file),
+            "--schema-version",
+            str(self.version or 7),
+            "-o",
+            str(output_file),
+            str(schema_file),
         ]
 
         subprocess.run(jsu_compile, text=True, check=True)  # noqa: S603
@@ -161,8 +165,10 @@ class Runner:
         test_file = json_file("test.json", test)
 
         ps = subprocess.run(  # noqa: S603
-            [ *self.runner, str(test_file) ],
-            text=True, capture_output=True, check=True,
+            [*self.runner, str(test_file)],
+            text=True,
+            capture_output=True,
+            check=True,
         )
 
         if "FAIL" in ps.stdout:
@@ -236,8 +242,7 @@ class Runner:
 
             # apply to test vector
             results = [
-                {"valid": self.run_test(test["instance"])}
-                    for test in tests
+                {"valid": self.run_test(test["instance"])} for test in tests
             ]
 
         except Exception:  # an internal error occurred
