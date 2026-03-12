@@ -11,7 +11,7 @@ WORKDIR /usr/src/myapp
 ARG JMC
 ARG JSU
 
-RUN apk add git py3-pip py3-re2 icu-data-full
+RUN apk add git py3-pip py3-re2 py3-dotenv icu-data-full
 
 # force install, otherwise it would require a virtual environment
 RUN pip install --break-system-packages jsonschema-specifications
@@ -20,5 +20,5 @@ RUN if [ "$JMC" ] ; then jmc="git+https://github.com/clairey-zx81/json-model@$JM
 RUN if [ "$JSU" ] ; then jsu="git+https://github.com/zx80/json-schema-utils@$JSU" ; fi ; \
     pip install --break-system-packages "${jsu:-json_schema_utils}"
 
-COPY bowtie_jsu_python.py .
-CMD ["python3", "./bowtie_jsu_python.py"]
+COPY bowtie_jsu_compile.py .
+CMD ["python3", "./bowtie_jsu_compile.py", "Python"]
