@@ -1810,18 +1810,11 @@ async def download_versions_of(id: ConnectableId) -> frozenset[str]:
                 )
                 response = await client.get(str(url))
                 response.raise_for_status()
-            except httpx.HTTPStatusError as err:
-                progress.update(
-                    task,
-                    description=(
-                        f"[bold red]Could not fetch versions of "
-                        f"{id}: {err.response.status_code}"
-                    ),
-                    completed=None,
-                    total=None,
-                    advance=None,
-                )
-                return frozenset()
+            except (httpx.HTTPStatusError, httpx.RequestError) as err:
+                progress.stop()
+                raise click.ClickException(
+                    f"Failed to fetch versions for '{id}': {err}",
+                ) from err
             else:
                 content = response.content
                 content_length = len(content)
@@ -1882,7 +1875,7 @@ async def download_and_parse_reports_for(
                             f"v{version}/{dialect.short_name}.json"
                         ),
                     )
-                except httpx.HTTPStatusError:
+                except (httpx.HTTPStatusError, httpx.RequestError):
                     report = _report.Report.empty(dialect=dialect)
                     progress.update(task, advance=1)
                     return version, dialect, report
@@ -1940,7 +1933,7 @@ async def download_and_parse_reports_for(
                         f"latest/{dialect.short_name}.json"
                     ),
                 )
-            except httpx.HTTPStatusError:
+            except (httpx.HTTPStatusError, httpx.RequestError):
                 report = _report.Report.empty(dialect=dialect)
                 progress.update(task, advance=1)
                 return "latest", dialect, report
