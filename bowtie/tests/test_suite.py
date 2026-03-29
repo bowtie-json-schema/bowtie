@@ -67,6 +67,6 @@ def test_cases_from_v1_filters_and_rewrites(tmp_path):
 
     assert [case.description for case in cases] == ["draft 7 and up"]
     assert cases[0].schema["$schema"] == str(
-        Dialect.by_short_name()["draft7"].uri
+        Dialect.by_short_name()["draft7"].uri,
     )
     assert cases[0].tests[0].instance == 1

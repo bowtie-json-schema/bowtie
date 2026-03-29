@@ -70,7 +70,9 @@ class ClickParam(click.ParamType):
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            explicit_dialect = None if ctx is None else ctx.params.get("dialect")
+            explicit_dialect = (
+                None if ctx is None else ctx.params.get("dialect")
+            )
             cases, dialect = self._cases_and_dialect(
                 path=Path(value),
                 explicit_dialect=explicit_dialect,
@@ -109,7 +111,9 @@ class ClickParam(click.ParamType):
             data.seek(0)
             with zipfile.ZipFile(data) as zf:
                 (contents,) = zipfile.Path(zf).iterdir()
-                explicit_dialect = None if ctx is None else ctx.params.get("dialect")
+                explicit_dialect = (
+                    None if ctx is None else ctx.params.get("dialect")
+                )
                 cases, dialect = self._cases_and_dialect(
                     path=contents / path,
                     explicit_dialect=explicit_dialect,
@@ -227,9 +231,12 @@ def _remotes_in(
         relative = str(_relative_to(each, path)).replace("\\", "/")
 
         if suite_version == "v1":
-            yield SUITE_REMOTE_BASE_URI / relative, rewrite_v1_dialect(
-                schema,
-                dialect,
+            yield (
+                SUITE_REMOTE_BASE_URI / relative,
+                rewrite_v1_dialect(
+                    schema,
+                    dialect,
+                ),
             )
             continue
 
