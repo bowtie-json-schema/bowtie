@@ -2504,6 +2504,7 @@ async def smoke(
 @fail_fast
 @SET_SCHEMA
 @VALIDATE
+@dialect_option(default=None)
 @click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
@@ -2521,6 +2522,9 @@ def suite(
 
             - ``{PATH}/tests/draft7/foo.json`` to run just one file from a checkout
 
+            - ``{PATH}/tests/v1`` together with ``--dialect draft7`` to run the
+              unified suite for draft 7
+
         * URLs to the test suite repository hosted on GitHub, e.g.:
 
             - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/``
@@ -2528,6 +2532,9 @@ def suite(
 
             - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
               to run a single file directly from a branch which exists in GitHub
+
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/v1``
+              together with ``--dialect draft2020-12`` to run the unified suite
 
         * short name versions of the previous URLs (similar to those providable
           to `bowtie validate --dialect`, e.g.:
