@@ -58,7 +58,7 @@ jobs:
           node-version-file: frontend/package.json
         if: startsWith(matrix.noxenv, 'ui')
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
           run_install: false
