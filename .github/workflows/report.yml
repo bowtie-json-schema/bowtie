@@ -19,6 +19,10 @@ on:
 
 permissions:
   contents: read
+  # These are needed at workflow level because reusable workflow permissions
+  # are intersected with the caller's — job-level permissions alone aren't enough.
+  pages: write # zizmor: ignore[excessive-permissions]
+  id-token: write # zizmor: ignore[excessive-permissions]
 
 concurrency:
   group: "pages"
@@ -300,6 +304,7 @@ jobs:
 
   redeploy-frontend:
     permissions:
+      contents: read # for actions/checkout in ui.yml
       pages: write # to deploy to GitHub Pages
       id-token: write # to verify the deployment originates from this workflow
     needs: site
