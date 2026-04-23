@@ -11,6 +11,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 import json
+import os
 import zipfile
 
 from diagnostic import DiagnosticError
@@ -57,57 +58,74 @@ class ClickParam(click.ParamType):
         value = Dialect.by_alias().get(value, value)
         value = URL_FOR_DIALECT.get(value, value)
 
-        try:
-            with suppress(TypeError):
-                value = URL.parse(value)
-        except RelativeURLWithoutBase:
+        # On Windows, drive-letter paths like D:\... are misinterpreted by
+        # URL.parse() as having a URL scheme (the drive letter).  Use
+        # splitdrive() to catch these before attempting URL parsing.
+        if os.path.splitdrive(value)[0] or Path(value).exists():
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
-            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                NotFoundError,
-            )
-
-            gh = github()
-            org, repo_name, *rest = value.path_segments
-            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
-            path, ref = path_and_ref_from_gh_path(rest)
-            data = BytesIO()
-            data.name = ""
-            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-            if not succeeded:
-                message = "Fetching the test suite from GitHub failed."
-                error = DiagnosticError(
-                    code="suite-fetch-failed",
-                    message=message,
-                    causes=[
-                        f"Retrieved the tree {ref}",
-                        f"Tried to download {path} from within it.",
-                    ],
-                    hint_stmt=(
-                        f"Check that {ref} is an existing branch and that "
-                        "you have passed the right path to test cases."
-                    ),
-                    note_stmt="You also can pass a local path to test cases.",
-                )
-                rich.print(error)
-                return self.fail(message)
-            data.seek(0)
-            with zipfile.ZipFile(data) as zf:
-                (contents,) = zipfile.Path(zf).iterdir()
-                cases, dialect = self._cases_and_dialect(path=contents / path)
-                cases = list(cases)
-
             try:
-                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-            except NotFoundError:
-                commit_info = ref
+                with suppress(TypeError):
+                    value = URL.parse(value)
+            except RelativeURLWithoutBase:
+                cases, dialect = self._cases_and_dialect(path=Path(value))
+                run_metadata = {}
             else:
-                # TODO: Make this the tree URL maybe, but I see tree(...)
-                #       doesn't come with an html_url
-                commit_info = {"text": commit.sha[:7], "href": commit.html_url}  # type: ignore[reportOptionalMemberAccess]
-            run_metadata: dict[str, Any] = {"Commit": commit_info}
+                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+                    NotFoundError,
+                )
+
+                gh = github()
+                org, repo_name, *rest = value.path_segments
+                repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+
+                path, ref = path_and_ref_from_gh_path(rest)
+                data = BytesIO()
+                data.name = ""
+                succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+                if not succeeded:
+                    message = "Fetching the test suite from GitHub failed."
+                    error = DiagnosticError(
+                        code="suite-fetch-failed",
+                        message=message,
+                        causes=[
+                            f"Retrieved the tree {ref}",
+                            f"Tried to download {path} from within it.",
+                        ],
+                        hint_stmt=(
+                            f"Check that {ref} is an existing branch and that "
+                            "you have passed the right path to test cases."
+                        ),
+                        note_stmt=(
+                            "You also can pass a local path"
+                            " to test cases."
+                        ),
+                    )
+                    rich.print(error)
+                    return self.fail(message)
+                data.seek(0)
+                with zipfile.ZipFile(data) as zf:
+                    (contents,) = zipfile.Path(zf).iterdir()
+                    cases, dialect = self._cases_and_dialect(
+                        path=contents / path,
+                    )
+                    cases = list(cases)
+
+                try:
+                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
+                except NotFoundError:
+                    commit_info = ref
+                else:
+                    # TODO: Make this the tree URL maybe, but I see tree(...)
+                    #       doesn't come with an html_url
+                    sha = commit.sha  # type: ignore[reportUnknownMemberType]
+                    url = commit.html_url  # type: ignore[reportUnknownMemberType]  # noqa: E501
+                    commit_info: dict[str, Any] = {
+                        "text": sha[:7],
+                        "href": url,
+                    }
+                run_metadata: dict[str, Any] = {"Commit": commit_info}
 
         return cases, dialect, run_metadata
 
