@@ -120,7 +120,7 @@ class ClickParam(click.ParamType):
                     #       doesn't come with an html_url
                     sha = commit.sha  # type: ignore[reportUnknownMemberType]
                     url = commit.html_url  # type: ignore[reportUnknownMemberType]
-                    commit_info: dict[str, Any] = {
+                    commit_info = {
                         "text": sha[:7],
                         "href": url,
                     }
