@@ -119,12 +119,12 @@ class ClickParam(click.ParamType):
                     # TODO: Make this the tree URL maybe, but I see tree(...)
                     #       doesn't come with an html_url
                     sha = cast(
-                        str,
+                        "str",
                         commit.sha,  # type: ignore[reportUnknownMemberType]
                     )
                     url = cast(
-                        str,
-                        commit.html_url,  # type: ignore[reportUnknownMemberType]  # noqa: E501
+                        "str",
+                        commit.html_url,  # type: ignore[reportUnknownMemberType]
                     )
                     commit_info = {
                         "text": sha[:7],
