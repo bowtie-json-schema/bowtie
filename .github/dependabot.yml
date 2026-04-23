@@ -49,13 +49,27 @@ updates:
       default-days: 7
 
   - package-ecosystem: "nuget"
-    directory: "/implementations/dotnet-corvus-jsonschema"
+    directory: "/implementations/dotnet-corvus-jsonschema-v4engine"
     schedule:
       interval: "daily"
     groups:
       corvus-json:
         patterns:
           - "Corvus.Json.*"
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "nuget"
+    directory: "/implementations/dotnet-corvus-jsonschema-v5engine"
+    schedule:
+      interval: "daily"
+    groups:
+      corvus-text-json:
+        patterns:
+          - "Corvus.Text.Json.*"
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
@@ -302,7 +316,14 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
-    directory: "/implementations/dotnet-corvus-jsonschema"
+    directory: "/implementations/dotnet-corvus-jsonschema-v4engine"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/dotnet-corvus-jsonschema-v5engine"
     schedule:
       interval: "daily"
     cooldown:
