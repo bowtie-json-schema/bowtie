@@ -222,7 +222,9 @@ class Runner:
             fn = hashlib.sha3_256(url.encode()).hexdigest()[:16] + ".json"
             files.add(fn)
             file = CACHE / fn
-            assert not file.exists(), f"should not cache same file twice: {url} ({fn})"
+            assert not file.exists(), (
+                f"should not cache same file twice: {url} ({fn})"
+            )
             with Path.open(file, "w") as fp:
                 json.dump(schema, fp)
 
