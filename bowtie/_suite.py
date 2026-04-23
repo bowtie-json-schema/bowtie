@@ -168,7 +168,7 @@ def _remotes_in(path: Path, dialect: Dialect) -> Iterable[tuple[URL, Any]]:
     # FIXME: #40: for draft-next support
 
     for each in _rglob(path, "*.json"):
-        schema = json.loads(each.read_text())
+        schema = json.loads(each.read_bytes())
 
         relative = str(_relative_to(each, path)).replace("\\", "/")
 
@@ -202,7 +202,7 @@ def cases_from(
         else:
             registry = {}
 
-        for case in json.loads(path.read_text()):
+        for case in json.loads(path.read_bytes()):
             for test in case["tests"]:
                 test["instance"] = test.pop("data")
             case.pop("specification", None)  # we do nothing with this now
