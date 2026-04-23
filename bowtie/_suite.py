@@ -114,13 +114,13 @@ class ClickParam(click.ParamType):
                 try:
                     commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
                 except NotFoundError:
-                    commit_info = ref
+                    commit_info: Any = ref
                 else:
                     # TODO: Make this the tree URL maybe, but I see tree(...)
                     #       doesn't come with an html_url
                     sha = commit.sha  # type: ignore[reportUnknownMemberType]
                     url = commit.html_url  # type: ignore[reportUnknownMemberType]
-                    commit_info = {
+                    commit_info: Any = {
                         "text": sha[:7],
                         "href": url,
                     }
