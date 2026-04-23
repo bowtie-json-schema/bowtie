@@ -74,7 +74,7 @@ class ClickParam(click.ParamType):
                 cases, dialect = self._cases_and_dialect(path=Path(value))
                 run_metadata = {}
             else:
-                assert isinstance(value, URL)
+                value = cast(URL, value)
                 from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
                     NotFoundError,
                 )
