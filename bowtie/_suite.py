@@ -118,9 +118,9 @@ class ClickParam(click.ParamType):
                 else:
                     # TODO: Make this the tree URL maybe, but I see tree(...)
                     #       doesn't come with an html_url
-                    sha = commit.sha  # type: ignore[reportUnknownMemberType]
-                    url = commit.html_url  # type: ignore[reportUnknownMemberType]
-                    commit_info: Any = {
+                    sha: str = commit.sha  # type: ignore[reportUnknownMemberType]
+                    url: str = commit.html_url  # type: ignore[reportUnknownMemberType]
+                    commit_info = {
                         "text": sha[:7],
                         "href": url,
                     }
