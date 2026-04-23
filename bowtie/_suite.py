@@ -61,7 +61,9 @@ class ClickParam(click.ParamType):
         # On Windows, drive-letter paths like D:\... are misinterpreted by
         # URL.parse() as having a URL scheme (the drive letter).  Use
         # splitdrive() to catch these before attempting URL parsing.
-        if os.path.splitdrive(value)[0] or Path(value).exists():
+        if isinstance(value, str) and (
+            os.path.splitdrive(value)[0] or Path(value).exists()
+        ):
             cases, dialect = self._cases_and_dialect(path=Path(value))
             run_metadata = {}
         else:
