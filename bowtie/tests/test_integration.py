@@ -2111,8 +2111,9 @@ async def test_info_pretty():
         "-i",
         miniatures.fake_language_and_os,
     )
-    assert stdout == _adjust_rich_box(dedent(
-        """\
+    assert stdout == _adjust_rich_box(
+        dedent(
+            """\
         ╭────────────────┬─────────────────────────────────────────────────────────────╮
         │ implementation │ fake_language_and_os v1.0.0                                 │
         │ language       │ python 1.2.3                                                │
@@ -2129,7 +2130,8 @@ async def test_info_pretty():
         ╰────────────────┴─────────────────────────────────────────────────────────────╯
                                        Ran on Linux 4.5.6                               \n\n
         """,  # noqa: E501
-    ),)
+        )
+    )
     assert stderr == ""
 
 
@@ -2350,8 +2352,9 @@ async def test_info_pretty_links():
         "-i",
         miniatures.fake_language_and_os_with_links,
     )
-    assert stdout == _adjust_rich_box(dedent(
-        """\
+    assert stdout == _adjust_rich_box(
+        dedent(
+            """\
         ╭────────────────┬─────────────────────────────────────────────────────────────╮
         │ implementation │ fake_language_and_os_with_links v1.0.0                      │
         │ language       │ python 1.2.3                                                │
@@ -2366,7 +2369,8 @@ async def test_info_pretty_links():
         ╰────────────────┴─────────────────────────────────────────────────────────────╯
                                        Ran on Linux 4.5.6                               \n\n
         """,  # noqa: E501
-    ),)
+        )
+    )
     assert stderr == ""
 
 

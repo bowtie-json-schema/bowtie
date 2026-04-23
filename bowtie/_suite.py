@@ -98,8 +98,7 @@ class ClickParam(click.ParamType):
                             "you have passed the right path to test cases."
                         ),
                         note_stmt=(
-                            "You also can pass a local path"
-                            " to test cases."
+                            "You also can pass a local path to test cases."
                         ),
                     )
                     rich.print(error)
@@ -120,7 +119,7 @@ class ClickParam(click.ParamType):
                     # TODO: Make this the tree URL maybe, but I see tree(...)
                     #       doesn't come with an html_url
                     sha = commit.sha  # type: ignore[reportUnknownMemberType]
-                    url = commit.html_url  # type: ignore[reportUnknownMemberType]  # noqa: E501
+                    url = commit.html_url  # type: ignore[reportUnknownMemberType]
                     commit_info: dict[str, Any] = {
                         "text": sha[:7],
                         "href": url,
