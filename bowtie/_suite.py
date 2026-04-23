@@ -9,7 +9,7 @@ from fnmatch import fnmatch
 from functools import cache
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 import json
 import os
 import zipfile
@@ -114,12 +114,18 @@ class ClickParam(click.ParamType):
                 try:
                     commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
                 except NotFoundError:
-                    commit_info: Any = ref
+                    commit_info = ref
                 else:
                     # TODO: Make this the tree URL maybe, but I see tree(...)
                     #       doesn't come with an html_url
-                    sha: str = commit.sha  # type: ignore[reportUnknownMemberType]
-                    url: str = commit.html_url  # type: ignore[reportUnknownMemberType]
+                    sha = cast(
+                        str,
+                        commit.sha,  # type: ignore[reportUnknownMemberType]
+                    )
+                    url = cast(
+                        str,
+                        commit.html_url,  # type: ignore[reportUnknownMemberType]  # noqa: E501
+                    )
                     commit_info = {
                         "text": sha[:7],
                         "href": url,
