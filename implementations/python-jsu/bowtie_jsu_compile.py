@@ -179,7 +179,7 @@ class Runner:
         test_results = [
             False if "FAIL" in out else True if "PASS" in out else None
             for out in filter(
-                lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n")
+                lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n"),
             )
         ]
 
