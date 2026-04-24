@@ -163,24 +163,31 @@ class Runner:
 
         return output_file
 
-    def run_test(self, test: Json) -> bool:
-        """Run one test using generated validator."""
-
-        test_file = json_file("test.json", test)
+    def run_tests(self, tests: list[Json]) -> list[bool]:
+        """Run several tests at once using the generated validator."""
+        test_files: list[Path] = [
+            json_file(f"test_{i}.json", j) for i, j in enumerate(tests)
+        ]
 
         ps = subprocess.run(  # noqa: S603
-            [*self.runner, str(test_file)],
+            [*self.runner, *[str(f) for f in test_files]],
             text=True,
             capture_output=True,
             check=True,
         )
 
-        if "FAIL" in ps.stdout:
-            return False
-        elif "PASS" in ps.stdout:
-            return True
-        else:
+        test_results = [
+            False if "FAIL" in out else True if "PASS" in out else None
+                for out in filter(lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n"))
+        ]
+
+        if len(test_results) != len(test_files):
             raise RunnerError(f"unexpected validation output: {ps.stdout}")
+
+        if any(r is None for r in test_results):
+            raise RunnerError(f"unexpected validation output: {ps.stdout}")
+
+        return test_results
 
     def cmd_start(self, req: JsonObject) -> JsonObject:
         """Respond to start with various meta data about the implementation."""
@@ -258,7 +265,8 @@ class Runner:
 
             # apply to test vector
             results = [
-                {"valid": self.run_test(test["instance"])} for test in tests
+                {"valid": res}
+                    for res in self.run_tests([t["instance"] for t in tests])
             ]
 
         except Exception:  # an internal error occurred
