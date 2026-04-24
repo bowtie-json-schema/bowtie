@@ -19,6 +19,9 @@ import traceback
 from jsonschema_specifications import REGISTRY
 import dotenv
 
+# json schema utils for direct compilation
+import jsutils
+
 type JsonObject = dict[str, Json]
 type JsonArray = list[Json]
 type Json = None | bool | int | float | str | JsonArray | JsonObject
@@ -124,6 +127,7 @@ class Runner:
         self.language_version = get_version(vers_cmd)
 
         # compiler call prefix missing version, output file and input schema
+        self.subprocess = False
         self.jsu_compile = [
             "jsu-compile",
             "--quiet",
@@ -133,9 +137,11 @@ class Runner:
             "--no-strict",  # accept any odd looking schema
             "--no-reporting",  # do not generate location reporting code
             "--loose",  # ints are floats, floats may be ints
+            f"--backend={'p' if self.subprocess else 'f'}",  # as a process?
             # next options may override the above defaults
             *options,
         ]
+        # TODO do not necessarily use subprocess?
         self.jsu_version = get_version(["jsu-compile", "--version"])
 
         TMP.mkdir(exist_ok=True)
@@ -143,6 +149,19 @@ class Runner:
         # write spec files once
         CACHE.mkdir(exist_ok=True)
         self.spec_files: set[str] = self.cache_schemas(SPECS)
+
+    def run_jsu_compile(self, cmd: list[str]):
+        """Run compiler as a subprocess or directly as a function."""
+        assert cmd[0] == "jsu-compile"
+        if self.subprocess:
+            subprocess.run(cmd, text=True, check=True)  # noqa: S603
+        else:
+            try:
+                status = jsutils.jsu_compile(cmd[1:])
+            except Exception:
+                status = 42
+            if status:
+                raise RunnerError(f"jsu_compile failed: {status}")
 
     def compile_schema(self, schema: JsonObject) -> Path:
         """Compile a schema for the current language."""
@@ -159,7 +178,7 @@ class Runner:
             str(schema_file),
         ]
 
-        subprocess.run(jsu_compile, text=True, check=True)  # noqa: S603
+        self.run_jsu_compile(jsu_compile)
 
         return output_file
 
@@ -177,16 +196,14 @@ class Runner:
         )
 
         test_results = [
-            False if "FAIL" in out else True if "PASS" in out else None
+            "FAIL" not in out  # False if both
             for out in filter(
-                lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n"),
+                lambda s: "PASS" in s or "FAIL" in s,
+                ps.stdout.split("\n"),
             )
         ]
 
         if len(test_results) != len(test_files):
-            raise RunnerError(f"unexpected validation output: {ps.stdout}")
-
-        if any(r is None for r in test_results):
             raise RunnerError(f"unexpected validation output: {ps.stdout}")
 
         return test_results
