@@ -5,7 +5,8 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Corvus.Json;
 using Corvus.Json.CodeGeneration;
-using Corvus.Text.Json.Validator;
+using Corvus.Json.CodeGeneration.DocumentResolvers;
+using JsonSchema = Corvus.Text.Json.Validator.JsonSchema;
 
 ICommandSource cmdSource = args.Length == 0 ? new ConsoleCommandSource() : new FileCommandSource(args[0]);
 
@@ -53,7 +54,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 ["version"] = 1,
                 ["implementation"] =
                     new System.Text.Json.Nodes
-                        .JsonObject { ["language"] = "dotnet", ["name"] = "Corvus.JsonSchema (V5 Engine)",
+                        .JsonObject { ["language"] = "dotnet", ["name"] = "dotnet-corvus-jsonschema-v5engine",
                                       ["version"] = GetLibVersion(),
                                       ["homepage"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
                                       ["documentation"] =
@@ -131,14 +132,15 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 
             string testDescription = string.Empty;
 
-            var schema = JsonSchema.FromText(
-                schemaText, fakeURI,
-                new JsonSchema.Options(additionalDocumentResolver: resolver, fallbackVocabulary: defaultVocabulary,
-                                       alwaysAssertFormat: validateFormat, allowFileSystemAndHttpResolution: false));
             System.Text.Json.Nodes.JsonArray? tests = testCase["tests"]?.AsArray() ?? throw new MissingTests(testCase);
 
             try
             {
+                var schema = JsonSchema.FromText(
+                    schemaText, fakeURI,
+                    new JsonSchema.Options(additionalDocumentResolver: resolver, fallbackVocabulary: defaultVocabulary,
+                                           alwaysAssertFormat: validateFormat, allowFileSystemAndHttpResolution: false));
+
                 var results = new System.Text.Json.Nodes.JsonArray();
 
                 foreach (JsonNode? test in tests)
@@ -153,8 +155,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                     testDescription = nullableTestDescription;
 
                     string? testInstance = test["instance"]?.ToJsonString() ?? "null";
-                    using var doc = JsonDocument.Parse(testInstance);
-                    bool validationResult = schema.Validate(doc.RootElement);
+                    bool validationResult = schema.Validate(testInstance);
                     results.Add(new System.Text.Json.Nodes.JsonObject { ["valid"] = validationResult });
                 }
 
@@ -208,7 +209,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 static string GetLibVersion()
 {
     AssemblyInformationalVersionAttribute? attribute =
-        typeof(Corvus.Text.Json.Validator.JsonSchema)
+        typeof(JsonSchema)
             .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 #pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
     return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
