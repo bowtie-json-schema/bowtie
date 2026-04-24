@@ -178,7 +178,9 @@ class Runner:
 
         test_results = [
             False if "FAIL" in out else True if "PASS" in out else None
-                for out in filter(lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n"))
+            for out in filter(
+                lambda s: "PASS" in s or "FAIL" in s, ps.stdout.split("\n")
+            )
         ]
 
         if len(test_results) != len(test_files):
@@ -266,7 +268,7 @@ class Runner:
             # apply to test vector
             results = [
                 {"valid": res}
-                    for res in self.run_tests([t["instance"] for t in tests])
+                for res in self.run_tests([t["instance"] for t in tests])
             ]
 
         except Exception:  # an internal error occurred
