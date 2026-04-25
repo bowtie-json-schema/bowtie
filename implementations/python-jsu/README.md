@@ -13,7 +13,7 @@ or plain bugs.
 ## Manual Testing
 
 ```sh
-JSU_CONTAINER=docker.io/zx80/bowtie-jsu
+export JSU_CONTAINER=docker.io/zx80/bowtie-jsu
 docker build --no-cache -t $JSU_CONTAINER -f Dockerfile .
 docker build --no-cache --build-arg JMC=dev --build-arg JSU=dev -t $JSU_CONTAINER -f Dockerfile .
 docker image ls $JSU_CONTAINER
