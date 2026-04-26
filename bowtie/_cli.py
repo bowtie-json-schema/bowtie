@@ -1399,16 +1399,18 @@ def tui(start: Any, dialect: Dialect, **kwargs: Any):
             except UnsupportedDialect as error:
                 STDERR.print(error)
                 continue
-            runners.append((
-                impl_id,
-                implementation.info.version or "?",
-                runner,
-            ))
+            runners.append(
+                (
+                    impl_id,
+                    implementation.info.version or "?",
+                    runner,
+                )
+            )
 
         if not runners:
             STDERR.print(
                 "[bold red]No implementation started successfully![/]",
-                )
+            )
             return EX.CONFIG
         session = TuiSession(
             runners=runners,

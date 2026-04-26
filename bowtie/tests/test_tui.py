@@ -13,6 +13,7 @@ from bowtie._tui import TuiSession, _is_schema_like, _parse_json
 def _silent_console() -> Console:
     return Console(file=io.StringIO(), highlight=False)
 
+
 def _test_prompt(inputs: list[str]):
     it = iter(inputs)
 
@@ -24,17 +25,22 @@ def _test_prompt(inputs: list[str]):
 
     return prompt
 
+
 def test_parse_json_invalid_raises_value_error():
     with pytest.raises(ValueError, match="Expecting property name"):
         _parse_json("{not valid json")
 
+
 def test_is_schema_like_rejects_string():
     assert _is_schema_like("hello") is False
+
 
 @pytest.fixture
 def dialect():
     from bowtie._core import Dialect
+
     return Dialect.by_short_name()["draft2020-12"]
+
 
 @pytest_asyncio.fixture
 async def session(dialect):
@@ -55,6 +61,7 @@ async def session(dialect):
             prompt=lambda _: (_ for _ in ()).throw(EOFError()),
         )
 
+
 @pytest.mark.asyncio
 async def test_run_once_valid_instance(session):
     results = await session.run_once(
@@ -66,6 +73,7 @@ async def test_run_once_valid_instance(session):
     assert valid is True
     assert "jsonschema" in impl_id
 
+
 @pytest.mark.asyncio
 async def test_run_once_invalid_instance(session):
     results = await session.run_once(
@@ -76,23 +84,28 @@ async def test_run_once_invalid_instance(session):
     _, _, valid = results[0]
     assert valid is False
 
+
 @pytest.mark.asyncio
 async def test_repl_exits_on_q(session):
     session._prompt = _test_prompt(["q"])
     await session.repl()
+
 
 @pytest.mark.asyncio
 async def test_repl_non_schema_json_continues(session):
     session._prompt = _test_prompt(['"just a string"', "q"])
     await session.repl()
 
+
 @pytest.mark.asyncio
 async def test_repl_validates_and_continues(session):
-    session._prompt = _test_prompt([
-        '{"type": "integer"}',
-        "42",
-        '{"type": "integer"}',
-        '"hello"',
-        "q",
-    ])
+    session._prompt = _test_prompt(
+        [
+            '{"type": "integer"}',
+            "42",
+            '{"type": "integer"}',
+            '"hello"',
+            "q",
+        ]
+    )
     await session.repl()

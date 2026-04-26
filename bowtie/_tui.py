@@ -35,12 +35,12 @@ class TuiSession:
     """
 
     def __init__(
-            self,
-            runners: list[tuple[str, str, DialectRunner]],
-            dialect: Dialect,
-            console: Console,
-            prompt: Callable[[str], str],
-            ) -> None:
+        self,
+        runners: list[tuple[str, str, DialectRunner]],
+        dialect: Dialect,
+        console: Console,
+        prompt: Callable[[str], str],
+    ) -> None:
         self._runners = runners
         self._dialect = dialect
         self._console = console
@@ -48,9 +48,9 @@ class TuiSession:
         self._seq = 0
 
     async def run_once(
-            self,
-            schema: Any,
-            instance: Any,
+        self,
+        schema: Any,
+        instance: Any,
     ) -> list[tuple[str, str, bool | None]]:
         """
         Validate one instance against one schema across all runners.
@@ -63,10 +63,7 @@ class TuiSession:
         )
         seq_case = SeqCase(seq=self._seq, case=case)
 
-        tasks = [
-            seq_case.run(runner=runner)
-            for _, _, runner in self._runners
-        ]
+        tasks = [seq_case.run(runner=runner) for _, _, runner in self._runners]
 
         raw_results = await asyncio.gather(*tasks)
 
@@ -80,8 +77,8 @@ class TuiSession:
         return output
 
     def show_results(
-            self,
-            results: list[tuple[str, str, bool | None]],
+        self,
+        results: list[tuple[str, str, bool | None]],
     ) -> None:
         table = Table(show_header=True, header_style="bold")
         table.add_column("Implementation")
@@ -107,13 +104,15 @@ class TuiSession:
         impl_count = len(self._runners)
         impl_word = "implementation" if impl_count == 1 else "implementations"
 
-        self._console.print(Panel(
-            f"Dialect: [bold]{self._dialect.pretty_name}[/bold]  "
-            f"Running: [bold]{impl_count}[/bold] {impl_word}\n\n"
-            "[dim]Enter a JSON schema, then one instance to validate.\n"
-            "Type [bold]q[/bold] to quit.[/dim]",
-            title="bowtie tui",
-        ))
+        self._console.print(
+            Panel(
+                f"Dialect: [bold]{self._dialect.pretty_name}[/bold]  "
+                f"Running: [bold]{impl_count}[/bold] {impl_word}\n\n"
+                "[dim]Enter a JSON schema, then one instance to validate.\n"
+                "Type [bold]q[/bold] to quit.[/dim]",
+                title="bowtie tui",
+            )
+        )
 
         while True:
             try:
@@ -127,7 +126,7 @@ class TuiSession:
             except ValueError as e:
                 self._console.print(
                     f"[red]Invalid JSON for schema: {e}[/red]",
-                    )
+                )
                 continue
 
             if not _is_schema_like(schema):
@@ -148,7 +147,7 @@ class TuiSession:
             except ValueError as e:
                 self._console.print(
                     f"[red]Invalid JSON for instance: {e}[/red]",
-                    )
+                )
                 continue
 
             results = await self.run_once(schema=schema, instance=instance)
