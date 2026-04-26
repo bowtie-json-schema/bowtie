@@ -80,4 +80,3 @@ Once ``git-filter-repo`` is installed, we can proceed with moving the test harne
 ++++
 Remove test harness from bowtie repository
 ++++
-
