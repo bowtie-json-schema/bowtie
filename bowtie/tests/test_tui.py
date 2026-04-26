@@ -106,6 +106,6 @@ async def test_repl_validates_and_continues(session):
             '{"type": "integer"}',
             '"hello"',
             "q",
-        ]
+        ],
     )
     await session.repl()

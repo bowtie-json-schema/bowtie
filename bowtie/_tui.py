@@ -111,7 +111,7 @@ class TuiSession:
                 "[dim]Enter a JSON schema, then one instance to validate.\n"
                 "Type [bold]q[/bold] to quit.[/dim]",
                 title="bowtie tui",
-            )
+            ),
         )
 
         while True:

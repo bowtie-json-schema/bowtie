@@ -1404,7 +1404,7 @@ def tui(start: Any, dialect: Dialect, **kwargs: Any):
                     impl_id,
                     implementation.info.version or "?",
                     runner,
-                )
+                ),
             )
 
         if not runners:
