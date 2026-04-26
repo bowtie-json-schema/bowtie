@@ -131,6 +131,7 @@ jobs:
       contents: read # needed for actions/checkout
       attestations: write # needed for build provenance attestation
       packages: write # needed for pushing to ghcr.io
+      artifact-metadata: write # needed for build provenance attestation
 
     strategy:
       fail-fast: false
@@ -240,7 +241,7 @@ jobs:
           )
 
       - name: Generate attestation for images
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
