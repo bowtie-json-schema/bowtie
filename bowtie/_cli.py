@@ -1380,47 +1380,42 @@ def run(
     )
 
 
-@subcommand
 @implementation_subcommand()
 @dialect_option()
-def tui(start: Any, dialect: Dialect, **kwargs: Any):
+async def tui(start: Any, dialect: Dialect, **kwargs: Any):
     """
     Interactively evaluate schemas against instances across implementations.
 
     Starts a REPL that keeps implementations running between validations,
     prompting for a JSON Schema and an instance on each iteration
     """
-
-    async def _tui(start: Any, dialect: Dialect, **kwargs: Any):
-        runners = []
-        async for impl_id, implementation in start():
-            try:
-                runner = await implementation.start_speaking(dialect)
-            except UnsupportedDialect as error:
-                STDERR.print(error)
-                continue
-            runners.append(
-                (
-                    impl_id,
-                    implementation.info.version or "?",
-                    runner,
-                ),
-            )
-
-        if not runners:
-            STDERR.print(
-                "[bold red]No implementation started successfully![/]",
-            )
-            return EX.CONFIG
-        session = TuiSession(
-            runners=runners,
-            dialect=dialect,
-            console=STDOUT,
-            prompt=lambda msg: Prompt.ask(msg),
+    runners = []
+    async for impl_id, implementation in start():
+        try:
+            runner = await implementation.start_speaking(dialect)
+        except UnsupportedDialect as error:
+            STDERR.print(error)
+            continue
+        runners.append(
+            (
+                impl_id,
+                implementation.info.version or "?",
+                runner,
+            ),
         )
-        await session.repl()
 
-    return asyncio.run(_tui(start=start, dialect=dialect, **kwargs))
+    if not runners:
+        STDERR.print(
+            "[bold red]No implementation started successfully![/]",
+        )
+        return EX.CONFIG
+    session = TuiSession(
+        runners=runners,
+        dialect=dialect,
+        console=STDOUT,
+        prompt=lambda msg: Prompt.ask(msg),
+    )
+    await session.repl()
 
 
 @subcommand
