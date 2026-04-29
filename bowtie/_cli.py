@@ -1413,7 +1413,7 @@ async def tui(start: Any, dialect: Dialect, **kwargs: Any):
         runners=runners,
         dialect=dialect,
         console=STDOUT,
-        prompt=lambda msg: Prompt.ask(msg),
+        prompt=Prompt.ask,
     )
     await session.repl()
 

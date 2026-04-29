@@ -68,11 +68,14 @@ class TuiSession:
         raw_results = await asyncio.gather(*tasks)
 
         output = []
-        for (impl_id, version, _), result in zip(self._runners, raw_results):
-            try:
-                valid: bool | None = result.result.results[_SINGLE].valid
-            except (AttributeError, IndexError):
+        for (impl_id, version, _), seq_result in zip(
+                self._runners, raw_results,
+            ):
+            test_result = seq_result.result_for(_SINGLE)
+            if test_result.errored or test_result.skipped:
                 valid = None
+            else:
+                valid = test_result.valid # type: ignore[reportUnknownMemberType]
             output.append((impl_id, version, valid))
         return output
 
