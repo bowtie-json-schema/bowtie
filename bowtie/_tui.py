@@ -69,13 +69,14 @@ class TuiSession:
 
         output: list[tuple[str, str, bool | None]] = []
         for (impl_id, version, _), seq_result in zip(
-                self._runners, raw_results,
-            ):
+            self._runners,
+            raw_results,
+        ):
             test_result = seq_result.result_for(_SINGLE)
             if test_result.errored or test_result.skipped:
                 valid = None
             else:
-                valid = bool(test_result.valid) # type: ignore[reportUnknownMemberType]
+                valid = bool(test_result.valid)  # type: ignore[reportUnknownMemberType]
             output.append((impl_id, version, valid))
         return output
 
