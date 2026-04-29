@@ -46,6 +46,7 @@ from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
+    DialectRunner,
     Example,
     Implementation,
     Test,
@@ -1389,7 +1390,7 @@ async def tui(start: Any, dialect: Dialect, **kwargs: Any):
     Starts a REPL that keeps implementations running between validations,
     prompting for a JSON Schema and an instance on each iteration
     """
-    runners = []
+    runners: list[tuple[str, str, DialectRunner]] = []
     async for impl_id, implementation in start():
         try:
             runner = await implementation.start_speaking(dialect)
