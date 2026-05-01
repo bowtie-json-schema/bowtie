@@ -83,7 +83,7 @@
     "typescript-eslint": "^8.59.0",
     "vite": "^8.0.8",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   },
   "resolutions": {
     "prismjs": "^1.30.0"
