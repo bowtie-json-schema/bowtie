@@ -1,0 +1,36 @@
+name: Custom JSU Bowtie Run
+
+on:
+  push:
+    branches:
+      - jsu-again
+
+jobs:
+  bowtie_test:
+    if: github.repository == 'zx80/bowtie-jsu'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # implementation: [python-jsu, c-jsu, java-jsu, js-jsu, perl-jsu]
+        # with custom containers
+        implementation: [docker.io/zx80/bowtie-jsu-blaze, docker.io/zx80/bowtie-jsu-c, docker.io/zx80/bowtie-jsu-py, docker.io/zx80/bowtie-jsu-perl, docker.io/zx80/bowtie-jsu-js, docker.io/zx80/bowtie-jsu-java]
+        # 0 is "smoke"
+        suite: [0, 7]
+    steps:
+      - name: Checkout Bowtie
+        uses: actions/checkout@v6
+      - name: Install Bowtie
+        uses: ./
+      - name: Show Bowtie Version
+        run: bowtie --version
+      - name: Show Implementation Info for ${{ matrix.implementation }}
+        run: bowtie info -f json -i ${{ matrix.implementation }}
+      - name: Bowtie Run for ${{ matrix.implementation }} ${{ matrix.suite }}
+        run: |
+          if [ ${{ matrix.suite }} = "0" ] ; then
+            bowtie smoke -f json -i ${{ matrix.implementation }}
+            echo "smoke status $? after $SECONDS"
+          else
+            bowtie suite -i ${{ matrix.implementation }} ${{ matrix.suite }}
+            echo "suite status $? after $SECONDS"
+          fi

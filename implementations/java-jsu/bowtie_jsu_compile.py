@@ -185,7 +185,7 @@ class Runner:
     def run_tests(self, tests: list[Json]) -> list[bool]:
         """Run several tests at once using the generated validator."""
         test_files: list[Path] = [
-            json_file(f"test_{i}.json", j) for i, j in enumerate(tests)
+            json_file(f"test_{i:02}.json", j) for i, j in enumerate(tests)
         ]
 
         ps = subprocess.run(  # noqa: S603
@@ -287,6 +287,8 @@ class Runner:
                 {"valid": res}
                 for res in self.run_tests([t["instance"] for t in tests])
             ]
+
+            assert len(results) == len(tests), "one result per test"
 
         except Exception:  # an internal error occurred
             return {
