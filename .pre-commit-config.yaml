@@ -30,7 +30,7 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.1
+    rev: 0.37.2
     hooks:
       - name: ensure bowtie's own schemas are valid
         id: check-metaschema
@@ -121,7 +121,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2026-04-24-a
+    rev: swift-DEVELOPMENT-SNAPSHOT-2026-04-30-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
