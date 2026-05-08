@@ -26,3 +26,12 @@ for version in 7 6 4 3 2019 2020 ; do
   bowtie summary -s failures suite_$version.jsonl
 done
 ```
+
+## Example Protocol Input
+
+For direct harness test.
+
+```jsonl
+{"cmd":"start","version":1}
+{"cmd":"run","seq":1,"case":{"description":"null schema","schema":{"type":"null"},"tests":[{"instance":null},{"instance":true},{"instance":42}]}}
+```
