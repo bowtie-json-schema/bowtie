@@ -17,7 +17,7 @@ int main() {
   using namespace sourcemeta::core;
   using namespace sourcemeta::blaze;
   bool started{false};
-  std::optional<std::string> default_dialect{std::nullopt};
+  std::string default_dialect{};
   sourcemeta::blaze::Evaluator evaluator;
 
   std::string line;
