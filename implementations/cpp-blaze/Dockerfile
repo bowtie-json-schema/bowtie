@@ -1,6 +1,6 @@
 FROM alpine:3.22 AS builder
 
-RUN apk add --no-cache cmake g++ git make
+RUN apk add --no-cache cmake g++ git make linux-headers
 
 RUN git clone https://github.com/sourcemeta/blaze.git /tmp/blaze
 
