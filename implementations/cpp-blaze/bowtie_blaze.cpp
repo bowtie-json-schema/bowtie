@@ -9,6 +9,8 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 
 int main() {
@@ -71,18 +73,27 @@ int main() {
       assert(message.at("case").defines("tests") &&
              message.at("case").at("tests").is_array());
 
-      sourcemeta::core::SchemaMapResolver resolver{
-          sourcemeta::core::schema_official_resolver};
+      std::unordered_map<std::string, sourcemeta::core::JSON> registry;
       if (message.at("case").defines("registry")) {
         assert(message.at("case").at("registry").is_object());
         for (const auto &pair : message.at("case").at("registry").as_object()) {
-          resolver.add(pair.second, default_dialect, pair.first);
+          registry.emplace(pair.first, pair.second);
         }
       }
 
+      const sourcemeta::core::SchemaResolver resolver{
+          [&registry](const std::string_view identifier)
+              -> std::optional<sourcemeta::core::JSON> {
+            const auto match{registry.find(std::string{identifier})};
+            if (match != registry.cend()) {
+              return match->second;
+            }
+            return sourcemeta::core::schema_resolver(identifier);
+          }};
+
       try {
         const auto schema_template{compile(
-            message.at("case").at("schema"), schema_official_walker, resolver,
+            message.at("case").at("schema"), schema_walker, resolver,
             default_schema_compiler, Mode::FastValidation, default_dialect)};
 
         auto response{JSON::make_object()};
