@@ -53,7 +53,7 @@
     "bootstrap": "^5.3.8",
     "dayjs": "^1.11.20",
     "mathjs": "^15.2.0",
-    "react": "^19.2.4",
+    "react": "^19.2.5",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
     "react-dom": "^19.2.4",
