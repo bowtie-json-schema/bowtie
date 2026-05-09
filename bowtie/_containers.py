@@ -26,7 +26,7 @@ from bowtie.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Callable
+    from collections.abc import AsyncGenerator, Awaitable, Callable
     from typing import Any
 
     import aiodocker.containers
@@ -226,7 +226,7 @@ class ConnectableImage:
     kind = "image"
 
     @asynccontextmanager
-    async def connect(self) -> AsyncIterator[Connection]:
+    async def connect(self) -> AsyncGenerator[Connection]:
         async with AsyncExitStack() as stack:
             docker = await stack.enter_async_context(Docker())
             create = start_container_maybe_pull
@@ -367,7 +367,7 @@ class ConnectableContainer:
     kind = "container"
 
     @asynccontextmanager
-    async def connect(self) -> AsyncIterator[Connection]:
+    async def connect(self) -> AsyncGenerator[Connection]:
         async with Docker() as docker:
             try:
                 container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
