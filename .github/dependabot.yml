@@ -615,3 +615,41 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+
+  #
+  # JSU (JSON Schema Utils) implementations
+  #
+  - package-ecosystem: "docker"
+    directory: "/implementations/c-jsu"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/python-jsu"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-jsu"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/java-jsu"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/perl-jsu"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
