@@ -37,6 +37,7 @@ from bowtie.exceptions import (
 
 if TYPE_CHECKING:
     from collections.abc import (
+        AsyncGenerator,
         AsyncIterator,
         Callable,
         Iterable,
@@ -515,7 +516,7 @@ class Implementation:
         id: ConnectableId,
         reporter: Reporter,
         **kwargs: Any,
-    ) -> AsyncIterator[Self]:
+    ) -> AsyncGenerator[Self]:
         _harness = HarnessClient(**kwargs)
 
         try:
@@ -558,9 +559,10 @@ class Implementation:
         )
         for page in pages:
             try:
+                data = cast("Mapping[str, Any]", page.as_dict() or {})
                 tags = cast(
                     "Iterable[str]",
-                    page.as_dict()["metadata"]["container"]["tags"],
+                    data["metadata"]["container"]["tags"],
                 )
             except KeyError:
                 continue
