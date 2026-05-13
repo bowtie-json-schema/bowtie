@@ -1,13 +1,18 @@
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.Error;
+import com.networknt.schema.OutputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
+import com.networknt.schema.output.OutputUnit;
 import com.networknt.schema.resource.InputStreamSource;
 import com.networknt.schema.resource.ResourceLoader;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
@@ -118,11 +123,45 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
+  private void collectAnnotations(
+    OutputUnit unit,
+    Map<String, Map<String, Map<String, Object>>> annotations) {
+    if (unit == null) return;
+
+    String instanceLoc = unit.getInstanceLocation() != null ? unit.getInstanceLocation().toString() : "";
+    String schemaLoc = unit.getEvaluationPath() != null ? unit.getEvaluationPath().toString() : "";
+    if (schemaLoc.isEmpty()) {
+      schemaLoc = "#";
+    } else if (schemaLoc.startsWith("/")) {
+      schemaLoc = "#" + schemaLoc;
+    }
+
+    Map<String, Object> unitAnnotations = unit.getAnnotations();
+    if (unitAnnotations != null && !unitAnnotations.isEmpty()) {
+      for (Map.Entry<String, Object> entry : unitAnnotations.entrySet()) {
+        String keyword = entry.getKey();
+        Object value = entry.getValue();
+        annotations
+            .computeIfAbsent(instanceLoc, k -> new LinkedHashMap<>())
+            .computeIfAbsent(keyword, k -> new LinkedHashMap<>())
+            .put(schemaLoc, value);
+      }
+    }
+
+    if (unit.getDetails() != null) {
+      for (OutputUnit child : unit.getDetails()) {
+        collectAnnotations(child, annotations);
+      }
+    }
+  }
+
   private void run(JsonNode node) {
     if (!started) {
       throw new IllegalArgumentException("Not started!");
     }
-    RunRequest runRequest = objectMapper.treeToValue(node, RunRequest.class);
+    JsonNode testCase = node.get("case");
+    JsonNode tests = testCase.get("tests");
+    boolean collectAnnotations = node.has("collect_annotations") && node.get("collect_annotations").asBoolean();
     try {
       SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
           versionFlag,
@@ -134,33 +173,53 @@ public class BowtieJsonSchemaValidator {
                             .mapPrefix("https://json-schema.org", "classpath:")
                             .mapPrefix("http://json-schema.org", "classpath:"))
                  .resourceLoaders(resourceLoaders -> {
-                   if (runRequest.testCase().registry() != null) {
+                   if (testCase.has("registry")) {
                      CustomResourceLoader resourceLoader =
                          new CustomResourceLoader(
-                             runRequest.testCase().registry());
+                             testCase.get("registry"));
                      resourceLoaders.add(resourceLoader);
                    }
                  }));
-      List<TestResult> results =
-          runRequest.testCase()
-              .tests()
-              .stream()
-              .map(test -> {
-                Schema jsonSchema =
-                    schemaRegistry.getSchema(runRequest.testCase().schema());
-                List<Error> errors = jsonSchema.validate(test.instance());
-                boolean isValid = errors == null || errors.isEmpty();
-                return new TestResult(isValid);
-              })
-              .toList();
-      output.println(objectMapper.writeValueAsString(
-          new RunResponse(runRequest.seq(), results)));
+      List<TestResult> results = new ArrayList<>();
+      for (JsonNode test : tests) {
+        Schema jsonSchema = schemaRegistry.getSchema(testCase.get("schema"));
+        if (collectAnnotations) {
+          try {
+            OutputUnit outputUnit = jsonSchema.validate(
+                test.get("instance"),
+                OutputFormat.HIERARCHICAL,
+                executionContext -> {
+                  executionContext.executionConfig(builder -> {
+                    builder.annotationCollectionEnabled(true);
+                    builder.annotationCollectionFilter(keyword -> true);
+                  });
+                }
+            );
+            boolean isValid = outputUnit.isValid();
+            Map<String, Map<String, Map<String, Object>>> annotations =
+                new LinkedHashMap<>();
+            collectAnnotations(outputUnit, annotations);
+            results.add(new TestResult(isValid, annotations.isEmpty() ? null : annotations));
+          } catch (Exception e) {
+            List<Error> errors = jsonSchema.validate(test.get("instance"));
+            boolean isValid = errors == null || errors.isEmpty();
+            results.add(new TestResult(isValid, null));
+          }
+        } else {
+          List<Error> errors = jsonSchema.validate(test.get("instance"));
+          boolean isValid = errors == null || errors.isEmpty();
+          results.add(new TestResult(isValid, null));
+        }
+      }
+      String responseString = objectMapper.writeValueAsString(
+          new RunResponse(node.get("seq"), results));
+      output.println(responseString);
     } catch (Exception e) {
       StringWriter stringWriter = new StringWriter();
       PrintWriter printWriter = new PrintWriter(stringWriter);
       e.printStackTrace(printWriter);
       RunErroredResponse response = new RunErroredResponse(
-          runRequest.seq(), true,
+          node.get("seq"), true,
           new ErrorContext(e.getMessage(), stackTraceToString(e)));
       output.println(objectMapper.writeValueAsString(response));
     }
@@ -235,7 +294,8 @@ record TestCase(String description, String comment, JsonNode schema,
                 JsonNode registry, List<Test> tests) {}
 
 record
-    Test(String description, String comment, JsonNode instance, boolean valid) {
+    Test(String description, String comment, JsonNode instance, JsonNode valid, JsonNode assertions) {
 }
 
-record TestResult(boolean valid) {}
+@JsonInclude(JsonInclude.Include.NON_NULL)
+record TestResult(boolean valid, Map<String, Map<String, Map<String, Object>>> annotations) {}
