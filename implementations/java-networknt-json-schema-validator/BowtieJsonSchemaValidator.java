@@ -124,12 +124,17 @@ public class BowtieJsonSchemaValidator {
   }
 
   private void collectAnnotations(
-    OutputUnit unit,
-    Map<String, Map<String, Map<String, Object>>> annotations) {
-    if (unit == null) return;
+      OutputUnit unit,
+      Map<String, Map<String, Map<String, Object>>> annotations) {
+    if (unit == null)
+      return;
 
-    String instanceLoc = unit.getInstanceLocation() != null ? unit.getInstanceLocation().toString() : "";
-    String schemaLoc = unit.getEvaluationPath() != null ? unit.getEvaluationPath().toString() : "";
+    String instanceLoc = unit.getInstanceLocation() != null
+                             ? unit.getInstanceLocation().toString()
+                             : "";
+    String schemaLoc = unit.getEvaluationPath() != null
+                           ? unit.getEvaluationPath().toString()
+                           : "";
     if (schemaLoc.isEmpty()) {
       schemaLoc = "#";
     } else if (schemaLoc.startsWith("/")) {
@@ -141,8 +146,7 @@ public class BowtieJsonSchemaValidator {
       for (Map.Entry<String, Object> entry : unitAnnotations.entrySet()) {
         String keyword = entry.getKey();
         Object value = entry.getValue();
-        annotations
-            .computeIfAbsent(instanceLoc, k -> new LinkedHashMap<>())
+        annotations.computeIfAbsent(instanceLoc, k -> new LinkedHashMap<>())
             .computeIfAbsent(keyword, k -> new LinkedHashMap<>())
             .put(schemaLoc, value);
       }
@@ -161,7 +165,8 @@ public class BowtieJsonSchemaValidator {
     }
     JsonNode testCase = node.get("case");
     JsonNode tests = testCase.get("tests");
-    boolean collectAnnotations = node.has("collect_annotations") && node.get("collect_annotations").asBoolean();
+    boolean collectAnnotations = node.has("collect_annotations") &&
+                                 node.get("collect_annotations").asBoolean();
     try {
       SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
           versionFlag,
@@ -175,8 +180,7 @@ public class BowtieJsonSchemaValidator {
                  .resourceLoaders(resourceLoaders -> {
                    if (testCase.has("registry")) {
                      CustomResourceLoader resourceLoader =
-                         new CustomResourceLoader(
-                             testCase.get("registry"));
+                         new CustomResourceLoader(testCase.get("registry"));
                      resourceLoaders.add(resourceLoader);
                    }
                  }));
@@ -186,20 +190,19 @@ public class BowtieJsonSchemaValidator {
         if (collectAnnotations) {
           try {
             OutputUnit outputUnit = jsonSchema.validate(
-                test.get("instance"),
-                OutputFormat.HIERARCHICAL,
+                test.get("instance"), OutputFormat.HIERARCHICAL,
                 executionContext -> {
                   executionContext.executionConfig(builder -> {
                     builder.annotationCollectionEnabled(true);
                     builder.annotationCollectionFilter(keyword -> true);
                   });
-                }
-            );
+                });
             boolean isValid = outputUnit.isValid();
             Map<String, Map<String, Map<String, Object>>> annotations =
                 new LinkedHashMap<>();
             collectAnnotations(outputUnit, annotations);
-            results.add(new TestResult(isValid, annotations.isEmpty() ? null : annotations));
+            results.add(new TestResult(
+                isValid, annotations.isEmpty() ? null : annotations));
           } catch (Exception e) {
             List<Error> errors = jsonSchema.validate(test.get("instance"));
             boolean isValid = errors == null || errors.isEmpty();
@@ -293,9 +296,9 @@ record Link(String url, String description) {}
 record TestCase(String description, String comment, JsonNode schema,
                 JsonNode registry, List<Test> tests) {}
 
-record
-    Test(String description, String comment, JsonNode instance, JsonNode valid, JsonNode assertions) {
-}
+record Test(String description, String comment, JsonNode instance,
+            JsonNode valid, JsonNode assertions) {}
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-record TestResult(boolean valid, Map<String, Map<String, Map<String, Object>>> annotations) {}
+record TestResult(boolean valid,
+                  Map<String, Map<String, Map<String, Object>>> annotations) {}
