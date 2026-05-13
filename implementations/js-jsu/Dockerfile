@@ -26,4 +26,4 @@ RUN echo '{"name": "bowtie-js-jsu", "type": "module"}' | jq > package.json
 RUN npm install /usr/lib/python3.*/site-packages/json_model/runtime/js --install-links
 
 COPY bowtie_jsu_compile.py .
-CMD ["python3", "./bowtie_jsu_compile.py", "JS"]
+CMD ["python3", "./bowtie_jsu_compile.py", "JavaScript"]

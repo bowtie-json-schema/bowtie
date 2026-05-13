@@ -104,7 +104,7 @@ class Runner:
                 self.output = TMP / "schema.out"
                 self.runner = [str(self.output)]
                 vers_cmd = ["cc", "--version"]
-            case "js":  # requires node_modules
+            case "js" | "javascript":  # requires node_modules
                 self.output = TMP / "schema.js"
                 self.runner = ["node", str(self.output)]
                 vers_cmd = ["node", "--version"]
