@@ -124,16 +124,21 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void addAnnotation(
-      Map<String, Map<String, Map<String, Object>>> annotations, String instanceLoc, 
-      String schemaLoc, String keyword, Object value) {
-    Map<String, Map<String, Object>> byKeyword = annotations.computeIfAbsent(instanceLoc, k -> new LinkedHashMap<>()); // NOPMD
-    Map<String, Object> bySchema = byKeyword.computeIfAbsent(keyword, k -> new LinkedHashMap<>()); // NOPMD
+  private void
+  addAnnotation(Map<String, Map<String, Map<String, Object>>> annotations,
+                String instanceLoc, String schemaLoc, String keyword,
+                Object value) {
+    Map<String, Map<String, Object>> byKeyword = annotations.computeIfAbsent(
+        instanceLoc, k -> new LinkedHashMap<>()); // NOPMD
+    Map<String, Object> bySchema =
+        byKeyword.computeIfAbsent(keyword, k -> new LinkedHashMap<>()); // NOPMD
     bySchema.put(schemaLoc, value);
   }
 
   private String normalizeSchemaLocation(OutputUnit unit) {
-    String schemaLoc = unit.getEvaluationPath() != null ? unit.getEvaluationPath().toString() : "";
+    String schemaLoc = unit.getEvaluationPath() != null
+                           ? unit.getEvaluationPath().toString()
+                           : "";
     if (schemaLoc.isEmpty()) {
       return "#";
     } else if (schemaLoc.startsWith("/")) {
@@ -142,18 +147,23 @@ public class BowtieJsonSchemaValidator {
     return schemaLoc;
   }
 
-  private void collectAnnotations(OutputUnit unit, Map<String, Map<String, Map<String, Object>>> annotations) {
+  private void collectAnnotations(
+      OutputUnit unit,
+      Map<String, Map<String, Map<String, Object>>> annotations) {
     if (unit == null) {
       return;
     }
 
-    String instanceLoc = unit.getInstanceLocation() != null ? unit.getInstanceLocation().toString() : "";
+    String instanceLoc = unit.getInstanceLocation() != null
+                             ? unit.getInstanceLocation().toString()
+                             : "";
     String schemaLoc = normalizeSchemaLocation(unit);
 
     Map<String, Object> unitAnnotations = unit.getAnnotations();
     if (unitAnnotations != null && !unitAnnotations.isEmpty()) {
       for (Map.Entry<String, Object> entry : unitAnnotations.entrySet()) {
-        addAnnotation(annotations, instanceLoc, schemaLoc, entry.getKey(), entry.getValue());
+        addAnnotation(annotations, instanceLoc, schemaLoc, entry.getKey(),
+                      entry.getValue());
       }
     }
 
@@ -167,17 +177,15 @@ public class BowtieJsonSchemaValidator {
   private TestResult runWithAnnotations(Schema jsonSchema, JsonNode test) {
     try {
       OutputUnit outputUnit = jsonSchema.validate(
-          test.get("instance"),
-          OutputFormat.HIERARCHICAL,
-          executionContext -> {
+          test.get("instance"), OutputFormat.HIERARCHICAL, executionContext -> {
             executionContext.executionConfig(builder -> {
               builder.annotationCollectionEnabled(true);
               builder.annotationCollectionFilter(keyword -> true);
             });
-          }
-      );
+          });
 
-      Map<String, Map<String, Map<String, Object>>> annotations = new LinkedHashMap<>(); // NOPMD
+      Map<String, Map<String, Map<String, Object>>> annotations =
+          new LinkedHashMap<>(); // NOPMD
       collectAnnotations(outputUnit, annotations);
 
       if (annotations.isEmpty()) {
@@ -317,4 +325,5 @@ record Test(String description, String comment, JsonNode instance,
             JsonNode valid, JsonNode assertions) {}
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-record TestResult(boolean valid, Map<String, Map<String, Map<String, Object>>> annotations) {}
+record TestResult(boolean valid,
+                  Map<String, Map<String, Map<String, Object>>> annotations) {}
