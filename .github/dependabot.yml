@@ -18,6 +18,13 @@ updates:
     directory: "frontend"
     schedule:
       interval: "weekly"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
     cooldown:
       default-days: 7
 
