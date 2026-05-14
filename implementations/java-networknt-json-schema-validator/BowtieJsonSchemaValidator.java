@@ -124,14 +124,12 @@ public class BowtieJsonSchemaValidator {
     output.println(objectMapper.writeValueAsString(dialectResponse));
   }
 
-  private void
-  addAnnotation(Map<String, Map<String, Map<String, Object>>> annotations,
-                String instanceLoc, String schemaLoc, String keyword,
-                Object value) {
-    Map<String, Map<String, Object>> byKeyword = annotations.computeIfAbsent(
-        instanceLoc, k -> new LinkedHashMap<>()); // NOPMD
-    Map<String, Object> bySchema =
-        byKeyword.computeIfAbsent(keyword, k -> new LinkedHashMap<>()); // NOPMD
+  @SuppressWarnings("PMD.UseConcurrentHashMap")
+  private void addAnnotation(
+      Map<String, Map<String, Map<String, Object>>> annotations, String instanceLoc, 
+      String schemaLoc, String keyword, Object value) {
+    Map<String, Map<String, Object>> byKeyword = annotations.computeIfAbsent(instanceLoc, k -> new LinkedHashMap<>()); // NOPMD
+    Map<String, Object> bySchema = byKeyword.computeIfAbsent(keyword, k -> new LinkedHashMap<>()); // NOPMD
     bySchema.put(schemaLoc, value);
   }
 
@@ -174,6 +172,7 @@ public class BowtieJsonSchemaValidator {
     }
   }
 
+  @SuppressWarnings("PMD.UseConcurrentHashMap")
   private TestResult runWithAnnotations(Schema jsonSchema, JsonNode test) {
     try {
       OutputUnit outputUnit = jsonSchema.validate(
