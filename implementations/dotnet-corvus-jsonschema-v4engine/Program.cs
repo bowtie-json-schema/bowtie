@@ -53,7 +53,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
                 ["version"] = 1,
                 ["implementation"] =
                     new System.Text.Json.Nodes
-                        .JsonObject { ["language"] = "dotnet", ["name"] = "Corvus.JsonSchema",
+                        .JsonObject { ["language"] = "dotnet", ["name"] = "dotnet-corvus-jsonschema-v4engine",
                                       ["version"] = GetLibVersion(),
                                       ["homepage"] = "https://github.com/corvus-dotnet/corvus.jsonschema",
                                       ["documentation"] =

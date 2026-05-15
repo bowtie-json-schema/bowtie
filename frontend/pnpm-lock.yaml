@@ -6,6 +6,7 @@ settings:
 
 overrides:
   prismjs: ^1.30.0
+  fast-uri: '>=3.1.2'
 
 importers:
 
