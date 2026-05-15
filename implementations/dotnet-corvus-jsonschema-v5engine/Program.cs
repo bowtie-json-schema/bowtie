@@ -136,10 +136,11 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 
             try
             {
-                var schema = JsonSchema.FromText(
-                    schemaText, fakeURI,
-                    new JsonSchema.Options(additionalDocumentResolver: resolver, fallbackVocabulary: defaultVocabulary,
-                                           alwaysAssertFormat: validateFormat, allowFileSystemAndHttpResolution: false));
+                var schema = JsonSchema.FromText(schemaText, fakeURI,
+                                                 new JsonSchema.Options(additionalDocumentResolver: resolver,
+                                                                        fallbackVocabulary: defaultVocabulary,
+                                                                        alwaysAssertFormat: validateFormat,
+                                                                        allowFileSystemAndHttpResolution: false));
 
                 var results = new System.Text.Json.Nodes.JsonArray();
 
@@ -209,8 +210,7 @@ while (cmdSource.GetNextCommand() is { } line && line != string.Empty)
 static string GetLibVersion()
 {
     AssemblyInformationalVersionAttribute? attribute =
-        typeof(JsonSchema)
-            .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+        typeof(JsonSchema).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
 #pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
     return Regex.Match(attribute!.InformationalVersion, @"\d+\.\d+\.\d+").Value;
 #pragma warning restore SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
