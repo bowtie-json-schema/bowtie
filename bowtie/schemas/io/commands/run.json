@@ -7,7 +7,12 @@
   "properties": {
     "cmd": { "const": "run" },
     "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
-    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" }
+    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
+    "output" : {
+      "description" : "The output format the harness should respond with.",
+      "enum" : ["flag", "basic"],
+      "default" : "flag"
+    }
   },
   "$defs": {
     "response": {
@@ -46,7 +51,11 @@
                 "oneOf": [
                   {
                     "properties": {
-                      "valid": { "type": "boolean" }
+                      "valid": { "type": "boolean" },
+                      "details" : {
+                        "description" : "Ouput units from a basic output format response",
+                        "type" : "array"
+                      }
                     },
                     "required": ["valid"]
                   },
