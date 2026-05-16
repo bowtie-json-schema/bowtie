@@ -119,13 +119,19 @@ class ClickParam(click.ParamType):
         else:
             paths, version_path = _glob(path, "*.json"), path
 
+        is_annotations = "annotations" in version_path.parts
+
         remotes = version_path.parent.parent / "remotes"
 
-        dialect = Dialect.by_short_name().get(version_path.name)
+        dialect_name = version_path.parent.name if is_annotations else version_path.name
+        dialect = Dialect.by_short_name().get(dialect_name)
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
-        cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
+        if is_annotations:
+            cases = annotation_cases_from(paths=paths, dialect=dialect)
+        else:
+            cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
         return cases, dialect
 
@@ -184,6 +190,38 @@ def cases_from(
                 dialect=dialect,
                 registry=registry,
                 **case,
+            )
+
+def annotation_cases_from(
+    paths: Iterable[_P],
+    dialect: Dialect,
+) -> Iterable[TestCase]:
+    for path in paths:
+        for case in json.loads(path.read_text()):
+            if "suite" not in case:
+                continue
+
+            tests = []
+            for test in case["tests"]:
+                if "compatibility" in test and "bowtie" not in test["compatibility"]:
+                    continue
+
+                tests.append(
+                    {
+                        "description": test["description"],
+                        "instance": test.get("instance", test.get("data", {})),
+                        "assertions": test.get("assertions", []),
+                    }
+                )
+
+            if not tests:
+                continue
+
+            yield TestCase.from_dict(
+                dialect=dialect,
+                description=case["description"],
+                schema=case["schema"],
+                tests=tests,
             )
 
 

@@ -2631,13 +2631,19 @@ def suite(
 
     """  # noqa: E501
     _cases, dialect, metadata = input
-    cases = filter(_cases)
+    cases = list(filter(_cases))
+    
+    output_format = "flag"
+    if cases and cases[0].tests and hasattr(cases[0].tests[0], "assertions") and cases[0].tests[0].assertions is not None:
+        output_format = "basic"
+
     return asyncio.run(
         _run_parallel(
             **kwargs,
             dialect=dialect,
             cases=cases,
             run_metadata=metadata,
+            output=output_format,
             jobs=jobs,
         ),
     )
@@ -2651,6 +2657,7 @@ async def _run_one(
     max_fail: int | None = None,
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
+    output: str = "flag",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -2702,7 +2709,7 @@ async def _run_one(
             maybe_set_schema(dialect)(cases),
             1,
         ):
-            seq_case = SeqCase(seq=count, case=case)
+            seq_case = SeqCase(seq=count, case=case, output=output)
             got_result = reporter.case_started(seq_case, dialect)
             st_time = perf_counter_ns()
             result = await seq_case.run(runner=runner)
@@ -2735,6 +2742,7 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
+    output: str = "flag",
     **kwargs: Any,
 ) -> int:
     """
@@ -2749,6 +2757,7 @@ async def _run_parallel(
                 connectable=connectable,
                 cases=materialized,
                 dialect=dialect,
+                output=output,
                 **kwargs,
             )
 

@@ -450,7 +450,7 @@ class DialectRunner:
     async def validate(
         self,
         run: Run,
-        expected: Sequence[bool | None],
+        expected: Sequence[Any],
     ) -> SeqResult:
         try:
             response: (
@@ -679,13 +679,16 @@ class Test:
 
     description: str
     instance: Any
-    valid: bool
+    valid: bool | None = None
+    assertions: list[dict[str, Any]] | None = None
     comment: str | None = None
 
-    def expected(self) -> bool:
+    def expected(self) -> Any:
         """
-        Expect our expected validity result.
+        Expect our expected validity result or assertions.
         """
+        if self.assertions is not None:
+            return self.assertions
         return self.valid
 
     def syntax(self) -> RenderableType:
@@ -789,7 +792,7 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def expected_results(self) -> Sequence[bool | None]:
+    def expected_results(self) -> Sequence[Any]:
         return [each.expected() for each in self.tests]
 
     def without_expected_results(self) -> Message:
@@ -798,7 +801,7 @@ class TestCase:
             {
                 k: v
                 for k, v in test.items()
-                if k != "valid" and (k != "comment" or v is not None)
+                if k not in {"valid", "assertions"} and (k != "comment" or v is not None)
             }
             for test in serializable.pop("tests")
         ]
