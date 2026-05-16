@@ -72,7 +72,11 @@ class SeqCase:
         if schema_without_dialect:
             runner.schema_without_dialect(self.case.schema)
 
-        run = Run(seq=self.seq, case=self.case.without_expected_results(), output=self.output)  # type: ignore[reportCallIssue]
+        run = Run(
+            seq=self.seq,
+            case=self.case.without_expected_results(),
+            output=self.output,
+        )  # type: ignore[reportCallIssue]
         return runner.validate(run, expected=self.case.expected_results())
 
     def serializable(self):
@@ -217,6 +221,7 @@ class FlagTestResult:
             return self.valid == expecting
         return False
 
+
 @frozen
 class BasicTestResult:
     errored = False
@@ -235,9 +240,9 @@ class BasicTestResult:
     def matches(self, expecting: Any) -> bool:
         if isinstance(expecting, bool):
             return self.valid == expecting
-        
+
         import urllib.parse
-        
+
         actual_annotations = {}
         for unit in self.details:
             loc = unit.get("instanceLocation", "")
@@ -250,9 +255,9 @@ class BasicTestResult:
             location = assertion.get("location", "")
             keyword = assertion.get("keyword", "")
             expected_annotation = assertion.get("expected", {})
-            
+
             actual = actual_annotations.get(location, {}).get(keyword, {})
-            
+
             decoded_expected = {
                 urllib.parse.unquote(k): v
                 for k, v in expected_annotation.items()
@@ -260,6 +265,7 @@ class BasicTestResult:
             if actual != decoded_expected:
                 return False
         return True
+
 
 class TestResult:
     VALID: ClassVar[FlagTestResult]
@@ -272,11 +278,12 @@ class TestResult:
             return SkippedTest(**data_copy)
         elif data_copy.pop("errored", False):
             return ErroredTest(**data_copy)
-        
+
         valid = data_copy.pop("valid")
         if "details" in data_copy:
             return BasicTestResult(valid=valid, details=data_copy["details"])
         return FlagTestResult(valid=valid)
+
 
 TestResult.VALID = FlagTestResult(valid=True)
 TestResult.INVALID = FlagTestResult(valid=False)

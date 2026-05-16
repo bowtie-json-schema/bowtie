@@ -2632,9 +2632,14 @@ def suite(
     """  # noqa: E501
     _cases, dialect, metadata = input
     cases = list(filter(_cases))
-    
+
     output_format = "flag"
-    if cases and cases[0].tests and hasattr(cases[0].tests[0], "assertions") and cases[0].tests[0].assertions is not None:
+    if (
+        cases
+        and cases[0].tests
+        and hasattr(cases[0].tests[0], "assertions")
+        and cases[0].tests[0].assertions is not None
+    ):
         output_format = "basic"
 
     return asyncio.run(

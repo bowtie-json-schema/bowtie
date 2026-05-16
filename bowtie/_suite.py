@@ -123,7 +123,9 @@ class ClickParam(click.ParamType):
 
         remotes = version_path.parent.parent / "remotes"
 
-        dialect_name = version_path.parent.name if is_annotations else version_path.name
+        dialect_name = (
+            version_path.parent.name if is_annotations else version_path.name
+        )
         dialect = Dialect.by_short_name().get(dialect_name)
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
@@ -192,6 +194,7 @@ def cases_from(
                 **case,
             )
 
+
 def annotation_cases_from(
     paths: Iterable[_P],
     dialect: Dialect,
@@ -203,7 +206,10 @@ def annotation_cases_from(
 
             tests = []
             for test in case["tests"]:
-                if "compatibility" in test and "bowtie" not in test["compatibility"]:
+                if (
+                    "compatibility" in test
+                    and "bowtie" not in test["compatibility"]
+                ):
                     continue
 
                 tests.append(
@@ -211,7 +217,7 @@ def annotation_cases_from(
                         "description": test["description"],
                         "instance": test.get("instance", test.get("data", {})),
                         "assertions": test.get("assertions", []),
-                    }
+                    },
                 )
 
             if not tests:

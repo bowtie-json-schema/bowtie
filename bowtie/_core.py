@@ -801,7 +801,8 @@ class TestCase:
             {
                 k: v
                 for k, v in test.items()
-                if k not in {"valid", "assertions"} and (k != "comment" or v is not None)
+                if k not in {"valid", "assertions"}
+                and (k != "comment" or v is not None)
             }
             for test in serializable.pop("tests")
         ]
