@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, dataclass_transform
 import re
+import urllib.parse
 
 from attrs import asdict, field, filters, frozen
 from url import URL
@@ -73,10 +74,10 @@ class SeqCase:
             runner.schema_without_dialect(self.case.schema)
 
         run = Run(
-            seq=self.seq,
-            case=self.case.without_expected_results(),
-            output=self.output,
-        )  # type: ignore[reportCallIssue]
+            seq=self.seq,  # type: ignore[reportCallIssue]
+            case=self.case.without_expected_results(),  # type: ignore[reportCallIssue]
+            output=self.output,  # type: ignore[reportCallIssue]
+        )
         return runner.validate(run, expected=self.case.expected_results())
 
     def serializable(self):
@@ -222,13 +223,16 @@ class FlagTestResult:
         return False
 
 
+
 @frozen
 class BasicTestResult:
     errored = False
     skipped = False
 
     valid: bool
-    details: list[dict[str, Any]] = field(factory=list)
+    details: list[dict[str, Any]] = field(
+        factory=list[dict[str, Any]],
+    )
 
     @property
     def description(self):
@@ -241,9 +245,7 @@ class BasicTestResult:
         if isinstance(expecting, bool):
             return self.valid == expecting
 
-        import urllib.parse
-
-        actual_annotations = {}
+        actual_annotations: dict[str, dict[str, Any]] = {}
         for unit in self.details:
             loc = unit.get("instanceLocation", "")
             if "annotations" in unit:
@@ -256,7 +258,9 @@ class BasicTestResult:
             keyword = assertion.get("keyword", "")
             expected_annotation = assertion.get("expected", {})
 
+
             actual = actual_annotations.get(location, {}).get(keyword, {})
+
 
             decoded_expected = {
                 urllib.parse.unquote(k): v
@@ -265,6 +269,7 @@ class BasicTestResult:
             if actual != decoded_expected:
                 return False
         return True
+
 
 
 class TestResult:
@@ -314,6 +319,9 @@ class SkippedTest:
             ),
         )
 
+    def matches(self, expecting: Any) -> bool:
+        return False
+
 
 @frozen
 class ErroredTest:
@@ -335,6 +343,9 @@ class ErroredTest:
 
     def serializable(self) -> Message:
         return asdict(self)
+
+    def matches(self, expecting: Any) -> bool:
+        return False
 
 
 class AnyCaseResult(Protocol):

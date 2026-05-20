@@ -42,7 +42,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
-from bowtie._commands import SeqCase, TestResult, Unsuccessful
+from bowtie._commands import FlagTestResult, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -2582,7 +2582,10 @@ async def smoke(
                             #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
-                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                expected = FlagTestResult(
+                                    valid=bool(test.expected()),
+                                )
+                                if expected != result:
                                     echo(f"* `{test.instance}`")
 
                         echo("\n</details>")
@@ -2637,8 +2640,7 @@ def suite(
     if (
         cases
         and cases[0].tests
-        and hasattr(cases[0].tests[0], "assertions")
-        and cases[0].tests[0].assertions is not None
+        and getattr(cases[0].tests[0], "assertions", None) is not None
     ):
         output_format = "basic"
 

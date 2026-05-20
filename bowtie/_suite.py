@@ -204,7 +204,7 @@ def annotation_cases_from(
             if "suite" not in case:
                 continue
 
-            tests = []
+            tests: list[dict[str, Any]] = []
             for test in case["tests"]:
                 if (
                     "compatibility" in test

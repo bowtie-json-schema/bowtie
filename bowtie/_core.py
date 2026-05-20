@@ -761,7 +761,8 @@ class TestCase:
         as_dict = asdict(
             self,
             filter=lambda k, v: (
-                k.name != "registry" and (k.name != "comment" or v is not None)
+                k.name != "registry"
+                and (k.name not in {"comment", "assertions"} or v is not None)
             ),
         )
         if self.registry:
