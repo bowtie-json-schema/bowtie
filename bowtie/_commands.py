@@ -223,7 +223,6 @@ class FlagTestResult:
         return False
 
 
-
 @frozen
 class BasicTestResult:
     errored = False
@@ -258,9 +257,7 @@ class BasicTestResult:
             keyword = assertion.get("keyword", "")
             expected_annotation = assertion.get("expected", {})
 
-
             actual = actual_annotations.get(location, {}).get(keyword, {})
-
 
             decoded_expected = {
                 urllib.parse.unquote(k): v
@@ -269,7 +266,6 @@ class BasicTestResult:
             if actual != decoded_expected:
                 return False
         return True
-
 
 
 class TestResult:
