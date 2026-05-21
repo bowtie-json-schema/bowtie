@@ -1,4 +1,4 @@
-FROM alpine:3.22
+FROM alpine:3.23.4
 WORKDIR /harness
 
 RUN apk add --no-cache \
