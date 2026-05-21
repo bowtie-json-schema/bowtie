@@ -6,7 +6,7 @@ COPY mix.exs mix.exs
 RUN mix deps.get --only prod && mix deps.compile
 COPY lib lib
 RUN mix compile && mix escript.build
-FROM erlang:28-alpine
+FROM erlang:29-alpine
 RUN mkdir -p /var/log/jsonschex
 COPY --from=builder /opt/app/bowtie_jsonschex /opt/app/bowtie_jsonschex
 ENTRYPOINT ["/opt/app/bowtie_jsonschex"]
