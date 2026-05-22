@@ -13,14 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
 import org.sjf4j.JsonObject;
-import org.sjf4j.node.Nodes;
 import org.sjf4j.Sjf4j;
 import org.sjf4j.annotation.node.NodeProperty;
+import org.sjf4j.node.Nodes;
 import org.sjf4j.schema.JsonSchema;
 import org.sjf4j.schema.SchemaDialect;
 import org.sjf4j.schema.SchemaPlan;
 import org.sjf4j.schema.SchemaRegistry;
-
 
 public class BowtieSjf4jValidator {
 
@@ -43,7 +42,6 @@ public class BowtieSjf4jValidator {
   private final String dialectOkJson =
       JSONS.toJsonString(new DialectResponse(true));
   private SchemaRegistry registry;
-
 
   public BowtieSjf4jValidator(PrintStream output) {
     this.output = output;
@@ -89,18 +87,18 @@ public class BowtieSjf4jValidator {
 
     String dialect = jo.getString("dialect");
     switch (dialect) {
-      case "https://json-schema.org/draft/2020-12/schema":
-        registry = new SchemaRegistry(SchemaDialect.DRAFT_2020_12);
-        break;
-      case "https://json-schema.org/draft/2019-09/schema":
-        registry = new SchemaRegistry(SchemaDialect.DRAFT_2019_09);
-        break;
-      case "https://json-schema.org/draft-07/schema":
-      case "http://json-schema.org/draft-07/schema#":
-        registry = new SchemaRegistry(SchemaDialect.DRAFT_07);
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported dialect " + dialect);
+    case "https://json-schema.org/draft/2020-12/schema":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_2020_12);
+      break;
+    case "https://json-schema.org/draft/2019-09/schema":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_2019_09);
+      break;
+    case "https://json-schema.org/draft-07/schema":
+    case "http://json-schema.org/draft-07/schema#":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_07);
+      break;
+    default:
+      throw new IllegalArgumentException("Unsupported dialect " + dialect);
     }
     output.println(dialectOkJson);
   }
