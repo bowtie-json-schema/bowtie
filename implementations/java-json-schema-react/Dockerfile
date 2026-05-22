@@ -6,7 +6,7 @@ COPY bowtie/JsonSchemaValidator.java /home/gradle/validator/bowtie/JsonSchemaVal
 RUN gradle jar --no-daemon
 
 # Shrink JRE
-FROM eclipse-temurin:21-jdk-alpine as jre_builder
+FROM eclipse-temurin:25-jdk-alpine as jre_builder
 WORKDIR /app
 COPY --from=build /home/gradle/validator/build/libs/*.jar /app/
 RUN jlink \
