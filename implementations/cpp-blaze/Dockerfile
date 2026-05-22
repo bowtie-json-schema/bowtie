@@ -1,11 +1,11 @@
 FROM alpine:3.22 AS builder
 
-RUN apk add --no-cache cmake g++ git make
+RUN apk add --no-cache cmake g++ git make linux-headers
 
 RUN git clone https://github.com/sourcemeta/blaze.git /tmp/blaze
 
 # Pin a specific commit for stable builds
-RUN git -C /tmp/blaze checkout 435a92c2dfd111ac3ee46dc659203c3e389457c9
+RUN git -C /tmp/blaze checkout 5eeef87e52cf45ae76d5b8c7a38f3189da65adb7
 
 COPY CMakeLists.txt /tmp/CMakeLists.txt
 COPY bowtie_blaze.cpp /tmp/bowtie_blaze.cpp

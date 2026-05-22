@@ -10,6 +10,8 @@ COPY . .
 RUN dotnet publish -a ${TARGETARCH} --no-restore -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine
+RUN apk add --no-cache icu-libs icu-data-full
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "bowtie_corvus_jsonschema.dll"]
+ENTRYPOINT ["dotnet", "bowtie_corvus_jsonschema_v5engine.dll"]

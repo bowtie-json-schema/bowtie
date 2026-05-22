@@ -1,0 +1,12 @@
+!lib
+
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+bowtie_jsonschex-*.tar
+bowtie_jsonschex
+mix.lock

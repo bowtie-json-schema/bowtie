@@ -11,10 +11,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      bowtie-dependencies:
-        patterns:
-          - "*"
     cooldown:
       default-days: 7
 
@@ -23,9 +19,12 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      frontend-dependencies:
+      react:
         patterns:
-          - "*"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
     cooldown:
       default-days: 7
 
@@ -57,13 +56,27 @@ updates:
       default-days: 7
 
   - package-ecosystem: "nuget"
-    directory: "/implementations/dotnet-corvus-jsonschema"
+    directory: "/implementations/dotnet-corvus-jsonschema-v4engine"
     schedule:
       interval: "daily"
     groups:
       corvus-json:
         patterns:
           - "Corvus.Json.*"
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "nuget"
+    directory: "/implementations/dotnet-corvus-jsonschema-v5engine"
+    schedule:
+      interval: "daily"
+    groups:
+      corvus-text-json:
+        patterns:
+          - "Corvus.Text.Json.*"
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
@@ -128,6 +141,13 @@ updates:
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-schemasafe"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "npm"
+    directory: "/implementations/ts-json-schema-library"
     schedule:
       interval: "daily"
     cooldown:
@@ -243,6 +263,13 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: "mix"
+    directory: "/implementations/elixir-jsonschex"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: "swift"
     directory: "/implementations/swift-swift-json-schema"
     schedule:
@@ -252,6 +279,7 @@ updates:
 
   # ignore: scala-mjs-validator - Dependabot doesn't support Scala.
   # ignore: scala-rc-circe-json-validator - Dependabot doesn't support Scala.
+  # ignore: unison-typed-json - Dependabot doesn't support Unsion.
 
   # Dependabot for Dockerfiles
   # --------------------------
@@ -295,7 +323,14 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
-    directory: "/implementations/dotnet-corvus-jsonschema"
+    directory: "/implementations/dotnet-corvus-jsonschema-v4engine"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/dotnet-corvus-jsonschema-v5engine"
     schedule:
       interval: "daily"
     cooldown:
@@ -554,6 +589,13 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
+    directory: "/implementations/elixir-jsonschex"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
     directory: "/implementations/swift-swift-json-schema"
     schedule:
       interval: "daily"
@@ -583,6 +625,20 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-ata"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/ts-json-schema-library"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/unison-typed-json"
     schedule:
       interval: "daily"
     cooldown:

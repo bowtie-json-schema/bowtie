@@ -21,14 +21,9 @@ RUN if [ "$JSU" ] ; then jsu="git+https://github.com/zx80/json-schema-utils@$JSU
     pip install --break-system-packages "${jsu:-json_schema_utils}"
 
 # js-specific setup
-RUN apk add nodejs
-# FIXME when adding a file-path, npm creates a link then node does not seem to follow
-# RUN apk add npm jq
-# RUN echo '{"name": "bowtie-js-jsu", "type": "module"}' | jq > package.json
-# RUN npm install /usr/lib/python3.*/site-packages/json_model/runtime/js
-# install manually instead
-RUN mkdir -p node_modules/json_model_runtime
-RUN cp /usr/lib/python3.*/site-packages/json_model/runtime/js/*.js node_modules/json_model_runtime
+RUN apk add nodejs npm jq
+RUN echo '{"name": "bowtie-js-jsu", "type": "module"}' | jq > package.json
+RUN npm install /usr/lib/python3.*/site-packages/json_model/runtime/js --install-links
 
 COPY bowtie_jsu_compile.py .
-CMD ["python3", "./bowtie_jsu_compile.py", "JS"]
+CMD ["python3", "./bowtie_jsu_compile.py", "JavaScript"]

@@ -12,13 +12,15 @@ from pathlib import Path
 import hashlib
 import json
 import platform
-import shutil
 import subprocess
 import sys
 import traceback
 
 from jsonschema_specifications import REGISTRY
 import dotenv
+
+# json schema utils for direct compilation
+import jsutils
 
 type JsonObject = dict[str, Json]
 type JsonArray = list[Json]
@@ -102,7 +104,7 @@ class Runner:
                 self.output = TMP / "schema.out"
                 self.runner = [str(self.output)]
                 vers_cmd = ["cc", "--version"]
-            case "js":  # requires node_modules
+            case "js" | "javascript":  # requires node_modules
                 self.output = TMP / "schema.js"
                 self.runner = ["node", str(self.output)]
                 vers_cmd = ["node", "--version"]
@@ -125,20 +127,41 @@ class Runner:
         self.language_version = get_version(vers_cmd)
 
         # compiler call prefix missing version, output file and input schema
+        self.subprocess = False
         self.jsu_compile = [
             "jsu-compile",
+            "--quiet",
             "--cache",
             str(CACHE),
             "--no-fix",  # do not try to fix the schema
             "--no-strict",  # accept any odd looking schema
             "--no-reporting",  # do not generate location reporting code
             "--loose",  # ints are floats, floats may be ints
+            f"--backend={'p' if self.subprocess else 'f'}",  # as a process?
             # next options may override the above defaults
             *options,
         ]
+        # TODO do not necessarily use subprocess?
         self.jsu_version = get_version(["jsu-compile", "--version"])
 
         TMP.mkdir(exist_ok=True)
+
+        # write spec files once
+        CACHE.mkdir(exist_ok=True)
+        self.spec_files: set[str] = self.cache_schemas(SPECS)
+
+    def run_jsu_compile(self, cmd: list[str]):
+        """Run compiler as a subprocess or directly as a function."""
+        assert cmd[0] == "jsu-compile"
+        if self.subprocess:
+            subprocess.run(cmd, text=True, check=True)  # noqa: S603
+        else:
+            try:
+                status = jsutils.jsu_compile(cmd[1:])
+            except Exception:
+                status = 42
+            if status:
+                raise RunnerError(f"jsu_compile failed: {status}")
 
     def compile_schema(self, schema: JsonObject) -> Path:
         """Compile a schema for the current language."""
@@ -155,28 +178,35 @@ class Runner:
             str(schema_file),
         ]
 
-        subprocess.run(jsu_compile, text=True, check=True)  # noqa: S603
+        self.run_jsu_compile(jsu_compile)
 
         return output_file
 
-    def run_test(self, test: Json) -> bool:
-        """Run one test using generated validator."""
-
-        test_file = json_file("test.json", test)
+    def run_tests(self, tests: list[Json]) -> list[bool]:
+        """Run several tests at once using the generated validator."""
+        test_files: list[Path] = [
+            json_file(f"test_{i:02}.json", j) for i, j in enumerate(tests)
+        ]
 
         ps = subprocess.run(  # noqa: S603
-            [*self.runner, str(test_file)],
+            [*self.runner, *[str(f) for f in test_files]],
             text=True,
             capture_output=True,
             check=True,
         )
 
-        if "FAIL" in ps.stdout:
-            return False
-        elif "PASS" in ps.stdout:
-            return True
-        else:
+        test_results = [
+            "FAIL" not in out  # False if both
+            for out in filter(
+                lambda s: "PASS" in s or "FAIL" in s,
+                ps.stdout.split("\n"),
+            )
+        ]
+
+        if len(test_results) != len(test_files):
             raise RunnerError(f"unexpected validation output: {ps.stdout}")
+
+        return test_results
 
     def cmd_start(self, req: JsonObject) -> JsonObject:
         """Respond to start with various meta data about the implementation."""
@@ -209,6 +239,23 @@ class Runner:
 
         return {"ok": True}
 
+    def cache_schemas(self, reg: dict[str, JsonObject]) -> set[str]:
+        """Register schemas in cache, return created cache file names."""
+        files: set[str] = set()
+
+        for url, schema in reg.items():
+            # use truncated hashed url as filename
+            fn = hashlib.sha3_256(url.encode()).hexdigest()[:16] + ".json"
+            files.add(fn)
+            file = CACHE / fn
+            assert not file.exists(), (
+                f"should not cache same file twice: {url} ({fn})"
+            )
+            with Path.open(file, "w") as fp:
+                json.dump(schema, fp)
+
+        return files
+
     def cmd_run(self, req: JsonObject) -> JsonObject:
         """Run one case and its tests."""
 
@@ -224,26 +271,24 @@ class Runner:
         description = case.get("description")
         assert description is None or isinstance(description, str)
 
-        CACHE.mkdir(exist_ok=True)
+        reg_files: set[str] = set()
         results: JsonArray = []
 
         try:
-            # put registries in cache
-            for reg in [SPECS, case.get("registry")]:
-                if reg is not None:
-                    for url, schema in reg.items():
-                        # use truncated hashed url as filename
-                        uh = hashlib.sha3_256(url.encode()).hexdigest()[:16]
-                        with Path.open(CACHE / f"{uh}.json", "w") as fp:
-                            json.dump(schema, fp)
+            # register case-specific remote schemas
+            if registry := case.get("registry"):
+                reg_files = self.cache_schemas(registry)
 
             # generate validator
             self.compile_schema(jschema)
 
             # apply to test vector
             results = [
-                {"valid": self.run_test(test["instance"])} for test in tests
+                {"valid": res}
+                for res in self.run_tests([t["instance"] for t in tests])
             ]
+
+            assert len(results) == len(tests), "one result per test"
 
         except Exception:  # an internal error occurred
             return {
@@ -252,8 +297,10 @@ class Runner:
                 "context": {"traceback": traceback.format_exc()},
             }
 
-        finally:  # wipe out cache to avoid state leaks
-            shutil.rmtree(CACHE)
+        finally:
+            # remove case-specific cached schemas
+            for fn in reg_files:
+                (CACHE / fn).unlink()
 
         return {
             "seq": req["seq"],

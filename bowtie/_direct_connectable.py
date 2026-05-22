@@ -15,7 +15,13 @@ from referencing.jsonschema import EMPTY_REGISTRY
 from url import URL
 
 from bowtie import DOCS, HOMEPAGE, REPO
-from bowtie._commands import CaseResult, Started, StartedDialect, TestResult
+from bowtie._commands import (
+    CaseErrored,
+    CaseResult,
+    Started,
+    StartedDialect,
+    TestResult,
+)
 from bowtie._core import Dialect, ImplementationInfo, registry
 from bowtie._registry import Invalid, SchemaCompiler, ValidatorRegistry
 from bowtie.exceptions import CannotConnect
@@ -73,16 +79,24 @@ class Unconnection[E: Exception]:
                 self._compile = self.compiler_for(self._current_dialect)
                 return asdict(self._implicit_dialect_response)
             case {"cmd": "run", "seq": seq, "case": case}:
-                schema = case["schema"]
-                registry = EMPTY_REGISTRY.with_contents(
-                    case.get("registry", {}).items(),
-                    default_specification=self._current_dialect.specification(),
-                )
-                validate = self._compile(schema, registry)
-                results = [
-                    TestResult(valid=validate(test["instance"]) is None)
-                    for test in case["tests"]
-                ]
+                try:
+                    schema = case["schema"]
+                    registry = EMPTY_REGISTRY.with_contents(
+                        case.get("registry", {}).items(),
+                        default_specification=self._current_dialect.specification(),
+                    )
+                    validate = self._compile(schema, registry)
+                    results = [
+                        TestResult(valid=validate(test["instance"]) is None)
+                        for test in case["tests"]
+                    ]
+                except Exception as err:  # noqa: BLE001
+                    return {
+                        "seq": seq,
+                        **CaseErrored.uncaught(
+                            message=str(err),
+                        ).serializable(),
+                    }
                 return {  # FIXME: Bleh this is not SeqResult
                     "seq": seq,
                     **CaseResult(results=results).serializable(),

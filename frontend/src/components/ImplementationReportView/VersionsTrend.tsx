@@ -33,56 +33,56 @@ interface TrendData extends Partial<Totals> {
 const VersionsTrend = ({ implementation }: Props) => {
   const { isDarkMode } = useContext(ThemeContext);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDialect, setSelectedDialect] = useState(Dialect.latest());
   const [dialectsTrendData, setDialectsTrendData] = useState<
     Map<Dialect, TrendData[]>
   >(new Map());
 
-  const fetchDialectTrendData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const versionedReports =
-        await implementation.fetchVersionedReportsFor(selectedDialect);
-
-      setDialectsTrendData((prev) =>
-        new Map(prev).set(
-          selectedDialect,
-          Array.from(versionedReports)
-            .sort(([versionA], [versionB]) => sortVersions(versionA, versionB))
-            .map(([version, data]) => {
-              const { failedTests, erroredTests, skippedTests } =
-                data.implementationsResults.values().next().value!.totals;
-
-              return {
-                version: `v${version}`,
-                failedTests,
-                erroredTests,
-                skippedTests,
-                totalUnsuccessfulTests:
-                  failedTests! + erroredTests! + skippedTests!,
-              };
-            }),
-        ),
-      );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      setDialectsTrendData((prev) => new Map(prev).set(selectedDialect, []));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedDialect, implementation]);
-
-  const shouldFetchDialectTrendData = useMemo(
-    () => !dialectsTrendData.has(selectedDialect),
-    [selectedDialect, dialectsTrendData],
-  );
+  const hasDialectTrendData = dialectsTrendData.has(selectedDialect);
 
   useEffect(() => {
-    if (shouldFetchDialectTrendData) {
-      void fetchDialectTrendData();
-    }
-  }, [shouldFetchDialectTrendData, fetchDialectTrendData]);
+    if (hasDialectTrendData) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const versionedReports =
+          await implementation.fetchVersionedReportsFor(selectedDialect);
+        if (cancelled) return;
+        setDialectsTrendData((prev) =>
+          new Map(prev).set(
+            selectedDialect,
+            Array.from(versionedReports)
+              .sort(([versionA], [versionB]) =>
+                sortVersions(versionA, versionB),
+              )
+              .map(([version, data]) => {
+                const { failedTests, erroredTests, skippedTests } =
+                  data.implementationsResults.values().next().value!.totals;
+
+                return {
+                  version: `v${version}`,
+                  failedTests,
+                  erroredTests,
+                  skippedTests,
+                  totalUnsuccessfulTests:
+                    failedTests! + erroredTests! + skippedTests!,
+                };
+              }),
+          ),
+        );
+      } catch {
+        if (cancelled) return;
+        setDialectsTrendData((prev) =>
+          new Map(prev).set(selectedDialect, []),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasDialectTrendData, selectedDialect, implementation]);
 
   const filteredDialects = useMemo(
     () =>
@@ -122,7 +122,7 @@ const VersionsTrend = ({ implementation }: Props) => {
               </Dropdown.Menu>
             </Dropdown>
           </div>
-          {isLoading || !dialectsTrendData.has(selectedDialect) ? (
+          {!hasDialectTrendData ? (
             <LoadingAnimation />
           ) : !dialectsTrendData.get(selectedDialect)!.length ? (
             <div className="d-flex justify-content-center align-items-center h-100">

@@ -10,6 +10,7 @@ import json as _json
 import os
 import platform
 import re
+import subprocess
 import sys
 import tarfile
 
@@ -45,7 +46,19 @@ HERE = Path(__file__).parent
 FAUXMPLEMENTATIONS = HERE / "fauxmplementations"
 
 # Make believe we're wide for tests to avoid line breaks in rich-click.
-WIDE_TERMINAL_ENV = dict(os.environ, TERMINAL_WIDTH="512")
+#
+# PYTHONUTF8 ensures subprocesses use UTF-8 I/O (no-op on Linux).
+#
+# On Windows, Rich subtracts 1 from the console width when piped stdout has
+# no VT capability.  COLUMNS=81 compensates so both platforms produce
+# identical 80-column output.
+_COLUMNS = "81" if sys.platform == "win32" else "80"
+WIDE_TERMINAL_ENV = dict(
+    os.environ,
+    TERMINAL_WIDTH="512",
+    PYTHONUTF8="1",
+    COLUMNS=_COLUMNS,
+)
 WIDE_TERMINAL_ENV.pop("CI", None)  # Run subprocesses as if they're not in CI
 
 
@@ -90,7 +103,13 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
         env=WIDE_TERMINAL_ENV,
     )
     raw_stdout, raw_stderr = await process.communicate(stdin.encode())
-    decoded = stdout, stderr = raw_stdout.decode(), raw_stderr.decode()
+    # Decode explicitly as UTF-8 (PYTHONUTF8=1 is set in the env) and
+    # normalize Windows CRLF line endings to LF so that test assertions
+    # don't need platform-specific expected strings.
+    decoded = stdout, stderr = (
+        raw_stdout.decode("utf-8").replace("\r\n", "\n"),
+        raw_stderr.decode("utf-8").replace("\r\n", "\n"),
+    )
 
     if exit_code == -1:
         assert process.returncode != 0, decoded
@@ -112,10 +131,34 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
 
 
 def tar_from_directory(directory):
+    """Build a tar archive from a directory for use as a Docker build context.
+
+    On Windows, two issues prevent the straightforward ``tar.add()`` approach:
+
+      * Git's ``core.autocrlf`` converts LF to CRLF on checkout, which breaks
+        shebang lines inside Linux containers (``env: python3\\r: not found``).
+
+      * The Windows filesystem has no executable bit, so ``tar.add()`` creates
+        entries with mode 0o666; ``COPY`` in the Dockerfile preserves that,
+        leaving scripts non-executable inside the container.
+
+    On non-Windows platforms ``tar.add()`` is used as-is to preserve original
+    file metadata.
+    """
     fileobj = BytesIO()
     with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        for file in directory.iterdir():
-            tar.add(file, file.name)
+        for path in sorted(directory.rglob("*")):
+            if path.is_dir():
+                continue
+            if sys.platform != "win32":
+                tar.add(path, arcname=path.relative_to(directory))
+            else:
+                data = path.read_bytes().replace(b"\r\n", b"\n")
+                arcname = path.relative_to(directory).as_posix()
+                info = tarfile.TarInfo(name=arcname)
+                info.size = len(data)
+                info.mode = 0o755 if data.startswith(b"#!") else 0o644
+                tar.addfile(info, BytesIO(data))
     fileobj.seek(0)
     return fileobj
 
@@ -607,6 +650,20 @@ async def test_unsupported_known_dialect():
 
     assert results == []
     assert re.search(r"does\s+not\s+support", stderr), stderr
+
+
+@pytest.mark.asyncio
+async def test_direct_connector_exception_does_not_crash():
+    async with run("-i", miniatures.crashes_on_validate) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "foo", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {miniatures.crashes_on_validate: ErroredTest.in_errored_case()},
+    ], stderr
 
 
 @pytest.mark.asyncio
@@ -2032,6 +2089,19 @@ class TestSmoke:
         assert stdout == "", stderr
 
 
+def _adjust_rich_box(text):
+    """Adjust Rich box-drawing characters for platform differences.
+
+    When Rich's Console has piped stdout on Windows, it detects a "legacy"
+    console (no VT capability on the pipe) and substitutes ROUNDED box
+    corners (╭╮╰╯) with SQUARE corners (┌┐└┘).  This is a no-op on Linux
+    where Rich always keeps the original ROUNDED characters.
+    """
+    if sys.platform != "win32":
+        return text
+    return text.translate(str.maketrans("╭╮╰╯", "┌┐└┘"))
+
+
 @pytest.mark.asyncio
 async def test_info_pretty():
     stdout, stderr = await bowtie(
@@ -2041,8 +2111,9 @@ async def test_info_pretty():
         "-i",
         miniatures.fake_language_and_os,
     )
-    assert stdout == dedent(
-        """\
+    assert stdout == _adjust_rich_box(
+        dedent(
+            """\
         ╭────────────────┬─────────────────────────────────────────────────────────────╮
         │ implementation │ fake_language_and_os v1.0.0                                 │
         │ language       │ python 1.2.3                                                │
@@ -2059,6 +2130,7 @@ async def test_info_pretty():
         ╰────────────────┴─────────────────────────────────────────────────────────────╯
                                        Ran on Linux 4.5.6                               \n\n
         """,  # noqa: E501
+        ),
     )
     assert stderr == ""
 
@@ -2280,8 +2352,9 @@ async def test_info_pretty_links():
         "-i",
         miniatures.fake_language_and_os_with_links,
     )
-    assert stdout == dedent(
-        """\
+    assert stdout == _adjust_rich_box(
+        dedent(
+            """\
         ╭────────────────┬─────────────────────────────────────────────────────────────╮
         │ implementation │ fake_language_and_os_with_links v1.0.0                      │
         │ language       │ python 1.2.3                                                │
@@ -2296,6 +2369,7 @@ async def test_info_pretty_links():
         ╰────────────────┴─────────────────────────────────────────────────────────────╯
                                        Ran on Linux 4.5.6                               \n\n
         """,  # noqa: E501
+        ),
     )
     assert stderr == ""
 
@@ -2316,11 +2390,21 @@ async def test_info_unsuccessful_start(succeed_immediately):
 
 @pytest.mark.asyncio
 async def test_filter_implementations_no_arguments():
-    output, exit_code = pexpect.runu(
-        sys.executable,
-        args=["-m", "bowtie", "filter-implementations"],
-        withexitstatus=True,
-    )
+    if sys.platform == "win32":
+        result = subprocess.run(  # noqa: ASYNC221
+            [sys.executable, "-m", "bowtie", "filter-implementations"],
+            capture_output=True,
+            check=False,
+            env=WIDE_TERMINAL_ENV,
+        )
+        output = result.stdout.decode("utf-8").replace("\r\n", "\n")
+        exit_code = result.returncode
+    else:
+        output, exit_code = pexpect.runu(
+            sys.executable,
+            args=["-m", "bowtie", "filter-implementations"],
+            withexitstatus=True,
+        )
     expected = sorted(Implementation.known())
     assert (sorted(output.splitlines()), exit_code) == (expected, 0)
 
@@ -2379,29 +2463,63 @@ async def test_filter_implementations_both_language_and_dialect():
 
 @pytest.mark.asyncio
 async def test_filter_implementations_direct():
-    output, exit_code = pexpect.runu(
-        sys.executable,
-        args=["-m", "bowtie", "filter-implementations", "--direct"],
-        withexitstatus=True,
-    )
+    if sys.platform == "win32":
+        result = subprocess.run(  # noqa: ASYNC221
+            [
+                sys.executable,
+                "-m",
+                "bowtie",
+                "filter-implementations",
+                "--direct",
+            ],
+            capture_output=True,
+            check=False,
+            env=WIDE_TERMINAL_ENV,
+        )
+        output = result.stdout.decode("utf-8").replace("\r\n", "\n")
+        exit_code = result.returncode
+    else:
+        output, exit_code = pexpect.runu(
+            sys.executable,
+            args=["-m", "bowtie", "filter-implementations", "--direct"],
+            withexitstatus=True,
+        )
     expected = sorted(KNOWN_DIRECT)
     assert (sorted(output.splitlines()), exit_code) == (expected, 0)
 
 
 @pytest.mark.asyncio
 async def test_filter_implementations_direct_by_language():
-    output, exit_code = pexpect.runu(
-        sys.executable,
-        args=[
-            "-m",
-            "bowtie",
-            "filter-implementations",
-            "--direct",
-            "--language",
-            "python",
-        ],
-        withexitstatus=True,
-    )
+    if sys.platform == "win32":
+        result = subprocess.run(  # noqa: ASYNC221
+            [
+                sys.executable,
+                "-m",
+                "bowtie",
+                "filter-implementations",
+                "--direct",
+                "--language",
+                "python",
+            ],
+            capture_output=True,
+            check=False,
+            env=WIDE_TERMINAL_ENV,
+        )
+        output = result.stdout.decode("utf-8").replace("\r\n", "\n")
+        exit_code = result.returncode
+    else:
+        output, exit_code = pexpect.runu(
+            sys.executable,
+            args=[
+                "-m",
+                "bowtie",
+                "filter-implementations",
+                "--direct",
+                "--language",
+                "python",
+            ],
+            withexitstatus=True,
+        )
     expected = sorted(d for d in KNOWN_DIRECT if d.startswith("python-"))
     assert (sorted(output.splitlines()), exit_code) == (expected, 0)
 

@@ -221,6 +221,23 @@ def has_bugs_by_versions(version: str):
     return fake(name="buggy")(null)()
 
 
+@fake()
+def crashes_on_validate(dialect: Dialect):
+    """
+    Raises an exception when trying to validate any instance.
+
+    Used to test that direct connectors don't crash the process.
+    """
+
+    def compile(schema, registry):
+        def validate(instance):
+            raise ValueError("BOOM!")
+
+        return validate
+
+    return compile
+
+
 def naively_correct(schema, registry):
     """
     The naivest implementation which tries to pass a smoke test.

@@ -2,6 +2,9 @@
 # It retests all of Bowtie's supported implementations for all their multiple versions listed in `matrix-versions.json` file if one exists for them.
 name: Collect New Versioned Test Results
 
+permissions:
+  contents: read
+
 on:
   schedule:
     # every Sunday at 23:30 UTC (45 minutes before a report workflow is scheduled)
@@ -13,15 +16,22 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: versioned-reports
+  cancel-in-progress: true
+
 env:
   GH_ORGANIZATION: ${{ github.repository_owner }}
 jobs:
   list-implementations:
+    name: List Implementations
     runs-on: ubuntu-latest
     outputs:
       implementations: ${{ steps.implementations-matrix.outputs.implementations }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
@@ -30,8 +40,9 @@ jobs:
         id: implementations-matrix
         env:
           GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
+          INPUTS_IMPLEMENTATION: ${{ inputs.implementation }}
         run: |
-          implementation=${{ inputs.implementation }}
+          implementation=${INPUTS_IMPLEMENTATION}
           IMPLEMENTATIONS=$(bowtie filter-implementations --format json)
           MATRIX="[]"
           if [ -n "$implementation" ]; then
@@ -67,6 +78,7 @@ jobs:
           echo "implementations=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   regenerate-versioned-reports:
+    name: Generate Versioned Reports
     needs: list-implementations
     runs-on: ubuntu-latest
     strategy:
@@ -75,27 +87,33 @@ jobs:
         implementation: ${{ fromJson(needs.list-implementations.outputs.implementations) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
 
         # just so that we don't get rate limited (429)
       - name: Checkout JSON Schema Test Suite
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: json-schema-org/JSON-Schema-Test-Suite
           path: json-schema-test-suite
+          persist-credentials: false
 
       - name: Make a ${{ matrix.implementation }} directory to keep all its version reports
-        run: mkdir ${{ matrix.implementation }}
+        run: mkdir ${MATRIX_IMPLEMENTATION}
+        env:
+          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
 
       - name: Generate New Versioned Reports for all Supported Dialects of ${{ matrix.implementation }}
         id: generate-new-versioned-report
         env:
           GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
+          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
         run: |
-          impl=${{ matrix.implementation }}
+          impl=${MATRIX_IMPLEMENTATION}
           MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
           if [ ! -f $MATRIX_VERSIONS_FILE ]; then
             echo "Dump versions for remote test harness $impl"
@@ -130,7 +148,7 @@ jobs:
       #        are *test* failures
       - name: Check that all Generated Versioned Reports of ${{ matrix.implementation }} are Valid
         run: |
-          impl=${{ matrix.implementation }}
+          impl=${MATRIX_IMPLEMENTATION}
           MATRIX_VERSIONS=$(jq -r '.[]' "implementations/$impl/matrix-versions.json")
           for version in $MATRIX_VERSIONS; do
             SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
@@ -141,24 +159,27 @@ jobs:
             fi
           done
         continue-on-error: true
+        env:
+          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.implementation }}
           path: |
             ${{ matrix.implementation }}
 
   combine-all-versioned-reports:
+    name: Combine Versioned Reports
     runs-on: ubuntu-latest
     needs: regenerate-versioned-reports
     steps:
       - name: Download all uploaded artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: implementations
 
       - name: Download latest versioned test reports
-        uses: dawidd6/action-download-artifact@v20
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           workflow: versioned-report.yml
           branch: main
@@ -168,11 +189,13 @@ jobs:
 
       - name: Prepare artifact for upload
         run: |
-          rm -rf "latest-implementations/${{ inputs.implementation }}"
-          cp -r "implementations/${{ inputs.implementation }}" "latest-implementations/"
+          rm -rf "latest-implementations/${INPUTS_IMPLEMENTATION}"
+          cp -r "implementations/${INPUTS_IMPLEMENTATION}" "latest-implementations/"
         if: ${{ inputs.implementation != null }}
+        env:
+          INPUTS_IMPLEMENTATION: ${{ inputs.implementation }}
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: implementations
           path: ${{ inputs.implementation != null && 'latest-implementations' || 'implementations' }}

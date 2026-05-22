@@ -15,6 +15,8 @@ local skipped1 = {
   ['contains with null instance elements'] = 'in a table, a `nil` value means that the key does not exist', -- contains
   ['heterogeneous enum-with-null validation'] = 'in a table, a `nil` value means that the key does not exist', -- enum
   ['items and subitems'] = 'in a table, a `nil` value means that the key does not exist', -- items
+  ['pattern with Unicode property escape requires unicode mode'] = 'unicode / PCRE2', -- pattern
+  ['patternProperties with Unicode property escape'] = 'unicode / PCRE2', -- patternProperties
 }
 
 local skipped2 = setmetatable({

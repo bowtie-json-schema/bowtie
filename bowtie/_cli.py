@@ -88,6 +88,10 @@ class _EX:
 
 EX = _EX()
 
+#: Internal sentinel for _run_one to signal that an implementation was
+#: skipped (e.g. unsupported dialect) rather than failing to start.
+_SKIP = -1
+
 STDOUT = console.Console()
 STDERR = console.Console(stderr=True)
 
@@ -2674,7 +2678,7 @@ async def _run_one(
             return EX.CONFIG, None
         except UnsupportedDialect as error:
             STDERR.print(error)
-            return EX.CONFIG, None
+            return _SKIP, None
 
         metadata = _report.RunMetadata(
             implementations={connectable_id: implementation.info},
@@ -2755,11 +2759,16 @@ async def _run_parallel(
     reports: list[_report.Report] = []
     no_cases = False
     for code, report in results:
-        exit_code |= code
         if report is not None:
+            exit_code |= code
             reports.append(report)
+        elif code == _SKIP:
+            pass
         elif code == EX.NOINPUT:
+            exit_code |= code
             no_cases = True
+        else:
+            exit_code |= code
 
     if not reports:
         if no_cases:

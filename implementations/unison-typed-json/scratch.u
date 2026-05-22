@@ -1,0 +1,150 @@
+type bowtie.Case
+  = Case Text RootSchema Registry [TestInstance]
+
+type bowtie.Cmd
+  = RunCmd Json Case
+  | StartCmd
+  | StopCmd
+  | DialectCmd
+
+type bowtie.Registry
+  = Registry (Map UriBase Json)
+
+type bowtie.TestInstance
+  = TestInstance Text Json
+
+bowtie.CaseDecoder : '{Decoder} Case
+bowtie.CaseDecoder = do
+  use Decoder <|>
+  use object at!
+  description = at! "description" Decoder.text
+  d = RootSchemaObjectDecoder <|> (SchemaDecoder |> Decoder.map rootSchema)
+  schema = at! "schema" d
+  registry = atOr "registry" (do Registry.empty) RegistryDecoder ()
+  tests = at! "tests" (Decoder.array CaseTestDecoder)
+  Case description schema registry tests
+
+bowtie.CaseTestDecoder : '{Decoder} TestInstance
+bowtie.CaseTestDecoder = do
+  use object at!
+  description = at! "description" Decoder.text
+  instance = at! "instance" Decoder.value
+  TestInstance description instance
+
+bowtie.CmdDecoder : '{Decoder} Cmd
+bowtie.CmdDecoder = do
+  cmd = object.at! "cmd" Decoder.text
+  match cmd with
+    "start"   -> StartCmd
+    "stop"    -> StopCmd
+    "dialect" -> DialectCmd
+    "run"     -> RunCmdDecoder()
+    _         -> Decoder.fail "unknown cmd"
+
+bowtie.handleCmd : Cmd -> Optional Json
+bowtie.handleCmd = cases
+  StartCmd -> Some responseStart
+  StopCmd -> None
+  DialectCmd -> Some responseKO
+  RunCmd seq case ->
+    (catch do
+      results = runTestCase case
+      Json.object [("seq", seq), ("results", results)])
+      |> Either.fold toErrored Function.id
+      |> Some
+
+bowtie.main : '{IO, Exception} ()
+bowtie.main = do
+  use Json toText
+  setBuffering stdIn LineBuffering
+  setBuffering stdOut NoBuffering
+  toDefaultValue! () do
+    Boolean.until (do isEOF stdIn) do
+      line = readLine()
+      boom = catch do
+        cmd = Decoder.run CmdDecoder line
+        response = handleCmd cmd
+        match response with
+          Some response -> printLine (toText response)
+          None          -> abort
+      match boom with
+        Left f -> toErrored f |> toText |> printLine
+        _      -> ()
+
+bowtie.Registry.empty : Registry
+bowtie.Registry.empty = Registry Map.empty
+
+bowtie.RegistryDecoder : '{Decoder} Registry
+bowtie.RegistryDecoder =
+  do
+    Decoder.object Decoder.value ()
+      |> Map.mapKeys (UriBase.fromText >> Optional.getOrBug "boom1")
+      |> Registry
+
+bowtie.responseKO : Json
+bowtie.responseKO = Json.object [("ok", Json.boolean false)]
+
+bowtie.responseOk : Json
+bowtie.responseOk = Json.object [("ok", Json.boolean true)]
+
+bowtie.responseStart : Json
+bowtie.responseStart =
+  use Json object text
+  object
+    [ ("version", Json.nat 1)
+    , ( "implementation"
+      , object
+          [ ("language", text "unison")
+          , ("name", text "typed-json")
+          , ("version", text VERSION)
+          , ( "homepage"
+            , text "https://share.unison-lang.org/@frawa/typed-json"
+            )
+          , ( "issues"
+            , text "https://share.unison-lang.org/@frawa/typed-json/tickets"
+            )
+          , ("source", text "https://share.unison-lang.org/@frawa/typed-json")
+          , ( "dialects"
+            , Json.array [text "https://json-schema.org/draft/2020-12/schema"]
+            )
+          ]
+      )
+    ]
+
+bowtie.RunCmdDecoder : '{Decoder} Cmd
+bowtie.RunCmdDecoder = do
+  use object at!
+  seq = at! "seq" Decoder.value
+  case = at! "case" CaseDecoder
+  RunCmd seq case
+
+bowtie.runTestCase : Case ->{Exception} Json
+bowtie.runTestCase = cases
+  Case _ schema registry instances ->
+    withRegistry registry do
+      withMetaSchemas do
+        withRootSchema schema do
+          use List map
+          validate instance =
+            validateInitial validFlag initial instance |> oFlag
+          instances
+            |> (map cases TestInstance _ i -> i)
+            |> map validate
+            |> map (flag -> Json.object [("valid", Json.boolean flag)])
+            |> Json.array
+
+bowtie.toErrored : Failure -> Json
+bowtie.toErrored = cases
+  Failure _ message _ ->
+    Json.object
+      [ ("errored", Json.boolean true)
+      , ("context", Json.object [("message", Json.text message)])
+      ]
+
+bowtie.withRegistry : Registry -> '{g, Remotes} a ->{g} a
+bowtie.withRegistry registry thunk =
+  (Registry map) = registry
+  go = cases
+    { v }                 -> v
+    { request base -> k } -> handle k (Map.get base map) with go
+  handle thunk() with go

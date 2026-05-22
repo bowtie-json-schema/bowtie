@@ -10,37 +10,46 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+concurrency:
+  group: benchmarks
+  cancel-in-progress: true
 
 jobs:
   dialects:
+    name: Collect Dialects
     runs-on: ubuntu-latest
     outputs:
       dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Collect supported dialects
         id: dialects-matrix
         run: |
           printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
 
   benchmark_files:
+    name: Collect Benchmark Files
     needs: dialects
     runs-on: ubuntu-latest
     outputs:
       dialect_benchmarks: ${{ steps.benchmarks.outputs.dialect_benchmarks }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
 
       - name: Collect Benchmark Files
         id: benchmarks
+        env:
+          DIALECTS_JSON: ${{ needs.dialects.outputs.dialects }}
         run: |
-          dialects='${{ needs.dialects.outputs.dialects }}'
-          dialects=$(echo $dialects | jq -r '.[]')
+          dialects=$(echo "${DIALECTS_JSON}" | jq -r '.[]')
           results=()
 
           idx=0
@@ -60,28 +69,36 @@ jobs:
           echo "dialect_benchmarks=$final_json" >> $GITHUB_OUTPUT
 
   run_benchmarks:
+    name: Run Benchmarks
     needs: benchmark_files
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.benchmark_files.outputs.dialect_benchmarks) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
 
       - name: Generate Benchmark Report
+        env:
+          MATRIX_BENCHMARK: ${{ matrix.benchmark }}
+          MATRIX_DIALECT: ${{ matrix.dialect }}
+          MATRIX_ID: ${{ matrix.id }}
         run: |
-          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b ${{ matrix.benchmark }} -D ${{ matrix.dialect }} -q > benchmark-file-${{ matrix.id }}.json
+          bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b "${MATRIX_BENCHMARK}" -D "${MATRIX_DIALECT}" -q > "benchmark-file-${MATRIX_ID}.json"
 
       - name: Upload Benchmark file as artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: benchmark-file-${{ matrix.dialect }}-${{ matrix.id }}
           path: benchmark-file-${{ matrix.id }}.json
 
   merge_benchmarks_into_single_report:
+    name: Merge Benchmark Reports
     needs:
       - dialects
       - run_benchmarks
@@ -93,17 +110,19 @@ jobs:
         dialect: ${{ fromJson(needs.dialects.outputs.dialects) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Download Benchmark Reports for a dialect
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: benchmark-file-${{ matrix.dialect }}-*
           path: benchmarks-${{ matrix.dialect }}/
           merge-multiple: true
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           enable-cache: true
 
@@ -112,50 +131,63 @@ jobs:
           uv pip install --system .
 
       - name: Merge Benchmark Reports for a dialect
+        env:
+          MATRIX_DIALECT: ${{ matrix.dialect }}
         run: |
           python - <<EOF
+          import os
           from pathlib import Path
           from bowtie._benchmarks import combine_benchmark_reports_to_serialized as combine
 
-          Path("${{ matrix.dialect }}.json").write_text(
+          dialect = os.environ["MATRIX_DIALECT"]
+          Path(f"{dialect}.json").write_text(
               combine(
-                  Path("benchmarks-${{ matrix.dialect }}").iterdir()
+                  Path(f"benchmarks-{dialect}").iterdir()
               )
           )
 
           EOF
 
       - name: Upload final Benchmark Report for dialect
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: benchmark-report-${{ matrix.dialect }}
           path: ${{ matrix.dialect }}.json
 
   upload_benchmark_artifact:
+    name: Upload Benchmark Artifact
     needs:
       - merge_benchmarks_into_single_report
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Create Benchmarks folder
         run: mkdir benchmarks
 
       - name: Include New Benchmark Reports
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: benchmark-report-*
           path: benchmarks/
           merge-multiple: true
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload benchmarks
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: benchmarks
           path: benchmarks
 
   regenerate-reports:
+    name: Regenerate Reports
     needs: upload_benchmark_artifact
     uses: ./.github/workflows/report.yml
+    permissions:
+      contents: read
+      pages: write # to deploy to GitHub Pages
+      id-token: write # for GitHub Pages OIDC token verification
     with:
       report_benchmark_artifact_in_scope: true

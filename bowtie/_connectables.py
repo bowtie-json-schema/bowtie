@@ -18,7 +18,7 @@ from bowtie._direct_connectable import Direct
 from bowtie.exceptions import CannotConnect
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncGenerator
     from contextlib import AbstractAsyncContextManager
 
     from bowtie._core import Connection
@@ -140,7 +140,7 @@ class Connectable:
         return self._connector.kind
 
     @asynccontextmanager
-    async def connect(self, **kwargs: Any) -> AsyncIterator[Implementation]:
+    async def connect(self, **kwargs: Any) -> AsyncGenerator[Implementation]:
         async with (
             self._connector.connect() as connection,
             Implementation.start(

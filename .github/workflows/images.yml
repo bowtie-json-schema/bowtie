@@ -34,22 +34,28 @@ on:
 env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
+permissions:
+  contents: read
+
 concurrency:
   group: images-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   list:
+    name: List Implementations
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.images-matrix.outputs.images }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Calculate which images to build
         id: images-matrix
@@ -58,9 +64,11 @@ jobs:
           # The token is required because bowtie is built during the step,
           # and we need access to packages to collect known implementations
           BUILD_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUTS_IMPLEMENTATION: ${{ inputs.implementation }}
+          INPUTS_VERSION: ${{ inputs.version }}
         run: |
-          implementation=${{ inputs.implementation }}
-          version=${{ inputs.version }}
+          implementation=${INPUTS_IMPLEMENTATION}
+          version=${INPUTS_VERSION}
           implementations_dir=implementations
           matrix_versions_file="$implementations_dir/$implementation/matrix-versions.json"
           IMPLEMENTATIONS=$(uvx --from . --python 3.14 bowtie filter-implementations --format json)
@@ -108,6 +116,7 @@ jobs:
           echo "images=$(echo $MATRIX | jq -c .)" >> $GITHUB_OUTPUT
 
   build:
+    name: Build and Push Image
     needs: list
 
     # Particularly for .NET (which we special case below),
@@ -118,10 +127,11 @@ jobs:
     runs-on: ubuntu-24.04
 
     permissions:
-      id-token: write
-      contents: read
-      attestations: write
-      packages: write
+      id-token: write # needed for build provenance attestation
+      contents: read # needed for actions/checkout
+      attestations: write # needed for build provenance attestation
+      packages: write # needed for pushing to ghcr.io
+      artifact-metadata: write # needed for build provenance attestation
 
     strategy:
       fail-fast: false
@@ -129,9 +139,11 @@ jobs:
         include: ${{ fromJson(needs.list.outputs.images) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: changes
         with:
           filters: |
@@ -156,7 +168,7 @@ jobs:
 
       - name: Build
         id: build_image
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
           context: implementations/${{ matrix.image }}
           containerfiles: |
@@ -181,14 +193,14 @@ jobs:
           echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Smoke Test
         run: |
-          uvx --from . --python 3.14 bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format json
-          uvx --from . --python 3.14 bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}" --format markdown >> $GITHUB_STEP_SUMMARY
+          uvx --from . --python 3.14 bowtie smoke -i "localhost/${STEPS_BUILD_IMAGE_OUTPUTS_IMAGE_WITH_TAG}" --format json
+          uvx --from . --python 3.14 bowtie smoke -i "localhost/${STEPS_BUILD_IMAGE_OUTPUTS_IMAGE_WITH_TAG}" --format markdown >> $GITHUB_STEP_SUMMARY
         # We special case python-fastjsonschema, which unfortunately does not
         # pass the smoke test, as it has multiple issues handling simple
         # schemas using the `not` keyword.
@@ -200,9 +212,11 @@ jobs:
             || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
             || (inputs.implementation)
           )
+        env:
+          STEPS_BUILD_IMAGE_OUTPUTS_IMAGE_WITH_TAG: ${{ steps.build_image.outputs.image-with-tag }}
 
       - name: Log in to ghcr.io
-        uses: redhat-actions/podman-login@v1
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
         with:
           username: ${{ github.actor }}
           password: ${{ github.token }}
@@ -215,7 +229,7 @@ jobs:
 
       - name: Publish
         id: push
-        uses: redhat-actions/push-to-registry@v2
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         with:
           image: ${{ steps.build_image.outputs.image }}
           tags: ${{ steps.build_image.outputs.tags }}
@@ -227,7 +241,7 @@ jobs:
           )
 
       - name: Generate attestation for images
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}

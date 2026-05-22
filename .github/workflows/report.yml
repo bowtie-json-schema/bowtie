@@ -19,44 +19,77 @@ on:
 
 permissions:
   contents: read
+  # These are needed at workflow level because reusable workflow permissions
+  # are intersected with the caller's — job-level permissions alone aren't enough.
+  pages: write # zizmor: ignore[excessive-permissions]
+  id-token: write # zizmor: ignore[excessive-permissions]
 
 concurrency:
-  group: "pages"
+  group: "report"
   cancel-in-progress: true
 
 jobs:
-  dialects:
+  matrix:
+    name: Collect Matrix Parameters
     runs-on: ubuntu-latest
     outputs:
+      implementations: ${{ steps.implementations-matrix.outputs.implementations }}
       dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
-      - uses: actions/checkout@v6
-      - name: Collect supported dialects
-        id: dialects-matrix
-        run: |
-          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
-
-  regenerate-reports:
-    needs: dialects
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ${{ fromJson(needs.dialects.outputs.dialects) }}
-
-    steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate a New Report
+      - name: Collect supported implementations
+        id: implementations-matrix
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} >${{ matrix.version }}.json
+          printf 'implementations=%s\n' "$(bowtie filter-implementations --format json | jq -c '.')" >> $GITHUB_OUTPUT
+
+      - name: Collect supported dialects
+        id: dialects-matrix
+        run: |
+          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+
+  regenerate-reports:
+    name: Generate Per-Implementation Reports
+    needs: matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: ${{ fromJson(needs.matrix.outputs.implementations) }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Install Bowtie
+        uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+
+      - name: Generate Reports
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
+          DIALECTS: ${{ join(fromJson(needs.matrix.outputs.dialects), ' ') }}
+        run: |
+          mkdir reports
+          for dialect in ${DIALECTS}; do
+            bowtie suite -i "${MATRIX_IMPLEMENTATION}" "https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${dialect}" > "reports/${dialect}.json" || true
+            # Unsupported dialects produce no output, which is fine.
+            if [ ! -s "reports/${dialect}.json" ]; then
+              rm -f "reports/${dialect}.json"
+            fi
+          done
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
@@ -64,22 +97,80 @@ jobs:
         run: docker images
         if: always()
 
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: impl-report-${{ matrix.implementation }}
+          path: reports/
+          if-no-files-found: ignore
+
+  combine-reports:
+    name: Combine Reports
+    if: ${{ !cancelled() }}
+    needs:
+      - matrix
+      - regenerate-reports
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dialect: ${{ fromJson(needs.matrix.outputs.dialects) }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Install Bowtie
+        uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+
+      - name: Download All Implementation Reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: impl-report-*
+          path: reports/
+
+      - name: Combine Reports
+        run: |
+          dialect=${MATRIX_DIALECT}
+          # Collect all per-implementation reports for this dialect
+          reports=()
+          for dir in reports/impl-report-*/; do
+            if [ -f "${dir}${dialect}.json" ]; then
+              reports+=("${dir}${dialect}.json")
+            fi
+          done
+          if [ ${#reports[@]} -gt 0 ]; then
+            bowtie combine "${reports[@]}" > "${dialect}.json"
+          else
+            echo "::warning::No implementation reports found for ${dialect}"
+            exit 1
+          fi
+        env:
+          MATRIX_DIALECT: ${{ matrix.dialect }}
+
         # FIXME: We ignore for now as now this exits unsuccessfully if there
         #        are *test* failures
       - name: Check Report is Valid
         run: |
-          bowtie summary --show failures ${{ matrix.version }}.json --format markdown >> $GITHUB_STEP_SUMMARY
+          bowtie summary --show failures ${MATRIX_DIALECT}.json --format markdown >> $GITHUB_STEP_SUMMARY
         continue-on-error: true
+        env:
+          MATRIX_DIALECT: ${{ matrix.dialect }}
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: report-${{ matrix.version }}
-          path: ${{ matrix.version }}.json
+          name: report-${{ matrix.dialect }}
+          path: ${{ matrix.dialect }}.json
 
   generate-implementation-metadata:
+    name: Generate Implementation Metadata
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install Bowtie
         uses: ./
@@ -89,7 +180,7 @@ jobs:
       - name: Regenerate data needed by the UI
         run: |
           bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: implementations
           path: implementations.json
@@ -131,19 +222,23 @@ jobs:
           VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
           echo "$VALIDATION" | bowtie summary --show failures --format markdown >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: api
           path: api
 
   site:
+    name: Assemble Site
+    if: ${{ !cancelled() }}
     needs:
-      - regenerate-reports
+      - combine-reports
       - generate-implementation-metadata
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Install Bowtie
         uses: ./
         with:
@@ -153,14 +248,14 @@ jobs:
         run: mkdir site
 
       - name: Include New Reports
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: report-*
           path: site/
           merge-multiple: true
 
       - name: Include Benchmark Report from local artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         if: inputs.report_benchmark_artifact_in_scope == true
         with:
           name: benchmarks
@@ -169,7 +264,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest Benchmark Report
         if: inputs.report_benchmark_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@v20
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           workflow: benchmark.yml
           branch: main
@@ -191,12 +286,12 @@ jobs:
           curl -O https://bowtie.report/benchmarks/draft2020-12.json
 
       - name: Include our UI data
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: implementations
           path: site/
       - name: Include our public API data
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: api
           path: site/api
@@ -204,15 +299,17 @@ jobs:
       - name: Generate Badges
         run: bowtie badges
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: site
           path: site
 
   redeploy-frontend:
+    if: ${{ !cancelled() && needs.site.result == 'success' }}
     permissions:
-      pages: write
-      id-token: write
+      contents: read # for actions/checkout in ui.yml
+      pages: write # to deploy to GitHub Pages
+      id-token: write # to verify the deployment originates from this workflow
     needs: site
     uses: ./.github/workflows/ui.yml
     with:

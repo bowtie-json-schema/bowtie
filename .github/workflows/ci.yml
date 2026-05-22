@@ -12,21 +12,27 @@ on:
     - cron: "12 5 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   list:
+    name: List Nox Sessions
     runs-on: ubuntu-latest
     outputs:
       noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
     steps:
-      - uses: actions/checkout@v6
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          enable-cache: true
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: false
       - id: noxenvs-matrix
         run: |
           echo >>$GITHUB_OUTPUT noxenvs=$(
@@ -34,6 +40,7 @@ jobs:
           )
 
   ci:
+    name: Run CI
     needs: list
     runs-on: ubuntu-latest
 
@@ -43,7 +50,9 @@ jobs:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
@@ -53,12 +62,13 @@ jobs:
         if: runner.os == 'macOS'
 
       - name: Install Node
-        uses: actions/setup-node@v6
+        # setup-node does not enable caching unless `cache` is explicitly set
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6 # zizmor: ignore[cache-poisoning]
         with:
           node-version-file: frontend/package.json
         if: startsWith(matrix.noxenv, 'ui')
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           package_json_file: frontend/package.json
           run_install: false
@@ -71,12 +81,12 @@ jobs:
         if: matrix.noxenv == 'ui(tests)'
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.14"
         if: startsWith(matrix.noxenv, 'audit')
@@ -84,10 +94,11 @@ jobs:
       - name: Run nox
         env:
           BUILD_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uvx nox -s "${{ matrix.noxenv }}"
+          MATRIX_NOXENV: ${{ matrix.noxenv }}
+        run: uvx nox -s "${MATRIX_NOXENV}"
 
       - name: Upload Playwright Report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report
           path: frontend/test-results
@@ -95,15 +106,18 @@ jobs:
         if: matrix.noxenv == 'ui(tests)'
 
   containerless:
+    name: Run Containerless Tests
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Ensure containers don't work
         run: sudo apt-get purge docker podman
@@ -114,30 +128,34 @@ jobs:
         run: uvx nox -s tests-3.14 -- -m 'not containers'
 
   coverage:
+    name: Run Coverage
     runs-on: ubuntu-latest
 
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Run nox
         run: uvx nox -s tests-3.14 -- coverage github
 
   automerge:
+    name: Auto-merge Dependabot PRs
     needs: ci
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
 
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # to merge pull requests
+      pull-requests: write # to approve and trigger auto-merge
 
     steps:
       - name: Automatically merge allowed PRs
@@ -147,6 +165,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   packaging:
+    name: Build and Publish Package
     needs: ci
     runs-on: ubuntu-latest
 
@@ -158,19 +177,21 @@ jobs:
       url: https://pypi.org/p/bowtie-json-schema
 
     permissions:
-      contents: write
-      id-token: write
-      attestations: write
+      contents: write # to create GitHub releases
+      id-token: write # to authenticate with PyPI via OIDC
+      attestations: write # to generate build provenance attestations
+      artifact-metadata: write # to generate build provenance attestations
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          enable-cache: true
+          enable-cache: false
 
       - name: Build our distributions
         env:
@@ -193,13 +214,13 @@ jobs:
 
       - name: Generate attestation for wheels
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1
         with:
           subject-path: "dist/*.whl"
 
       - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
       - name: Create a Release
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
@@ -212,6 +233,10 @@ jobs:
 
   report:
     needs: packaging
+    permissions:
+      contents: read
+      pages: write # to deploy to GitHub Pages via report.yml
+      id-token: write # to verify the deployment originates from this repo
     uses: ./.github/workflows/report.yml
     with:
       bowtie-version: ${{ needs.packaging.outputs.version }}

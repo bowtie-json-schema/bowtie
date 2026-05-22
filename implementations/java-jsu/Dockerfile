@@ -22,7 +22,7 @@ RUN if [ "$JSU" ] ; then jsu="git+https://github.com/zx80/json-schema-utils@$JSU
 
 # java-specific setup
 RUN apk add openjdk21 maven
-RUN cd /usr/lib/python3.*/site-packages/json_model/runtime/java && mvn install
+RUN cd $(jsu-compile --runtime)/java && mvn install
 RUN echo -n "export CLASSPATH=/usr/src/myapp/work:" > .env
 RUN find / -type f -name '*.jar' -print | \
     egrep "json-model|getopt|gson|jakarta|johnzon|jackson" | \

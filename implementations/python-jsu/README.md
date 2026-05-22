@@ -13,7 +13,7 @@ or plain bugs.
 ## Manual Testing
 
 ```sh
-JSU_CONTAINER=docker.io/zx80/bowtie-jsu
+export JSU_CONTAINER=docker.io/zx80/bowtie-jsu
 docker build --no-cache -t $JSU_CONTAINER -f Dockerfile .
 docker build --no-cache --build-arg JMC=dev --build-arg JSU=dev -t $JSU_CONTAINER -f Dockerfile .
 docker image ls $JSU_CONTAINER
@@ -25,4 +25,13 @@ for version in 7 6 4 3 2019 2020 ; do
   bowtie suite -i $JSU_CONTAINER $version > suite_$version.jsonl
   bowtie summary -s failures suite_$version.jsonl
 done
+```
+
+## Example Protocol Input
+
+For direct harness test.
+
+```jsonl
+{"cmd":"start","version":1}
+{"cmd":"run","seq":1,"case":{"description":"null schema","schema":{"type":"null"},"tests":[{"instance":null},{"instance":true},{"instance":42}]}}
 ```
