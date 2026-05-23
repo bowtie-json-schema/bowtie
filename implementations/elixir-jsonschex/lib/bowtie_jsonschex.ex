@@ -123,9 +123,7 @@ defmodule BowtieJSONSchex do
   defp build_schema(raw_schema, registry, state) do
     loader = build_loader(registry)
 
-    opts =
-      [external_loader: loader]
-      |> maybe_put_default_dialect(state)
+    opts = maybe_put_default_dialect([loader: loader], state)
 
     case JSONSchex.compile(raw_schema, opts) do
       {:ok, schema} -> schema
