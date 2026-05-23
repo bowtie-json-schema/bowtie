@@ -32,6 +32,7 @@ from rich.progress import (
     TextColumn,
     TimeElapsedColumn,
 )
+from rich.prompt import Prompt
 from rich.table import Column, Table
 from rich.text import Text
 from rich_click.utils import CommandGroupDict, OptionGroupDict
@@ -45,6 +46,7 @@ from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
+    DialectRunner,
     Example,
     Implementation,
     Test,
@@ -52,6 +54,7 @@ from bowtie._core import (
     convert_table_to_markdown,
 )
 from bowtie._direct_connectable import Direct
+from bowtie._tui import TuiSession
 from bowtie.exceptions import (
     CannotConnect,
     DialectError,
@@ -125,7 +128,7 @@ _COMMAND_GROUPS = {
     "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
-            commands=["validate", "suite", "summary", "info"],
+            commands=["tui", "validate", "suite", "summary", "info"],
         ),
         CommandGroupDict(
             name="Advanced Usage",
@@ -1376,6 +1379,44 @@ def run(
     return asyncio.run(
         _run_parallel(**kwargs, cases=cases, dialect=dialect, jobs=jobs),
     )
+
+
+@implementation_subcommand()
+@dialect_option()
+async def tui(start: Any, dialect: Dialect, **kwargs: Any):
+    """
+    Interactively evaluate schemas against instances across implementations.
+
+    Starts a REPL that keeps implementations running between validations,
+    prompting for a JSON Schema and an instance on each iteration
+    """
+    runners: list[tuple[str, str, DialectRunner]] = []
+    async for impl_id, implementation in start():
+        try:
+            runner = await implementation.start_speaking(dialect)
+        except UnsupportedDialect as error:
+            STDERR.print(error)
+            continue
+        runners.append(
+            (
+                impl_id,
+                implementation.info.version or "?",
+                runner,
+            ),
+        )
+
+    if not runners:
+        STDERR.print(
+            "[bold red]No implementation started successfully![/]",
+        )
+        return EX.CONFIG
+    session = TuiSession(
+        runners=runners,
+        dialect=dialect,
+        console=STDOUT,
+        prompt=Prompt.ask,
+    )
+    await session.repl()
 
 
 @subcommand
