@@ -26,7 +26,7 @@ defmodule BowtieJSONSchex.MixProject do
 
   defp deps do
     [
-      {:jsonschex, "~> 0.5"},
+      {:jsonschex, "~> 0.7"},
       {:idna, "~> 7.1"},
       {:decimal, "~> 3.0"}
     ]
