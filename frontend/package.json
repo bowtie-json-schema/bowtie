@@ -22,24 +22,7 @@
   "engines": {
     "node": ">=21.0.0"
   },
-  "packageManager": "pnpm@10.22.0",
-  "pnpm": {
-    "auditConfig": {
-      "ignoreGhsas": [
-        "GHSA-3ppc-4f35-3m26",
-        "GHSA-2g4f-4pwh-qvx6"
-      ],
-      "ignoreCves": [
-        "GHSA-3ppc-4f35-3m26"
-      ]
-    },
-    "overrides": {
-      "fast-uri": ">=3.1.2"
-    },
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  },
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "start": "vite --no-clearScreen",
     "build": "tsc && vite build",
