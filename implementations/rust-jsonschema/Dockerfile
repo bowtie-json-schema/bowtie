@@ -1,4 +1,4 @@
-FROM rust:1.90-slim AS builder
+FROM rust:1.95-slim AS builder
 
 RUN ARCH=$(dpkg --print-architecture) && \
     case "$ARCH" in \

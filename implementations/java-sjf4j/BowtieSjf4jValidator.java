@@ -15,8 +15,11 @@ import java.util.jar.Manifest;
 import org.sjf4j.JsonObject;
 import org.sjf4j.Sjf4j;
 import org.sjf4j.annotation.node.NodeProperty;
+import org.sjf4j.node.Nodes;
 import org.sjf4j.schema.JsonSchema;
-import org.sjf4j.schema.SchemaStore;
+import org.sjf4j.schema.SchemaDialect;
+import org.sjf4j.schema.SchemaPlan;
+import org.sjf4j.schema.SchemaRegistry;
 
 public class BowtieSjf4jValidator {
 
@@ -27,7 +30,9 @@ public class BowtieSjf4jValidator {
   }
 
   private static final List<String> DIALECTS =
-      List.of("https://json-schema.org/draft/2020-12/schema");
+      List.of("https://json-schema.org/draft/2020-12/schema",
+              "https://json-schema.org/draft/2019-09/schema",
+              "http://json-schema.org/draft-07/schema#");
 
   private static final Sjf4j JSONS = Sjf4j.global();
 
@@ -36,6 +41,7 @@ public class BowtieSjf4jValidator {
   private boolean started;
   private final String dialectOkJson =
       JSONS.toJsonString(new DialectResponse(true));
+  private SchemaRegistry registry;
 
   public BowtieSjf4jValidator(PrintStream output) {
     this.output = output;
@@ -58,7 +64,7 @@ public class BowtieSjf4jValidator {
     String cmd = jo.getString("cmd");
     switch (cmd) {
     case "start" -> start(jo);
-    case "dialect" -> dialect();
+    case "dialect" -> dialect(jo);
     case "run" -> runCase(jo);
     case "stop" -> System.exit(0);
     default ->
@@ -76,34 +82,54 @@ public class BowtieSjf4jValidator {
     output.println(startResponseJson);
   }
 
-  private void dialect() {
+  private void dialect(JsonObject jo) {
     ensureStarted();
+
+    String dialect = jo.getString("dialect");
+    switch (dialect) {
+    case "https://json-schema.org/draft/2020-12/schema":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_2020_12);
+      break;
+    case "https://json-schema.org/draft/2019-09/schema":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_2019_09);
+      break;
+    case "https://json-schema.org/draft-07/schema":
+    case "http://json-schema.org/draft-07/schema#":
+      registry = new SchemaRegistry(SchemaDialect.DRAFT_07);
+      break;
+    default:
+      throw new IllegalArgumentException("Unsupported dialect " + dialect);
+    }
     output.println(dialectOkJson);
   }
 
   private void runCase(JsonObject jo) {
     ensureStarted();
+    if (registry == null) {
+      throw new IllegalArgumentException("No dialect configured!");
+    }
 
     try {
       JsonObject tcJo = jo.getJsonObject("case");
 
-      Map<String, Object> registry = tcJo.getMap("registry");
-      SchemaStore store = new SchemaStore();
-      if (registry != null) {
-        for (Map.Entry<String, Object> e : registry.entrySet()) {
-          store.register(URI.create(e.getKey()),
-                         JsonSchema.fromNode(e.getValue()));
+      Map<String, Object> registryMap = tcJo.getMap("registry");
+      if (registryMap != null) {
+        for (Map.Entry<String, Object> e : registryMap.entrySet()) {
+          URI id = URI.create(e.getKey());
+          if (registry.contains(id)) {
+            registry.index(id, JsonSchema.fromNode(e.getValue()));
+          }
         }
       }
 
       JsonSchema schema = JsonSchema.fromNode(tcJo.getNode("schema"));
-      schema.compile(store);
+      SchemaPlan plan = schema.createPlan(registry);
 
       List<Object> tests = tcJo.getList("tests");
       List<TestResult> results = new ArrayList<>(tests.size());
       for (Object t : tests) {
-        Map<?, ?> tmap = (Map<?, ?>) t;
-        results.add(new TestResult(schema.isValid(tmap.get("instance"))));
+        Object instance = Nodes.getInObject(t, "instance");
+        results.add(new TestResult(plan.isValid(instance)));
       }
 
       output.println(

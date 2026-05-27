@@ -33,6 +33,9 @@
         "GHSA-3ppc-4f35-3m26"
       ]
     },
+    "overrides": {
+      "fast-uri": ">=3.1.2"
+    },
     "onlyBuiltDependencies": [
       "esbuild"
     ]
@@ -53,11 +56,11 @@
     "bootstrap": "^5.3.8",
     "dayjs": "^1.11.20",
     "mathjs": "^15.2.0",
-    "react": "^19.2.4",
+    "react": "^19.2.6",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
-    "react-dom": "^19.2.4",
-    "react-router": "^7.14.2",
+    "react-dom": "^19.2.6",
+    "react-router": "^7.15.1",
     "react-syntax-highlighter": "^16.1.1",
     "recharts": "^3.8.1",
     "title-case": "^4.3.2",
@@ -66,22 +69,22 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.59.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.26",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-tsdoc": "^0.5.2",
-    "jiti": "^2.6.1",
+    "jiti": "^2.7.0",
     "jsdom": "^29.1.1",
     "recharts": "3.6.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.1",
-    "vite": "^8.0.10",
+    "typescript-eslint": "^8.59.3",
+    "vite": "^8.0.13",
     "vite-bundle-visualizer": "^1.2.1",
     "vitest": "^4.1.5"
   },

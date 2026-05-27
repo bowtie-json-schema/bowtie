@@ -1,6 +1,6 @@
 ```ucm
 scratch/main> project.create build
-build/main> lib.install @frawa/typed-json/releases/0.9.1
+build/main> lib.install @frawa/typed-json/releases/0.13.0
 build/main> ls lib
 ```
 

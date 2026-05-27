@@ -2,6 +2,6 @@
   "name": "bowtie-ata",
   "version": "1.0.0",
   "dependencies": {
-    "ata-validator": "^0.12.6"
+    "ata-validator": "^0.15.0"
   }
 }

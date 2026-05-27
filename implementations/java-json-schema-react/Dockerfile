@@ -1,12 +1,12 @@
 #Build Jar
-FROM gradle:8.14-jdk21-alpine AS build
+FROM gradle:9.5.1-jdk21-alpine AS build
 WORKDIR /home/gradle/validator
 COPY --chown=gradle build.gradle /home/gradle/validator/build.gradle
 COPY bowtie/JsonSchemaValidator.java /home/gradle/validator/bowtie/JsonSchemaValidator.java
 RUN gradle jar --no-daemon
 
 # Shrink JRE
-FROM eclipse-temurin:21-jdk-alpine as jre_builder
+FROM eclipse-temurin:25-jdk-alpine as jre_builder
 WORKDIR /app
 COPY --from=build /home/gradle/validator/build/libs/*.jar /app/
 RUN jlink \
