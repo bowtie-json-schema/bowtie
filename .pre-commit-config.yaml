@@ -24,7 +24,7 @@ repos:
       - id: zizmor
         args: [--pedantic]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.13"
+    rev: "v0.15.14"
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
@@ -121,7 +121,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2026-05-17-a
+    rev: swift-DEVELOPMENT-SNAPSHOT-2026-05-20-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
