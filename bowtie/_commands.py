@@ -224,12 +224,12 @@ class FlagTestResult:
 
 
 @frozen
-class BasicTestResult:
+class RichTestResult:
     errored = False
     skipped = False
 
     valid: bool
-    details: list[dict[str, Any]] = field(
+    annotations: list[dict[str, Any]] = field(
         factory=list[dict[str, Any]],
     )
 
@@ -245,21 +245,28 @@ class BasicTestResult:
             return self.valid == expecting
 
         actual_annotations: dict[str, dict[str, Any]] = {}
-        for unit in self.details:
+        for unit in self.annotations:
             loc = unit.get("instanceLocation", "")
-            if "annotations" in unit:
-                if loc not in actual_annotations:
-                    actual_annotations[loc] = {}
-                actual_annotations[loc].update(unit["annotations"])
+            kw = unit.get("keyword", "")
+            ann = unit.get("annotation")
+            if loc not in actual_annotations:
+                actual_annotations[loc] = {}
+            kw_loc = unit.get("keywordLocation", "")
+            if kw not in actual_annotations[loc]:
+                actual_annotations[loc][kw] = {}
+            actual_annotations[loc][kw][kw_loc] = ann
 
         for assertion in expecting:
             location = assertion.get("location", "")
             keyword = assertion.get("keyword", "")
             expected_annotation = assertion.get("expected", {})
 
-            actual = actual_annotations.get(location, {}).get(keyword, {})
+            actual = actual_annotations.get(
+                location,
+                {},
+            ).get(keyword, {})
 
-            decoded_expected = {
+            decoded_expected: dict[str, Any] = {
                 urllib.parse.unquote(k): v
                 for k, v in expected_annotation.items()
             }
@@ -281,8 +288,11 @@ class TestResult:
             return ErroredTest(**data_copy)
 
         valid = data_copy.pop("valid")
-        if "details" in data_copy:
-            return BasicTestResult(valid=valid, details=data_copy["details"])
+        if "annotations" in data_copy:
+            return RichTestResult(
+                valid=valid,
+                annotations=data_copy["annotations"],
+            )
         return FlagTestResult(valid=valid)
 
 

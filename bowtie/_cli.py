@@ -2602,7 +2602,7 @@ async def smoke(
 @JOBS
 @click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
-    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any], bool],
     filter: CaseTransform,
     jobs: int,
     **kwargs: Any,
@@ -2633,16 +2633,10 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata = input
+    _cases, dialect, metadata, is_annotations = input
     cases = list(filter(_cases))
 
-    output_format = "flag"
-    if (
-        cases
-        and cases[0].tests
-        and getattr(cases[0].tests[0], "assertions", None) is not None
-    ):
-        output_format = "basic"
+    output_format = "rich" if is_annotations else "flag"
 
     return asyncio.run(
         _run_parallel(
