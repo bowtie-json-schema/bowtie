@@ -26,7 +26,8 @@
           "description": "Whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
           "type": "boolean"
         }
-      }
+      },
+      "not": { "required": ["assertions"] }
     },
     {
       "properties": {
@@ -57,8 +58,9 @@
           }
         }
       },
-      "required": ["assertions"]
+      "required": ["assertions"],
+      "not": { "required": ["valid"] }
     }
   ],
-  "additionalProperties": false
+  "unevaluatedProperties": false
 }
