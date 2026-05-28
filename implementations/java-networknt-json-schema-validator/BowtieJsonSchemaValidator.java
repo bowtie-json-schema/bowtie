@@ -10,7 +10,12 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.jar.Manifest;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.networknt.schema.OutputFormat;
+import com.networknt.schema.output.OutputUnit;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
@@ -148,9 +153,22 @@ public class BowtieJsonSchemaValidator {
               .map(test -> {
                 Schema jsonSchema =
                     schemaRegistry.getSchema(runRequest.testCase().schema());
-                List<Error> errors = jsonSchema.validate(test.instance());
-                boolean isValid = errors == null || errors.isEmpty();
-                return new TestResult(isValid);
+                
+                if ("rich".equals(runRequest.output())) {
+                    OutputUnit outputUnit = jsonSchema.validate(test.instance(), OutputFormat.LIST, executionContext -> {
+                        executionContext.executionConfig(config -> {
+                            config.annotationCollectionEnabled(true);
+                            config.annotationCollectionFilter(keyword -> true);
+                        });
+                    });
+                    List<Map<String, Object>> annotations = new ArrayList<>();
+                    extractAnnotations(outputUnit, annotations);
+                    return new TestResult(outputUnit.isValid(), annotations);
+                } else {
+                    List<Error> errors = jsonSchema.validate(test.instance());
+                    boolean isValid = errors == null || errors.isEmpty();
+                    return new TestResult(isValid);
+                }
               })
               .toList();
       output.println(objectMapper.writeValueAsString(
@@ -170,6 +188,34 @@ public class BowtieJsonSchemaValidator {
     StringWriter stringWriter = new StringWriter();
     e.printStackTrace(new PrintWriter(stringWriter));
     return stringWriter.toString();
+  }
+
+  private void extractAnnotations(OutputUnit unit, List<Map<String, Object>> list) {
+    if (unit.getAnnotations() != null) {
+      for (Map.Entry<String, Object> entry : unit.getAnnotations().entrySet()) {
+        Map<String, Object> ann = new HashMap<>();
+        ann.put("keyword", entry.getKey());
+        ann.put("instanceLocation", unit.getInstanceLocation());
+
+        String sloc = unit.getSchemaLocation();
+        if (sloc == null) sloc = "";
+        if (!sloc.endsWith("/" + entry.getKey())) {
+          if (sloc.endsWith("#")) {
+            sloc += "/" + entry.getKey();
+          } else {
+            sloc += "/" + entry.getKey();
+          }
+        }
+        ann.put("keywordLocation", sloc);
+        ann.put("annotation", entry.getValue());
+        list.add(ann);
+      }
+    }
+    if (unit.getDetails() != null) {
+      for (OutputUnit child : unit.getDetails()) {
+        extractAnnotations(child, list);
+      }
+    }
   }
 
   class CustomResourceLoader implements ResourceLoader {
@@ -211,7 +257,7 @@ record DialectRequest(String dialect) {}
 
 record DialectResponse(boolean ok) {}
 
-record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase, String output) {}
 
 record RunResponse(JsonNode seq, List<TestResult> results) {}
 
@@ -238,4 +284,8 @@ record
     Test(String description, String comment, JsonNode instance, boolean valid) {
 }
 
-record TestResult(boolean valid) {}
+record TestResult(boolean valid, @JsonInclude(JsonInclude.Include.NON_NULL) List<Map<String, Object>> annotations) {
+  public TestResult(boolean valid) {
+    this(valid, null);
+  }
+}
