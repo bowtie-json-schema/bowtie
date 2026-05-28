@@ -215,7 +215,7 @@ public class BowtieJsonSchemaValidator {
     StringBuilder sloc = new StringBuilder(
         unit.getSchemaLocation() == null ? "" : unit.getSchemaLocation());
     if (!sloc.toString().endsWith("/" + key)) {
-      sloc.append("/").append(key);
+      sloc.append('/').append(key);
     }
     ann.put("keywordLocation", sloc.toString());
     ann.put("annotation", value);
