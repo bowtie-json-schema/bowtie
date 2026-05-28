@@ -137,7 +137,10 @@ class ClickParam(click.ParamType):
         else:
             paths, version_path = _glob(path, "*.json"), path
 
-        is_annotations = version_path.name == "annotations" or version_path.parent.name == "annotations"
+        is_annotations = (
+            version_path.name == "annotations"
+            or version_path.parent.name == "annotations"
+        )
 
         remotes = version_path.parent.parent / "remotes"
 
@@ -147,9 +150,12 @@ class ClickParam(click.ParamType):
         dialect = Dialect.by_short_name().get(dialect_name)
         if dialect is None and ctx is not None:
             dialect = ctx.params.get("dialect")
-            
+
         if dialect is None:
-            self.fail(f"{path} does not contain JSON Schema Test Suite cases or could not infer dialect. Please use --dialect.")
+            self.fail(
+                f"{path} does not contain JSON Schema Test Suite cases or "
+                "could not infer dialect. Please use --dialect.",
+            )
 
         if is_annotations:
             cases = annotation_cases_from(paths=paths, dialect=dialect)
@@ -219,7 +225,7 @@ def cases_from(
 def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     if compatibility is None:
         return True
-    
+
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
         if constraint.startswith("<="):
@@ -249,15 +255,14 @@ def annotation_cases_from(
             if not _is_compatible(dialect, compatibility):
                 continue
 
-            tests: list[dict[str, Any]] = []
-            for test in case["tests"]:
-                tests.append(
-                    {
-                        "description": test.get("description", ""),
-                        "instance": test.get("instance", test.get("data", {})),
-                        "assertions": test.get("assertions", []),
-                    },
-                )
+            tests = [
+                {
+                    "description": test.get("description", ""),
+                    "instance": test.get("instance", test.get("data", {})),
+                    "assertions": test.get("assertions", []),
+                }
+                for test in case["tests"]
+            ]
 
             if not tests:
                 continue
@@ -275,9 +280,9 @@ def path_and_ref_from_gh_path(path: list[str]):
     for i in range(1, len(path)):
         if path[i] in ROOTS:
             ref = "/".join(path[1:i])
-            subpath = "/".join(path[i:])
+            subpath = "/".join(path[i:]).rstrip("/")
             return subpath, ref
-    return "", "/".join(path[1:])
+    return "", "/".join(path[1:]).rstrip("/")
 
 
 # Missing zipfile.Path methods...
