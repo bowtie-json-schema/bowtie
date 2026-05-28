@@ -195,23 +195,7 @@ public class BowtieJsonSchemaValidator {
                                   List<Map<String, Object>> list) {
     if (unit.getAnnotations() != null) {
       for (Map.Entry<String, Object> entry : unit.getAnnotations().entrySet()) {
-        Map<String, Object> ann = new HashMap<>();
-        ann.put("keyword", entry.getKey());
-        ann.put("instanceLocation", unit.getInstanceLocation());
-
-        String sloc = unit.getSchemaLocation();
-        if (sloc == null)
-          sloc = "";
-        if (!sloc.endsWith("/" + entry.getKey())) {
-          if (sloc.endsWith("#")) {
-            sloc += "/" + entry.getKey();
-          } else {
-            sloc += "/" + entry.getKey();
-          }
-        }
-        ann.put("keywordLocation", sloc);
-        ann.put("annotation", entry.getValue());
-        list.add(ann);
+        list.add(createAnnotationMap(unit, entry.getKey(), entry.getValue()));
       }
     }
     if (unit.getDetails() != null) {
@@ -219,6 +203,21 @@ public class BowtieJsonSchemaValidator {
         extractAnnotations(child, list);
       }
     }
+  }
+
+  @SuppressWarnings("PMD.UseConcurrentHashMap")
+  private Map<String, Object> createAnnotationMap(OutputUnit unit, String key, Object value) {
+    Map<String, Object> ann = new HashMap<>();
+    ann.put("keyword", key);
+    ann.put("instanceLocation", unit.getInstanceLocation());
+
+    StringBuilder sloc = new StringBuilder(unit.getSchemaLocation() == null ? "" : unit.getSchemaLocation());
+    if (!sloc.toString().endsWith("/" + key)) {
+      sloc.append("/").append(key);
+    }
+    ann.put("keywordLocation", sloc.toString());
+    ann.put("annotation", value);
+    return ann;
   }
 
   class CustomResourceLoader implements ResourceLoader {

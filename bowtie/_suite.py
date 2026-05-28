@@ -72,9 +72,9 @@ class ClickParam(click.ParamType):
                 NotFoundError,
             )
 
-                gh = github()
-                org, repo_name, *rest = value.path_segments
-                repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+            gh = github()
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
             path, ref = path_and_ref_from_gh_path(rest)
             data = BytesIO()
