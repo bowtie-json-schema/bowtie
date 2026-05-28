@@ -206,12 +206,14 @@ public class BowtieJsonSchemaValidator {
   }
 
   @SuppressWarnings("PMD.UseConcurrentHashMap")
-  private Map<String, Object> createAnnotationMap(OutputUnit unit, String key, Object value) {
+  private Map<String, Object> createAnnotationMap(OutputUnit unit, String key,
+                                                  Object value) {
     Map<String, Object> ann = new HashMap<>();
     ann.put("keyword", key);
     ann.put("instanceLocation", unit.getInstanceLocation());
 
-    StringBuilder sloc = new StringBuilder(unit.getSchemaLocation() == null ? "" : unit.getSchemaLocation());
+    StringBuilder sloc = new StringBuilder(
+        unit.getSchemaLocation() == null ? "" : unit.getSchemaLocation());
     if (!sloc.toString().endsWith("/" + key)) {
       sloc.append("/").append(key);
     }

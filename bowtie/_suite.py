@@ -11,7 +11,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
-import os
 import zipfile
 
 from diagnostic import DiagnosticError
@@ -241,6 +240,7 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
             if b is not None and dialect < b:
                 return False
     return True
+
 
 def annotation_cases_from(
     paths: Iterable[_P],
