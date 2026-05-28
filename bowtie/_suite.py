@@ -64,6 +64,7 @@ class ClickParam(click.ParamType):
         except RelativeURLWithoutBase:
             cases, dialect, is_annotations = self._cases_and_dialect(
                 path=Path(value),
+                ctx=ctx,
             )
             run_metadata: dict[str, Any] = {}
         else:
@@ -101,6 +102,7 @@ class ClickParam(click.ParamType):
                 (contents,) = zipfile.Path(zf).iterdir()
                 cases, dialect, is_annotations = self._cases_and_dialect(
                     path=contents / path,
+                    ctx=ctx,
                 )
                 cases = list(cases)
 
@@ -129,13 +131,13 @@ class ClickParam(click.ParamType):
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
-    def _cases_and_dialect(self, path: Any):
+    def _cases_and_dialect(self, path: Any, ctx: click.Context | None):
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
             paths, version_path = _glob(path, "*.json"), path
 
-        is_annotations = "annotations" in version_path.parts
+        is_annotations = version_path.name == "annotations" or version_path.parent.name == "annotations"
 
         remotes = version_path.parent.parent / "remotes"
 
@@ -143,8 +145,11 @@ class ClickParam(click.ParamType):
             version_path.parent.name if is_annotations else version_path.name
         )
         dialect = Dialect.by_short_name().get(dialect_name)
+        if dialect is None and ctx is not None:
+            dialect = ctx.params.get("dialect")
+            
         if dialect is None:
-            self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
+            self.fail(f"{path} does not contain JSON Schema Test Suite cases or could not infer dialect. Please use --dialect.")
 
         if is_annotations:
             cases = annotation_cases_from(paths=paths, dialect=dialect)
@@ -211,26 +216,44 @@ def cases_from(
             )
 
 
+def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
+    if compatibility is None:
+        return True
+    
+    for constraint in compatibility.split(","):
+        constraint = constraint.strip()
+        if constraint.startswith("<="):
+            b = Dialect.by_alias().get(constraint[2:])
+            if b is not None and dialect > b:
+                return False
+        elif constraint.startswith("="):
+            b = Dialect.by_alias().get(constraint[1:])
+            if b is not None and dialect != b:
+                return False
+        else:
+            b = Dialect.by_alias().get(constraint)
+            if b is not None and dialect < b:
+                return False
+    return True
+
 def annotation_cases_from(
     paths: Iterable[_P],
     dialect: Dialect,
 ) -> Iterable[TestCase]:
     for path in paths:
-        for case in json.loads(path.read_text()):
-            if "suite" not in case:
+        data = json.loads(path.read_text())
+        if "suite" not in data:
+            continue
+        for case in data["suite"]:
+            compatibility = case.get("compatibility")
+            if not _is_compatible(dialect, compatibility):
                 continue
 
             tests: list[dict[str, Any]] = []
             for test in case["tests"]:
-                if (
-                    "compatibility" in test
-                    and "bowtie" not in test["compatibility"]
-                ):
-                    continue
-
                 tests.append(
                     {
-                        "description": test["description"],
+                        "description": test.get("description", ""),
                         "instance": test.get("instance", test.get("data", {})),
                         "assertions": test.get("assertions", []),
                     },
@@ -248,12 +271,13 @@ def annotation_cases_from(
 
 
 def path_and_ref_from_gh_path(path: list[str]):
-    subpath: list[str] = []
-    while path[-1] != "tests":
-        subpath.append(path.pop())
-    subpath.append(path.pop())
-    # remove tree/ or blob/
-    return "/".join(reversed(subpath)).rstrip("/"), "/".join(path[1:])
+    ROOTS = {"tests", "annotations"}
+    for i in range(1, len(path)):
+        if path[i] in ROOTS:
+            ref = "/".join(path[1:i])
+            subpath = "/".join(path[i:])
+            return subpath, ref
+    return "", "/".join(path[1:])
 
 
 # Missing zipfile.Path methods...

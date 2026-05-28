@@ -2597,6 +2597,7 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@dialect_option(default=None)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2605,6 +2606,7 @@ def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any], bool],
     filter: CaseTransform,
     jobs: int,
+    dialect: Dialect | None = None,
     **kwargs: Any,
 ):
     """

@@ -664,11 +664,12 @@ class Example:
         cls,
         instance: Any = None,
         valid: bool | None = None,
+        assertions: list[dict[str, Any]] | None = None,
         **data: Any,
     ) -> Example | Test:
-        if valid is None:
+        if valid is None and assertions is None:
             return cls(**data, instance=instance)
-        return Test(**data, instance=instance, valid=valid)
+        return Test(**data, instance=instance, valid=valid, assertions=assertions)
 
 
 @frozen
@@ -762,7 +763,7 @@ class TestCase:
             self,
             filter=lambda k, v: (
                 k.name != "registry"
-                and (k.name not in {"comment", "assertions"} or v is not None)
+                and (k.name not in {"comment", "assertions", "valid"} or v is not None)
             ),
         )
         if self.registry:
