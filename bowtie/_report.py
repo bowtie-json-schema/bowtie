@@ -142,6 +142,7 @@ class RunMetadata:
         repr=False,
     )
     metadata: Mapping[str, Any] = field(factory=dict, repr=False)  # type: ignore[reportUnknownVariableType]
+    test_type: str = field(default="validation", repr=False)
     started: datetime = field(
         factory=lambda: datetime.now(UTC),
         eq=False,
@@ -154,6 +155,7 @@ class RunMetadata:
         dialect: str,
         implementations: dict[str, dict[str, Any]],
         started: str | None = None,
+        test_type: str = "validation",
         **kwargs: Any,
     ) -> RunMetadata:
         from bowtie._core import ImplementationInfo  # noqa: PLC0415
@@ -166,6 +168,7 @@ class RunMetadata:
                 id: ImplementationInfo.from_dict(**data)
                 for id, data in implementations.items()
             },
+            test_type=test_type,
             **kwargs,
         )
 
@@ -443,6 +446,10 @@ class Report:  # noqa: PLW1641
     @property
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
+
+    @property
+    def is_annotations(self) -> bool:
+        return self.metadata.test_type == "annotations"
 
     @property
     def is_empty(self):
