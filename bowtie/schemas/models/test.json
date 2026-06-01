@@ -17,11 +17,50 @@
     },
     "instance": {
       "description": "The instance which should be validated against the schema in \"schema\"."
-    },
-    "valid": {
-      "description": "Optionally, whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
-      "type": "boolean"
     }
   },
-  "additionalProperties": false
+  "oneOf": [
+    {
+      "properties": {
+        "valid": {
+          "description": "Whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
+          "type": "boolean"
+        }
+      },
+      "not": { "required": ["assertions"] }
+    },
+    {
+      "properties": {
+        "assertions": {
+          "description": "Assertions for annotation output. Each assertion specifies a keyword, instance location, and expected annotation values keyed by schema location.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "description": "The instance location as a JSON Pointer.",
+                "type": "string",
+                "format": "json-pointer"
+              },
+              "keyword": {
+                "description": "The annotation keyword.",
+                "type": "string"
+              },
+              "expected": {
+                "description": "An object mapping schema locations (URIs) to expected annotation values.",
+                "type": "object",
+                "propertyNames": {
+                  "format": "uri"
+                }
+              }
+            },
+            "required": ["location", "keyword", "expected"]
+          }
+        }
+      },
+      "required": ["assertions"],
+      "not": { "required": ["valid"] }
+    }
+  ],
+  "unevaluatedProperties": false
 }

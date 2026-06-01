@@ -7,7 +7,12 @@
   "properties": {
     "cmd": { "const": "run" },
     "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
-    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" }
+    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
+    "output": {
+      "description": "The output format the harness should respond with. 'flag' returns only a boolean validity result. 'rich' returns annotations alongside validity.",
+      "enum": ["flag", "rich"],
+      "default": "flag"
+    }
   },
   "$defs": {
     "response": {
@@ -46,7 +51,32 @@
                 "oneOf": [
                   {
                     "properties": {
-                      "valid": { "type": "boolean" }
+                      "valid": { "type": "boolean" },
+                      "annotations": {
+                        "description": "Annotation results in Bowtie's rich output format. Each item represents a single annotation collected during evaluation.",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "keyword": {
+                              "description": "The keyword that produced this annotation.",
+                              "type": "string"
+                            },
+                            "instanceLocation": {
+                              "description": "The location of the instance being annotated, as a JSON Pointer.",
+                              "type": "string"
+                            },
+                            "keywordLocation": {
+                              "description": "The location of the keyword that produced this annotation, as a JSON Pointer or URI.",
+                              "type": "string"
+                            },
+                            "annotation": {
+                              "description": "The annotation value produced by the keyword."
+                            }
+                          },
+                          "required": ["keyword", "instanceLocation", "keywordLocation", "annotation"]
+                        }
+                      }
                     },
                     "required": ["valid"]
                   },

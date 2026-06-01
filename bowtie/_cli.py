@@ -42,7 +42,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
-from bowtie._commands import SeqCase, TestResult, Unsuccessful
+from bowtie._commands import FlagTestResult, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -2582,7 +2582,10 @@ async def smoke(
                             #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
-                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                expected = FlagTestResult(
+                                    valid=bool(test.expected()),
+                                )
+                                if expected != result:
                                     echo(f"* `{test.instance}`")
 
                         echo("\n</details>")
@@ -2594,14 +2597,16 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@dialect_option(default=None)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
 @click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
-    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any], bool],
     filter: CaseTransform,
     jobs: int,
+    dialect: Dialect | None = None,
     **kwargs: Any,
 ):
     """
@@ -2630,14 +2635,18 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata = input
-    cases = filter(_cases)
+    _cases, dialect, metadata, is_annotations = input
+    cases = list(filter(_cases))
+
+    output_format = "rich" if is_annotations else "flag"
+
     return asyncio.run(
         _run_parallel(
             **kwargs,
             dialect=dialect,
             cases=cases,
             run_metadata=metadata,
+            output=output_format,
             jobs=jobs,
         ),
     )
@@ -2651,6 +2660,7 @@ async def _run_one(
     max_fail: int | None = None,
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
+    output: str = "flag",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -2702,7 +2712,7 @@ async def _run_one(
             maybe_set_schema(dialect)(cases),
             1,
         ):
-            seq_case = SeqCase(seq=count, case=case)
+            seq_case = SeqCase(seq=count, case=case, output=output)
             got_result = reporter.case_started(seq_case, dialect)
             st_time = perf_counter_ns()
             result = await seq_case.run(runner=runner)
@@ -2735,6 +2745,7 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
+    output: str = "flag",
     **kwargs: Any,
 ) -> int:
     """
@@ -2749,6 +2760,7 @@ async def _run_parallel(
                 connectable=connectable,
                 cases=materialized,
                 dialect=dialect,
+                output=output,
                 **kwargs,
             )
 
