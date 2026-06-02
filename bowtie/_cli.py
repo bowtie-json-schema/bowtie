@@ -692,7 +692,7 @@ def summary(report: _report.Report, format: _F, show: str):
             ],
         ):
             return [(id, u.counts()) for id, _, u in value]
-    
+
     elif report.is_annotations:
         results = report.cases_with_results()
         exit_code = 0
@@ -926,6 +926,7 @@ def _validation_results_table_in_markdown(
 
     return final_content
 
+
 def _annotation_status(
     test: Example | Test,
     result: AnyTestResult,
@@ -939,6 +940,7 @@ def _annotation_status(
     if expected is None or result.matches(expected):
         return "pass"
     return "fail"
+
 
 def _annotations_results_table(
     report: _report.Report,
@@ -997,6 +999,7 @@ def _annotations_results_table(
 
     return table
 
+
 def _annotation_results_table_in_markdown(
     report: _report.Report,
     results: Iterable[
@@ -1016,11 +1019,7 @@ def _annotation_results_table_in_markdown(
     )
     inner_table_columns.extend(
         f"{impl.name}"
-        + (
-            f" {impl.version}"
-            if implementation_counts[impl.id] > 1
-            else ""
-        )
+        + (f" {impl.version}" if implementation_counts[impl.id] > 1 else "")
         + f" ({impl.language})"
         for impl in implementations.values()
     )
@@ -1051,14 +1050,14 @@ def _annotation_results_table_in_markdown(
 
     for idx, row_data in enumerate(rows_data):
         final_content += (
-            f"### {idx + 1}. Schema:\n ```json\n"
-            f"{row_data[0]}\n```\n\n"
+            f"### {idx + 1}. Schema:\n ```json\n{row_data[0]}\n```\n\n"
         )
         final_content += "### Results:"
         final_content += row_data[1]
         final_content += "\n"
 
     return final_content
+
 
 def _annotation_to_serializable(
     report: _report.Report,
@@ -1093,6 +1092,7 @@ def _annotation_to_serializable(
             },
         )
     return serialized
+
 
 @subcommand
 @click.argument(
