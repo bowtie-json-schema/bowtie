@@ -692,6 +692,22 @@ def summary(report: _report.Report, format: _F, show: str):
             ],
         ):
             return [(id, u.counts()) for id, _, u in value]
+    
+    elif report.is_annotations:
+        results = report.cases_with_results()
+        exit_code = 0
+        to_table = _annotation_result_table
+        to_markdown_table = _annotation_results_table_in_markdown
+
+        def to_serializable(
+            value: Iterable[
+                tuple[
+                    TestCase,
+                    Iterable[tuple[Test, dict[str, AnyTestResult]]],
+                ]
+            ],
+        ):
+            return _annotation_to_serializable(report, value)
 
     else:
         results = report.cases_with_results()
@@ -910,6 +926,173 @@ def _validation_results_table_in_markdown(
 
     return final_content
 
+def _annotation_status(
+    test: Example | Test,
+    result: AnyTestResult,
+) -> str:
+    """Return a status string for an annotation test result."""
+    if result.skipped:
+        return "skipped"
+    if result.errored:
+        return "error"
+    expected = test.expected()
+    if expected is None or result.matches(expected):
+        return "pass"
+    return "fail"
+
+def _annotations_results_table(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+):
+    test = "tests" if report.total_tests != 1 else "test"
+    table = Table(
+        Column(header="Test Case", vertical="middle"),
+        "",
+        title="Bowtie (Annotations)",
+        caption=f"{report.total_tests} {test} ran",
+    )
+
+    implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
+
+    for case, test_results in results:
+        subtable = Table("Instance", box=box.SIMPLE_HEAD)
+        for implementation in implementations.values():
+            subtable.add_column(
+                Text.assemble(
+                    implementation.name,
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
+                    (f" ({implementation.language})", "dim"),
+                ),
+            )
+
+        for t, test_result in test_results:
+            cells = []
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+                if status == "pass":
+                    cells.append(Text("Pass", style="green"))
+                elif status == "fail":
+                    cells.append(Text("Fail", style="red"))
+                elif status == "skipped":
+                    cells.append(Text("Skipped", style="yellow"))
+                else:
+                    cells.append(Text("Error", style="red bold"))
+            subtable.add_row(t.syntax(), *cells)
+
+        table.add_row(case.syntax(report.metadata.dialect), subtable)
+        table.add_section()
+
+    return table
+
+def _annotation_results_table_in_markdown(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+):
+    rows_data: list[list[str]] = []
+    final_content = ""
+
+    inner_table_columns = ["Instance"]
+    implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
+    inner_table_columns.extend(
+        f"{impl.name}"
+        + (
+            f" {impl.version}"
+            if implementation_counts[impl.id] > 1
+            else ""
+        )
+        + f" ({impl.language})"
+        for impl in implementations.values()
+    )
+
+    for case, test_results in results:
+        inner_table_rows: list[list[str]] = []
+        for t, test_result in test_results:
+            row = [json.dumps(t.instance)]
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+                if status == "pass":
+                    row.append("Pass")
+                elif status == "fail":
+                    row.append("Fail")
+                elif status == "skipped":
+                    row.append("Skipped")
+                else:
+                    row.append("Error")
+            inner_table_rows.append(row)
+        inner_markdown_table = convert_table_to_markdown(
+            inner_table_columns,
+            inner_table_rows,
+        )
+        schema_name = json.dumps(case.schema, indent=2)
+        row_data = [schema_name, inner_markdown_table]
+        rows_data.append(row_data)
+
+    for idx, row_data in enumerate(rows_data):
+        final_content += (
+            f"### {idx + 1}. Schema:\n ```json\n"
+            f"{row_data[0]}\n```\n\n"
+        )
+        final_content += "### Results:"
+        final_content += row_data[1]
+        final_content += "\n"
+
+    return final_content
+
+def _annotation_to_serializable(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+):
+    implementations = report.implementations
+    serialized = []
+    for case, test_results in results:
+        tests_out = []
+        for t, test_result in test_results:
+            impl_results = {}
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+                impl_results[impl_id] = {"status": status}
+            tests_out.append(
+                {
+                    "instance": t.instance,
+                    "results": impl_results,
+                },
+            )
+        serialized.append(
+            {
+                "description": case.description,
+                "schema": case.schema,
+                "tests": tests_out,
+            },
+        )
+    return serialized
 
 @subcommand
 @click.argument(
