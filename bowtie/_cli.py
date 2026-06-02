@@ -693,20 +693,21 @@ def summary(report: _report.Report, format: _F, show: str):
         ):
             return [(id, u.counts()) for id, _, u in value]
 
+
     elif report.is_annotations:
         results = report.cases_with_results()
         exit_code = 0
-        to_table = _annotation_result_table
+        to_table = _annotation_results_table
         to_markdown_table = _annotation_results_table_in_markdown
 
-        def to_serializable(
+        def to_serializable(  # type: ignore[reportRedeclaration]
             value: Iterable[
                 tuple[
                     TestCase,
                     Iterable[tuple[Test, dict[str, AnyTestResult]]],
                 ]
             ],
-        ):
+        ) -> list[dict[str, Any]]:
             return _annotation_to_serializable(report, value)
 
     else:
@@ -941,8 +942,7 @@ def _annotation_status(
         return "pass"
     return "fail"
 
-
-def _annotations_results_table(
+def _annotation_results_table(
     report: _report.Report,
     results: Iterable[
         tuple[
@@ -980,7 +980,7 @@ def _annotations_results_table(
             )
 
         for t, test_result in test_results:
-            cells = []
+            cells: list[Text] = []
             for impl_id in implementations:
                 r = test_result[impl_id]
                 status = _annotation_status(t, r)
@@ -1067,13 +1067,13 @@ def _annotation_to_serializable(
             Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
         ],
     ],
-):
+) -> list[dict[str, Any]]:
     implementations = report.implementations
-    serialized = []
+    serialized: list[dict[str, Any]] = []
     for case, test_results in results:
-        tests_out = []
+        tests_out: list[dict[str, Any]] = []
         for t, test_result in test_results:
-            impl_results = {}
+            impl_results: dict[str, dict[str, str]] = {}
             for impl_id in implementations:
                 r = test_result[impl_id]
                 status = _annotation_status(t, r)
