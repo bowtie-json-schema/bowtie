@@ -693,7 +693,6 @@ def summary(report: _report.Report, format: _F, show: str):
         ):
             return [(id, u.counts()) for id, _, u in value]
 
-
     elif report.is_annotations:
         results = report.cases_with_results()
         exit_code = 0
@@ -941,6 +940,7 @@ def _annotation_status(
     if expected is None or result.matches(expected):
         return "pass"
     return "fail"
+
 
 def _annotation_results_table(
     report: _report.Report,
