@@ -43,7 +43,7 @@
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
     "react-dom": "^19.2.6",
-    "react-router": "^7.15.1",
+    "react-router": "^7.16.0",
     "react-syntax-highlighter": "^16.1.1",
     "recharts": "^3.8.1",
     "title-case": "^4.3.2",
