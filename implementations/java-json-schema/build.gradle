@@ -23,7 +23,7 @@ def harnessImplementation = [
 def jsonProvider = [
         group: 'com.fasterxml.jackson.core',
         name: 'jackson-databind',
-        version: '2.21.4'
+        version: '2.22.0'
 ]
 if (project.hasProperty('implementationVersion')) {
     harnessImplementation.version = project.implementationVersion
