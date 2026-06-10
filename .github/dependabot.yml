@@ -47,6 +47,7 @@ updates:
   # ignore: cpp-valijson - builds its repository's HEAD
   # ignore: cpp-blaze - builds its repository's HEAD
   # ignore: cpp-jsoncons - No Dependabot support
+  # ignore: cpp-iris - clones IRIS release tag at image build time
 
   - package-ecosystem: "nuget"
     directory: "/implementations/dotnet-jsonschema-net"
@@ -310,6 +311,13 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/cpp-jsoncons"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/cpp-iris"
     schedule:
       interval: "daily"
     cooldown:
