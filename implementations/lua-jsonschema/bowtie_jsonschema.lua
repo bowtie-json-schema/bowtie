@@ -19,11 +19,11 @@ local cmds = {
   start = function(request)
     assert(request.version == 1, 'Wrong version!')
     STARTED = true
-    local os_platform_handle = io.popen 'uname'
+    local os_platform_handle = io.popen 'lsb_release -is'
     local os_platform = os_platform_handle:read '*l'
     os_platform_handle:close()
 
-    local os_version_handle = io.popen 'uname -r'
+    local os_version_handle = io.popen 'lsb_release -rs'
     local os_version = os_version_handle:read '*l'
     os_version_handle:close()
 
