@@ -19,11 +19,11 @@ local cmds = {
   start = function(request)
     assert(request.version == 1, 'Wrong version!')
     STARTED = true
-    local os_platform_handle = io.popen 'uname'
+    local os_platform_handle = io.popen 'lsb_release -is'
     local os_platform = os_platform_handle:read '*l'
     os_platform_handle:close()
 
-    local os_version_handle = io.popen 'uname -r'
+    local os_version_handle = io.popen 'lsb_release -rs'
     local os_version = os_version_handle:read '*l'
     os_version_handle:close()
 
@@ -38,7 +38,6 @@ local cmds = {
     return {
       version = 1,
       implementation = {
-        language = 'lua',
         name = 'jsonschema',
         version = jsonschema_version,
         homepage = 'https://github.com/api7/jsonschema',
@@ -50,9 +49,10 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
+        language = 'lua',
+        language_version = lua_version,
         os = os_platform,
         os_version = os_version,
-        language_version = lua_version,
       },
     }
   end,
