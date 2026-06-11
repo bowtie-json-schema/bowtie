@@ -38,7 +38,6 @@ local cmds = {
     return {
       version = 1,
       implementation = {
-        language = 'lua',
         name = 'jsonschema',
         version = jsonschema_version,
         homepage = 'https://github.com/api7/jsonschema',
@@ -50,9 +49,10 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
+        language = 'lua',
+        language_version = lua_version,
         os = os_platform,
         os_version = os_version,
-        language_version = lua_version,
       },
     }
   end,
