@@ -17,9 +17,9 @@ my %dialect = (
 
 my $started = 0;
 my $schema;
-my $os = qx/uname/;
+my $os = qx/lsb_release -is/;
 chomp $os;
-my $os_version = qx/uname -r/;
+my $os_version = qx/lsb_release -rs/;
 chomp $os_version;
 
 my %cmds = (
@@ -30,7 +30,6 @@ my %cmds = (
         return {
             version        => 1,
             implementation => {
-                language => 'perl',
                 name     => 'JSON-Schema-Modern',
                 version  => $JSON::Schema::Modern::VERSION,
                 homepage => 'https://metacpan.org/release/JSON-Schema-Modern/',
@@ -39,9 +38,10 @@ my %cmds = (
                 source =>
                   'https://github.com/karenetheridge/JSON-Schema-Modern',
                 dialects         => [ keys %dialect ],
+                language         => 'perl',
+                language_version => $^V,
                 os               => $os,
                 os_version       => $os_version,
-                language_version => $^V,
             },
         };
     },
