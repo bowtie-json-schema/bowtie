@@ -30,7 +30,6 @@ my %cmds = (
         return {
             version        => 1,
             implementation => {
-                language => 'perl',
                 name     => 'JSON-Schema-Modern',
                 version  => $JSON::Schema::Modern::VERSION,
                 homepage => 'https://metacpan.org/release/JSON-Schema-Modern/',
@@ -39,9 +38,10 @@ my %cmds = (
                 source =>
                   'https://github.com/karenetheridge/JSON-Schema-Modern',
                 dialects         => [ keys %dialect ],
+                language         => 'perl',
+                language_version => $^V,
                 os               => $os,
                 os_version       => $os_version,
-                language_version => $^V,
             },
         };
     },
