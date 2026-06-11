@@ -97,8 +97,8 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
-        os = exec 'uname',
-        os_version = exec 'uname -r',
+        os = exec 'lsb_release -is',
+        os_version = exec 'lsb_release -rs',
         language_version = _VERSION:match '^%S+%s+(%S+)',
       },
     }

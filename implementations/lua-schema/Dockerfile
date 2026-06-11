@@ -2,6 +2,7 @@ FROM alpine:3.24
 WORKDIR /harness
 
 RUN apk add --no-cache \
+    lsb-release-minimal \
     lua5.4 \
     lua5.4-lpeg \
     lua5.4-rex-pcre2 \
