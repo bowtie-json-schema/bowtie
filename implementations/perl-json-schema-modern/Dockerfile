@@ -2,6 +2,7 @@ FROM alpine:3.24.0
 WORKDIR /harness
 
 RUN apk add --no-cache \
+    lsb-release-minimal \
     build-base \
     perl-dev \
     perl-app-cpanminus \

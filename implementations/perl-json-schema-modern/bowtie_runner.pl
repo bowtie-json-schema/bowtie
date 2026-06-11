@@ -17,9 +17,9 @@ my %dialect = (
 
 my $started = 0;
 my $schema;
-my $os = qx/uname/;
+my $os = qx/lsb_release -is/;
 chomp $os;
-my $os_version = qx/uname -r/;
+my $os_version = qx/lsb_release -rs/;
 chomp $os_version;
 
 my %cmds = (
