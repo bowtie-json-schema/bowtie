@@ -65,7 +65,7 @@
     "jiti": "^2.7.0",
     "jsdom": "^29.1.1",
     "recharts": "3.6.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.1",
     "vite": "^8.0.14",
     "vite-bundle-visualizer": "^1.2.1",
