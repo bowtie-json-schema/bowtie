@@ -30,7 +30,6 @@ function start($request)
     return [
         'version' => 1,
         'implementation' => [
-            'language' => 'php',
             'name' => 'opis-json-schema',
             'version' => $jsonschema_version,
             'homepage' => 'https://opis.io/json-schema',
@@ -43,9 +42,10 @@ function start($request)
                 'http://json-schema.org/draft-07/schema#',
                 'http://json-schema.org/draft-06/schema#',
             ],
-            'os' => PHP_OS,
-            'os_version' => php_uname('r'),
+            'language' => 'php',
             'language_version' => PHP_VERSION,
+            'os' => rtrim(shell_exec('lsb_release -is')),
+            'os_version' => rtrim(shell_exec('lsb_release -rs')),
         ],
     ];
 }

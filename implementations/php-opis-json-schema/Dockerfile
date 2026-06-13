@@ -11,6 +11,7 @@ FROM php:8.5.0RC2-fpm-alpine
 
 WORKDIR /usr/src/myapp
 
+RUN apk add --no-cache lsb-release-minimal
 COPY bowtieJsonSchema.php .
 COPY --from=builder /usr/src/myapp/vendor /usr/src/myapp/vendor
 
