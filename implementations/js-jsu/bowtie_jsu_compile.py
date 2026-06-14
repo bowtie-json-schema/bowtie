@@ -213,6 +213,8 @@ class Runner:
 
         assert req.get("version") == 1, "expecting protocol version 1"
 
+        os_release = platform.freedesktop_os_release()
+
         return {
             "version": 1,
             "implementation": {
@@ -220,8 +222,8 @@ class Runner:
                 "version": self.jsu_version,
                 "language": self.language,
                 "language_version": self.language_version,
-                "os": platform.system(),
-                "os_version": platform.release(),
+                "os": os_release["ID"],
+                "os_version": os_release["VERSION_ID"],
                 "dialects": sorted(VERSIONS.keys()),
                 "homepage": "https://github.com/zx80/json-schema-utils/",
                 "documentation": "https://github.com/zx80/json-schema-utils/",
