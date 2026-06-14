@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'etc'
 require 'json'
 require 'json_schemer'
 
@@ -77,6 +76,8 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   when 'start'
     version = request.fetch('version')
     raise UnsupportedVersion, version unless version == 1
+    os = `lsb_release -is`
+    os_version = `lsb_release -rs`
 
     {
       version: version,
@@ -88,8 +89,8 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
         issues: 'https://github.com/davishmcclurg/json_schemer/issues',
         source: 'https://github.com/davishmcclurg/json_schemer',
         dialects: SUPPORTED_DIALECTS,
-        os: Etc.uname[:sysname],
-        os_version: Etc.uname[:release],
+        os: os.chomp!,
+        os_version: os_version.chomp!,
         language_version: RUBY_VERSION,
       },
     }
