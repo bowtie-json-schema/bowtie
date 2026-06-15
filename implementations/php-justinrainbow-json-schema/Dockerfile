@@ -12,6 +12,7 @@ FROM php:8.5-cli-alpine3.22
 
 WORKDIR /usr/src/json-schema
 
+RUN apk add --no-cache lsb-release-minimal
 COPY ./src ./src
 COPY ./bootstrap.php .
 COPY composer.* .

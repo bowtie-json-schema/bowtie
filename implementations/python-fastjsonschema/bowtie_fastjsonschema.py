@@ -26,10 +26,10 @@ class Runner:
     def cmd_start(self, version):
         assert version == 1
         self._started = True
+        os_release = platform.freedesktop_os_release()
         return dict(
             version=1,
             implementation=dict(
-                language="python",
                 name="fastjsonschema",
                 version=metadata.version("fastjsonschema"),
                 homepage="https://horejsek.github.io/python-fastjsonschema/",
@@ -45,9 +45,10 @@ class Runner:
                     "http://json-schema.org/draft-06/schema#",
                     "http://json-schema.org/draft-04/schema#",
                 ],
-                os=platform.system(),
-                os_version=platform.release(),
+                language="python",
                 language_version=platform.python_version(),
+                os=os_release["ID"],
+                os_version=os_release["VERSION_ID"],
             ),
         )
 
