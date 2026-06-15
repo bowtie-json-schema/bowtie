@@ -76,6 +76,7 @@ ARGF.each_line do |line| # rubocop:disable Metrics/BlockLength
   when 'start'
     version = request.fetch('version')
     raise UnsupportedVersion, version unless version == 1
+
     os = `lsb_release -is`
     os_version = `lsb_release -rs`
 
