@@ -191,7 +191,8 @@ public class BowtieJsonSchemaValidator {
     return stringWriter.toString();
   }
 
-  private void extractAnnotations(OutputUnit unit, List<Map<String, Object>> list) {
+  private void extractAnnotations(OutputUnit unit,
+                                  List<Map<String, Object>> list) {
     if (unit.getAnnotations() != null) {
       for (Map.Entry<String, Object> entry : unit.getAnnotations().entrySet()) {
         Map<String, Object> ann = new HashMap<>();
@@ -199,12 +200,14 @@ public class BowtieJsonSchemaValidator {
         ann.put("instanceLocation", unit.getInstanceLocation());
 
         String sloc = unit.getSchemaLocation();
-        if (sloc == null) sloc = "";
+        if (sloc == null)
+          sloc = "";
         String suffix = "/" + entry.getKey();
         if (sloc.endsWith(suffix)) {
           sloc = sloc.substring(0, sloc.length() - suffix.length());
         }
-        if (sloc.isEmpty()) sloc = "#";
+        if (sloc.isEmpty())
+          sloc = "#";
         ann.put("keywordLocation", sloc);
         ann.put("annotation", entry.getValue());
         list.add(ann);

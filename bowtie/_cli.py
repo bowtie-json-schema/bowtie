@@ -941,10 +941,12 @@ def _annotation_status(
         return "pass"
     return "fail"
 
+
 def _assertions_to_grouped(
     assertions: list[dict[str, Any]],
 ) -> dict[str, dict[str, dict[str, Any]]]:
-    """Convert test suite assertions to the same grouped format as grouped_annotations.
+    """
+    Convert test suite assertions to the same grouped format as grouped_annotations.
 
     Input format (test suite assertions)::
 
@@ -965,6 +967,7 @@ def _assertions_to_grouped(
             grouped[location][keyword] = {}
         grouped[location][keyword].update(expected)
     return grouped
+
 
 def _annotation_results_table(
     report: _report.Report,
