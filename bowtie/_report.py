@@ -424,6 +424,7 @@ class Report:  # noqa: PLW1641
                 implementations=implementations,
                 dialect=dialect,
                 started=started,
+                test_type=first.metadata.test_type,
             ),
             did_fail_fast=did_fail_fast,
         )
@@ -449,7 +450,7 @@ class Report:  # noqa: PLW1641
 
     @property
     def is_annotations(self) -> bool:
-        return self.metadata.test_type == "annotations"
+        return self.metadata.test_type == "annotation"
 
     @property
     def is_empty(self):

@@ -941,6 +941,30 @@ def _annotation_status(
         return "pass"
     return "fail"
 
+def _assertions_to_grouped(
+    assertions: list[dict[str, Any]],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """Convert test suite assertions to the same grouped format as grouped_annotations.
+
+    Input format (test suite assertions)::
+
+        [{"location": "/foo", "keyword": "title", "expected": {"#/path": "value"}}]
+
+    Output format (grouped, same as RichTestResult.grouped_annotations)::
+
+        {"/foo": {"title": {"#/path": "value"}}}
+    """
+    grouped: dict[str, dict[str, dict[str, Any]]] = {}
+    for assertion in assertions:
+        location = assertion.get("location", "")
+        keyword = assertion.get("keyword", "")
+        expected = assertion.get("expected", {})
+        if location not in grouped:
+            grouped[location] = {}
+        if keyword not in grouped[location]:
+            grouped[location][keyword] = {}
+        grouped[location][keyword].update(expected)
+    return grouped
 
 def _annotation_results_table(
     report: _report.Report,
@@ -984,14 +1008,40 @@ def _annotation_results_table(
             for impl_id in implementations:
                 r = test_result[impl_id]
                 status = _annotation_status(t, r)
+
+                cell_text = Text()
                 if status == "pass":
-                    cells.append(Text("Pass", style="green"))
+                    cell_text.append("Pass", style="green")
                 elif status == "fail":
-                    cells.append(Text("Fail", style="red"))
+                    cell_text.append("Fail", style="red")
                 elif status == "skipped":
-                    cells.append(Text("Skipped", style="yellow"))
+                    cell_text.append("⏭ Skipped", style="yellow")
                 else:
-                    cells.append(Text("Error", style="red bold"))
+                    cell_text.append("⚠ Error", style="red bold")
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            dumped = json.dumps(actual, indent=2)
+                            cell_text.append(f"\n{dumped}")
+                    else:
+                        expected_raw = t.expected()
+                        expected_grouped = (
+                            _assertions_to_grouped(expected_raw)
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        cell_text.append("\nExpected:\n", style="bold")
+                        cell_text.append(
+                            f"{json.dumps(expected_grouped, indent=2)}\n",
+                        )
+                        cell_text.append("Actual:\n", style="bold")
+                        cell_text.append(f"{json.dumps(actual, indent=2)}")
+
+                cells.append(cell_text)
+
             subtable.add_row(t.syntax(), *cells)
 
         table.add_row(case.syntax(report.metadata.dialect), subtable)
@@ -1031,14 +1081,38 @@ def _annotation_results_table_in_markdown(
             for impl_id in implementations:
                 r = test_result[impl_id]
                 status = _annotation_status(t, r)
+                cell_text = ""
                 if status == "pass":
-                    row.append("Pass")
+                    cell_text += "Pass"
                 elif status == "fail":
-                    row.append("Fail")
+                    cell_text += "Fail"
                 elif status == "skipped":
-                    row.append("Skipped")
+                    cell_text += "⏭ Skipped"
                 else:
-                    row.append("Error")
+                    cell_text += "⚠ Error"
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            dumped = json.dumps(actual)
+                            cell_text += f"<br><br>Actual:<br>`{dumped}`"
+                    else:
+                        expected_raw = t.expected()
+                        expected_grouped = (
+                            _assertions_to_grouped(expected_raw)
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        dumped_exp = json.dumps(expected_grouped)
+                        dumped_act = json.dumps(actual)
+                        cell_text += (
+                            f"<br><br>Expected:<br>`{dumped_exp}`"
+                            f"<br>Actual:<br>`{dumped_act}`"
+                        )
+
+                row.append(cell_text)
             inner_table_rows.append(row)
         inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
@@ -1073,11 +1147,29 @@ def _annotation_to_serializable(
     for case, test_results in results:
         tests_out: list[dict[str, Any]] = []
         for t, test_result in test_results:
-            impl_results: dict[str, dict[str, str]] = {}
+            impl_results: dict[str, dict[str, Any]] = {}
             for impl_id in implementations:
                 r = test_result[impl_id]
                 status = _annotation_status(t, r)
-                impl_results[impl_id] = {"status": status}
+                result_data: dict[str, Any] = {"status": status}
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            result_data["actual"] = actual
+                    else:
+                        expected_raw = t.expected()
+                        result_data["expected"] = (
+                            _assertions_to_grouped(expected_raw)
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        result_data["actual"] = actual
+
+                impl_results[impl_id] = result_data
+
             tests_out.append(
                 {
                     "instance": t.instance,
@@ -2822,6 +2914,7 @@ def suite(
     cases = list(filter(_cases))
 
     output_format = "rich" if is_annotations else "flag"
+    test_type = "annotation" if is_annotations else "validation"
 
     return asyncio.run(
         _run_parallel(
@@ -2830,6 +2923,7 @@ def suite(
             cases=cases,
             run_metadata=metadata,
             output=output_format,
+            test_type=test_type,
             jobs=jobs,
         ),
     )
@@ -2844,6 +2938,7 @@ async def _run_one(
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     output: str = "flag",
+    test_type: str = "validation",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -2877,6 +2972,7 @@ async def _run_one(
             implementations={connectable_id: implementation.info},
             dialect=dialect,
             metadata=run_metadata,
+            test_type=test_type,
         )
         lines: list[dict[str, Any]] = [metadata.serializable()]
         count = 0

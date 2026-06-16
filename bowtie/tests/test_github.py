@@ -37,6 +37,10 @@ from bowtie._suite import path_and_ref_from_gh_path
             "blob/main/tests/draft2020-12/",
             ("tests/draft2020-12", "main"),
         ),
+        (
+            "tree/main/annotations/tests/",
+            ("annotations/tests", "main"),
+        ),
     ],
 )
 def test_path_and_ref(path, expected):

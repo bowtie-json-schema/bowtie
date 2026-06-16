@@ -240,10 +240,8 @@ class RichTestResult:
     def serializable(self) -> Message:
         return asdict(self)
 
-    def matches(self, expecting: Any) -> bool:
-        if isinstance(expecting, bool):
-            return self.valid == expecting
-
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
         actual_annotations: dict[str, dict[str, Any]] = {}
         for unit in self.annotations:
             loc = unit.get("instanceLocation", "")
@@ -255,6 +253,13 @@ class RichTestResult:
             if kw not in actual_annotations[loc]:
                 actual_annotations[loc][kw] = {}
             actual_annotations[loc][kw][kw_loc] = ann
+        return actual_annotations
+
+    def matches(self, expecting: Any) -> bool:
+        if isinstance(expecting, bool):
+            return self.valid == expecting
+
+        actual_annotations = self.grouped_annotations
 
         for assertion in expecting:
             location = assertion.get("location", "")
