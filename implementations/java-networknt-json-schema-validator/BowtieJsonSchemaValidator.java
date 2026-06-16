@@ -12,7 +12,6 @@ import com.networknt.schema.resource.ResourceLoader;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
@@ -195,22 +194,7 @@ public class BowtieJsonSchemaValidator {
                                   List<Map<String, Object>> list) {
     if (unit.getAnnotations() != null) {
       for (Map.Entry<String, Object> entry : unit.getAnnotations().entrySet()) {
-        Map<String, Object> ann = new HashMap<>();
-        ann.put("keyword", entry.getKey());
-        ann.put("instanceLocation", unit.getInstanceLocation());
-
-        String sloc = unit.getSchemaLocation();
-        if (sloc == null)
-          sloc = "";
-        String suffix = "/" + entry.getKey();
-        if (sloc.endsWith(suffix)) {
-          sloc = sloc.substring(0, sloc.length() - suffix.length());
-        }
-        if (sloc.isEmpty())
-          sloc = "#";
-        ann.put("keywordLocation", sloc);
-        ann.put("annotation", entry.getValue());
-        list.add(ann);
+        list.add(buildAnnotation(entry, unit));
       }
     }
     if (unit.getDetails() != null) {
@@ -218,6 +202,26 @@ public class BowtieJsonSchemaValidator {
         extractAnnotations(child, list);
       }
     }
+  }
+
+  private Map<String, Object> buildAnnotation(
+      Map.Entry<String, Object> entry, OutputUnit unit) {
+    String sloc = unit.getSchemaLocation();
+    if (sloc == null) {
+      sloc = "";
+    }
+    String suffix = "/" + entry.getKey();
+    if (sloc.endsWith(suffix)) {
+      sloc = sloc.substring(0, sloc.length() - suffix.length());
+    }
+    if (sloc.isEmpty()) {
+      sloc = "#";
+    }
+    return Map.of(
+        "keyword", entry.getKey(),
+        "instanceLocation", unit.getInstanceLocation(),
+        "keywordLocation", sloc,
+        "annotation", entry.getValue());
   }
 
   class CustomResourceLoader implements ResourceLoader {

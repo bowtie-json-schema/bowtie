@@ -946,13 +946,16 @@ def _assertions_to_grouped(
     assertions: list[dict[str, Any]],
 ) -> dict[str, dict[str, dict[str, Any]]]:
     """
-    Convert test suite assertions to the same grouped format as grouped_annotations.
+    Convert test suite assertions to grouped format.
+
+    Matches the format of ``RichTestResult.grouped_annotations``.
 
     Input format (test suite assertions)::
 
-        [{"location": "/foo", "keyword": "title", "expected": {"#/path": "value"}}]
+        [{"location": "/foo", "keyword": "title",
+          "expected": {"#/path": "value"}}]
 
-    Output format (grouped, same as RichTestResult.grouped_annotations)::
+    Output format (grouped)::
 
         {"/foo": {"title": {"#/path": "value"}}}
     """
@@ -1032,7 +1035,9 @@ def _annotation_results_table(
                     else:
                         expected_raw = t.expected()
                         expected_grouped = (
-                            _assertions_to_grouped(expected_raw)
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
                             if isinstance(expected_raw, list)
                             else expected_raw
                         )
@@ -1104,7 +1109,9 @@ def _annotation_results_table_in_markdown(
                     else:
                         expected_raw = t.expected()
                         expected_grouped = (
-                            _assertions_to_grouped(expected_raw)
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
                             if isinstance(expected_raw, list)
                             else expected_raw
                         )
@@ -1165,7 +1172,9 @@ def _annotation_to_serializable(
                     else:
                         expected_raw = t.expected()
                         result_data["expected"] = (
-                            _assertions_to_grouped(expected_raw)
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
                             if isinstance(expected_raw, list)
                             else expected_raw
                         )
