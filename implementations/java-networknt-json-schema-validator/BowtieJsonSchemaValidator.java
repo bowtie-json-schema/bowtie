@@ -204,8 +204,8 @@ public class BowtieJsonSchemaValidator {
     }
   }
 
-  private Map<String, Object> buildAnnotation(
-      Map.Entry<String, Object> entry, OutputUnit unit) {
+  private Map<String, Object> buildAnnotation(Map.Entry<String, Object> entry,
+                                              OutputUnit unit) {
     String sloc = unit.getSchemaLocation();
     if (sloc == null) {
       sloc = "";
@@ -217,11 +217,9 @@ public class BowtieJsonSchemaValidator {
     if (sloc.isEmpty()) {
       sloc = "#";
     }
-    return Map.of(
-        "keyword", entry.getKey(),
-        "instanceLocation", unit.getInstanceLocation(),
-        "keywordLocation", sloc,
-        "annotation", entry.getValue());
+    return Map.of("keyword", entry.getKey(), "instanceLocation",
+                  unit.getInstanceLocation(), "keywordLocation", sloc,
+                  "annotation", entry.getValue());
   }
 
   class CustomResourceLoader implements ResourceLoader {
