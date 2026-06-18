@@ -43,7 +43,7 @@
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
     "react-dom": "^19.2.7",
-    "react-router": "^7.16.0",
+    "react-router": "^7.18.0",
     "react-syntax-highlighter": "^16.1.1",
     "recharts": "^3.8.1",
     "title-case": "^4.3.2",
@@ -51,9 +51,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.60.0",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.16",
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/urijs": "^1.19.26",
@@ -66,9 +66,9 @@
     "jsdom": "^29.1.1",
     "recharts": "3.6.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.1",
-    "vite": "^8.0.14",
+    "typescript-eslint": "^8.61.1",
+    "vite": "^8.0.16",
     "vite-bundle-visualizer": "^1.2.1",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
