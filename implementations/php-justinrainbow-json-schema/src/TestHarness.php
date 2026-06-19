@@ -77,7 +77,6 @@ class TestHarness
         return [
             'version' => 1,
             'implementation' => [
-                'language' => 'php',
                 'name' => 'justinrainbow-json-schema',
                 'version' => InstalledVersions::getVersion('justinrainbow/json-schema'),
                 'homepage' => 'https://github.com/jsonrainbow/json-schema',
@@ -85,14 +84,16 @@ class TestHarness
                 'source' => 'https://github.com/jsonrainbow/json-schema',
                 'issues' => 'https://github.com/jsonrainbow/json-schema/issues',
                 'dialects' => [
+                    'https://json-schema.org/draft/2019-09/schema',
                     'http://json-schema.org/draft-07/schema#',
                     'http://json-schema.org/draft-06/schema#',
                     'http://json-schema.org/draft-04/schema#',
                     'http://json-schema.org/draft-03/schema#',
                 ],
-                'os' => PHP_OS,
-                'os_version' => php_uname('r'),
+                'language' => 'php',
                 'language_version' => PHP_VERSION,
+                'os' => rtrim(shell_exec('lsb_release -is')),
+                'os_version' => rtrim(shell_exec('lsb_release -rs')),
             ],
         ];
     }

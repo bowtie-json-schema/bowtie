@@ -13,6 +13,7 @@ RUN bundle install
 
 FROM ruby:4-alpine
 WORKDIR /usr/src/app
+RUN apk add --no-cache lsb-release-minimal
 COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
 COPY . .
 CMD ["ruby", "bowtie_json_schemer.rb"]

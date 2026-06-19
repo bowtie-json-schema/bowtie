@@ -1,7 +1,8 @@
-FROM alpine:3.23.4
+FROM alpine:3.24.1
 WORKDIR /usr/src/myapp
 
 RUN apk add --no-cache \
+    lsb-release-minimal \
     build-base \
     lua5.1-dev \
     luarocks5.1 \

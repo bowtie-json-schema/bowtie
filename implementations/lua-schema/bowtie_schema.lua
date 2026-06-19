@@ -84,7 +84,6 @@ local cmds = {
     return {
       version = 1,
       implementation = {
-        language = 'lua',
         name = schema._NAME,
         version = schema._VERSION,
         homepage = 'https://fperrad.frama.io/lua-schema',
@@ -97,9 +96,10 @@ local cmds = {
           'http://json-schema.org/draft-06/schema#',
           'http://json-schema.org/draft-04/schema#',
         },
-        os = exec 'uname',
-        os_version = exec 'uname -r',
+        language = 'lua',
         language_version = _VERSION:match '^%S+%s+(%S+)',
+        os = exec 'lsb_release -is',
+        os_version = exec 'lsb_release -rs',
       },
     }
   end,

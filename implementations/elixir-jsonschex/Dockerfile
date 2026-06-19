@@ -1,4 +1,4 @@
-FROM elixir:1.19-otp-28-alpine AS builder
+FROM elixir:1.20.0-otp-29-alpine AS builder
 WORKDIR /opt/app
 ENV MIX_ENV=prod
 RUN mix local.hex --force && mix local.rebar --force

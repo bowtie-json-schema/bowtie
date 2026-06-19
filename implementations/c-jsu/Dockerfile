@@ -1,4 +1,4 @@
-FROM alpine:3.23.4
+FROM alpine:3.24.1
 
 # NOTE python images do not seem to have google-re2 python wrapper available
 # without recompiling from sources, whereas the base alpine image has it,
