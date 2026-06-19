@@ -5,7 +5,7 @@
 # The IHOP harness (bowtie_iris.cpp) lives in that directory; this image clones
 # IRIS only for the static validator library.
 # =============================================================================
-FROM alpine:3.22 AS build
+FROM alpine:3.24.1 AS build
 
 RUN apk add --no-cache \
         build-base \
@@ -24,7 +24,7 @@ RUN git clone --depth 1 --branch "${IRIS_REF}" \
 RUN cmake -B out -DCMAKE_BUILD_TYPE=Release \
     && cmake --build out --target bowtie_iris -j"$(nproc)"
 
-FROM alpine:3.22
+FROM alpine:3.24.1
 RUN apk add --no-cache libstdc++ re2 abseil-cpp
 COPY --from=build /build/out/bowtie_iris /usr/local/bin/bowtie_iris
 CMD ["bowtie_iris"]
