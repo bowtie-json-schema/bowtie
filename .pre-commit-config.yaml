@@ -19,12 +19,12 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.25.2
+    rev: v1.26.1
     hooks:
       - id: zizmor
         args: [--pedantic]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.17"
+    rev: "v0.15.18"
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
@@ -121,7 +121,7 @@ repos:
             "implementations",
           ]
   - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2026-06-12-a
+    rev: swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-06-02-a
     hooks:
       - name: swift-format (swift implementations)
         id: swift-format
