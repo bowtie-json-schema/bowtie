@@ -52,6 +52,9 @@ dynamic = ["version"]
 dependencies = [
   "aiodocker",
   "attrs>=22.2.0",
+  # click 8.4 made ParamType generic, but rich-click's type stubs still
+  # reference it without a type argument, breaking strict type checking.
+  "click<8.4",
   "diagnostic",
   "github3.py",
   "httpx",
