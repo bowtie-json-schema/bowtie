@@ -64,14 +64,6 @@
 
           "type": "string"
         },
-        "test_type": {
-          "description": "Whether the report contains validation or annotation test results.",
-
-          "default": "validation",
-
-          "type": "string",
-          "enum": ["validation", "annotation"]
-        },
         "started": {
           "description": "When the report started.",
 

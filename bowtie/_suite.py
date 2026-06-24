@@ -35,10 +35,9 @@ URL_FOR_DIALECT = {
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
-URL_FOR_ANNOTATION_DIALECT = {
-    dialect: ANNOTATIONS_DIR_URL
-    for dialect in Dialect.known()
-}
+URL_FOR_ANNOTATION_DIALECT = dict.fromkeys(
+    Dialect.known(), ANNOTATIONS_DIR_URL
+)
 
 # Magic constants assumed/used by the official test suite for $ref tests
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
@@ -157,11 +156,9 @@ class AnnotationClickParam(click.ParamType):
         )
 
         dialect_name = (
-            version_path.parent.name
-            if is_annotations
-            else version_path.name
+            version_path.parent.name if is_annotations else version_path.name
         )
-        
+
         dialect = known_dialect
         if dialect is None:
             dialect = Dialect.by_short_name().get(dialect_name)

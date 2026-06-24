@@ -325,8 +325,7 @@ class TestResult:
             return RichTestResult(
                 valid=valid,
                 annotations=[
-                    Annotation.from_dict(**a)
-                    for a in data_copy["annotations"]
+                    Annotation.from_dict(**a) for a in data_copy["annotations"]
                 ],
             )
         return FlagTestResult(valid=valid)
