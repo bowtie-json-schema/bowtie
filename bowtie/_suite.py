@@ -36,7 +36,8 @@ URL_FOR_DIALECT = {
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
 URL_FOR_ANNOTATION_DIALECT = dict.fromkeys(
-    Dialect.known(), ANNOTATIONS_DIR_URL
+    Dialect.known(),
+    ANNOTATIONS_DIR_URL,
 )
 
 # Magic constants assumed/used by the official test suite for $ref tests
@@ -65,7 +66,7 @@ class AnnotationClickParam(click.ParamType):
             value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
 
         try:
-            with suppress(TypeError):
+            if isinstance(value, str):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
             _dialect_name, dialect, cases = self._resolve_local(
