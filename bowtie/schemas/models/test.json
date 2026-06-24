@@ -63,7 +63,13 @@
       "required": ["assertions"]
     },
     {
-      "description": "No assertion — implementation results will be reported without comparing against an expected value."
+      "description": "No assertion — implementation results will be reported without comparing against an expected value.",
+      "not": {
+        "anyOf": [
+          { "required": ["valid"] },
+          { "required": ["assertions"] }
+        ]
+      }
     }
   ],
   "unevaluatedProperties": false

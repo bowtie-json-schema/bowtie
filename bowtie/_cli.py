@@ -125,7 +125,13 @@ _COMMAND_GROUPS = {
     "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
-            commands=["validate", "suite", "summary", "info"],
+            commands=[
+                "validate",
+                "suite",
+                "annotation-suite",
+                "summary",
+                "info",
+            ],
         ),
         CommandGroupDict(
             name="Advanced Usage",

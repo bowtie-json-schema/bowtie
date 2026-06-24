@@ -36,7 +36,7 @@ URL_FOR_DIALECT = {
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
 URL_FOR_ANNOTATION_DIALECT = {
-    dialect: ANNOTATIONS_DIR_URL / dialect.short_name
+    dialect: ANNOTATIONS_DIR_URL
     for dialect in Dialect.known()
 }
 
@@ -61,8 +61,9 @@ class AnnotationClickParam(click.ParamType):
             return value
 
         # Convert dialect URIs or shortnames to annotation test suite URIs
-        value = Dialect.by_alias().get(value, value)
-        value = URL_FOR_ANNOTATION_DIALECT.get(value, value)
+        input_dialect = Dialect.by_alias().get(value)
+        if input_dialect is not None:
+            value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
 
         try:
             with suppress(TypeError):
@@ -71,6 +72,7 @@ class AnnotationClickParam(click.ParamType):
             _dialect_name, dialect, cases = self._resolve_local(
                 path=Path(value),
                 ctx=ctx,
+                known_dialect=input_dialect,
             )
             run_metadata: dict[str, Any] = {}
         else:
@@ -109,6 +111,7 @@ class AnnotationClickParam(click.ParamType):
                 _dialect_name, dialect, cases = self._resolve_local(
                     path=contents / path,
                     ctx=ctx,
+                    known_dialect=input_dialect,
                 )
                 cases = list(cases)
 
@@ -141,6 +144,7 @@ class AnnotationClickParam(click.ParamType):
         self,
         path: Any,
         ctx: click.Context | None,
+        known_dialect: Dialect | None = None,
     ) -> tuple[str, Dialect, Iterable[TestCase]]:
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
@@ -157,7 +161,10 @@ class AnnotationClickParam(click.ParamType):
             if is_annotations
             else version_path.name
         )
-        dialect = Dialect.by_short_name().get(dialect_name)
+        
+        dialect = known_dialect
+        if dialect is None:
+            dialect = Dialect.by_short_name().get(dialect_name)
         if dialect is None and ctx is not None:
             dialect = ctx.params.get("dialect")
 
