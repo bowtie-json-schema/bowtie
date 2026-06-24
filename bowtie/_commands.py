@@ -204,6 +204,38 @@ class AnyTestResult(Protocol):
 
 
 @frozen
+class Annotation:
+    keyword: str
+    instance_location: str
+    keyword_location: str
+    value: Any
+
+    @classmethod
+    def from_dict(
+        cls,
+        keyword: str = "",
+        instanceLocation: str = "",
+        keywordLocation: str = "",
+        annotation: Any = None,
+        **_: Any,
+    ) -> Self:
+        return cls(
+            keyword=keyword,
+            instance_location=instanceLocation,
+            keyword_location=keywordLocation,
+            value=annotation,
+        )
+
+    def serializable(self) -> dict[str, Any]:
+        return {
+            "keyword": self.keyword,
+            "instanceLocation": self.instance_location,
+            "keywordLocation": self.keyword_location,
+            "annotation": self.value,
+        }
+
+
+@frozen
 class FlagTestResult:
     errored = False
     skipped = False
@@ -218,9 +250,7 @@ class FlagTestResult:
         return asdict(self)
 
     def matches(self, expecting: Any) -> bool:
-        if isinstance(expecting, bool):
-            return self.valid == expecting
-        return False
+        return self == FlagTestResult(valid=expecting)
 
 
 @frozen
@@ -229,8 +259,8 @@ class RichTestResult:
     skipped = False
 
     valid: bool
-    annotations: list[dict[str, Any]] = field(
-        factory=list[dict[str, Any]],
+    annotations: list[Annotation] = field(
+        factory=list[Annotation],
     )
 
     @property
@@ -238,27 +268,25 @@ class RichTestResult:
         return "valid" if self.valid else "invalid"
 
     def serializable(self) -> Message:
-        return asdict(self)
+        return {
+            "valid": self.valid,
+            "annotations": [a.serializable() for a in self.annotations],
+        }
 
     @property
     def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
         actual_annotations: dict[str, dict[str, Any]] = {}
-        for unit in self.annotations:
-            loc = unit.get("instanceLocation", "")
-            kw = unit.get("keyword", "")
-            ann = unit.get("annotation")
+        for ann in self.annotations:
+            loc = ann.instance_location
+            kw = ann.keyword
             if loc not in actual_annotations:
                 actual_annotations[loc] = {}
-            kw_loc = unit.get("keywordLocation", "")
             if kw not in actual_annotations[loc]:
                 actual_annotations[loc][kw] = {}
-            actual_annotations[loc][kw][kw_loc] = ann
+            actual_annotations[loc][kw][ann.keyword_location] = ann.value
         return actual_annotations
 
     def matches(self, expecting: Any) -> bool:
-        if isinstance(expecting, bool):
-            return self.valid == expecting
-
         actual_annotations = self.grouped_annotations
 
         for assertion in expecting:
@@ -296,7 +324,10 @@ class TestResult:
         if "annotations" in data_copy:
             return RichTestResult(
                 valid=valid,
-                annotations=data_copy["annotations"],
+                annotations=[
+                    Annotation.from_dict(**a)
+                    for a in data_copy["annotations"]
+                ],
             )
         return FlagTestResult(valid=valid)
 
