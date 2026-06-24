@@ -21,15 +21,17 @@
   },
   "oneOf": [
     {
+      "description": "Assert validity",
       "properties": {
         "valid": {
-          "description": "Whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
+          "description": "Whether validation of this instance is expected to be valid or not.",
           "type": "boolean"
         }
       },
-      "not": { "required": ["assertions"] }
+      "required": ["valid"]
     },
     {
+      "description": "Assert annotations",
       "properties": {
         "assertions": {
           "description": "Assertions for annotation output. Each assertion specifies a keyword, instance location, and expected annotation values keyed by schema location.",
@@ -58,8 +60,10 @@
           }
         }
       },
-      "required": ["assertions"],
-      "not": { "required": ["valid"] }
+      "required": ["assertions"]
+    },
+    {
+      "description": "No assertion — implementation results will be reported without comparing against an expected value."
     }
   ],
   "unevaluatedProperties": false

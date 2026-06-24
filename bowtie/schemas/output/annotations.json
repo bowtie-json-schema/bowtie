@@ -1,0 +1,40 @@
+{
+  "description": "An annotations output format result containing validity alongside collected annotations.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tag:bowtie.report,2024:output:annotations",
+
+  "type": "object",
+  "properties": {
+    "valid": {
+      "description": "Whether the instance validated successfully against the schema.",
+      "type": "boolean"
+    },
+    "annotations": {
+      "description": "Annotation results collected during evaluation. Each item represents a single annotation produced by a keyword.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "description": "The keyword that produced this annotation.",
+            "type": "string"
+          },
+          "instanceLocation": {
+            "description": "The location of the instance being annotated, as a JSON Pointer.",
+            "type": "string"
+          },
+          "keywordLocation": {
+            "description": "The location of the keyword that produced this annotation, as a JSON Pointer or URI.",
+            "type": "string"
+          },
+          "annotation": {
+            "description": "The annotation value produced by the keyword."
+          }
+        },
+        "required": ["keyword", "instanceLocation", "keywordLocation", "annotation"]
+      }
+    }
+  },
+  "required": ["valid"]
+}
