@@ -2922,11 +2922,8 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata, is_annotations = input
+    _cases, dialect, metadata, _is_annotations = input
     cases = list(filter(_cases))
-
-    output_format = "rich" if is_annotations else "flag"
-    test_type = "annotation" if is_annotations else "validation"
 
     return asyncio.run(
         _run_parallel(
@@ -2934,8 +2931,45 @@ def suite(
             dialect=dialect,
             cases=cases,
             run_metadata=metadata,
-            output=output_format,
-            test_type=test_type,
+            jobs=jobs,
+        ),
+    )
+
+
+@subcommand
+@IMPLEMENTATION
+@FILTER
+@fail_fast
+@SET_SCHEMA
+@VALIDATE
+@JOBS
+@click.argument(
+    "input",
+    type=_suite.AnnotationClickParam(),
+    metavar="DIALECT",
+)
+def annotation_suite(
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    filter: CaseTransform,
+    jobs: int,
+    **kwargs: Any,
+):
+    """
+    Run the official JSON Schema annotation test suite.
+
+    Supports dialect short names (e.g. ``2020``) and local file paths
+    to annotation test cases.
+    """
+    _cases, dialect, metadata = input
+    cases = list(filter(_cases))
+
+    return asyncio.run(
+        _run_parallel(
+            **kwargs,
+            dialect=dialect,
+            cases=cases,
+            run_metadata=metadata,
+            output="annotations",
             jobs=jobs,
         ),
     )
@@ -2950,7 +2984,6 @@ async def _run_one(
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     output: str = "flag",
-    test_type: str = "validation",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -2984,7 +3017,6 @@ async def _run_one(
             implementations={connectable_id: implementation.info},
             dialect=dialect,
             metadata=run_metadata,
-            test_type=test_type,
         )
         lines: list[dict[str, Any]] = [metadata.serializable()]
         count = 0

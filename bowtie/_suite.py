@@ -33,8 +33,142 @@ URL_FOR_DIALECT = {
     dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
 }
 
+ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
+
+URL_FOR_ANNOTATION_DIALECT = {
+    dialect: ANNOTATIONS_DIR_URL / dialect.short_name
+    for dialect in Dialect.known()
+}
+
 # Magic constants assumed/used by the official test suite for $ref tests
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
+
+
+class AnnotationClickParam(click.ParamType):
+    """
+    A command line parameter which loads annotation tests.
+    """
+
+    name = "json-schema-org/JSON-Schema-Test-Suite annotation test cases"
+
+    def convert(
+        self,
+        value: Any,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+        if not isinstance(value, str):
+            return value
+
+        # Convert dialect URIs or shortnames to annotation test suite URIs
+        value = Dialect.by_alias().get(value, value)
+        value = URL_FOR_ANNOTATION_DIALECT.get(value, value)
+
+        try:
+            with suppress(TypeError):
+                value = URL.parse(value)
+        except RelativeURLWithoutBase:
+            _dialect_name, dialect, cases = self._resolve_local(
+                path=Path(value),
+                ctx=ctx,
+            )
+            run_metadata: dict[str, Any] = {}
+        else:
+            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+                NotFoundError,
+            )
+
+            gh = github()
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+
+            path, ref = path_and_ref_from_gh_path(rest)
+            data = BytesIO()
+            data.name = ""
+            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+            if not succeeded:
+                message = "Fetching the annotation test suite failed."
+                error = DiagnosticError(
+                    code="annotation-suite-fetch-failed",
+                    message=message,
+                    causes=[
+                        f"Retrieved the tree {ref}",
+                        f"Tried to download {path} from within it.",
+                    ],
+                    hint_stmt=(
+                        f"Check that {ref} is an existing branch and that "
+                        "you have passed the right path to test cases."
+                    ),
+                    note_stmt="You can also pass a local path.",
+                )
+                rich.print(error)
+                return self.fail(message)
+            data.seek(0)
+            with zipfile.ZipFile(data) as zf:
+                (contents,) = zipfile.Path(zf).iterdir()
+                _dialect_name, dialect, cases = self._resolve_local(
+                    path=contents / path,
+                    ctx=ctx,
+                )
+                cases = list(cases)
+
+                try:
+                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
+                except NotFoundError:
+                    commit_info = ref
+                else:
+                    sha = cast(
+                        "str",
+                        commit.sha,  # type: ignore[reportUnknownMemberType]
+                    )
+                    url = cast(
+                        "str",
+                        commit.html_url,  # type: ignore[reportUnknownMemberType]
+                    )
+                    commit_info = {
+                        "text": sha[:7],
+                        "href": url,
+                    }
+                run_metadata: dict[str, Any] = {"Commit": commit_info}
+
+        return cases, dialect, run_metadata
+
+        self.fail(
+            f"{value!r} does not contain annotation test suite cases.",
+        )
+
+    def _resolve_local(
+        self,
+        path: Any,
+        ctx: click.Context | None,
+    ) -> tuple[str, Dialect, Iterable[TestCase]]:
+        if path.name.endswith(".json"):
+            paths, version_path = [path], path.parent
+        else:
+            paths, version_path = _glob(path, "*.json"), path
+
+        is_annotations = (
+            version_path.name == "annotations"
+            or version_path.parent.name == "annotations"
+        )
+
+        dialect_name = (
+            version_path.parent.name
+            if is_annotations
+            else version_path.name
+        )
+        dialect = Dialect.by_short_name().get(dialect_name)
+        if dialect is None and ctx is not None:
+            dialect = ctx.params.get("dialect")
+
+        if dialect is None:
+            self.fail(
+                f"{path} does not contain annotation test cases or "
+                "could not infer dialect. Please use --dialect.",
+            )
+
+        cases = annotation_cases_from(paths=paths, dialect=dialect)
+        return dialect_name, dialect, cases
 
 
 class ClickParam(click.ParamType):

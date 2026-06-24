@@ -142,7 +142,6 @@ class RunMetadata:
         repr=False,
     )
     metadata: Mapping[str, Any] = field(factory=dict, repr=False)  # type: ignore[reportUnknownVariableType]
-    test_type: str = field(default="validation", repr=False)
     started: datetime = field(
         factory=lambda: datetime.now(UTC),
         eq=False,
@@ -155,7 +154,6 @@ class RunMetadata:
         dialect: str,
         implementations: dict[str, dict[str, Any]],
         started: str | None = None,
-        test_type: str = "validation",
         **kwargs: Any,
     ) -> RunMetadata:
         from bowtie._core import ImplementationInfo  # noqa: PLC0415
@@ -168,7 +166,6 @@ class RunMetadata:
                 id: ImplementationInfo.from_dict(**data)
                 for id, data in implementations.items()
             },
-            test_type=test_type,
             **kwargs,
         )
 
@@ -424,7 +421,6 @@ class Report:  # noqa: PLW1641
                 implementations=implementations,
                 dialect=dialect,
                 started=started,
-                test_type=first.metadata.test_type,
             ),
             did_fail_fast=did_fail_fast,
         )
@@ -450,7 +446,14 @@ class Report:  # noqa: PLW1641
 
     @property
     def is_annotations(self) -> bool:
-        return self.metadata.test_type == "annotation"
+        """Check if any result row contains annotation data."""
+        for impl_results in self._results.values():
+            for seq_result in impl_results.values():
+                if seq_result.result.results is not None:
+                    for r in seq_result.result.results:
+                        if hasattr(r, "annotations"):
+                            return True
+        return False
 
     @property
     def is_empty(self):
