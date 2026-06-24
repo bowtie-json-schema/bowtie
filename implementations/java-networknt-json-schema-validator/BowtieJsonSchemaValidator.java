@@ -153,7 +153,7 @@ public class BowtieJsonSchemaValidator {
                 Schema jsonSchema =
                     schemaRegistry.getSchema(runRequest.testCase().schema());
 
-                if ("rich".equals(runRequest.output())) {
+                if ("annotations".equals(runRequest.output())) {
                   OutputUnit outputUnit = jsonSchema.validate(
                       test.instance(), OutputFormat.LIST, executionContext -> {
                         executionContext.executionConfig(config -> {
