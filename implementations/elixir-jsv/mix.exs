@@ -26,7 +26,7 @@ defmodule BowtieJSV.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jsv, "~> 0.7"}
+      {:jsv, ">= 0.19.6"}
     ]
   end
 end
