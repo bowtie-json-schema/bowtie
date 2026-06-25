@@ -51,7 +51,8 @@ int main() {
                            JSON{"https://json-schema.org/draft/2019-09/schema"},
                            JSON{"http://json-schema.org/draft-07/schema#"},
                            JSON{"http://json-schema.org/draft-06/schema#"},
-                           JSON{"http://json-schema.org/draft-04/schema#"}});
+                           JSON{"http://json-schema.org/draft-04/schema#"},
+                           JSON{"http://json-schema.org/draft-03/schema#"}});
 
       response.assign("implementation", std::move(implementation));
       stringify(response, std::cout);
