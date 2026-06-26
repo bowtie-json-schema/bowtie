@@ -2,10 +2,6 @@ version = 1
 revision = 3
 requires-python = ">=3.13"
 
-[options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
-exclude-newer-span = "P7D"
-
 [[package]]
 name = "accessible-pygments"
 version = "0.0.5"
@@ -1616,7 +1612,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-substitution-extensions"
-version = "2026.1.12"
+version = "2026.6.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beartype" },
@@ -1624,9 +1620,9 @@ dependencies = [
     { name = "myst-parser" },
     { name = "sphinx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/3e/a82aa5fed0d06161a89dc2f6971b160f837cad44f196c467fc6b2132acaa/sphinx_substitution_extensions-2026.1.12.tar.gz", hash = "sha256:25e0c6c40fbf9e1df593883da946879044a3bf8d85652c8c58f354a53575d736", size = 31676, upload-time = "2026-01-12T06:19:35.324Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/fb/6bf1b3e5bbd97d6f4632e2bb8f48518f8400cf0e4d2949f15be5a933b068/sphinx_substitution_extensions-2026.6.17.tar.gz", hash = "sha256:b7901937a43853bdaa97408ab8d73c9dc3497ec9bcf3a0c4b5fb2cce8baece13", size = 37045, upload-time = "2026-06-17T09:57:31.943Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/5e/9caa7167d2ef2b60326765150d64513be1b61b1864ad58a92683578b2776/sphinx_substitution_extensions-2026.1.12-py2.py3-none-any.whl", hash = "sha256:9152beb4f0f5cab52057681b376a473fa6b997defc85d4ac154dd12b13a3e987", size = 8766, upload-time = "2026-01-12T06:19:33.541Z" },
+    { url = "https://files.pythonhosted.org/packages/38/e9/b8f35529c3fa1fd3efd232113c5342bef4ab0cb703a1a3beda2fcccb6392/sphinx_substitution_extensions-2026.6.17-py2.py3-none-any.whl", hash = "sha256:9971b1e402d13faaca903af894130a831218f78e8e266d36cbcddad83b7f7609", size = 10152, upload-time = "2026-06-17T09:57:30.783Z" },
 ]
 
 [[package]]
