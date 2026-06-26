@@ -159,7 +159,8 @@ class TestHarness
     {
         return match ($this->currentDialect) {
             'http://json-schema.org/draft-06/schema#',
-            'http://json-schema.org/draft-07/schema#' => Constraint::CHECK_MODE_NORMAL | Constraint::CHECK_MODE_STRICT,
+            'http://json-schema.org/draft-07/schema#',
+            'https://json-schema.org/draft/2019-09/schema' => Constraint::CHECK_MODE_NORMAL | Constraint::CHECK_MODE_STRICT,
             default => Constraint::CHECK_MODE_NORMAL,
         };
     }
