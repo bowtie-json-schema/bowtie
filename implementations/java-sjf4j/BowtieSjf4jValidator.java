@@ -116,9 +116,7 @@ public class BowtieSjf4jValidator {
       if (registryMap != null) {
         for (Map.Entry<String, Object> e : registryMap.entrySet()) {
           URI id = URI.create(e.getKey());
-          if (registry.contains(id)) {
-            registry.index(id, JsonSchema.fromNode(e.getValue()));
-          }
+          registry.indexIfAbsent(id, JsonSchema.fromNode(e.getValue()));
         }
       }
 
