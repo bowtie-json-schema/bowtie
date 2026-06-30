@@ -193,6 +193,13 @@ class AnyTestResult(Protocol):
         ...
 
     @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        """
+        The grouped annotations for this result, empty if not supported.
+        """
+        ...
+
+    @property
     def skipped(self) -> bool: ...
 
     @property
@@ -205,34 +212,20 @@ class AnyTestResult(Protocol):
 
 @frozen
 class Annotation:
-    keyword: str
-    instance_location: str
-    keyword_location: str
-    value: Any
+    keyword: str = ""
+    instanceLocation: str = ""
+    keywordLocation: str = ""
+    annotation: Any = None
 
     @classmethod
-    def from_dict(
-        cls,
-        keyword: str = "",
-        instanceLocation: str = "",
-        keywordLocation: str = "",
-        annotation: Any = None,
-        **_: Any,
-    ) -> Self:
-        return cls(
-            keyword=keyword,
-            instance_location=instanceLocation,
-            keyword_location=keywordLocation,
-            value=annotation,
-        )
+    def from_dict(cls, **kwargs: Any) -> Self:
+        return cls(**{
+            k: v for k, v in kwargs.items()
+            if k in ("keyword", "instanceLocation", "keywordLocation", "annotation")
+        })
 
     def serializable(self) -> dict[str, Any]:
-        return {
-            "keyword": self.keyword,
-            "instanceLocation": self.instance_location,
-            "keywordLocation": self.keyword_location,
-            "annotation": self.value,
-        }
+        return asdict(self)
 
 
 @frozen
@@ -245,6 +238,10 @@ class FlagTestResult:
     @property
     def description(self):
         return "valid" if self.valid else "invalid"
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
 
     def serializable(self) -> Message:
         return asdict(self)
@@ -277,13 +274,13 @@ class RichTestResult:
     def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
         actual_annotations: dict[str, dict[str, Any]] = {}
         for ann in self.annotations:
-            loc = ann.instance_location
+            loc = ann.instanceLocation
             kw = ann.keyword
             if loc not in actual_annotations:
                 actual_annotations[loc] = {}
             if kw not in actual_annotations[loc]:
                 actual_annotations[loc][kw] = {}
-            actual_annotations[loc][kw][ann.keyword_location] = ann.value
+            actual_annotations[loc][kw][ann.keywordLocation] = ann.annotation
         return actual_annotations
 
     def matches(self, expecting: Any) -> bool:
