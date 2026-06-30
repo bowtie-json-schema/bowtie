@@ -1,4 +1,4 @@
-FROM gradle:9.6.0-jdk17 AS builder
+FROM gradle:9.6.1-jdk17 AS builder
 COPY BowtieSjf4jValidator.java /opt/app/BowtieSjf4jValidator.java
 COPY build.gradle /opt/app/build.gradle
 WORKDIR /opt/app
