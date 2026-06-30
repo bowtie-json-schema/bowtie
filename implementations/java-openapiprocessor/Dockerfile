@@ -1,4 +1,4 @@
-FROM gradle:9.6.0-jdk17 AS builder
+FROM gradle:9.6.1-jdk17 AS builder
 WORKDIR /opt/app
 COPY . .
 RUN gradle installDist --no-daemon
