@@ -44,7 +44,73 @@ URL_FOR_ANNOTATION_DIALECT = dict.fromkeys(
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 
-class AnnotationClickParam(click.ParamType):
+class _SuiteClickParam(click.ParamType):
+    """Base class for click parameters that fetch test suites."""
+
+    def _fetch_from_github(
+        self,
+        value: URL,
+        error_code: str,
+        error_message: str,
+        resolve_func: Any,
+    ) -> tuple[Any, ...]:
+        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+            NotFoundError,
+        )
+
+        gh = github()
+        org, repo_name, *rest = value.path_segments
+        repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+
+        path, ref = path_and_ref_from_gh_path(rest)
+        data = BytesIO()
+        data.name = ""
+        succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+        if not succeeded:
+            error = DiagnosticError(
+                code=error_code,
+                message=error_message,
+                causes=[
+                    f"Retrieved the tree {ref}",
+                    f"Tried to download {path} from within it.",
+                ],
+                hint_stmt=(
+                    f"Check that {ref} is an existing branch and that "
+                    "you have passed the right path to test cases."
+                ),
+                note_stmt="You can also pass a local path.",
+            )
+            rich.print(error)
+            return self.fail(error_message)
+        data.seek(0)
+        with zipfile.ZipFile(data) as zf:
+            (contents,) = zipfile.Path(zf).iterdir()
+            resolved = resolve_func(contents / path)
+            cases = list(resolved[-1])
+
+            try:
+                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
+            except NotFoundError:
+                commit_info = ref
+            else:
+                sha = cast(
+                    "str",
+                    commit.sha,  # type: ignore[reportUnknownMemberType]
+                )
+                url = cast(
+                    "str",
+                    commit.html_url,  # type: ignore[reportUnknownMemberType]
+                )
+                commit_info = {
+                    "text": sha[:7],
+                    "href": url,
+                }
+            run_metadata: dict[str, Any] = {"Commit": commit_info}
+
+        return (*resolved[:-1], cases, run_metadata)
+
+
+class AnnotationClickParam(_SuiteClickParam):
     """
     A command line parameter which loads annotation tests.
     """
@@ -75,66 +141,19 @@ class AnnotationClickParam(click.ParamType):
                 known_dialect=input_dialect,
             )
             run_metadata: dict[str, Any] = {}
+            return cases, dialect, run_metadata
         else:
-            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                NotFoundError,
-            )
-
-            gh = github()
-            org, repo_name, *rest = value.path_segments
-            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
-            path, ref = path_and_ref_from_gh_path(rest)
-            data = BytesIO()
-            data.name = ""
-            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-            if not succeeded:
-                message = "Fetching the annotation test suite failed."
-                error = DiagnosticError(
-                    code="annotation-suite-fetch-failed",
-                    message=message,
-                    causes=[
-                        f"Retrieved the tree {ref}",
-                        f"Tried to download {path} from within it.",
-                    ],
-                    hint_stmt=(
-                        f"Check that {ref} is an existing branch and that "
-                        "you have passed the right path to test cases."
-                    ),
-                    note_stmt="You can also pass a local path.",
-                )
-                rich.print(error)
-                return self.fail(message)
-            data.seek(0)
-            with zipfile.ZipFile(data) as zf:
-                (contents,) = zipfile.Path(zf).iterdir()
-                _dialect_name, dialect, cases = self._resolve_local(
-                    path=contents / path,
+            _dialect_name, dialect, cases, run_metadata = self._fetch_from_github(
+                value=value,
+                error_code="annotation-suite-fetch-failed",
+                error_message="Fetching the annotation test suite failed.",
+                resolve_func=lambda path: self._resolve_local(
+                    path=path,
                     ctx=ctx,
                     known_dialect=input_dialect,
-                )
-                cases = list(cases)
-
-                try:
-                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-                except NotFoundError:
-                    commit_info = ref
-                else:
-                    sha = cast(
-                        "str",
-                        commit.sha,  # type: ignore[reportUnknownMemberType]
-                    )
-                    url = cast(
-                        "str",
-                        commit.html_url,  # type: ignore[reportUnknownMemberType]
-                    )
-                    commit_info = {
-                        "text": sha[:7],
-                        "href": url,
-                    }
-                run_metadata: dict[str, Any] = {"Commit": commit_info}
-
-        return cases, dialect, run_metadata
+                ),
+            )
+            return cases, dialect, run_metadata
 
         self.fail(
             f"{value!r} does not contain annotation test suite cases.",
@@ -176,7 +195,7 @@ class AnnotationClickParam(click.ParamType):
         return dialect_name, dialect, cases
 
 
-class ClickParam(click.ParamType):
+class ClickParam(_SuiteClickParam):
     """
     A command line parameter which loads tests from the official test suite.
     """
@@ -205,67 +224,19 @@ class ClickParam(click.ParamType):
                 ctx=ctx,
             )
             run_metadata: dict[str, Any] = {}
+            return cases, dialect, run_metadata, is_annotations
         else:
-            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                NotFoundError,
-            )
-
-            gh = github()
-            org, repo_name, *rest = value.path_segments
-            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
-            path, ref = path_and_ref_from_gh_path(rest)
-            data = BytesIO()
-            data.name = ""
-            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-            if not succeeded:
-                message = "Fetching the test suite from GitHub failed."
-                error = DiagnosticError(
-                    code="suite-fetch-failed",
-                    message=message,
-                    causes=[
-                        f"Retrieved the tree {ref}",
-                        f"Tried to download {path} from within it.",
-                    ],
-                    hint_stmt=(
-                        f"Check that {ref} is an existing branch and that "
-                        "you have passed the right path to test cases."
-                    ),
-                    note_stmt="You also can pass a local path to test cases.",
-                )
-                rich.print(error)
-                return self.fail(message)
-            data.seek(0)
-            with zipfile.ZipFile(data) as zf:
-                (contents,) = zipfile.Path(zf).iterdir()
-                cases, dialect, is_annotations = self._cases_and_dialect(
-                    path=contents / path,
+            cases, dialect, is_annotations, run_metadata = self._fetch_from_github(
+                value=value,
+                error_code="suite-fetch-failed",
+                error_message="Fetching the test suite from GitHub failed.",
+                resolve_func=lambda path: self._cases_and_dialect(
+                    path=path,
                     ctx=ctx,
-                )
-                cases = list(cases)
-
-                try:
-                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-                except NotFoundError:
-                    commit_info = ref
-                else:
-                    # TODO: Make this the tree URL maybe, but I see tree(...)
-                    #       doesn't come with an html_url
-                    sha = cast(
-                        "str",
-                        commit.sha,  # type: ignore[reportUnknownMemberType]
-                    )
-                    url = cast(
-                        "str",
-                        commit.html_url,  # type: ignore[reportUnknownMemberType]
-                    )
-                    commit_info = {
-                        "text": sha[:7],
-                        "href": url,
-                    }
-                run_metadata: dict[str, Any] = {"Commit": commit_info}
-
-        return cases, dialect, run_metadata, is_annotations
+                ),
+            )
+            # Re-order the return tuple to match the expected return type
+            return cases, dialect, run_metadata, is_annotations
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
