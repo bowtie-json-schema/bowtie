@@ -2,7 +2,7 @@
   "description": "An annotations output format result containing validity alongside collected annotations.",
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "tag:bowtie.report,2024:output:annotations",
+  "$id": "tag:bowtie.report,2026:output:annotations",
 
   "type": "object",
   "properties": {
@@ -36,5 +36,5 @@
       }
     }
   },
-  "required": ["valid"]
+  "required": ["valid", "annotations"]
 }

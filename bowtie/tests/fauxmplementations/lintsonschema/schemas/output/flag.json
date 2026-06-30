@@ -2,7 +2,7 @@
   "description": "A flag output format result containing only a boolean validity result.",
 
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "tag:bowtie.report,2024:output:flag",
+  "$id": "tag:bowtie.report,2026:output:flag",
 
   "type": "object",
   "properties": {
@@ -11,5 +11,6 @@
       "type": "boolean"
     }
   },
-  "required": ["valid"]
+  "required": ["valid"],
+  "unevaluatedProperties": false
 }

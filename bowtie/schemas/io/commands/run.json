@@ -49,7 +49,7 @@
               "items": {
                 "type": "object",
                 "oneOf": [
-                  { "$ref": "tag:bowtie.report,2024:output:annotations" },
+                  { "$ref": "tag:bowtie.report,2026:output" },
                   { "$ref": "#skipped" },
                   { "$ref": "#errored" }
                 ]
