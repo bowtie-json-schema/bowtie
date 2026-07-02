@@ -4,6 +4,7 @@ WORKDIR /opt/harness
 COPY Harness.scala /opt/harness
 COPY build.sbt /opt/harness
 COPY project /opt/harness/project
+COPY src /opt/harness/src
 RUN sbt assembly
 
 FROM bellsoft/liberica-openjdk-alpine:26

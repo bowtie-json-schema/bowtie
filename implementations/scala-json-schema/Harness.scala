@@ -3,10 +3,21 @@ import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import io.circe.{Json, Decoder}
 import java.io.InputStream
+import java.nio.charset.StandardCharsets
 import java.util.Scanner
 import java.util.jar.Manifest
-import io.github.jam01.json_schema.{Config, Dialect, MutableRegistry, Schema, Uri}
+import io.github.jam01.json_schema.{Config, Dialect, MutableRegistry, Registry, Schema, Uri}
 import io.github.jam01.json_schema as js
+
+// The library resolves `$ref` purely against the supplied Registry - it doesn't bundle
+// the official meta-schema documents itself, so a schema that `$ref`s its own dialect's
+// meta-schema (e.g. the test suite's "remote ref, containing refs itself" case) needs
+// them supplied. Falls back to the officially bundled 2020-12 meta-schemas whenever a
+// URI isn't found in the per-case registry.
+final class FallbackRegistry(primary: Registry, fallback: Registry) extends Registry {
+  override def contains(schemaUri: Uri): Boolean = primary.contains(schemaUri) || fallback.contains(schemaUri)
+  override def get(schemaUri: Uri): Option[Schema] = primary.get(schemaUri).orElse(fallback.get(schemaUri))
+}
 
 class Harness {
   def operate(line: String) = {
@@ -77,7 +88,8 @@ class Harness {
 
       val schema: Schema = js.from(ujson.Readable, ujson.Readable.fromString(testCase.schema.noSpaces),
         registry = registry)
-      val validator = js.validator(schema, Config(dialect = Dialect.FullSpec, ffast = false), registry)
+      val effectiveRegistry = new FallbackRegistry(registry, Harness.metaschemas)
+      val validator = js.validator(schema, Config(dialect = Dialect.FullSpec, ffast = false), effectiveRegistry)
 
       val resultArray = testCase.tests.map { test =>
         val outcome = ujson.read(test.instance.noSpaces).transform(validator)
@@ -131,6 +143,27 @@ case class Test(description: String, comment: Option[String], instance: Json, va
 
 object Harness {
   var started: Boolean = false
+
+  // The official JSON Schema 2020-12 meta-schemas, bundled as resources and pre-registered
+  // once so `$ref`s to them (e.g. a schema validating against its own dialect) resolve.
+  val metaschemas: MutableRegistry = {
+    val reg = new MutableRegistry
+    Seq(
+      "schema.json" -> "https://json-schema.org/draft/2020-12/schema",
+      "meta_core.json" -> "https://json-schema.org/draft/2020-12/meta/core",
+      "meta_applicator.json" -> "https://json-schema.org/draft/2020-12/meta/applicator",
+      "meta_unevaluated.json" -> "https://json-schema.org/draft/2020-12/meta/unevaluated",
+      "meta_validation.json" -> "https://json-schema.org/draft/2020-12/meta/validation",
+      "meta_meta-data.json" -> "https://json-schema.org/draft/2020-12/meta/meta-data",
+      "meta_format-annotation.json" -> "https://json-schema.org/draft/2020-12/meta/format-annotation",
+      "meta_content.json" -> "https://json-schema.org/draft/2020-12/meta/content",
+    ).foreach { case (resource, uri) =>
+      val is = getClass.getResourceAsStream(s"/metaschemas/$resource")
+      val text = new String(is.readAllBytes(), StandardCharsets.UTF_8)
+      js.from(ujson.Readable, ujson.Readable.fromString(text), docbase = Uri(uri), registry = reg)
+    }
+    reg
+  }
 
   def main(args: Array[String]): Unit = {
     val input = new Scanner(System.in)
