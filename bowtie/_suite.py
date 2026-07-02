@@ -11,7 +11,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
-import os
 import zipfile
 
 from diagnostic import DiagnosticError
@@ -34,8 +33,147 @@ URL_FOR_DIALECT = {
     dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
 }
 
+ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
+
+URL_FOR_ANNOTATION_DIALECT = dict.fromkeys(
+    Dialect.known(),
+    ANNOTATIONS_DIR_URL,
+)
+
 # Magic constants assumed/used by the official test suite for $ref tests
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
+
+
+class AnnotationClickParam(click.ParamType):
+    """
+    A command line parameter which loads annotation tests.
+    """
+
+    name = "json-schema-org/JSON-Schema-Test-Suite annotation test cases"
+
+    def convert(
+        self,
+        value: Any,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+        if not isinstance(value, str):
+            return value
+
+        # Convert dialect URIs or shortnames to annotation test suite URIs
+        input_dialect = Dialect.by_alias().get(value)
+        if input_dialect is not None:
+            value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
+
+        try:
+            if isinstance(value, str):
+                value = URL.parse(value)
+        except RelativeURLWithoutBase:
+            _dialect_name, dialect, cases = self._resolve_local(
+                path=Path(value),
+                ctx=ctx,
+                known_dialect=input_dialect,
+            )
+            run_metadata: dict[str, Any] = {}
+        else:
+            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+                NotFoundError,
+            )
+
+            gh = github()
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+
+            path, ref = path_and_ref_from_gh_path(rest)
+            data = BytesIO()
+            data.name = ""
+            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+            if not succeeded:
+                message = "Fetching the annotation test suite failed."
+                error = DiagnosticError(
+                    code="annotation-suite-fetch-failed",
+                    message=message,
+                    causes=[
+                        f"Retrieved the tree {ref}",
+                        f"Tried to download {path} from within it.",
+                    ],
+                    hint_stmt=(
+                        f"Check that {ref} is an existing branch and that "
+                        "you have passed the right path to test cases."
+                    ),
+                    note_stmt="You can also pass a local path.",
+                )
+                rich.print(error)
+                return self.fail(message)
+            data.seek(0)
+            with zipfile.ZipFile(data) as zf:
+                (contents,) = zipfile.Path(zf).iterdir()
+                _dialect_name, dialect, cases = self._resolve_local(
+                    path=contents / path,
+                    ctx=ctx,
+                    known_dialect=input_dialect,
+                )
+                cases = list(cases)
+
+                try:
+                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
+                except NotFoundError:
+                    commit_info = ref
+                else:
+                    sha = cast(
+                        "str",
+                        commit.sha,  # type: ignore[reportUnknownMemberType]
+                    )
+                    url = cast(
+                        "str",
+                        commit.html_url,  # type: ignore[reportUnknownMemberType]
+                    )
+                    commit_info = {
+                        "text": sha[:7],
+                        "href": url,
+                    }
+                run_metadata: dict[str, Any] = {"Commit": commit_info}
+
+        return cases, dialect, run_metadata
+
+        self.fail(
+            f"{value!r} does not contain annotation test suite cases.",
+        )
+
+    def _resolve_local(
+        self,
+        path: Any,
+        ctx: click.Context | None,
+        known_dialect: Dialect | None = None,
+    ) -> tuple[str, Dialect, Iterable[TestCase]]:
+        if path.name.endswith(".json"):
+            paths, version_path = [path], path.parent
+        else:
+            paths, version_path = _glob(path, "*.json"), path
+
+        is_annotations = (
+            version_path.name == "annotations"
+            or version_path.parent.name == "annotations"
+        )
+
+        dialect_name = (
+            version_path.parent.name if is_annotations else version_path.name
+        )
+
+        dialect = known_dialect
+        if dialect is None:
+            dialect = Dialect.by_short_name().get(dialect_name)
+        if dialect is None and ctx is not None:
+            dialect = ctx.params.get("dialect")
+
+        if dialect is None:
+            self.fail(
+                f"{path} does not contain annotation test cases or "
+                "could not infer dialect. Please use --dialect.",
+            )
+
+        cases = annotation_cases_from(paths=paths, dialect=dialect)
+        return dialect_name, dialect, cases
 
 
 class ClickParam(click.ParamType):
@@ -50,7 +188,7 @@ class ClickParam(click.ParamType):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any], bool]:
         if not isinstance(value, str):
             return value
 
@@ -58,61 +196,53 @@ class ClickParam(click.ParamType):
         value = Dialect.by_alias().get(value, value)
         value = URL_FOR_DIALECT.get(value, value)
 
-        # On Windows, drive-letter paths like D:\... are misinterpreted by
-        # URL.parse() as having a URL scheme (the drive letter).  Use
-        # splitdrive() to catch these before attempting URL parsing.
-        if isinstance(value, str) and (
-            os.path.splitdrive(value)[0] or Path(value).exists()
-        ):
-            cases, dialect = self._cases_and_dialect(path=Path(value))
-            run_metadata = {}
+        try:
+            with suppress(TypeError):
+                value = URL.parse(value)
+        except RelativeURLWithoutBase:
+            cases, dialect, is_annotations = self._cases_and_dialect(
+                path=Path(value),
+                ctx=ctx,
+            )
+            run_metadata: dict[str, Any] = {}
         else:
-            try:
-                with suppress(TypeError):
-                    value = URL.parse(value)
-            except RelativeURLWithoutBase:
-                cases, dialect = self._cases_and_dialect(path=Path(value))
-                run_metadata = {}
-            else:
-                value = cast("URL", value)
-                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                    NotFoundError,
+            from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+                NotFoundError,
+            )
+
+            gh = github()
+            org, repo_name, *rest = value.path_segments
+            repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+
+            path, ref = path_and_ref_from_gh_path(rest)
+            data = BytesIO()
+            data.name = ""
+            succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+            if not succeeded:
+                message = "Fetching the test suite from GitHub failed."
+                error = DiagnosticError(
+                    code="suite-fetch-failed",
+                    message=message,
+                    causes=[
+                        f"Retrieved the tree {ref}",
+                        f"Tried to download {path} from within it.",
+                    ],
+                    hint_stmt=(
+                        f"Check that {ref} is an existing branch and that "
+                        "you have passed the right path to test cases."
+                    ),
+                    note_stmt="You also can pass a local path to test cases.",
                 )
-
-                gh = github()
-                org, repo_name, *rest = value.path_segments
-                repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
-                path, ref = path_and_ref_from_gh_path(rest)
-                data = BytesIO()
-                data.name = ""
-                succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-                if not succeeded:
-                    message = "Fetching the test suite from GitHub failed."
-                    error = DiagnosticError(
-                        code="suite-fetch-failed",
-                        message=message,
-                        causes=[
-                            f"Retrieved the tree {ref}",
-                            f"Tried to download {path} from within it.",
-                        ],
-                        hint_stmt=(
-                            f"Check that {ref} is an existing branch and that "
-                            "you have passed the right path to test cases."
-                        ),
-                        note_stmt=(
-                            "You also can pass a local path to test cases."
-                        ),
-                    )
-                    rich.print(error)
-                    return self.fail(message)
-                data.seek(0)
-                with zipfile.ZipFile(data) as zf:
-                    (contents,) = zipfile.Path(zf).iterdir()
-                    cases, dialect = self._cases_and_dialect(
-                        path=contents / path,
-                    )
-                    cases = list(cases)
+                rich.print(error)
+                return self.fail(message)
+            data.seek(0)
+            with zipfile.ZipFile(data) as zf:
+                (contents,) = zipfile.Path(zf).iterdir()
+                cases, dialect, is_annotations = self._cases_and_dialect(
+                    path=contents / path,
+                    ctx=ctx,
+                )
+                cases = list(cases)
 
                 try:
                     commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
@@ -135,25 +265,42 @@ class ClickParam(click.ParamType):
                     }
                 run_metadata: dict[str, Any] = {"Commit": commit_info}
 
-        return cases, dialect, run_metadata
+        return cases, dialect, run_metadata, is_annotations
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
-    def _cases_and_dialect(self, path: Any):
+    def _cases_and_dialect(self, path: Any, ctx: click.Context | None):
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
             paths, version_path = _glob(path, "*.json"), path
 
+        is_annotations = (
+            version_path.name == "annotations"
+            or version_path.parent.name == "annotations"
+        )
+
         remotes = version_path.parent.parent / "remotes"
 
-        dialect = Dialect.by_short_name().get(version_path.name)
+        dialect_name = (
+            version_path.parent.name if is_annotations else version_path.name
+        )
+        dialect = Dialect.by_short_name().get(dialect_name)
+        if dialect is None and ctx is not None:
+            dialect = ctx.params.get("dialect")
+
         if dialect is None:
-            self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
+            self.fail(
+                f"{path} does not contain JSON Schema Test Suite cases or "
+                "could not infer dialect. Please use --dialect.",
+            )
 
-        cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
+        if is_annotations:
+            cases = annotation_cases_from(paths=paths, dialect=dialect)
+        else:
+            cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
-        return cases, dialect
+        return cases, dialect, is_annotations
 
 
 _P = Path | zipfile.Path
@@ -213,13 +360,68 @@ def cases_from(
             )
 
 
+def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
+    if compatibility is None:
+        return True
+
+    for constraint in compatibility.split(","):
+        constraint = constraint.strip()
+        if constraint.startswith("<="):
+            b = Dialect.by_alias().get(constraint[2:])
+            if b is not None and dialect > b:
+                return False
+        elif constraint.startswith("="):
+            b = Dialect.by_alias().get(constraint[1:])
+            if b is not None and dialect != b:
+                return False
+        else:
+            b = Dialect.by_alias().get(constraint)
+            if b is not None and dialect < b:
+                return False
+    return True
+
+
+def annotation_cases_from(
+    paths: Iterable[_P],
+    dialect: Dialect,
+) -> Iterable[TestCase]:
+    for path in paths:
+        data = json.loads(path.read_text())
+        if "suite" not in data:
+            continue
+        for case in data["suite"]:
+            compatibility = case.get("compatibility")
+            if not _is_compatible(dialect, compatibility):
+                continue
+
+            tests = [
+                {
+                    "description": test.get("description", ""),
+                    "instance": test.get("instance", test.get("data", {})),
+                    "assertions": test.get("assertions", []),
+                }
+                for test in case["tests"]
+            ]
+
+            if not tests:
+                continue
+
+            yield TestCase.from_dict(
+                dialect=dialect,
+                description=case["description"],
+                schema=case["schema"],
+                tests=tests,
+            )
+
+
 def path_and_ref_from_gh_path(path: list[str]):
-    subpath: list[str] = []
-    while path[-1] != "tests":
-        subpath.append(path.pop())
-    subpath.append(path.pop())
-    # remove tree/ or blob/
-    return "/".join(reversed(subpath)).rstrip("/"), "/".join(path[1:])
+    ROOTS = {"tests", "annotations"}
+    for i in range(1, len(path)):
+        if path[i] in ROOTS:
+            ref = "/".join(path[1:i])
+            subpath = "/".join(path[i:]).rstrip("/")
+            return subpath, ref
+    return "", "/".join(path[1:]).rstrip("/")
 
 
 # Missing zipfile.Path methods...

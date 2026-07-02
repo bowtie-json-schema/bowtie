@@ -42,7 +42,7 @@ import structlog
 import structlog.typing
 
 from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
-from bowtie._commands import SeqCase, TestResult, Unsuccessful
+from bowtie._commands import FlagTestResult, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -125,7 +125,13 @@ _COMMAND_GROUPS = {
     "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
-            commands=["validate", "suite", "summary", "info"],
+            commands=[
+                "validate",
+                "suite",
+                "annotation-suite",
+                "summary",
+                "info",
+            ],
         ),
         CommandGroupDict(
             name="Advanced Usage",
@@ -693,6 +699,22 @@ def summary(report: _report.Report, format: _F, show: str):
         ):
             return [(id, u.counts()) for id, _, u in value]
 
+    elif report.is_annotations:
+        results = report.cases_with_results()
+        exit_code = 0
+        to_table = _annotation_results_table
+        to_markdown_table = _annotation_results_table_in_markdown
+
+        def to_serializable(  # type: ignore[reportRedeclaration]
+            value: Iterable[
+                tuple[
+                    TestCase,
+                    Iterable[tuple[Test, dict[str, AnyTestResult]]],
+                ]
+            ],
+        ) -> list[dict[str, Any]]:
+            return _annotation_to_serializable(report, value)
+
     else:
         results = report.cases_with_results()
         exit_code = 0
@@ -909,6 +931,277 @@ def _validation_results_table_in_markdown(
         final_content += "\n"
 
     return final_content
+
+
+def _annotation_status(
+    test: Example | Test,
+    result: AnyTestResult,
+) -> str:
+    """Return a status string for an annotation test result."""
+    if result.skipped:
+        return "skipped"
+    if result.errored:
+        return "error"
+    expected = test.expected()
+    if expected is None or result.matches(expected):
+        return "pass"
+    return "fail"
+
+
+def _assertions_to_grouped(
+    assertions: list[dict[str, Any]],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """
+    Convert test suite assertions to grouped format.
+
+    Matches the format of ``RichTestResult.grouped_annotations``.
+
+    Input format (test suite assertions)::
+
+        [{"location": "/foo", "keyword": "title",
+          "expected": {"#/path": "value"}}]
+
+    Output format (grouped)::
+
+        {"/foo": {"title": {"#/path": "value"}}}
+    """
+    grouped: dict[str, dict[str, dict[str, Any]]] = {}
+    for assertion in assertions:
+        location = assertion.get("location", "")
+        keyword = assertion.get("keyword", "")
+        expected = assertion.get("expected", {})
+        if location not in grouped:
+            grouped[location] = {}
+        if keyword not in grouped[location]:
+            grouped[location][keyword] = {}
+        grouped[location][keyword].update(expected)
+    return grouped
+
+
+def _annotation_results_table(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+):
+    test = "tests" if report.total_tests != 1 else "test"
+    table = Table(
+        Column(header="Test Case", vertical="middle"),
+        "",
+        title="Bowtie (Annotations)",
+        caption=f"{report.total_tests} {test} ran",
+    )
+
+    implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
+
+    for case, test_results in results:
+        subtable = Table("Instance", box=box.SIMPLE_HEAD)
+        for implementation in implementations.values():
+            subtable.add_column(
+                Text.assemble(
+                    implementation.name,
+                    (
+                        (f" {implementation.version}", "dim")
+                        if implementation_counts[implementation.id] > 1
+                        else ("", "")
+                    ),
+                    (f" ({implementation.language})", "dim"),
+                ),
+            )
+
+        for t, test_result in test_results:
+            cells: list[Text] = []
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+
+                cell_text = Text()
+                if status == "pass":
+                    cell_text.append("Pass", style="green")
+                elif status == "fail":
+                    cell_text.append("Fail", style="red")
+                elif status == "skipped":
+                    cell_text.append("⏭ Skipped", style="yellow")
+                else:
+                    cell_text.append("⚠ Error", style="red bold")
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            dumped = json.dumps(actual, indent=2)
+                            cell_text.append(f"\n{dumped}")
+                    else:
+                        expected_raw = t.expected()
+                        expected_grouped = (
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        cell_text.append("\nExpected:\n", style="bold")
+                        cell_text.append(
+                            f"{json.dumps(expected_grouped, indent=2)}\n",
+                        )
+                        cell_text.append("Actual:\n", style="bold")
+                        cell_text.append(f"{json.dumps(actual, indent=2)}")
+
+                cells.append(cell_text)
+
+            subtable.add_row(t.syntax(), *cells)
+
+        table.add_row(case.syntax(report.metadata.dialect), subtable)
+        table.add_section()
+
+    return table
+
+
+def _annotation_results_table_in_markdown(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+):
+    rows_data: list[list[str]] = []
+    final_content = ""
+
+    inner_table_columns = ["Instance"]
+    implementations = report.implementations
+    implementation_counts = Counter(
+        each.id for each in implementations.values()
+    )
+    inner_table_columns.extend(
+        f"{impl.name}"
+        + (f" {impl.version}" if implementation_counts[impl.id] > 1 else "")
+        + f" ({impl.language})"
+        for impl in implementations.values()
+    )
+
+    for case, test_results in results:
+        inner_table_rows: list[list[str]] = []
+        for t, test_result in test_results:
+            row = [json.dumps(t.instance)]
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+                cell_text = ""
+                if status == "pass":
+                    cell_text += "Pass"
+                elif status == "fail":
+                    cell_text += "Fail"
+                elif status == "skipped":
+                    cell_text += "⏭ Skipped"
+                else:
+                    cell_text += "⚠ Error"
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            dumped = json.dumps(actual)
+                            cell_text += f"<br><br>Actual:<br>`{dumped}`"
+                    else:
+                        expected_raw = t.expected()
+                        expected_grouped = (
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        dumped_exp = json.dumps(expected_grouped)
+                        dumped_act = json.dumps(actual)
+                        cell_text += (
+                            f"<br><br>Expected:<br>`{dumped_exp}`"
+                            f"<br>Actual:<br>`{dumped_act}`"
+                        )
+
+                row.append(cell_text)
+            inner_table_rows.append(row)
+        inner_markdown_table = convert_table_to_markdown(
+            inner_table_columns,
+            inner_table_rows,
+        )
+        schema_name = json.dumps(case.schema, indent=2)
+        row_data = [schema_name, inner_markdown_table]
+        rows_data.append(row_data)
+
+    for idx, row_data in enumerate(rows_data):
+        final_content += (
+            f"### {idx + 1}. Schema:\n ```json\n{row_data[0]}\n```\n\n"
+        )
+        final_content += "### Results:"
+        final_content += row_data[1]
+        final_content += "\n"
+
+    return final_content
+
+
+def _annotation_to_serializable(
+    report: _report.Report,
+    results: Iterable[
+        tuple[
+            TestCase,
+            Iterable[tuple[Test, Mapping[str, AnyTestResult]]],
+        ],
+    ],
+) -> list[dict[str, Any]]:
+    implementations = report.implementations
+    serialized: list[dict[str, Any]] = []
+    for case, test_results in results:
+        tests_out: list[dict[str, Any]] = []
+        for t, test_result in test_results:
+            impl_results: dict[str, dict[str, Any]] = {}
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                status = _annotation_status(t, r)
+                result_data: dict[str, Any] = {"status": status}
+
+                has_annotations = hasattr(r, "grouped_annotations")
+                if has_annotations and status in ("pass", "fail"):
+                    actual = getattr(r, "grouped_annotations", {})
+                    if status == "pass":
+                        if actual:
+                            result_data["actual"] = actual
+                    else:
+                        expected_raw = t.expected()
+                        result_data["expected"] = (
+                            _assertions_to_grouped(
+                                list(expected_raw),  # type: ignore[arg-type]
+                            )
+                            if isinstance(expected_raw, list)
+                            else expected_raw
+                        )
+                        result_data["actual"] = actual
+
+                impl_results[impl_id] = result_data
+
+            tests_out.append(
+                {
+                    "instance": t.instance,
+                    "results": impl_results,
+                },
+            )
+        serialized.append(
+            {
+                "description": case.description,
+                "schema": case.schema,
+                "tests": tests_out,
+            },
+        )
+    return serialized
 
 
 @subcommand
@@ -2582,7 +2875,10 @@ async def smoke(
                             #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
-                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                expected = FlagTestResult(
+                                    valid=bool(test.expected()),
+                                )
+                                if expected != result:
                                     echo(f"* `{test.instance}`")
 
                         echo("\n</details>")
@@ -2594,14 +2890,16 @@ async def smoke(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@dialect_option(default=None)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
 @click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
 def suite(
-    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any], bool],
     filter: CaseTransform,
     jobs: int,
+    dialect: Dialect | None = None,
     **kwargs: Any,
 ):
     """
@@ -2630,14 +2928,54 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata = input
-    cases = filter(_cases)
+    _cases, dialect, metadata, _is_annotations = input
+    cases = list(filter(_cases))
+
     return asyncio.run(
         _run_parallel(
             **kwargs,
             dialect=dialect,
             cases=cases,
             run_metadata=metadata,
+            jobs=jobs,
+        ),
+    )
+
+
+@subcommand
+@IMPLEMENTATION
+@FILTER
+@fail_fast
+@SET_SCHEMA
+@VALIDATE
+@JOBS
+@click.argument(
+    "input",
+    type=_suite.AnnotationClickParam(),
+    metavar="DIALECT",
+)
+def annotation_suite(
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    filter: CaseTransform,
+    jobs: int,
+    **kwargs: Any,
+):
+    """
+    Run the official JSON Schema annotation test suite.
+
+    Supports dialect short names (e.g. ``2020``) and local file paths
+    to annotation test cases.
+    """
+    _cases, dialect, metadata = input
+    cases = list(filter(_cases))
+
+    return asyncio.run(
+        _run_parallel(
+            **kwargs,
+            dialect=dialect,
+            cases=cases,
+            run_metadata=metadata,
+            output="annotations",
             jobs=jobs,
         ),
     )
@@ -2651,6 +2989,7 @@ async def _run_one(
     max_fail: int | None = None,
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
+    output: str = "flag",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -2702,7 +3041,7 @@ async def _run_one(
             maybe_set_schema(dialect)(cases),
             1,
         ):
-            seq_case = SeqCase(seq=count, case=case)
+            seq_case = SeqCase(seq=count, case=case, output=output)
             got_result = reporter.case_started(seq_case, dialect)
             st_time = perf_counter_ns()
             result = await seq_case.run(runner=runner)
@@ -2735,6 +3074,7 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
+    output: str = "flag",
     **kwargs: Any,
 ) -> int:
     """
@@ -2749,6 +3089,7 @@ async def _run_parallel(
                 connectable=connectable,
                 cases=materialized,
                 dialect=dialect,
+                output=output,
                 **kwargs,
             )
 

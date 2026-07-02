@@ -126,7 +126,7 @@
           "type": "array",
 
           "minItems": 1,
-          "items": { "type": ["boolean", "null"] }
+          "items": { "type": ["boolean", "null", "array"] }
         }
       }
     },
