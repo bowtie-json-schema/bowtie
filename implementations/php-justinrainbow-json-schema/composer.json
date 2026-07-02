@@ -23,7 +23,8 @@
     "run-suite-draft3": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft3",
     "run-suite-draft4": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft4",
     "run-suite-draft6": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft6",
-    "run-suite-draft7": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7"
+    "run-suite-draft7": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft7",
+    "run-suite-draft2019-09": "bowtie suite -i localhost/php-justinrainbow-json-schema https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/draft2019-09"
   },
   "scripts-descriptions": {
     "build-container": "Build the container image using Docker.",
@@ -31,6 +32,7 @@
     "run-suite-draft3": "Run the test suite for draft-3 against the test harness",
     "run-suite-draft4": "Run the test suite for draft-4 against the test harness",
     "run-suite-draft6": "Run the test suite for draft-6 against the test harness",
-    "run-suite-draft7": "Run the test suite for draft-7 against the test harness"
+    "run-suite-draft7": "Run the test suite for draft-7 against the test harness",
+    "run-suite-draft2019-09": "Run the test suite for draft-2019-09 against the test harness"
   }
 }
