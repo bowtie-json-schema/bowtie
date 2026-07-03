@@ -278,6 +278,7 @@ updates:
     cooldown:
       default-days: 7
 
+  # ignore: scala-json-schema - Dependabot doesn't support Scala.
   # ignore: scala-mjs-validator - Dependabot doesn't support Scala.
   # ignore: scala-rc-circe-json-validator - Dependabot doesn't support Scala.
   # ignore: unison-typed-json - Dependabot doesn't support Unsion.
@@ -563,6 +564,13 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/java-json-schema-react"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/scala-json-schema"
     schedule:
       interval: "daily"
     cooldown:
