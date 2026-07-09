@@ -230,7 +230,7 @@ class Annotation:
                     "keywordLocation",
                     "annotation",
                 )
-            }
+            },
         )
 
     def serializable(self) -> dict[str, Any]:

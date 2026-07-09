@@ -738,8 +738,11 @@ def summary(report: _report.Report, format: _F, show: str):
                                     expected_raw = t.expected()
                                     result_data["expected"] = (
                                         _assertions_to_grouped(
-                                            list(expected_raw)
-                                        )  # type: ignore[arg-type]
+                                            cast(
+                                                "list[dict[str, Any]]",
+                                                expected_raw,
+                                            ),
+                                        )
                                         if isinstance(expected_raw, list)
                                         else expected_raw
                                     )
