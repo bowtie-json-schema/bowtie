@@ -444,8 +444,6 @@ class Report:  # noqa: PLW1641
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
 
-
-
     @property
     def is_empty(self):
         return not self._cases

@@ -219,12 +219,19 @@ class Annotation:
 
     @classmethod
     def from_dict(cls, **kwargs: Any) -> Self:
-        return cls(**{
-            k: v for k, v in kwargs.items()
-            if k in (
-                "keyword", "instanceLocation", "keywordLocation", "annotation",
-            )
-        })
+        return cls(
+            **{
+                k: v
+                for k, v in kwargs.items()
+                if k
+                in (
+                    "keyword",
+                    "instanceLocation",
+                    "keywordLocation",
+                    "annotation",
+                )
+            }
+        )
 
     def serializable(self) -> dict[str, Any]:
         return asdict(self)
@@ -479,8 +486,10 @@ class SeqResult:
         )
         serializable["expected"] = [
             (
-                e if isinstance(e, dict)
-                else {"valid": e} if isinstance(e, bool)
+                e
+                if isinstance(e, dict)
+                else {"valid": e}
+                if isinstance(e, bool)
                 else None
             )
             for e in self.expected

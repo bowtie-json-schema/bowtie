@@ -10,8 +10,7 @@
     "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
     "output": {
       "description": "The output format the harness should respond with. 'flag' returns only a boolean validity result. 'annotations' returns annotations alongside validity.",
-      "enum": ["flag", "annotations"],
-      "default": "flag"
+      "enum": ["flag", "annotations"]
     }
   },
   "$defs": {
