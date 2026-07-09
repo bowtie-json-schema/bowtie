@@ -450,11 +450,15 @@ class SeqResult:
         expected: list[Any],
         **data: dict[str, Any],
     ):
+        raw_expected: list[Any] = [
+            e.get("valid") if isinstance(e, dict) else e  # type: ignore[reportUnknownMemberType]
+            for e in expected
+        ]
         _, _, result = _case_result(seq=seq, **data)
         return cls(
             seq=seq,
             implementation=implementation,
-            expected=expected,
+            expected=raw_expected,
             result=result,
         )
 
@@ -474,7 +478,11 @@ class SeqResult:
             filter=filters.exclude("result", "expected"),
         )
         serializable["expected"] = [
-            {"valid": True, "annotations": e} if isinstance(e, list) else e
+            (
+                e if isinstance(e, dict)
+                else {"valid": e} if isinstance(e, bool)
+                else None
+            )
             for e in self.expected
         ]
         serializable.update(self.result.serializable())
