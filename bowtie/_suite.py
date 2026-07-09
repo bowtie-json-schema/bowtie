@@ -110,102 +110,19 @@ class _SuiteClickParam(click.ParamType):
         return (*resolved[:-1], cases, run_metadata)
 
 
-class AnnotationClickParam(_SuiteClickParam):
-    """
-    A command line parameter which loads annotation tests.
-    """
-
-    name = "json-schema-org/JSON-Schema-Test-Suite annotation test cases"
-
-    def convert(
-        self,
-        value: Any,
-        param: click.Parameter | None,
-        ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
-        if not isinstance(value, str):
-            return value
-
-        # Convert dialect URIs or shortnames to annotation test suite URIs
-        input_dialect = Dialect.by_alias().get(value)
-        if input_dialect is not None:
-            value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
-
-        try:
-            if isinstance(value, str):
-                value = URL.parse(value)
-        except RelativeURLWithoutBase:
-            _dialect_name, dialect, cases = self._resolve_local(
-                path=Path(value),
-                ctx=ctx,
-                known_dialect=input_dialect,
-            )
-            run_metadata: dict[str, Any] = {}
-            return cases, dialect, run_metadata
-        else:
-            (
-                _dialect_name,
-                dialect,
-                cases,
-                run_metadata,
-            ) = self._fetch_from_github(
-                value=value,
-                error_code="annotation-suite-fetch-failed",
-                error_message="Fetching the annotation test suite failed.",
-                resolve_func=lambda path: self._resolve_local(
-                    path=path,
-                    ctx=ctx,
-                    known_dialect=input_dialect,
-                ),
-            )
-            return cases, dialect, run_metadata
-
-        self.fail(
-            f"{value!r} does not contain annotation test suite cases.",
-        )
-
-    def _resolve_local(
-        self,
-        path: Any,
-        ctx: click.Context | None,
-        known_dialect: Dialect | None = None,
-    ) -> tuple[str, Dialect, Iterable[TestCase]]:
-        if path.name.endswith(".json"):
-            paths, version_path = [path], path.parent
-        else:
-            paths, version_path = _glob(path, "*.json"), path
-
-        is_annotations = (
-            version_path.name == "annotations"
-            or version_path.parent.name == "annotations"
-        )
-
-        dialect_name = (
-            version_path.parent.name if is_annotations else version_path.name
-        )
-
-        dialect = known_dialect
-        if dialect is None:
-            dialect = Dialect.by_short_name().get(dialect_name)
-        if dialect is None and ctx is not None:
-            dialect = ctx.params.get("dialect")
-
-        if dialect is None:
-            self.fail(
-                f"{path} does not contain annotation test cases or "
-                "could not infer dialect. Please use --dialect.",
-            )
-
-        cases = annotation_cases_from(paths=paths, dialect=dialect)
-        return dialect_name, dialect, cases
-
-
 class ClickParam(_SuiteClickParam):
     """
     A command line parameter which loads tests from the official test suite.
     """
 
-    name = "json-schema-org/JSON-Schema-Test-Suite test cases"
+    def __init__(self, is_annotations: bool = False):
+        self._is_annotations = is_annotations
+        if is_annotations:
+            self.name = (
+                "json-schema-org/JSON-Schema-Test-Suite annotation test cases"
+            )
+        else:
+            self.name = "json-schema-org/JSON-Schema-Test-Suite test cases"
 
     def convert(
         self,
@@ -217,8 +134,12 @@ class ClickParam(_SuiteClickParam):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
-        value = Dialect.by_alias().get(value, value)
-        value = URL_FOR_DIALECT.get(value, value)
+        input_dialect = Dialect.by_alias().get(value)
+        if self._is_annotations and input_dialect is not None:
+            value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
+        else:
+            value = input_dialect or value
+            value = URL_FOR_DIALECT.get(value, value)
 
         try:
             with suppress(TypeError):
@@ -227,6 +148,7 @@ class ClickParam(_SuiteClickParam):
             _dialect_name, dialect, cases = self._cases_and_dialect(
                 path=Path(value),
                 ctx=ctx,
+                known_dialect=input_dialect if self._is_annotations else None,
             )
             run_metadata: dict[str, Any] = {}
             return cases, dialect, run_metadata
@@ -238,11 +160,22 @@ class ClickParam(_SuiteClickParam):
                 run_metadata,
             ) = self._fetch_from_github(
                 value=value,
-                error_code="suite-fetch-failed",
-                error_message="Fetching the test suite from GitHub failed.",
+                error_code=(
+                    "annotation-suite-fetch-failed"
+                    if self._is_annotations
+                    else "suite-fetch-failed"
+                ),
+                error_message=(
+                    "Fetching the annotation test suite failed."
+                    if self._is_annotations
+                    else "Fetching the test suite from GitHub failed."
+                ),
                 resolve_func=lambda path: self._cases_and_dialect(
                     path=path,
                     ctx=ctx,
+                    known_dialect=input_dialect
+                    if self._is_annotations
+                    else None,
                 ),
             )
             # Re-order the return tuple to match the expected return type
@@ -250,7 +183,12 @@ class ClickParam(_SuiteClickParam):
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
-    def _cases_and_dialect(self, path: Any, ctx: click.Context | None):
+    def _cases_and_dialect(
+        self,
+        path: Any,
+        ctx: click.Context | None,
+        known_dialect: Dialect | None = None,
+    ):
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
@@ -266,7 +204,10 @@ class ClickParam(_SuiteClickParam):
         dialect_name = (
             version_path.parent.name if is_annotations else version_path.name
         )
-        dialect = Dialect.by_short_name().get(dialect_name)
+
+        dialect = known_dialect
+        if dialect is None:
+            dialect = Dialect.by_short_name().get(dialect_name)
         if dialect is None and ctx is not None:
             dialect = ctx.params.get("dialect")
 

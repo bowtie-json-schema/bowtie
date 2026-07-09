@@ -2834,7 +2834,7 @@ def suite(
 @JOBS
 @click.argument(
     "input",
-    type=_suite.AnnotationClickParam(),
+    type=_suite.ClickParam(is_annotations=True),
     metavar="DIALECT",
 )
 def annotation_suite(
