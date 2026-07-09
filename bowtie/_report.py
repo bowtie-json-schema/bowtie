@@ -444,16 +444,7 @@ class Report:  # noqa: PLW1641
     def implementations(self) -> Mapping[ConnectableId, ImplementationInfo]:
         return self.metadata.implementations
 
-    @property
-    def is_annotations(self) -> bool:
-        """Check if any result row contains annotation data."""
-        for impl_results in self._results.values():
-            for seq_result in impl_results.values():
-                if seq_result.result.results is not None:
-                    for r in seq_result.result.results:
-                        if hasattr(r, "annotations"):
-                            return True
-        return False
+
 
     @property
     def is_empty(self):

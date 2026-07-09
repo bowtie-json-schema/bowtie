@@ -22,7 +22,7 @@ from bowtie import GITHUB
 from bowtie._core import Dialect, TestCase, github
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
     from typing import Any
 
 
@@ -52,14 +52,14 @@ class _SuiteClickParam(click.ParamType):
         value: URL,
         error_code: str,
         error_message: str,
-        resolve_func: Any,
+        resolve_func: Callable[[Any], tuple[Any, ...]],
     ) -> tuple[Any, ...]:
         from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
             NotFoundError,
         )
 
         gh = github()
-        org, repo_name, *rest = value.path_segments
+        org, repo_name, *rest = cast("list[str]", value.path_segments)
         repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
 
         path, ref = path_and_ref_from_gh_path(rest)
@@ -143,7 +143,12 @@ class AnnotationClickParam(_SuiteClickParam):
             run_metadata: dict[str, Any] = {}
             return cases, dialect, run_metadata
         else:
-            _dialect_name, dialect, cases, run_metadata = self._fetch_from_github(
+            (
+                _dialect_name,
+                dialect,
+                cases,
+                run_metadata,
+            ) = self._fetch_from_github(
                 value=value,
                 error_code="annotation-suite-fetch-failed",
                 error_message="Fetching the annotation test suite failed.",
@@ -207,7 +212,7 @@ class ClickParam(_SuiteClickParam):
         value: Any,
         param: click.Parameter | None,
         ctx: click.Context | None,
-    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any], bool]:
+    ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
         if not isinstance(value, str):
             return value
 
@@ -219,14 +224,19 @@ class ClickParam(_SuiteClickParam):
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            cases, dialect, is_annotations = self._cases_and_dialect(
+            _dialect_name, dialect, cases = self._cases_and_dialect(
                 path=Path(value),
                 ctx=ctx,
             )
             run_metadata: dict[str, Any] = {}
-            return cases, dialect, run_metadata, is_annotations
+            return cases, dialect, run_metadata
         else:
-            cases, dialect, is_annotations, run_metadata = self._fetch_from_github(
+            (
+                _dialect_name,
+                dialect,
+                cases,
+                run_metadata,
+            ) = self._fetch_from_github(
                 value=value,
                 error_code="suite-fetch-failed",
                 error_message="Fetching the test suite from GitHub failed.",
@@ -236,7 +246,7 @@ class ClickParam(_SuiteClickParam):
                 ),
             )
             # Re-order the return tuple to match the expected return type
-            return cases, dialect, run_metadata, is_annotations
+            return cases, dialect, run_metadata
 
         self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
 
@@ -271,7 +281,7 @@ class ClickParam(_SuiteClickParam):
         else:
             cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
-        return cases, dialect, is_annotations
+        return dialect_name, dialect, cases
 
 
 _P = Path | zipfile.Path
