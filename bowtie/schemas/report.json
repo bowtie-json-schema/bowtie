@@ -126,7 +126,7 @@
           "type": "array",
 
           "minItems": 1,
-          "items": { "type": ["boolean", "null", "array"] }
+          "items": { "$ref": "tag:bowtie.report,2026:output" }
         }
       }
     },

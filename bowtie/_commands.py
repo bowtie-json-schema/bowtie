@@ -221,7 +221,9 @@ class Annotation:
     def from_dict(cls, **kwargs: Any) -> Self:
         return cls(**{
             k: v for k, v in kwargs.items()
-            if k in ("keyword", "instanceLocation", "keywordLocation", "annotation")
+            if k in (
+                "keyword", "instanceLocation", "keywordLocation", "annotation",
+            )
         })
 
     def serializable(self) -> dict[str, Any]:
@@ -342,6 +344,10 @@ class SkippedTest:
 
     description = "skipped"
 
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
+
     @classmethod
     def in_skipped_case(cls):
         """
@@ -369,6 +375,10 @@ class ErroredTest:
     skipped: bool = False
 
     description = "error"
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
 
     @classmethod
     def in_errored_case(cls):
@@ -459,7 +469,14 @@ class SeqResult:
         return self.serializable()
 
     def serializable(self):
-        serializable = asdict(self, filter=filters.exclude("result"))
+        serializable = asdict(
+            self,
+            filter=filters.exclude("result", "expected"),
+        )
+        serializable["expected"] = [
+            {"valid": True, "annotations": e} if isinstance(e, list) else e
+            for e in self.expected
+        ]
         serializable.update(self.result.serializable())
         return serializable
 
