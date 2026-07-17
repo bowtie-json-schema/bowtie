@@ -1,4 +1,4 @@
-FROM elixir:1.20.0-otp-29-alpine AS builder
+FROM elixir:1.20.1-otp-29-alpine AS builder
 
 WORKDIR /opt/app
 
