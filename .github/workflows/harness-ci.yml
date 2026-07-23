@@ -1,0 +1,197 @@
+# Reusable workflow for building, smoke-testing, publishing and attesting a Bowtie test harness image
+# from its own (extracted) repository.
+#
+# Each extracted harness repository calls this workflow from a thin caller workflow
+# (see the `test-harness-template` repository), so that the shared logic for how we build, test and push
+# harness images lives in exactly one place -- here -- rather than being copy-pasted into every harness repo.
+#
+# The harness (and therefore the published image) name is taken from the calling repository's name,
+# which MUST match the Bowtie implementation name.
+# Images are always published to the organization-level registry (ghcr.io/<org>/<name>) regardless of which
+# repository builds them, so that `bowtie run -i <name>` keeps working after a harness is extracted.
+name: Harness CI
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: >
+          Git ref (branch, tag or SHA) of the harness repository to build.
+
+          Defaults to the ref that triggered the caller workflow. `build-all`
+          style callers pass a specific tag here to (re)build a historical
+          version.
+        required: false
+        type: string
+        default: ""
+      qemu:
+        description: >
+          Whether to install qemu-user-static for cross-architecture emulation.
+
+          Leave enabled for harnesses which cannot cross-compile. Disable it
+          for toolchains which build multi-arch natively (e.g. Go and .NET),
+          which is both faster and avoids emulation bugs.
+        required: false
+        type: boolean
+        default: true
+      archs:
+        description: The architectures to build the image for.
+        required: false
+        type: string
+        default: "amd64, arm64"
+      runs-on:
+        description: The runner to build on.
+        required: false
+        type: string
+        default: ubuntu-latest
+      build-args:
+        description: Newline-separated build arguments to pass to the image build.
+        required: false
+        type: string
+        default: ""
+      publish:
+        description: Whether to push the built image to the registry (and attest it).
+        required: false
+        type: boolean
+        default: false
+      is-latest:
+        description: Whether to additionally tag the built image as `latest`.
+        required: false
+        type: boolean
+        default: false
+      smoke-continue-on-error:
+        description: >
+          Whether a failing smoke test should be tolerated.
+
+          Needed only for the handful of harnesses whose implementations are
+          known not to pass Bowtie's smoke test (e.g. python-fastjsonschema).
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      current-version:
+        description: The implementation version reported by the freshly built image.
+        value: ${{ jobs.build.outputs.current-version }}
+
+# Both the registry namespace and the push credentials below derive from the *calling* repository
+# (a workflow_call run always uses the caller's GITHUB_TOKEN, never ours).
+# A caller can therefore only ever publish to its own org's packages;
+# calling this from outside the org cannot push to our registry.
+env:
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build and Test Image
+    runs-on: ${{ inputs.runs-on }}
+
+    outputs:
+      current-version: ${{ steps.current-version.outputs.value }}
+
+    permissions:
+      id-token: write # needed for build provenance attestation
+      contents: read # needed for actions/checkout
+      attestations: write # needed for build provenance attestation
+      packages: write # needed for pushing to ghcr.io
+      artifact-metadata: write # needed for build provenance attestation
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Resolve the built commit
+        id: commit
+        # The commit actually checked out -- which for `build-all` is the tag being rebuilt,
+        # not `github.sha` (the ref the workflow was dispatched on).
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Bowtie
+        uses: bowtie-json-schema/bowtie@1ad060eb2e1058b6f863165e0075fd3684ba3458 # main
+
+      - name: Compute implementation (image) name
+        id: impl
+        env:
+          GH_REPOSITORY: ${{ github.repository }}
+        run: echo "name=${GH_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Install qemu
+        if: inputs.qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Build
+        id: build_image
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        with:
+          context: .
+          containerfiles: |
+            Dockerfile
+          image: ${{ steps.impl.outputs.name }}
+          tags: ${{ steps.commit.outputs.sha }} ${{ inputs.is-latest && 'latest' || '' }}
+          archs: ${{ inputs.archs }}
+          build-args: ${{ inputs.build-args }}
+
+      - name: Set DOCKER_HOST so podman-built images are findable
+        run: |
+          systemctl --user enable --now podman.socket
+          sudo loginctl enable-linger "$USER"
+          podman --remote info
+          echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> "$GITHUB_ENV"
+
+      - name: Smoke Test
+        continue-on-error: ${{ inputs.smoke-continue-on-error }}
+        env:
+          IMAGE_WITH_TAG: ${{ steps.build_image.outputs.image-with-tag }}
+        run: |
+          bowtie smoke -i "localhost/${IMAGE_WITH_TAG}" --format json
+          bowtie smoke -i "localhost/${IMAGE_WITH_TAG}" --format markdown >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Collect current version
+        id: current-version
+        env:
+          IMAGE_WITH_TAG: ${{ steps.build_image.outputs.image-with-tag }}
+        run: |
+          version=$(bowtie info \
+              --implementation "localhost/${IMAGE_WITH_TAG}" \
+              --format json | jq -r '.version // empty')
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+          echo "Collected version: ${version}"
+
+      - name: Log in to ghcr.io
+        if: inputs.publish
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+
+      - name: Tag the image with its implementation version
+        if: inputs.publish && steps.current-version.outputs.value != ''
+        env:
+          IMAGE_WITH_TAG: ${{ steps.build_image.outputs.image-with-tag }}
+          IMAGE_WITH_VERSION: "${{ steps.build_image.outputs.image }}:${{ steps.current-version.outputs.value }}"
+        run: podman tag "${IMAGE_WITH_TAG}" "${IMAGE_WITH_VERSION}"
+
+      - name: Publish
+        id: push
+        if: inputs.publish
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          # Prepend the version tag only when a version was determined,
+          # so a missing version never pushes an empty (leading-space) tag.
+          tags: ${{ steps.current-version.outputs.value && format('{0} ', steps.current-version.outputs.value) || '' }}${{ steps.build_image.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+
+      - name: Generate attestation for the image
+        if: inputs.publish
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1
+        with:
+          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
