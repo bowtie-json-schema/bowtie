@@ -66,6 +66,9 @@ step "Extracting implementations/$NAME/ with history into $OUT"
 # up to the repository root and keeps only the commits that touched them.
 git clone --quiet --single-branch --branch main "file://$BOWTIE_DIR" "$OUT"
 ( cd "$OUT" && PYTHONWARNINGS=ignore git-filter-repo --subdirectory-filter "implementations/$NAME/" --force --quiet )
+# Drop bowtie's own tags (release tags etc.) that the clone carried along; the
+# new repo starts tagless and accrues its own harness-release-* tags later.
+git -C "$OUT" tag -l | xargs -r git -C "$OUT" tag -d >/dev/null
 note "$(git -C "$OUT" rev-list --count HEAD) commit(s) of harness history preserved"
 
 step "Fetching CI scaffolding from $TEMPLATE_REPO"
