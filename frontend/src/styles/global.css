@@ -195,6 +195,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--surfa
 .card > header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2); font-weight: 560; font-size: 13.5px; }
 .card > .body { padding: 16px; }
 
+table.kv { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.kv th { text-align: left; font-weight: 560; color: var(--text-muted); padding: 6px 14px 6px 0; white-space: nowrap; vertical-align: top; width: 160px; }
+table.kv td { padding: 6px 0; word-break: break-word; }
+
 @media (max-width: 1120px) {
   .shell { grid-template-columns: 220px minmax(0, 1fr); }
   .master { display: none; }
