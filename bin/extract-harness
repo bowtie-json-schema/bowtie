@@ -136,8 +136,15 @@ else
   step "Creating and pushing $ORG/$NAME"
   git -C "$OUT" branch -M main
   gh repo create "$ORG/$NAME" --public --source "$OUT" --remote origin --push
-  gh repo edit "$ORG/$NAME" --add-topic bowtie-harness
-  note "pushed and tagged with the bowtie-harness topic"
+  # Standard harness-repo settings: discoverable by Bowtie (topic), and the
+  # Dependabot flow needs auto-merge; delete merged branches; no wiki/projects.
+  gh repo edit "$ORG/$NAME" \
+    --add-topic bowtie-harness \
+    --enable-auto-merge \
+    --delete-branch-on-merge \
+    --enable-wiki=false \
+    --enable-projects=false
+  note "pushed, tagged bowtie-harness, and configured repo defaults"
 fi
 
 cat <<EOF
@@ -147,14 +154,14 @@ $(printf '\033[1;32mNext steps (manual / judgement):\033[0m')
      (see its current entries in bowtie's .github/dependabot.yml).
   2. Review .pre-commit-config.yaml -- add its language's formatter/linter
      (see bowtie's .pre-commit-config.yaml).
-  3. Enable "Allow auto-merge" in the new repo's settings (for Dependabot).
-  4. Ensure the ghcr.io/$ORG/$NAME package grants write access to the new repo
-     (Package settings -> Manage Actions access), or the first publish will fail.
-  5. If the Dockerfile uses ARG IMPLEMENTATION_VERSION (previously fed by
+  3. Grant the ghcr.io/$ORG/$NAME package write access to the new repo
+     (Package settings -> Manage Actions access), or publishing will fail. This
+     is only needed because the package already exists (from images.yml).
+  4. If the Dockerfile uses ARG IMPLEMENTATION_VERSION (previously fed by
      images.yml), decide how the version is pinned now: builds default to
      "latest". Rebuilding a historical version via build-all only works if the
      version is captured in the repo at each harness-release-* tag.
-  6. Confirm CI is green and \`bowtie run -i $NAME\` still works.
-  7. In bowtie, open a PR removing implementations/$NAME/, its dependabot.yml
+  5. Confirm CI is green and \`bowtie run -i $NAME\` still works.
+  6. In bowtie, open a PR removing implementations/$NAME/, its dependabot.yml
      entries, and its .pre-commit-config.yaml hooks.
 EOF
