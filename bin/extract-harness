@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+#
+# Extract a Bowtie test harness out of implementations/<name>/ into a standalone
+# repository (github.com/bowtie-json-schema/<name>), preserving its git history.
+#
+# The extracted repository keeps the harness's own commit history at its root
+# (via git-filter-repo) and gains the standard CI scaffolding (workflows,
+# Dependabot, zizmor, pre-commit, LICENSE) copied from the test-harness-template
+# repository. The published image stays at ghcr.io/bowtie-json-schema/<name>, so
+# `bowtie run -i <name>` keeps working once the image is rebuilt from the new repo.
+#
+# By default this only PREPARES the new repository locally and prints the
+# remaining (outward-facing / judgement) steps. Pass --push to actually create
+# and push the GitHub repository.
+#
+# Usage:
+#   bin/extract-harness <name> [--push] [--workdir DIR]
+#
+# Requirements: git, git-filter-repo, gh (authenticated), jq.
+
+set -euo pipefail
+
+ORG=bowtie-json-schema
+TEMPLATE_REPO="$ORG/test-harness-template"
+
+die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+step() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
+note() { printf '    %s\n' "$*"; }
+
+NAME=""
+PUSH=false
+WORKDIR=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --push) PUSH=true ;;
+    --workdir) shift; WORKDIR="${1:-}" ;;
+    -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) die "unknown option: $1" ;;
+    *) [ -z "$NAME" ] || die "unexpected argument: $1"; NAME="$1" ;;
+  esac
+  shift
+done
+
+[ -n "$NAME" ] || die "usage: bin/extract-harness <name> [--push] [--workdir DIR]"
+
+# Run from the root of a bowtie checkout.
+BOWTIE_DIR=$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)
+HARNESS_DIR="$BOWTIE_DIR/implementations/$NAME"
+[ -d "$HARNESS_DIR" ] || die "no such harness: implementations/$NAME"
+[ -f "$HARNESS_DIR/Dockerfile" ] || die "implementations/$NAME has no Dockerfile"
+
+for tool in git git-filter-repo gh jq; do
+  command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
+done
+
+if [ -z "$WORKDIR" ]; then
+  WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/extract-$NAME.XXXXXX")
+fi
+OUT="$WORKDIR/$NAME"
+[ -e "$OUT" ] && die "$OUT already exists; pass a clean --workdir"
+
+step "Extracting implementations/$NAME/ with history into $OUT"
+# Filter a fresh clone in place (git-filter-repo's recommended mode); the bowtie
+# clone itself is never touched. --subdirectory-filter moves the harness's files
+# up to the repository root and keeps only the commits that touched them.
+git clone --quiet --single-branch --branch main "file://$BOWTIE_DIR" "$OUT"
+( cd "$OUT" && PYTHONWARNINGS=ignore git-filter-repo --subdirectory-filter "implementations/$NAME/" --force --quiet )
+note "$(git -C "$OUT" rev-list --count HEAD) commit(s) of harness history preserved"
+
+step "Fetching CI scaffolding from $TEMPLATE_REPO"
+TEMPLATE_DIR="$WORKDIR/template"
+gh repo clone "$TEMPLATE_REPO" "$TEMPLATE_DIR" -- --depth 1 --quiet
+
+# Copy the scaffolding the harness needs, but never clobber a file the harness
+# already ships (its real Dockerfile, sources, manifests, .gitignore, ...).
+copy_if_absent() {
+  local rel="$1"
+  if [ -e "$OUT/$rel" ]; then
+    note "keeping harness's own $rel"
+  else
+    mkdir -p "$OUT/$(dirname "$rel")"
+    cp "$TEMPLATE_DIR/$rel" "$OUT/$rel"
+    note "added $rel"
+  fi
+}
+
+step "Adding scaffolding"
+mkdir -p "$OUT/.github/workflows"
+cp "$TEMPLATE_DIR"/.github/workflows/*.yml "$OUT/.github/workflows/"
+note "added .github/workflows/ (build, build-all, dependabot-build)"
+copy_if_absent .github/dependabot.yml
+copy_if_absent zizmor.yml
+copy_if_absent .pre-commit-config.yaml
+copy_if_absent .gitignore
+copy_if_absent LICENSE
+# The template's placeholder Dockerfile/README are never wanted here; the
+# harness ships its own Dockerfile and we generate a minimal README below.
+
+if [ ! -e "$OUT/README.md" ]; then
+  cat > "$OUT/README.md" <<EOF
+# $NAME
+
+A [Bowtie](https://github.com/bowtie-json-schema/bowtie) test harness.
+
+Its image is published to \`ghcr.io/$ORG/$NAME\` and run via \`bowtie run -i $NAME\`.
+EOF
+  note "generated README.md"
+fi
+
+# Known special cases, mirroring the central images.yml: Go and .NET build
+# multi-arch natively (no QEMU), and python-fastjsonschema can't pass smoke yet.
+case "$NAME" in
+  go-*|dotnet-*)
+    sed -i.bak 's/^\( *\)# qemu: false.*/\1qemu: false/' "$OUT/.github/workflows/build.yml"
+    note "set qemu: false (native multi-arch build)"
+    ;;
+esac
+if [ "$NAME" = "python-fastjsonschema" ]; then
+  sed -i.bak 's/^\( *\)# smoke-continue-on-error: true.*/\1smoke-continue-on-error: true/' "$OUT/.github/workflows/build.yml"
+  note "set smoke-continue-on-error: true"
+fi
+rm -f "$OUT/.github/workflows/build.yml.bak"
+
+step "Committing scaffolding"
+git -C "$OUT" add -A
+git -C "$OUT" commit -q -m "Add Bowtie CI scaffolding from $TEMPLATE_REPO"
+
+if ! $PUSH; then
+  step "Prepared $OUT (not pushed)"
+  note "Inspect it, then re-run with --push, or push it yourself."
+else
+  step "Creating and pushing $ORG/$NAME"
+  git -C "$OUT" branch -M main
+  gh repo create "$ORG/$NAME" --public --source "$OUT" --remote origin --push
+  gh repo edit "$ORG/$NAME" --add-topic bowtie-harness
+  note "pushed and tagged with the bowtie-harness topic"
+fi
+
+cat <<EOF
+
+$(printf '\033[1;32mNext steps (manual / judgement):\033[0m')
+  1. Review .github/dependabot.yml -- add this harness's package-ecosystem
+     (see its current entries in bowtie's .github/dependabot.yml).
+  2. Review .pre-commit-config.yaml -- add its language's formatter/linter
+     (see bowtie's .pre-commit-config.yaml).
+  3. Enable "Allow auto-merge" in the new repo's settings (for Dependabot).
+  4. Ensure the ghcr.io/$ORG/$NAME package grants write access to the new repo
+     (Package settings -> Manage Actions access), or the first publish will fail.
+  5. If the Dockerfile uses ARG IMPLEMENTATION_VERSION (previously fed by
+     images.yml), decide how the version is pinned now: builds default to
+     "latest". Rebuilding a historical version via build-all only works if the
+     version is captured in the repo at each harness-release-* tag.
+  6. Confirm CI is green and \`bowtie run -i $NAME\` still works.
+  7. In bowtie, open a PR removing implementations/$NAME/, its dependabot.yml
+     entries, and its .pre-commit-config.yaml hooks.
+EOF
