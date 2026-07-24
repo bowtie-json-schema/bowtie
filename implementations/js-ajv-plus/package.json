@@ -1,8 +1,0 @@
-{
-  "name": "bowtie-ajv-plus",
-  "version": "1.0.0",
-  "dependencies": {
-    "@theflashlabs/ajv-draft-04": "^0.0.3",
-    "@theflashlabs/ajv-plus": "^1.0.0"
-  }
-}
