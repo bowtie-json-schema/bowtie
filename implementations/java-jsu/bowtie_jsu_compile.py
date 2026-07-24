@@ -142,7 +142,8 @@ class Runner:
             *options,
         ]
         # TODO do not necessarily use subprocess?
-        self.jsu_version = get_version(["jsu-compile", "--version"])
+        # Only jsu's own version, not the "X (jmc backend Y)" string.
+        self.jsu_version = get_version(["jsu-compile", "--version"]).split()[0]
 
         TMP.mkdir(exist_ok=True)
 
