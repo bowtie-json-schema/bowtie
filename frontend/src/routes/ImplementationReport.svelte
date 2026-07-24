@@ -172,24 +172,10 @@
 {/if}
 
 <style>
-  table.kv,
   table.compliance {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
-  }
-  table.kv th {
-    text-align: left;
-    font-weight: 560;
-    color: var(--text-muted);
-    padding: 6px 14px 6px 0;
-    white-space: nowrap;
-    vertical-align: top;
-    width: 160px;
-  }
-  table.kv td {
-    padding: 6px 0;
-    word-break: break-word;
   }
   .muted {
     color: var(--text-muted);

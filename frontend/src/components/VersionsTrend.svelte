@@ -97,7 +97,7 @@
       </div>
     {:else}
       <svg class="vt-chart" viewBox="0 0 {W} {H}" role="img" aria-label="Unsuccessful tests across versions">
-        {#each ticks as t (t)}
+        {#each ticks as t, ti (ti)}
           <line class="vt-grid" x1={PAD.l} y1={yOf(t)} x2={W - PAD.r} y2={yOf(t)} />
           <text class="vt-axis" x={PAD.l - 8} y={yOf(t) + 4} text-anchor="end">{t}</text>
         {/each}

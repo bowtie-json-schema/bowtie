@@ -26,7 +26,8 @@ button { font-family: inherit; color: inherit; }
 .app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
 .route { min-height: 0; display: flex; flex-direction: column; }
 
-.topbar { display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 52px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); z-index: 20; }
+.topbar { display: flex; align-items: center; gap: 20px; padding: 0 20px; height: 52px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 20; }
+.topbar::-webkit-scrollbar { display: none; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 640; letter-spacing: -0.02em; font-size: 15px; color: var(--text); text-decoration: none; }
 .brand .mark { font-family: var(--font-mono); color: var(--accent); font-size: 17px; font-weight: 700; letter-spacing: -0.04em; }
 .dialect-pill { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12px; padding: 5px 11px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); cursor: pointer; color: var(--text); }
@@ -200,7 +201,24 @@ table.kv { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.kv th { text-align: left; font-weight: 560; color: var(--text-muted); padding: 6px 14px 6px 0; white-space: nowrap; vertical-align: top; width: 160px; }
 table.kv td { padding: 6px 0; word-break: break-word; }
 
+/* Below the 3-pane threshold, stack the panes into one scrolling page so the
+   case list stays reachable (never hide it). */
 @media (max-width: 1120px) {
-  .shell { grid-template-columns: 220px minmax(0, 1fr); }
-  .master { display: none; }
+  html, body { height: auto; }
+  .app { height: auto; min-height: 100vh; }
+  .route { min-height: 0; }
+  .shell { display: flex; flex-direction: column; flex: none; }
+  .shell > * { min-height: 0; overflow: visible; }
+  .rail { border-right: 0; border-bottom: 1px solid var(--border); }
+  .impl-list { max-height: 320px; }
+  .master { display: flex; border-left: 0; border-top: 1px solid var(--border); }
+  .master-head { position: static; }
+  .doc { flex: none; overflow: visible; }
+}
+
+@media (max-width: 640px) {
+  .center { padding: 22px 18px 48px; }
+  .doc { padding: 24px 18px 48px; }
+  .split { grid-template-columns: 1fr; }
+  .topbar { gap: 12px; overflow-x: auto; }
 }

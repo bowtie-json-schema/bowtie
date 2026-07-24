@@ -5,13 +5,19 @@
 
   let impls = $state<Implementation[]>([]);
   let loading = $state(true);
+  let error = $state<string | null>(null);
 
   $effect(() => {
     document.title = "Bowtie – implementations";
     void (async () => {
-      const all = await Implementation.fetchAllImplementationsData();
-      impls = [...all.values()];
-      loading = false;
+      try {
+        const all = await Implementation.fetchAllImplementationsData();
+        impls = [...all.values()];
+      } catch (e) {
+        error = e instanceof Error ? e.message : String(e);
+      } finally {
+        loading = false;
+      }
     })();
   });
 
@@ -28,6 +34,11 @@
 
 {#if loading}
   <Spinner />
+{:else if error}
+  <div class="doc"><div class="doc-inner">
+    <h1 class="page">Implementations</h1>
+    <div class="empty-note">Couldn't load implementations.<br />{error}</div>
+  </div></div>
 {:else}
   <div class="doc">
     <div class="doc-inner">

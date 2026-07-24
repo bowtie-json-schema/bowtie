@@ -1,8 +1,7 @@
 <script lang="ts">
   import { report } from "../stores/report.svelte";
   import { mapLanguage } from "../data/mapLanguage";
-  import { tokenizeJson } from "../lib/highlightJson";
-  import CopyButton from "./CopyButton.svelte";
+  import JsonPanel from "./JsonPanel.svelte";
   import {
     resultFor,
     stateToWorst,
@@ -24,8 +23,6 @@
   const implLang = (id: string) => data.runMetadata.implementations.get(id)!.language;
 
   const counts = $derived(testCounts(data, implIds, seq, t));
-  const schemaJson = $derived(JSON.stringify(c.schema, null, 2) ?? "");
-  const instanceJson = $derived(JSON.stringify(c.tests[t].instance, null, 2) ?? "");
 
   const groups = $derived.by(() => {
     const defs: { state: Worst; label: string }[] = [
@@ -72,20 +69,8 @@
 </div>
 
 <div class="split">
-  <div class="panel">
-    <header>
-      <span class="label">Schema</span>
-      <span class="hdr-right"><span class="hint">the whole case</span><CopyButton text={schemaJson} label="Copy schema" /></span>
-    </header>
-    <pre class="code">{#each tokenizeJson(c.schema) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
-  </div>
-  <div class="panel">
-    <header>
-      <span class="label">Instance</span>
-      <span class="hdr-right"><span class="hint">test {t + 1} of {c.tests.length}</span><CopyButton text={instanceJson} label="Copy instance" /></span>
-    </header>
-    <pre class="code">{#each tokenizeJson(c.tests[t].instance) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
-  </div>
+  <JsonPanel label="Schema" value={c.schema} hint="the whole case" />
+  <JsonPanel label="Instance" value={c.tests[t].instance} hint="test {t + 1} of {c.tests.length}" />
 </div>
 
 <span class="label sec-label">Tests · pick one to inspect</span>

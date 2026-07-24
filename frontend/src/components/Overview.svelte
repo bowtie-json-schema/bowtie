@@ -67,7 +67,8 @@
     ),
   );
 
-  const latestDialect = (impl: (typeof report.otherImpls)[number]) =>
+  const others = $derived(report.otherImpls);
+  const latestDialect = (impl: (typeof others)[number]) =>
     impl.dialects.reduce((a, c) =>
       c.firstPublicationDate > a.firstPublicationDate ? c : a,
     );
@@ -142,16 +143,16 @@
   {/each}
 </div>
 
-{#if report.otherImpls.length}
+{#if others.length}
   <details class="other-impls">
     <summary>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-      {report.otherImpls.length}
-      {report.otherImpls.length === 1 ? "implementation doesn't" : "more implementations don't"}
+      {others.length}
+      {others.length === 1 ? "implementation doesn't" : "more implementations don't"}
       support {data.runMetadata.dialect.prettyName} under the current language filter
     </summary>
     <ul>
-      {#each report.otherImpls as impl (impl.id)}
+      {#each others as impl (impl.id)}
         <li>
           <a href="#{impl.routePath}">{impl.name}</a>
           <span class="oi-lang">{mapLanguage(impl.language)}</span>
@@ -165,7 +166,7 @@
 {/if}
 
 <div class="hint-card">
-  Select a case from the list on the right &nbsp;·&nbsp; or press
+  Select a case from the list &nbsp;·&nbsp; or press
   <span class="kbd">↓</span> to start browsing
 </div>
 

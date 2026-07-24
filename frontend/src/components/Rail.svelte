@@ -3,11 +3,36 @@
   import { mapLanguage } from "../data/mapLanguage";
   import type { Worst } from "../lib/reportModel";
 
-  const statusDefs: { key: Worst | "pass"; label: string; color: string }[] = [
-    { key: "fail", label: "failed", color: "var(--fail)" },
-    { key: "err", label: "errored", color: "var(--error)" },
-    { key: "skip", label: "skipped", color: "var(--skip)" },
-    { key: "pass", label: "passing", color: "var(--pass)" },
+  const statusDefs: {
+    key: Worst | "pass";
+    label: string;
+    color: string;
+    hint: string;
+  }[] = [
+    {
+      key: "fail",
+      label: "failed",
+      color: "var(--fail)",
+      hint: "The implementation ran but gave the wrong answer.",
+    },
+    {
+      key: "err",
+      label: "errored",
+      color: "var(--error)",
+      hint: "The implementation crashed trying to answer.",
+    },
+    {
+      key: "skip",
+      label: "skipped",
+      color: "var(--skip)",
+      hint: "The implementation skipped the test, usually a known bug.",
+    },
+    {
+      key: "pass",
+      label: "passing",
+      color: "var(--pass)",
+      hint: "The implementation gave the correct answer.",
+    },
   ];
 
   function statusPressed(key: Worst | "pass"): boolean {
@@ -43,6 +68,7 @@
         <button
           class="chip status"
           aria-pressed={statusPressed(s.key)}
+          title={s.hint}
           onclick={() => toggleStatus(s.key)}
         >
           <span class="dot" style="background:{s.color}"></span>{s.label}

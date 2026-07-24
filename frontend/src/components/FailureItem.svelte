@@ -1,14 +1,11 @@
 <script lang="ts">
   import type { Failure } from "../lib/reportModel";
-  import { tokenizeJson } from "../lib/highlightJson";
-  import CopyButton from "./CopyButton.svelte";
+  import JsonPanel from "./JsonPanel.svelte";
 
   let { failure }: { failure: Failure } = $props();
 
   let open = $state(false);
   const stateClass = { failed: "fail", errored: "err", skipped: "skip" } as const;
-  const schemaJson = $derived(JSON.stringify(failure.schema, null, 2) ?? "");
-  const instanceJson = $derived(JSON.stringify(failure.instance, null, 2) ?? "");
 </script>
 
 <details class="failure" bind:open>
@@ -23,20 +20,8 @@
     <div class="f-body">
       {#if failure.message}<pre class="f-msg">{failure.message}</pre>{/if}
       <div class="split">
-        <div class="panel">
-          <header>
-            <span class="label">Schema</span>
-            <CopyButton text={schemaJson} label="Copy schema" />
-          </header>
-          <pre class="code">{#each tokenizeJson(failure.schema) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
-        </div>
-        <div class="panel">
-          <header>
-            <span class="label">Instance</span>
-            <CopyButton text={instanceJson} label="Copy instance" />
-          </header>
-          <pre class="code">{#each tokenizeJson(failure.instance) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
-        </div>
+        <JsonPanel label="Schema" value={failure.schema} />
+        <JsonPanel label="Instance" value={failure.instance} />
       </div>
     </div>
   {/if}
