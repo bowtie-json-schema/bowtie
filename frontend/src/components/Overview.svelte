@@ -76,8 +76,13 @@
 <div class="crumbs"><span>Report</span></div>
 <h1 class="page">{data.runMetadata.dialect.prettyName} compliance</h1>
 <p class="h-lead">
-  How each implementation does against the official JSON Schema Test Suite. Pick
-  a case on the right to inspect who disagrees, and why.
+  Bowtie is a tool for understanding and comparing implementations of the
+  <a href="https://json-schema.org/" target="_blank" rel="noopener noreferrer">JSON Schema specification</a>
+  across all programming languages. The report below uses the
+  <a href="https://github.com/json-schema-org/JSON-Schema-Test-Suite" target="_blank" rel="noopener noreferrer">official JSON Schema Test Suite</a>
+  to show bugs and functionality gaps in implementations. You can also use Bowtie
+  on
+  <a href="https://docs.bowtie.report/" target="_blank" rel="noopener noreferrer">your own schemas</a>.
 </p>
 
 <div class="runstrip">
