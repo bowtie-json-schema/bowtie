@@ -18,7 +18,7 @@
     {:else if route.name === "benchmarks"}
       <Benchmarks draftName={route.params.draftName} />
     {:else if route.name === "implementation"}
-      <ImplementationReport id={route.params.id ?? ""} />
+      <ImplementationReport id={route.params.id ?? ""} badges={route.params.badges === "1"} />
     {:else if route.name === "local"}
       <LocalReport />
     {:else}

@@ -46,6 +46,31 @@
   });
 
   const pct = (n: number) => (totalTests ? (n / totalTests) * 100 : 0);
+
+  // free-form run metadata: string values, or { href, text } link entries
+  function asLink(v: unknown): { href: string; text: string } | null {
+    if (
+      v &&
+      typeof v === "object" &&
+      "href" in v &&
+      "text" in v &&
+      typeof (v as { href: unknown }).href === "string" &&
+      typeof (v as { text: unknown }).text === "string"
+    ) {
+      return v as { href: string; text: string };
+    }
+    return null;
+  }
+  const metaEntries = $derived(
+    Object.entries(data.runMetadata.metadata ?? {}).filter(
+      ([, v]) => typeof v === "string" || asLink(v),
+    ),
+  );
+
+  const latestDialect = (impl: (typeof report.otherImpls)[number]) =>
+    impl.dialects.reduce((a, c) =>
+      c.firstPublicationDate > a.firstPublicationDate ? c : a,
+    );
 </script>
 
 <div class="crumbs"><span>Report</span></div>
@@ -68,6 +93,20 @@
   <div class="cell"><span class="label">Tests</span><div class="v">{totalTests}</div></div>
   <div class="cell"><span class="label">Ran</span><div class="v small">{data.runMetadata.ago()}</div></div>
 </div>
+
+{#if metaEntries.length}
+  <table class="kv runmeta">
+    <tbody>
+      {#each metaEntries as [label, value] (label)}
+        {@const link = asLink(value)}
+        <tr>
+          <th>{label}</th>
+          <td>{#if link}<a href={link.href}>{link.text}</a>{:else}{String(value)}{/if}</td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+{/if}
 
 {#if data.didFailFast}
   <div class="alert-failfast">
@@ -98,7 +137,85 @@
   {/each}
 </div>
 
+{#if report.otherImpls.length}
+  <details class="other-impls">
+    <summary>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+      {report.otherImpls.length}
+      {report.otherImpls.length === 1 ? "implementation doesn't" : "more implementations don't"}
+      support {data.runMetadata.dialect.prettyName} under the current language filter
+    </summary>
+    <ul>
+      {#each report.otherImpls as impl (impl.id)}
+        <li>
+          <a href="#{impl.routePath}">{impl.name}</a>
+          <span class="oi-lang">{mapLanguage(impl.language)}</span>
+          {#if impl.dialects.length}
+            <span class="oi-latest">latest: <a href="#{latestDialect(impl).routePath}">{latestDialect(impl).prettyName}</a></span>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+  </details>
+{/if}
+
 <div class="hint-card">
   Select a case from the list on the right &nbsp;·&nbsp; or press
   <span class="kbd">↓</span> to start browsing
 </div>
+
+<style>
+  .runmeta {
+    margin: -14px 0 26px;
+  }
+  .other-impls {
+    margin-top: 22px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface);
+    padding: 0 15px;
+  }
+  .other-impls summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .other-impls summary::-webkit-details-marker {
+    display: none;
+  }
+  .other-impls summary svg {
+    color: var(--text-faint);
+    flex: none;
+  }
+  .other-impls ul {
+    margin: 0;
+    padding: 4px 0 14px;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .other-impls li {
+    font-size: 12.5px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+  }
+  .oi-lang {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+  }
+  .oi-latest {
+    color: var(--text-muted);
+    margin-left: auto;
+    font-size: 11.5px;
+  }
+</style>

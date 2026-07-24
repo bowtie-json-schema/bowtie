@@ -108,6 +108,7 @@ h1.page { font-size: 26px; letter-spacing: -0.025em; font-weight: 660; margin: 4
 .panel { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
 .panel > header { display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
 .panel > header .hint { font-size: 10.5px; color: var(--text-faint); font-family: var(--font-mono); }
+.panel > header .hdr-right { display: flex; align-items: center; gap: 10px; }
 pre.code { margin: 0; padding: 13px 14px; overflow: auto; max-height: 360px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; tab-size: 2; }
 pre.code .j-key { color: var(--j-key); } pre.code .j-str { color: var(--j-str); } pre.code .j-num { color: var(--j-num); } pre.code .j-bool { color: var(--j-bool); }
 

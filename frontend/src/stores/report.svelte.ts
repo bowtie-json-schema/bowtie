@@ -67,6 +67,22 @@ class ReportStore {
       .map(([id]) => id);
   }
 
+  /**
+   * Implementations Bowtie knows about that are in scope by language but absent
+   * from this dialect's report (i.e. they don't support the current dialect),
+   * sorted by name.
+   */
+  get otherImpls(): Implementation[] {
+    if (!this.data) return [];
+    return [...this.allImpls.values()]
+      .filter(
+        (i) =>
+          this.langs.has(i.language) &&
+          !this.d.implementationsResults.has(i.id),
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   countsWorst(seq: number): Counts {
     const n = emptyCounts();
     const m = this.worst.get(seq);

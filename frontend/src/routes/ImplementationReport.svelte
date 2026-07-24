@@ -7,14 +7,20 @@
     type Totals,
   } from "../data/parseReportData";
   import VersionsTrend from "../components/VersionsTrend.svelte";
+  import BadgeEmbed from "../components/BadgeEmbed.svelte";
   import Spinner from "../components/Spinner.svelte";
 
-  let { id }: { id: string } = $props();
+  let { id, badges = false }: { id: string; badges?: boolean } = $props();
 
   let impl = $state<Implementation | null>(null);
   let compliance = $state<[Dialect, Partial<Totals>][]>([]);
   let loading = $state(true);
   let notFound = $state(false);
+  let showBadges = $state(false);
+
+  $effect(() => {
+    if (badges) showBadges = true;
+  });
 
   const badTotal = (t: Partial<Totals>) =>
     (t.failedTests ?? 0) + (t.erroredTests ?? 0) + (t.skippedTests ?? 0);
@@ -69,11 +75,24 @@
         <a href="#/">Report</a><span class="sep">/</span>
         <span class="mono" style="color:var(--accent)">{impl.id}</span>
       </div>
-      <h1 class="page">{impl.name}</h1>
-      <p class="h-lead">
-        {mapLanguage(impl.language)}{#if impl.language_version}
-          · {impl.language_version}{/if}{#if impl.version} · v{impl.version}{/if}
-      </p>
+      <div class="impl-head">
+        <div>
+          <h1 class="page">{impl.name}</h1>
+          <p class="h-lead">
+            {mapLanguage(impl.language)}{#if impl.language_version}
+              · {impl.language_version}{/if}{#if impl.version} · v{impl.version}{/if}
+          </p>
+        </div>
+        <button
+          class="btn-badges"
+          aria-expanded={showBadges}
+          onclick={() => (showBadges = !showBadges)}
+        >Badges</button>
+      </div>
+
+      {#if showBadges}
+        <BadgeEmbed implementation={impl} />
+      {/if}
 
       <div class="card">
         <header>Details</header>
@@ -194,5 +213,27 @@
   .badge {
     max-width: 100%;
     vertical-align: middle;
+  }
+  .impl-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .btn-badges {
+    flex: none;
+    margin-top: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12.5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-badges:hover,
+  .btn-badges[aria-expanded="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 </style>

@@ -42,7 +42,10 @@ export function matchRoute(path: string): Route {
     return { name: "benchmarks", params: { draftName: m[1] || undefined } };
   if (path === "/local-report" || path === "/local-report/")
     return { name: "local", params: {} };
-  if ((m = path.match(/^\/implementations\/([^/]+)/)))
-    return { name: "implementation", params: { id: m[1] } };
+  if ((m = path.match(/^\/implementations\/([^/]+?)(?:\/(badges))?\/?$/)))
+    return {
+      name: "implementation",
+      params: { id: m[1], badges: m[2] ? "1" : undefined },
+    };
   return { name: "notfound", params: {} };
 }
