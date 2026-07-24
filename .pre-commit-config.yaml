@@ -1,8 +1,3 @@
-ci:
-  skip:
-    - clippy # doesn't seem to run in pre-commit.ci
-    - swift-format # timesout in pre-commit.ci
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -48,47 +43,6 @@ repos:
         language: python
         pass_filenames: false
         entry: .pre-commit-hooks/check-lintsonschema-schema
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: "v1.0"
-    hooks:
-      - name: cargo fmt rust-jsonschema
-        id: fmt
-        args:
-          [
-            "--manifest-path",
-            "implementations/rust-jsonschema/Cargo.toml",
-            "--",
-          ]
-      - name: cargo clippy rust-jsonschema
-        id: clippy
-        args:
-          [
-            "--manifest-path",
-            "implementations/rust-jsonschema/Cargo.toml",
-            "--allow-dirty",
-            "--allow-staged",
-            "--fix",
-            "--",
-          ]
-      - name: cargo fmt rust-boon
-        id: fmt
-        args: ["--manifest-path", "implementations/rust-boon/Cargo.toml", "--"]
-      - name: cargo clippy rust-boon
-        id: clippy
-        args:
-          [
-            "--manifest-path",
-            "implementations/rust-boon/Cargo.toml",
-            "--allow-dirty",
-            "--allow-staged",
-            "--fix",
-            "--",
-          ]
-  - repo: https://github.com/syntaqx/git-hooks
-    rev: v0.0.18
-    hooks:
-      - name: go fmt (golang implementations)
-        id: go-fmt
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.8
     hooks:
@@ -106,13 +60,4 @@ repos:
             "implementations/.java-implementations-pmd-ruleset.xml",
             "-d",
             "implementations",
-          ]
-  - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2026-07-11-a
-    hooks:
-      - name: swift-format (swift implementations)
-        id: swift-format
-        args:
-          [
-            "implementations/swift-swift-json-schema/Sources"
           ]

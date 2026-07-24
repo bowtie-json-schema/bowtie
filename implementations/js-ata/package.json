@@ -1,7 +1,0 @@
-{
-  "name": "bowtie-ata",
-  "version": "1.0.0",
-  "dependencies": {
-    "ata-validator": "^1.0.2"
-  }
-}
