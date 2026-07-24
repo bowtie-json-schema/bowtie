@@ -67,7 +67,7 @@
     "recharts": "3.9.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0",
-    "vite": "^8.1.4",
+    "vite": "^8.1.5",
     "vite-bundle-visualizer": "^1.2.1",
     "vitest": "^4.1.10"
   }
