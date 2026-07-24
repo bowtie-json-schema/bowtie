@@ -164,7 +164,7 @@ void on_start(const iris::JsonValue &cmd) {
   (void)cmd;
   write_line(
       R"({"version":1,"implementation":{)"
-      R"("language":"cpp",)"
+      R"("language":"c++",)"
       R"("name":"iris",)"
       R"("version":"0.1.0",)"
       R"("homepage":"https://github.com/Cobra007-star-source/IRIS",)"
