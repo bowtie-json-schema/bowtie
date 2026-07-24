@@ -110,7 +110,7 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install Bowtie
-        uses: bowtie-json-schema/bowtie@1ad060eb2e1058b6f863165e0075fd3684ba3458 # main
+        uses: bowtie-json-schema/bowtie@b83e81f74693a2032638eeeb8b62613498a9919a # main
 
       - name: Compute implementation (image) name
         id: impl
