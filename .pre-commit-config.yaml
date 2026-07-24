@@ -19,7 +19,7 @@ repos:
         args: [--fix, lf]
       - id: trailing-whitespace
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.27.0
+    rev: v1.28.0
     hooks:
       - id: zizmor
         args: [--pedantic]
@@ -89,12 +89,6 @@ repos:
     hooks:
       - name: go fmt (golang implementations)
         id: go-fmt
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: "3.0.0"
-    hooks:
-      - name: rubocop (ruby implementations)
-        id: rubocop
-        args: ["--auto-correct"]
   - repo: https://github.com/JohnnyMorganz/StyLua
     rev: v2.5.2
     hooks:

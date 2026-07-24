@@ -626,8 +626,10 @@ class _Report(click.File):
                 code="truncated-report",
                 message="The Bowtie report looks corrupt.",
                 causes=[
-                    f"{input.name} is missing its footer, which usually means "
-                    "it has been somehow truncated.",
+                    (
+                        f"{input.name} is missing its footer, which usually "
+                        "means it has been somehow truncated."
+                    ),
                 ],
                 hint_stmt=(
                     "Try running the command you used to produce the report, "
