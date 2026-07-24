@@ -173,6 +173,7 @@ ignore = [
   "B905",  # No need for explicit strict, this is simply zip's default behavior
   "C408",  # Calling dict is fine when it saves quoting the keys
   "C901",  # Not really something to focus on
+  "CPY",  # No need for copyright notices.
   "CPY001",  # We don't put copyright notices at the top of files
   "D105",  # It's fine to not have docstrings for magic methods.
   "D107",  # __init__ especially doesn't need a docstring
