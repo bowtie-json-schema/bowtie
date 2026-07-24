@@ -106,13 +106,6 @@ updates:
       default-days: 7
 
   - package-ecosystem: "npm"
-    directory: "/implementations/js-ajv"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "npm"
     directory: "/implementations/js-ajv-plus"
     schedule:
       interval: "daily"
@@ -121,27 +114,6 @@ updates:
 
   - package-ecosystem: "npm"
     directory: "/implementations/js-hyperjump"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "npm"
-    directory: "/implementations/js-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "npm"
-    directory: "/implementations/js-jsonschema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "npm"
-    directory: "/implementations/js-schemasafe"
     schedule:
       interval: "daily"
     cooldown:
@@ -161,31 +133,11 @@ updates:
     cooldown:
       default-days: 7
 
-  # ignore: lua-jsonschema - installs the latest (unpinned) version
-  # ignore: lua-schema - installs the latest (unpinned) version
-  # ignore: perl-json-schema-modern - installs the latest (unpinned) version
   # ignore: python-fastjsonschema - installs the latest (unpinned) version
-  # ignore: python-jschon - installs the latest (unpinned) version
   # ignore: python-jsonschema - installs the latest (unpinned) version
-  # ignore: python-jsu - installs the latest (unpinned) version
   # ignore: c-jsu - installs the latest (unpinned) version
   # ignore: java-jsu - installs the latest (unpinned) version
   # ignore: js-jsu - installs the latest (unpinned) version
-  # ignore: perl-jsu - installs the latest (unpinned) version
-
-  - package-ecosystem: "composer"
-    directory: "/implementations/php-opis-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "composer"
-    directory: "/implementations/php-justinrainbow-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
 
   - package-ecosystem: "cargo"
     directory: "/implementations/rust-jsonschema"
@@ -360,13 +312,6 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
-    directory: "/implementations/js-ajv"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
     directory: "/implementations/js-ajv-plus"
     schedule:
       interval: "daily"
@@ -381,62 +326,6 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
-    directory: "/implementations/js-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/js-jsonschema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/js-schemasafe"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/lua-jsonschema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/lua-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/perl-json-schema-modern"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/php-opis-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/php-justinrainbow-json-schema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
     directory: "/implementations/python-fastjsonschema"
     schedule:
       interval: "daily"
@@ -444,21 +333,7 @@ updates:
       default-days: 7
 
   - package-ecosystem: "docker"
-    directory: "/implementations/python-jschon"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
     directory: "/implementations/python-jsonschema"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/python-jsu"
     schedule:
       interval: "daily"
     cooldown:
@@ -480,13 +355,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-jsu"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/perl-jsu"
     schedule:
       interval: "daily"
     cooldown:
