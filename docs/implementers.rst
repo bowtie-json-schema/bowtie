@@ -79,16 +79,37 @@ If you're not, there shouldn't be a need to be an expert neither in the language
     Bowtie certainly aims to support all implementations and architectures, so if you're writing a harness for a drastically different architecture, you'll need to adjust what is below to suit.
 
 For the purposes of this tutorial, we'll write support for a :github:`Lua implementation of JSON Schema <api7/jsonschema>` (one which calls itself simply ``jsonschema`` within the Lua ecosystem, as many implementations tend to).
-Bowtie of course already supports this implementation officially, so if you want to see the final result either now or at the end of this tutorial, it's :gh:`here <tree/main/implementations/lua-jsonschema>`.
+Bowtie of course already supports this implementation officially, so if you want to see the final result either now or at the end of this tutorial, it's :org:`here <lua-jsonschema>`.
 If you're not already familiar with Lua as a programming language, the below won't serve as a full tutorial of course, but you still should be able to follow along; it's a fairly simple one.
 
 Let's get a Hello World container running which we'll turn into our test harness.
 
 Create a directory somewhere, and within it create a ``Dockerfile`` with these contents:
 
-.. literalinclude:: ../implementations/lua-jsonschema/Dockerfile
-    :language: Dockerfile
+.. code-block:: Dockerfile
     :emphasize-lines: 1,8,10-12
+
+    FROM alpine:3.24.1 AS builder
+
+    RUN apk add --no-cache \
+        build-base \
+        lua5.1-dev \
+        luarocks5.1 \
+        pcre-dev \
+     && luarocks-5.1 install jsonschema
+
+    FROM alpine:3.24.1
+    WORKDIR /usr/src/myapp
+
+    RUN apk add --no-cache \
+        lsb-release-minimal \
+        pcre \
+        luajit
+    COPY --from=builder /usr/local/lib/lua /usr/local/lib/lua
+    COPY --from=builder /usr/local/share/lua /usr/local/share/lua
+    COPY json.lua bowtie_jsonschema.lua ./
+
+    CMD ["luajit", "bowtie_jsonschema.lua"]
 
 Most of the above is slightly *more* complicated than you're likely to need for your own language, and has to do with some Lua-specific issues that are uninteresting to discuss in detail (which essentially relate to installing Lua's package manager and a library for JSON serialization).
 
