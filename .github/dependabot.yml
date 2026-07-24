@@ -173,13 +173,6 @@ updates:
   # ignore: js-jsu - installs the latest (unpinned) version
   # ignore: perl-jsu - installs the latest (unpinned) version
 
-  - package-ecosystem: "bundler"
-    directory: "/implementations/ruby-json_schemer"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
   - package-ecosystem: "composer"
     directory: "/implementations/php-opis-json-schema"
     schedule:
@@ -494,13 +487,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/perl-jsu"
-    schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/implementations/ruby-json_schemer"
     schedule:
       interval: "daily"
     cooldown:
