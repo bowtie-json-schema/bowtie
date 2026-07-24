@@ -450,7 +450,7 @@ class DialectRunner:
     async def validate(
         self,
         run: Run,
-        expected: Sequence[bool | None],
+        expected: Sequence[Any],
     ) -> SeqResult:
         try:
             response: (
@@ -664,11 +664,17 @@ class Example:
         cls,
         instance: Any = None,
         valid: bool | None = None,
+        assertions: list[dict[str, Any]] | None = None,
         **data: Any,
     ) -> Example | Test:
-        if valid is None:
+        if valid is None and assertions is None:
             return cls(**data, instance=instance)
-        return Test(**data, instance=instance, valid=valid)
+        return Test(
+            **data,
+            instance=instance,
+            valid=valid,
+            assertions=assertions,
+        )
 
 
 @frozen
@@ -679,13 +685,16 @@ class Test:
 
     description: str
     instance: Any
-    valid: bool
+    valid: bool | None = None
+    assertions: list[dict[str, Any]] | None = None
     comment: str | None = None
 
-    def expected(self) -> bool:
+    def expected(self) -> Any:
         """
-        Expect our expected validity result.
+        Expect our expected validity result or assertions.
         """
+        if self.assertions is not None:
+            return self.assertions
         return self.valid
 
     def syntax(self) -> RenderableType:
@@ -758,7 +767,11 @@ class TestCase:
         as_dict = asdict(
             self,
             filter=lambda k, v: (
-                k.name != "registry" and (k.name != "comment" or v is not None)
+                k.name != "registry"
+                and (
+                    k.name not in {"comment", "assertions", "valid"}
+                    or v is not None
+                )
             ),
         )
         if self.registry:
@@ -789,7 +802,7 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def expected_results(self) -> Sequence[bool | None]:
+    def expected_results(self) -> Sequence[Any]:
         return [each.expected() for each in self.tests]
 
     def without_expected_results(self) -> Message:
@@ -798,7 +811,8 @@ class TestCase:
             {
                 k: v
                 for k, v in test.items()
-                if k != "valid" and (k != "comment" or v is not None)
+                if k not in {"valid", "assertions"}
+                and (k != "comment" or v is not None)
             }
             for test in serializable.pop("tests")
         ]

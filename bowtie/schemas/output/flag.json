@@ -1,0 +1,16 @@
+{
+  "description": "A flag output format result containing only a boolean validity result.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tag:bowtie.report,2026:output:flag",
+
+  "type": "object",
+  "properties": {
+    "valid": {
+      "description": "Whether the instance validated successfully against the schema.",
+      "type": "boolean"
+    }
+  },
+  "required": ["valid"],
+  "unevaluatedProperties": false
+}

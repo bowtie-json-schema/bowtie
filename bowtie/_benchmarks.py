@@ -1411,6 +1411,8 @@ class Benchmarker:
                 encoding="utf-8",
             )
             return await self._pyperf_benchmark_command(
+                sys.executable,
+                "-m",
                 "bowtie",
                 "run",
                 "-i",

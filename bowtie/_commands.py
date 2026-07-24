@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, dataclass_transform
 import re
+import urllib.parse
 
 from attrs import asdict, field, filters, frozen
 from url import URL
@@ -61,6 +62,7 @@ class Unsuccessful:
 class SeqCase:
     seq: Seq
     case: TestCase
+    output: str = "flag"
 
     def run(self, runner: DialectRunner) -> Awaitable[SeqResult]:
         try:
@@ -71,7 +73,11 @@ class SeqCase:
         if schema_without_dialect:
             runner.schema_without_dialect(self.case.schema)
 
-        run = Run(seq=self.seq, case=self.case.without_expected_results())  # type: ignore[reportCallIssue]
+        run = Run(
+            seq=self.seq,  # type: ignore[reportCallIssue]
+            case=self.case.without_expected_results(),  # type: ignore[reportCallIssue]
+            output=self.output,  # type: ignore[reportCallIssue]
+        )
         return runner.validate(run, expected=self.case.expected_results())
 
     def serializable(self):
@@ -187,6 +193,13 @@ class AnyTestResult(Protocol):
         ...
 
     @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        """
+        The grouped annotations for this result, empty if not supported.
+        """
+        ...
+
+    @property
     def skipped(self) -> bool: ...
 
     @property
@@ -194,35 +207,138 @@ class AnyTestResult(Protocol):
 
     def serializable(self) -> Message: ...
 
+    def matches(self, expecting: Any) -> bool: ...
+
 
 @frozen
-class TestResult:
+class Annotation:
+    keyword: str = ""
+    instanceLocation: str = ""
+    keywordLocation: str = ""
+    annotation: Any = None
+
+    @classmethod
+    def from_dict(cls, **kwargs: Any) -> Self:
+        return cls(
+            **{
+                k: v
+                for k, v in kwargs.items()
+                if k
+                in (
+                    "keyword",
+                    "instanceLocation",
+                    "keywordLocation",
+                    "annotation",
+                )
+            },
+        )
+
+    def serializable(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@frozen
+class FlagTestResult:
     errored = False
     skipped = False
 
     valid: bool
 
-    VALID: ClassVar[Self]
-    INVALID: ClassVar[Self]
+    @property
+    def description(self):
+        return "valid" if self.valid else "invalid"
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
+
+    def serializable(self) -> Message:
+        return asdict(self)
+
+    def matches(self, expecting: Any) -> bool:
+        return self == FlagTestResult(valid=expecting)
+
+
+@frozen
+class RichTestResult:
+    errored = False
+    skipped = False
+
+    valid: bool
+    annotations: list[Annotation] = field(
+        factory=list[Annotation],
+    )
 
     @property
     def description(self):
         return "valid" if self.valid else "invalid"
 
+    def serializable(self) -> Message:
+        return {
+            "valid": self.valid,
+            "annotations": [a.serializable() for a in self.annotations],
+        }
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        actual_annotations: dict[str, dict[str, Any]] = {}
+        for ann in self.annotations:
+            loc = ann.instanceLocation
+            kw = ann.keyword
+            if loc not in actual_annotations:
+                actual_annotations[loc] = {}
+            if kw not in actual_annotations[loc]:
+                actual_annotations[loc][kw] = {}
+            actual_annotations[loc][kw][ann.keywordLocation] = ann.annotation
+        return actual_annotations
+
+    def matches(self, expecting: Any) -> bool:
+        actual_annotations = self.grouped_annotations
+
+        for assertion in expecting:
+            location = assertion.get("location", "")
+            keyword = assertion.get("keyword", "")
+            expected_annotation = assertion.get("expected", {})
+
+            actual = actual_annotations.get(
+                location,
+                {},
+            ).get(keyword, {})
+
+            decoded_expected: dict[str, Any] = {
+                urllib.parse.unquote(k): v
+                for k, v in expected_annotation.items()
+            }
+            if actual != decoded_expected:
+                return False
+        return True
+
+
+class TestResult:
+    VALID: ClassVar[FlagTestResult]
+    INVALID: ClassVar[FlagTestResult]
+
     @classmethod
     def from_dict(cls, data: Message) -> AnyTestResult:
-        if data.pop("skipped", False):
-            return SkippedTest(**data)
-        elif data.pop("errored", False):
-            return ErroredTest(**data)
-        return cls(valid=data["valid"])
+        data_copy = dict(data)
+        if data_copy.pop("skipped", False):
+            return SkippedTest(**data_copy)
+        elif data_copy.pop("errored", False):
+            return ErroredTest(**data_copy)
 
-    def serializable(self) -> Message:
-        return asdict(self)
+        valid = data_copy.pop("valid")
+        if "annotations" in data_copy:
+            return RichTestResult(
+                valid=valid,
+                annotations=[
+                    Annotation.from_dict(**a) for a in data_copy["annotations"]
+                ],
+            )
+        return FlagTestResult(valid=valid)
 
 
-TestResult.VALID = TestResult(valid=True)
-TestResult.INVALID = TestResult(valid=False)
+TestResult.VALID = FlagTestResult(valid=True)
+TestResult.INVALID = FlagTestResult(valid=False)
 
 
 @frozen
@@ -234,6 +350,10 @@ class SkippedTest:
     skipped: bool = field(init=False, default=True)
 
     description = "skipped"
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
 
     @classmethod
     def in_skipped_case(cls):
@@ -250,6 +370,9 @@ class SkippedTest:
             ),
         )
 
+    def matches(self, expecting: Any) -> bool:
+        return False
+
 
 @frozen
 class ErroredTest:
@@ -259,6 +382,10 @@ class ErroredTest:
     skipped: bool = False
 
     description = "error"
+
+    @property
+    def grouped_annotations(self) -> dict[str, dict[str, dict[str, Any]]]:
+        return {}
 
     @classmethod
     def in_errored_case(cls):
@@ -272,6 +399,9 @@ class ErroredTest:
     def serializable(self) -> Message:
         return asdict(self)
 
+    def matches(self, expecting: Any) -> bool:
+        return False
+
 
 class AnyCaseResult(Protocol):
     @property
@@ -283,7 +413,7 @@ class AnyCaseResult(Protocol):
 
     def unsuccessful(
         self,
-        expected: Sequence[bool | None],
+        expected: Sequence[Any],
     ) -> Unsuccessful: ...
 
     def serializable(self) -> Message: ...
@@ -317,21 +447,25 @@ class SeqResult:
     implementation: ConnectableId
 
     result: AnyCaseResult
-    expected: Sequence[bool | None]
+    expected: Sequence[Any]
 
     @classmethod
     def from_dict(
         cls,
         seq: Seq,
         implementation: str,
-        expected: list[bool | None],
+        expected: list[Any],
         **data: dict[str, Any],
     ):
+        raw_expected: list[Any] = [
+            e.get("valid") if isinstance(e, dict) else e  # type: ignore[reportUnknownMemberType]
+            for e in expected
+        ]
         _, _, result = _case_result(seq=seq, **data)
         return cls(
             seq=seq,
             implementation=implementation,
-            expected=expected,
+            expected=raw_expected,
             result=result,
         )
 
@@ -346,7 +480,20 @@ class SeqResult:
         return self.serializable()
 
     def serializable(self):
-        serializable = asdict(self, filter=filters.exclude("result"))
+        serializable = asdict(
+            self,
+            filter=filters.exclude("result", "expected"),
+        )
+        serializable["expected"] = [
+            (
+                e
+                if isinstance(e, dict)
+                else {"valid": e}
+                if isinstance(e, bool)
+                else None
+            )
+            for e in self.expected
+        ]
         serializable.update(self.result.serializable())
         return serializable
 
@@ -369,14 +516,14 @@ class CaseResult:
     def result_for(self, i: int) -> AnyTestResult:
         return self.results[i]
 
-    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[Any]) -> Unsuccessful:
         skipped, errored, failed = [], [], []
         for got, expecting in zip(self.results, expected):
             if got.skipped:
                 skipped.append(got)  # type: ignore[reportArgumentType]
             elif got.errored:
                 errored.append(got)  # type: ignore[reportArgumentType]
-            elif expecting is not None and got != TestResult(valid=expecting):
+            elif expecting is not None and not got.matches(expecting):
                 failed.append(got)  # type: ignore[reportArgumentType]
         return Unsuccessful(skipped=skipped, failed=failed, errored=errored)  # type: ignore[reportUnknownArgumentType]
 
@@ -409,7 +556,7 @@ class CaseErrored:
     def result_for(self, i: int) -> ErroredTest:
         return ErroredTest.in_errored_case()
 
-    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[Any]) -> Unsuccessful:
         errored = [ErroredTest.in_errored_case() for _ in expected]
         return Unsuccessful(errored=errored)
 
@@ -440,7 +587,7 @@ class CaseSkipped:
     def result_for(self, i: int) -> SkippedTest:
         return SkippedTest.in_skipped_case()
 
-    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[Any]) -> Unsuccessful:
         skipped = [SkippedTest.in_skipped_case() for _ in expected]
         return Unsuccessful(skipped=skipped)
 
@@ -462,7 +609,7 @@ class Empty:
     def log(self, log: BoundLogger):
         log.error("No response")
 
-    def unsuccessful(self, expected: Sequence[bool | None]) -> Unsuccessful:
+    def unsuccessful(self, expected: Sequence[Any]) -> Unsuccessful:
         errored = [ErroredTest.in_errored_case() for _ in expected]
         return Unsuccessful(errored=errored)
 
@@ -471,6 +618,7 @@ class Empty:
 class Run:
     seq: Seq
     case: dict[str, Any]
+    output: str = "flag"
 
 
 @command(Response=Empty)

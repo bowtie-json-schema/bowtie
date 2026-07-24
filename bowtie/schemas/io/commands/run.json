@@ -7,7 +7,11 @@
   "properties": {
     "cmd": { "const": "run" },
     "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },
-    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" }
+    "case": { "$ref": "tag:bowtie.report,2023:ihop#case" },
+    "output": {
+      "description": "The output format the harness should respond with. 'flag' returns only a boolean validity result. 'annotations' returns annotations alongside validity.",
+      "enum": ["flag", "annotations"]
+    }
   },
   "$defs": {
     "response": {
@@ -44,12 +48,7 @@
               "items": {
                 "type": "object",
                 "oneOf": [
-                  {
-                    "properties": {
-                      "valid": { "type": "boolean" }
-                    },
-                    "required": ["valid"]
-                  },
+                  { "$ref": "tag:bowtie.report,2026:output" },
                   { "$ref": "#skipped" },
                   { "$ref": "#errored" }
                 ]

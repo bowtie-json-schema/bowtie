@@ -1,13 +1,17 @@
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.Error;
+import com.networknt.schema.OutputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
+import com.networknt.schema.output.OutputUnit;
 import com.networknt.schema.resource.InputStreamSource;
 import com.networknt.schema.resource.ResourceLoader;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
@@ -148,9 +152,23 @@ public class BowtieJsonSchemaValidator {
               .map(test -> {
                 Schema jsonSchema =
                     schemaRegistry.getSchema(runRequest.testCase().schema());
-                List<Error> errors = jsonSchema.validate(test.instance());
-                boolean isValid = errors == null || errors.isEmpty();
-                return new TestResult(isValid);
+
+                if ("annotations".equals(runRequest.output())) {
+                  OutputUnit outputUnit = jsonSchema.validate(
+                      test.instance(), OutputFormat.LIST, executionContext -> {
+                        executionContext.executionConfig(config -> {
+                          config.annotationCollectionEnabled(true);
+                          config.annotationCollectionFilter(keyword -> true);
+                        });
+                      });
+                  List<Map<String, Object>> annotations = new ArrayList<>();
+                  extractAnnotations(outputUnit, annotations);
+                  return new TestResult(outputUnit.isValid(), annotations);
+                } else {
+                  List<Error> errors = jsonSchema.validate(test.instance());
+                  boolean isValid = errors == null || errors.isEmpty();
+                  return new TestResult(isValid);
+                }
               })
               .toList();
       output.println(objectMapper.writeValueAsString(
@@ -170,6 +188,38 @@ public class BowtieJsonSchemaValidator {
     StringWriter stringWriter = new StringWriter();
     e.printStackTrace(new PrintWriter(stringWriter));
     return stringWriter.toString();
+  }
+
+  private void extractAnnotations(OutputUnit unit,
+                                  List<Map<String, Object>> list) {
+    if (unit.getAnnotations() != null) {
+      for (Map.Entry<String, Object> entry : unit.getAnnotations().entrySet()) {
+        list.add(buildAnnotation(entry, unit));
+      }
+    }
+    if (unit.getDetails() != null) {
+      for (OutputUnit child : unit.getDetails()) {
+        extractAnnotations(child, list);
+      }
+    }
+  }
+
+  private Map<String, Object> buildAnnotation(Map.Entry<String, Object> entry,
+                                              OutputUnit unit) {
+    String sloc = unit.getSchemaLocation();
+    if (sloc == null) {
+      sloc = "";
+    }
+    String suffix = "/" + entry.getKey();
+    if (sloc.endsWith(suffix)) {
+      sloc = sloc.substring(0, sloc.length() - suffix.length());
+    }
+    if (sloc.isEmpty()) {
+      sloc = "#";
+    }
+    return Map.of("keyword", entry.getKey(), "instanceLocation",
+                  unit.getInstanceLocation(), "keywordLocation", sloc,
+                  "annotation", entry.getValue());
   }
 
   class CustomResourceLoader implements ResourceLoader {
@@ -211,7 +261,8 @@ record DialectRequest(String dialect) {}
 
 record DialectResponse(boolean ok) {}
 
-record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase,
+                  String output) {}
 
 record RunResponse(JsonNode seq, List<TestResult> results) {}
 
@@ -238,4 +289,7 @@ record
     Test(String description, String comment, JsonNode instance, boolean valid) {
 }
 
-record TestResult(boolean valid) {}
+record TestResult(boolean valid, @JsonInclude(JsonInclude.Include.NON_NULL)
+                                 List<Map<String, Object>> annotations) {
+  public TestResult(boolean valid) { this(valid, null); }
+}
