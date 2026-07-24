@@ -1,0 +1,129 @@
+# Reusable workflow: a harness runs the official JSON Schema Test Suite against
+# its own published image and publishes the per-dialect reports as assets on a
+# rolling `report` release in its own repository.
+#
+# Bowtie's central report workflow then just collects each harness's latest
+# report and combines them -- it no longer runs every implementation's suite
+# itself.
+#
+# All harnesses independently resolve the SAME test-suite commit -- the newest
+# commit on the suite's `main` dated at or before the start of the current hour.
+# It's a pure function of the hour, so every harness agrees without any central
+# pin to maintain, and it rolls forward on its own. Passing that commit in the
+# suite URL makes `bowtie suite` record it in each report's metadata (the SHA the
+# UI already shows), so the combine can verify everyone ran the same suite.
+name: Harness Report
+
+on:
+  workflow_call:
+    inputs:
+      force:
+        description: >
+          Re-report even if the current suite commit was already reported
+          (used when the image itself changed, e.g. right after a publish).
+        required: false
+        type: boolean
+        default: false
+
+env:
+  SUITE: json-schema-org/JSON-Schema-Test-Suite
+
+permissions: {}
+
+jobs:
+  report:
+    name: Run the suite and publish the report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the report release
+      packages: read # to pull the harness's own image
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          python-version: "3.14"
+          enable-cache: false
+
+      - name: Install Bowtie
+        run: uv tool install bowtie-json-schema
+
+      - name: Compute implementation (image) name
+        id: impl
+        env:
+          GH_REPOSITORY: ${{ github.repository }}
+        run: echo "name=${GH_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve the shared test-suite commit
+        id: suite
+        # The newest commit on the suite's main at or before the start of the
+        # current hour -- deterministic, so every harness resolves the same one.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          hour_start=$(date -u +%Y-%m-%dT%H:00:00Z)
+          sha=$(gh api "repos/${SUITE}/commits?sha=main&until=${hour_start}&per_page=1" --jq '.[0].sha')
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Test-suite commit for ${hour_start}: ${sha}"
+
+      - name: Skip if this commit was already reported
+        id: skip
+        # A rolling `report` release records the last-reported suite commit in
+        # its notes. On the hourly schedule we skip when it's unchanged; a
+        # `force` run (image changed) always re-reports.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.suite.outputs.sha }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          last=$(gh release view report --json body --jq '.body' 2>/dev/null | sed -n 's/^Suite: //p')
+          if [ "$FORCE" != "true" ] && [ "$last" = "$SHA" ]; then
+            echo "already reported ${SHA}; skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: List the suite's dialects at that commit
+        id: dialects
+        if: steps.skip.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.suite.outputs.sha }}
+        run: |
+          dialects=$(gh api "repos/${SUITE}/contents/tests?ref=${SHA}" --jq '[.[] | select(.type=="dir" and (.name | startswith("draft"))) | .name] | join(" ")')
+          echo "list=${dialects}" >> "$GITHUB_OUTPUT"
+          echo "Dialects: ${dialects}"
+
+      - name: Run the suite against the published image
+        if: steps.skip.outputs.skip == 'false'
+        env:
+          IMPL: ${{ steps.impl.outputs.name }}
+          SHA: ${{ steps.suite.outputs.sha }}
+          DIALECTS: ${{ steps.dialects.outputs.list }}
+        run: |
+          mkdir reports
+          base="https://github.com/${SUITE}/tree/${SHA}/tests"
+          for dialect in ${DIALECTS}; do
+            # bowtie records the resolved commit in the report metadata.
+            # Dialects the implementation doesn't support produce no output.
+            bowtie suite -i "${IMPL}" "${base}/${dialect}" > "reports/${dialect}.json" || true
+            [ -s "reports/${dialect}.json" ] || rm -f "reports/${dialect}.json"
+          done
+          echo "Produced: $(ls reports/ | tr '\n' ' ')"
+
+      - name: Publish the report release
+        if: steps.skip.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.suite.outputs.sha }}
+        run: |
+          notes="Latest Bowtie compliance report for this harness.
+
+          Suite: ${SHA}"
+          if gh release view report >/dev/null 2>&1; then
+            gh release edit report --notes "$notes"
+          else
+            gh release create report --title "Latest report" --notes "$notes"
+          fi
+          gh release upload report reports/*.json --clobber
