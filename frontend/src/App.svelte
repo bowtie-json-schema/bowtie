@@ -3,6 +3,7 @@
   import TopBar from "./components/TopBar.svelte";
   import DialectReport from "./routes/DialectReport.svelte";
   import Benchmarks from "./routes/Benchmarks.svelte";
+  import Implementations from "./routes/Implementations.svelte";
   import ImplementationReport from "./routes/ImplementationReport.svelte";
   import LocalReport from "./routes/LocalReport.svelte";
   import NotFound from "./routes/NotFound.svelte";
@@ -17,6 +18,8 @@
       <DialectReport draftName={route.params.draftName} />
     {:else if route.name === "benchmarks"}
       <Benchmarks draftName={route.params.draftName} />
+    {:else if route.name === "implementations"}
+      <Implementations />
     {:else if route.name === "implementation"}
       <ImplementationReport id={route.params.id ?? ""} badges={route.params.badges === "1"} />
     {:else if route.name === "local"}

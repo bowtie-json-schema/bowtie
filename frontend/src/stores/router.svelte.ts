@@ -1,5 +1,11 @@
 export interface Route {
-  name: "dialect" | "benchmarks" | "implementation" | "local" | "notfound";
+  name:
+    | "dialect"
+    | "benchmarks"
+    | "implementation"
+    | "implementations"
+    | "local"
+    | "notfound";
   params: Record<string, string | undefined>;
 }
 
@@ -42,6 +48,8 @@ export function matchRoute(path: string): Route {
     return { name: "benchmarks", params: { draftName: m[1] || undefined } };
   if (path === "/local-report" || path === "/local-report/")
     return { name: "local", params: {} };
+  if (path === "/implementations" || path === "/implementations/")
+    return { name: "implementations", params: {} };
   if ((m = path.match(/^\/implementations\/([^/]+?)(?:\/(badges))?\/?$/)))
     return {
       name: "implementation",

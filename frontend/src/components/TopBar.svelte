@@ -59,6 +59,8 @@
     <a class="ghost" href="#/benchmarks">Benchmarks</a>
   {/if}
 
+  <a class="ghost" href="#/implementations">Implementations</a>
+
   <a class="ghost" href="#/local-report">Upload</a>
 
   <a class="ghost" href="https://docs.bowtie.report/" target="_blank" rel="noopener noreferrer">

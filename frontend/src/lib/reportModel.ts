@@ -79,6 +79,47 @@ export function testCounts(
   return n;
 }
 
+export interface Failure {
+  seq: number;
+  caseDescription: string;
+  testDescription: string;
+  state: "failed" | "errored" | "skipped";
+  message?: string;
+  schema: Case["schema"];
+  instance: unknown;
+}
+
+const FAILURE_ORDER = { failed: 0, errored: 1, skipped: 2 } as const;
+
+/**
+ * Every unsuccessful (case, test) an implementation produced in a report,
+ * ordered failed → errored → skipped then by case sequence.
+ */
+export function failuresFor(report: ReportData, implId: string): Failure[] {
+  const res = report.implementationsResults.get(implId);
+  if (!res) return [];
+  const out: Failure[] = [];
+  for (const [seq, results] of res.caseResults) {
+    const c = report.cases.get(seq);
+    if (!c) continue;
+    results.forEach((r, i) => {
+      if (r.state === "successful") return;
+      out.push({
+        seq,
+        caseDescription: c.description,
+        testDescription: c.tests[i].description,
+        state: r.state,
+        message: r.message,
+        schema: c.schema,
+        instance: c.tests[i].instance,
+      });
+    });
+  }
+  return out.sort(
+    (a, b) => FAILURE_ORDER[a.state] - FAILURE_ORDER[b.state] || a.seq - b.seq,
+  );
+}
+
 /**
  * Grouping seam for issue #27 (case groups in the report format). Today the
  * report is flat, so this returns null and callers render ungrouped. When the

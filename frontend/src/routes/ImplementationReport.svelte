@@ -4,16 +4,19 @@
   import { mapLanguage } from "../data/mapLanguage";
   import {
     prepareDialectsComplianceReportFor,
+    type ReportData,
     type Totals,
   } from "../data/parseReportData";
   import VersionsTrend from "../components/VersionsTrend.svelte";
   import BadgeEmbed from "../components/BadgeEmbed.svelte";
+  import ImplementationFailures from "../components/ImplementationFailures.svelte";
   import Spinner from "../components/Spinner.svelte";
 
   let { id, badges = false }: { id: string; badges?: boolean } = $props();
 
   let impl = $state<Implementation | null>(null);
   let compliance = $state<[Dialect, Partial<Totals>][]>([]);
+  let reports = $state<Map<Dialect, ReportData> | null>(null);
   let loading = $state(true);
   let notFound = $state(false);
   let showBadges = $state(false);
@@ -40,6 +43,7 @@
       return;
     }
     impl = found;
+    reports = allReports;
     document.title = `Bowtie – ${found.name}`;
     compliance = [
       ...prepareDialectsComplianceReportFor(found.id, allReports).entries(),
@@ -92,6 +96,10 @@
 
       {#if showBadges}
         <BadgeEmbed implementation={impl} />
+      {/if}
+
+      {#if reports}
+        <ImplementationFailures {reports} implId={impl.id} implName={impl.name} />
       {/if}
 
       <div class="card">
