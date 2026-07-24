@@ -11,6 +11,10 @@ body {
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
+/* Links inside running text must be distinguishable without relying on colour
+   (WCAG 1.4.1 / axe link-in-text-block) — so underline in-text/prose links.
+   Standalone UI links (nav, cards, crumbs, table cells) are exempt. */
+p a, .h-lead a, .empty-note a, .other-impls a { text-decoration: underline; text-underline-offset: 0.15em; }
 button { font-family: inherit; color: inherit; }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-faint); font-weight: 500; }
@@ -30,8 +34,10 @@ button { font-family: inherit; color: inherit; }
 .topbar::-webkit-scrollbar { display: none; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 640; letter-spacing: -0.02em; font-size: 15px; color: var(--text); text-decoration: none; }
 .brand .mark { font-family: var(--font-mono); color: var(--accent); font-size: 17px; font-weight: 700; letter-spacing: -0.04em; }
-.dialect-pill { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12px; padding: 5px 11px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); cursor: pointer; color: var(--text); }
-.dialect-pill select { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; outline: none; }
+.topnav { display: flex; align-items: center; gap: 2px; }
+.navlink { padding: 6px 11px; border-radius: 7px; font-size: 13.5px; color: var(--text-muted); text-decoration: none; white-space: nowrap; }
+.navlink:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+.navlink.active { color: var(--accent); font-weight: 540; }
 .topbar .spacer { flex: 1; }
 .topbar .ghost { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 11px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; text-decoration: none; }
 .topbar .ghost:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
@@ -56,7 +62,8 @@ button { font-family: inherit; color: inherit; }
 .chip.status .dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
 .impl-list { list-style: none; display: flex; flex-direction: column; gap: 1px; max-height: 260px; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
 .impl-item { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; }
-.impl-item .nm { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.impl-item .nm { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; text-decoration: none; }
+.impl-item .nm:hover { color: var(--accent); text-decoration: underline; }
 .impl-item .lg { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: auto; flex: none; }
 .impl-item.off { opacity: 0.34; }
 .impl-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); padding-left: 2px; }
@@ -75,7 +82,9 @@ button { font-family: inherit; color: inherit; }
 .runstrip .cell .v { font-family: var(--font-mono); font-size: 15px; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .runstrip .cell .v.small { font-size: 12px; }
 
-.h-lead { font-size: 13px; color: var(--text-muted); margin: 0 0 20px; max-width: 62ch; }
+.h-lead { font-size: 15px; line-height: 1.6; color: var(--text-muted); margin: 0 0 20px; max-width: 66ch; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.page-head .page { margin-bottom: 0; }
 h1.page { font-size: 26px; letter-spacing: -0.025em; font-weight: 660; margin: 4px 0 6px; text-wrap: balance; line-height: 1.2; }
 
 .matrix { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
@@ -119,7 +128,7 @@ pre.code .j-key { color: var(--j-key); } pre.code .j-str { color: var(--j-str); 
 .tline .exp { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: 8px; }
 .tline .tally { margin-left: auto; display: flex; gap: 12px; font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; flex: none; }
 .tally .t-ok { color: var(--pass); } .tally .t-fail { color: var(--fail); } .tally .t-err { color: var(--error); } .tally .t-skip { color: var(--skip); }
-.tally .mut { opacity: 0.3; }
+.tally .mut { color: var(--text-faint); }
 
 .dis { border: 1px solid var(--border); border-radius: 11px; background: var(--surface); overflow: hidden; }
 .dis .dhead { padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -131,9 +140,9 @@ pre.code .j-key { color: var(--j-key); } pre.code .j-str { color: var(--j-str); 
 .ogroup:first-child { border-top: 0; }
 .oh { padding: 11px 14px 4px; display: flex; align-items: center; gap: 9px; }
 .oh .badge { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 5px; letter-spacing: 0.03em; text-transform: uppercase; }
-.badge.fail { background: color-mix(in srgb, var(--fail) 16%, transparent); color: var(--fail); }
-.badge.err { background: color-mix(in srgb, var(--error) 18%, transparent); color: var(--error); }
-.badge.skip { background: color-mix(in srgb, var(--skip) 16%, transparent); color: var(--skip); }
+.badge.fail { background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
+.badge.err { background: color-mix(in srgb, var(--error) 10%, transparent); color: var(--error); }
+.badge.skip { background: color-mix(in srgb, var(--skip) 10%, transparent); color: var(--skip); }
 .chips-impl { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 13px; }
 .ichip { font-family: var(--font-mono); font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--border-strong); background: var(--surface); cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: baseline; gap: 6px; }
 .ichip:hover { border-color: var(--text-faint); color: var(--text); }

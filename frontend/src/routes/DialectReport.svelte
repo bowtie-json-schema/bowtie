@@ -52,7 +52,7 @@
 {#if loading}
   <Spinner />
 {:else if error}
-  <div class="empty-note">Couldn't load this report.<br />{error}</div>
+  <div class="empty-note">Couldn’t load this report.<br />{error}</div>
 {:else}
-  <ReportShell />
+  <ReportShell dialectBase="/dialects" />
 {/if}

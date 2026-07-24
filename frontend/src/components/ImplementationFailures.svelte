@@ -61,7 +61,7 @@
   </header>
   <div class="body">
     {#if !active}
-      <div class="empty-note">{implName} isn't included in any dialect report.</div>
+      <div class="empty-note">{implName} isn’t included in any dialect report.</div>
     {:else if failures.length === 0}
       <div class="empty-note">{implName} passes every test on {active.prettyName}.</div>
     {:else}

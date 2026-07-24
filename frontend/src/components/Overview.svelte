@@ -74,7 +74,6 @@
     );
 </script>
 
-<div class="crumbs"><span>Report</span></div>
 <h1 class="page">{data.runMetadata.dialect.prettyName} compliance</h1>
 <p class="h-lead">
   Bowtie is a tool for understanding and comparing implementations of the
@@ -154,7 +153,7 @@
     <summary>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
       {others.length}
-      {others.length === 1 ? "implementation doesn't" : "more implementations don't"}
+      {others.length === 1 ? "implementation doesn’t" : "more implementations don't"}
       support {data.runMetadata.dialect.prettyName} under the current language filter
     </summary>
     <ul>

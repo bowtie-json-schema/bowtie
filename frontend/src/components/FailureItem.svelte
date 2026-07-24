@@ -55,9 +55,9 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
-  .badge.fail { background: color-mix(in srgb, var(--fail) 16%, transparent); color: var(--fail); }
-  .badge.err { background: color-mix(in srgb, var(--error) 18%, transparent); color: var(--error); }
-  .badge.skip { background: color-mix(in srgb, var(--skip) 16%, transparent); color: var(--skip); }
+  .badge.fail { background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
+  .badge.err { background: color-mix(in srgb, var(--error) 10%, transparent); color: var(--error); }
+  .badge.skip { background: color-mix(in srgb, var(--skip) 10%, transparent); color: var(--skip); }
   .f-text {
     display: flex;
     flex-direction: column;

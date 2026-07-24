@@ -2,6 +2,12 @@
   import { report } from "../stores/report.svelte";
   import { mapLanguage } from "../data/mapLanguage";
   import type { Worst } from "../lib/reportModel";
+  import DialectPicker from "./DialectPicker.svelte";
+
+  let { dialectBase }: { dialectBase?: string } = $props();
+
+  const inScope = (language: string) =>
+    report.langs.size === 0 || report.langs.has(language);
 
   const statusDefs: {
     key: Worst | "pass";
@@ -46,6 +52,12 @@
 </script>
 
 <aside class="rail">
+  {#if dialectBase && report.data}
+    <div class="rail-group">
+      <DialectPicker current={report.data.runMetadata.dialect.shortName} base={dialectBase} />
+    </div>
+  {/if}
+
   <div class="rail-group">
     <span class="label">Search cases</span>
     <div class="search">
@@ -101,8 +113,8 @@
          includes; filtering itself lives on the language chips above. -->
     <ul class="impl-list">
       {#each [...(report.data?.runMetadata.implementations ?? [])] as [id, impl] (id)}
-        <li class="impl-item {report.langs.has(impl.language) ? '' : 'off'}">
-          <span class="nm">{impl.name}</span>
+        <li class="impl-item {inScope(impl.language) ? '' : 'off'}">
+          <a class="nm" href="#/implementations/{id}">{impl.name}</a>
           <span class="lg">{mapLanguage(impl.language)}</span>
         </li>
       {/each}

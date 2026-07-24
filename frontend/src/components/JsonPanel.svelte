@@ -19,5 +19,8 @@
       <CopyButton text={json} label="Copy {label.toLowerCase()}" />
     </span>
   </header>
-  <pre class="code">{#each tokenizeJson(value) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
+  <!-- a scrollable code block must be keyboard-focusable so it can be scrolled
+       (axe scrollable-region-focusable); Svelte's heuristic doesn't allow for that -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <pre class="code" tabindex="0" role="group" aria-label="{label} JSON">{#each tokenizeJson(value) as tok, i (i)}{#if tok.cls}<span class={tok.cls}>{tok.text}</span>{:else}{tok.text}{/if}{/each}</pre>
 </div>

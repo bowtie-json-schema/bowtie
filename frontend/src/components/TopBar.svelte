@@ -1,21 +1,11 @@
 <script lang="ts">
-  import Dialect from "../data/Dialect";
   import { theme } from "../stores/theme.svelte";
-  import { router, matchRoute } from "../stores/router.svelte";
+  import { router, matchRoute, type Route } from "../stores/router.svelte";
   import { report } from "../stores/report.svelte";
+  import { NAV } from "../lib/nav";
 
   const route = $derived(matchRoute(router.path));
-  const dialects = Dialect.newestToOldest();
-
-  const currentDraft = $derived(
-    route.params.draftName ?? Dialect.latest().shortName,
-  );
-
-  function onDialectChange(e: Event) {
-    const shortName = (e.target as HTMLSelectElement).value;
-    const base = route.name === "benchmarks" ? "/benchmarks" : "/dialects";
-    router.navigate(`${base}/${shortName}`);
-  }
+  const isActive = (m: Route["name"][]) => m.includes(route.name);
 </script>
 
 <header class="topbar">
@@ -23,15 +13,16 @@
     <span class="mark">&gt;·&lt;</span> Bowtie
   </a>
 
-  {#if route.name === "dialect" || route.name === "benchmarks"}
-    <label class="dialect-pill">
-      <select value={currentDraft} onchange={onDialectChange} aria-label="Choose dialect">
-        {#each dialects as d (d.shortName)}
-          <option value={d.shortName}>{d.prettyName}</option>
-        {/each}
-      </select>
-    </label>
-  {/if}
+  <nav class="topnav" aria-label="Primary">
+    {#each NAV as item (item.label)}
+      <a
+        class="navlink"
+        class:active={isActive(item.match)}
+        href={item.href}
+        aria-current={isActive(item.match) ? "page" : undefined}
+      >{item.label}</a>
+    {/each}
+  </nav>
 
   <div class="spacer"></div>
 
@@ -52,16 +43,6 @@
       </svg>
     {/if}
   </button>
-
-  {#if route.name === "benchmarks"}
-    <a class="ghost" href="#/">Reports</a>
-  {:else}
-    <a class="ghost" href="#/benchmarks">Benchmarks</a>
-  {/if}
-
-  <a class="ghost" href="#/implementations">Implementations</a>
-
-  <a class="ghost" href="#/local-report">Upload</a>
 
   <a class="ghost" href="https://docs.bowtie.report/" target="_blank" rel="noopener noreferrer">
     Docs

@@ -13,6 +13,7 @@
   import BenchmarkChart from "../components/BenchmarkChart.svelte";
   import BenchmarkGroup from "../components/BenchmarkGroup.svelte";
   import Spinner from "../components/Spinner.svelte";
+  import DialectPicker from "../components/DialectPicker.svelte";
 
   let { draftName }: { draftName?: string } = $props();
 
@@ -35,8 +36,7 @@
       const report = await dialect.fetchBenchmarkReport();
       if (token !== loadToken) return;
       data = report;
-      langs = benchmarkLanguages(report.metadata.implementations);
-      types = benchmarkTypes(report.results);
+      // langs/types stay empty = "all" (first click narrows, further clicks add)
     } catch (e) {
       if (token === loadToken)
         error = e instanceof Error ? e.message : String(e);
@@ -54,16 +54,21 @@
   );
   const allTypes = $derived(data ? benchmarkTypes(data.results) : []);
 
+  // empty selection = all (first click narrows, further clicks add)
   const scopedIds = $derived(
     data
       ? [...data.metadata.implementations]
-          .filter(([, i]) => langs.includes(i.language))
+          .filter(([, i]) => langs.length === 0 || langs.includes(i.language))
           .map(([id]) => id)
       : [],
   );
 
   const filteredGroups = $derived(
-    data ? data.results.filter((g) => types.includes(g.benchmarkType)) : [],
+    data
+      ? data.results.filter(
+          (g) => types.length === 0 || types.includes(g.benchmarkType),
+        )
+      : [],
   );
 
   const ranking = $derived(
@@ -90,13 +95,15 @@
 {:else if error}
   <div class="doc"><div class="doc-inner">
     <h1 class="page">Benchmarks</h1>
-    <div class="empty-note">Couldn't load benchmarks.<br />{error}</div>
+    <div class="empty-note">Couldn’t load benchmarks.<br />{error}</div>
   </div></div>
 {:else if data}
   <div class="doc">
     <div class="doc-inner">
-      <div class="crumbs"><a href="#/">Report</a><span class="sep">/</span><span>Benchmarks</span></div>
-      <h1 class="page">{data.metadata.dialect.prettyName} benchmarks</h1>
+      <div class="page-head">
+        <h1 class="page">{data.metadata.dialect.prettyName} benchmarks</h1>
+        <DialectPicker current={data.metadata.dialect.shortName} base="/benchmarks" />
+      </div>
 
       <div class="card">
         <header>Run info</header>
@@ -150,7 +157,7 @@
         </div>
       </div>
 
-      {#each allTypes.filter((t) => types.includes(t) && groupsByType[t]) as type (type)}
+      {#each allTypes.filter((t) => (types.length === 0 || types.includes(t)) && groupsByType[t]) as type (type)}
         <h2 class="bench-type-head">{titleCase(type)}</h2>
         {#each groupsByType[type] as group, gi (gi)}
           <BenchmarkGroup {group} {scopedIds} implementations={data.metadata.implementations} />
