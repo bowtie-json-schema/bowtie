@@ -111,6 +111,9 @@
               {#if data.metadata.systemMetadata.cpuCount}
                 <tr><th>CPU count</th><td class="mono">{data.metadata.systemMetadata.cpuCount}</td></tr>
               {/if}
+              {#if data.metadata.systemMetadata.hostname}
+                <tr><th>Hostname</th><td class="mono">{data.metadata.systemMetadata.hostname}</td></tr>
+              {/if}
               <tr><th>Platform</th><td class="mono">{data.metadata.systemMetadata.platform}</td></tr>
               <tr><th>pyperf</th><td class="mono">{data.metadata.systemMetadata.perfVersion}</td></tr>
             </tbody>

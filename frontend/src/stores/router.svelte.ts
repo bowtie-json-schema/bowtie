@@ -44,7 +44,7 @@ export function matchRoute(path: string): Route {
   if (path === "/") return { name: "dialect", params: {} };
   if ((m = path.match(/^\/dialects\/(.+?)\/?$/)))
     return { name: "dialect", params: { draftName: m[1] } };
-  if ((m = path.match(/^\/benchmarks\/?(.*?)\/?$/)))
+  if ((m = path.match(/^\/benchmarks(?:\/(.*?))?\/?$/)))
     return { name: "benchmarks", params: { draftName: m[1] || undefined } };
   if (path === "/local-report" || path === "/local-report/")
     return { name: "local", params: {} };

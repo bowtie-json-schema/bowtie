@@ -19,7 +19,9 @@
   let reports = $state<Map<Dialect, ReportData> | null>(null);
   let loading = $state(true);
   let notFound = $state(false);
+  let error = $state<string | null>(null);
   let showBadges = $state(false);
+  let loadToken = 0;
 
   $effect(() => {
     if (badges) showBadges = true;
@@ -29,31 +31,38 @@
     (t.failedTests ?? 0) + (t.erroredTests ?? 0) + (t.skippedTests ?? 0);
 
   async function load(implId: string) {
+    const token = ++loadToken;
     loading = true;
     notFound = false;
+    error = null;
     document.title = `Bowtie – ${implId}`;
-    const [, allReports] = await Promise.all([
-      Implementation.fetchAllImplementationsData(),
-      Dialect.fetchAllReports(),
-    ]);
-    const found = Implementation.withId(implId);
-    if (!found) {
-      notFound = true;
-      loading = false;
-      return;
+    try {
+      const [, allReports] = await Promise.all([
+        Implementation.fetchAllImplementationsData(),
+        Dialect.fetchAllReports(),
+      ]);
+      if (token !== loadToken) return; // superseded by a newer navigation
+      const found = Implementation.withId(implId);
+      if (!found) {
+        notFound = true;
+        return;
+      }
+      impl = found;
+      reports = allReports;
+      document.title = `Bowtie – ${found.name}`;
+      compliance = [
+        ...prepareDialectsComplianceReportFor(found.id, allReports).entries(),
+      ].sort(
+        ([da, a], [db, b]) =>
+          badTotal(a) - badTotal(b) ||
+          +db.firstPublicationDate - +da.firstPublicationDate,
+      );
+      await found.fetchVersions();
+    } catch (e) {
+      if (token === loadToken) error = e instanceof Error ? e.message : String(e);
+    } finally {
+      if (token === loadToken) loading = false;
     }
-    impl = found;
-    reports = allReports;
-    document.title = `Bowtie – ${found.name}`;
-    compliance = [
-      ...prepareDialectsComplianceReportFor(found.id, allReports).entries(),
-    ].sort(
-      ([da, a], [db, b]) =>
-        badTotal(a) - badTotal(b) ||
-        +db.firstPublicationDate - +da.firstPublicationDate,
-    );
-    await found.fetchVersions();
-    loading = false;
   }
 
   $effect(() => {
@@ -63,6 +72,13 @@
 
 {#if loading}
   <Spinner />
+{:else if error}
+  <div class="doc">
+    <div class="doc-inner">
+      <h1 class="page">Couldn't load this implementation</h1>
+      <div class="empty-note">{error}<br /><a href="#/">Back to the report</a></div>
+    </div>
+  </div>
 {:else if notFound || !impl}
   <div class="doc">
     <div class="doc-inner">
@@ -124,6 +140,20 @@
                 <th>Supported dialects</th>
                 <td><img class="badge" alt="Supported dialects" src={impl.versionsBadge().href()} /></td>
               </tr>
+              {#if impl.links?.some((l) => l.url)}
+                <tr>
+                  <th>Additional links</th>
+                  <td>
+                    <ul class="links">
+                      {#each impl.links as link, i (i)}
+                        {#if link.url}
+                          <li><a href={link.url}>{link.description ?? link.url}</a></li>
+                        {/if}
+                      {/each}
+                    </ul>
+                  </td>
+                </tr>
+              {/if}
             </tbody>
           </table>
         </div>
@@ -179,6 +209,13 @@
   }
   .muted {
     color: var(--text-muted);
+  }
+  ul.links {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
   table.compliance th,
   table.compliance td {

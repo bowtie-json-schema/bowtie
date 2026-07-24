@@ -8,7 +8,7 @@
   const dialects = Dialect.newestToOldest();
 
   const currentDraft = $derived(
-    report.data?.runMetadata.dialect.shortName ?? Dialect.latest().shortName,
+    route.params.draftName ?? Dialect.latest().shortName,
   );
 
   function onDialectChange(e: Event) {

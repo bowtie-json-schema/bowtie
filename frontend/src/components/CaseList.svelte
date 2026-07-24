@@ -60,10 +60,12 @@
 {#snippet caseRow(seq: number)}
   {@const c = report.data!.cases.get(seq)!}
   {@const group = caseGroup(c)}
-  {@const nf = report.nDisagree(seq)}
+  {@const n = report.countsWorst(seq)}
+  {@const nf = n.fail + n.err + n.skip}
   <button
     class="case-row {report.selectedSeq === seq ? 'sel' : ''}"
     aria-current={report.selectedSeq === seq ? "true" : undefined}
+    title={nf ? `${n.fail} failed · ${n.err} errored · ${n.skip} skipped` : undefined}
     onclick={() => report.select(seq)}
   >
     <div class="cr-top">

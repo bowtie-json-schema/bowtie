@@ -126,7 +126,13 @@
 <span class="label sec-label">Implementations · fewest issues first</span>
 <div class="matrix">
   {#each rows as r (r.id)}
-    <button class="row" onclick={() => router.navigate(`/implementations/${r.id}`)}>
+    <button
+      class="row"
+      title={r.bad
+        ? `${r.fail} failed · ${r.err} errored · ${r.skip} skipped`
+        : "no unsuccessful tests"}
+      onclick={() => router.navigate(`/implementations/${r.id}`)}
+    >
       <div class="who">
         <span class="nm">{r.name}</span>
         <span class="lg">{mapLanguage(r.language)}</span>

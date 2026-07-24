@@ -94,24 +94,18 @@
 
   <div class="rail-group">
     <div style="display:flex;align-items:baseline;justify-content:space-between">
-      <span class="label">Implementations</span>
+      <span class="label">In scope</span>
       <span class="impl-count">{report.scopedImplIds.length} / {report.data?.runMetadata.implementations.size ?? 0}</span>
     </div>
-    <div class="impl-list">
+    <!-- Read-out of which implementations the language filter currently
+         includes; filtering itself lives on the language chips above. -->
+    <ul class="impl-list">
       {#each [...(report.data?.runMetadata.implementations ?? [])] as [id, impl] (id)}
-        {@const on = report.langs.has(impl.language)}
-        <button
-          class="impl-item {on ? 'on' : 'off'}"
-          aria-pressed={on}
-          onclick={() => report.toggleLang(impl.language)}
-        >
-          <span class="box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M20 6 9 17l-5-5" /></svg>
-          </span>
+        <li class="impl-item {report.langs.has(impl.language) ? '' : 'off'}">
           <span class="nm">{impl.name}</span>
           <span class="lg">{mapLanguage(impl.language)}</span>
-        </button>
+        </li>
       {/each}
-    </div>
+    </ul>
   </div>
 </aside>
