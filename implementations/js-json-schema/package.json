@@ -1,8 +1,0 @@
-{
-  "name": "bowtie-json-schema",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@cfworker/json-schema": "^4.0.3"
-  }
-}
