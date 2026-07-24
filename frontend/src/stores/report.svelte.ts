@@ -9,16 +9,17 @@ import {
 
 /**
  * Holds the currently-loaded dialect report plus all cross-pane UI state
- * (filters + selection). Kept as a single reactive store so the rail, case
- * list, and detail stay in sync. Selection/filters are in-memory for now;
- * URL-syncing (`?case=`, `?language=`) is a follow-up.
+ * (filters + selection), kept as a single reactive store so the rail, case
+ * list, and detail stay in sync. Filters + selection round-trip through the URL
+ * via {@link toQuery}/{@link applyQuery}.
  */
 class ReportStore {
   data = $state<ReportData | null>(null);
   allImpls = $state<Map<string, Implementation>>(new Map());
   worst = $state<Map<number, Map<string, Worst>>>(new Map());
 
-  // filters
+  // filters. An empty `langs` set means "all languages" (no filter); the first
+  // click on a language narrows to just it, further clicks add/remove.
   langs = $state<Set<string>>(new Set());
   statuses = $state<Set<Worst>>(new Set<Worst>(["fail", "err", "skip"]));
   search = $state("");
@@ -33,11 +34,7 @@ class ReportStore {
     this.data = data;
     this.allImpls = allImpls;
     this.worst = computeWorst(data);
-    const langs = new Set<string>();
-    for (const impl of data.runMetadata.implementations.values()) {
-      langs.add(impl.language);
-    }
-    this.langs = langs;
+    this.langs = new Set(); // empty = all languages
     this.statuses = new Set<Worst>(["fail", "err", "skip"]);
     this.search = "";
     this.showPassing = false;
@@ -62,8 +59,9 @@ class ReportStore {
 
   get scopedImplIds(): string[] {
     if (!this.data) return [];
+    const all = this.langs.size === 0;
     return [...this.d.runMetadata.implementations]
-      .filter(([, i]) => this.langs.has(i.language))
+      .filter(([, i]) => all || this.langs.has(i.language))
       .map(([id]) => id);
   }
 
@@ -77,7 +75,7 @@ class ReportStore {
     return [...this.allImpls.values()]
       .filter(
         (i) =>
-          this.langs.has(i.language) &&
+          (this.langs.size === 0 || this.langs.has(i.language)) &&
           !this.d.implementationsResults.has(i.id),
       )
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -161,17 +159,25 @@ class ReportStore {
     this.openDiag = null;
   }
 
+  private static readonly DEFAULT_STATUS = ["err", "fail", "skip"];
+
   /**
-   * Serialize the shareable slice of state (language filter + selected
-   * case/test) to a query string. Ephemeral UI (status toggles, search text)
-   * is intentionally left out of the URL.
+   * Serialize the filter + selection state to a query string so a view is
+   * shareable and survives reload. Defaults (all languages, the default status
+   * set, no search) are omitted to keep URLs tidy.
    */
   toQuery(): string {
     const p = new URLSearchParams();
-    const all = this.languages;
-    if (this.langs.size && this.langs.size < all.length) {
-      for (const l of all) if (this.langs.has(l)) p.append("language", l);
+    if (this.langs.size) {
+      for (const l of this.languages) if (this.langs.has(l)) p.append("language", l);
     }
+    const cur = [...this.statuses].sort();
+    if (cur.join(",") !== ReportStore.DEFAULT_STATUS.join(",")) {
+      if (cur.length === 0) p.set("status", "none");
+      else for (const s of cur) p.append("status", s);
+    }
+    if (this.showPassing) p.set("passing", "1");
+    if (this.search) p.set("q", this.search);
     if (this.selectedSeq !== null) {
       p.set("case", String(this.selectedSeq));
       if (this.selectedTest) p.set("test", String(this.selectedTest));
@@ -181,10 +187,21 @@ class ReportStore {
 
   /** Restore filters/selection from a URL query (deep links, reloads). */
   applyQuery(params: URLSearchParams) {
-    const langs = params
-      .getAll("language")
-      .filter((l) => this.languages.includes(l));
-    if (langs.length) this.langs = new Set(langs);
+    this.langs = new Set(
+      params.getAll("language").filter((l) => this.languages.includes(l)),
+    );
+
+    const valid: Worst[] = ["fail", "err", "skip"];
+    if (params.get("status") === "none") {
+      this.statuses = new Set();
+    } else {
+      const statuses = params
+        .getAll("status")
+        .filter((s): s is Worst => valid.includes(s as Worst));
+      if (statuses.length) this.statuses = new Set(statuses);
+    }
+    this.showPassing = params.get("passing") === "1";
+    this.search = params.get("q") ?? "";
 
     const caseParam = params.get("case");
     if (caseParam !== null) {

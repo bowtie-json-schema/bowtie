@@ -5,6 +5,10 @@
   import CaseList from "./CaseList.svelte";
   import CaseDetail from "./CaseDetail.svelte";
 
+  // Only the live dialect report offers a dialect switcher; a local upload has
+  // no dialect to navigate to.
+  let { dialectBase }: { dialectBase?: string } = $props();
+
   // Arrow-key navigation through the currently-visible case list.
   function onKeydown(e: KeyboardEvent) {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
@@ -27,7 +31,7 @@
 <svelte:window onkeydown={onKeydown} />
 
 <div class="shell">
-  <Rail />
+  <Rail {dialectBase} />
   <main class="center">
     {#key report.selectedSeq}
       <div class="center-inner fade">

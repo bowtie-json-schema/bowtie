@@ -37,7 +37,7 @@
 {:else if error}
   <div class="doc"><div class="doc-inner">
     <h1 class="page">Implementations</h1>
-    <div class="empty-note">Couldn't load implementations.<br />{error}</div>
+    <div class="empty-note">Couldn’t load implementations.<br />{error}</div>
   </div></div>
 {:else}
   <div class="doc">

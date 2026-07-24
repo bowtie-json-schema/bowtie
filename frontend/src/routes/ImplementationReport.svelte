@@ -10,6 +10,7 @@
   import VersionsTrend from "../components/VersionsTrend.svelte";
   import BadgeEmbed from "../components/BadgeEmbed.svelte";
   import ImplementationFailures from "../components/ImplementationFailures.svelte";
+  import Breadcrumbs from "../components/Breadcrumbs.svelte";
   import Spinner from "../components/Spinner.svelte";
 
   let { id, badges = false }: { id: string; badges?: boolean } = $props();
@@ -75,7 +76,7 @@
 {:else if error}
   <div class="doc">
     <div class="doc-inner">
-      <h1 class="page">Couldn't load this implementation</h1>
+      <h1 class="page">Couldn’t load this implementation</h1>
       <div class="empty-note">{error}<br /><a href="#/">Back to the report</a></div>
     </div>
   </div>
@@ -91,10 +92,7 @@
 {:else}
   <div class="doc">
     <div class="doc-inner">
-      <div class="crumbs">
-        <a href="#/">Report</a><span class="sep">/</span>
-        <span class="mono" style="color:var(--accent)">{impl.id}</span>
-      </div>
+      <Breadcrumbs />
       <div class="impl-head">
         <div>
           <h1 class="page">{impl.name}</h1>

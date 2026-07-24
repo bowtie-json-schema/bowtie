@@ -53,7 +53,7 @@
     <div class="doc-inner">
       <h1 class="page">Upload a report</h1>
       <p class="h-lead">
-        Explore a report you generated locally with Bowtie's CLI — it's parsed
+        Explore a report you generated locally with Bowtie’s CLI — it’s parsed
         in your browser and never leaves your machine.
       </p>
 
@@ -89,7 +89,7 @@
         </svg>
         {#if invalid}
           <p style="color:var(--fail);font-weight:560;margin:0">
-            That doesn't look like a Bowtie report.
+            That doesn’t look like a Bowtie report.
           </p>
         {:else}
           <p style="margin:0">Drag &amp; drop a JSON report here, or click to choose a file.</p>

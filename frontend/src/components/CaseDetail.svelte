@@ -2,11 +2,11 @@
   import { report } from "../stores/report.svelte";
   import { mapLanguage } from "../data/mapLanguage";
   import JsonPanel from "./JsonPanel.svelte";
+  import Breadcrumbs from "./Breadcrumbs.svelte";
   import {
     resultFor,
     stateToWorst,
     testCounts,
-    caseGroup,
     type Worst,
   } from "../lib/reportModel";
 
@@ -15,7 +15,6 @@
   const c = $derived(data.cases.get(seq)!);
   const t = $derived(Math.min(report.selectedTest, c.tests.length - 1));
   const implIds = $derived(report.scopedImplIds);
-  const group = $derived(caseGroup(c));
 
   const nDisagree = $derived(report.nDisagree(seq));
 
@@ -55,10 +54,7 @@
   }
 </script>
 
-<div class="crumbs">
-  <a href="#/" onclick={(e) => { e.preventDefault(); report.selectedSeq = null; }}>Report</a>
-  {#if group}<span class="sep">/</span><span class="mono" style="color:var(--accent)">{group}</span>{/if}
-</div>
+<Breadcrumbs />
 
 <h1 class="page">{c.description}</h1>
 
