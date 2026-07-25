@@ -2853,7 +2853,7 @@ def site_combine(
     produced by `bowtie site collect` (or an individual report file). For
     each dialect the matching reports are combined into a single
     multi-implementation report, and every implementation's own metadata is
-    gathered into implementations.json -- all read from the reports
+    gathered into ``implementations.json`` -- all read from the reports
     themselves, without starting any implementation.
     """
     context.exit(_combine(collected=collected, output=output))
