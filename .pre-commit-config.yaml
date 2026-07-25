@@ -1,7 +1,3 @@
-ci:
-  skip:
-    - swift-format # timesout in pre-commit.ci
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -47,11 +43,6 @@ repos:
         language: python
         pass_filenames: false
         entry: .pre-commit-hooks/check-lintsonschema-schema
-  - repo: https://github.com/syntaqx/git-hooks
-    rev: v0.0.18
-    hooks:
-      - name: go fmt (golang implementations)
-        id: go-fmt
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.8
     hooks:
@@ -69,13 +60,4 @@ repos:
             "implementations/.java-implementations-pmd-ruleset.xml",
             "-d",
             "implementations",
-          ]
-  - repo: https://github.com/swiftlang/swift-format
-    rev: swift-DEVELOPMENT-SNAPSHOT-2026-07-11-a
-    hooks:
-      - name: swift-format (swift implementations)
-        id: swift-format
-        args:
-          [
-            "implementations/swift-swift-json-schema/Sources"
           ]

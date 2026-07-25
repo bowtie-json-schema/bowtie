@@ -1,6 +1,0 @@
-FROM node:26-alpine
-COPY . /usr/app
-WORKDIR /usr/app
-RUN npm install --omit=dev
-RUN npm -g install tsm
-CMD ["tsm", "bowtie-jlib.ts"]
