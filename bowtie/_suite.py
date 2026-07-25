@@ -5,6 +5,7 @@ Peculiarities related to how the official JSON Schema Test Suite is structured.
 from __future__ import annotations
 
 from contextlib import suppress
+from datetime import UTC, datetime
 from fnmatch import fnmatch
 from functools import cache
 from io import BytesIO
@@ -266,17 +267,53 @@ def _commit_metadata(repo: Any, ref: str) -> dict[str, Any]:
     return {"Commit": commit_info}
 
 
-def download(ref: str = DEFAULT_REF) -> tuple[_P, dict[str, Any]]:
+def hour_start() -> datetime:
     """
-    Download the whole official test suite once, at the given ref.
+    The start of the current hour, in UTC.
 
-    Returns its root directory (which contains ``tests/`` and ``remotes/``)
-    alongside run metadata recording the exact commit retrieved.
+    Pinning the suite to this makes the choice deterministic within any
+    given hour, so independent runs in the same hour collect against -- and
+    can therefore be combined at -- the same commit, with no coordination
+    needed between them.
+    """
+    return datetime.now(tz=UTC).replace(
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+
+def _commit_at_hour_start(repo: Any) -> str:
+    """
+    The newest commit on the suite's main branch at or before this hour.
+    """
+    commits = repo.commits(sha=DEFAULT_REF, until=hour_start(), number=1)
+    commit = next(iter(commits), None)
+    if commit is None:
+        return DEFAULT_REF
+    return commit.sha
+
+
+def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
+    """
+    Download the whole official test suite once.
+
+    With no ``ref``, the suite is pinned to the newest commit on its main
+    branch at or before the start of the current hour -- a deterministic
+    choice, so that independent runs within the same hour all collect
+    against (and can therefore be combined at) the same commit. Pass an
+    explicit ref (a branch, tag or commit) to override.
+
+    Returns the suite's root directory (which contains ``tests/`` and
+    ``remotes/``) alongside run metadata recording the exact commit.
     Every dialect collected from this one root is therefore guaranteed to
     share a single consistent commit, even if the suite moves meanwhile.
     """
     segments = cast("list[str]", TEST_SUITE_URL.path_segments)
     repo = github().repository(segments[0], segments[1])  # type: ignore[reportUnknownMemberType]
+
+    if ref is None:
+        ref = _commit_at_hour_start(repo)
 
     data = BytesIO()
     data.name = ""
