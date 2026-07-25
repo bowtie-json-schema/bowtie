@@ -795,6 +795,46 @@ async def test_site_combine(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_site_combine_ignores_stray_files(tmp_path):
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {"description": "an int", "data": 1, "valid": True},
+                    ],
+                },
+            ],
+        ),
+    )
+
+    collected = tmp_path / "collected"
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:null",
+        "--suite",
+        suite,
+        "--output",
+        collected,
+    )
+    # Non-report files sitting alongside the real reports are ignored, not
+    # treated as (invalid) reports.
+    collected.joinpath("implementations.json").write_text("{}")
+    collected.joinpath("README.json").write_text('{"hello": "world"}')
+
+    site = tmp_path / "site"
+    await bowtie("site", "combine", str(collected), "--output", site)
+    assert site.joinpath("draft7.json").exists()
+
+
+@pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", "direct:null", "--set-schema") as send:
         results, stderr = await send(

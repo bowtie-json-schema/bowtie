@@ -2877,17 +2877,37 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
         STDERR.print(error)
         return EX.CONFIG
 
+    known = Dialect.by_short_name()
     paths: list[Path] = []
     for each in collected:
         if each.is_dir():
-            paths.extend(sorted(each.glob("*.json")))
+            # Only the per-dialect reports, so stray files (a previous run's
+            # implementations.json, a README, ...) in a directory are ignored.
+            paths.extend(
+                sorted(p for p in each.glob("*.json") if p.stem in known),
+            )
         else:
             paths.append(each)
 
     by_dialect: dict[Dialect, list[_report.Report]] = {}
     infos: dict[str, ImplementationInfo] = {}
     for path in paths:
-        report = _report.Report.from_serialized(path.read_text().splitlines())
+        try:
+            report = _report.Report.from_serialized(
+                path.read_text().splitlines(),
+            )
+        except (_report.InvalidReport, json.JSONDecodeError) as err:
+            error = DiagnosticError(
+                code="invalid-report",
+                message=f"{path} is not a valid Bowtie report.",
+                causes=[str(err)],
+                hint_stmt=(
+                    "Each input should be a report produced by "
+                    "`bowtie site collect`."
+                ),
+            )
+            STDERR.print(error)
+            return EX.DATAERR
         if report.is_empty:
             continue
         by_dialect.setdefault(report.metadata.dialect, []).append(report)
