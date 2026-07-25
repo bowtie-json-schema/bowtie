@@ -44,6 +44,8 @@ jobs:
       - name: Publish the report release
         env:
           GH_TOKEN: ${{ github.token }}
+          # The repo isn't checked out, so tell gh which repository to act on.
+          GH_REPO: ${{ github.repository }}
         run: |
           notes="Latest Bowtie compliance report for this harness."
           if gh release view report >/dev/null 2>&1; then
