@@ -1,0 +1,54 @@
+# Reusable workflow: a harness runs the official JSON Schema Test Suite against
+# its own published image and publishes the per-dialect reports as assets on a
+# rolling `report` release in its own repository.
+#
+# Bowtie's central report workflow then just collects each harness's latest
+# report and combines them -- it no longer runs every implementation's suite
+# itself.
+#
+# `bowtie site collect` pins the suite to a deterministic per-hour commit (the
+# newest commit at or before the start of the current hour), so every harness
+# independently runs the very same suite and the reports can be combined --
+# with no test-suite URLs, dialect lists or commit wrangling in the workflow.
+name: Harness Report
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  report:
+    name: Run the suite and publish the report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the report release
+      packages: read # to pull the harness's own image
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          python-version: "3.14"
+          enable-cache: false
+
+      - name: Install Bowtie
+        run: uv tool install bowtie-json-schema
+
+      - name: Run the suite against the published image
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: bowtie site collect -i "${GH_REPOSITORY##*/}" --output reports
+
+      - name: Publish the report release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Latest Bowtie compliance report for this harness."
+          if gh release view report >/dev/null 2>&1; then
+            gh release edit report --notes "$notes"
+          else
+            gh release create report --title "Latest report" --notes "$notes"
+          fi
+          gh release upload report reports/*.json --clobber

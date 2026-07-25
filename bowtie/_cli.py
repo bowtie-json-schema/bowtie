@@ -2663,9 +2663,7 @@ def collect(
         run_metadata: dict[str, Any] = {}
     else:
         try:
-            root, run_metadata = _suite.download(
-                ref=suite_source or _suite.DEFAULT_REF,
-            )
+            root, run_metadata = _suite.download(ref=suite_source)
         except _suite.SuiteNotAvailable as error:
             STDERR.print(error.diagnostic())
             context.exit(EX.CONFIG)
