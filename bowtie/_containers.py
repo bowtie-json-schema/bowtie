@@ -1,8 +1,8 @@
 """
 Speaking to harnesses which run inside containers.
 
-The awkward parts of actually driving a container engine now live in
-`bowtie._engines`, which knows nothing of Bowtie.
+The awkward parts of actually driving a container engine live in
+`imaged`, which knows nothing of Bowtie.
 What's left here is Bowtie's own concerns -- when to restart a
 container, when to retry a request, and what to make of a harness which
 writes to standard error.
@@ -11,15 +11,14 @@ writes to standard error.
 from __future__ import annotations
 
 from contextlib import AsyncExitStack, asynccontextmanager
+from os import environ
 from typing import TYPE_CHECKING
 import json
 
 from attrs import field, frozen, mutable
-import anyio
-
-from bowtie._core import InvalidResponse, Restarted
-from bowtie._engines import (
+from imaged import (
     Engine,
+    EngineError,
     EngineNotRunning,
     NoSuchEngine,
     NoSuchImage,
@@ -27,10 +26,14 @@ from bowtie._engines import (
     SessionClosed,
     Unsupported,
 )
+import anyio
+
+from bowtie._core import InvalidResponse, Restarted
 from bowtie.exceptions import (
     CannotConnect,
     GotStderr,
     NoSuchImplementation,
+    StartupFailed,
 )
 
 if TYPE_CHECKING:
@@ -140,12 +143,24 @@ def _float_or_none(value: str | float | None) -> float | None:
     return None
 
 
+def engine() -> Engine:
+    """
+    The container engine to speak to.
+
+    `BOWTIE_ENGINE` names which one to use, which matters when more than
+    one is installed, and which is how we check that Bowtie behaves the
+    same way on all of them.
+    """
+    chosen = environ.get("BOWTIE_ENGINE")
+    return Engine.named(chosen) if chosen else Engine.detect()
+
+
 def _engine(kind: str, id: str) -> Engine:
     """
     Find something able to run containers, or explain that we couldn't.
     """
     try:
-        return Engine.detect()
+        return engine()
     except NoSuchEngine as err:
         raise CannotConnect(kind=kind, id=id, hint=_NO_ENGINE) from err
 
@@ -186,7 +201,10 @@ class ConnectableImage:
                 await current.aclose()
 
                 try:
-                    id = await engine.create_pulling_if_needed(self._id)
+                    id = await engine.create_pulling_if_needed(
+                        self._id,
+                        network=False,
+                    )
                 except NoSuchImage as err:
                     raise NoSuchImplementation(self._id) from err
                 except EngineNotRunning as err:
@@ -195,6 +213,10 @@ class ConnectableImage:
                         id=self._id,
                         hint=_not_running(engine.name),
                     ) from err
+                except EngineError as err:
+                    # Anything else the engine couldn't manage is still a
+                    # failure to start, which Bowtie knows how to show.
+                    raise StartupFailed(id=self._id, data=str(err)) from err
 
                 current.push_async_callback(engine.remove, id)
                 return await current.enter_async_context(engine.start(id))

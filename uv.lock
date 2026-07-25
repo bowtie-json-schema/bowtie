@@ -85,6 +85,7 @@ dependencies = [
     { name = "diagnostic" },
     { name = "github3-py" },
     { name = "httpx" },
+    { name = "imaged" },
     { name = "inflect" },
     { name = "jsonschema" },
     { name = "jsonschema-lexer" },
@@ -139,6 +140,7 @@ requires-dist = [
     { name = "github3-py" },
     { name = "httpx" },
     { name = "hypothesis", marker = "extra == 'strategies'", specifier = ">=6.92.1" },
+    { name = "imaged", specifier = ">=2026.7.2" },
     { name = "inflect" },
     { name = "jsonschema", specifier = ">=4.19.0" },
     { name = "jsonschema-lexer" },
@@ -509,6 +511,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz", hash = "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848", size = 196711, upload-time = "2026-06-02T14:34:07.794Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl", hash = "sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2", size = 65455, upload-time = "2026-06-02T14:34:06.319Z" },
+]
+
+[[package]]
+name = "imaged"
+version = "2026.7.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "attrs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/d1/44a8e3143e047c00c8fe2939e916da58dc567277101b21fcc3356529e999/imaged-2026.7.2.tar.gz", hash = "sha256:db0daa5417dfca07ddbbfdf4fb00db7f743d43cb071455f84a9fd7b386b3cdc8", size = 43142, upload-time = "2026-07-25T13:21:34.737Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/3b/7a38fa3bd5baea64a54fed4277e57ffd83fa499d444df920ec02cdedb701/imaged-2026.7.2-py3-none-any.whl", hash = "sha256:361ecc358b92cc0bfeffbaa31a509013a3ff06ae87ed5c02ceaf87e8ea730eec", size = 16542, upload-time = "2026-07-25T13:21:33.323Z" },
 ]
 
 [[package]]

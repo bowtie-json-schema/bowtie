@@ -22,6 +22,7 @@ import tarfile
 from dateutil.parser import isoparse, parse as parse_datetime
 from dateutil.tz import tzlocal
 from dateutil.utils import default_tzinfo, within_delta
+from imaged import EngineError, EngineFailed
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
@@ -37,7 +38,6 @@ from bowtie._core import (
     TestCase,
 )
 from bowtie._direct_connectable import IMPLEMENTATIONS as KNOWN_DIRECT, Direct
-from bowtie._engines import EngineError, EngineFailed
 from bowtie._report import EmptyReport, InvalidReport, Report
 from bowtie.tests import miniatures as _miniatures
 
@@ -349,7 +349,7 @@ wrong_number_of_tests = shellplementation(
 
 @pytest_asyncio.fixture
 async def envsonschema_container(engine, envsonschema):
-    id = await engine.create(envsonschema)
+    id = await engine.create(envsonschema, network=False)
     await engine.start_detached(id)
     yield f"container:{id}"
 
@@ -360,7 +360,7 @@ async def envsonschema_container(engine, envsonschema):
 
 @pytest_asyncio.fixture
 async def lintsonschema_container(engine, lintsonschema):
-    id = await engine.create(lintsonschema)
+    id = await engine.create(lintsonschema, network=False)
     await engine.start_detached(id)
     yield f"container:{id}"
 
