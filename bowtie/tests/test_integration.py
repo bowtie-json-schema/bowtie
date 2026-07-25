@@ -574,6 +574,84 @@ async def test_suite(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_site_collect(tmp_path):
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                    {"description": "a string", "data": "foo", "valid": False},
+                ],
+            },
+        ],
+    )
+    # The implementation supports only draft7, so even though the suite
+    # provides two dialects, only draft7 should be collected.
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "reports"
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.only_supports + ",dialect=draft7",
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert {path.relative_to(out) for path in out.rglob("*")} == {
+        Path("draft7.json"),
+    }
+    report = Report.from_serialized(
+        out.joinpath("draft7.json").read_text().splitlines(),
+    )
+    assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
+    assert not report.is_empty
+
+
+@pytest.mark.asyncio
+async def test_site_collect_refuses_existing_output(tmp_path):
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {"description": "ok", "data": 1, "valid": True},
+                    ],
+                },
+            ],
+        ),
+    )
+    out = tmp_path / "reports"
+    out.mkdir()
+
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.only_supports + ",dialect=draft7",
+        "--suite",
+        suite,
+        "--output",
+        out,
+        exit_code=EX.CONFIG,
+    )
+
+
+@pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", "direct:null", "--set-schema") as send:
         results, stderr = await send(

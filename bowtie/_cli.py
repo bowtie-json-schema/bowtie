@@ -2645,6 +2645,184 @@ def suite(
     )
 
 
+@main.group()
+def site() -> None:
+    """
+    Generate the data that Bowtie's website is built from.
+    """
+
+
+@site.command()
+@IMPLEMENTATION
+@SET_SCHEMA
+@VALIDATE
+@click.option(
+    "--output",
+    "-o",
+    "output",
+    default=Path("reports"),
+    show_default=True,
+    type=click.Path(path_type=Path, file_okay=False, dir_okay=True),
+    help="A directory to write the collected per-dialect reports into.",
+)
+@click.option(
+    "--suite",
+    "suite_source",
+    default=None,
+    metavar="PATH_OR_REF",
+    help=(
+        "Where to load the test suite from. "
+        "Either a path to a local checkout of the suite, or a git ref "
+        "(a branch, tag or commit) of the official suite on GitHub. "
+        "Defaults to the latest commit on the suite's default branch."
+    ),
+)
+@click.pass_context
+def collect(
+    context: click.Context,
+    connectables: tuple[Connectable, ...],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    registry: ValidatorRegistry[Any],
+    output: Path,
+    suite_source: str | None,
+) -> None:
+    """
+    Run the official test suite against a single implementation.
+
+    Writes one Bowtie report per supported dialect into the output
+    directory, ready to be combined into the data for Bowtie's website.
+    """
+    if len(connectables) != 1:
+        error = DiagnosticError(
+            code="one-implementation",
+            message="`bowtie site collect` collects a single implementation.",
+            causes=[f"{len(connectables)} implementations were provided."],
+            hint_stmt="Pass exactly one implementation with -i.",
+        )
+        STDERR.print(error)
+        context.exit(EX.USAGE)
+    (connectable,) = connectables
+
+    try:
+        output.mkdir(parents=True)
+    except FileExistsError:
+        error = DiagnosticError(
+            code="already-exists",
+            message="The output directory already exists.",
+            causes=[f"{output} is an existing directory."],
+            hint_stmt=(
+                "If you intended to replace its contents, "
+                "delete the directory first."
+            ),
+        )
+        STDERR.print(error)
+        context.exit(EX.CONFIG)
+
+    if suite_source is not None and Path(suite_source).exists():
+        root: _suite.SuitePath = Path(suite_source)
+        run_metadata: dict[str, Any] = {}
+    else:
+        try:
+            root, run_metadata = _suite.download(
+                ref=suite_source or _suite.DEFAULT_REF,
+            )
+        except _suite.SuiteNotAvailable as error:
+            STDERR.print(error.diagnostic())
+            context.exit(EX.CONFIG)
+
+    context.exit(
+        asyncio.run(
+            _collect(
+                connectable=connectable,
+                root=root,
+                run_metadata=run_metadata,
+                maybe_set_schema=maybe_set_schema,
+                registry=registry,
+                output=output,
+            ),
+        ),
+    )
+
+
+async def _collect(
+    connectable: Connectable,
+    root: _suite.SuitePath,
+    run_metadata: dict[str, Any],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    registry: ValidatorRegistry[Any],
+    output: Path,
+) -> int:
+    """
+    Collect one report per supported dialect for a single implementation.
+
+    The suite has already been fetched exactly once (so every dialect shares
+    a single consistent commit), and the implementation is started once here.
+    """
+    available = _suite.dialects_in(root)
+
+    async with _start(
+        connectables=[connectable],
+        reporter=SILENT,
+        registry=registry,
+    ) as starting:
+        (started,) = starting
+        try:
+            connectable_id, implementation = await started
+        except STARTUP_ERRORS as error:
+            STDERR.print(error)
+            return EX.CONFIG
+
+        wrote = 0
+        supported = sorted(
+            implementation.info.dialects & available,
+            reverse=True,
+        )
+        for dialect in supported:
+            cases = list(_suite.cases_for(root, dialect))
+            if not cases:
+                continue
+
+            try:
+                runner = await implementation.start_speaking(dialect)
+            except (DialectError, UnsupportedDialect) as error:
+                STDERR.print(error)
+                continue
+
+            metadata = _report.RunMetadata(
+                implementations={connectable_id: implementation.info},
+                dialect=dialect,
+                metadata=run_metadata,
+            )
+            lines: list[dict[str, Any]] = [metadata.serializable()]
+            for seq, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+                seq_case = SeqCase(seq=seq, case=case)
+                result = await seq_case.run(runner=runner)
+                lines.append(seq_case.serializable())
+                lines.append(result.serializable())
+            lines.append({"did_fail_fast": False})
+
+            report = _report.Report.from_input(lines)
+            output.joinpath(f"{dialect.short_name}.json").write_text(
+                "\n".join(report.serialized()),
+            )
+            wrote += 1
+
+    if not wrote:
+        error = DiagnosticError(
+            code="no-reports",
+            message="No reports were produced.",
+            causes=[
+                "None of the implementation's supported dialects were "
+                "found in the test suite.",
+            ],
+            hint_stmt="Check `bowtie smoke -i <implementation>`.",
+        )
+        STDERR.print(error)
+        return EX.DATAERR
+
+    return 0
+
+
 async def _run_one(
     connectable: Connectable,
     cases: Sequence[TestCase],
