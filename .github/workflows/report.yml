@@ -34,7 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       implementations: ${{ steps.implementations-matrix.outputs.implementations }}
-      dialects: ${{ steps.dialects-matrix.outputs.dialects }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,13 +51,8 @@ jobs:
         run: |
           printf 'implementations=%s\n' "$(bowtie filter-implementations --format json | jq -c '.')" >> $GITHUB_OUTPUT
 
-      - name: Collect supported dialects
-        id: dialects-matrix
-        run: |
-          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
-
-  regenerate-reports:
-    name: Generate Per-Implementation Reports
+  collect:
+    name: Collect Per-Implementation Reports
     needs: matrix
     runs-on: ubuntu-latest
     strategy:
@@ -76,20 +70,14 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Generate Reports
+      - name: Collect Reports
+        # Bowtie runs the whole suite for every dialect the implementation
+        # supports in a single command, so the workflow needs no per-dialect
+        # loop and no test-suite URLs.
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
-          DIALECTS: ${{ join(fromJson(needs.matrix.outputs.dialects), ' ') }}
-        run: |
-          mkdir reports
-          for dialect in ${DIALECTS}; do
-            bowtie suite -i "${MATRIX_IMPLEMENTATION}" "https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${dialect}" > "reports/${dialect}.json" || true
-            # Unsupported dialects produce no output, which is fine.
-            if [ ! -s "reports/${dialect}.json" ]; then
-              rm -f "reports/${dialect}.json"
-            fi
-          done
+        run: bowtie site collect -i "${MATRIX_IMPLEMENTATION}" --output reports
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
@@ -103,18 +91,11 @@ jobs:
           path: reports/
           if-no-files-found: ignore
 
-  combine-reports:
-    name: Combine Reports
+  site:
+    name: Assemble Site
     if: ${{ !cancelled() }}
-    needs:
-      - matrix
-      - regenerate-reports
+    needs: collect
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        dialect: ${{ fromJson(needs.matrix.outputs.dialects) }}
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -129,130 +110,28 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: impl-report-*
-          path: reports/
+          path: collected/
 
-      - name: Combine Reports
-        run: |
-          dialect=${MATRIX_DIALECT}
-          # Collect all per-implementation reports for this dialect
-          reports=()
-          for dir in reports/impl-report-*/; do
-            if [ -f "${dir}${dialect}.json" ]; then
-              reports+=("${dir}${dialect}.json")
-            fi
-          done
-          if [ ${#reports[@]} -gt 0 ]; then
-            bowtie combine "${reports[@]}" > "${dialect}.json"
-          else
-            echo "::warning::No implementation reports found for ${dialect}"
-            exit 1
-          fi
-        env:
-          MATRIX_DIALECT: ${{ matrix.dialect }}
+      - name: Combine into Site Data
+        # Combines the per-implementation reports for each dialect and writes
+        # implementations.json and the public API data -- all read from the
+        # reports, so no implementations are started here.
+        run: bowtie site combine collected/* --output site
 
-        # FIXME: We ignore for now as now this exits unsuccessfully if there
-        #        are *test* failures
-      - name: Check Report is Valid
-        run: |
-          bowtie summary --show failures ${MATRIX_DIALECT}.json --format markdown >> $GITHUB_STEP_SUMMARY
+      - name: Generate Badges
+        run: bowtie badges --site site
+
+        # FIXME: We ignore for now as this exits unsuccessfully if there are
+        #        *test* failures.
+      - name: Summarize Failures
         continue-on-error: true
-        env:
-          MATRIX_DIALECT: ${{ matrix.dialect }}
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: report-${{ matrix.dialect }}
-          path: ${{ matrix.dialect }}.json
-
-  generate-implementation-metadata:
-    name: Generate Implementation Metadata
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install Bowtie
-        uses: ./
-        with:
-          version: ${{ inputs.bowtie-version }}
-
-      - name: Regenerate data needed by the UI
         run: |
-          bowtie info $(bowtie filter-implementations | sed 's/^/-i /') --format json > implementations.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: implementations
-          path: implementations.json
-
-      - name: Regenerate data for our public APIs
-        run: |
-          mkdir -p api/v1/json-schema-org
-          bowtie filter-implementations | \
-            while read -r impl; do
-              bowtie info -i $impl --format json | \
-              jq --arg impl "$impl" --slurpfile dialects data/dialects.json '
-                . as $info |
-                {($info.source): (
-                  {
-                    id: $impl,
-                    dialects: $info.dialects,
-                    badges_urls: (
-                      {
-                        supported_versions: "https://bowtie.report/badges/\($info.language)-\($info.name)/supported_versions.json",
-                        compliance: (
-                          $info.dialects | map(
-                            . as $uri |
-                            $dialects[0] | map(select(.uri == $uri)) | .[0] |
-                            {
-                              (.uri): "https://bowtie.report/badges/\($info.language)-\($info.name)/compliance/\(.shortName).json"
-                            }
-                          ) | add
-                        )
-                      }
-                    )
-                  }
-                )}
-              '
-            done | \
-          jq -s 'add' > api/v1/json-schema-org/implementations
-
-      - name: Validate the public API data against their schema(s)
-        run: |
-          VALIDATION=$(bowtie validate --expect valid -i python-jsonschema bowtie/schemas/api/v1/json-schema-org/implementations.json api/v1/json-schema-org/implementations)
-          echo "$VALIDATION" | bowtie summary --show failures --format markdown >> $GITHUB_STEP_SUMMARY
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: api
-          path: api
-
-  site:
-    name: Assemble Site
-    if: ${{ !cancelled() }}
-    needs:
-      - combine-reports
-      - generate-implementation-metadata
-
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Install Bowtie
-        uses: ./
-        with:
-          version: ${{ inputs.bowtie-version }}
-
-      - name: Create our Site Structure
-        run: mkdir site
-
-      - name: Include New Reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          pattern: report-*
-          path: site/
-          merge-multiple: true
+          for report in site/*.json; do
+            case "${report}" in
+              site/implementations.json) continue ;;
+            esac
+            bowtie summary --show failures "${report}" --format markdown >> "$GITHUB_STEP_SUMMARY"
+          done
 
       - name: Include Benchmark Report from local artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -284,20 +163,6 @@ jobs:
           curl -O https://bowtie.report/benchmarks/draft7.json
           curl -O https://bowtie.report/benchmarks/draft2019-09.json
           curl -O https://bowtie.report/benchmarks/draft2020-12.json
-
-      - name: Include our UI data
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: implementations
-          path: site/
-      - name: Include our public API data
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: api
-          path: site/api
-
-      - name: Generate Badges
-        run: bowtie badges
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
