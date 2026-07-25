@@ -1,54 +1,12 @@
 <script lang="ts">
   import { report } from "../stores/report.svelte";
   import { mapLanguage } from "../data/mapLanguage";
-  import type { Worst } from "../lib/reportModel";
   import DialectPicker from "./DialectPicker.svelte";
 
   let { dialectBase }: { dialectBase?: string } = $props();
 
   const inScope = (language: string) =>
     report.langs.size === 0 || report.langs.has(language);
-
-  const statusDefs: {
-    key: Worst | "pass";
-    label: string;
-    color: string;
-    hint: string;
-  }[] = [
-    {
-      key: "fail",
-      label: "failed",
-      color: "var(--fail)",
-      hint: "The implementation ran but gave the wrong answer.",
-    },
-    {
-      key: "err",
-      label: "errored",
-      color: "var(--error)",
-      hint: "The implementation crashed trying to answer.",
-    },
-    {
-      key: "skip",
-      label: "skipped",
-      color: "var(--skip)",
-      hint: "The implementation skipped the test, usually a known bug.",
-    },
-    {
-      key: "pass",
-      label: "passing",
-      color: "var(--pass)",
-      hint: "The implementation gave the correct answer.",
-    },
-  ];
-
-  function statusPressed(key: Worst | "pass"): boolean {
-    return key === "pass" ? report.showPassing : report.statuses.has(key);
-  }
-
-  function toggleStatus(key: Worst | "pass") {
-    if (key === "pass") report.showPassing = !report.showPassing;
-    else report.toggleStatus(key);
-  }
 </script>
 
 <aside class="rail">
@@ -57,37 +15,6 @@
       <DialectPicker current={report.data.runMetadata.dialect.shortName} base={dialectBase} />
     </div>
   {/if}
-
-  <div class="rail-group">
-    <span class="label">Search cases</span>
-    <div class="search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7" /><path d="m21 21-4-4" />
-      </svg>
-      <input
-        type="text"
-        placeholder="description, keyword…"
-        aria-label="Search test cases"
-        bind:value={report.search}
-      />
-    </div>
-  </div>
-
-  <div class="rail-group">
-    <span class="label">Status</span>
-    <div class="chips">
-      {#each statusDefs as s (s.key)}
-        <button
-          class="chip status"
-          aria-pressed={statusPressed(s.key)}
-          title={s.hint}
-          onclick={() => toggleStatus(s.key)}
-        >
-          <span class="dot" style="background:{s.color}"></span>{s.label}
-        </button>
-      {/each}
-    </div>
-  </div>
 
   <div class="rail-group">
     <span class="label">Language</span>
