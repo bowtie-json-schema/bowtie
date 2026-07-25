@@ -1,8 +1,8 @@
 import asyncio
 
-import aiodocker
 import pytest
-import pytest_asyncio
+
+from bowtie._engines import Engine
 
 
 @pytest.fixture(scope="module")
@@ -13,8 +13,6 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="module")
-async def docker():
-    docker = aiodocker.Docker()
-    yield docker
-    await docker.close()
+@pytest.fixture(scope="module")
+def engine():
+    return Engine.detect()
