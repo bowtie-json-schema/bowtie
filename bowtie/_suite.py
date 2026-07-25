@@ -75,9 +75,6 @@ class ClickParam(click.ParamType):
                 run_metadata = {}
             else:
                 value = cast("URL", value)
-                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                    NotFoundError,
-                )
 
                 gh = github()
                 org, repo_name, *rest = value.path_segments
@@ -114,26 +111,7 @@ class ClickParam(click.ParamType):
                     )
                     cases = list(cases)
 
-                try:
-                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-                except NotFoundError:
-                    commit_info = ref
-                else:
-                    # TODO: Make this the tree URL maybe, but I see tree(...)
-                    #       doesn't come with an html_url
-                    sha = cast(
-                        "str",
-                        commit.sha,  # type: ignore[reportUnknownMemberType]
-                    )
-                    url = cast(
-                        "str",
-                        commit.html_url,  # type: ignore[reportUnknownMemberType]
-                    )
-                    commit_info = {
-                        "text": sha[:7],
-                        "href": url,
-                    }
-                run_metadata: dict[str, Any] = {"Commit": commit_info}
+                run_metadata: dict[str, Any] = _commit_metadata(repo, ref)
 
         return cases, dialect, run_metadata
 
@@ -241,3 +219,95 @@ def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
         return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
     return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+
+
+#: The default git ref of the official suite to collect test cases from.
+DEFAULT_REF = "main"
+
+
+class SuiteNotAvailable(Exception):
+    """
+    The official test suite could not be retrieved from GitHub.
+    """
+
+    def __init__(self, ref: str):
+        super().__init__(ref)
+        self.ref = ref
+
+    def diagnostic(self) -> DiagnosticError:
+        return DiagnosticError(
+            code="suite-fetch-failed",
+            message="Fetching the test suite from GitHub failed.",
+            causes=[f"Tried to retrieve the tree at {self.ref!r}."],
+            hint_stmt=(
+                f"Check that {self.ref!r} is an existing branch, tag or "
+                "commit of the suite, or pass a local path to a checkout "
+                "of it instead."
+            ),
+        )
+
+
+def _commit_metadata(repo: Any, ref: str) -> dict[str, Any]:
+    """
+    Run metadata recording the exact commit a suite ``ref`` resolves to.
+    """
+    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+        NotFoundError,
+    )
+
+    try:
+        commit = repo.commit(ref)
+    except NotFoundError:
+        commit_info = ref
+    else:
+        # TODO: Make this the tree URL maybe, but tree(...) doesn't come with
+        #       an html_url.
+        commit_info = {"text": commit.sha[:7], "href": commit.html_url}
+    return {"Commit": commit_info}
+
+
+def download(ref: str = DEFAULT_REF) -> tuple[_P, dict[str, Any]]:
+    """
+    Download the whole official test suite once, at the given ref.
+
+    Returns its root directory (which contains ``tests/`` and ``remotes/``)
+    alongside run metadata recording the exact commit retrieved.
+    Every dialect collected from this one root is therefore guaranteed to
+    share a single consistent commit, even if the suite moves meanwhile.
+    """
+    segments = cast("list[str]", TEST_SUITE_URL.path_segments)
+    repo = github().repository(segments[0], segments[1])  # type: ignore[reportUnknownMemberType]
+
+    data = BytesIO()
+    data.name = ""
+    succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+    if not succeeded:
+        raise SuiteNotAvailable(ref)
+    data.seek(0)
+    (root,) = zipfile.Path(zipfile.ZipFile(data)).iterdir()
+
+    return root, _commit_metadata(repo, ref)
+
+
+def dialects_in(root: _P) -> set[Dialect]:
+    """
+    Which dialects the suite rooted at the given path provides cases for.
+    """
+    by_short = Dialect.by_short_name()
+    return {
+        by_short[child.name]
+        for child in (root / "tests").iterdir()
+        if child.is_dir() and child.name in by_short
+    }
+
+
+def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:
+    """
+    The test cases for a single dialect within the suite at the given root.
+    """
+    version_path = root / "tests" / dialect.short_name
+    return cases_from(
+        paths=list(_glob(version_path, "*.json")),
+        remotes=cast("Path", root / "remotes"),
+        dialect=dialect,
+    )

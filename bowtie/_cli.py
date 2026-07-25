@@ -77,7 +77,7 @@ if TYPE_CHECKING:
 
     from bowtie._commands import AnyTestResult, SeqResult
     from bowtie._connectables import Connectable, ConnectableId
-    from bowtie._core import ImplementationInfo
+    from bowtie._core import DialectRunner, ImplementationInfo
     from bowtie._registry import ValidatorRegistry
 
 
@@ -2645,6 +2645,240 @@ def suite(
     )
 
 
+@main.group()
+def site() -> None:
+    """
+    Generate the data that Bowtie's website is built from.
+    """
+
+
+@site.command()
+@IMPLEMENTATION
+@SET_SCHEMA
+@VALIDATE
+@click.option(
+    "--output",
+    "-o",
+    "output",
+    default=Path("reports"),
+    show_default=True,
+    type=click.Path(path_type=Path, file_okay=False, dir_okay=True),
+    help="A directory to write the collected per-dialect reports into.",
+)
+@click.option(
+    "--suite",
+    "suite_source",
+    default=None,
+    metavar="PATH_OR_REF",
+    help=(
+        "Where to load the test suite from. "
+        "Either a path to a local checkout of the suite, or a git ref "
+        "(a branch, tag or commit) of the official suite on GitHub. "
+        "Defaults to the latest commit on the suite's default branch."
+    ),
+)
+@click.pass_context
+def collect(
+    context: click.Context,
+    connectables: tuple[Connectable, ...],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    registry: ValidatorRegistry[Any],
+    output: Path,
+    suite_source: str | None,
+) -> None:
+    """
+    Run the official test suite against a single implementation.
+
+    Writes one Bowtie report per supported dialect into the output
+    directory, ready to be combined into the data for Bowtie's website.
+    """
+    if len(connectables) != 1:
+        error = DiagnosticError(
+            code="one-implementation",
+            message="`bowtie site collect` collects a single implementation.",
+            causes=[f"{len(connectables)} implementations were provided."],
+            hint_stmt="Pass exactly one implementation with -i.",
+        )
+        STDERR.print(error)
+        context.exit(EX.USAGE)
+    (connectable,) = connectables
+
+    try:
+        output.mkdir(parents=True)
+    except FileExistsError:
+        error = DiagnosticError(
+            code="already-exists",
+            message="The output directory already exists.",
+            causes=[f"{output} is an existing directory."],
+            hint_stmt=(
+                "If you intended to replace its contents, "
+                "delete the directory first."
+            ),
+        )
+        STDERR.print(error)
+        context.exit(EX.CONFIG)
+
+    if suite_source is not None and Path(suite_source).exists():
+        root: _suite._P = Path(suite_source)  # type: ignore[reportPrivateUsage]
+        run_metadata: dict[str, Any] = {}
+    else:
+        try:
+            root, run_metadata = _suite.download(
+                ref=suite_source or _suite.DEFAULT_REF,
+            )
+        except _suite.SuiteNotAvailable as error:
+            STDERR.print(error.diagnostic())
+            context.exit(EX.CONFIG)
+
+    context.exit(
+        asyncio.run(
+            _collect(
+                connectable=connectable,
+                root=root,
+                run_metadata=run_metadata,
+                maybe_set_schema=maybe_set_schema,
+                registry=registry,
+                output=output,
+            ),
+        ),
+    )
+
+
+async def _collect(
+    connectable: Connectable,
+    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    run_metadata: dict[str, Any],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    registry: ValidatorRegistry[Any],
+    output: Path,
+) -> int:
+    """
+    Collect one report per supported dialect for a single implementation.
+
+    The suite has already been fetched exactly once (so every dialect shares
+    a single consistent commit), and the implementation is started once here.
+    """
+    available = _suite.dialects_in(root)
+
+    async with _start(
+        connectables=[connectable],
+        reporter=SILENT,
+        registry=registry,
+    ) as starting:
+        (started,) = starting
+        try:
+            connectable_id, implementation = await started
+        except STARTUP_ERRORS as error:
+            STDERR.print(error)
+            return EX.CONFIG
+
+        wrote = 0
+        supported = sorted(
+            implementation.info.dialects & available,
+            reverse=True,
+        )
+        for dialect in supported:
+            cases = list(_suite.cases_for(root, dialect))
+            if not cases:
+                continue
+
+            try:
+                runner = await implementation.start_speaking(dialect)
+            except (DialectError, UnsupportedDialect) as error:
+                STDERR.print(error)
+                continue
+
+            report = await _run_cases(
+                runner=runner,
+                dialect=dialect,
+                cases=cases,
+                implementations={connectable_id: implementation.info},
+                maybe_set_schema=maybe_set_schema,
+                run_metadata=run_metadata,
+            )
+            if report is None:
+                continue
+
+            output.joinpath(f"{dialect.short_name}.json").write_text(
+                "\n".join(report.serialized()),
+            )
+            wrote += 1
+
+    if not wrote:
+        error = DiagnosticError(
+            code="no-reports",
+            message="No reports were produced.",
+            causes=[
+                "None of the implementation's supported dialects were "
+                "found in the test suite.",
+            ],
+            hint_stmt="Check `bowtie smoke -i <implementation>`.",
+        )
+        STDERR.print(error)
+        return EX.DATAERR
+
+    reports = _inflect_engine.plural("report", wrote)  # type: ignore[reportArgumentType]
+    STDERR.print(f"Collected [green]{wrote}[/] {reports} into {output}.")
+    return 0
+
+
+async def _run_cases(
+    runner: DialectRunner,
+    dialect: Dialect,
+    cases: Iterable[TestCase],
+    implementations: Mapping[ConnectableId, ImplementationInfo],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    run_metadata: dict[str, Any] = {},
+    reporter: _report.Reporter = SILENT,
+    max_fail: int | None = None,
+    max_error: int | None = None,
+    time_output_file: Path | None = None,
+) -> _report.Report | None:
+    """
+    Run cases against an already-speaking runner, returning a Report.
+
+    Returns `None` if there were no cases to run. When `time_output_file` is
+    set, the implementation's cumulative per-case wall time is appended to it
+    (used by `bowtie perf`).
+    """
+    metadata = _report.RunMetadata(
+        implementations=implementations,
+        dialect=dialect,
+        metadata=run_metadata,
+    )
+    lines: list[dict[str, Any]] = [metadata.serializable()]
+    count = 0
+    should_stop = False
+    unsuccessful = Unsuccessful()
+    time_taken = 0
+
+    for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+        seq_case = SeqCase(seq=count, case=case)
+        got_result = reporter.case_started(seq_case, dialect)
+        st_time = perf_counter_ns()
+        result = await seq_case.run(runner=runner)
+        time_taken += perf_counter_ns() - st_time
+        got_result(result=result)
+        lines.append(seq_case.serializable())
+        lines.append(result.serializable())
+        unsuccessful += result.unsuccessful()
+        if (max_fail and len(unsuccessful.failed) >= max_fail) or (
+            max_error and len(unsuccessful.errored) >= max_error
+        ):
+            should_stop = True
+            break
+
+    lines.append({"did_fail_fast": should_stop})
+
+    if time_output_file:
+        with time_output_file.open("a") as file:
+            file.write(f"{time_taken}\n")
+
+    if count == 0:
+        return None
+    return _report.Report.from_input(lines)
+
+
 async def _run_one(
     connectable: Connectable,
     cases: Sequence[TestCase],
@@ -2682,53 +2916,29 @@ async def _run_one(
             STDERR.print(error)
             return _SKIP, None
 
-        metadata = _report.RunMetadata(
-            implementations={connectable_id: implementation.info},
-            dialect=dialect,
-            metadata=run_metadata,
-        )
-        lines: list[dict[str, Any]] = [metadata.serializable()]
-        count = 0
-        should_stop = False
-        unsuccessful = Unsuccessful()
-
         # Used by bowtie perf to measure implementation time.
         time_output_file = (
             Path(os.environ["TIME_OUTPUT_FILE"])
             if "TIME_OUTPUT_FILE" in os.environ
             else None
         )
-        time_taken = 0
 
-        for count, case in enumerate(
-            maybe_set_schema(dialect)(cases),
-            1,
-        ):
-            seq_case = SeqCase(seq=count, case=case)
-            got_result = reporter.case_started(seq_case, dialect)
-            st_time = perf_counter_ns()
-            result = await seq_case.run(runner=runner)
-            time_taken += perf_counter_ns() - st_time
-            got_result(result=result)
-            lines.append(seq_case.serializable())
-            lines.append(result.serializable())
-            unsuccessful += result.unsuccessful()
-            if (max_fail and len(unsuccessful.failed) >= max_fail) or (
-                max_error and len(unsuccessful.errored) >= max_error
-            ):
-                should_stop = True
-                break
+        report = await _run_cases(
+            runner=runner,
+            dialect=dialect,
+            cases=cases,
+            implementations={connectable_id: implementation.info},
+            maybe_set_schema=maybe_set_schema,
+            run_metadata=run_metadata,
+            reporter=reporter,
+            max_fail=max_fail,
+            max_error=max_error,
+            time_output_file=time_output_file,
+        )
 
-        lines.append({"did_fail_fast": should_stop})
-
-        if time_output_file:
-            with time_output_file.open("a") as file:
-                file.write(f"{time_taken}\n")
-
-        if count == 0:
-            return EX.NOINPUT, None
-
-    return 0, _report.Report.from_input(lines)
+    if report is None:
+        return EX.NOINPUT, None
+    return 0, report
 
 
 async def _run_parallel(
