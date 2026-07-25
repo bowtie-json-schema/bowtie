@@ -175,11 +175,16 @@
             </thead>
             <tbody>
               {#each compliance as [dialect, totals] (dialect.uri)}
-                <tr>
+                {@const bad = badTotal(totals)}
+                <tr class:compliant={bad === 0}>
                   <th scope="row" class="dialect">{dialect.prettyName}</th>
-                  <td class="num" class:bad={totals.failedTests}>{totals.failedTests ?? 0}</td>
-                  <td class="num" class:bad={totals.skippedTests}>{totals.skippedTests ?? 0}</td>
-                  <td class="num" class:bad={totals.erroredTests}>{totals.erroredTests ?? 0}</td>
+                  {#if bad === 0}
+                    <td class="pass-cell" colspan="3"><span class="ok-check">✓</span> passes every test</td>
+                  {:else}
+                    <td class="num" class:bad={totals.failedTests}>{totals.failedTests ?? 0}</td>
+                    <td class="num" class:bad={totals.skippedTests}>{totals.skippedTests ?? 0}</td>
+                    <td class="num" class:bad={totals.erroredTests}>{totals.erroredTests ?? 0}</td>
+                  {/if}
                   <td>
                     <a href="#{dialect.routePath}">
                       <img class="badge" alt="{dialect.prettyName} compliance" src={impl.complianceBadgeFor(dialect).href()} />
@@ -238,6 +243,14 @@
   table.compliance .num.bad {
     color: var(--text);
     font-weight: 600;
+  }
+  table.compliance .pass-cell {
+    color: var(--pass);
+    font-size: var(--fs-sm);
+  }
+  table.compliance .ok-check {
+    font-weight: 700;
+    margin-right: 3px;
   }
   .badge {
     max-width: 100%;
