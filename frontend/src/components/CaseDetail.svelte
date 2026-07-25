@@ -2,6 +2,7 @@
   import { report } from "../stores/report.svelte";
   import { mapLanguage } from "../data/mapLanguage";
   import JsonPanel from "./JsonPanel.svelte";
+  import ErrorText from "./ErrorText.svelte";
   import Breadcrumbs from "./Breadcrumbs.svelte";
   import {
     resultFor,
@@ -118,8 +119,10 @@
           {/each}
         </div>
         {#if g.members.includes(report.openDiag ?? "")}
+          {@const msg = diagMessage(report.openDiag!)}
           <div class="diag">
-            <span class="who">{implName(report.openDiag!)} · {mapLanguage(implLang(report.openDiag!))}</span>{diagMessage(report.openDiag!) || "(no message reported)"}
+            <span class="who">{implName(report.openDiag!)} · {mapLanguage(implLang(report.openDiag!))}</span>
+            {#if msg}<ErrorText text={msg} />{:else}(no message reported){/if}
           </div>
         {/if}
       </div>
