@@ -2809,8 +2809,10 @@ async def _collect(
             code="no-reports",
             message="No reports were produced.",
             causes=[
-                "None of the implementation's supported dialects were "
-                "found in the test suite.",
+                (
+                    "None of the implementation's supported dialects were "
+                    "found in the test suite."
+                ),
             ],
             hint_stmt="Check `bowtie smoke -i <implementation>`.",
         )
