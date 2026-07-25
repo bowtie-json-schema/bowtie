@@ -152,6 +152,8 @@ The container must be listening on standard input for input valid under Bowtie's
 
 Bowtie will *not* attempt to manage the container, so this connectable is suitable for cases where you wish to spin up a container externally, leave it running and potentially have Bowtie connect to it multiple times.
 
+It does require an engine which can attach to a running container's standard streams, which ``docker`` and ``podman`` can but Apple's ``container`` cannot.
+
 The ``id`` is a connector-specific identifier and should indicate the specific intended implementation.
 For example, for container images, it must be the name of a container image which will be pulled if needed.
 It need not be fully qualified (i.e. include the repository), and will default to pulling from Bowtie's own image repository.
@@ -191,6 +193,14 @@ Examples:
 
     * ``happy:python-jsonschema``: a direct connection to the Python implementation known as ``jsonschema``, equivalent to ``direct:python-jsonschema``
     * ``happy:some-not-directly-connectable-implementation``: for any non-directly connectable implementation, equivalent to ``image:some-not-directly-connectable-implementation``
+
+
+Container Engines
+-----------------
+
+Connectables which run containers will use whichever engine is installed, looking for ``docker``, then ``podman``, then Apple's ``container``.
+
+Set the ``BOWTIE_ENGINE`` environment variable to the name of one of them if you have more than one installed and want a specific one.
 
 
 Enabling Shell Tab Completion

@@ -131,11 +131,9 @@ and build the image (below using ``podman`` but if you're using ``docker``, just
 
 .. note::
 
-    If you are indeed using ``podman``, you must ensure you have set the ``DOCKER_HOST`` environment variable in the environment in which you invoke ``bowtie``.
+    Bowtie drives whichever container engine it finds installed, so using ``podman`` needs no further setup.
 
-    This ensures ``bowtie`` can speak the Docker API to your ``podman`` installation (which is needed because the API client used within Bowtie is agnostic, but speaks the Docker API, which ``podman`` supports as well).
-
-    Further information may be found `here <https://podman-desktop.io/docs/migrating-from-docker/using-the-docker_host-environment-variable>`_.
+    If you have more than one installed, set the ``BOWTIE_ENGINE`` environment variable to the name of the one you want (``docker``, ``podman`` or ``container``).
 
 If everything went well, running:
 

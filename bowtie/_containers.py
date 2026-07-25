@@ -46,8 +46,8 @@ IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
 _NO_ENGINE = (
     "Bowtie couldn't find a container engine. "
-    "Install docker, podman or container, and ensure a container "
-    "successfully starts if you run one directly outside of Bowtie."
+    "Install docker, podman or Apple's container, then check that a "
+    "container starts if you run one directly outside of Bowtie."
 )
 
 
@@ -143,7 +143,7 @@ def _float_or_none(value: str | float | None) -> float | None:
     return None
 
 
-def engine() -> Engine:
+def chosen_engine() -> Engine:
     """
     The container engine to speak to.
 
@@ -160,7 +160,7 @@ def _engine(kind: str, id: str) -> Engine:
     Find something able to run containers, or explain that we couldn't.
     """
     try:
-        return engine()
+        return chosen_engine()
     except NoSuchEngine as err:
         raise CannotConnect(kind=kind, id=id, hint=_NO_ENGINE) from err
 

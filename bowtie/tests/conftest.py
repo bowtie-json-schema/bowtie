@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from bowtie._containers import engine as _engine
+from bowtie._containers import chosen_engine
 
 
 @pytest.fixture(scope="module")
@@ -15,4 +15,4 @@ def event_loop():
 
 @pytest.fixture(scope="module")
 def engine():
-    return _engine()
+    return chosen_engine()

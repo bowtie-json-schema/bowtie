@@ -172,7 +172,10 @@ def tar_from_versioned_reports(
 
 def image(name, context):
     """
-    A fixture building an image, given something yielding its context.
+    A fixture building an image.
+
+    `context` is called to get a context manager yielding the directory
+    to build from.
     """
 
     @pytest_asyncio.fixture(scope="module")
@@ -211,8 +214,8 @@ def strimplementation(name, contents, files={}, base="alpine:3.22"):
             directory = Path(directory)
             containerfile = f"FROM {base}\n{dedent(contents)}"
             directory.joinpath("Dockerfile").write_text(containerfile)
-            for each, v in files.items():
-                directory.joinpath(each).write_text(dedent(v))
+            for each, text in files.items():
+                directory.joinpath(each).write_text(dedent(text))
             yield directory
 
     return image(name=name, context=context)

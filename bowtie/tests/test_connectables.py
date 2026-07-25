@@ -1,3 +1,4 @@
+from imaged import NoSuchEngine
 import pytest
 
 from bowtie._connectables import Connectable, UnknownConnector
@@ -5,6 +6,7 @@ from bowtie._containers import (
     IMAGE_REPOSITORY,
     ConnectableContainer,
     ConnectableImage,
+    chosen_engine,
 )
 from bowtie._direct_connectable import Direct
 from bowtie.exceptions import CannotConnect
@@ -228,3 +230,45 @@ class TestToTerse:
     def test_implicit_image_no_repository(self):
         id = validated("bar")
         assert Connectable.from_str(id).to_terse() == "bar"
+
+
+class TestChosenEngine:
+    """
+    Which container engine Bowtie will speak to.
+    """
+
+    def test_named_by_the_environment(self, monkeypatch):
+        monkeypatch.setenv("BOWTIE_ENGINE", "podman")
+        assert chosen_engine().name == "podman"
+
+    def test_otherwise_whichever_is_installed(self, monkeypatch):
+        monkeypatch.delenv("BOWTIE_ENGINE", raising=False)
+        assert chosen_engine().name in {"docker", "podman", "container"}
+
+    def test_a_name_we_do_not_know(self, monkeypatch):
+        monkeypatch.setenv("BOWTIE_ENGINE", "kubernetes-lol")
+        with pytest.raises(NoSuchEngine):
+            chosen_engine()
+
+
+@pytest.mark.asyncio
+class TestCannotConnectWithoutAnEngine:
+    """
+    Saying so up front beats failing partway through a run.
+    """
+
+    @pytest.fixture
+    def no_engines(self, monkeypatch):
+        monkeypatch.setenv("BOWTIE_ENGINE", "definitely-not-an-engine")
+
+    async def test_image(self, no_engines):
+        with pytest.raises(CannotConnect) as excinfo:
+            async with ConnectableImage(id="foo").connect():
+                pass
+        assert "couldn't find a container engine" in excinfo.value.hint
+
+    async def test_container(self, no_engines):
+        with pytest.raises(CannotConnect) as excinfo:
+            async with ConnectableContainer(id="deadbeef").connect():
+                pass
+        assert "couldn't find a container engine" in excinfo.value.hint
