@@ -43,7 +43,7 @@ button { font-family: inherit; color: inherit; }
 .topbar .ghost:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
 .ver { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-faint); }
 
-.shell { flex: 1; min-height: 0; display: grid; grid-template-columns: 248px minmax(0, 1fr) 392px; }
+.shell { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr) 392px; }
 .shell > * { min-height: 0; overflow-y: auto; }
 
 /* ---------- left rail ---------- */
@@ -159,6 +159,7 @@ pre.code .j-key { color: var(--j-key); } pre.code .j-str { color: var(--j-str); 
 .master-head .row1 { display: flex; align-items: center; justify-content: space-between; }
 .master-head h2 { font-size: var(--fs-base); margin: 0; letter-spacing: -0.01em; }
 .master-head .n { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); background: var(--surface-2); padding: 2px 8px; border-radius: 20px; }
+.master-filters { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .section-label { padding: 14px 16px 6px; }
 .case-row { display: block; width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer; padding: 11px 16px; border-bottom: 1px solid var(--border); border-left: 2px solid transparent; }
 .case-row:hover { background: var(--surface-2); }

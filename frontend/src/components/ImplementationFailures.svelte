@@ -43,37 +43,49 @@
   const failures = $derived(active ? failuresFor(reports.get(active)!, implId) : []);
 </script>
 
-<div class="card">
-  <header class="ff-head">
-    <span>Failures</span>
-    {#if dialects.length > 1 && active}
-      <select
-        class="ff-select mono"
-        value={active.shortName}
-        onchange={(e) => (chosen = (e.target as HTMLSelectElement).value)}
-        aria-label="Dialect for failures"
-      >
-        {#each dialects as d (d.shortName)}
-          <option value={d.shortName}>{d.prettyName}</option>
-        {/each}
-      </select>
-    {/if}
-  </header>
-  <div class="body">
-    {#if !active}
-      <div class="empty-note">{implName} isn’t included in any dialect report.</div>
-    {:else if failures.length === 0}
-      <div class="empty-note">{implName} passes every test on {active.prettyName}.</div>
-    {:else}
-      <p class="ff-count">
-        <b>{failures.length}</b> unsuccessful {failures.length === 1 ? "test" : "tests"} on {active.prettyName}
-      </p>
-      {#each failures as f, i (i)}
-        <FailureItem failure={f} />
-      {/each}
-    {/if}
+{#if active && failures.length === 0}
+  <div class="card pass-card">
+    <div class="pass-body">
+      <svg class="pass-ic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" /><path d="m8.5 12 2.5 2.5 4.5-5" />
+      </svg>
+      <div class="pass-text">
+        <strong>Fully compliant</strong>
+        <span>{implName} passes every test on {active.prettyName}.</span>
+      </div>
+    </div>
   </div>
-</div>
+{:else}
+  <div class="card">
+    <header class="ff-head">
+      <span>Failures</span>
+      {#if dialects.length > 1 && active}
+        <select
+          class="ff-select mono"
+          value={active.shortName}
+          onchange={(e) => (chosen = (e.target as HTMLSelectElement).value)}
+          aria-label="Dialect for failures"
+        >
+          {#each dialects as d (d.shortName)}
+            <option value={d.shortName}>{d.prettyName}</option>
+          {/each}
+        </select>
+      {/if}
+    </header>
+    <div class="body">
+      {#if !active}
+        <div class="empty-note">{implName} isn’t included in any dialect report.</div>
+      {:else}
+        <p class="ff-count">
+          <b>{failures.length}</b> unsuccessful {failures.length === 1 ? "test" : "tests"} on {active.prettyName}
+        </p>
+        {#each failures as f, i (i)}
+          <FailureItem failure={f} />
+        {/each}
+      {/if}
+    </div>
+  </div>
+{/if}
 
 <style>
   .ff-head {
@@ -98,5 +110,33 @@
   .ff-count b {
     color: var(--text);
     font-variant-numeric: tabular-nums;
+  }
+  .pass-card {
+    border-color: color-mix(in srgb, var(--pass) 38%, var(--border));
+    background: color-mix(in srgb, var(--pass) 7%, var(--surface));
+  }
+  .pass-body {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+  }
+  .pass-ic {
+    color: var(--pass);
+    flex: none;
+  }
+  .pass-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .pass-text strong {
+    color: var(--pass);
+    font-size: var(--fs-md);
+    letter-spacing: -0.01em;
+  }
+  .pass-text span {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
   }
 </style>
