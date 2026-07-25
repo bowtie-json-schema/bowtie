@@ -106,9 +106,12 @@ class BowtieDataIncluder(BuildHookInterface):
     def _collect_harnesses(gh_token) -> list[str]:
         gh = login(token=gh_token) if gh_token else GitHub()
         org = gh.organization("bowtie-json-schema")
-        repositories = org.repositories()
 
+        # Topics already come back with the organization's repository listing,
+        # so read them from there rather than a separate `.topics()` call per
+        # repository -- the org has dozens of repositories, and one API call
+        # each rapidly exhausts the GitHub rate limit during builds.
         def is_harness(repo) -> bool:
-            return "bowtie-harness" in repo.topics().names
+            return "bowtie-harness" in (repo.as_dict().get("topics") or [])
 
-        return [repo.name for repo in repositories if is_harness(repo)]
+        return [repo.name for repo in org.repositories() if is_harness(repo)]
