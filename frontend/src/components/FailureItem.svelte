@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Failure } from "../lib/reportModel";
   import JsonPanel from "./JsonPanel.svelte";
+  import ErrorText from "./ErrorText.svelte";
 
   let { failure }: { failure: Failure } = $props();
 
@@ -18,7 +19,7 @@
   </summary>
   {#if open}
     <div class="f-body">
-      {#if failure.message}<pre class="f-msg">{failure.message}</pre>{/if}
+      {#if failure.message}<div class="f-msg"><ErrorText text={failure.message} /></div>{/if}
       <div class="split">
         <JsonPanel label="Schema" value={failure.schema} />
         <JsonPanel label="Instance" value={failure.instance} />
