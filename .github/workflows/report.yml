@@ -14,8 +14,10 @@ on:
         type: boolean
   workflow_dispatch:
   schedule:
-    # Every 6 hours, at 15 past the hour
-    - cron: "15 */6 * * *"
+    # Every 6 hours, at 50 past the hour -- after the harnesses publish their
+    # own reports near the start of the same hour, so we collect fresh reports
+    # pinned to the same per-hour suite commit.
+    - cron: "50 */6 * * *"
 
 permissions:
   contents: read
@@ -70,14 +72,26 @@ jobs:
         with:
           version: ${{ inputs.bowtie-version }}
 
-      - name: Collect Reports
-        # Bowtie runs the whole suite for every dialect the implementation
-        # supports in a single command, so the workflow needs no per-dialect
-        # loop and no test-suite URLs.
+      - name: Collect this implementation's report
+        # Prefer the harness's own published report (produced by its
+        # harness-report.yml against the same per-hour suite commit).
+        # Fall back to running the suite centrally for implementations that
+        # don't publish one -- the in-repo direct connectables, and any
+        # harness that hasn't reported yet.
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
-        run: bowtie site collect -i "${MATRIX_IMPLEMENTATION}" --output reports
+        run: |
+          if gh release download report \
+               --repo "bowtie-json-schema/${MATRIX_IMPLEMENTATION}" \
+               --dir reports --clobber 2>/dev/null; then
+            echo "Using ${MATRIX_IMPLEMENTATION}'s published report."
+          else
+            echo "No published report for ${MATRIX_IMPLEMENTATION}; running the suite."
+            rm -rf reports
+            bowtie site collect -i "${MATRIX_IMPLEMENTATION}" --output reports
+          fi
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
