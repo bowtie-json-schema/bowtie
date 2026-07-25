@@ -172,7 +172,7 @@
     color: var(--text-muted);
   }
   .bench-type-head {
-    font-size: 15px;
+    font-size: var(--fs-lg);
     font-weight: 620;
     letter-spacing: -0.01em;
     margin: 26px 0 12px;

@@ -97,15 +97,15 @@
   }
   .bg-name {
     font-weight: 560;
-    font-size: 13.5px;
+    font-size: var(--fs-base);
   }
   .bg-vary {
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: var(--fs-2xs);
     color: var(--accent);
   }
   .bg-desc {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     margin-top: 3px;
   }
@@ -118,12 +118,12 @@
   }
   .bi-head {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text);
     margin-bottom: 2px;
   }
   .bi-desc {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     margin-bottom: 8px;
   }
@@ -133,7 +133,7 @@
   .bench-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: var(--fs-sm);
   }
   .bench-table th,
   .bench-table td {
@@ -145,7 +145,7 @@
   .bench-table thead th {
     color: var(--text-muted);
     font-weight: 560;
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .bench-table th.impl {
     text-align: left;
@@ -165,7 +165,7 @@
   }
   .fastest {
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: var(--fs-2xs);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--pass);

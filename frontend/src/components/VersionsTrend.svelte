@@ -130,7 +130,7 @@
     border-radius: 7px;
     background: var(--surface);
     color: var(--text);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     padding: 4px 8px;
     cursor: pointer;
   }
@@ -145,7 +145,7 @@
   .vt-axis {
     fill: var(--text-faint);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .vt-line {
     fill: none;

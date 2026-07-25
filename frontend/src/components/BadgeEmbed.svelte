@@ -103,7 +103,7 @@
     border: 0;
     background: transparent;
     color: var(--text-muted);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     padding: 5px 9px;
     border-radius: 6px;
     cursor: pointer;
@@ -126,7 +126,7 @@
   }
   .be-format {
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     border: 1px solid var(--border);
   }
   .be-snippet {
@@ -141,7 +141,7 @@
     padding: 13px 44px 13px 14px;
     overflow-x: auto;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;

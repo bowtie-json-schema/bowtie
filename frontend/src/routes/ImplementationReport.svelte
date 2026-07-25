@@ -203,7 +203,7 @@
   table.compliance {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: var(--fs-base);
   }
   .muted {
     color: var(--text-muted);
@@ -224,7 +224,7 @@
   table.compliance thead th {
     color: var(--text-muted);
     font-weight: 560;
-    font-size: 12px;
+    font-size: var(--fs-sm);
   }
   table.compliance .dialect {
     text-align: left;
@@ -255,7 +255,7 @@
     border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     padding: 6px 14px;
     border-radius: 8px;
     cursor: pointer;

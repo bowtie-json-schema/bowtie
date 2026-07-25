@@ -193,7 +193,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
   }
   .other-impls summary::-webkit-details-marker {
@@ -212,7 +212,7 @@
     border-top: 1px solid var(--border);
   }
   .other-impls li {
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -221,12 +221,12 @@
   }
   .oi-lang {
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: var(--fs-2xs);
     color: var(--text-faint);
   }
   .oi-latest {
     color: var(--text-muted);
     margin-left: auto;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
   }
 </style>

@@ -94,7 +94,7 @@
     text-decoration: none;
   }
   .ic-name {
-    font-size: 13px;
+    font-size: var(--fs-base);
     font-weight: 520;
     flex: 1 1 auto;
     min-width: 0;
@@ -103,7 +103,7 @@
     text-overflow: ellipsis;
   }
   .ic-ver {
-    font-size: 10.5px;
+    font-size: var(--fs-2xs);
     color: var(--text-faint);
     flex: 0 1 auto;
     min-width: 0;

@@ -2,6 +2,17 @@
   --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
 
+  /* type scale — the single source of truth for font sizes. Bump these to
+     resize the whole UI proportionally; never hard-code px sizes in components. */
+  --fs-2xs: 11px; /* micro labels, version chips, dense mono */
+  --fs-xs: 12px; /* captions, small labels */
+  --fs-sm: 13px; /* secondary text */
+  --fs-base: 14px; /* body copy, tables */
+  --fs-md: 15px; /* emphasized values */
+  --fs-lg: 16px; /* lead paragraph, callouts */
+  --fs-xl: 18px; /* section titles */
+  --fs-2xl: 28px; /* page headings */
+
   /* light (default) — all text/background pairs meet WCAG AA (>=4.5:1) */
   --bg: #faf8fb;
   --surface: #ffffff;
