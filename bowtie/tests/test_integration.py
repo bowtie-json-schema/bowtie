@@ -652,6 +652,61 @@ async def test_site_collect_refuses_existing_output(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_site_collect_one_report_per_supported_dialect(tmp_path):
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                ],
+            },
+        ],
+    )
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "reports"
+    # always_invalid supports every dialect, so the report set is exactly the
+    # dialects the suite provides -- exercising repeated start_speaking on one
+    # started implementation.
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.always_invalid,
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert {path.relative_to(out) for path in out.rglob("*")} == {
+        Path("draft7.json"),
+        Path("draft2020-12.json"),
+    }
+
+
+@pytest.mark.asyncio
+async def test_site_collect_requires_a_single_implementation(tmp_path):
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "--output",
+        tmp_path / "reports",
+        exit_code=EX.USAGE,
+    )
+
+
+@pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", "direct:null", "--set-schema") as send:
         results, stderr = await send(

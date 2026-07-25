@@ -75,9 +75,6 @@ class ClickParam(click.ParamType):
                 run_metadata = {}
             else:
                 value = cast("URL", value)
-                from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-                    NotFoundError,
-                )
 
                 gh = github()
                 org, repo_name, *rest = value.path_segments
@@ -114,26 +111,7 @@ class ClickParam(click.ParamType):
                     )
                     cases = list(cases)
 
-                try:
-                    commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-                except NotFoundError:
-                    commit_info = ref
-                else:
-                    # TODO: Make this the tree URL maybe, but I see tree(...)
-                    #       doesn't come with an html_url
-                    sha = cast(
-                        "str",
-                        commit.sha,  # type: ignore[reportUnknownMemberType]
-                    )
-                    url = cast(
-                        "str",
-                        commit.html_url,  # type: ignore[reportUnknownMemberType]
-                    )
-                    commit_info = {
-                        "text": sha[:7],
-                        "href": url,
-                    }
-                run_metadata: dict[str, Any] = {"Commit": commit_info}
+                run_metadata: dict[str, Any] = _commit_metadata(repo, ref)
 
         return cases, dialect, run_metadata
 
@@ -156,9 +134,7 @@ class ClickParam(click.ParamType):
         return cases, dialect
 
 
-#: A path within either the local filesystem or a downloaded suite archive.
-SuitePath = Path | zipfile.Path
-_P = SuitePath
+_P = Path | zipfile.Path
 
 
 def _remotes_in(path: Path, dialect: Dialect) -> Iterable[tuple[URL, Any]]:
@@ -271,6 +247,25 @@ class SuiteNotAvailable(Exception):
         )
 
 
+def _commit_metadata(repo: Any, ref: str) -> dict[str, Any]:
+    """
+    Run metadata recording the exact commit a suite ``ref`` resolves to.
+    """
+    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+        NotFoundError,
+    )
+
+    try:
+        commit = repo.commit(ref)
+    except NotFoundError:
+        commit_info = ref
+    else:
+        # TODO: Make this the tree URL maybe, but tree(...) doesn't come with
+        #       an html_url.
+        commit_info = {"text": commit.sha[:7], "href": commit.html_url}
+    return {"Commit": commit_info}
+
+
 def download(ref: str = DEFAULT_REF) -> tuple[_P, dict[str, Any]]:
     """
     Download the whole official test suite once, at the given ref.
@@ -280,10 +275,6 @@ def download(ref: str = DEFAULT_REF) -> tuple[_P, dict[str, Any]]:
     Every dialect collected from this one root is therefore guaranteed to
     share a single consistent commit, even if the suite moves meanwhile.
     """
-    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-        NotFoundError,
-    )
-
     segments = cast("list[str]", TEST_SUITE_URL.path_segments)
     repo = github().repository(segments[0], segments[1])  # type: ignore[reportUnknownMemberType]
 
@@ -295,16 +286,7 @@ def download(ref: str = DEFAULT_REF) -> tuple[_P, dict[str, Any]]:
     data.seek(0)
     (root,) = zipfile.Path(zipfile.ZipFile(data)).iterdir()
 
-    try:
-        commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
-    except NotFoundError:
-        commit_info: Any = ref
-    else:
-        commit_info = {
-            "text": cast("str", commit.sha)[:7],  # type: ignore[reportUnknownMemberType]
-            "href": cast("str", commit.html_url),  # type: ignore[reportUnknownMemberType]
-        }
-    return root, {"Commit": commit_info}
+    return root, _commit_metadata(repo, ref)
 
 
 def dialects_in(root: _P) -> set[Dialect]:
