@@ -2824,6 +2824,167 @@ async def _collect(
     return 0
 
 
+@site.command("combine")
+@click.option(
+    "--output",
+    "-o",
+    "output",
+    default=Path("site"),
+    show_default=True,
+    type=click.Path(path_type=Path, file_okay=False, dir_okay=True),
+    help="A directory to write the combined site data into.",
+)
+@click.argument(
+    "collected",
+    nargs=-1,
+    required=True,
+    type=click.Path(path_type=Path, exists=True),
+)
+@click.pass_context
+def site_combine(
+    context: click.Context,
+    collected: tuple[Path, ...],
+    output: Path,
+) -> None:
+    """
+    Combine collected per-implementation reports into the site's data.
+
+    Each COLLECTED path is a directory of single-implementation reports as
+    produced by `bowtie site collect` (or an individual report file). For
+    each dialect the matching reports are combined into a single
+    multi-implementation report, and every implementation's own metadata is
+    gathered into ``implementations.json``. The public API data under
+    ``api/`` is written too, with each implementation's compliance-badge
+    URLs resolved from its own dialects. All of this is read from the
+    reports themselves, without starting any implementation.
+    """
+    context.exit(_combine(collected=collected, output=output))
+
+
+def _combine(collected: tuple[Path, ...], output: Path) -> int:
+    try:
+        output.mkdir(parents=True)
+    except FileExistsError:
+        error = DiagnosticError(
+            code="already-exists",
+            message="The output directory already exists.",
+            causes=[f"{output} is an existing directory."],
+            hint_stmt=(
+                "If you intended to replace its contents, "
+                "delete the directory first."
+            ),
+        )
+        STDERR.print(error)
+        return EX.CONFIG
+
+    paths: list[Path] = []
+    for each in collected:
+        if each.is_dir():
+            paths.extend(sorted(each.glob("*.json")))
+        else:
+            paths.append(each)
+
+    by_dialect: dict[Dialect, list[_report.Report]] = {}
+    infos: dict[str, ImplementationInfo] = {}
+    for path in paths:
+        report = _report.Report.from_serialized(path.read_text().splitlines())
+        if report.is_empty:
+            continue
+        by_dialect.setdefault(report.metadata.dialect, []).append(report)
+        for info in report.metadata.implementations.values():
+            infos[info.id] = info
+
+    if not by_dialect:
+        error = DiagnosticError(
+            code="no-reports",
+            message="No reports were found to combine.",
+            causes=["None of the given paths contained a non-empty report."],
+            hint_stmt="Check that `bowtie site collect` produced output.",
+        )
+        STDERR.print(error)
+        return EX.DATAERR
+
+    for dialect, reports in by_dialect.items():
+        try:
+            combined = _report.Report.combine(*reports)
+        except (
+            _report.DuplicateImplementation,
+            _report.InconsistentCases,
+        ) as err:
+            error = DiagnosticError(
+                code="cannot-combine",
+                message=f"Cannot combine the {dialect.short_name} reports.",
+                causes=[str(err)],
+                hint_stmt=(
+                    "Ensure each implementation is collected once, and that "
+                    "all reports for a dialect ran against the same suite."
+                ),
+            )
+            STDERR.print(error)
+            return EX.DATAERR
+        output.joinpath(f"{dialect.short_name}.json").write_text(
+            "\n".join(combined.serialized()),
+        )
+
+    output.joinpath("implementations.json").write_text(
+        json.dumps(
+            {
+                id: {k: v for k, v in info.serializable().items() if v}
+                for id, info in sorted(infos.items())
+            },
+            indent=2,
+        ),
+    )
+
+    _write_api(output=output, infos=infos)
+
+    dialects = _inflect_engine.plural("dialect", len(by_dialect))  # type: ignore[reportArgumentType]
+    STDERR.print(
+        f"Combined [green]{len(infos)}[/] implementations across "
+        f"[green]{len(by_dialect)}[/] {dialects} into {output}.",
+    )
+    return 0
+
+
+def _write_api(output: Path, infos: dict[str, ImplementationInfo]) -> None:
+    """
+    Write the public API data (consumed by json-schema.org).
+
+    Keyed by each implementation's source, with the compliance-badge URLs
+    resolved from each dialect's own short name -- so it needs no separate
+    dialect short-name lookup table.
+    """
+    api = {
+        str(info.source): {
+            "id": info.id,
+            "dialects": sorted(
+                (str(dialect.uri) for dialect in info.dialects),
+                reverse=True,
+            ),
+            "badges_urls": {
+                "supported_versions": str(
+                    HOMEPAGE / "badges" / info.id / "supported_versions.json",
+                ),
+                "compliance": {
+                    str(dialect.uri): str(
+                        HOMEPAGE
+                        / "badges"
+                        / info.id
+                        / "compliance"
+                        / f"{dialect.short_name}.json",
+                    )
+                    for dialect in sorted(info.dialects, reverse=True)
+                },
+            },
+        }
+        for info in sorted(infos.values(), key=lambda each: each.id)
+    }
+
+    api_dir = output / "api" / "v1" / "json-schema-org"
+    api_dir.mkdir(parents=True)
+    api_dir.joinpath("implementations").write_text(json.dumps(api, indent=2))
+
+
 async def _run_cases(
     runner: DialectRunner,
     dialect: Dialect,

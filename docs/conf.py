@@ -119,6 +119,13 @@ autodoc_default_options = {
 
 autosectionlabel_prefix_document = True
 
+# sphinx-click generates a section per command, so a subcommand sharing a
+# name with a top-level command (e.g. `bowtie site combine` and `bowtie
+# combine`) produces a duplicate autosectionlabel in cli.rst.
+# These auto-generated CLI labels are not cross-referenced, so silence the
+# otherwise -W-fatal duplicate-label warning for that page.
+suppress_warnings = ["autosectionlabel.cli"]
+
 # -- intersphinx --
 
 intersphinx_mapping = {
