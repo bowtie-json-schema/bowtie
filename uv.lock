@@ -140,7 +140,7 @@ requires-dist = [
     { name = "github3-py" },
     { name = "httpx" },
     { name = "hypothesis", marker = "extra == 'strategies'", specifier = ">=6.92.1" },
-    { name = "imaged", specifier = ">=2026.7.3" },
+    { name = "imaged", specifier = ">=2026.7.4" },
     { name = "inflect" },
     { name = "jsonschema", specifier = ">=4.19.0" },
     { name = "jsonschema-lexer" },
@@ -515,15 +515,15 @@ wheels = [
 
 [[package]]
 name = "imaged"
-version = "2026.7.3"
+version = "2026.7.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "attrs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/4e/a322a19cd7b15c68ff91d315c35767f4f4981a717cc3e6bc87811a229a5a/imaged-2026.7.3.tar.gz", hash = "sha256:b461bfbf0365d3cc022c8dd61223237808c4afd3971362b43bc8c9bffc9667b5", size = 43163, upload-time = "2026-07-25T13:35:30.628Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/87/51bc47e3d700f8c7dd5163fe34846602865e5df77454947636b52fe1b131/imaged-2026.7.4.tar.gz", hash = "sha256:a2422229132718252a622dcfa233cbe23d22fde02300fdcec82b71ff7dc57760", size = 43892, upload-time = "2026-07-25T23:07:55.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/4a/eb051edb188e86a4234f08e4e0a509adf372dfc8d952efc7ddc3b5152254/imaged-2026.7.3-py3-none-any.whl", hash = "sha256:891840f61e185605bceebc297d3f06b54e4eeaa7a69dd95474795d47c8c2c0c1", size = 16661, upload-time = "2026-07-25T13:35:29.569Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/36/3f3fc2d685a93672ee443998b5bf5c2ccd80ef5f39d5cd407c89851864c0/imaged-2026.7.4-py3-none-any.whl", hash = "sha256:0ab4cde8d0f2e0e55b502557183687833f7e1f8b15b695cb1665a82b719e970a", size = 17219, upload-time = "2026-07-25T23:07:53.788Z" },
 ]
 
 [[package]]
