@@ -86,12 +86,12 @@
     border-radius: 7px;
     background: var(--surface);
     color: var(--text);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     padding: 4px 8px;
     cursor: pointer;
   }
   .ff-count {
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     margin: 0 0 14px;
   }

@@ -49,7 +49,7 @@
   .badge {
     flex: none;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     padding: 2px 8px;
     border-radius: 5px;
     text-transform: uppercase;
@@ -65,11 +65,11 @@
     min-width: 0;
   }
   .f-case {
-    font-size: 13px;
+    font-size: var(--fs-base);
     font-weight: 520;
   }
   .f-test {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
   }
   .f-body {
@@ -83,7 +83,7 @@
     border-radius: 8px;
     background: var(--surface-2);
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.55;
     color: var(--text-muted);
     white-space: pre-wrap;

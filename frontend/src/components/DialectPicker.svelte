@@ -38,7 +38,7 @@
     appearance: none;
     width: 100%;
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     color: var(--text);
     background: var(--surface);
     border: 1px solid var(--border-strong);

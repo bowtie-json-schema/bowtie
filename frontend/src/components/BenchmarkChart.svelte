@@ -40,7 +40,7 @@
     gap: 12px;
   }
   .blabel {
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -65,7 +65,7 @@
   .bval {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     text-align: right;
   }
