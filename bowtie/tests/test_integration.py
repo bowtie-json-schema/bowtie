@@ -745,7 +745,7 @@ async def test_site_combine(tmp_path):
         "site",
         "collect",
         "-i",
-        miniatures.always_invalid,
+        "direct:python-jsonschema",
         "--suite",
         suite,
         "--output",
@@ -758,6 +758,10 @@ async def test_site_combine(tmp_path):
     assert {path.relative_to(site) for path in site.rglob("*")} == {
         Path("draft7.json"),
         Path("implementations.json"),
+        Path("api"),
+        Path("api/v1"),
+        Path("api/v1/json-schema-org"),
+        Path("api/v1/json-schema-org/implementations"),
     }
 
     # The combined per-dialect report contains both implementations.
@@ -769,6 +773,25 @@ async def test_site_combine(tmp_path):
     # implementations.json lists both, gathered from the reports' metadata.
     impls = _json.loads(site.joinpath("implementations.json").read_text())
     assert len(impls) == 2  # noqa: PLR2004
+
+    # The public API data is produced and valid against its bundled schema.
+    import jsonschema
+
+    api = _json.loads(
+        site.joinpath("api/v1/json-schema-org/implementations").read_text(),
+    )
+    schema = _json.loads(
+        Path(__file__)
+        .parents[1]
+        .joinpath("schemas/api/v1/json-schema-org/implementations.json")
+        .read_text(),
+    )
+    jsonschema.validate(instance=api, schema=schema)
+    assert len(api) == 2  # noqa: PLR2004
+    entry = next(iter(api.values()))
+    assert entry["badges_urls"]["supported_versions"].startswith(
+        "https://bowtie.report/badges/",
+    )
 
 
 @pytest.mark.asyncio

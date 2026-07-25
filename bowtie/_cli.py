@@ -2853,8 +2853,10 @@ def site_combine(
     produced by `bowtie site collect` (or an individual report file). For
     each dialect the matching reports are combined into a single
     multi-implementation report, and every implementation's own metadata is
-    gathered into ``implementations.json`` -- all read from the reports
-    themselves, without starting any implementation.
+    gathered into ``implementations.json``. The public API data under
+    ``api/`` is written too, with each implementation's compliance-badge
+    URLs resolved from its own dialects. All of this is read from the
+    reports themselves, without starting any implementation.
     """
     context.exit(_combine(collected=collected, output=output))
 
@@ -2934,12 +2936,53 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
         ),
     )
 
+    _write_api(output=output, infos=infos)
+
     dialects = _inflect_engine.plural("dialect", len(by_dialect))  # type: ignore[reportArgumentType]
     STDERR.print(
         f"Combined [green]{len(infos)}[/] implementations across "
         f"[green]{len(by_dialect)}[/] {dialects} into {output}.",
     )
     return 0
+
+
+def _write_api(output: Path, infos: dict[str, ImplementationInfo]) -> None:
+    """
+    Write the public API data (consumed by json-schema.org).
+
+    Keyed by each implementation's source, with the compliance-badge URLs
+    resolved from each dialect's own short name -- so it needs no separate
+    dialect short-name lookup table.
+    """
+    api = {
+        str(info.source): {
+            "id": info.id,
+            "dialects": sorted(
+                (str(dialect.uri) for dialect in info.dialects),
+                reverse=True,
+            ),
+            "badges_urls": {
+                "supported_versions": str(
+                    HOMEPAGE / "badges" / info.id / "supported_versions.json",
+                ),
+                "compliance": {
+                    str(dialect.uri): str(
+                        HOMEPAGE
+                        / "badges"
+                        / info.id
+                        / "compliance"
+                        / f"{dialect.short_name}.json",
+                    )
+                    for dialect in sorted(info.dialects, reverse=True)
+                },
+            },
+        }
+        for info in sorted(infos.values(), key=lambda each: each.id)
+    }
+
+    api_dir = output / "api" / "v1" / "json-schema-org"
+    api_dir.mkdir(parents=True)
+    api_dir.joinpath("implementations").write_text(json.dumps(api, indent=2))
 
 
 async def _run_cases(
