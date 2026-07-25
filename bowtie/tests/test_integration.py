@@ -707,6 +707,71 @@ async def test_site_collect_requires_a_single_implementation(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_site_combine(tmp_path):
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {
+                            "description": "an integer",
+                            "data": 1,
+                            "valid": True,
+                        },
+                    ],
+                },
+            ],
+        ),
+    )
+
+    a = tmp_path / "a"
+    b = tmp_path / "b"
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:null",
+        "--suite",
+        suite,
+        "--output",
+        a,
+    )
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.always_invalid,
+        "--suite",
+        suite,
+        "--output",
+        b,
+    )
+
+    site = tmp_path / "site"
+    await bowtie("site", "combine", str(a), str(b), "--output", site)
+
+    assert {path.relative_to(site) for path in site.rglob("*")} == {
+        Path("draft7.json"),
+        Path("implementations.json"),
+    }
+
+    # The combined per-dialect report contains both implementations.
+    report = Report.from_serialized(
+        site.joinpath("draft7.json").read_text().splitlines(),
+    )
+    assert len(report.implementations) == 2  # noqa: PLR2004
+
+    # implementations.json lists both, gathered from the reports' metadata.
+    impls = _json.loads(site.joinpath("implementations.json").read_text())
+    assert len(impls) == 2  # noqa: PLR2004
+
+
+@pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", "direct:null", "--set-schema") as send:
         results, stderr = await send(
