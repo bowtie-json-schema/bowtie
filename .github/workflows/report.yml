@@ -63,23 +63,11 @@ jobs:
         implementation: ${{ fromJson(needs.matrix.outputs.implementations) }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install Bowtie
-        uses: ./
-        with:
-          version: ${{ inputs.bowtie-version }}
-
-      - name: Collect this implementation's report
-        # Prefer the harness's own published report (produced by its
-        # harness-report.yml against the same per-hour suite commit).
-        # Fall back to running the suite centrally for implementations that
-        # don't publish one -- the in-repo direct connectables, and any
-        # harness that hasn't reported yet.
+      - name: Download this implementation's published report
+        id: download
+        # Prefer the harness's own published report, produced by its
+        # harness-report.yml against the same per-hour suite commit.
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
           MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
         run: |
@@ -88,16 +76,38 @@ jobs:
                --dir reports --clobber 2>/dev/null; then
             echo "Using ${MATRIX_IMPLEMENTATION}'s published report."
           else
-            echo "No published report for ${MATRIX_IMPLEMENTATION}; running the suite."
-            rm -rf reports
-            bowtie site collect -i "${MATRIX_IMPLEMENTATION}" --output reports
+            echo "No published report for ${MATRIX_IMPLEMENTATION}; will run the suite."
+            echo "fallback=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Only implementations without a published report -- the in-repo direct
+      # connectables, and any harness not reporting yet -- need Bowtie to run
+      # the suite here, so most jobs skip checking it out and installing it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.download.outputs.fallback == 'true'
+        with:
+          persist-credentials: false
+
+      - name: Install Bowtie
+        if: steps.download.outputs.fallback == 'true'
+        uses: ./
+        with:
+          version: ${{ inputs.bowtie-version }}
+
+      - name: Run the suite
+        if: steps.download.outputs.fallback == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
+        run: |
+          rm -rf reports
+          bowtie site collect -i "${MATRIX_IMPLEMENTATION}" --output reports
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
       - name: Show what images we fetched
+        if: ${{ always() && steps.download.outputs.fallback == 'true' }}
         run: docker images
-        if: always()
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
