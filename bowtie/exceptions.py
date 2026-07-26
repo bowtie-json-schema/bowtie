@@ -119,7 +119,7 @@ class StartupFailed(Exception):
                     "If you are developing a new harness, check if stderr "
                     "(shown below) contains harness-specific information "
                     "which can help. Otherwise, you may have an issue with "
-                    "your local container setup (podman, docker, etc.)."
+                    "your local container setup (docker, podman or container)."
                 ),
             )
         else:

@@ -1,9 +1,14 @@
 from collections.abc import Iterable
-from contextlib import asynccontextmanager, suppress
+from contextlib import (
+    asynccontextmanager,
+    contextmanager,
+    nullcontext,
+    suppress,
+)
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from pprint import pformat
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 import asyncio
 import json as _json
@@ -14,10 +19,10 @@ import subprocess
 import sys
 import tarfile
 
-from aiodocker.exceptions import DockerError
 from dateutil.parser import isoparse, parse as parse_datetime
 from dateutil.tz import tzlocal
 from dateutil.utils import default_tzinfo, within_delta
+from imaged import EngineError, EngineFailed
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
@@ -130,39 +135,6 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
     return decoded
 
 
-def tar_from_directory(directory):
-    """Build a tar archive from a directory for use as a Docker build context.
-
-    On Windows, two issues prevent the straightforward ``tar.add()`` approach:
-
-      * Git's ``core.autocrlf`` converts LF to CRLF on checkout, which breaks
-        shebang lines inside Linux containers (``env: python3\\r: not found``).
-
-      * The Windows filesystem has no executable bit, so ``tar.add()`` creates
-        entries with mode 0o666; ``COPY`` in the Dockerfile preserves that,
-        leaving scripts non-executable inside the container.
-
-    On non-Windows platforms ``tar.add()`` is used as-is to preserve original
-    file metadata.
-    """
-    fileobj = BytesIO()
-    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        for path in sorted(directory.rglob("*")):
-            if path.is_dir():
-                continue
-            if sys.platform != "win32":
-                tar.add(path, arcname=path.relative_to(directory))
-            else:
-                data = path.read_bytes().replace(b"\r\n", b"\n")
-                arcname = path.relative_to(directory).as_posix()
-                info = tarfile.TarInfo(name=arcname)
-                info.size = len(data)
-                info.mode = 0o755 if data.startswith(b"#!") else 0o644
-                tar.addfile(info, BytesIO(data))
-    fileobj.seek(0)
-    return fileobj
-
-
 def tar_from_versioned_reports(
     tar_path: Path,
     id: str,
@@ -198,18 +170,24 @@ def tar_from_versioned_reports(
             tar.addfile(report_info, BytesIO(report_bytes))
 
 
-def image(name, fileobj):
+def image(name, context):
+    """
+    A fixture building an image.
+
+    `context` is called to get a context manager yielding the directory
+    to build from.
+    """
+
     @pytest_asyncio.fixture(scope="module")
-    async def _image(docker):
-        images = docker.images
+    async def _image(engine):
         t = tag(name)
-        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=t)
-        try:
-            await docker.images.inspect(t)
-        except DockerError:
-            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
+        with context() as directory:
+            try:
+                await engine.build(tag=t, context=directory)
+            except EngineFailed as err:
+                pytest.fail(f"Failed to build {name}:\n\n{err}")
         yield t
-        await images.delete(name=t, force=True)
+        await engine.remove_image(t)
 
     return _image
 
@@ -218,30 +196,29 @@ def fauxmplementation(name):
     """
     A fake implementation built from files in the fauxmplementations directory.
     """
-    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
-    return image(name=name, fileobj=fileobj)
+
+    def context():
+        return nullcontext(FAUXMPLEMENTATIONS / name)
+
+    return image(name=name, context=context)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.22"):
     """
     A fake implementation built from the given Dockerfile contents.
     """
-    containerfile = f"FROM {base}\n{dedent(contents)}".encode()
 
-    fileobj = BytesIO()
-    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        info = tarfile.TarInfo(name="Dockerfile")
-        info.size = len(containerfile)
-        tar.addfile(info, BytesIO(containerfile))
+    @contextmanager
+    def context():
+        with TemporaryDirectory() as directory:
+            directory = Path(directory)
+            containerfile = f"FROM {base}\n{dedent(contents)}"
+            directory.joinpath("Dockerfile").write_text(containerfile)
+            for each, text in files.items():
+                directory.joinpath(each).write_text(dedent(text))
+            yield directory
 
-        for k, v in files.items():
-            v = dedent(v).encode("utf-8")
-            info = tarfile.TarInfo(name=k)
-            info.size = len(v)
-            tar.addfile(info, BytesIO(v))
-
-    fileobj.seek(0)
-    return image(name=name, fileobj=fileobj)
+    return image(name=name, context=context)
 
 
 def shellplementation(name, contents):
@@ -374,35 +351,25 @@ wrong_number_of_tests = shellplementation(
 
 
 @pytest_asyncio.fixture
-async def envsonschema_container(docker, envsonschema):
-    config = dict(
-        Image=envsonschema,
-        OpenStdin=True,
-        HostConfig=dict(NetworkMode="none"),
-    )
-    container = await docker.containers.create(config=config)
-    await container.start()
-    yield f"container:{container.id}"
+async def envsonschema_container(engine, envsonschema):
+    id = await engine.create(envsonschema, network=False)
+    await engine.start_detached(id)
+    yield f"container:{id}"
 
     # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    with suppress(EngineError):
+        await engine.remove(id)
 
 
 @pytest_asyncio.fixture
-async def lintsonschema_container(docker, lintsonschema):
-    config = dict(
-        Image=lintsonschema,
-        OpenStdin=True,
-        HostConfig=dict(NetworkMode="none"),
-    )
-    container = await docker.containers.create(config=config)
-    await container.start()
-    yield f"container:{container.id}"
+async def lintsonschema_container(engine, lintsonschema):
+    id = await engine.create(lintsonschema, network=False)
+    await engine.start_detached(id)
+    yield f"container:{id}"
 
     # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    with suppress(EngineError):
+        await engine.remove(id)
 
 
 @asynccontextmanager
