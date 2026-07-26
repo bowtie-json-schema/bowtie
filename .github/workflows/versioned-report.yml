@@ -124,11 +124,18 @@ jobs:
               /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ]')
             latest_version=$(bowtie info \
                 --implementation image:$impl \
-                --format json | jq -r '.version // empty')
+                --format json 2>/dev/null | jq -r '.version // empty' || true)
             echo $tagged_versions | jq -c --arg latest "$latest_version" '. + [$latest]' > $MATRIX_VERSIONS_FILE
           fi
           cp $MATRIX_VERSIONS_FILE $impl
           for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
+            # A version whose image is unavailable (a historical version that never built,
+            # or a `harness-release-*` tag with no matching image) is skipped rather than
+            # failing the whole implementation and dropping its entire trend.
+            if [ -z "$version" ] || ! bowtie info -i image:$impl:$version --format json > /dev/null 2>&1; then
+              echo "::warning::Skipping $impl:$version -- image unavailable"
+              continue
+            fi
             SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
             if [ -n "$SUPPORTED_DIALECTS" ]; then
               mkdir "$impl/v$version"
@@ -149,14 +156,14 @@ jobs:
       - name: Check that all Generated Versioned Reports of ${{ matrix.implementation }} are Valid
         run: |
           impl=${MATRIX_IMPLEMENTATION}
-          MATRIX_VERSIONS=$(jq -r '.[]' "implementations/$impl/matrix-versions.json")
-          for version in $MATRIX_VERSIONS; do
-            SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
-            if [ -n "$SUPPORTED_DIALECTS" ]; then
-              for dialect in $SUPPORTED_DIALECTS; do
-                bowtie summary --show failures "$impl/v$version/$dialect.json" --format markdown >> $GITHUB_STEP_SUMMARY
-              done
-            fi
+          # Summarize only the reports that were actually generated (versions whose image
+          # was unavailable are skipped above and have no directory).
+          for version_dir in "$impl"/v*/; do
+            [ -d "$version_dir" ] || continue
+            for dialect_file in "$version_dir"*.json; do
+              [ -e "$dialect_file" ] || continue
+              bowtie summary --show failures "$dialect_file" --format markdown >> $GITHUB_STEP_SUMMARY
+            done
           done
         continue-on-error: true
         env:
