@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack, asynccontextmanager
 from os import environ
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 import json
 
 from attrs import field, frozen, mutable
@@ -60,14 +60,12 @@ def versions_of(name: str) -> list[str]:
     image, so version discovery is always best-effort and never fatal.
     """
     organization = IMAGE_REPOSITORY.rsplit("/", 1)[-1]
+    client: Any = github()
     try:
-        repo: Any = github().repository(  # type: ignore[reportUnknownMemberType]
-            organization,
-            name,
-        )
+        repo = client.repository(organization, name)
         if repo is None:
             return []
-        tags = cast("list[Any]", list(repo.tags()))
+        tags = list(repo.tags())
     except Exception:  # noqa: BLE001
         return []
     return [
