@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack, asynccontextmanager
 from os import environ
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 import json
 
 from attrs import field, frozen, mutable
@@ -67,13 +67,14 @@ def versions_of(name: str) -> list[str]:
         )
         if repo is None:
             return []
-        return [
-            tag.name.removeprefix(_VERSION_TAG_PREFIX)
-            for tag in repo.tags()
-            if tag.name.startswith(_VERSION_TAG_PREFIX)
-        ]
+        tags = cast("list[Any]", list(repo.tags()))
     except Exception:  # noqa: BLE001
         return []
+    return [
+        tag.name.removeprefix(_VERSION_TAG_PREFIX)
+        for tag in tags
+        if tag.name.startswith(_VERSION_TAG_PREFIX)
+    ]
 
 
 _NO_ENGINE = (

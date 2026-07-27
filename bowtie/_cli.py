@@ -2632,10 +2632,10 @@ def site() -> None:
     help=(
         "Collect a per-version trend rather than a single current report. "
         "Each implementation passed with -i (typically several versions of "
-        "one, as image:<implementation>:<version>) is collected into a "
-        "v<version>/ subdirectory keyed by the version it reports, alongside "
-        "a matrix-versions.json index. Implementations whose image is "
-        "unavailable are skipped."
+        "one, as ``image:<implementation>:<version>``) is collected into a "
+        "``v<version>/`` subdirectory keyed by the version it reports, "
+        "alongside a ``matrix-versions.json`` index. Implementations whose "
+        "image is unavailable are skipped."
     ),
 )
 @click.pass_context
@@ -2740,7 +2740,7 @@ def collect(
 async def _collect_dialects(
     implementation: Implementation,
     connectable_id: ConnectableId,
-    available: frozenset[Dialect],
+    available: set[Dialect],
     root: _suite._P,  # type: ignore[reportPrivateUsage]
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any],
