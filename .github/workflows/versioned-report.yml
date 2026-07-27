@@ -102,48 +102,27 @@ jobs:
           path: json-schema-test-suite
           persist-credentials: false
 
-      - name: Make a ${{ matrix.implementation }} directory to keep all its version reports
-        run: mkdir ${MATRIX_IMPLEMENTATION}
+      - name: Generate versioned reports for ${{ matrix.implementation }}
         env:
-          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
-
-      - name: Generate New Versioned Reports for all Supported Dialects of ${{ matrix.implementation }}
-        id: generate-new-versioned-report
-        env:
-          GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
+          # Lets bowtie list an extracted harness's version tags un-throttled.
+          GITHUB_TOKEN: ${{ github.token }}
           MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
         run: |
           impl=${MATRIX_IMPLEMENTATION}
-          MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
-          if [ ! -f $MATRIX_VERSIONS_FILE ]; then
-            echo "Dump versions for remote test harness $impl"
-            mkdir -p $(dirname "$MATRIX_VERSIONS_FILE")
-            tagged_versions=$(gh api \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ]')
-            latest_version=$(bowtie info \
-                --implementation image:$impl \
-                --format json 2>/dev/null | jq -r '.version // empty' || true)
-            echo $tagged_versions | jq -c --arg latest "$latest_version" '. + [$latest]' > $MATRIX_VERSIONS_FILE
+          # bowtie discovers an extracted harness's versions from its
+          # harness-release-* tags on its own; the current image plus every
+          # discovered version is collected, each keyed by the version the image
+          # reports, unavailable ones skipped. The few in-repo harnesses instead
+          # pin their versions in a committed matrix-versions.json we pass through.
+          images="-i image:$impl"
+          if [ -f "implementations/$impl/matrix-versions.json" ]; then
+            for version in $(jq -r '.[]' "implementations/$impl/matrix-versions.json"); do
+              images="$images -i image:$impl:$version"
+            done
           fi
-          cp $MATRIX_VERSIONS_FILE $impl
-          for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
-            # A version whose image is unavailable (a historical version that never built,
-            # or a `harness-release-*` tag with no matching image) is skipped rather than
-            # failing the whole implementation and dropping its entire trend.
-            if [ -z "$version" ] || ! bowtie info -i image:$impl:$version --format json > /dev/null 2>&1; then
-              echo "::warning::Skipping $impl:$version -- image unavailable"
-              continue
-            fi
-            SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
-            if [ -n "$SUPPORTED_DIALECTS" ]; then
-              mkdir "$impl/v$version"
-              for dialect in $SUPPORTED_DIALECTS; do
-                bowtie suite -i image:$impl:$version ./json-schema-test-suite/tests/$dialect > "$impl/v$version/$dialect.json"
-              done
-            fi
-          done
+          bowtie site collect --versioned $images \
+            --suite ./json-schema-test-suite \
+            --output "$impl"
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.
@@ -177,32 +156,40 @@ jobs:
 
   combine-all-versioned-reports:
     name: Combine Versioned Reports
+    # Publish whatever succeeded even if some implementations failed, rather than
+    # letting a single failure gate (and drop) every implementation's trend.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     needs: regenerate-versioned-reports
     steps:
-      - name: Download all uploaded artifacts
+      - name: Download this run's freshly generated reports
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          path: implementations
+          path: fresh
 
-      - name: Download latest versioned test reports
+      - name: Download the last published versioned reports
         uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           workflow: versioned-report.yml
           branch: main
           name: implementations
-          path: latest-implementations
-        if: ${{ inputs.implementation != null }}
+          path: implementations
+        continue-on-error: true # nothing is published yet on the very first run
 
-      - name: Prepare artifact for upload
+      - name: Overlay this run's reports onto the last published set
         run: |
-          rm -rf "latest-implementations/${INPUTS_IMPLEMENTATION}"
-          cp -r "implementations/${INPUTS_IMPLEMENTATION}" "latest-implementations/"
-        if: ${{ inputs.implementation != null }}
-        env:
-          INPUTS_IMPLEMENTATION: ${{ inputs.implementation }}
+          # Replace each implementation that was (re)generated this run, and keep
+          # the previously published trend for any that failed and produced no
+          # fresh reports -- so a transient failure never wipes an implementation.
+          shopt -s nullglob
+          mkdir -p implementations
+          for dir in fresh/*/; do
+            impl=$(basename "$dir")
+            rm -rf "implementations/$impl"
+            cp -r "$dir" "implementations/$impl"
+          done
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: implementations
-          path: ${{ inputs.implementation != null && 'latest-implementations' || 'implementations' }}
+          path: implementations

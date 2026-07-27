@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from contextlib import AsyncExitStack, asynccontextmanager
 from os import environ
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 import json
 
 from attrs import field, frozen, mutable
@@ -28,7 +28,7 @@ from imaged import (
 )
 import anyio
 
-from bowtie._core import InvalidResponse, Restarted
+from bowtie._core import InvalidResponse, Restarted, github
 from bowtie.exceptions import (
     CannotConnect,
     GotStderr,
@@ -43,6 +43,37 @@ if TYPE_CHECKING:
 
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
+
+#: The git tag prefix each harness repository uses to mark a released version.
+_VERSION_TAG_PREFIX = "harness-release-"
+
+
+def versions_of(name: str) -> list[str]:
+    """
+    The published versions of an implementation.
+
+    Read from the ``harness-release-*`` tags of the implementation's harness
+    repository (a sibling, in the Bowtie organization, of its published image).
+
+    Returns an empty list when the harness has no such repository or tags, or
+    when GitHub can't be reached -- callers then fall back to just the current
+    image, so version discovery is always best-effort and never fatal.
+    """
+    organization = IMAGE_REPOSITORY.rsplit("/", 1)[-1]
+    client: Any = github()
+    try:
+        repo = client.repository(organization, name)
+        if repo is None:
+            return []
+        tags = list(repo.tags())
+    except Exception:  # noqa: BLE001
+        return []
+    return [
+        tag.name.removeprefix(_VERSION_TAG_PREFIX)
+        for tag in tags
+        if tag.name.startswith(_VERSION_TAG_PREFIX)
+    ]
+
 
 _NO_ENGINE = (
     "Bowtie couldn't find a container engine. "
