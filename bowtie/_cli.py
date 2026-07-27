@@ -41,7 +41,15 @@ import rich_click as click
 import structlog
 import structlog.typing
 
-from bowtie import DOCS, HOMEPAGE, _benchmarks, _connectables, _report, _suite
+from bowtie import (
+    DOCS,
+    HOMEPAGE,
+    _benchmarks,
+    _connectables,
+    _containers,
+    _report,
+    _suite,
+)
 from bowtie._commands import SeqCase, TestResult, Unsuccessful
 from bowtie._core import (
     Dialect,
@@ -2688,10 +2696,23 @@ def collect(
             context.exit(EX.CONFIG)
 
     if versioned:
+        expanded: list[Connectable] = []
+        for connectable in connectables:
+            expanded.append(connectable)
+            terse = connectable.to_terse()
+            # A bare image (no `:version`) also contributes every version
+            # published for it, discovered from its harness-release-* tags.
+            if ":" not in terse:
+                expanded.extend(
+                    _connectables.Connectable.from_str(
+                        f"image:{terse}:{version}",
+                    )
+                    for version in _containers.versions_of(terse)
+                )
         context.exit(
             asyncio.run(
                 _collect_versions(
-                    connectables=connectables,
+                    connectables=expanded,
                     root=root,
                     run_metadata=run_metadata,
                     maybe_set_schema=maybe_set_schema,
