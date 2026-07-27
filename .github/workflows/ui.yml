@@ -95,6 +95,11 @@ jobs:
         with:
           workflow: versioned-report.yml
           branch: main
+          # The latest COMPLETED run, not only a fully successful one: its
+          # combine step runs on `!cancelled()` and merges onto the last
+          # published set, so it always produces a valid, up-to-date artifact
+          # even when a few implementations failed to (re)generate.
+          workflow_conclusion: ""
           name: implementations
           path: _site/implementations
 
