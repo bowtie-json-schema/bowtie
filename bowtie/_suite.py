@@ -8,7 +8,6 @@ from contextlib import suppress
 from datetime import UTC, datetime
 from fnmatch import fnmatch
 from functools import cache
-from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
@@ -20,8 +19,8 @@ from url import URL, RelativeURLWithoutBase
 import click
 import rich
 
-from bowtie import GITHUB
-from bowtie._core import Dialect, TestCase, github
+from bowtie import GITHUB, _github
+from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -77,15 +76,11 @@ class ClickParam(click.ParamType):
             else:
                 value = cast("URL", value)
 
-                gh = github()
                 org, repo_name, *rest = value.path_segments
-                repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
-
                 path, ref = path_and_ref_from_gh_path(rest)
-                data = BytesIO()
-                data.name = ""
-                succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-                if not succeeded:
+
+                downloaded = _github.download_tree(org, repo_name, ref)
+                if downloaded is None:
                     message = "Fetching the test suite from GitHub failed."
                     error = DiagnosticError(
                         code="suite-fetch-failed",
@@ -104,15 +99,13 @@ class ClickParam(click.ParamType):
                     )
                     rich.print(error)
                     return self.fail(message)
-                data.seek(0)
+                data, run_metadata = downloaded
                 with zipfile.ZipFile(data) as zf:
                     (contents,) = zipfile.Path(zf).iterdir()
                     cases, dialect = self._cases_and_dialect(
                         path=contents / path,
                     )
                     cases = list(cases)
-
-                run_metadata: dict[str, Any] = _commit_metadata(repo, ref)
 
         return cases, dialect, run_metadata
 
@@ -248,25 +241,6 @@ class SuiteNotAvailable(Exception):
         )
 
 
-def _commit_metadata(repo: Any, ref: str) -> dict[str, Any]:
-    """
-    Run metadata recording the exact commit a suite ``ref`` resolves to.
-    """
-    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-        NotFoundError,
-    )
-
-    try:
-        commit = repo.commit(ref)
-    except NotFoundError:
-        commit_info = ref
-    else:
-        # TODO: Make this the tree URL maybe, but tree(...) doesn't come with
-        #       an html_url.
-        commit_info = {"text": commit.sha[:7], "href": commit.html_url}
-    return {"Commit": commit_info}
-
-
 def hour_start() -> datetime:
     """
     The start of the current hour, in UTC.
@@ -281,17 +255,6 @@ def hour_start() -> datetime:
         second=0,
         microsecond=0,
     )
-
-
-def _commit_at_hour_start(repo: Any) -> str:
-    """
-    The newest commit on the suite's main branch at or before this hour.
-    """
-    commits = repo.commits(sha=DEFAULT_REF, until=hour_start(), number=1)
-    commit = next(iter(commits), None)
-    if commit is None:
-        return DEFAULT_REF
-    return commit.sha
 
 
 def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
@@ -309,21 +272,26 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
     Every dialect collected from this one root is therefore guaranteed to
     share a single consistent commit, even if the suite moves meanwhile.
     """
-    segments = cast("list[str]", TEST_SUITE_URL.path_segments)
-    repo = github().repository(segments[0], segments[1])  # type: ignore[reportUnknownMemberType]
+    owner, name, *_ = cast("list[str]", TEST_SUITE_URL.path_segments)
 
     if ref is None:
-        ref = _commit_at_hour_start(repo)
+        ref = (
+            _github.latest_commit_before(
+                owner,
+                name,
+                DEFAULT_REF,
+                hour_start(),
+            )
+            or DEFAULT_REF
+        )
 
-    data = BytesIO()
-    data.name = ""
-    succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
-    if not succeeded:
+    downloaded = _github.download_tree(owner, name, ref)
+    if downloaded is None:
         raise SuiteNotAvailable(ref)
-    data.seek(0)
+    data, run_metadata = downloaded
     (root,) = zipfile.Path(zipfile.ZipFile(data)).iterdir()
 
-    return root, _commit_metadata(repo, ref)
+    return root, run_metadata
 
 
 def dialects_in(root: _P) -> set[Dialect]:

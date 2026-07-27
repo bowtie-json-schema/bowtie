@@ -46,7 +46,7 @@ from bowtie import (
     HOMEPAGE,
     _benchmarks,
     _connectables,
-    _containers,
+    _github,
     _report,
     _suite,
 )
@@ -2707,7 +2707,7 @@ def collect(
                     _connectables.Connectable.from_str(
                         f"image:{terse}:{version}",
                     )
-                    for version in _containers.versions_of(terse)
+                    for version in _github.versions_of(terse)
                 )
         context.exit(
             asyncio.run(
