@@ -102,48 +102,31 @@ jobs:
           path: json-schema-test-suite
           persist-credentials: false
 
-      - name: Make a ${{ matrix.implementation }} directory to keep all its version reports
-        run: mkdir ${MATRIX_IMPLEMENTATION}
+      - name: Generate versioned reports for ${{ matrix.implementation }}
         env:
-          MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
-
-      - name: Generate New Versioned Reports for all Supported Dialects of ${{ matrix.implementation }}
-        id: generate-new-versioned-report
-        env:
-          GH_TOKEN: ${{ github.token }} # because we use gh CLI in the script (https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows)
+          GH_TOKEN: ${{ github.token }} # for the gh CLI used to list version tags
           MATRIX_IMPLEMENTATION: ${{ matrix.implementation }}
         run: |
           impl=${MATRIX_IMPLEMENTATION}
-          MATRIX_VERSIONS_FILE="implementations/$impl/matrix-versions.json"
-          if [ ! -f $MATRIX_VERSIONS_FILE ]; then
-            echo "Dump versions for remote test harness $impl"
-            mkdir -p $(dirname "$MATRIX_VERSIONS_FILE")
-            tagged_versions=$(gh api \
+          # Historical versions come from a committed matrix-versions.json (the few
+          # in-repo harnesses) or from the extracted harness repo's `harness-release-*` tags.
+          if [ -f "implementations/$impl/matrix-versions.json" ]; then
+            versions=$(jq -r '.[]' "implementations/$impl/matrix-versions.json")
+          else
+            versions=$(gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release- | jq -c '[ .[].ref | ltrimstr("refs/tags/harness-release-") ]')
-            latest_version=$(bowtie info \
-                --implementation image:$impl \
-                --format json 2>/dev/null | jq -r '.version // empty' || true)
-            echo $tagged_versions | jq -c --arg latest "$latest_version" '. + [$latest]' > $MATRIX_VERSIONS_FILE
+              "/repos/$GH_ORGANIZATION/$impl/git/matching-refs/tags/harness-release-" \
+              | jq -r '.[].ref | ltrimstr("refs/tags/harness-release-")')
           fi
-          cp $MATRIX_VERSIONS_FILE $impl
-          for version in $(jq -r '.[]' $MATRIX_VERSIONS_FILE); do
-            # A version whose image is unavailable (a historical version that never built,
-            # or a `harness-release-*` tag with no matching image) is skipped rather than
-            # failing the whole implementation and dropping its entire trend.
-            if [ -z "$version" ] || ! bowtie info -i image:$impl:$version --format json > /dev/null 2>&1; then
-              echo "::warning::Skipping $impl:$version -- image unavailable"
-              continue
-            fi
-            SUPPORTED_DIALECTS=$(bowtie filter-dialects -i image:$impl:$version | xargs -I {} jq -r '.[] | select(.uri == "{}") | .shortName' data/dialects.json)
-            if [ -n "$SUPPORTED_DIALECTS" ]; then
-              mkdir "$impl/v$version"
-              for dialect in $SUPPORTED_DIALECTS; do
-                bowtie suite -i image:$impl:$version ./json-schema-test-suite/tests/$dialect > "$impl/v$version/$dialect.json"
-              done
-            fi
-          done
+          # The current published image plus each historical version. `bowtie` keys each
+          # report tree off the version the image reports, skips unavailable images, and
+          # writes the matrix-versions.json index, so one missing image never drops the trend.
+          images="-i image:$impl"
+          for version in $versions; do images="$images -i image:$impl:$version"; done
+          bowtie site collect --versioned $images \
+            --suite ./json-schema-test-suite \
+            --output "$impl"
 
       # This is useful to debug whether Bowtie accidentally fetched some huge
       # number of container images.

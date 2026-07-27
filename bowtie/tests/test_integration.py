@@ -761,6 +761,111 @@ async def test_site_combine(tmp_path):
     )
 
 
+def _has_bugs_connectable(version):
+    return (
+        f"direct:{_miniatures.__name__}:has_bugs_by_versions,version={version}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_site_collect_versioned(tmp_path):
+    """
+    `site collect --versioned` writes one report tree per version, keyed by the
+    version each implementation reports, plus a matrix-versions.json index.
+    """
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                    {"description": "a string", "data": "foo", "valid": False},
+                ],
+            },
+        ],
+    )
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "buggy"
+    await bowtie(
+        "site",
+        "collect",
+        "--versioned",
+        "-i",
+        _has_bugs_connectable("1.0"),
+        "-i",
+        _has_bugs_connectable("2.0"),
+        # A repeated version (e.g. the current image also matching a tag) is
+        # collected only once.
+        "-i",
+        _has_bugs_connectable("1.0"),
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert sorted(_json.loads((out / "matrix-versions.json").read_text())) == [
+        "1.0",
+        "2.0",
+    ]
+    for version in ("1.0", "2.0"):
+        report = Report.from_serialized(
+            out.joinpath(f"v{version}", "draft7.json")
+            .read_text()
+            .splitlines(),
+        )
+        assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
+        assert not report.is_empty
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_site_collect_versioned_skips_unavailable(tmp_path):
+    """
+    A version whose image can't start is skipped, leaving the others (and the
+    matrix-versions.json index) intact rather than aborting the whole trend.
+    """
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [{"description": "ok", "data": 1, "valid": True}],
+                },
+            ],
+        ),
+    )
+
+    out = tmp_path / "buggy"
+    await bowtie(
+        "site",
+        "collect",
+        "--versioned",
+        "-i",
+        _has_bugs_connectable("1.0"),
+        # No such image exists, so starting it fails and it is skipped.
+        "-i",
+        "image:bowtie-json-schema/does-not-exist:9.9.9",
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert _json.loads((out / "matrix-versions.json").read_text()) == ["1.0"]
+    assert out.joinpath("v1.0", "draft7.json").exists()
+
+
 @pytest.mark.asyncio
 async def test_set_schema_sets_a_dialect_explicitly():
     async with run("-i", "direct:null", "--set-schema") as send:

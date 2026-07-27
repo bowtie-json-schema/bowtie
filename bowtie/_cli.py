@@ -2617,6 +2617,19 @@ def site() -> None:
         "Defaults to the latest commit on the suite's default branch."
     ),
 )
+@click.option(
+    "--versioned",
+    "versioned",
+    is_flag=True,
+    help=(
+        "Collect a per-version trend rather than a single current report. "
+        "Each implementation passed with -i (typically several versions of "
+        "one, as image:<implementation>:<version>) is collected into a "
+        "v<version>/ subdirectory keyed by the version it reports, alongside "
+        "a matrix-versions.json index. Implementations whose image is "
+        "unavailable are skipped."
+    ),
+)
 @click.pass_context
 def collect(
     context: click.Context,
@@ -2625,23 +2638,29 @@ def collect(
     registry: ValidatorRegistry[Any],
     output: Path,
     suite_source: str | None,
+    versioned: bool,
 ) -> None:
     """
     Run the official test suite against a single implementation.
 
     Writes one Bowtie report per supported dialect into the output
     directory, ready to be combined into the data for Bowtie's website.
+
+    With --versioned, instead writes one such report tree per version under
+    v<version>/, for the implementation's compliance-over-time trend.
     """
-    if len(connectables) != 1:
+    if not versioned and len(connectables) != 1:
         error = DiagnosticError(
             code="one-implementation",
             message="`bowtie site collect` collects a single implementation.",
             causes=[f"{len(connectables)} implementations were provided."],
-            hint_stmt="Pass exactly one implementation with -i.",
+            hint_stmt=(
+                "Pass exactly one implementation with -i, "
+                "or --versioned to collect several versions of one."
+            ),
         )
         STDERR.print(error)
         context.exit(EX.USAGE)
-    (connectable,) = connectables
 
     try:
         output.mkdir(parents=True)
@@ -2668,6 +2687,21 @@ def collect(
             STDERR.print(error.diagnostic())
             context.exit(EX.CONFIG)
 
+    if versioned:
+        context.exit(
+            asyncio.run(
+                _collect_versions(
+                    connectables=connectables,
+                    root=root,
+                    run_metadata=run_metadata,
+                    maybe_set_schema=maybe_set_schema,
+                    registry=registry,
+                    output=output,
+                ),
+            ),
+        )
+
+    (connectable,) = connectables
     context.exit(
         asyncio.run(
             _collect(
@@ -2680,6 +2714,53 @@ def collect(
             ),
         ),
     )
+
+
+async def _collect_dialects(
+    implementation: Implementation,
+    connectable_id: ConnectableId,
+    available: frozenset[Dialect],
+    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    run_metadata: dict[str, Any],
+    output: Path,
+) -> int:
+    """
+    Write one report per supported dialect for a started implementation.
+
+    Returns the number of dialect reports written into `output` (whose parent
+    directory is created lazily, only once there is something to write).
+    """
+    wrote = 0
+    supported = sorted(implementation.info.dialects & available, reverse=True)
+    for dialect in supported:
+        cases = list(_suite.cases_for(root, dialect))
+        if not cases:
+            continue
+
+        try:
+            runner = await implementation.start_speaking(dialect)
+        except (DialectError, UnsupportedDialect) as error:
+            STDERR.print(error)
+            continue
+
+        report = await _run_cases(
+            runner=runner,
+            dialect=dialect,
+            cases=cases,
+            implementations={connectable_id: implementation.info},
+            maybe_set_schema=maybe_set_schema,
+            run_metadata=run_metadata,
+        )
+        if report is None:
+            continue
+
+        output.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240
+        output.joinpath(f"{dialect.short_name}.json").write_text(
+            "\n".join(report.serialized()),
+        )
+        wrote += 1
+    return wrote
 
 
 async def _collect(
@@ -2710,37 +2791,15 @@ async def _collect(
             STDERR.print(error)
             return EX.CONFIG
 
-        wrote = 0
-        supported = sorted(
-            implementation.info.dialects & available,
-            reverse=True,
+        wrote = await _collect_dialects(
+            implementation=implementation,
+            connectable_id=connectable_id,
+            available=available,
+            root=root,
+            maybe_set_schema=maybe_set_schema,
+            run_metadata=run_metadata,
+            output=output,
         )
-        for dialect in supported:
-            cases = list(_suite.cases_for(root, dialect))
-            if not cases:
-                continue
-
-            try:
-                runner = await implementation.start_speaking(dialect)
-            except (DialectError, UnsupportedDialect) as error:
-                STDERR.print(error)
-                continue
-
-            report = await _run_cases(
-                runner=runner,
-                dialect=dialect,
-                cases=cases,
-                implementations={connectable_id: implementation.info},
-                maybe_set_schema=maybe_set_schema,
-                run_metadata=run_metadata,
-            )
-            if report is None:
-                continue
-
-            output.joinpath(f"{dialect.short_name}.json").write_text(
-                "\n".join(report.serialized()),
-            )
-            wrote += 1
 
     if not wrote:
         error = DiagnosticError(
@@ -2759,6 +2818,81 @@ async def _collect(
 
     reports = _inflect_engine.plural("report", wrote)  # type: ignore[reportArgumentType]
     STDERR.print(f"Collected [green]{wrote}[/] {reports} into {output}.")
+    return 0
+
+
+async def _collect_versions(
+    connectables: Iterable[Connectable],
+    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    run_metadata: dict[str, Any],
+    maybe_set_schema: Callable[[Dialect], CaseTransform],
+    registry: ValidatorRegistry[Any],
+    output: Path,
+) -> int:
+    """
+    Collect a per-version compliance trend for a single implementation.
+
+    Each connectable (typically ``image:<implementation>:<version>``) is
+    collected into ``output/v<version>/``, keyed by the version the image
+    itself reports. One whose image is unavailable (e.g. a historical version
+    that never built, or a tag with no published image) is skipped rather than
+    aborting the rest, so a single missing image never drops an
+    implementation's whole trend. Writes ``output/matrix-versions.json``
+    listing the versions that actually produced reports.
+    """
+    available = _suite.dialects_in(root)
+
+    collected: list[str] = []
+    seen: set[str] = set()
+    for connectable in connectables:
+        async with _start(
+            connectables=[connectable],
+            reporter=SILENT,
+            registry=registry,
+        ) as starting:
+            (started,) = starting
+            try:
+                connectable_id, implementation = await started
+            except STARTUP_ERRORS:
+                STDERR.print(
+                    f"[yellow]Skipping[/] {connectable.to_terse()} "
+                    "(image unavailable).",
+                )
+                continue
+
+            version = implementation.info.version
+            if not version:
+                STDERR.print(
+                    f"[yellow]Skipping[/] {connectable.to_terse()} "
+                    "(no reported version).",
+                )
+                continue
+
+            # The current image and a historical tag can report the same
+            # version; collect each distinct version only once.
+            if version in seen:
+                continue
+            seen.add(version)
+
+            wrote = await _collect_dialects(
+                implementation=implementation,
+                connectable_id=connectable_id,
+                available=available,
+                root=root,
+                maybe_set_schema=maybe_set_schema,
+                run_metadata=run_metadata,
+                output=output.joinpath(f"v{version}"),
+            )
+        if wrote:
+            collected.append(version)
+
+    output.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240
+    output.joinpath("matrix-versions.json").write_text(json.dumps(collected))
+
+    versions = _inflect_engine.plural("version", len(collected))  # type: ignore[reportArgumentType]
+    STDERR.print(
+        f"Collected [green]{len(collected)}[/] {versions} into {output}.",
+    )
     return 0
 
 
