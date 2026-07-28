@@ -1,4 +1,4 @@
-FROM python:3.15.0b3-alpine
+FROM python:3.15.0b4-alpine
 WORKDIR /usr/src/myapp
 ARG IMPLEMENTATION_VERSION
 RUN python -m pip install --no-cache-dir jsonschema${IMPLEMENTATION_VERSION:+==}${IMPLEMENTATION_VERSION} packaging
