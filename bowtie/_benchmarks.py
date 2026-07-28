@@ -1411,6 +1411,11 @@ class Benchmarker:
                 encoding="utf-8",
             )
             return await self._pyperf_benchmark_command(
+                # Run Bowtie via the current interpreter rather than relying on
+                # a `bowtie` executable being on PATH (it isn't when Bowtie is
+                # run as `python -m bowtie`, e.g. in the test suite).
+                sys.executable,
+                "-m",
                 "bowtie",
                 "run",
                 "-i",
