@@ -144,12 +144,27 @@ class Connectable:
         async with (
             self._connector.connect() as connection,
             Implementation.start(
-                id=self._id,
+                report_id=self.report_id,
                 connection=connection,
                 **kwargs,
             ) as implementation,
         ):
             yield implementation
+
+    @property
+    def report_id(self) -> ConnectableId:
+        """
+        The identity this connectable's implementation carries in a report.
+
+        A report should say *which* implementation it describes, not how we
+        happened to reach it, so the connector (``image:``, ``direct:``, ...)
+        and image registry -- both of which are transport -- are dropped.
+        The same implementation reached different ways therefore shares one
+        report id, and reports never leak the transport used to run them.
+        """
+        return self._id.removeprefix(f"{self.kind}:").removeprefix(
+            f"{_containers.IMAGE_REPOSITORY}/",
+        )
 
     def to_terse(self) -> ConnectableId:
         """

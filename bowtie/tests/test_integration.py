@@ -31,6 +31,7 @@ import pytest_asyncio
 
 from bowtie._cli import EX
 from bowtie._commands import ErroredTest, TestResult
+from bowtie._connectables import Connectable
 from bowtie._core import (
     Dialect,
     Implementation,
@@ -74,6 +75,22 @@ class _Miniatures:
 
 
 miniatures = _Miniatures()
+
+
+class _ReportId:
+    """
+    The report id a miniature shows up as in a report.
+
+    A report identifies an implementation by *which* it is, not by how it was
+    reached, so ``report_id.always_invalid`` is ``miniatures.always_invalid``
+    with its connector dropped.
+    """
+
+    def __getattr__(self, name: str) -> str:
+        return Connectable.from_str(getattr(miniatures, name)).report_id
+
+
+report_id = _ReportId()
 
 #: An arbitrary harness for when behavior shouldn't depend on a specific one.
 ARBITRARY = miniatures.always_invalid
@@ -426,7 +443,7 @@ class TestRun:
             results, stderr = await send()
 
         assert results == [
-            {miniatures.always_invalid: TestResult.INVALID},
+            {report_id.always_invalid: TestResult.INVALID},
         ], stderr
 
     @pytest.mark.asyncio
@@ -457,8 +474,8 @@ class TestRun:
             [
                 {"type": "integer"},
                 [
-                    [12, {"direct:null": "valid"}],
-                    [12.5, {"direct:null": "valid"}],
+                    [12, {"null": "valid"}],
+                    [12.5, {"null": "valid"}],
                 ],
             ],
         ], run_stderr
@@ -525,13 +542,13 @@ async def test_suite(tmp_path):
                     (
                         one,
                         {
-                            miniatures.always_invalid: TestResult.INVALID,
+                            report_id.always_invalid: TestResult.INVALID,
                         },
                     ),
                     (
                         two,
                         {
-                            miniatures.always_invalid: TestResult.INVALID,
+                            report_id.always_invalid: TestResult.INVALID,
                         },
                     ),
                 ],
@@ -876,7 +893,7 @@ async def test_set_schema_sets_a_dialect_explicitly():
         )
 
     # XXX: we need to make run() return the whole report
-    assert results == [{"direct:null": TestResult.VALID}], stderr
+    assert results == [{"null": TestResult.VALID}], stderr
 
 
 @pytest.mark.asyncio
@@ -955,7 +972,7 @@ async def test_direct_connector_exception_does_not_crash():
         )
 
     assert results == [
-        {miniatures.crashes_on_validate: ErroredTest.in_errored_case()},
+        {report_id.crashes_on_validate: ErroredTest.in_errored_case()},
     ], stderr
 
 
@@ -997,8 +1014,8 @@ async def test_handles_dead_implementations(succeed_immediately):
         )
 
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
     assert "failed to start" in stderr, stderr
 
@@ -1042,8 +1059,8 @@ async def test_it_handles_immediately_broken_implementations(fail_immediately):
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
 
 
@@ -1067,8 +1084,8 @@ async def test_it_handles_broken_start_implementations(fail_on_start):
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
 
 
@@ -1327,8 +1344,8 @@ async def test_fail_fast():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1345,9 +1362,9 @@ async def test_fail_fast_many_tests_at_once():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1365,9 +1382,9 @@ async def test_max_fail():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1410,7 +1427,7 @@ async def test_filter():
             """,  # noqa: E501
         )
 
-    assert results == [{"direct:null": TestResult.VALID}], stderr
+    assert results == [{"null": TestResult.VALID}], stderr
     assert stderr == ""
 
 
@@ -2139,14 +2156,14 @@ class TestSmoke:
             exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
-            miniatures.passes_smoke: {
+            report_id.passes_smoke: {
                 "success": True,
                 "dialects": [
                     dialect.short_name
                     for dialect in sorted(Dialect.known(), reverse=True)
                 ],
             },
-            miniatures.always_invalid: {
+            report_id.always_invalid: {
                 "success": False,
                 "dialects": {
                     "draft2019-09": [
@@ -2597,7 +2614,7 @@ async def test_info_json_multiple_implementations():
     jsonout = _json.loads(stdout)
 
     assert (await command_validator("info")).validated(jsonout) == {
-        miniatures.always_invalid: {
+        report_id.always_invalid: {
             "name": "always_invalid",
             "language": "python",
             "homepage": "https://bowtie.report/",
@@ -2616,7 +2633,7 @@ async def test_info_json_multiple_implementations():
                 "http://json-schema.org/draft-03/schema#",
             ],
         },
-        miniatures.links: {
+        report_id.links: {
             "name": "links",
             "language": "python",
             "homepage": "urn:example",
@@ -3010,11 +3027,11 @@ async def test_summary_show_failures_json(tmp_path):
 
     assert (await command_validator("summary")).validated(jsonout) == [
         [
-            "direct:null",
+            "null",
             dict(failed=0, skipped=0, errored=0),
         ],
         [
-            miniatures.always_invalid,
+            report_id.always_invalid,
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
@@ -3260,14 +3277,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     12,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "valid",
                     },
                 ],
                 [
                     12.5,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -3279,7 +3296,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3291,14 +3308,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     37,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3310,7 +3327,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -3322,7 +3339,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -3334,14 +3351,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     12,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -3353,7 +3370,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3938,7 +3955,7 @@ async def test_run_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -3951,7 +3968,7 @@ async def test_run_registry_metasschema_not_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
@@ -3964,7 +3981,7 @@ async def test_run_registry_metasschema_still_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -3982,7 +3999,7 @@ async def test_run_mismatched_dialect_total_junk():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
@@ -4011,7 +4028,7 @@ async def test_run_boolean_schema(tmp_path):
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == "", stderr
 
 
@@ -4228,14 +4245,18 @@ async def test_container_connectables(
     assert stderr == ""
 
     report = Report.from_serialized(stdout.splitlines())
+    # A report identifies an implementation transport-free, so the container
+    # connectables show up under their report id, not the `container:` string.
+    envsonschema_id = Connectable.from_str(envsonschema_container).report_id
+    lintsonschema_id = Connectable.from_str(lintsonschema_container).report_id
     assert [
         [test_results for _, test_results in results]
         for _, results in report.cases_with_results()
     ] == [
         [
             {
-                envsonschema_container: TestResult.INVALID,
-                lintsonschema_container: TestResult.VALID,
+                envsonschema_id: TestResult.INVALID,
+                lintsonschema_id: TestResult.VALID,
             },
         ],
     ], stderr
@@ -4261,7 +4282,7 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
         [test_results for _, test_results in results]
         for _, results in report.cases_with_results()
     ] == [
-        [{"direct:python-jsonschema": TestResult.VALID}],
+        [{"python-jsonschema": TestResult.VALID}],
     ], stderr
 
 
@@ -4440,7 +4461,7 @@ class TestBenchmarkRun:
 
             Benchmark: Tests with benchmark
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 
@@ -4490,7 +4511,7 @@ class TestBenchmarkRun:
 
             Benchmark: Tests with varying Array Size
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 
@@ -4498,7 +4519,7 @@ class TestBenchmarkRun:
             """
             Benchmark: Tests with benchmark 2
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 

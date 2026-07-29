@@ -1825,7 +1825,7 @@ async def info(
 
         match format:
             case "json":
-                serializable[each.id] = dict(metadata)
+                serializable[each.report_id] = dict(metadata)
             case "pretty":
                 table = _info_table_for(dict(metadata))
                 STDOUT.print(table, "\n")
@@ -2458,7 +2458,11 @@ async def smoke(
     Smoke test implementations for basic correctness against Bowtie's protocol.
     """
     results = [
-        (implementation.id, implementation.info, await implementation.smoke())
+        (
+            implementation.report_id,
+            implementation.info,
+            await implementation.smoke(),
+        )
         async for _, implementation in start()
     ]
 
@@ -2739,7 +2743,6 @@ def collect(
 
 async def _collect_dialects(
     implementation: Implementation,
-    connectable_id: ConnectableId,
     available: set[Dialect],
     root: _suite._P,  # type: ignore[reportPrivateUsage]
     maybe_set_schema: Callable[[Dialect], CaseTransform],
@@ -2769,7 +2772,7 @@ async def _collect_dialects(
             runner=runner,
             dialect=dialect,
             cases=cases,
-            implementations={connectable_id: implementation.info},
+            implementations={implementation.report_id: implementation.info},
             maybe_set_schema=maybe_set_schema,
             run_metadata=run_metadata,
         )
@@ -2807,14 +2810,13 @@ async def _collect(
     ) as starting:
         (started,) = starting
         try:
-            connectable_id, implementation = await started
+            _, implementation = await started
         except STARTUP_ERRORS as error:
             STDERR.print(error)
             return EX.CONFIG
 
         wrote = await _collect_dialects(
             implementation=implementation,
-            connectable_id=connectable_id,
             available=available,
             root=root,
             maybe_set_schema=maybe_set_schema,
@@ -2873,7 +2875,7 @@ async def _collect_versions(
         ) as starting:
             (started,) = starting
             try:
-                connectable_id, implementation = await started
+                _, implementation = await started
             except STARTUP_ERRORS:
                 STDERR.print(
                     f"[yellow]Skipping[/] {connectable.to_terse()} "
@@ -2897,7 +2899,6 @@ async def _collect_versions(
 
             wrote = await _collect_dialects(
                 implementation=implementation,
-                connectable_id=connectable_id,
                 available=available,
                 root=root,
                 maybe_set_schema=maybe_set_schema,
@@ -3158,7 +3159,7 @@ async def _run_one(
     ) as starting:
         (started,) = starting
         try:
-            connectable_id, implementation = await started
+            _, implementation = await started
         except STARTUP_ERRORS as error:
             STDERR.print(error)
             return EX.CONFIG, None
@@ -3183,7 +3184,7 @@ async def _run_one(
             runner=runner,
             dialect=dialect,
             cases=cases,
-            implementations={connectable_id: implementation.info},
+            implementations={implementation.report_id: implementation.info},
             maybe_set_schema=maybe_set_schema,
             run_metadata=run_metadata,
             reporter=reporter,

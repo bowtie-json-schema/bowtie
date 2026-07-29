@@ -93,7 +93,7 @@ async def test(implementation: Implementation):
             (failure,) = got
             ref = last, *failure
 
-    return Result(id=implementation.id, dialects=dialects, ref=ref)
+    return Result(id=implementation.report_id, dialects=dialects, ref=ref)
 
 
 @frozen

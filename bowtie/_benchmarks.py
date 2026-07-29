@@ -1231,7 +1231,7 @@ class Benchmarker:
                 if dialect not in implementation.info.dialects:
                     incompatible_connectables.append(connectable)
                     continue
-                acknowledged[connectable.to_terse()] = implementation.info
+                acknowledged[connectable.report_id] = implementation.info
                 compatible_connectables.append(connectable)
 
         with Progress(
@@ -1324,7 +1324,7 @@ class Benchmarker:
                                         )
                                     except BowtieRunError as err:
                                         got_connectable_result(
-                                            connectable.to_terse(),
+                                            connectable.report_id,
                                             "Errored",
                                             0,
                                             [1e9]
@@ -1352,7 +1352,7 @@ class Benchmarker:
                                         ]
 
                                         run_needed = got_connectable_result(
-                                            connectable.to_terse(),
+                                            connectable.report_id,
                                             output,
                                             retries_allowed,
                                             measured_time_values,
