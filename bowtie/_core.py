@@ -488,7 +488,7 @@ class Implementation:
     A running implementation under test.
     """
 
-    id: ConnectableId
+    report_id: ConnectableId
     info: ImplementationInfo
     _harness: HarnessClient = field(repr=False, alias="harness")
     _reporter: Reporter = field(alias="reporter")
@@ -509,7 +509,7 @@ class Implementation:
     @asynccontextmanager
     async def start(
         cls,
-        id: ConnectableId,
+        report_id: ConnectableId,
         reporter: Reporter,
         **kwargs: Any,
     ) -> AsyncGenerator[Self]:
@@ -518,16 +518,24 @@ class Implementation:
         try:
             harness, started = await _harness.transition(START_V1)
         except ProtocolError as err:
-            raise StartupFailed(id=id) from err
+            raise StartupFailed(id=report_id) from err
         except GotStderr as err:
-            raise StartupFailed(id=id, stderr=err.stderr.decode()) from err
+            raise StartupFailed(
+                id=report_id,
+                stderr=err.stderr.decode(),
+            ) from err
         else:
             if started is None:
-                raise StartupFailed(id=id)
+                raise StartupFailed(id=report_id)
 
         info = ImplementationInfo.from_dict(**started.implementation)
 
-        yield cls(harness=harness, id=id, info=info, reporter=reporter)
+        yield cls(
+            harness=harness,
+            report_id=report_id,
+            info=info,
+            reporter=reporter,
+        )
 
     def supports(self, *dialects: Dialect) -> bool:
         """
@@ -538,7 +546,7 @@ class Implementation:
     async def get_versions(self) -> Iterable[str]:
         from bowtie import _github  # noqa: PLC0415
 
-        versions: Set[str] = set(_github.versions_of(self.id))
+        versions: Set[str] = set(_github.versions_of(self.report_id))
         if self.info.version:
             versions.add(self.info.version)
         return sorted(versions, key=sortable_version_key, reverse=True)
@@ -573,7 +581,7 @@ class Implementation:
             raise UnsupportedDialect(implementation=self, dialect=dialect)
         try:
             return await DialectRunner.for_dialect(
-                implementation=self.id,
+                implementation=self.report_id,
                 dialect=dialect,
                 harness=self._harness,
                 reporter=self._reporter,
