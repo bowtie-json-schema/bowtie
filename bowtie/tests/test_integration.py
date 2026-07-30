@@ -739,6 +739,10 @@ async def test_site_combine(tmp_path):
     site = tmp_path / "site"
     await bowtie("site", "combine", str(a), str(b), "--output", site)
 
+    # Badges are written under each implementation's report id, and also under
+    # its (differing) self-reported id so existing badge URLs keep resolving.
+    # null's ids differ (null vs python-null), so it gets both; for
+    # python-jsonschema they coincide, so it gets a single directory.
     assert {path.relative_to(site) for path in site.rglob("*")} == {
         Path("draft7.json"),
         Path("implementations.json"),
@@ -746,6 +750,19 @@ async def test_site_combine(tmp_path):
         Path("api/v1"),
         Path("api/v1/json-schema-org"),
         Path("api/v1/json-schema-org/implementations"),
+        Path("badges"),
+        Path("badges/null"),
+        Path("badges/null/compliance"),
+        Path("badges/null/compliance/draft7.json"),
+        Path("badges/null/supported_versions.json"),
+        Path("badges/python-null"),
+        Path("badges/python-null/compliance"),
+        Path("badges/python-null/compliance/draft7.json"),
+        Path("badges/python-null/supported_versions.json"),
+        Path("badges/python-jsonschema"),
+        Path("badges/python-jsonschema/compliance"),
+        Path("badges/python-jsonschema/compliance/draft7.json"),
+        Path("badges/python-jsonschema/supported_versions.json"),
     }
 
     # The combined per-dialect report contains both implementations.
@@ -3378,64 +3395,6 @@ async def test_summary_show_validation_json(envsonschema):
         ],
     ], run_stderr
     assert stderr == ""
-
-
-@pytest.mark.asyncio
-@pytest.mark.containers
-async def test_badges(envsonschema, tmp_path):
-    site = tmp_path / "site"
-    site.mkdir()
-
-    raw = """
-        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
-        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
-        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
-        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
-        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
-        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
-    """  # noqa: E501
-
-    run_stdout, _ = await bowtie(
-        "run",
-        "-i",
-        envsonschema,
-        stdin=dedent(raw.strip("\n")),
-    )
-
-    site.joinpath("draft2020-12.json").write_text(run_stdout)
-
-    _stdout, _stderr = await bowtie("badges", "--site", site)
-
-    badges = site / "badges"
-    assert {path.relative_to(badges) for path in badges.rglob("*")} == {
-        Path("python-envsonschema"),
-        Path("python-envsonschema/supported_versions.json"),
-        Path("python-envsonschema/compliance"),
-        Path("python-envsonschema/compliance/draft2020-12.json"),
-    }
-
-
-@pytest.mark.asyncio
-async def test_badges_nothing_ran(tmp_path):
-    run_stdout, _ = await bowtie(
-        "run",
-        "-i",
-        ARBITRARY,
-        stdin="",
-        exit_code=-1,  # no test cases run causes a non-zero here
-    )
-
-    badges = tmp_path / "badges"
-    stdout, stderr = await bowtie(
-        "badges",
-        badges,
-        stdin=run_stdout,
-        exit_code=2,  # comes from click
-    )
-    assert stdout == ""
-    assert stderr != ""
-    assert not badges.is_dir()
 
 
 @pytest.mark.asyncio

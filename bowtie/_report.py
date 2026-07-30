@@ -518,13 +518,16 @@ class Report:  # noqa: PLW1641
                 test_results.append((test, test_result))
             yield case, test_results
 
-    def compliance_badges(self) -> Iterable[tuple[ImplementationInfo, Badge]]:
+    def compliance_badges(
+        self,
+    ) -> Iterable[tuple[ConnectableId, ImplementationInfo, Badge]]:
         for id, implementation in self.implementations.items():
             unsuccessful = self.unsuccessful(id)
             passed = self.total_tests - unsuccessful.total
             percentage = int(100 * (passed / self.total_tests))
             r, g, b = 100 - percentage, percentage, 0
             yield (
+                id,
                 implementation,
                 Badge(
                     schemaVersion=1,
