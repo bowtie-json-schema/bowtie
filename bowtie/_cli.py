@@ -7,7 +7,6 @@ from fnmatch import fnmatch
 from functools import wraps
 from io import TextIOWrapper
 from pathlib import Path
-from pprint import pformat
 from statistics import mean, median, quantiles
 from textwrap import dedent
 from time import perf_counter_ns
@@ -149,7 +148,7 @@ _COMMAND_GROUPS = {
         ),
         CommandGroupDict(
             name="Plumbing Commands",
-            commands=["badges", "smoke"],
+            commands=["smoke"],
         ),
         CommandGroupDict(
             name="Benchmarking Commands",
@@ -437,100 +436,6 @@ def implementation_subcommand(
         return cmd
 
     return wrapper
-
-
-@subcommand
-@click.option(
-    "--site",
-    default=Path("site"),
-    show_default=True,
-    type=click.Path(
-        path_type=Path,
-        file_okay=False,
-        dir_okay=True,
-        exists=True,
-    ),
-    help=(
-        "The path to a previously generated collection of reports, "
-        "used to generate the badges."
-    ),
-)
-def badges(site: Path):
-    """
-    Generate Bowtie badges for implementations using a previous Bowtie run.
-
-    Will generate badges for any existing dialects, and ignore any for which a
-    report was not generated.
-    """
-    outdir = site / "badges"
-    try:
-        outdir.mkdir()
-    except FileExistsError:
-        error = DiagnosticError(
-            code="already-exists",
-            message="Badge output directory already exists.",
-            causes=[f"{outdir} is an existing directory."],
-            hint_stmt=(
-                "If you intended to replace its contents with new badges, "
-                "delete the directory first."
-            ),
-        )
-        STDERR.print(error)
-        return EX.CONFIG
-
-    supported_versions: dict[Path, Iterable[Dialect]] = {}
-
-    for name, dialect in Dialect.by_short_name().items():
-        try:
-            file = site.joinpath(f"{name}.json").open()
-        except FileNotFoundError:
-            continue
-        with file:
-            report = _report.Report.from_serialized(file)
-            if report.is_empty:
-                error = DiagnosticError(
-                    code="empty-report",
-                    message="A Bowtie report is empty.",
-                    causes=[f"The {name} report contains no results."],
-                    hint_stmt="Check that site generation has not failed.",
-                )
-                STDERR.print(error)
-                return EX.DATAERR
-
-            badge_name = f"{dialect.short_name}.json"
-
-            for each, badge in report.compliance_badges():
-                dir = outdir / each.id
-
-                compliance = dir / "compliance"
-                compliance.mkdir(parents=True, exist_ok=True)
-                compliance.joinpath(badge_name).write_text(json.dumps(badge))
-
-                dialects = each.dialects
-                seen = supported_versions.setdefault(dir, dialects)
-                if seen != dialects:
-                    message = (
-                        f"{dir.name} appears with different "
-                        "supported dialects in the provided reports."
-                    )
-                    error = DiagnosticError(
-                        code="inconsistent-reports",
-                        message=message,
-                        causes=[
-                            f"{file.name} contains:\n{pformat(dialects)}",
-                            f"{pformat(seen)} was previously seen.",
-                        ],
-                        hint_stmt=(
-                            "Check that the implementation produces "
-                            "consistent output and that a run has not failed."
-                        ),
-                    )
-                    STDERR.print(error)
-                    return EX.CONFIG
-
-    for dir, dialects in supported_versions.items():
-        badge = _report.supported_version_badge(dialects=dialects)
-        dir.joinpath("supported_versions.json").write_text(json.dumps(badge))
 
 
 _F = Literal["json", "pretty", "markdown"]
@@ -2947,10 +2852,10 @@ def site_combine(
     produced by `bowtie site collect` (or an individual report file). For
     each dialect the matching reports are combined into a single
     multi-implementation report, and every implementation's own metadata is
-    gathered into ``implementations.json``. The public API data under
-    ``api/`` is written too, with each implementation's compliance-badge
-    URLs resolved from its own dialects. All of this is read from the
-    reports themselves, without starting any implementation.
+    gathered into ``implementations.json``. Compliance and supported-version
+    ``badges`` are written for each implementation, and the public API data
+    under ``api/`` too. All of this is read from the reports themselves,
+    without starting any implementation.
     """
     context.exit(_combine(collected=collected, output=output))
 
@@ -2985,8 +2890,7 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
         if report.is_empty:
             continue
         by_dialect.setdefault(report.metadata.dialect, []).append(report)
-        for info in report.metadata.implementations.values():
-            infos[info.id] = info
+        infos.update(report.metadata.implementations)
 
     if not by_dialect:
         error = DiagnosticError(
@@ -3019,6 +2923,25 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
         output.joinpath(f"{dialect.short_name}.json").write_text(
             "\n".join(combined.serialized()),
         )
+        # Badges live under both the report id -- how the site, reports and
+        # version trends refer to an implementation -- and the self-reported
+        # id, kept so pre-existing badge URLs (in harness READMEs) don't break.
+        for id, info, badge in combined.compliance_badges():
+            for badge_id in {id, info.id}:
+                compliance = output / "badges" / badge_id / "compliance"
+                compliance.mkdir(parents=True, exist_ok=True)
+                compliance.joinpath(f"{dialect.short_name}.json").write_text(
+                    json.dumps(badge),
+                )
+
+    for id, info in infos.items():
+        badge = _report.supported_version_badge(dialects=info.dialects)
+        for badge_id in {id, info.id}:
+            directory = output / "badges" / badge_id
+            directory.mkdir(parents=True, exist_ok=True)
+            directory.joinpath("supported_versions.json").write_text(
+                json.dumps(badge),
+            )
 
     output.joinpath("implementations.json").write_text(
         json.dumps(

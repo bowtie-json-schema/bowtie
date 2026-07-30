@@ -138,12 +138,9 @@ jobs:
 
       - name: Combine into Site Data
         # Combines the per-implementation reports for each dialect and writes
-        # implementations.json and the public API data -- all read from the
-        # reports, so no implementations are started here.
+        # implementations.json, badges and the public API data -- all read
+        # from the reports, so no implementations are started here.
         run: bowtie site combine collected/* --output site
-
-      - name: Generate Badges
-        run: bowtie badges --site site
 
         # FIXME: We ignore for now as this exits unsuccessfully if there are
         #        *test* failures.
