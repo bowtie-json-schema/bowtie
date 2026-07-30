@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 import tarfile
+import urllib.parse
 
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
@@ -1061,29 +1062,19 @@ def _assertions_to_grouped(
     assertions: list[dict[str, Any]],
 ) -> dict[str, dict[str, dict[str, Any]]]:
     """
-    Convert test suite assertions to grouped format.
-
-    Matches the format of ``RichTestResult.grouped_annotations``.
-
-    Input format (test suite assertions)::
-
-        [{"location": "/foo", "keyword": "title",
-          "expected": {"#/path": "value"}}]
-
-    Output format (grouped)::
-
-        {"/foo": {"title": {"#/path": "value"}}}
+    Convert test suite assertions (in standard Bowtie output format) to grouped format.
     """
     grouped: dict[str, dict[str, dict[str, Any]]] = {}
     for assertion in assertions:
-        location = assertion.get("location", "")
-        keyword = assertion.get("keyword", "")
-        expected = assertion.get("expected", {})
-        if location not in grouped:
-            grouped[location] = {}
-        if keyword not in grouped[location]:
-            grouped[location][keyword] = {}
-        grouped[location][keyword].update(expected)
+        loc = assertion.get("instanceLocation", "")
+        kw = assertion.get("keyword", "")
+        kw_loc = assertion.get("keywordLocation", "")
+        decoded_kw_loc = urllib.parse.unquote(kw_loc)
+        if loc not in grouped:
+            grouped[loc] = {}
+        if kw not in grouped[loc]:
+            grouped[loc][kw] = {}
+        grouped[loc][kw][decoded_kw_loc] = assertion.get("annotation")
     return grouped
 
 
@@ -2829,6 +2820,7 @@ def suite(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@dialect_option(default=None)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2840,6 +2832,7 @@ def suite(
 def annotation_suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
+    dialect: Dialect | None,
     jobs: int,
     **kwargs: Any,
 ):

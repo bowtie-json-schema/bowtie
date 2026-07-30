@@ -293,25 +293,24 @@ class RichTestResult:
         return actual_annotations
 
     def matches(self, expecting: Any) -> bool:
-        actual_annotations = self.grouped_annotations
+        if not isinstance(expecting, list):
+            return False
 
-        for assertion in expecting:
-            location = assertion.get("location", "")
-            keyword = assertion.get("keyword", "")
-            expected_annotation = assertion.get("expected", {})
+        expected_annotations: dict[str, dict[str, Any]] = {}
+        for ann in expecting:
+            loc = ann.get("instanceLocation", "")
+            kw = ann.get("keyword", "")
+            kw_loc = ann.get("keywordLocation", "")
 
-            actual = actual_annotations.get(
-                location,
-                {},
-            ).get(keyword, {})
+            decoded_kw_loc = urllib.parse.unquote(kw_loc)
+            
+            if loc not in expected_annotations:
+                expected_annotations[loc] = {}
+            if kw not in expected_annotations[loc]:
+                expected_annotations[loc][kw] = {}
+            expected_annotations[loc][kw][decoded_kw_loc] = ann.get("annotation")
 
-            decoded_expected: dict[str, Any] = {
-                urllib.parse.unquote(k): v
-                for k, v in expected_annotation.items()
-            }
-            if actual != decoded_expected:
-                return False
-        return True
+        return self.grouped_annotations == expected_annotations
 
 
 class TestResult:
