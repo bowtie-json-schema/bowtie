@@ -22,7 +22,13 @@
   "oneOf": [
     {
       "description": "Assert validity",
-      "$ref": "tag:bowtie.report,2026:output:flag"
+      "properties": {
+        "valid": {
+          "description": "Whether validation of this instance is expected to be valid or not.",
+          "type": "boolean"
+        }
+      },
+      "required": ["valid"]
     },
     {
       "description": "Assert annotations",

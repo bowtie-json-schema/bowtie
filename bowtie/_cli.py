@@ -1062,7 +1062,9 @@ def _assertions_to_grouped(
     assertions: list[dict[str, Any]],
 ) -> dict[str, dict[str, dict[str, Any]]]:
     """
-    Convert test suite assertions (in standard Bowtie output format) to grouped format.
+    Convert test suite assertions to grouped format.
+
+    Expects the standard Bowtie output format.
     """
     grouped: dict[str, dict[str, dict[str, Any]]] = {}
     for assertion in assertions:

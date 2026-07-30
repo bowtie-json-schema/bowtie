@@ -4364,7 +4364,7 @@ async def test_annotation_suite(tmp_path):
                         "schema": {
                             "$schema": "http://json-schema.org/draft-07/schema#",
                             "type": "string",
-                            "title": "A string"
+                            "title": "A string",
                         },
                         "tests": [
                             {
@@ -4375,15 +4375,15 @@ async def test_annotation_suite(tmp_path):
                                         "location": "",
                                         "keyword": "title",
                                         "expected": {
-                                            "#/title": "A string"
-                                        }
-                                    }
-                                ]
-                            }
+                                            "#/title": "A string",
+                                        },
+                                    },
+                                ],
+                            },
                         ],
                     },
-                ]
-            }
+                ],
+            },
         ),
     )
 
@@ -4397,7 +4397,7 @@ async def test_annotation_suite(tmp_path):
     )
     report = Report.from_serialized(stdout.splitlines())
     cases = list(report.cases_with_results())
-    
+
     assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
     assert len(cases) == 1
     assert cases[0][0].description == "the case"
@@ -4490,4 +4490,5 @@ async def test_summary_annotation_json(tmp_path):
     assert stderr == ""
     assert len(jsonout) == 1
     assert jsonout[0]["description"] == "the case"
-    assert jsonout[0]["tests"][0]["results"]["direct:miniatures:always_invalid"]["status"] == "pass"
+    results = jsonout[0]["tests"][0]["results"]
+    assert results["direct:miniatures:always_invalid"]["status"] == "pass"

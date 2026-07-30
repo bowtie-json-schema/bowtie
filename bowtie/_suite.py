@@ -316,27 +316,28 @@ def annotation_cases_from(
             if not _is_compatible(dialect, compatibility):
                 continue
 
-            tests = []
+            tests: list[dict[str, Any]] = []
             for test in case["tests"]:
-                assertions = []
+                assertions: list[dict[str, Any]] = []
                 for assertion in test.get("assertions", []):
                     location = assertion.get("location", "")
                     keyword = assertion.get("keyword", "")
-                    for expected_loc, expected_val in assertion.get("expected", {}).items():
+                    expected = assertion.get("expected", {})
+                    for expected_loc, expected_val in expected.items():
                         assertions.append(
                             {
                                 "instanceLocation": location,
                                 "keyword": keyword,
                                 "keywordLocation": expected_loc,
                                 "annotation": expected_val,
-                            }
+                            },
                         )
                 tests.append(
                     {
                         "description": test.get("description", ""),
                         "instance": test.get("instance", test.get("data", {})),
                         "assertions": assertions,
-                    }
+                    },
                 )
 
             if not tests:
