@@ -10,6 +10,7 @@ from fnmatch import fnmatch
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
+import io
 import json
 import zipfile
 
@@ -58,14 +59,14 @@ class _SuiteClickParam(click.ParamType):
             NotFoundError,
         )
 
-        gh = github()
+        gh = _github._client()  # type: ignore[reportPrivateUsage]
         org, repo_name, *rest = cast("list[str]", value.path_segments)
-        repo = gh.repository(org, repo_name)  # type: ignore[reportUnknownMemberType]
+        repo = gh.repository(org, repo_name)
 
         path, ref = path_and_ref_from_gh_path(rest)
-        data = BytesIO()
+        data = io.BytesIO()
         data.name = ""
-        succeeded = repo.archive(format="zipball", path=data, ref=ref)  # type: ignore[reportUnknownMemberType]
+        succeeded = repo.archive(format="zipball", path=data, ref=ref)
         if not succeeded:
             error = DiagnosticError(
                 code=error_code,
@@ -89,17 +90,17 @@ class _SuiteClickParam(click.ParamType):
             cases = list(resolved[-1])
 
             try:
-                commit = repo.commit(ref)  # type: ignore[reportOptionalMemberAccess]
+                commit = repo.commit(ref)
             except NotFoundError:
                 commit_info = ref
             else:
                 sha = cast(
                     "str",
-                    commit.sha,  # type: ignore[reportUnknownMemberType]
+                    commit.sha,
                 )
                 url = cast(
                     "str",
-                    commit.html_url,  # type: ignore[reportUnknownMemberType]
+                    commit.html_url,
                 )
                 commit_info = {
                     "text": sha[:7],

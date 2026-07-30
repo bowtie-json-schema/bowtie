@@ -50,7 +50,7 @@ from bowtie import (
     _report,
     _suite,
 )
-from bowtie._commands import FlagTestResult, SeqCase, TestResult, Unsuccessful
+from bowtie._commands import FlagTestResult, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -149,6 +149,7 @@ _COMMAND_GROUPS = {
                 "filter-implementations",
                 "latest-report",
                 "run",
+                "site",
                 "statistics",
                 "trend",
             ],
@@ -2715,6 +2716,9 @@ def annotation_suite(
             run_metadata=metadata,
             output="annotations",
             jobs=jobs,
+        ),
+    )
+
 
 @main.group()
 def site() -> None:
