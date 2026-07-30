@@ -34,29 +34,10 @@
       "description": "Assert annotations",
       "properties": {
         "assertions": {
-          "description": "Assertions for annotation output. Each assertion specifies a keyword, instance location, and expected annotation values keyed by schema location.",
+          "description": "Assertions for annotation output. Expected annotation values mapped directly into the Bowtie output schema.",
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "location": {
-                "description": "The instance location as a JSON Pointer.",
-                "type": "string",
-                "format": "json-pointer"
-              },
-              "keyword": {
-                "description": "The annotation keyword.",
-                "type": "string"
-              },
-              "expected": {
-                "description": "An object mapping schema locations (URIs) to expected annotation values.",
-                "type": "object",
-                "propertyNames": {
-                  "format": "uri"
-                }
-              }
-            },
-            "required": ["location", "keyword", "expected"]
+            "$ref": "tag:bowtie.report,2026:output:annotations#/properties/annotations/items"
           }
         }
       },

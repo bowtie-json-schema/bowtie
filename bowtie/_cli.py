@@ -2678,7 +2678,6 @@ def suite(
     )
 
 
-
 @subcommand
 @IMPLEMENTATION
 @FILTER
@@ -2860,11 +2859,8 @@ def collect(
                 registry=registry,
                 output=output,
             ),
-
         ),
     )
-
-
 
 
 async def _collect_dialects(
@@ -3279,7 +3275,6 @@ async def _run_cases(
     if count == 0:
         return None
     return _report.Report.from_input(lines)
-
 
 
 async def _run_one(
