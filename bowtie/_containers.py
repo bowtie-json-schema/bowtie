@@ -1,21 +1,32 @@
 """
-Clunky pepperings-over of communication with containers.
+Speaking to harnesses which run inside containers.
 
-Some of this is warts from aiodocker, but mixed in with fun
-special-to-this-package logic occasionally.
+The awkward parts of actually driving a container engine live in
+`imaged`, which knows nothing of Bowtie.
+What's left here is Bowtie's own concerns -- when to restart a
+container, when to retry a request, and what to make of a harness which
+writes to standard error.
 """
 
 from __future__ import annotations
 
-from collections import deque
 from contextlib import AsyncExitStack, asynccontextmanager
+from os import environ
 from typing import TYPE_CHECKING
-import asyncio
 import json
 
-from aiodocker import Docker
 from attrs import field, frozen, mutable
-import aiodocker.exceptions
+from imaged import (
+    Engine,
+    EngineError,
+    EngineNotRunning,
+    NoSuchEngine,
+    NoSuchImage,
+    Session,
+    SessionClosed,
+    Unsupported,
+)
+import anyio
 
 from bowtie._core import InvalidResponse, Restarted
 from bowtie.exceptions import (
@@ -27,162 +38,91 @@ from bowtie.exceptions import (
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Awaitable, Callable
-    from typing import Any
-
-    import aiodocker.containers
-    import aiodocker.stream  # noqa: TC004 ??? no it's not?
 
     from bowtie._commands import Message
 
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
-
-@frozen
-class _ClosedStream(Exception):
-    """
-    The stream is closed, and we tried to send something on it.
-
-    This exception should never bubble out of this module, it should be handled
-    by the connection.
-    """
-
-    container: aiodocker.containers.DockerContainer
+_NO_ENGINE = (
+    "Bowtie couldn't find a container engine. "
+    "Install docker, podman or Apple's container, then check that a "
+    "container starts if you run one directly outside of Bowtie."
+)
 
 
-@mutable
-class Stream:
-    """
-    Wrapper to make aiodocker's Stream more pleasant to use.
-    """
-
-    _stream: aiodocker.stream.Stream = field(repr=False, alias="stream")
-    _container: aiodocker.containers.DockerContainer = field(
-        repr=False,
-        alias="container",
+def _not_running(engine: str) -> str:
+    return (
+        f"Bowtie found {engine}, but it doesn't seem to be running. "
+        "Start it -- along with whatever VM or service it needs, if "
+        "you're on macOS -- and check that a container starts if you "
+        "run one directly outside of Bowtie."
     )
-    _read_timeout_sec: float | None = field(
-        repr=False,
-        alias="read_timeout_sec",
-    )
-    _buffer: deque[bytes] = field(factory=deque[bytes], alias="buffer")
-    _last: bytes = b""
-
-    @classmethod
-    def attached_to(
-        cls,
-        container: aiodocker.containers.DockerContainer,
-        **kwargs: Any,
-    ) -> Stream:
-        stream = container.attach(stdin=True, stdout=True, stderr=True)
-        return cls(stream=stream, container=container, **kwargs)
-
-    def _read_with_timeout(self) -> Awaitable[aiodocker.stream.Message | None]:
-        read = self._stream.read_out()
-        return asyncio.wait_for(read, timeout=self._read_timeout_sec)
-
-    async def send(self, message: str) -> None:
-        try:  # aiodocker doesn't appear to properly report stream closure
-            await self._stream.write_in(message.encode())
-        except aiodocker.exceptions.DockerError as err:
-            raise _ClosedStream(self._container) from err
-        except (AssertionError, AttributeError):
-            raise _ClosedStream(self._container) from None
-
-    async def receive(self) -> str:
-        if self._buffer:
-            return self._buffer.popleft().decode()
-
-        while True:
-            try:
-                message = await self._read_with_timeout()
-            except asyncio.exceptions.TimeoutError:
-                info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
-                if not info["State"]["Running"]:
-                    raise _ClosedStream(self._container)
-                raise
-
-            if message is not None:
-                break
-            info: dict[str, Any] = await self._container.show()  # type: ignore[reportUnknownMemberType]
-            if not info["State"]["Running"]:
-                raise _ClosedStream(self._container)
-
-        if message.stream == 2:  # noqa: PLR2004
-            data: list[bytes] = []
-
-            while message.stream == 2:  # noqa: PLR2004
-                data.append(message.data)
-                try:
-                    message = await self._read_with_timeout()
-                except asyncio.exceptions.TimeoutError:
-                    message = None
-                if message is None:
-                    raise GotStderr(b"".join(data))
-
-        line: bytes
-        rest: list[bytes]
-        while True:
-            line, *rest = message.data.split(b"\n")
-            if rest:
-                line, self._last = self._last + line, rest.pop()
-                self._buffer.extend(rest)
-                return line.decode()
-
-            message = None
-            while message is None:
-                message = await self._read_with_timeout()
-            self._last += line
 
 
 @mutable
 class Connection:
     """
-    A connection with a restartable container over stdio via request/responses.
+    A connection with a restartable container over stdio.
 
-    Requests and responses are JSON-serializable messages, with serialization
-    handled here.
+    Requests and responses are JSON-serializable messages, with
+    serialization handled here.
     """
 
-    _new_stream: Callable[[], Awaitable[Stream]] = field(
+    _new_session: Callable[[], Awaitable[Session]] = field(
         repr=False,
-        alias="new_stream",
+        alias="new_session",
     )
 
-    # Maybe second versions of these will be useful also at the Implementation
-    # level again, to control for non-protocol-related flakiness or slowness
+    #: An explicit timeout to wait for the harness to respond to each
+    #: request, or `None` to wait forever -- though note that this does
+    #: mean ... forever!
+    _read_timeout_sec: float | None = field(
+        default=2.0,
+        repr=False,
+        alias="read_timeout_sec",
+    )
+
+    # Maybe second versions of these will be useful also at the
+    # Implementation level again, to control for non-protocol-related
+    # flakiness or slowness
     _restarts: int = field(default=10, repr=False, alias="restarts")
 
     #: A per-request number of retries, before giving up
     _retry: int = field(default=3, repr=False)
 
-    _connected_to: Stream | None = None
+    _connected_to: Session | None = None
 
     @property
-    async def _stream(self) -> Stream:
+    async def _session(self) -> Session:
         if self._connected_to is None:
-            self._connected_to = await self._new_stream()
+            self._connected_to = await self._new_session()
         return self._connected_to
 
     async def request(self, message: Message) -> Message | None:
-        request = f"{json.dumps(message)}\n"
+        session = await self._session
 
         try:
-            await (await self._stream).send(request)
-        except _ClosedStream:
+            await session.send(json.dumps(message))
+        except SessionClosed:
             self._restarts -= 1
             self._connected_to = None
             raise Restarted() from None
 
         for _ in range(self._retry):
             try:
-                response = await (await self._stream).receive()
-            except asyncio.exceptions.TimeoutError:
-                continue
-            except _ClosedStream as err:
-                stderr: list[str] = await err.container.log(stderr=True)  # type: ignore[reportUnknownVariableType]
+                with anyio.fail_after(self._read_timeout_sec):
+                    response = await session.receive()
+            except TimeoutError:
+                # A harness which has said something on standard error
+                # and then gone quiet is telling us why it won't answer.
+                stderr = session.stderr()
                 if stderr:
-                    raise GotStderr("".join(stderr).encode())
+                    raise GotStderr(stderr)
+                continue
+            except SessionClosed as err:
+                if err.stderr:
+                    raise GotStderr(err.stderr)
                 return
 
             try:
@@ -201,6 +141,28 @@ def _float_or_none(value: str | float | None) -> float | None:
     if value:
         return value
     return None
+
+
+def chosen_engine() -> Engine:
+    """
+    The container engine to speak to.
+
+    `BOWTIE_ENGINE` names which one to use, which matters when more than
+    one is installed, and which is how we check that Bowtie behaves the
+    same way on all of them.
+    """
+    chosen = environ.get("BOWTIE_ENGINE")
+    return Engine.named(chosen) if chosen else Engine.detect()
+
+
+def _engine(kind: str, id: str) -> Engine:
+    """
+    Find something able to run containers, or explain that we couldn't.
+    """
+    try:
+        return chosen_engine()
+    except NoSuchEngine as err:
+        raise CannotConnect(kind=kind, id=id, hint=_NO_ENGINE) from err
 
 
 @frozen(kw_only=True)
@@ -227,126 +189,42 @@ class ConnectableImage:
 
     @asynccontextmanager
     async def connect(self) -> AsyncGenerator[Connection]:
-        async with AsyncExitStack() as stack:
-            docker = await stack.enter_async_context(Docker())
-            create = start_container_maybe_pull
+        engine = _engine(kind=self.kind, id=self._id)
 
-            async def new_stream():
-                nonlocal create
+        async with AsyncExitStack() as stack:
+            # Whatever we're speaking to right now, closed and replaced
+            # on each restart so that dead containers don't pile up for
+            # the lifetime of the connection.
+            current = await stack.enter_async_context(AsyncExitStack())
+
+            async def new_session():
+                await current.aclose()
 
                 try:
-                    container = await create(
-                        docker=docker,
-                        image_name=self._id,
+                    id = await engine.create_pulling_if_needed(
+                        self._id,
+                        network=False,
                     )
-                except aiodocker.exceptions.DockerError as err:
-                    if err.status != 900:  # noqa: PLR2004
-                        raise
+                except NoSuchImage as err:
+                    raise NoSuchImplementation(self._id) from err
+                except EngineNotRunning as err:
                     raise CannotConnect(
                         kind=self.kind,
                         id=self._id,
-                        hint=(
-                            "Can't connect to your container runtime "
-                            "(e.g. podman or docker). "
-                            "Ensure you have one installed, that you have "
-                            "set the DOCKER_HOST environment variable if "
-                            "needed, and that containers successfully start "
-                            "if you directly run one outside of Bowtie."
-                        ),
+                        hint=_not_running(engine.name),
                     ) from err
+                except EngineError as err:
+                    # Anything else the engine couldn't manage is still a
+                    # failure to start, which Bowtie knows how to show.
+                    raise StartupFailed(id=self._id, data=str(err)) from err
 
-                stack.push_async_callback(container.delete, force=True)
-                create = start_container
+                current.push_async_callback(engine.remove, id)
+                return await current.enter_async_context(engine.start(id))
 
-                try:
-                    return Stream.attached_to(
-                        container,
-                        read_timeout_sec=self._read_timeout_sec,
-                    )
-                except GotStderr as error:
-                    err = StartupFailed(
-                        id=self._id,
-                        stderr=error.stderr.decode(),
-                    )
-                    raise err from None
-                except _ClosedStream:
-                    raise StartupFailed(id=self._id) from None
-
-            yield Connection(new_stream=new_stream)
-
-
-async def start_container_maybe_pull(docker: Docker, image_name: str):
-    # You would think we would use aiodocker's container.start() function
-    # which essentially does the below. You would think wrong.
-    # That function will pull the *entire* image repository if it ends up
-    # pulling our harness image -- so here we reimplement it, but only
-    # pull :latest when the image is missing.
-    try:
-        return await start_container(docker=docker, image_name=image_name)
-    except aiodocker.exceptions.DockerError as err:
-        if err.status != 404:  # noqa: PLR2004
-            raise
-
-        try:
-            tag = image_name.partition(":")[2] or "latest"
-            await docker.pull(from_image=image_name, tag=tag)
-        except aiodocker.exceptions.DockerError as err:
-            # This craziness can go wrong in various ways, none of them
-            # machine parseable.
-
-            data: dict[str, str]
-            if len(err.args) == 1:
-                status, data, message = err.status, {}, err.message
-
-                if "403" in message or ": denied" in message:
-                    raise NoSuchImplementation(image_name) from err
-            else:
-                status, data, *_ = err.args
-                message = data.get("message", "")
-
-            if data.get("cause") == "image not known":
-                raise NoSuchImplementation(image_name) from err
-
-            if status in {404, 500}:
-                try:
-                    # GitHub Registry saying an image doesn't exist as
-                    # reported within GitHub Actions' version of Podman...
-                    # This is some crazy string like:
-                    #   Head "https://ghcr.io/v2/bowtie-json-schema/image-name/manifests/latest": denied  # noqa: E501
-                    # with seemingly no other indication elsewhere and
-                    # obviously no good way to detect this specific case
-                    no_image = ": denied" in message
-                except Exception:  # noqa: BLE001, S110
-                    pass
-                else:
-                    if no_image:
-                        raise NoSuchImplementation(image_name)
-
-                try:
-                    # GitHub Registry saying an image doesn't exist as
-                    # reported locally via podman on macOS...
-
-                    # message will be ... a JSON string !?! ...
-                    error = json.loads(message).get("message", "")
-                except Exception:  # noqa: BLE001, S110
-                    pass  # nonJSON / missing key
-                else:
-                    if "403 (forbidden)" in error.casefold():
-                        raise NoSuchImplementation(image_name)
-
-            raise StartupFailed(id=image_name, data=data) from err
-        return await start_container(docker=docker, image_name=image_name)
-
-
-async def start_container(docker: Docker, image_name: str):
-    config = dict(
-        Image=image_name,
-        OpenStdin=True,
-        HostConfig=dict(NetworkMode="none"),
-    )
-    container = await docker.containers.create(config=config)
-    await container.start()  # type: ignore[reportUnknownMemberType]
-    return container
+            yield Connection(
+                new_session=new_session,
+                read_timeout_sec=self._read_timeout_sec,
+            )
 
 
 @frozen(kw_only=True)
@@ -368,16 +246,44 @@ class ConnectableContainer:
 
     @asynccontextmanager
     async def connect(self) -> AsyncGenerator[Connection]:
-        async with Docker() as docker:
-            try:
-                container = await docker.containers.get(self._id)  # type: ignore[reportUnknownMemberType]
-            except aiodocker.exceptions.DockerError as err:
-                raise CannotConnect(kind=self.kind, id=self._id) from err
+        engine = _engine(kind=self.kind, id=self._id)
 
-            async def new_stream():
-                return Stream.attached_to(
-                    container,
-                    read_timeout_sec=self._read_timeout_sec,
+        if not engine.attaches:
+            raise CannotConnect(
+                kind=self.kind,
+                id=self._id,
+                hint=str(
+                    Unsupported(
+                        engine=engine.name,
+                        operation="speak to an already running container",
+                    ),
+                ),
+            )
+
+        try:
+            exists = await engine.exists(self._id)
+        except EngineNotRunning as err:
+            raise CannotConnect(
+                kind=self.kind,
+                id=self._id,
+                hint=_not_running(engine.name),
+            ) from err
+
+        if not exists:
+            raise CannotConnect(kind=self.kind, id=self._id)
+
+        async with AsyncExitStack() as stack:
+            # As above -- detach from the previous session before we go
+            # making another one.
+            current = await stack.enter_async_context(AsyncExitStack())
+
+            async def new_session():
+                await current.aclose()
+                return await current.enter_async_context(
+                    engine.attach(self._id),
                 )
 
-            yield Connection(new_stream=new_stream)
+            yield Connection(
+                new_session=new_session,
+                read_timeout_sec=self._read_timeout_sec,
+            )

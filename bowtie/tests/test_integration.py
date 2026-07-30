@@ -1,9 +1,14 @@
 from collections.abc import Iterable
-from contextlib import asynccontextmanager, suppress
+from contextlib import (
+    asynccontextmanager,
+    contextmanager,
+    nullcontext,
+    suppress,
+)
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from pprint import pformat
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 import asyncio
 import json as _json
@@ -14,10 +19,10 @@ import subprocess
 import sys
 import tarfile
 
-from aiodocker.exceptions import DockerError
 from dateutil.parser import isoparse, parse as parse_datetime
 from dateutil.tz import tzlocal
 from dateutil.utils import default_tzinfo, within_delta
+from imaged import EngineError, EngineFailed
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
 import pexpect
@@ -26,6 +31,7 @@ import pytest_asyncio
 
 from bowtie._cli import EX
 from bowtie._commands import ErroredTest, TestResult
+from bowtie._connectables import Connectable
 from bowtie._core import (
     Dialect,
     Implementation,
@@ -69,6 +75,22 @@ class _Miniatures:
 
 
 miniatures = _Miniatures()
+
+
+class _ReportId:
+    """
+    The report id a miniature shows up as in a report.
+
+    A report identifies an implementation by *which* it is, not by how it was
+    reached, so ``report_id.always_invalid`` is ``miniatures.always_invalid``
+    with its connector dropped.
+    """
+
+    def __getattr__(self, name: str) -> str:
+        return Connectable.from_str(getattr(miniatures, name)).report_id
+
+
+report_id = _ReportId()
 
 #: An arbitrary harness for when behavior shouldn't depend on a specific one.
 ARBITRARY = miniatures.always_invalid
@@ -130,39 +152,6 @@ async def bowtie(*argv, stdin: str = "", exit_code=EX.OK, json=False):
     return decoded
 
 
-def tar_from_directory(directory):
-    """Build a tar archive from a directory for use as a Docker build context.
-
-    On Windows, two issues prevent the straightforward ``tar.add()`` approach:
-
-      * Git's ``core.autocrlf`` converts LF to CRLF on checkout, which breaks
-        shebang lines inside Linux containers (``env: python3\\r: not found``).
-
-      * The Windows filesystem has no executable bit, so ``tar.add()`` creates
-        entries with mode 0o666; ``COPY`` in the Dockerfile preserves that,
-        leaving scripts non-executable inside the container.
-
-    On non-Windows platforms ``tar.add()`` is used as-is to preserve original
-    file metadata.
-    """
-    fileobj = BytesIO()
-    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        for path in sorted(directory.rglob("*")):
-            if path.is_dir():
-                continue
-            if sys.platform != "win32":
-                tar.add(path, arcname=path.relative_to(directory))
-            else:
-                data = path.read_bytes().replace(b"\r\n", b"\n")
-                arcname = path.relative_to(directory).as_posix()
-                info = tarfile.TarInfo(name=arcname)
-                info.size = len(data)
-                info.mode = 0o755 if data.startswith(b"#!") else 0o644
-                tar.addfile(info, BytesIO(data))
-    fileobj.seek(0)
-    return fileobj
-
-
 def tar_from_versioned_reports(
     tar_path: Path,
     id: str,
@@ -198,18 +187,24 @@ def tar_from_versioned_reports(
             tar.addfile(report_info, BytesIO(report_bytes))
 
 
-def image(name, fileobj):
+def image(name, context):
+    """
+    A fixture building an image.
+
+    `context` is called to get a context manager yielding the directory
+    to build from.
+    """
+
     @pytest_asyncio.fixture(scope="module")
-    async def _image(docker):
-        images = docker.images
+    async def _image(engine):
         t = tag(name)
-        lines = await images.build(fileobj=fileobj, encoding="utf-8", tag=t)
-        try:
-            await docker.images.inspect(t)
-        except DockerError:
-            pytest.fail(f"Failed to build {name}:\n\n{pformat(lines)}")
+        with context() as directory:
+            try:
+                await engine.build(tag=t, context=directory)
+            except EngineFailed as err:
+                pytest.fail(f"Failed to build {name}:\n\n{err}")
         yield t
-        await images.delete(name=t, force=True)
+        await engine.remove_image(t)
 
     return _image
 
@@ -218,30 +213,29 @@ def fauxmplementation(name):
     """
     A fake implementation built from files in the fauxmplementations directory.
     """
-    fileobj = tar_from_directory(FAUXMPLEMENTATIONS / name)
-    return image(name=name, fileobj=fileobj)
+
+    def context():
+        return nullcontext(FAUXMPLEMENTATIONS / name)
+
+    return image(name=name, context=context)
 
 
 def strimplementation(name, contents, files={}, base="alpine:3.22"):
     """
     A fake implementation built from the given Dockerfile contents.
     """
-    containerfile = f"FROM {base}\n{dedent(contents)}".encode()
 
-    fileobj = BytesIO()
-    with tarfile.TarFile(fileobj=fileobj, mode="w") as tar:
-        info = tarfile.TarInfo(name="Dockerfile")
-        info.size = len(containerfile)
-        tar.addfile(info, BytesIO(containerfile))
+    @contextmanager
+    def context():
+        with TemporaryDirectory() as directory:
+            directory = Path(directory)
+            containerfile = f"FROM {base}\n{dedent(contents)}"
+            directory.joinpath("Dockerfile").write_text(containerfile)
+            for each, text in files.items():
+                directory.joinpath(each).write_text(dedent(text))
+            yield directory
 
-        for k, v in files.items():
-            v = dedent(v).encode("utf-8")
-            info = tarfile.TarInfo(name=k)
-            info.size = len(v)
-            tar.addfile(info, BytesIO(v))
-
-    fileobj.seek(0)
-    return image(name=name, fileobj=fileobj)
+    return image(name=name, context=context)
 
 
 def shellplementation(name, contents):
@@ -374,35 +368,25 @@ wrong_number_of_tests = shellplementation(
 
 
 @pytest_asyncio.fixture
-async def envsonschema_container(docker, envsonschema):
-    config = dict(
-        Image=envsonschema,
-        OpenStdin=True,
-        HostConfig=dict(NetworkMode="none"),
-    )
-    container = await docker.containers.create(config=config)
-    await container.start()
-    yield f"container:{container.id}"
+async def envsonschema_container(engine, envsonschema):
+    id = await engine.create(envsonschema, network=False)
+    await engine.start_detached(id)
+    yield f"container:{id}"
 
     # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    with suppress(EngineError):
+        await engine.remove(id)
 
 
 @pytest_asyncio.fixture
-async def lintsonschema_container(docker, lintsonschema):
-    config = dict(
-        Image=lintsonschema,
-        OpenStdin=True,
-        HostConfig=dict(NetworkMode="none"),
-    )
-    container = await docker.containers.create(config=config)
-    await container.start()
-    yield f"container:{container.id}"
+async def lintsonschema_container(engine, lintsonschema):
+    id = await engine.create(lintsonschema, network=False)
+    await engine.start_detached(id)
+    yield f"container:{id}"
 
     # FIXME: When this happens, it's likely due to #1187.
-    with suppress(DockerError):
-        await container.delete()
+    with suppress(EngineError):
+        await engine.remove(id)
 
 
 @asynccontextmanager
@@ -459,7 +443,7 @@ class TestRun:
             results, stderr = await send()
 
         assert results == [
-            {miniatures.always_invalid: TestResult.INVALID},
+            {report_id.always_invalid: TestResult.INVALID},
         ], stderr
 
     @pytest.mark.asyncio
@@ -490,8 +474,8 @@ class TestRun:
             [
                 {"type": "integer"},
                 [
-                    [12, {"direct:null": "valid"}],
-                    [12.5, {"direct:null": "valid"}],
+                    [12, {"null": "valid"}],
+                    [12.5, {"null": "valid"}],
                 ],
             ],
         ], run_stderr
@@ -558,19 +542,362 @@ async def test_suite(tmp_path):
                     (
                         one,
                         {
-                            miniatures.always_invalid: TestResult.INVALID,
+                            report_id.always_invalid: TestResult.INVALID,
                         },
                     ),
                     (
                         two,
                         {
-                            miniatures.always_invalid: TestResult.INVALID,
+                            report_id.always_invalid: TestResult.INVALID,
                         },
                     ),
                 ],
             ),
         ],
     )
+
+
+@pytest.mark.asyncio
+async def test_site_collect(tmp_path):
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                    {"description": "a string", "data": "foo", "valid": False},
+                ],
+            },
+        ],
+    )
+    # The implementation supports only draft7, so even though the suite
+    # provides two dialects, only draft7 should be collected.
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "reports"
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.only_supports + ",dialect=draft7",
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert {path.relative_to(out) for path in out.rglob("*")} == {
+        Path("draft7.json"),
+    }
+    report = Report.from_serialized(
+        out.joinpath("draft7.json").read_text().splitlines(),
+    )
+    assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
+    assert not report.is_empty
+
+
+@pytest.mark.asyncio
+async def test_site_collect_refuses_existing_output(tmp_path):
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {"description": "ok", "data": 1, "valid": True},
+                    ],
+                },
+            ],
+        ),
+    )
+    out = tmp_path / "reports"
+    out.mkdir()
+
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.only_supports + ",dialect=draft7",
+        "--suite",
+        suite,
+        "--output",
+        out,
+        exit_code=EX.CONFIG,
+    )
+
+
+@pytest.mark.asyncio
+async def test_site_collect_one_report_per_supported_dialect(tmp_path):
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                ],
+            },
+        ],
+    )
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "reports"
+    # always_invalid supports every dialect, so the report set is exactly the
+    # dialects the suite provides -- exercising repeated start_speaking on one
+    # started implementation.
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.always_invalid,
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert {path.relative_to(out) for path in out.rglob("*")} == {
+        Path("draft7.json"),
+        Path("draft2020-12.json"),
+    }
+
+
+@pytest.mark.asyncio
+async def test_site_collect_requires_a_single_implementation(tmp_path):
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "--output",
+        tmp_path / "reports",
+        exit_code=EX.USAGE,
+    )
+
+
+@pytest.mark.asyncio
+async def test_site_combine(tmp_path):
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {
+                            "description": "an integer",
+                            "data": 1,
+                            "valid": True,
+                        },
+                    ],
+                },
+            ],
+        ),
+    )
+
+    a = tmp_path / "a"
+    b = tmp_path / "b"
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:null",
+        "--suite",
+        suite,
+        "--output",
+        a,
+    )
+    await bowtie(
+        "site",
+        "collect",
+        "-i",
+        "direct:python-jsonschema",
+        "--suite",
+        suite,
+        "--output",
+        b,
+    )
+
+    site = tmp_path / "site"
+    await bowtie("site", "combine", str(a), str(b), "--output", site)
+
+    # Badges are written under each implementation's report id, and also under
+    # its (differing) self-reported id so existing badge URLs keep resolving.
+    # null's ids differ (null vs python-null), so it gets both; for
+    # python-jsonschema they coincide, so it gets a single directory.
+    assert {path.relative_to(site) for path in site.rglob("*")} == {
+        Path("draft7.json"),
+        Path("implementations.json"),
+        Path("api"),
+        Path("api/v1"),
+        Path("api/v1/json-schema-org"),
+        Path("api/v1/json-schema-org/implementations"),
+        Path("badges"),
+        Path("badges/null"),
+        Path("badges/null/compliance"),
+        Path("badges/null/compliance/draft7.json"),
+        Path("badges/null/supported_versions.json"),
+        Path("badges/python-null"),
+        Path("badges/python-null/compliance"),
+        Path("badges/python-null/compliance/draft7.json"),
+        Path("badges/python-null/supported_versions.json"),
+        Path("badges/python-jsonschema"),
+        Path("badges/python-jsonschema/compliance"),
+        Path("badges/python-jsonschema/compliance/draft7.json"),
+        Path("badges/python-jsonschema/supported_versions.json"),
+    }
+
+    # The combined per-dialect report contains both implementations.
+    report = Report.from_serialized(
+        site.joinpath("draft7.json").read_text().splitlines(),
+    )
+    assert len(report.implementations) == 2  # noqa: PLR2004
+
+    # implementations.json lists both, gathered from the reports' metadata.
+    impls = _json.loads(site.joinpath("implementations.json").read_text())
+    assert len(impls) == 2  # noqa: PLR2004
+
+    # The public API data is produced and valid against its bundled schema.
+    import jsonschema
+
+    api = _json.loads(
+        site.joinpath("api/v1/json-schema-org/implementations").read_text(),
+    )
+    schema = _json.loads(
+        Path(__file__)
+        .parents[1]
+        .joinpath("schemas/api/v1/json-schema-org/implementations.json")
+        .read_text(),
+    )
+    jsonschema.validate(instance=api, schema=schema)
+    assert len(api) == 2  # noqa: PLR2004
+    entry = next(iter(api.values()))
+    assert entry["badges_urls"]["supported_versions"].startswith(
+        "https://bowtie.report/badges/",
+    )
+
+
+def _has_bugs_connectable(version):
+    return (
+        f"direct:{_miniatures.__name__}:has_bugs_by_versions,version={version}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_site_collect_versioned(tmp_path):
+    """
+    `site collect --versioned` writes one report tree per version, keyed by the
+    version each implementation reports, plus a matrix-versions.json index.
+    """
+    suite = tmp_path / "suite"
+    cases = _json.dumps(
+        [
+            {
+                "description": "integer",
+                "schema": {"type": "integer"},
+                "tests": [
+                    {"description": "an integer", "data": 1, "valid": True},
+                    {"description": "a string", "data": "foo", "valid": False},
+                ],
+            },
+        ],
+    )
+    for each in ("draft7", "draft2020-12"):
+        dialect_dir = suite / "tests" / each
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(cases)
+
+    out = tmp_path / "buggy"
+    await bowtie(
+        "site",
+        "collect",
+        "--versioned",
+        "-i",
+        _has_bugs_connectable("1.0"),
+        "-i",
+        _has_bugs_connectable("2.0"),
+        # A repeated version (e.g. the current image also matching a tag) is
+        # collected only once.
+        "-i",
+        _has_bugs_connectable("1.0"),
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert sorted(_json.loads((out / "matrix-versions.json").read_text())) == [
+        "1.0",
+        "2.0",
+    ]
+    for version in ("1.0", "2.0"):
+        report = Report.from_serialized(
+            out.joinpath(f"v{version}", "draft7.json")
+            .read_text()
+            .splitlines(),
+        )
+        assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
+        assert not report.is_empty
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_site_collect_versioned_skips_unavailable(tmp_path):
+    """
+    A version whose image can't start is skipped, leaving the others (and the
+    matrix-versions.json index) intact rather than aborting the whole trend.
+    """
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [{"description": "ok", "data": 1, "valid": True}],
+                },
+            ],
+        ),
+    )
+
+    out = tmp_path / "buggy"
+    await bowtie(
+        "site",
+        "collect",
+        "--versioned",
+        "-i",
+        _has_bugs_connectable("1.0"),
+        # No such image exists, so starting it fails and it is skipped.
+        "-i",
+        "image:bowtie-json-schema/does-not-exist:9.9.9",
+        "--suite",
+        suite,
+        "--output",
+        out,
+    )
+
+    assert _json.loads((out / "matrix-versions.json").read_text()) == ["1.0"]
+    assert out.joinpath("v1.0", "draft7.json").exists()
 
 
 @pytest.mark.asyncio
@@ -583,7 +910,7 @@ async def test_set_schema_sets_a_dialect_explicitly():
         )
 
     # XXX: we need to make run() return the whole report
-    assert results == [{"direct:null": TestResult.VALID}], stderr
+    assert results == [{"null": TestResult.VALID}], stderr
 
 
 @pytest.mark.asyncio
@@ -662,7 +989,7 @@ async def test_direct_connector_exception_does_not_crash():
         )
 
     assert results == [
-        {miniatures.crashes_on_validate: ErroredTest.in_errored_case()},
+        {report_id.crashes_on_validate: ErroredTest.in_errored_case()},
     ], stderr
 
 
@@ -704,8 +1031,8 @@ async def test_handles_dead_implementations(succeed_immediately):
         )
 
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
     assert "failed to start" in stderr, stderr
 
@@ -749,8 +1076,8 @@ async def test_it_handles_immediately_broken_implementations(fail_immediately):
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
 
 
@@ -774,8 +1101,8 @@ async def test_it_handles_broken_start_implementations(fail_on_start):
     assert "failed to start" in stderr, stderr
     assert "BOOM!" in stderr, stderr
     assert results == [
-        {miniatures.always_invalid: TestResult.INVALID},
-        {miniatures.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
+        {report_id.always_invalid: TestResult.INVALID},
     ], stderr
 
 
@@ -1034,8 +1361,8 @@ async def test_fail_fast():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1052,9 +1379,9 @@ async def test_fail_fast_many_tests_at_once():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1072,9 +1399,9 @@ async def test_max_fail():
         )
 
     assert results == [
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
-        {"direct:null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
+        {"null": TestResult.VALID},
     ], stderr
     assert stderr != ""
 
@@ -1117,7 +1444,7 @@ async def test_filter():
             """,  # noqa: E501
         )
 
-    assert results == [{"direct:null": TestResult.VALID}], stderr
+    assert results == [{"null": TestResult.VALID}], stderr
     assert stderr == ""
 
 
@@ -1846,14 +2173,14 @@ class TestSmoke:
             exit_code=EX.DATAERR,  # because indeed invalid isn't always right
         )
         assert (await command_validator("smoke")).validated(jsonout) == {
-            miniatures.passes_smoke: {
+            report_id.passes_smoke: {
                 "success": True,
                 "dialects": [
                     dialect.short_name
                     for dialect in sorted(Dialect.known(), reverse=True)
                 ],
             },
-            miniatures.always_invalid: {
+            report_id.always_invalid: {
                 "success": False,
                 "dialects": {
                     "draft2019-09": [
@@ -2304,7 +2631,7 @@ async def test_info_json_multiple_implementations():
     jsonout = _json.loads(stdout)
 
     assert (await command_validator("info")).validated(jsonout) == {
-        miniatures.always_invalid: {
+        report_id.always_invalid: {
             "name": "always_invalid",
             "language": "python",
             "homepage": "https://bowtie.report/",
@@ -2323,7 +2650,7 @@ async def test_info_json_multiple_implementations():
                 "http://json-schema.org/draft-03/schema#",
             ],
         },
-        miniatures.links: {
+        report_id.links: {
             "name": "links",
             "language": "python",
             "homepage": "urn:example",
@@ -2685,82 +3012,6 @@ async def test_validate(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_combine_two_reports(tmp_path):
-    tmp_path.joinpath("schema.json").write_text("{}")
-    tmp_path.joinpath("instance.json").write_text("12")
-
-    report1_path = tmp_path / "report1.json"
-    report2_path = tmp_path / "report2.json"
-
-    stdout1, _ = await bowtie(
-        "validate",
-        "-i",
-        "direct:null",
-        tmp_path / "schema.json",
-        tmp_path / "instance.json",
-    )
-    report1_path.write_text(stdout1)
-
-    stdout2, _ = await bowtie(
-        "validate",
-        "-i",
-        miniatures.always_invalid,
-        tmp_path / "schema.json",
-        tmp_path / "instance.json",
-    )
-    report2_path.write_text(stdout2)
-
-    combined_stdout, _ = await bowtie(
-        "combine",
-        str(report1_path),
-        str(report2_path),
-    )
-
-    report = Report.from_serialized(combined_stdout.splitlines())
-    assert len(report.implementations) == 2  # noqa: PLR2004
-    assert report.total_tests == 1
-
-
-@pytest.mark.asyncio
-async def test_combine_errors_on_mismatched_dialects(tmp_path):
-    tmp_path.joinpath("schema.json").write_text("{}")
-    tmp_path.joinpath("instance.json").write_text("12")
-
-    report1_path = tmp_path / "report1.json"
-    report2_path = tmp_path / "report2.json"
-
-    stdout1, _ = await bowtie(
-        "validate",
-        "-i",
-        "direct:null",
-        "-D",
-        "2020",
-        tmp_path / "schema.json",
-        tmp_path / "instance.json",
-    )
-    report1_path.write_text(stdout1)
-
-    stdout2, _ = await bowtie(
-        "validate",
-        "-i",
-        miniatures.always_invalid,
-        "-D",
-        "7",
-        tmp_path / "schema.json",
-        tmp_path / "instance.json",
-    )
-    report2_path.write_text(stdout2)
-
-    _, stderr = await bowtie(
-        "combine",
-        str(report1_path),
-        str(report2_path),
-        exit_code=EX.DATAERR,
-    )
-    assert "dialect" in stderr.lower()
-
-
-@pytest.mark.asyncio
 @pytest.mark.json
 async def test_summary_show_failures_json(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
@@ -2793,11 +3044,11 @@ async def test_summary_show_failures_json(tmp_path):
 
     assert (await command_validator("summary")).validated(jsonout) == [
         [
-            "direct:null",
+            "null",
             dict(failed=0, skipped=0, errored=0),
         ],
         [
-            miniatures.always_invalid,
+            report_id.always_invalid,
             dict(failed=2, skipped=0, errored=0),
         ],
     ]
@@ -3043,14 +3294,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     12,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "valid",
                     },
                 ],
                 [
                     12.5,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -3062,7 +3313,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3074,14 +3325,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "{}",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     37,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3093,7 +3344,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -3105,7 +3356,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "skipped",
                     },
                 ],
@@ -3117,14 +3368,14 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
                 [
                     12,
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "invalid",
                     },
                 ],
@@ -3136,7 +3387,7 @@ async def test_summary_show_validation_json(envsonschema):
                 [
                     "",
                     {
-                        "direct:null": "valid",
+                        "null": "valid",
                         tag("envsonschema"): "error",
                     },
                 ],
@@ -3144,64 +3395,6 @@ async def test_summary_show_validation_json(envsonschema):
         ],
     ], run_stderr
     assert stderr == ""
-
-
-@pytest.mark.asyncio
-@pytest.mark.containers
-async def test_badges(envsonschema, tmp_path):
-    site = tmp_path / "site"
-    site.mkdir()
-
-    raw = """
-        {"description":"one","schema":{"type": "integer"},"tests":[{"description":"valid:1","instance":12},{"description":"valid:0","instance":12.5}]}
-        {"description":"two","schema":{"type": "string"},"tests":[{"description":"crash:1","instance":"{}"}]}
-        {"description":"crash:1","schema":{"type": "number"},"tests":[{"description":"three","instance":"{}"}, {"description": "another", "instance": 37}]}
-        {"description":"four","schema":{"type": "array"},"tests":[{"description":"skip:message=foo","instance":""}]}
-        {"description":"skip:message=bar","schema":{"type": "boolean"},"tests":[{"description":"five","instance":""}]}
-        {"description":"six","schema":{"type": "array"},"tests":[{"description":"error:message=boom","instance":""}, {"description":"valid:0", "instance":12}]}
-        {"description":"error:message=boom","schema":{"type": "array"},"tests":[{"description":"seven","instance":""}]}
-    """  # noqa: E501
-
-    run_stdout, _ = await bowtie(
-        "run",
-        "-i",
-        envsonschema,
-        stdin=dedent(raw.strip("\n")),
-    )
-
-    site.joinpath("draft2020-12.json").write_text(run_stdout)
-
-    _stdout, _stderr = await bowtie("badges", "--site", site)
-
-    badges = site / "badges"
-    assert {path.relative_to(badges) for path in badges.rglob("*")} == {
-        Path("python-envsonschema"),
-        Path("python-envsonschema/supported_versions.json"),
-        Path("python-envsonschema/compliance"),
-        Path("python-envsonschema/compliance/draft2020-12.json"),
-    }
-
-
-@pytest.mark.asyncio
-async def test_badges_nothing_ran(tmp_path):
-    run_stdout, _ = await bowtie(
-        "run",
-        "-i",
-        ARBITRARY,
-        stdin="",
-        exit_code=-1,  # no test cases run causes a non-zero here
-    )
-
-    badges = tmp_path / "badges"
-    stdout, stderr = await bowtie(
-        "badges",
-        badges,
-        stdin=run_stdout,
-        exit_code=2,  # comes from click
-    )
-    assert stdout == ""
-    assert stderr != ""
-    assert not badges.is_dir()
 
 
 @pytest.mark.asyncio
@@ -3721,7 +3914,7 @@ async def test_run_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -3734,7 +3927,7 @@ async def test_run_registry_metasschema_not_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
@@ -3747,7 +3940,7 @@ async def test_run_registry_metasschema_still_mismatched_dialect():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert "$schema keyword does not" in stderr, stderr
 
 
@@ -3765,7 +3958,7 @@ async def test_run_mismatched_dialect_total_junk():
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == ""
 
 
@@ -3794,7 +3987,7 @@ async def test_run_boolean_schema(tmp_path):
             """,  # noqa: E501
         )
 
-    assert results == [{miniatures.always_invalid: TestResult.INVALID}], stderr
+    assert results == [{report_id.always_invalid: TestResult.INVALID}], stderr
     assert stderr == "", stderr
 
 
@@ -4011,14 +4204,18 @@ async def test_container_connectables(
     assert stderr == ""
 
     report = Report.from_serialized(stdout.splitlines())
+    # A report identifies an implementation transport-free, so the container
+    # connectables show up under their report id, not the `container:` string.
+    envsonschema_id = Connectable.from_str(envsonschema_container).report_id
+    lintsonschema_id = Connectable.from_str(lintsonschema_container).report_id
     assert [
         [test_results for _, test_results in results]
         for _, results in report.cases_with_results()
     ] == [
         [
             {
-                envsonschema_container: TestResult.INVALID,
-                lintsonschema_container: TestResult.VALID,
+                envsonschema_id: TestResult.INVALID,
+                lintsonschema_id: TestResult.VALID,
             },
         ],
     ], stderr
@@ -4044,7 +4241,7 @@ async def test_direct_connectable_python_jsonschema(tmp_path):
         [test_results for _, test_results in results]
         for _, results in report.cases_with_results()
     ] == [
-        [{"direct:python-jsonschema": TestResult.VALID}],
+        [{"python-jsonschema": TestResult.VALID}],
     ], stderr
 
 
@@ -4223,7 +4420,7 @@ class TestBenchmarkRun:
 
             Benchmark: Tests with benchmark
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 
@@ -4273,7 +4470,7 @@ class TestBenchmarkRun:
 
             Benchmark: Tests with varying Array Size
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 
@@ -4281,7 +4478,7 @@ class TestBenchmarkRun:
             """
             Benchmark: Tests with benchmark 2
 
-            | Test Name | direct:python-jsonschema |
+            | Test Name | python-jsonschema |
         """,
         ).strip()
 

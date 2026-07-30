@@ -1,0 +1,18 @@
+overrides:
+  fast-uri: ">=3.1.2"
+  prismjs: ^1.30.0
+
+onlyBuiltDependencies:
+  - esbuild
+
+minimumReleaseAgeExclude:
+  - tmp
+  - tmp@0.2.7
+  - vite@8.0.16
+  - js-yaml@4.1.2
+  - '@babel/core@7.29.1'
+  - undici@7.28.0
+  - brace-expansion@1.1.16
+  - js-yaml@4.3.0
+  - fast-uri@4.1.1
+  - fast-uri@4.0.1

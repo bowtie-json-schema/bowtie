@@ -50,11 +50,15 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "aiodocker",
+  "anyio>=4",
   "attrs>=22.2.0",
+  # click 8.4 made ParamType generic, but rich-click's type stubs still
+  # reference it without a type argument, breaking strict type checking.
+  "click<8.4",
   "diagnostic",
   "github3.py",
   "httpx",
+  "imaged>=2026.7.4",
   "inflect",
   "jsonschema>=4.19.0",
   "jsonschema_lexer",
@@ -62,7 +66,7 @@ dependencies = [
   "referencing>=0.31.0",
   "referencing-loaders>=2024.5.2",
   "rich",
-  "rich-click>=1.8.0,<1.9.8",
+  "rich-click>=1.8.0,<1.9.9",
   "rpds.py>=0.18.0",
   "structlog",
   "url.py>=0.11.3",
@@ -100,7 +104,7 @@ test = [
     "markdown-it-py>=4.0.0",
     "pexpect>=4.9.0",
     "pytest>=9.0.1",
-    "pytest-asyncio==0.21.2",
+    "pytest-asyncio==1.4.0",
     "pytest-icdiff>=0.9",
     "python-dateutil>=2.9.0.post0",
 ]
@@ -170,6 +174,8 @@ ignore = [
   "B905",  # No need for explicit strict, this is simply zip's default behavior
   "C408",  # Calling dict is fine when it saves quoting the keys
   "C901",  # Not really something to focus on
+  "CPY",  # No need for copyright notices.
+  "CPY001",  # We don't put copyright notices at the top of files
   "D105",  # It's fine to not have docstrings for magic methods.
   "D107",  # __init__ especially doesn't need a docstring
   "D200",  # This rule makes diffs uglier when expanding docstrings
@@ -188,6 +194,7 @@ ignore = [
   "PLR0912",  # These metrics are fine to be aware of but not to enforce
   "PLR0913",
   "PLR0915",
+  "PLR0917",
   "PLW2901",  # Shadowing for loop variables is occasionally fine.
   "PT006",  # pytest parametrize takes strings as well
   "PT028",  # gets very confused by functions named test* which are not tests

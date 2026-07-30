@@ -119,7 +119,7 @@ class StartupFailed(Exception):
                     "If you are developing a new harness, check if stderr "
                     "(shown below) contains harness-specific information "
                     "which can help. Otherwise, you may have an issue with "
-                    "your local container setup (podman, docker, etc.)."
+                    "your local container setup (docker, podman or container)."
                 ),
             )
         else:
@@ -208,7 +208,7 @@ class UnsupportedDialect(Exception):
         return DiagnosticWarning(
             code="unsupported-dialect",
             message=(
-                f"{self.implementation.id!r} does not "
+                f"{self.implementation.report_id!r} does not "
                 f"support {self.dialect.pretty_name}."
             ),
             causes=[],
@@ -233,8 +233,8 @@ class DialectError(Exception):
         return DiagnosticError(
             code="dialect-error",
             message=(
-                f"{self.implementation.id!r} failed as we were beginning to "
-                f"send {self.dialect.pretty_name} tests."
+                f"{self.implementation.report_id!r} failed as we were "
+                f"beginning to send {self.dialect.pretty_name} tests."
             ),
             causes=[],
             hint_stmt=(

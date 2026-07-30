@@ -1,47 +1,46 @@
 import js from "@eslint/js";
-import react from "eslint-plugin-react";
-import reactHooks from "eslint-plugin-react-hooks";
-import tsdoc from "eslint-plugin-tsdoc";
+import svelte from "eslint-plugin-svelte";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import svelteConfig from "./svelte.config.js";
+
 export default tseslint.config(
+  { ignores: ["build/", "node_modules/"] },
   js.configs.recommended,
-  react.configs.flat.recommended,
-  react.configs.flat["jsx-runtime"],
-  ...tseslint.configs.recommendedTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.recommended,
+  ...svelte.configs.recommended,
   {
     languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
+  {
+    files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
+    languageOptions: {
       parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        extraFileExtensions: [".svelte"],
+        parser: tseslint.parser,
+        svelteConfig,
       },
     },
   },
   {
-    plugins: {
-      react,
-      tsdoc,
-      "react-hooks": reactHooks,
-    },
     rules: {
-      "react/prop-types": 0,
-      "no-restricted-imports": [
+      "@typescript-eslint/no-unused-vars": [
         "error",
-        {
-          name: "react-bootstrap",
-          message:
-            "Import react-bootstrap/<your-component> instead. See https://react-bootstrap.netlify.app/docs/getting-started/introduction/#importing-components.",
-        },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      "tsdoc/syntax": "warn",
-      ...reactHooks.configs.recommended.rules,
     },
-    settings: {
-      react: { version: "detect" },
+  },
+  {
+    // The report store drives reactivity by reassigning its $state fields
+    // wholesale rather than mutating collections in place, so the Svelte
+    // reactive collection classes aren't needed here.
+    files: ["**/stores/report.svelte.ts"],
+    rules: {
+      "svelte/prefer-svelte-reactivity": "off",
     },
   },
 );

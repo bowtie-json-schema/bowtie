@@ -23,7 +23,6 @@ Options:
   -h, --help                      Show this message and exit.
 
 Commands:
-  badges    Generate Bowtie badges from previous runs.
   info      Retrieve a particular implementation (harness)'s metadata.
   run       Run a sequence of cases provided on standard input.
   smoke     Smoke test one or more implementations for basic correctness.

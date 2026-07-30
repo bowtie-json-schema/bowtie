@@ -5,9 +5,9 @@ Peculiarities related to how the official JSON Schema Test Suite is structured.
 from __future__ import annotations
 
 from contextlib import suppress
+from datetime import UTC, datetime
 from fnmatch import fnmatch
 from functools import cache
-from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
@@ -18,8 +18,8 @@ from url import URL, RelativeURLWithoutBase
 import click
 import rich
 
-from bowtie import GITHUB
-from bowtie._core import Dialect, TestCase, github
+from bowtie import GITHUB, _github
+from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -380,3 +380,106 @@ def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
         return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
     return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+
+
+#: The default git ref of the official suite to collect test cases from.
+DEFAULT_REF = "main"
+
+
+class SuiteNotAvailable(Exception):
+    """
+    The official test suite could not be retrieved from GitHub.
+    """
+
+    def __init__(self, ref: str):
+        super().__init__(ref)
+        self.ref = ref
+
+    def diagnostic(self) -> DiagnosticError:
+        return DiagnosticError(
+            code="suite-fetch-failed",
+            message="Fetching the test suite from GitHub failed.",
+            causes=[f"Tried to retrieve the tree at {self.ref!r}."],
+            hint_stmt=(
+                f"Check that {self.ref!r} is an existing branch, tag or "
+                "commit of the suite, or pass a local path to a checkout "
+                "of it instead."
+            ),
+        )
+
+
+def hour_start() -> datetime:
+    """
+    The start of the current hour, in UTC.
+
+    Pinning the suite to this makes the choice deterministic within any
+    given hour, so independent runs in the same hour collect against -- and
+    can therefore be combined at -- the same commit, with no coordination
+    needed between them.
+    """
+    return datetime.now(tz=UTC).replace(
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+
+def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
+    """
+    Download the whole official test suite once.
+
+    With no ``ref``, the suite is pinned to the newest commit on its main
+    branch at or before the start of the current hour -- a deterministic
+    choice, so that independent runs within the same hour all collect
+    against (and can therefore be combined at) the same commit. Pass an
+    explicit ref (a branch, tag or commit) to override.
+
+    Returns the suite's root directory (which contains ``tests/`` and
+    ``remotes/``) alongside run metadata recording the exact commit.
+    Every dialect collected from this one root is therefore guaranteed to
+    share a single consistent commit, even if the suite moves meanwhile.
+    """
+    owner, name, *_ = cast("list[str]", TEST_SUITE_URL.path_segments)
+
+    if ref is None:
+        ref = (
+            _github.latest_commit_before(
+                owner,
+                name,
+                DEFAULT_REF,
+                hour_start(),
+            )
+            or DEFAULT_REF
+        )
+
+    downloaded = _github.download_tree(owner, name, ref)
+    if downloaded is None:
+        raise SuiteNotAvailable(ref)
+    data, run_metadata = downloaded
+    (root,) = zipfile.Path(zipfile.ZipFile(data)).iterdir()
+
+    return root, run_metadata
+
+
+def dialects_in(root: _P) -> set[Dialect]:
+    """
+    Which dialects the suite rooted at the given path provides cases for.
+    """
+    by_short = Dialect.by_short_name()
+    return {
+        by_short[child.name]
+        for child in (root / "tests").iterdir()
+        if child.is_dir() and child.name in by_short
+    }
+
+
+def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:
+    """
+    The test cases for a single dialect within the suite at the given root.
+    """
+    version_path = root / "tests" / dialect.short_name
+    return cases_from(
+        paths=list(_glob(version_path, "*.json")),
+        remotes=cast("Path", root / "remotes"),
+        dialect=dialect,
+    )
