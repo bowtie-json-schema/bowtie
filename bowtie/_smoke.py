@@ -17,7 +17,7 @@ from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY
 from rpds import HashTrieMap
 
-from bowtie._commands import TestResult
+from bowtie._commands import FlagTestResult
 from bowtie._core import Example, Test, TestCase
 
 if TYPE_CHECKING:
@@ -193,7 +193,7 @@ class Result:
             instances = Table.grid(padding=2)
             for i, test in enumerate(case.tests):
                 result = failure.result_for(i)
-                expected = TestResult(valid=test.expected())  # type: ignore[reportArgumentType]
+                expected = FlagTestResult(valid=test.expected())  # type: ignore[reportArgumentType]
                 if expected != result:
                     instances.add_row(
                         JSON(json.dumps(test.instance)),

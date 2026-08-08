@@ -17,11 +17,41 @@
     },
     "instance": {
       "description": "The instance which should be validated against the schema in \"schema\"."
-    },
-    "valid": {
-      "description": "Optionally, whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
-      "type": "boolean"
     }
   },
-  "additionalProperties": false
+  "oneOf": [
+    {
+      "description": "Assert validity",
+      "properties": {
+        "valid": {
+          "description": "Whether validation of this instance is expected to be valid or not.",
+          "type": "boolean"
+        }
+      },
+      "required": ["valid"]
+    },
+    {
+      "description": "Assert annotations",
+      "properties": {
+        "assertions": {
+          "description": "Assertions for annotation output. Expected annotation values mapped directly into the Bowtie output schema.",
+          "type": "array",
+          "items": {
+            "$ref": "tag:bowtie.report,2026:output:annotations#/properties/annotations/items"
+          }
+        }
+      },
+      "required": ["assertions"]
+    },
+    {
+      "description": "No assertion — implementation results will be reported without comparing against an expected value.",
+      "not": {
+        "anyOf": [
+          { "required": ["valid"] },
+          { "required": ["assertions"] }
+        ]
+      }
+    }
+  ],
+  "unevaluatedProperties": false
 }
