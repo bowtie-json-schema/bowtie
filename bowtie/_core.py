@@ -21,6 +21,8 @@ from bowtie._commands import (
     START_V1,
     CaseErrored,
     Dialect as DialectCommand,
+    ExpectedAnnotations,
+    ExpectedValidity,
     SeqCase,
     SeqResult,
     StartedDialect,
@@ -678,8 +680,10 @@ class Test:
         Expect our expected validity result or assertions.
         """
         if self.assertions is not None:
-            return self.assertions
-        return self.valid
+            return ExpectedAnnotations.from_serialized(self.assertions)
+        if self.valid is None:
+            return None
+        return ExpectedValidity(valid=self.valid)
 
     def syntax(self) -> RenderableType:
         from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415

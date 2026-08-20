@@ -49,13 +49,7 @@ from bowtie import (
     _report,
     _suite,
 )
-from bowtie._commands import (
-    FlagTestResult,
-    OutputFormat,
-    SeqCase,
-    Unsuccessful,
-    grouped_assertions,
-)
+from bowtie._commands import OutputFormat, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -688,8 +682,9 @@ def summary(report: _report.Report, format: _F, show: str):
             table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             STDOUT.print(table)
         case "markdown":
-            table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
-            STDOUT.print(table)
+            content = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            # Not via rich, whose console width would wrap (breaking) tables.
+            click.echo(content)
 
     return exit_code
 
@@ -920,12 +915,12 @@ def _annotation_status(
     """
     The status of an annotation test result.
     """
-    if result.skipped:
+    if result.skipped is True:
         return "skipped"
-    if result.errored:
+    if result.errored is True:
         return "error"
     expected = test.expected()
-    if expected is None or result.matches(expected):
+    if expected is None or expected.matches(result):
         return "pass"
     return "fail"
 
@@ -944,11 +939,8 @@ def _annotation_cell(
     actual = result.grouped_annotations
     if status == "fail":
         expected = test.expected()
-        cell["expected"] = (
-            grouped_assertions(expected)
-            if isinstance(expected, list)
-            else expected
-        )
+        if expected is not None:
+            cell["expected"] = expected.display()
         cell["actual"] = actual
     elif actual:
         cell["actual"] = actual
@@ -1330,6 +1322,16 @@ class JSON(click.File):
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@click.option(
+    "--output",
+    type=click.Choice(["flag", "annotations"]),
+    default="flag",
+    show_default=True,
+    help=(
+        "The output format implementations should respond with. "
+        "Tests asserting on annotations need 'annotations'."
+    ),
+)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2570,10 +2572,13 @@ async def smoke(
                             #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
-                                expected = FlagTestResult(
-                                    valid=bool(test.expected()),
-                                )
-                                if expected != result:
+                                expected = test.expected()
+                                if (
+                                    result.skipped is True
+                                    or result.errored is True
+                                    or expected is None
+                                    or not expected.matches(result)
+                                ):
                                     echo(f"* `{test.instance}`")
 
                         echo("\n</details>")
@@ -2591,6 +2596,7 @@ def _run_suite(
     _cases, dialect, metadata = input
     cases = list(filter(_cases))
     if not cases:
+        STDERR.print("[bold red]No test cases ran.[/]")
         return EX.NOINPUT
     return asyncio.run(
         _run_parallel(

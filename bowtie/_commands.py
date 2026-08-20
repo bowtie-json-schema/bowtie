@@ -39,10 +39,6 @@ Message = dict[str, Any]
 #: The output format harnesses are asked to report results in.
 OutputFormat = Literal["flag", "annotations"]
 
-#: A single test's expected result -- a validity assertion, annotation
-#: assertions, or ``None`` for no expectation.
-Expectation = bool | list[dict[str, Any]] | None
-
 #: Annotations (or expectations of them) grouped by instance location,
 #: then keyword, then the schema location which produced them.
 GroupedAnnotations = dict[str, dict[str, dict[str, Any]]]
@@ -50,7 +46,9 @@ GroupedAnnotations = dict[str, dict[str, dict[str, Any]]]
 
 @frozen
 class Unsuccessful:
-    failed: list[TestResult] = field(factory=list["TestResult"])
+    failed: list[FlagTestResult | AnnotationsTestResult] = field(
+        factory=list["FlagTestResult | AnnotationsTestResult"],
+    )
     errored: list[ErroredTest] = field(factory=list["ErroredTest"])
     skipped: list[SkippedTest] = field(factory=list["SkippedTest"])
 
@@ -201,33 +199,7 @@ class Dialect:
     dialect: str
 
 
-class AnyTestResult(Protocol):
-    @property
-    def description(self) -> str:
-        """
-        A single word to use when displaying this result.
-        """
-        ...
-
-    @property
-    def grouped_annotations(self) -> GroupedAnnotations:
-        """
-        The grouped annotations for this result, empty if not supported.
-        """
-        ...
-
-    @property
-    def skipped(self) -> bool: ...
-
-    @property
-    def errored(self) -> bool: ...
-
-    def serializable(self) -> Message: ...
-
-    def matches(self, expecting: Expectation) -> bool: ...
-
-
-def _by_decoded_location(expected: dict[str, Any]) -> dict[str, Any]:
+def _by_decoded_location(expected: Mapping[str, Any]) -> dict[str, Any]:
     """
     Percent-decode the schema locations keying an expectation.
     """
@@ -235,24 +207,6 @@ def _by_decoded_location(expected: dict[str, Any]) -> dict[str, Any]:
         urllib.parse.unquote(location): value
         for location, value in expected.items()
     }
-
-
-def grouped_assertions(
-    assertions: Iterable[dict[str, Any]],
-) -> GroupedAnnotations:
-    """
-    Group assertions the same way harness annotations are grouped.
-    """
-    grouped: GroupedAnnotations = {}
-    for assertion in assertions:
-        by_keyword = grouped.setdefault(
-            assertion.get("instanceLocation", ""),
-            {},
-        )
-        by_keyword.setdefault(assertion.get("keyword", ""), {}).update(
-            _by_decoded_location(assertion.get("expected", {})),
-        )
-    return grouped
 
 
 @frozen
@@ -273,8 +227,8 @@ class Annotation:
 
 @frozen
 class FlagTestResult:
-    errored = False
-    skipped = False
+    errored: ClassVar[Literal[False]] = False
+    skipped: ClassVar[Literal[False]] = False
 
     valid: bool
 
@@ -289,14 +243,11 @@ class FlagTestResult:
     def serializable(self) -> Message:
         return asdict(self)
 
-    def matches(self, expecting: Expectation) -> bool:
-        return expecting == self.valid
-
 
 @frozen
 class AnnotationsTestResult:
-    errored = False
-    skipped = False
+    errored: ClassVar[Literal[False]] = False
+    skipped: ClassVar[Literal[False]] = False
 
     valid: bool
     annotations: list[Annotation] = field(
@@ -322,29 +273,6 @@ class AnnotationsTestResult:
             location = urllib.parse.unquote(annotation.keywordLocation)
             in_keyword[location] = annotation.annotation
         return grouped
-
-    def matches(self, expecting: Expectation) -> bool:
-        if isinstance(expecting, bool):
-            return self.valid == expecting
-        if not isinstance(expecting, list):
-            return False
-        # Annotations are only collected for successful evaluations.
-        # A result asserted to have annotations must therefore be valid.
-        if not self.valid:
-            return False
-
-        # Each asserted (instance location, keyword) pair must match exactly.
-        # An empty expectation asserts the keyword produced nothing there.
-        # Annotations for unasserted pairs are ignored.
-        produced = self.grouped_annotations
-        for assertion in expecting:
-            instance_location = assertion.get("instanceLocation", "")
-            keyword = assertion.get("keyword", "")
-            expected = _by_decoded_location(assertion.get("expected", {}))
-            got = produced.get(instance_location, {}).get(keyword, {})
-            if got != expected:
-                return False
-        return True
 
 
 class TestResult:
@@ -379,8 +307,8 @@ class SkippedTest:
     message: str | None = field(default=None)
     issue_url: str | None = field(default=None)
 
-    errored = False
-    skipped: bool = field(init=False, default=True)
+    errored: ClassVar[Literal[False]] = False
+    skipped: Literal[True] = field(init=False, default=True)
 
     description = "skipped"
 
@@ -403,16 +331,13 @@ class SkippedTest:
             ),
         )
 
-    def matches(self, expecting: Expectation) -> bool:
-        return False
-
 
 @frozen
 class ErroredTest:
     context: dict[str, Any] = field(factory=dict[str, "Any"])
 
-    errored: bool = field(init=False, default=True)
-    skipped: bool = False
+    errored: Literal[True] = field(init=False, default=True)
+    skipped: Literal[False] = False
 
     description = "error"
 
@@ -432,8 +357,119 @@ class ErroredTest:
     def serializable(self) -> Message:
         return asdict(self)
 
-    def matches(self, expecting: Expectation) -> bool:
-        return False
+
+#: Any result a harness can report for a single test.
+AnyTestResult = (
+    FlagTestResult | AnnotationsTestResult | SkippedTest | ErroredTest
+)
+
+
+@frozen
+class Assertion:
+    """
+    An assertion about the annotations one keyword produced at one location.
+    """
+
+    instanceLocation: str
+    keyword: str
+    #: The annotations the keyword must have produced, keyed by the schema
+    #: location of the keyword. Empty asserts it produced no annotation.
+    expected: Mapping[str, Any]
+
+    @classmethod
+    def from_dict(cls, **kwargs: Any) -> Self:
+        names = {each.name for each in fields(cls)}
+        return cls(**{k: v for k, v in kwargs.items() if k in names})
+
+    def serializable(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@frozen
+class ExpectedValidity:
+    """
+    An expectation that an instance is (in)valid under its schema.
+    """
+
+    valid: bool
+
+    @property
+    def description(self):
+        return "valid" if self.valid else "invalid"
+
+    def matches(self, result: FlagTestResult | AnnotationsTestResult) -> bool:
+        return result.valid == self.valid
+
+    def display(self) -> bool:
+        return self.valid
+
+    def serializable(self) -> bool:
+        return self.valid
+
+
+@frozen
+class ExpectedAnnotations:
+    """
+    An expectation about the annotations evaluating an instance produced.
+    """
+
+    assertions: Sequence[Assertion]
+
+    description = "annotated as asserted"
+
+    @classmethod
+    def from_serialized(cls, assertions: Iterable[dict[str, Any]]) -> Self:
+        return cls(
+            assertions=[Assertion.from_dict(**each) for each in assertions],
+        )
+
+    @property
+    def grouped_annotations(self) -> GroupedAnnotations:
+        grouped: GroupedAnnotations = {}
+        for assertion in self.assertions:
+            by_keyword = grouped.setdefault(assertion.instanceLocation, {})
+            by_keyword.setdefault(assertion.keyword, {}).update(
+                _by_decoded_location(assertion.expected),
+            )
+        return grouped
+
+    def matches(self, result: FlagTestResult | AnnotationsTestResult) -> bool:
+        # Annotations are only collected for successful evaluations.
+        # A result asserted to have annotations must therefore be valid.
+        if not result.valid:
+            return False
+        # Each asserted (instance location, keyword) pair must match exactly.
+        # An empty expectation asserts the keyword produced nothing there.
+        # Annotations for unasserted pairs are ignored.
+        produced = result.grouped_annotations
+        return all(
+            produced.get(location, {}).get(keyword, {}) == expected
+            for location, by_keyword in self.grouped_annotations.items()
+            for keyword, expected in by_keyword.items()
+        )
+
+    def display(self) -> GroupedAnnotations:
+        return self.grouped_annotations
+
+    def serializable(self) -> list[dict[str, Any]]:
+        return [each.serializable() for each in self.assertions]
+
+
+#: A single test's expected result, or ``None`` for no expectation.
+Expectation = ExpectedValidity | ExpectedAnnotations | None
+
+
+def expectation_from_serialized(value: Any) -> Expectation:
+    """
+    Deserialize an expected result from its report representation.
+    """
+    match value:
+        case bool(valid):
+            return ExpectedValidity(valid=valid)
+        case [*assertions]:
+            return ExpectedAnnotations.from_serialized(assertions)
+        case _:
+            return None
 
 
 class AnyCaseResult(Protocol):
@@ -490,15 +526,12 @@ class SeqResult:
         expected: list[Any],
         **data: dict[str, Any],
     ):
-        raw_expected: list[Expectation] = [
-            e.get("valid") if isinstance(e, dict) else e  # type: ignore[reportUnknownMemberType]
-            for e in expected
-        ]
+        expectations = [expectation_from_serialized(e) for e in expected]
         _, _, result = _case_result(seq=seq, **data)
         return cls(
             seq=seq,
             implementation=implementation,
-            expected=raw_expected,
+            expected=expectations,
             result=result,
         )
 
@@ -518,14 +551,7 @@ class SeqResult:
             filter=filters.exclude("result", "expected"),
         )
         serializable["expected"] = [
-            (
-                e
-                if isinstance(e, dict | list)
-                else {"valid": e}
-                if isinstance(e, bool)
-                else None
-            )
-            for e in self.expected
+            None if e is None else e.serializable() for e in self.expected
         ]
         serializable.update(self.result.serializable())
         return serializable
@@ -553,15 +579,17 @@ class CaseResult:
         self,
         expected: Sequence[Expectation],
     ) -> Unsuccessful:
-        skipped, errored, failed = [], [], []
+        skipped: list[SkippedTest] = []
+        errored: list[ErroredTest] = []
+        failed: list[FlagTestResult | AnnotationsTestResult] = []
         for got, expecting in zip(self.results, expected):
-            if got.skipped:
-                skipped.append(got)  # type: ignore[reportArgumentType]
-            elif got.errored:
-                errored.append(got)  # type: ignore[reportArgumentType]
-            elif expecting is not None and not got.matches(expecting):
-                failed.append(got)  # type: ignore[reportArgumentType]
-        return Unsuccessful(skipped=skipped, failed=failed, errored=errored)  # type: ignore[reportUnknownArgumentType]
+            if got.skipped is True:
+                skipped.append(got)
+            elif got.errored is True:
+                errored.append(got)
+            elif expecting is not None and not expecting.matches(got):
+                failed.append(got)
+        return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
     def log(self, log: BoundLogger):
         for result in self.results:

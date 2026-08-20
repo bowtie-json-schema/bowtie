@@ -130,10 +130,9 @@
             "anyOf": [
               { "type": "null" },
               {
-                "description": "A validity expectation, as written by Bowtie before output formats existed.",
+                "description": "A validity expectation.",
                 "type": "boolean"
               },
-              { "$ref": "tag:bowtie.report,2026:output:flag" },
               {
                 "title": "Expected Annotations",
                 "type": "array",
