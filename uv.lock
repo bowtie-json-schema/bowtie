@@ -1302,7 +1302,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-substitution-extensions"
-version = "2026.6.17"
+version = "2026.8.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beartype" },
@@ -1310,9 +1310,9 @@ dependencies = [
     { name = "myst-parser" },
     { name = "sphinx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/fb/6bf1b3e5bbd97d6f4632e2bb8f48518f8400cf0e4d2949f15be5a933b068/sphinx_substitution_extensions-2026.6.17.tar.gz", hash = "sha256:b7901937a43853bdaa97408ab8d73c9dc3497ec9bcf3a0c4b5fb2cce8baece13", size = 37045, upload-time = "2026-06-17T09:57:31.943Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/bc/50d6cc6ddb2249843edaa15857f4292c486304d6ea957d752a5a0118f19a/sphinx_substitution_extensions-2026.8.13.1.tar.gz", hash = "sha256:a4c64ed45614af028b6e397f001852e3968d8d06db2e02f79cceec8de53623a8", size = 44974, upload-time = "2026-08-13T10:01:38.054Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/e9/b8f35529c3fa1fd3efd232113c5342bef4ab0cb703a1a3beda2fcccb6392/sphinx_substitution_extensions-2026.6.17-py2.py3-none-any.whl", hash = "sha256:9971b1e402d13faaca903af894130a831218f78e8e266d36cbcddad83b7f7609", size = 10152, upload-time = "2026-06-17T09:57:30.783Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/55/c28ec57ed403496dcb688c49110d77259b916e715178d78391299def33a7/sphinx_substitution_extensions-2026.8.13.1-py3-none-any.whl", hash = "sha256:6006ee556fed311f57113337cb095b31aef5014875ba2d905e9271e6210c8e04", size = 12333, upload-time = "2026-08-13T10:01:36.923Z" },
 ]
 
 [[package]]
