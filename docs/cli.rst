@@ -84,6 +84,17 @@ Providing a local path to the test suite can be used as well, which is useful if
     $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
 
 
+Running the Official Annotation Suite
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The official test suite also contains tests asserting on the `annotations <https://json-schema.org/draft/2020-12/json-schema-core#name-annotations>`_ implementations produce, which `bowtie annotation-suite <cli:annotation-suite>` can run.
+The following will run them under the latest dialect (which ``--dialect`` can change) on the ``hyperjump`` implementation:
+
+.. code:: sh
+
+    $ bowtie annotation-suite -i js-hyperjump | bowtie summary --show failures
+
+
 Checking An Implementation Functions On Basic Input
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

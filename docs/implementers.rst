@@ -457,6 +457,9 @@ Let's take a first pass at implementing the ``run`` command, whose input looks l
     :dedent:
 
 ``run`` requests contain a test case (a schema with tests), alongside a ``seq`` parameter which is simply an identifier for the request and needs to be included in the response we write back.
+They also contain an ``output`` parameter indicating which output format Bowtie wants results in -- ``flag``, where each test result is simply a boolean ``valid`` saying whether the instance was valid under the schema, or ``annotations``, where each result additionally contains the `annotations <https://json-schema.org/draft/2020-12/json-schema-core#name-annotations>`_ collected while evaluating the instance.
+Validation runs (such as this tutorial's, or `bowtie suite <cli:suite>`) ask for ``flag`` output; ``annotations`` is asked for by `bowtie annotation-suite <cli:annotation-suite>`, and a harness whose implementation cannot collect annotations should skip such tests.
+Annotations-format results follow the ``tag:bowtie.report,2026:output:annotations`` schema (found in Bowtie's ``schemas/output/annotations.json``): each annotation carries the ``keyword`` producing it, the ``instanceLocation`` it annotates as a plain JSON Pointer, the ``keywordLocation`` of the keyword within the schema as a URI fragment JSON Pointer (e.g. ``#/properties/foo/title``), and the ``annotation`` value itself.
 Here's an implementation of the ``run`` command to add to our harness implementation:
 
 .. code:: lua
