@@ -95,6 +95,31 @@ report_id = _ReportId()
 #: An arbitrary harness for when behavior shouldn't depend on a specific one.
 ARBITRARY = miniatures.always_invalid
 
+#: A header line for hand-writing reports within tests.
+FAUX_REPORT_HEADER = _json.dumps(
+    {
+        "implementations": {
+            "direct:miniatures:always_invalid": {
+                "name": "always_invalid",
+                "language": "python",
+                "homepage": "https://example.com",
+                "issues": "https://example.com",
+                "source": "https://example.com",
+                "dialects": ["http://json-schema.org/draft-07/schema#"],
+                "version": "1.0",
+                "language_version": "3",
+                "os": "Linux",
+                "os_version": "1",
+                "documentation": "https://example.com",
+            },
+        },
+        "bowtie_version": "0.1",
+        "metadata": {},
+        "dialect": "http://json-schema.org/draft-07/schema#",
+        "started": "2026-06-02T12:00:00Z",
+    },
+)
+
 VALIDATORS = Direct.from_id("python-jsonschema").registry()
 
 
@@ -599,6 +624,49 @@ async def test_site_collect(tmp_path):
     )
     assert report.metadata.dialect == Dialect.by_short_name()["draft7"]
     assert not report.is_empty
+
+
+@pytest.mark.asyncio
+async def test_site_collect_withholds_all_errored_reports(tmp_path):
+    """
+    A report in which every test errored indicates a broken implementation
+    or harness, and publishing it would silently wipe out good results.
+    """
+    suite = tmp_path / "suite"
+    dialect_dir = suite / "tests" / "draft7"
+    dialect_dir.mkdir(parents=True)
+    dialect_dir.joinpath("type.json").write_text(
+        _json.dumps(
+            [
+                {
+                    "description": "integer",
+                    "schema": {"type": "integer"},
+                    "tests": [
+                        {
+                            "description": "an integer",
+                            "data": 1,
+                            "valid": True,
+                        },
+                    ],
+                },
+            ],
+        ),
+    )
+
+    out = tmp_path / "reports"
+    _stdout, stderr = await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.crashes_on_validate,
+        "--suite",
+        suite,
+        "--output",
+        out,
+        exit_code=EX.DATAERR,
+    )
+    assert "errored" in stderr
+    assert not list(out.rglob("*.json"))
 
 
 @pytest.mark.asyncio
@@ -4767,6 +4835,7 @@ async def test_annotation_suite_default_dialect(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.json
 async def test_annotation_suite_expected_results_survive_the_report(tmp_path):
     """
     Annotation assertions round-trip through a written report,
@@ -4846,37 +4915,14 @@ async def test_annotation_suite_expected_results_survive_the_report(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_annotation_failures_json(tmp_path):
+@pytest.mark.json
+async def test_summary_annotation_failures_json():
     """
     Mismatching annotations are counted as failures when re-read.
     """
     raw = "\n".join(
         [
-            _json.dumps(
-                {
-                    "implementations": {
-                        "direct:miniatures:always_invalid": {
-                            "name": "always_invalid",
-                            "language": "python",
-                            "homepage": "https://example.com",
-                            "issues": "https://example.com",
-                            "source": "https://example.com",
-                            "dialects": [
-                                "http://json-schema.org/draft-07/schema#",
-                            ],
-                            "version": "1.0",
-                            "language_version": "3",
-                            "os": "Linux",
-                            "os_version": "1",
-                            "documentation": "https://example.com",
-                        },
-                    },
-                    "bowtie_version": "0.1",
-                    "metadata": {},
-                    "dialect": "http://json-schema.org/draft-07/schema#",
-                    "started": "2026-06-02T12:00:00Z",
-                },
-            ),
+            FAUX_REPORT_HEADER,
             _json.dumps(
                 {
                     "seq": 1,
@@ -4951,7 +4997,8 @@ async def test_summary_annotation_failures_json(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_run_output_annotations(tmp_path):
+@pytest.mark.json
+async def test_run_output_annotations():
     """
     Asking for annotations output reaches the implementation.
 
@@ -5002,37 +5049,14 @@ async def test_run_output_annotations(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_pre_output_format_report(tmp_path):
+@pytest.mark.json
+async def test_summary_pre_output_format_report():
     """
     Reports written before expected results became objects still summarize.
     """
     raw = "\n".join(
         [
-            _json.dumps(
-                {
-                    "implementations": {
-                        "direct:miniatures:always_invalid": {
-                            "name": "always_invalid",
-                            "language": "python",
-                            "homepage": "https://example.com",
-                            "issues": "https://example.com",
-                            "source": "https://example.com",
-                            "dialects": [
-                                "http://json-schema.org/draft-07/schema#",
-                            ],
-                            "version": "1.0",
-                            "language_version": "3",
-                            "os": "Linux",
-                            "os_version": "1",
-                            "documentation": "https://example.com",
-                        },
-                    },
-                    "bowtie_version": "0.1",
-                    "metadata": {},
-                    "dialect": "http://json-schema.org/draft-07/schema#",
-                    "started": "2026-06-02T12:00:00Z",
-                },
-            ),
+            FAUX_REPORT_HEADER,
             _json.dumps(
                 {
                     "seq": 1,
@@ -5086,34 +5110,14 @@ async def test_summary_pre_output_format_report(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_summary_annotation_json(tmp_path):
+@pytest.mark.json
+async def test_summary_annotation_json():
+    """
+    Annotation reports summarize with per-implementation statuses.
+    """
     raw = "\n".join(
         [
-            _json.dumps(
-                {
-                    "implementations": {
-                        "direct:miniatures:always_invalid": {
-                            "name": "always_invalid",
-                            "language": "python",
-                            "homepage": "https://example.com",
-                            "issues": "https://example.com",
-                            "source": "https://example.com",
-                            "dialects": [
-                                "http://json-schema.org/draft-07/schema#",
-                            ],
-                            "version": "1.0",
-                            "language_version": "3",
-                            "os": "Linux",
-                            "os_version": "1",
-                            "documentation": "https://example.com",
-                        },
-                    },
-                    "bowtie_version": "0.1",
-                    "metadata": {},
-                    "dialect": "http://json-schema.org/draft-07/schema#",
-                    "started": "2026-06-02T12:00:00Z",
-                },
-            ),
+            FAUX_REPORT_HEADER,
             _json.dumps(
                 {
                     "seq": 1,
