@@ -139,7 +139,7 @@ class ClickParam(click.ParamType):
         dialect = known_dialect
         if dialect is None:
             dialect = Dialect.by_short_name().get(version_path.name)
-        if dialect is None and ctx is not None:
+        if dialect is None and self._is_annotations and ctx is not None:
             dialect = ctx.params.get("dialect")
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
@@ -299,13 +299,20 @@ def annotation_cases_from(
 
 
 def path_and_ref_from_gh_path(path: list[str]) -> tuple[str, str]:
-    # Scan for the suite's root directories from the end.
+    # Scan for the suite's tests directory from the end.
     # Splitting at the first match breaks refs containing a tests segment.
-    for root in "annotations", "tests":
-        if root in path:
-            i = len(path) - 1 - path[::-1].index(root)
-            # remove tree/ or blob/ from the front of the ref
-            return "/".join(path[i:]).rstrip("/"), "/".join(path[1:i])
+    for i in reversed(range(1, len(path))):
+        if path[i] != "tests":
+            continue
+        # An annotations/tests directory is the annotation suite,
+        # unless what follows is a validation suite version directory.
+        after = [each for each in path[i + 1 :] if each]
+        if path[i - 1] == "annotations" and (
+            not after or after[0].endswith(".json")
+        ):
+            i -= 1
+        # remove tree/ or blob/ from the front of the ref
+        return "/".join(path[i:]).rstrip("/"), "/".join(path[1:i])
     return "", "/".join(path[1:]).rstrip("/")
 
 

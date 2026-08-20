@@ -478,6 +478,20 @@ Here's an implementation of the ``run`` command to add to our harness implementa
 We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` alongside results for each test.
 The results are indicated positionally as shown above, meaning the first result in the results array should be the result for the first test in the input array.
 
+.. note::
+
+    The library we're wrapping has no API for collecting annotations, so a complete version of this harness should respond to ``run`` requests asking for ``annotations`` output by skipping each test:
+
+    .. code:: lua
+
+        if request.output == 'annotations' then
+          local results = {}
+          for _ = 1, #request.case.tests do
+            table.insert(results, { skipped = true, message = 'jsonschema cannot collect annotations' })
+          end
+          return { seq = request.seq, results = results }
+        end
+
 If we run ``bowtie`` again, we see::
 
     2022-10-31 13:20.14 [debug    ] Will speak dialect             dialect=http://json-schema.org/draft-07/schema#

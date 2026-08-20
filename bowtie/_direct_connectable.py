@@ -19,6 +19,7 @@ from bowtie._commands import (
     CaseErrored,
     CaseResult,
     FlagTestResult,
+    SkippedTest,
     Started,
     StartedDialect,
 )
@@ -78,6 +79,23 @@ class Unconnection[E: Exception]:
                 self._current_dialect = Dialect.from_str(uri)
                 self._compile = self.compiler_for(self._current_dialect)
                 return asdict(self._implicit_dialect_response)
+            case {
+                "cmd": "run",
+                "seq": seq,
+                "case": case,
+                "output": "annotations",
+            }:
+                skipped = SkippedTest(
+                    message=(
+                        "Direct connectables do not support "
+                        "annotation collection."
+                    ),
+                )
+                results: list[Any] = [skipped for _ in case["tests"]]
+                return {
+                    "seq": seq,
+                    **CaseResult(results=results).serializable(),
+                }
             case {"cmd": "run", "seq": seq, "case": case}:
                 try:
                     schema = case["schema"]

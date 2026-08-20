@@ -4720,7 +4720,7 @@ async def test_annotation_suite_no_test_cases(tmp_path):
         exit_code=EX.NOINPUT,
     )
     assert stdout == ""
-    assert stderr == ""
+    assert "No test cases ran." in stderr
 
 
 @pytest.mark.asyncio
@@ -4838,12 +4838,167 @@ async def test_annotation_suite_expected_results_survive_the_report(tmp_path):
         "failures",
         stdin=stdout,
         json=True,
-        exit_code=EX.DATAERR,
     )
     assert jsonout == [
-        [report_id.always_invalid, dict(failed=1, skipped=0, errored=0)],
+        [report_id.always_invalid, dict(failed=0, skipped=1, errored=0)],
     ]
     assert stderr == ""
+
+
+@pytest.mark.asyncio
+async def test_summary_annotation_failures_json(tmp_path):
+    """
+    Mismatching annotations are counted as failures when re-read.
+    """
+    raw = "\n".join(
+        [
+            _json.dumps(
+                {
+                    "implementations": {
+                        "direct:miniatures:always_invalid": {
+                            "name": "always_invalid",
+                            "language": "python",
+                            "homepage": "https://example.com",
+                            "issues": "https://example.com",
+                            "source": "https://example.com",
+                            "dialects": [
+                                "http://json-schema.org/draft-07/schema#",
+                            ],
+                            "version": "1.0",
+                            "language_version": "3",
+                            "os": "Linux",
+                            "os_version": "1",
+                            "documentation": "https://example.com",
+                        },
+                    },
+                    "bowtie_version": "0.1",
+                    "metadata": {},
+                    "dialect": "http://json-schema.org/draft-07/schema#",
+                    "started": "2026-06-02T12:00:00Z",
+                },
+            ),
+            _json.dumps(
+                {
+                    "seq": 1,
+                    "case": {
+                        "description": "the case",
+                        "schema": {"type": "string"},
+                        "tests": [
+                            {
+                                "description": "one",
+                                "instance": "foo",
+                                "assertions": [
+                                    {
+                                        "instanceLocation": "",
+                                        "keyword": "title",
+                                        "expected": {"#/title": "A string"},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            ),
+            _json.dumps(
+                {
+                    "seq": 1,
+                    "implementation": "direct:miniatures:always_invalid",
+                    "expected": [
+                        [
+                            {
+                                "instanceLocation": "",
+                                "keyword": "title",
+                                "expected": {"#/title": "A string"},
+                            },
+                        ],
+                    ],
+                    "results": [
+                        {
+                            "valid": True,
+                            "annotations": [
+                                {
+                                    "keyword": "title",
+                                    "instanceLocation": "",
+                                    "keywordLocation": "#/title",
+                                    "annotation": "Wrong!",
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ),
+            _json.dumps({"did_fail_fast": False}),
+        ],
+    )
+
+    jsonout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "failures",
+        stdin=raw,
+        json=True,
+        exit_code=EX.DATAERR,
+    )
+    assert stderr == ""
+    assert jsonout == [
+        [
+            "direct:miniatures:always_invalid",
+            dict(failed=1, skipped=0, errored=0),
+        ],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_run_output_annotations(tmp_path):
+    """
+    Asking for annotations output reaches the implementation.
+
+    Direct connectables cannot collect annotations, so they skip.
+    """
+    raw = _json.dumps(
+        {
+            "description": "the case",
+            "schema": {"type": "string", "title": "A string"},
+            "tests": [
+                {
+                    "description": "one",
+                    "instance": "foo",
+                    "assertions": [
+                        {
+                            "instanceLocation": "",
+                            "keyword": "title",
+                            "expected": {"#/title": "A string"},
+                        },
+                    ],
+                },
+            ],
+        },
+    )
+
+    run_stdout, _ = await bowtie(
+        "run",
+        "-i",
+        "direct:python-jsonschema",
+        "--output",
+        "annotations",
+        stdin=f"{raw}\n",
+    )
+
+    jsonout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "failures",
+        stdin=run_stdout,
+        json=True,
+    )
+    assert stderr == ""
+    assert jsonout == [
+        ["python-jsonschema", dict(failed=0, skipped=1, errored=0)],
+    ]
 
 
 @pytest.mark.asyncio
