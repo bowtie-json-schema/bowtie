@@ -215,13 +215,46 @@ successful_tests = sampled_from(
         _commands.TestResult.INVALID,
     ],
 )
+annotations = builds(
+    _commands.Annotation,
+    keyword=text(min_size=1, max_size=20),
+    instanceLocation=text(max_size=10),
+    keywordLocation=text(max_size=20),
+    annotation=text(max_size=10) | integers() | booleans() | none(),
+)
+annotated_tests = builds(
+    _commands.AnnotationsTestResult,
+    valid=booleans(),
+    annotations=lists(annotations, max_size=4),
+)
 errored_tests = builds(_commands.ErroredTest, context=error_context_optional)
 skipped_tests = builds(
     _commands.SkippedTest,
     message=text(min_size=1, max_size=50) | none(),
     issue_url=urls() | none(),
 )
-test_results = successful_tests | errored_tests | skipped_tests
+test_results = (
+    successful_tests | annotated_tests | errored_tests | skipped_tests
+)
+
+assertions = builds(
+    _commands.Assertion,
+    instanceLocation=text(max_size=10),
+    keyword=text(min_size=1, max_size=20),
+    expected=dictionaries(
+        text(max_size=20),
+        text(max_size=10) | integers(),
+        max_size=3,
+    ),
+)
+expectations = (
+    none()
+    | builds(_commands.ExpectedValidity, valid=booleans())
+    | builds(
+        _commands.ExpectedAnnotations,
+        assertions=lists(assertions, max_size=3),
+    )
+)
 
 
 def case_results(min_tests=1, max_tests=10):
@@ -273,7 +306,7 @@ def seq_results(
             _commands.SeqResult,
             seq=seqs,
             implementation=implementations,
-            expected=lists(booleans() | none(), min_size=size, max_size=size),
+            expected=lists(expectations, min_size=size, max_size=size),
             result=any_case_results(min_tests=size, max_tests=size),
         ),
     )
@@ -399,7 +432,8 @@ register_type_strategy(Example, examples())
 register_type_strategy(Test, tests())
 register_type_strategy(TestCase, test_cases())
 register_type_strategy(_commands.TestResult, successful_tests)
+register_type_strategy(_commands.FlagTestResult, successful_tests)
+register_type_strategy(_commands.AnnotationsTestResult, annotated_tests)
 register_type_strategy(_commands.SkippedTest, skipped_tests)
 register_type_strategy(_commands.ErroredTest, errored_tests)
-register_type_strategy(_commands.AnyTestResult, test_results)
 register_type_strategy(Report, reports())

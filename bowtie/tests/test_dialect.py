@@ -55,3 +55,16 @@ def test_no_bottom():
     )
     with pytest.raises(ValueError, match="has no bottom"):
         no_bottom.bottom()
+
+
+def test_ordering():
+    draft7 = Dialect.by_short_name()["draft7"]
+    draft2019 = Dialect.by_short_name()["draft2019-09"]
+
+    assert draft7 < draft2019
+    assert draft7 <= draft2019
+    assert draft2019 > draft7
+    assert draft2019 >= draft7
+    assert draft7 <= draft7  # noqa: PLR0124
+    assert draft7 >= draft7  # noqa: PLR0124
+    assert not draft7 < draft7  # noqa: PLR0124

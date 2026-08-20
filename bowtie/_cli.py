@@ -49,7 +49,7 @@ from bowtie import (
     _report,
     _suite,
 )
-from bowtie._commands import SeqCase, TestResult, Unsuccessful
+from bowtie._commands import OutputFormat, SeqCase, Unsuccessful
 from bowtie._core import (
     Dialect,
     Example,
@@ -132,7 +132,13 @@ _COMMAND_GROUPS = {
     "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
-            commands=["validate", "suite", "summary", "info"],
+            commands=[
+                "validate",
+                "suite",
+                "annotation-suite",
+                "summary",
+                "info",
+            ],
         ),
         CommandGroupDict(
             name="Advanced Usage",
@@ -142,6 +148,7 @@ _COMMAND_GROUPS = {
                 "filter-implementations",
                 "latest-report",
                 "run",
+                "site",
                 "statistics",
                 "trend",
             ],
@@ -611,8 +618,8 @@ def summary(report: _report.Report, format: _F, show: str):
     else:
         results = report.cases_with_results()
         exit_code = 0
-        to_table = _validation_results_table
-        to_markdown_table = _validation_results_table_in_markdown
+        to_table = _results_table
+        to_markdown_table = _results_table_in_markdown
 
         def to_serializable(
             value: Iterable[
@@ -622,19 +629,51 @@ def summary(report: _report.Report, format: _F, show: str):
                 ]
             ],
         ):
-            return [
-                (
-                    case.schema,
-                    [
-                        (
-                            test.instance,
-                            {k: v.description for k, v in test_result.items()},
-                        )
-                        for test, test_result in test_results
-                    ],
+            serialized: list[Any] = []
+            for case, test_results in value:
+                test_results_list = list(test_results)
+                is_annotation = any(
+                    t.assertions is not None for t, _ in test_results_list
                 )
-                for case, test_results in value
-            ]
+
+                if is_annotation:
+                    tests_out = [
+                        {
+                            "instance": t.instance,
+                            "results": {
+                                impl_id: _annotation_cell(
+                                    t,
+                                    test_result[impl_id],
+                                )
+                                for impl_id in report.implementations
+                            },
+                        }
+                        for t, test_result in test_results_list
+                    ]
+                    serialized.append(
+                        {
+                            "description": case.description,
+                            "schema": case.schema,
+                            "tests": tests_out,
+                        },
+                    )
+                else:
+                    serialized.append(
+                        (
+                            case.schema,
+                            [
+                                (
+                                    test.instance,
+                                    {
+                                        k: v.description
+                                        for k, v in test_result.items()
+                                    },
+                                )
+                                for test, test_result in test_results_list
+                            ],
+                        ),
+                    )
+            return serialized
 
     match format:
         case "json":
@@ -643,8 +682,9 @@ def summary(report: _report.Report, format: _F, show: str):
             table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
             STDOUT.print(table)
         case "markdown":
-            table = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
-            STDOUT.print(table)
+            content = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            # Not via rich, whose console width would wrap (breaking) tables.
+            click.echo(content)
 
     return exit_code
 
@@ -726,7 +766,7 @@ def _failure_table_in_markdown(
     )
 
 
-def _validation_results_table(
+def _results_table(
     report: _report.Report,
     results: Iterable[
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
@@ -740,7 +780,6 @@ def _validation_results_table(
         caption=f"{report.total_tests} {test} ran",
     )
 
-    # TODO: sort the columns by results?
     implementations = report.implementations
     implementation_counts = Counter(
         each.id for each in implementations.values()
@@ -761,11 +800,28 @@ def _validation_results_table(
                 ),
             )
 
-        for test, test_result in test_results:
-            subtable.add_row(
-                test.syntax(),
-                *(Text(test_result[id].description) for id in implementations),
-            )
+        for t, test_result in test_results:
+            cells: list[Text] = []
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                if t.assertions is None:
+                    cells.append(Text(r.description))
+                    continue
+
+                cell = _annotation_cell(t, r)
+                status = cell["status"]
+                text = Text()
+                text.append(status, style=_ANNOTATION_STATUS_STYLES[status])
+                if "expected" in cell:
+                    text.append("\nExpected:\n", style="bold")
+                    text.append(f"{json.dumps(cell['expected'], indent=2)}\n")
+                    text.append("Actual:\n", style="bold")
+                    text.append(f"{json.dumps(cell['actual'], indent=2)}")
+                elif "actual" in cell:
+                    text.append(f"\n{json.dumps(cell['actual'], indent=2)}")
+                cells.append(text)
+
+            subtable.add_row(t.syntax(), *cells)
 
         table.add_row(case.syntax(report.metadata.dialect), subtable)
         table.add_section()
@@ -773,7 +829,7 @@ def _validation_results_table(
     return table
 
 
-def _validation_results_table_in_markdown(
+def _results_table_in_markdown(
     report: _report.Report,
     results: Iterable[
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
@@ -800,13 +856,29 @@ def _validation_results_table_in_markdown(
 
     for case, test_results in results:
         inner_table_rows: list[list[str]] = []
-        for test, test_result in test_results:
-            inner_table_rows.append(
-                [
-                    json.dumps(test.instance),
-                    *(test_result[id].description for id in implementations),
-                ],
-            )
+        for t, test_result in test_results:
+            row = [json.dumps(t.instance)]
+            for impl_id in implementations:
+                r = test_result[impl_id]
+                if t.assertions is None:
+                    row.append(r.description)
+                    continue
+
+                cell = _annotation_cell(t, r)
+                text = cell["status"]
+                if "expected" in cell:
+                    expected = json.dumps(cell["expected"])
+                    actual = json.dumps(cell["actual"])
+                    text += (
+                        f"<br><br>Expected:<br>`{expected}`"
+                        f"<br>Actual:<br>`{actual}`"
+                    )
+                elif "actual" in cell:
+                    text += (
+                        f"<br><br>Actual:<br>`{json.dumps(cell['actual'])}`"
+                    )
+                row.append(text)
+            inner_table_rows.append(row)
         inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
             inner_table_rows,
@@ -824,6 +896,55 @@ def _validation_results_table_in_markdown(
         final_content += "\n"
 
     return final_content
+
+
+_AnnotationStatus = Literal["pass", "fail", "skipped", "error"]
+
+_ANNOTATION_STATUS_STYLES: dict[_AnnotationStatus, str] = {
+    "pass": "green",
+    "fail": "red",
+    "skipped": "yellow",
+    "error": "red bold",
+}
+
+
+def _annotation_status(
+    test: Example | Test,
+    result: AnyTestResult,
+) -> _AnnotationStatus:
+    """
+    The status of an annotation test result.
+    """
+    if result.skipped is True:
+        return "skipped"
+    if result.errored is True:
+        return "error"
+    expected = test.expected()
+    if expected is None or expected.matches(result):
+        return "pass"
+    return "fail"
+
+
+def _annotation_cell(
+    test: Example | Test,
+    result: AnyTestResult,
+) -> dict[str, Any]:
+    """
+    The status and expected/actual annotations one summary cell shows.
+    """
+    status = _annotation_status(test, result)
+    cell: dict[str, Any] = {"status": status}
+    if status not in {"pass", "fail"}:
+        return cell
+    actual = result.grouped_annotations
+    if status == "fail":
+        expected = test.expected()
+        if expected is not None:
+            cell["expected"] = expected.display()
+        cell["actual"] = actual
+    elif actual:
+        cell["actual"] = actual
+    return cell
 
 
 @subcommand
@@ -1201,6 +1322,16 @@ class JSON(click.File):
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@click.option(
+    "--output",
+    type=click.Choice(["flag", "annotations"]),
+    default="flag",
+    show_default=True,
+    help=(
+        "The output format implementations should respond with. "
+        "Tests asserting on annotations need 'annotations'."
+    ),
+)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2441,12 +2572,42 @@ async def smoke(
                             #        contains the unsuccessful results.
                             for i, test in enumerate(case.tests):
                                 result = each.result_for(i)
-                                if TestResult(valid=test.expected()) != result:  # type: ignore[reportArgumentType]
+                                expected = test.expected()
+                                if (
+                                    result.skipped is True
+                                    or result.errored is True
+                                    or expected is None
+                                    or not expected.matches(result)
+                                ):
                                     echo(f"* `{test.instance}`")
 
                         echo("\n</details>")
 
     return 0 if all(result.success for _, _, result in results) else EX.DATAERR
+
+
+def _run_suite(
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    filter: CaseTransform,
+    jobs: int,
+    output: OutputFormat = "flag",
+    **kwargs: Any,
+):
+    _cases, dialect, metadata = input
+    cases = list(filter(_cases))
+    if not cases:
+        STDERR.print("[bold red]No test cases ran.[/]")
+        return EX.NOINPUT
+    return asyncio.run(
+        _run_parallel(
+            **kwargs,
+            dialect=dialect,
+            cases=cases,
+            run_metadata=metadata,
+            output=output,
+            jobs=jobs,
+        ),
+    )
 
 
 @subcommand
@@ -2489,17 +2650,49 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata = input
-    cases = filter(_cases)
-    return asyncio.run(
-        _run_parallel(
-            **kwargs,
-            dialect=dialect,
-            cases=cases,
-            run_metadata=metadata,
-            jobs=jobs,
-        ),
-    )
+    return _run_suite(input, filter, jobs, **kwargs)
+
+
+@subcommand
+@IMPLEMENTATION
+@FILTER
+@fail_fast
+@dialect_option(is_eager=True)
+@SET_SCHEMA
+@VALIDATE
+@JOBS
+@click.argument(
+    "input",
+    type=_suite.ClickParam(is_annotations=True),
+    metavar="DIALECT",
+    default=str(_suite.ANNOTATIONS_DIR_URL),
+)
+def annotation_suite(
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    filter: CaseTransform,
+    dialect: Dialect,
+    jobs: int,
+    **kwargs: Any,
+):
+    """
+    Run the official JSON Schema annotation test suite.
+
+    Unlike the validation test suite, the annotation suite is not organized
+    per-dialect -- each test case instead declares which dialects it is
+    compatible with, so the dialect to run under comes from ``--dialect``.
+
+    Supports a number of possible inputs:
+
+        * dialect short names (e.g. ``2020``), to run the annotation suite
+          directly from GitHub under the given dialect
+
+        * URLs to annotation test cases hosted on GitHub
+
+        * file paths found on the local file system containing
+          annotation test cases
+    """
+    # --dialect is consumed by the INPUT param when loading the cases.
+    return _run_suite(input, filter, jobs, output="annotations", **kwargs)
 
 
 @main.group()
@@ -3013,6 +3206,7 @@ async def _run_cases(
     max_fail: int | None = None,
     max_error: int | None = None,
     time_output_file: Path | None = None,
+    output: OutputFormat = "flag",
 ) -> _report.Report | None:
     """
     Run cases against an already-speaking runner, returning a Report.
@@ -3033,7 +3227,7 @@ async def _run_cases(
     time_taken = 0
 
     for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
-        seq_case = SeqCase(seq=count, case=case)
+        seq_case = SeqCase(seq=count, case=case, output=output)
         got_result = reporter.case_started(seq_case, dialect)
         st_time = perf_counter_ns()
         result = await seq_case.run(runner=runner)
@@ -3067,6 +3261,7 @@ async def _run_one(
     max_fail: int | None = None,
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
+    output: OutputFormat = "flag",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -3114,6 +3309,7 @@ async def _run_one(
             max_fail=max_fail,
             max_error=max_error,
             time_output_file=time_output_file,
+            output=output,
         )
 
     if report is None:
@@ -3127,6 +3323,7 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
+    output: OutputFormat = "flag",
     **kwargs: Any,
 ) -> int:
     """
@@ -3141,6 +3338,7 @@ async def _run_parallel(
                 connectable=connectable,
                 cases=materialized,
                 dialect=dialect,
+                output=output,
                 **kwargs,
             )
 

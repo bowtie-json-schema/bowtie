@@ -78,7 +78,7 @@ class Runner:
         assert self._started, "Not started!"
         return dict(ok=True)
 
-    def cmd_run(self, case, seq):
+    def cmd_run(self, case, seq, output):
         assert self._started, "Not started!"
 
         results = [

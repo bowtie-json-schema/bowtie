@@ -17,7 +17,7 @@ from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY
 from rpds import HashTrieMap
 
-from bowtie._commands import TestResult
+from bowtie._commands import ExpectedValidity
 from bowtie._core import Example, Test, TestCase
 
 if TYPE_CHECKING:
@@ -193,13 +193,23 @@ class Result:
             instances = Table.grid(padding=2)
             for i, test in enumerate(case.tests):
                 result = failure.result_for(i)
-                expected = TestResult(valid=test.expected())  # type: ignore[reportArgumentType]
-                if expected != result:
+                expected = test.expected()
+                if (
+                    result.skipped is True
+                    or result.errored is True
+                    or expected is None
+                    or not expected.matches(result)
+                ):
+                    should_be = (
+                        "successful"
+                        if expected is None
+                        else expected.description
+                    )
                     instances.add_row(
                         JSON(json.dumps(test.instance)),
                         (
                             f"[red]{result.description}[/] but should be "
-                            f"[green]{expected.description}"
+                            f"[green]{should_be}"
                         ),
                     )
 
@@ -260,7 +270,10 @@ class Result:
                         schema=case.schema,
                         instances=[each.instance for each in case.tests],
                         expected=[
-                            dict(valid=expect) for expect in each.expected
+                            dict(valid=expect.valid)
+                            if isinstance(expect, ExpectedValidity)
+                            else None
+                            for expect in each.expected
                         ],
                         **each.result.serializable(),
                     )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import date
-from functools import cache
+from functools import cache, total_ordering
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
@@ -21,6 +21,8 @@ from bowtie._commands import (
     START_V1,
     CaseErrored,
     Dialect as DialectCommand,
+    ExpectedAnnotations,
+    ExpectedValidity,
     SeqCase,
     SeqResult,
     StartedDialect,
@@ -53,6 +55,7 @@ if TYPE_CHECKING:
     from bowtie._commands import (
         AnyCaseResult,
         Command,
+        Expectation,
         Message,
         Run,
         Seq,
@@ -63,6 +66,7 @@ if TYPE_CHECKING:
 
 
 @frozen
+@total_ordering
 class Dialect:
     """
     A dialect of JSON Schema.
@@ -446,7 +450,7 @@ class DialectRunner:
     async def validate(
         self,
         run: Run,
-        expected: Sequence[bool | None],
+        expected: Sequence[Expectation],
     ) -> SeqResult:
         try:
             response: (
@@ -610,6 +614,8 @@ class Example:
     A validation example where we don't have any particularly expected result.
     """
 
+    assertions = None
+
     description: str
     instance: Any
     comment: str | None = None
@@ -644,11 +650,17 @@ class Example:
         cls,
         instance: Any = None,
         valid: bool | None = None,
+        assertions: list[dict[str, Any]] | None = None,
         **data: Any,
     ) -> Example | Test:
-        if valid is None:
+        if valid is None and assertions is None:
             return cls(**data, instance=instance)
-        return Test(**data, instance=instance, valid=valid)
+        return Test(
+            **data,
+            instance=instance,
+            valid=valid,
+            assertions=assertions,
+        )
 
 
 @frozen
@@ -659,14 +671,19 @@ class Test:
 
     description: str
     instance: Any
-    valid: bool
+    valid: bool | None = None
+    assertions: list[dict[str, Any]] | None = None
     comment: str | None = None
 
-    def expected(self) -> bool:
+    def expected(self) -> Expectation:
         """
-        Expect our expected validity result.
+        Expect our expected validity result or assertions.
         """
-        return self.valid
+        if self.assertions is not None:
+            return ExpectedAnnotations.from_serialized(self.assertions)
+        if self.valid is None:
+            return None
+        return ExpectedValidity(valid=self.valid)
 
     def syntax(self) -> RenderableType:
         from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
@@ -738,7 +755,11 @@ class TestCase:
         as_dict = asdict(
             self,
             filter=lambda k, v: (
-                k.name != "registry" and (k.name != "comment" or v is not None)
+                k.name != "registry"
+                and (
+                    k.name not in {"comment", "assertions", "valid"}
+                    or v is not None
+                )
             ),
         )
         if self.registry:
@@ -769,7 +790,7 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def expected_results(self) -> Sequence[bool | None]:
+    def expected_results(self) -> Sequence[Expectation]:
         return [each.expected() for each in self.tests]
 
     def without_expected_results(self) -> Message:
@@ -778,7 +799,8 @@ class TestCase:
             {
                 k: v
                 for k, v in test.items()
-                if k != "valid" and (k != "comment" or v is not None)
+                if k not in {"valid", "assertions"}
+                and (k != "comment" or v is not None)
             }
             for test in serializable.pop("tests")
         ]

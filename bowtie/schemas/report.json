@@ -126,7 +126,22 @@
           "type": "array",
 
           "minItems": 1,
-          "items": { "type": ["boolean", "null"] }
+          "items": {
+            "anyOf": [
+              { "type": "null" },
+              {
+                "description": "A validity expectation.",
+                "type": "boolean"
+              },
+              {
+                "title": "Expected Annotations",
+                "type": "array",
+                "items": {
+                  "$ref": "tag:bowtie.report,2023:models:test#assertion"
+                }
+              }
+            ]
+          }
         }
       }
     },

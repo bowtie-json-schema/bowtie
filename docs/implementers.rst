@@ -457,6 +457,9 @@ Let's take a first pass at implementing the ``run`` command, whose input looks l
     :dedent:
 
 ``run`` requests contain a test case (a schema with tests), alongside a ``seq`` parameter which is simply an identifier for the request and needs to be included in the response we write back.
+They also contain an ``output`` parameter indicating which output format Bowtie wants results in -- ``flag``, where each test result is simply a boolean ``valid`` saying whether the instance was valid under the schema, or ``annotations``, where each result additionally contains the `annotations <https://json-schema.org/draft/2020-12/json-schema-core#name-annotations>`_ collected while evaluating the instance.
+Validation runs (such as this tutorial's, or `bowtie suite <cli:suite>`) ask for ``flag`` output; ``annotations`` is asked for by `bowtie annotation-suite <cli:annotation-suite>`, and a harness whose implementation cannot collect annotations should skip such tests.
+Annotations-format results follow the ``tag:bowtie.report,2026:output:annotations`` schema (found in Bowtie's ``schemas/output/annotations.json``): each annotation carries the ``keyword`` producing it, the ``instanceLocation`` it annotates as a plain JSON Pointer, the ``keywordLocation`` of the keyword within the schema as a URI fragment JSON Pointer (e.g. ``#/properties/foo/title``), and the ``annotation`` value itself.
 Here's an implementation of the ``run`` command to add to our harness implementation:
 
 .. code:: lua
@@ -474,6 +477,20 @@ Here's an implementation of the ``run`` command to add to our harness implementa
 
 We call ``generate_validator`` to get our validation callable, then we apply it (``map`` it, though Lua has no builtin to do so) over all tests in the ``run`` request, returning a response which contains the ``seq`` alongside results for each test.
 The results are indicated positionally as shown above, meaning the first result in the results array should be the result for the first test in the input array.
+
+.. note::
+
+    The library we're wrapping has no API for collecting annotations, so a complete version of this harness should respond to ``run`` requests asking for ``annotations`` output by skipping each test:
+
+    .. code:: lua
+
+        if request.output == 'annotations' then
+          local results = {}
+          for _ = 1, #request.case.tests do
+            table.insert(results, { skipped = true, message = 'jsonschema cannot collect annotations' })
+          end
+          return { seq = request.seq, results = results }
+        end
 
 If we run ``bowtie`` again, we see::
 

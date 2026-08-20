@@ -18,9 +18,10 @@ from bowtie import DOCS, HOMEPAGE, REPO
 from bowtie._commands import (
     CaseErrored,
     CaseResult,
+    FlagTestResult,
+    SkippedTest,
     Started,
     StartedDialect,
-    TestResult,
 )
 from bowtie._core import Dialect, ImplementationInfo, registry
 from bowtie._registry import Invalid, SchemaCompiler, ValidatorRegistry
@@ -78,6 +79,23 @@ class Unconnection[E: Exception]:
                 self._current_dialect = Dialect.from_str(uri)
                 self._compile = self.compiler_for(self._current_dialect)
                 return asdict(self._implicit_dialect_response)
+            case {
+                "cmd": "run",
+                "seq": seq,
+                "case": case,
+                "output": "annotations",
+            }:
+                skipped = SkippedTest(
+                    message=(
+                        "Direct connectables do not support "
+                        "annotation collection."
+                    ),
+                )
+                results: list[Any] = [skipped for _ in case["tests"]]
+                return {
+                    "seq": seq,
+                    **CaseResult(results=results).serializable(),
+                }
             case {"cmd": "run", "seq": seq, "case": case}:
                 try:
                     schema = case["schema"]
@@ -87,7 +105,9 @@ class Unconnection[E: Exception]:
                     )
                     validate = self._compile(schema, registry)
                     results = [
-                        TestResult(valid=validate(test["instance"]) is None)
+                        FlagTestResult(
+                            valid=validate(test["instance"]) is None,
+                        )
                         for test in case["tests"]
                     ]
                 except Exception as err:  # noqa: BLE001

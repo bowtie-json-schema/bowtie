@@ -39,6 +39,18 @@ from bowtie._suite import hour_start, path_and_ref_from_gh_path
             "blob/main/tests/draft2020-12/",
             ("tests/draft2020-12", "main"),
         ),
+        (
+            "tree/main/annotations/tests/",
+            ("annotations/tests", "main"),
+        ),
+        (
+            "tree/main/annotations/tests/format.json",
+            ("annotations/tests/format.json", "main"),
+        ),
+        (
+            "tree/feature/tests/tests/draft2020-12/",
+            ("tests/draft2020-12", "feature/tests"),
+        ),
     ],
 )
 def test_path_and_ref(path, expected):

@@ -17,11 +17,64 @@
     },
     "instance": {
       "description": "The instance which should be validated against the schema in \"schema\"."
-    },
-    "valid": {
-      "description": "Optionally, whether validation of this instance is expected to be valid or not. If unprovided, implementation results will be reported without comparing against an expected value.",
-      "type": "boolean"
     }
   },
-  "additionalProperties": false
+  "oneOf": [
+    {
+      "description": "Assert validity",
+      "properties": {
+        "valid": {
+          "description": "Whether validation of this instance is expected to be valid or not.",
+          "type": "boolean"
+        }
+      },
+      "required": ["valid"]
+    },
+    {
+      "description": "Assert annotations",
+      "properties": {
+        "assertions": {
+          "description": "Assertions about the annotations an implementation must produce for this instance.",
+          "type": "array",
+          "items": { "$ref": "#assertion" }
+        }
+      },
+      "required": ["assertions"]
+    },
+    {
+      "description": "No assertion — implementation results will be reported without comparing against an expected value.",
+      "not": {
+        "anyOf": [
+          { "required": ["valid"] },
+          { "required": ["assertions"] }
+        ]
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+
+  "$defs": {
+    "assertion": {
+      "$anchor": "assertion",
+      "description": "An assertion about the annotations produced by a single keyword at a single instance location.",
+
+      "type": "object",
+      "required": ["instanceLocation", "keyword", "expected"],
+      "properties": {
+        "instanceLocation": {
+          "description": "The location of the instance whose annotations are being asserted, as a JSON Pointer.",
+          "type": "string"
+        },
+        "keyword": {
+          "description": "The annotating keyword.",
+          "type": "string"
+        },
+        "expected": {
+          "description": "The annotations which the keyword must have produced at the instance location. Keys are schema locations of the keyword, as URI fragment JSON Pointers, and values are the annotation value each location contributed. An empty object asserts the keyword produced no annotation at the instance location.",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

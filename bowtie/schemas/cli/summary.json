@@ -16,53 +16,122 @@
   "unevaluatedItems": false,
   "oneOf": [
     {
-      "title": "Validation Results",
-      "description": "A summary of the validation results collected for each test.",
+      "title": "Test Results",
+      "description": "A summary of the results collected for each test case.",
 
       "items": {
-        "type": "array",
-
-        "unevaluatedItems": false,
-        "prefixItems": [
+        "anyOf": [
           {
-            "title": "JSON Schema",
-            "description": "The schema which validated this test case."
-          },
-          {
-            "description": "Results across all instances which were tested.",
+            "title": "Validation Test Case Results",
+            "description": "Results for a test case asserting validity.",
 
             "type": "array",
 
             "unevaluatedItems": false,
-            "items": {
-              "title": "Instance Result",
-              "description": "The result of validation for a specific instance across implementations.",
+            "prefixItems": [
+              {
+                "title": "JSON Schema",
+                "description": "The schema which validated this test case."
+              },
+              {
+                "description": "Results across all instances which were tested.",
 
-              "type": "array",
+                "type": "array",
 
-              "unevaluatedItems": false,
-              "prefixItems": [
-                {
-                  "title": "Instance",
-                  "description": "The instance which was validated in this test."
-                },
-                {
-                  "title": "Per-implementation Validation Results",
-                  "description": "The results of validation for each implementation which was run.",
+                "unevaluatedItems": false,
+                "items": {
+                  "title": "Instance Result",
+                  "description": "The result of validation for a specific instance across implementations.",
 
-                  "type": "object",
-                  "minProperties": 1,
+                  "type": "array",
 
-                  "propertyNames": {
-                    "$ref": "tag:bowtie.report,2024:models:implementation:id"
-                  },
-                  "additionalProperties": {
-                    "$todo": "Include more of the actual result details.",
-                    "enum": ["valid", "invalid", "skipped", "error"]
-                  }
+                  "unevaluatedItems": false,
+                  "prefixItems": [
+                    {
+                      "title": "Instance",
+                      "description": "The instance which was validated in this test."
+                    },
+                    {
+                      "title": "Per-implementation Validation Results",
+                      "description": "The results of validation for each implementation which was run.",
+
+                      "type": "object",
+                      "minProperties": 1,
+
+                      "propertyNames": {
+                        "$ref": "tag:bowtie.report,2024:models:implementation:id"
+                      },
+                      "additionalProperties": {
+                        "$todo": "Include more of the actual result details.",
+                        "enum": ["valid", "invalid", "skipped", "error"]
+                      }
+                    }
+                  ]
                 }
-              ]
-            }
+              }
+            ]
+          },
+          {
+            "title": "Annotation Test Case Results",
+            "description": "Results for a test case asserting annotations.",
+
+            "type": "object",
+            "required": ["description", "schema", "tests"],
+            "properties": {
+              "description": {
+                "description": "The test case description.",
+                "type": "string"
+              },
+              "schema": {
+                "title": "JSON Schema",
+                "description": "The schema whose annotations this test case asserts on."
+              },
+              "tests": {
+                "description": "Results across all instances which were tested.",
+
+                "type": "array",
+
+                "items": {
+                  "type": "object",
+                  "required": ["instance", "results"],
+                  "properties": {
+                    "instance": {
+                      "title": "Instance",
+                      "description": "The instance which was annotated in this test."
+                    },
+                    "results": {
+                      "title": "Per-implementation Annotation Results",
+                      "description": "The annotation results for each implementation which was run.",
+
+                      "type": "object",
+                      "minProperties": 1,
+
+                      "propertyNames": {
+                        "$ref": "tag:bowtie.report,2024:models:implementation:id"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": ["status"],
+                        "properties": {
+                          "status": {
+                            "enum": ["pass", "fail", "skipped", "error"]
+                          },
+                          "expected": {
+                            "description": "What the test expected, grouped by instance location and keyword for annotation assertions."
+                          },
+                          "actual": {
+                            "description": "The annotations the implementation produced, grouped by instance location and keyword."
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
           }
         ]
       }

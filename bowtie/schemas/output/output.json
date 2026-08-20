@@ -1,0 +1,11 @@
+{
+  "description": "A single output result, either flag or annotations format.",
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tag:bowtie.report,2026:output",
+
+  "oneOf": [
+    { "$ref": "tag:bowtie.report,2026:output:flag" },
+    { "$ref": "tag:bowtie.report,2026:output:annotations" }
+  ]
+}
