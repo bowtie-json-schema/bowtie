@@ -80,7 +80,7 @@ class Runner:
             )
         return dict(ok=True)
 
-    def cmd_run(self, case, seq, output):
+    def cmd_run(self, case, seq, output="flag"):
         assert self._started, "Not started!"
         if output == "annotations":
             skipped = dict(
