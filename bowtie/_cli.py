@@ -17,7 +17,6 @@ import logging
 import os
 import sys
 import tarfile
-import urllib.parse
 
 from click.shell_completion import CompletionItem
 from diagnostic import DiagnosticError
@@ -50,7 +49,13 @@ from bowtie import (
     _report,
     _suite,
 )
-from bowtie._commands import FlagTestResult, SeqCase, Unsuccessful
+from bowtie._commands import (
+    FlagTestResult,
+    OutputFormat,
+    SeqCase,
+    Unsuccessful,
+    grouped_assertions,
+)
 from bowtie._core import (
     Dialect,
     Example,
@@ -633,45 +638,24 @@ def summary(report: _report.Report, format: _F, show: str):
             serialized: list[Any] = []
             for case, test_results in value:
                 test_results_list = list(test_results)
-                if not test_results_list:
-                    continue
-                first_test = test_results_list[0][0]
-                is_annotation = isinstance(first_test.expected(), list)
+                is_annotation = any(
+                    t.assertions is not None for t, _ in test_results_list
+                )
 
                 if is_annotation:
-                    tests_out: list[dict[str, Any]] = []
-                    for t, test_result in test_results_list:
-                        impl_results: dict[str, Any] = {}
-                        for impl_id in report.implementations:
-                            r = test_result[impl_id]
-                            status = _annotation_status(t, r)
-                            result_data: dict[str, Any] = {"status": status}
-                            if status in ("pass", "fail"):
-                                actual = r.grouped_annotations
-                                if status == "pass":
-                                    if actual:
-                                        result_data["actual"] = actual
-                                else:
-                                    expected_raw = t.expected()
-                                    result_data["expected"] = (
-                                        _assertions_to_grouped(
-                                            cast(
-                                                "list[dict[str, Any]]",
-                                                expected_raw,
-                                            ),
-                                        )
-                                        if isinstance(expected_raw, list)
-                                        else expected_raw
-                                    )
-                                    result_data["actual"] = actual
-                            impl_results[impl_id] = result_data
-
-                        tests_out.append(
-                            {
-                                "instance": t.instance,
-                                "results": impl_results,
+                    tests_out = [
+                        {
+                            "instance": t.instance,
+                            "results": {
+                                impl_id: _annotation_cell(
+                                    t,
+                                    test_result[impl_id],
+                                )
+                                for impl_id in report.implementations
                             },
-                        )
+                        }
+                        for t, test_result in test_results_list
+                    ]
                     serialized.append(
                         {
                             "description": case.description,
@@ -825,43 +809,22 @@ def _results_table(
             cells: list[Text] = []
             for impl_id in implementations:
                 r = test_result[impl_id]
-                expected_raw = t.expected()
-                is_annotation = t.assertions is not None
+                if t.assertions is None:
+                    cells.append(Text(r.description))
+                    continue
 
-                cell_text = Text()
-                if is_annotation:
-                    status = _annotation_status(t, r)
-                    if status == "pass":
-                        cell_text.append("Pass", style="green")
-                    elif status == "fail":
-                        cell_text.append("Fail", style="red")
-                    elif status == "skipped":
-                        cell_text.append("Skipped", style="yellow")
-                    else:
-                        cell_text.append("Error", style="red bold")
-
-                    if status in ("pass", "fail"):
-                        actual = r.grouped_annotations
-                        if status == "pass":
-                            if actual:
-                                dumped = json.dumps(actual, indent=2)
-                                cell_text.append(f"\n{dumped}")
-                        else:
-                            expected_grouped = (
-                                _assertions_to_grouped(list(expected_raw))  # type: ignore[arg-type]
-                                if isinstance(expected_raw, list)
-                                else expected_raw
-                            )
-                            cell_text.append("\nExpected:\n", style="bold")
-                            cell_text.append(
-                                f"{json.dumps(expected_grouped, indent=2)}\n",
-                            )
-                            cell_text.append("Actual:\n", style="bold")
-                            cell_text.append(f"{json.dumps(actual, indent=2)}")
-                else:
-                    cell_text.append(r.description)
-
-                cells.append(cell_text)
+                cell = _annotation_cell(t, r)
+                status = cell["status"]
+                text = Text()
+                text.append(status, style=_ANNOTATION_STATUS_STYLES[status])
+                if "expected" in cell:
+                    text.append("\nExpected:\n", style="bold")
+                    text.append(f"{json.dumps(cell['expected'], indent=2)}\n")
+                    text.append("Actual:\n", style="bold")
+                    text.append(f"{json.dumps(cell['actual'], indent=2)}")
+                elif "actual" in cell:
+                    text.append(f"\n{json.dumps(cell['actual'], indent=2)}")
+                cells.append(text)
 
             subtable.add_row(t.syntax(), *cells)
 
@@ -902,43 +865,24 @@ def _results_table_in_markdown(
             row = [json.dumps(t.instance)]
             for impl_id in implementations:
                 r = test_result[impl_id]
-                expected_raw = t.expected()
-                is_annotation = t.assertions is not None
+                if t.assertions is None:
+                    row.append(r.description)
+                    continue
 
-                cell_text = ""
-                if is_annotation:
-                    status = _annotation_status(t, r)
-                    if status == "pass":
-                        cell_text += "Pass"
-                    elif status == "fail":
-                        cell_text += "Fail"
-                    elif status == "skipped":
-                        cell_text += "Skipped"
-                    else:
-                        cell_text += "Error"
-
-                    if status in ("pass", "fail"):
-                        actual = r.grouped_annotations
-                        if status == "pass":
-                            if actual:
-                                dumped = json.dumps(actual)
-                                cell_text += f"<br><br>Actual:<br>`{dumped}`"
-                        else:
-                            expected_grouped = (
-                                _assertions_to_grouped(list(expected_raw))  # type: ignore[arg-type]
-                                if isinstance(expected_raw, list)
-                                else expected_raw
-                            )
-                            dumped_exp = json.dumps(expected_grouped)
-                            dumped_act = json.dumps(actual)
-                            cell_text += (
-                                f"<br><br>Expected:<br>`{dumped_exp}`"
-                                f"<br>Actual:<br>`{dumped_act}`"
-                            )
-                else:
-                    cell_text += r.description
-
-                row.append(cell_text)
+                cell = _annotation_cell(t, r)
+                text = cell["status"]
+                if "expected" in cell:
+                    expected = json.dumps(cell["expected"])
+                    actual = json.dumps(cell["actual"])
+                    text += (
+                        f"<br><br>Expected:<br>`{expected}`"
+                        f"<br>Actual:<br>`{actual}`"
+                    )
+                elif "actual" in cell:
+                    text += (
+                        f"<br><br>Actual:<br>`{json.dumps(cell['actual'])}`"
+                    )
+                row.append(text)
             inner_table_rows.append(row)
         inner_markdown_table = convert_table_to_markdown(
             inner_table_columns,
@@ -959,11 +903,23 @@ def _results_table_in_markdown(
     return final_content
 
 
+_AnnotationStatus = Literal["pass", "fail", "skipped", "error"]
+
+_ANNOTATION_STATUS_STYLES: dict[_AnnotationStatus, str] = {
+    "pass": "green",
+    "fail": "red",
+    "skipped": "yellow",
+    "error": "red bold",
+}
+
+
 def _annotation_status(
     test: Example | Test,
     result: AnyTestResult,
-) -> str:
-    """Return a status string for an annotation test result."""
+) -> _AnnotationStatus:
+    """
+    The status of an annotation test result.
+    """
     if result.skipped:
         return "skipped"
     if result.errored:
@@ -974,26 +930,29 @@ def _annotation_status(
     return "fail"
 
 
-def _assertions_to_grouped(
-    assertions: list[dict[str, Any]],
-) -> dict[str, dict[str, dict[str, Any]]]:
+def _annotation_cell(
+    test: Example | Test,
+    result: AnyTestResult,
+) -> dict[str, Any]:
     """
-    Convert test suite assertions to grouped format.
-
-    Expects the standard Bowtie output format.
+    The status and expected/actual annotations one summary cell shows.
     """
-    grouped: dict[str, dict[str, dict[str, Any]]] = {}
-    for assertion in assertions:
-        loc = assertion.get("instanceLocation", "")
-        kw = assertion.get("keyword", "")
-        kw_loc = assertion.get("keywordLocation", "")
-        decoded_kw_loc = urllib.parse.unquote(kw_loc)
-        if loc not in grouped:
-            grouped[loc] = {}
-        if kw not in grouped[loc]:
-            grouped[loc][kw] = {}
-        grouped[loc][kw][decoded_kw_loc] = assertion.get("annotation")
-    return grouped
+    status = _annotation_status(test, result)
+    cell: dict[str, Any] = {"status": status}
+    if status not in {"pass", "fail"}:
+        return cell
+    actual = result.grouped_annotations
+    if status == "fail":
+        expected = test.expected()
+        cell["expected"] = (
+            grouped_assertions(expected)
+            if isinstance(expected, list)
+            else expected
+        )
+        cell["actual"] = actual
+    elif actual:
+        cell["actual"] = actual
+    return cell
 
 
 @subcommand
@@ -2622,11 +2581,33 @@ async def smoke(
     return 0 if all(result.success for _, _, result in results) else EX.DATAERR
 
 
+def _run_suite(
+    input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
+    filter: CaseTransform,
+    jobs: int,
+    output: OutputFormat = "flag",
+    **kwargs: Any,
+):
+    _cases, dialect, metadata = input
+    cases = list(filter(_cases))
+    if not cases:
+        return EX.NOINPUT
+    return asyncio.run(
+        _run_parallel(
+            **kwargs,
+            dialect=dialect,
+            cases=cases,
+            run_metadata=metadata,
+            output=output,
+            jobs=jobs,
+        ),
+    )
+
+
 @subcommand
 @IMPLEMENTATION
 @FILTER
 @fail_fast
-@dialect_option(default=None)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2635,7 +2616,6 @@ def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
     jobs: int,
-    dialect: Dialect | None = None,
     **kwargs: Any,
 ):
     """
@@ -2664,25 +2644,14 @@ def suite(
               URL example above)
 
     """  # noqa: E501
-    _cases, dialect, metadata = input
-    cases = list(filter(_cases))
-
-    return asyncio.run(
-        _run_parallel(
-            **kwargs,
-            dialect=dialect,
-            cases=cases,
-            run_metadata=metadata,
-            jobs=jobs,
-        ),
-    )
+    return _run_suite(input, filter, jobs, **kwargs)
 
 
 @subcommand
 @IMPLEMENTATION
 @FILTER
 @fail_fast
-@dialect_option(default=None)
+@dialect_option(is_eager=True)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2690,33 +2659,34 @@ def suite(
     "input",
     type=_suite.ClickParam(is_annotations=True),
     metavar="DIALECT",
+    default=str(_suite.ANNOTATIONS_DIR_URL),
 )
 def annotation_suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
-    dialect: Dialect | None,
+    dialect: Dialect,
     jobs: int,
     **kwargs: Any,
 ):
     """
     Run the official JSON Schema annotation test suite.
 
-    Supports dialect short names (e.g. ``2020``) and local file paths
-    to annotation test cases.
-    """
-    _cases, dialect, metadata = input
-    cases = list(filter(_cases))
+    Unlike the validation test suite, the annotation suite is not organized
+    per-dialect -- each test case instead declares which dialects it is
+    compatible with, so the dialect to run under comes from ``--dialect``.
 
-    return asyncio.run(
-        _run_parallel(
-            **kwargs,
-            dialect=dialect,
-            cases=cases,
-            run_metadata=metadata,
-            output="annotations",
-            jobs=jobs,
-        ),
-    )
+    Supports a number of possible inputs:
+
+        * dialect short names (e.g. ``2020``), to run the annotation suite
+          directly from GitHub under the given dialect
+
+        * URLs to annotation test cases hosted on GitHub
+
+        * file paths found on the local file system containing
+          annotation test cases
+    """
+    # --dialect is consumed by the INPUT param when loading the cases.
+    return _run_suite(input, filter, jobs, output="annotations", **kwargs)
 
 
 @main.group()
@@ -3230,7 +3200,7 @@ async def _run_cases(
     max_fail: int | None = None,
     max_error: int | None = None,
     time_output_file: Path | None = None,
-    output: str = "flag",
+    output: OutputFormat = "flag",
 ) -> _report.Report | None:
     """
     Run cases against an already-speaking runner, returning a Report.
@@ -3285,7 +3255,7 @@ async def _run_one(
     max_fail: int | None = None,
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
-    output: str = "flag",
+    output: OutputFormat = "flag",
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -3347,7 +3317,7 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
-    output: str = "flag",
+    output: OutputFormat = "flag",
     **kwargs: Any,
 ) -> int:
     """
