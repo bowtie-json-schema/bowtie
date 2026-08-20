@@ -10,8 +10,8 @@ from fnmatch import fnmatch
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
-import io
 import json
+import os
 import zipfile
 
 from diagnostic import DiagnosticError
@@ -23,7 +23,7 @@ from bowtie import GITHUB, _github
 from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
     from typing import Any
 
 
@@ -36,94 +36,19 @@ URL_FOR_DIALECT = {
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
-URL_FOR_ANNOTATION_DIALECT = dict.fromkeys(
-    Dialect.known(),
-    ANNOTATIONS_DIR_URL,
-)
-
 # Magic constants assumed/used by the official test suite for $ref tests
 SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 
-class _SuiteClickParam(click.ParamType):
-    """Base class for click parameters that fetch test suites."""
-
-    def _fetch_from_github(
-        self,
-        value: URL,
-        error_code: str,
-        error_message: str,
-        resolve_func: Callable[[Any], tuple[Any, ...]],
-    ) -> tuple[Any, ...]:
-        from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
-            NotFoundError,
-        )
-
-        gh = _github._client()  # type: ignore[reportPrivateUsage]
-        org, repo_name, *rest = cast("list[str]", value.path_segments)
-        repo = gh.repository(org, repo_name)
-
-        path, ref = path_and_ref_from_gh_path(rest)
-        data = io.BytesIO()
-        data.name = ""
-        succeeded = repo.archive(format="zipball", path=data, ref=ref)
-        if not succeeded:
-            error = DiagnosticError(
-                code=error_code,
-                message=error_message,
-                causes=[
-                    f"Retrieved the tree {ref}",
-                    f"Tried to download {path} from within it.",
-                ],
-                hint_stmt=(
-                    f"Check that {ref} is an existing branch and that "
-                    "you have passed the right path to test cases."
-                ),
-                note_stmt="You can also pass a local path.",
-            )
-            rich.print(error)
-            return self.fail(error_message)
-        data.seek(0)
-        with zipfile.ZipFile(data) as zf:
-            (contents,) = zipfile.Path(zf).iterdir()
-            resolved = resolve_func(contents / path)
-            cases = list(resolved[-1])
-
-            try:
-                commit = repo.commit(ref)
-            except NotFoundError:
-                commit_info = ref
-            else:
-                sha = cast(
-                    "str",
-                    commit.sha,
-                )
-                url = cast(
-                    "str",
-                    commit.html_url,
-                )
-                commit_info = {
-                    "text": sha[:7],
-                    "href": url,
-                }
-            run_metadata: dict[str, Any] = {"Commit": commit_info}
-
-        return (*resolved[:-1], cases, run_metadata)
-
-
-class ClickParam(_SuiteClickParam):
+class ClickParam(click.ParamType):
     """
     A command line parameter which loads tests from the official test suite.
     """
 
     def __init__(self, is_annotations: bool = False):
         self._is_annotations = is_annotations
-        if is_annotations:
-            self.name = (
-                "json-schema-org/JSON-Schema-Test-Suite annotation test cases"
-            )
-        else:
-            self.name = "json-schema-org/JSON-Schema-Test-Suite test cases"
+        kind = "annotation test cases" if is_annotations else "test cases"
+        self.name = f"json-schema-org/JSON-Schema-Test-Suite {kind}"
 
     def convert(
         self,
@@ -136,53 +61,69 @@ class ClickParam(_SuiteClickParam):
 
         # Convert dialect URIs or shortnames to test suite URIs
         input_dialect = Dialect.by_alias().get(value)
+        known_dialect = input_dialect if self._is_annotations else None
         if self._is_annotations and input_dialect is not None:
-            value = URL_FOR_ANNOTATION_DIALECT.get(input_dialect, value)
+            value = ANNOTATIONS_DIR_URL
         else:
             value = input_dialect or value
             value = URL_FOR_DIALECT.get(value, value)
+
+        def local(
+            path: Path,
+        ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+            dialect, cases = self._cases_and_dialect(
+                path=path,
+                ctx=ctx,
+                known_dialect=known_dialect,
+            )
+            return cases, dialect, {}
+
+        # On Windows, drive-letter paths like D:\... are misinterpreted by
+        # URL.parse() as having a URL scheme (the drive letter).  Use
+        # splitdrive() to catch these before attempting URL parsing.
+        if isinstance(value, str) and (
+            os.path.splitdrive(value)[0] or Path(value).exists()
+        ):
+            return local(Path(value))
 
         try:
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            _dialect_name, dialect, cases = self._cases_and_dialect(
-                path=Path(value),
-                ctx=ctx,
-                known_dialect=input_dialect if self._is_annotations else None,
-            )
-            run_metadata: dict[str, Any] = {}
-            return cases, dialect, run_metadata
-        else:
-            (
-                _dialect_name,
-                dialect,
-                cases,
-                run_metadata,
-            ) = self._fetch_from_github(
-                value=value,
-                error_code=(
-                    "annotation-suite-fetch-failed"
-                    if self._is_annotations
-                    else "suite-fetch-failed"
-                ),
-                error_message=(
-                    "Fetching the annotation test suite failed."
-                    if self._is_annotations
-                    else "Fetching the test suite from GitHub failed."
-                ),
-                resolve_func=lambda path: self._cases_and_dialect(
-                    path=path,
-                    ctx=ctx,
-                    known_dialect=input_dialect
-                    if self._is_annotations
-                    else None,
-                ),
-            )
-            # Re-order the return tuple to match the expected return type
-            return cases, dialect, run_metadata
+            return local(Path(value))
 
-        self.fail(f"{value!r} does not contain JSON Schema Test Suite cases.")
+        value = cast("URL", value)
+        org, repo_name, *rest = value.path_segments
+        path, ref = path_and_ref_from_gh_path(rest)
+
+        downloaded = _github.download_tree(org, repo_name, ref)
+        if downloaded is None:
+            message = "Fetching the test suite from GitHub failed."
+            error = DiagnosticError(
+                code="suite-fetch-failed",
+                message=message,
+                causes=[
+                    f"Retrieved the tree {ref}",
+                    f"Tried to download {path} from within it.",
+                ],
+                hint_stmt=(
+                    f"Check that {ref} is an existing branch and that "
+                    "you have passed the right path to test cases."
+                ),
+                note_stmt="You also can pass a local path to test cases.",
+            )
+            rich.print(error)
+            return self.fail(message)
+        data, run_metadata = downloaded
+        with zipfile.ZipFile(data) as zf:
+            (contents,) = zipfile.Path(zf).iterdir()
+            dialect, cases = self._cases_and_dialect(
+                path=contents / path,
+                ctx=ctx,
+                known_dialect=known_dialect,
+            )
+            cases = list(cases)
+        return cases, dialect, run_metadata
 
     def _cases_and_dialect(
         self,
@@ -195,35 +136,21 @@ class ClickParam(_SuiteClickParam):
         else:
             paths, version_path = _glob(path, "*.json"), path
 
-        is_annotations = (
-            version_path.name == "annotations"
-            or version_path.parent.name == "annotations"
-        )
-
-        remotes = version_path.parent.parent / "remotes"
-
-        dialect_name = (
-            version_path.parent.name if is_annotations else version_path.name
-        )
-
         dialect = known_dialect
         if dialect is None:
-            dialect = Dialect.by_short_name().get(dialect_name)
+            dialect = Dialect.by_short_name().get(version_path.name)
         if dialect is None and ctx is not None:
             dialect = ctx.params.get("dialect")
-
         if dialect is None:
-            self.fail(
-                f"{path} does not contain JSON Schema Test Suite cases or "
-                "could not infer dialect. Please use --dialect.",
-            )
+            self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
-        if is_annotations:
+        if self._is_annotations:
             cases = annotation_cases_from(paths=paths, dialect=dialect)
         else:
+            remotes = version_path.parent.parent / "remotes"
             cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
 
-        return dialect_name, dialect, cases
+        return dialect, cases
 
 
 _P = Path | zipfile.Path
@@ -283,24 +210,37 @@ def cases_from(
             )
 
 
+# The version tokens the suite's compatibility grammar allows.
+# Some are drafts Bowtie does not support.
+# 9999 is a placeholder marking tests needing a draft which does not exist.
+_COMPATIBILITY_VERSIONS = {
+    str(each): each for each in (1, 2, 3, 4, 6, 7, 2019, 2020, 9999)
+}
+
+
 def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     if compatibility is None:
         return True
 
+    version = int(dialect.short_name.removeprefix("draft").partition("-")[0])
+
+    # Constraints naming an unknown version are never satisfied, not ignored.
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
         if constraint.startswith("<="):
-            b = Dialect.by_alias().get(constraint[2:])
-            if b is not None and dialect > b:
-                return False
+            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
+            satisfied = bound is not None and version <= bound
+        elif constraint.startswith(">="):
+            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
+            satisfied = bound is not None and version >= bound
         elif constraint.startswith("="):
-            b = Dialect.by_alias().get(constraint[1:])
-            if b is not None and dialect != b:
-                return False
+            bound = _COMPATIBILITY_VERSIONS.get(constraint[1:])
+            satisfied = bound is not None and version == bound
         else:
-            b = Dialect.by_alias().get(constraint)
-            if b is not None and dialect < b:
-                return False
+            bound = _COMPATIBILITY_VERSIONS.get(constraint)
+            satisfied = bound is not None and version >= bound
+        if not satisfied:
+            return False
     return True
 
 
@@ -321,22 +261,27 @@ def annotation_cases_from(
             for test in case["tests"]:
                 assertions: list[dict[str, Any]] = []
                 for assertion in test.get("assertions", []):
-                    location = assertion.get("location", "")
-                    keyword = assertion.get("keyword", "")
-                    expected = assertion.get("expected", {})
-                    for expected_loc, expected_val in expected.items():
-                        assertions.append(
-                            {
-                                "instanceLocation": location,
-                                "keyword": keyword,
-                                "keywordLocation": expected_loc,
-                                "annotation": expected_val,
-                            },
-                        )
+                    keyword = assertion["keyword"]
+                    # The suite keys these by containing subschema location.
+                    # Bowtie uses the location of the keyword itself.
+                    expected = {
+                        f"{location}/{keyword}": value
+                        for location, value in assertion.get(
+                            "expected",
+                            {},
+                        ).items()
+                    }
+                    assertions.append(
+                        {
+                            "instanceLocation": assertion.get("location", ""),
+                            "keyword": keyword,
+                            "expected": expected,
+                        },
+                    )
                 tests.append(
                     {
                         "description": test.get("description", ""),
-                        "instance": test.get("instance", test.get("data", {})),
+                        "instance": test["instance"],
                         "assertions": assertions,
                     },
                 )
@@ -348,17 +293,19 @@ def annotation_cases_from(
                 dialect=dialect,
                 description=case["description"],
                 schema=case["schema"],
+                registry=case.get("externalSchemas", {}),
                 tests=tests,
             )
 
 
-def path_and_ref_from_gh_path(path: list[str]):
-    ROOTS = {"tests", "annotations"}
-    for i in range(1, len(path)):
-        if path[i] in ROOTS:
-            ref = "/".join(path[1:i])
-            subpath = "/".join(path[i:]).rstrip("/")
-            return subpath, ref
+def path_and_ref_from_gh_path(path: list[str]) -> tuple[str, str]:
+    # Scan for the suite's root directories from the end.
+    # Splitting at the first match breaks refs containing a tests segment.
+    for root in "annotations", "tests":
+        if root in path:
+            i = len(path) - 1 - path[::-1].index(root)
+            # remove tree/ or blob/ from the front of the ref
+            return "/".join(path[i:]).rstrip("/"), "/".join(path[1:i])
     return "", "/".join(path[1:]).rstrip("/")
 
 
