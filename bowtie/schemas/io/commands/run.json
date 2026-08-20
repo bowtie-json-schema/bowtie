@@ -3,7 +3,7 @@
 
   "$id": "tag:bowtie.report,2023:ihop:command:run",
 
-  "required": ["seq", "case"],
+  "required": ["seq", "case", "output"],
   "properties": {
     "cmd": { "const": "run" },
     "seq": { "$ref": "tag:bowtie.report,2024:report:seq" },

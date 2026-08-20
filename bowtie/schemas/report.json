@@ -129,7 +129,18 @@
           "items": {
             "anyOf": [
               { "type": "null" },
-              { "$ref": "tag:bowtie.report,2026:output" }
+              {
+                "description": "A validity expectation, as written by Bowtie before output formats existed.",
+                "type": "boolean"
+              },
+              { "$ref": "tag:bowtie.report,2026:output:flag" },
+              {
+                "title": "Expected Annotations",
+                "type": "array",
+                "items": {
+                  "$ref": "tag:bowtie.report,2023:models:test#assertion"
+                }
+              }
             ]
           }
         }

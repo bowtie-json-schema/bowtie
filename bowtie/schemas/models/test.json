@@ -34,11 +34,9 @@
       "description": "Assert annotations",
       "properties": {
         "assertions": {
-          "description": "Assertions for annotation output. Expected annotation values mapped directly into the Bowtie output schema.",
+          "description": "Assertions about the annotations an implementation must produce for this instance.",
           "type": "array",
-          "items": {
-            "$ref": "tag:bowtie.report,2026:output:annotations#/properties/annotations/items"
-          }
+          "items": { "$ref": "#assertion" }
         }
       },
       "required": ["assertions"]
@@ -53,5 +51,30 @@
       }
     }
   ],
-  "unevaluatedProperties": false
+  "unevaluatedProperties": false,
+
+  "$defs": {
+    "assertion": {
+      "$anchor": "assertion",
+      "description": "An assertion about the annotations produced by a single keyword at a single instance location.",
+
+      "type": "object",
+      "required": ["instanceLocation", "keyword", "expected"],
+      "properties": {
+        "instanceLocation": {
+          "description": "The location of the instance whose annotations are being asserted, as a JSON Pointer.",
+          "type": "string"
+        },
+        "keyword": {
+          "description": "The annotating keyword.",
+          "type": "string"
+        },
+        "expected": {
+          "description": "The annotations which the keyword must have produced at the instance location. Keys are schema locations of the keyword, as URI fragment JSON Pointers, and values are the annotation value each location contributed. An empty object asserts the keyword produced no annotation at the instance location.",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

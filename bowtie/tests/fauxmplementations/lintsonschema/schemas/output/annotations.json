@@ -21,20 +21,22 @@
             "type": "string"
           },
           "instanceLocation": {
-            "description": "The location of the instance being annotated, as a JSON Pointer.",
+            "description": "The location of the instance being annotated, as a plain JSON Pointer (e.g. '' or '/foo').",
             "type": "string"
           },
           "keywordLocation": {
-            "description": "The location of the keyword that produced this annotation, as a JSON Pointer or URI.",
+            "description": "The location within the schema of the keyword that produced this annotation, as a URI fragment JSON Pointer (e.g. '#/properties/foo/title').",
             "type": "string"
           },
           "annotation": {
             "description": "The annotation value produced by the keyword."
           }
         },
-        "required": ["keyword", "instanceLocation", "keywordLocation", "annotation"]
+        "required": ["keyword", "instanceLocation", "keywordLocation", "annotation"],
+        "additionalProperties": false
       }
     }
   },
-  "required": ["valid", "annotations"]
+  "required": ["valid", "annotations"],
+  "unevaluatedProperties": false
 }
