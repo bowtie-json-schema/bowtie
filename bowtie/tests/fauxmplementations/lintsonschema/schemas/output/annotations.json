@@ -5,6 +5,7 @@
   "$id": "tag:bowtie.report,2026:output:annotations",
 
   "type": "object",
+  "required": ["valid", "annotations"],
   "properties": {
     "valid": {
       "description": "Whether the instance validated successfully against the schema.",
@@ -37,6 +38,5 @@
       }
     }
   },
-  "required": ["valid", "annotations"],
-  "unevaluatedProperties": false
+  "additionalProperties": false
 }

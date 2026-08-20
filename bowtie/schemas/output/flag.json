@@ -5,12 +5,12 @@
   "$id": "tag:bowtie.report,2026:output:flag",
 
   "type": "object",
+  "required": ["valid"],
   "properties": {
     "valid": {
       "description": "Whether the instance validated successfully against the schema.",
       "type": "boolean"
     }
   },
-  "required": ["valid"],
-  "unevaluatedProperties": false
+  "additionalProperties": false
 }

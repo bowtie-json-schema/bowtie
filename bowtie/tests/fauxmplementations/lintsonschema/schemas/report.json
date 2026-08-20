@@ -128,13 +128,16 @@
           "minItems": 1,
           "items": {
             "anyOf": [
-              { "type": "null" },
               {
-                "description": "A validity expectation.",
+                "description": "No expectation.",
+                "type": "null"
+              },
+              {
+                "description": "An expectation that the instance is (in)valid.",
                 "type": "boolean"
               },
               {
-                "title": "Expected Annotations",
+                "description": "Expectations about produced annotations.",
                 "type": "array",
                 "items": {
                   "$ref": "tag:bowtie.report,2023:models:test#assertion"
