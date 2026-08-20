@@ -80,8 +80,14 @@ class Runner:
             )
         return dict(ok=True)
 
-    def cmd_run(self, case, seq):
+    def cmd_run(self, case, seq, output):
         assert self._started, "Not started!"
+        if output == "annotations":
+            skipped = dict(
+                skipped=True,
+                message="jsonschema does not support annotation collection",
+            )
+            return dict(seq=seq, results=[skipped for _ in case["tests"]])
         schema = case["schema"]
         try:
             Validator = validator_for(schema, self._DefaultValidator)

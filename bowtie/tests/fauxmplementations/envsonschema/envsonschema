@@ -42,6 +42,10 @@ Here's a short description of the minilanguage:
         - sleep (number) : as above, for only this test
         - skip (**SkippedTest.context) : as above, for only this test
         - error (**ErroredTest.context): as above, for only this test
+        - annotate (**annotation)
+            attach an annotation to this test's result, making it an
+            annotations-format result. Arguments are the annotation's
+            fields. May be repeated to attach multiple annotations.
 
 Any other words are ignored.
 """
@@ -147,6 +151,7 @@ class Runner:
         results = {"results": []}
         for test in case["tests"]:
             result = {"valid": False}
+            annotations = []
 
             for instruction, arg in instructions(test["description"]):
                 if instruction == "crash":
@@ -168,6 +173,13 @@ class Runner:
                             kv.split("=", 1) for kv in arg.split(",")
                         ),
                     )
+                elif instruction == "annotate":
+                    annotations.append(
+                        dict(kv.split("=", 1) for kv in arg.split(",")),
+                    )
+
+            if annotations and "valid" in result:
+                result = {**result, "annotations": annotations}
 
             results["results"].append(result)
 
