@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import date
-from functools import cache
+from functools import cache, total_ordering
 from importlib.resources import files
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from bowtie._commands import (
         AnyCaseResult,
         Command,
+        Expectation,
         Message,
         Run,
         Seq,
@@ -63,6 +64,7 @@ if TYPE_CHECKING:
 
 
 @frozen
+@total_ordering
 class Dialect:
     """
     A dialect of JSON Schema.
@@ -446,7 +448,7 @@ class DialectRunner:
     async def validate(
         self,
         run: Run,
-        expected: Sequence[Any],
+        expected: Sequence[Expectation],
     ) -> SeqResult:
         try:
             response: (
@@ -610,6 +612,8 @@ class Example:
     A validation example where we don't have any particularly expected result.
     """
 
+    assertions = None
+
     description: str
     instance: Any
     comment: str | None = None
@@ -669,7 +673,7 @@ class Test:
     assertions: list[dict[str, Any]] | None = None
     comment: str | None = None
 
-    def expected(self) -> Any:
+    def expected(self) -> Expectation:
         """
         Expect our expected validity result or assertions.
         """
@@ -782,7 +786,7 @@ class TestCase:
         """
         return json.dumps(self.serializable(), sort_keys=True)
 
-    def expected_results(self) -> Sequence[Any]:
+    def expected_results(self) -> Sequence[Expectation]:
         return [each.expected() for each in self.tests]
 
     def without_expected_results(self) -> Message:
