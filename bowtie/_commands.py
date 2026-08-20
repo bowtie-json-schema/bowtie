@@ -209,6 +209,8 @@ def _by_decoded_location(expected: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+# The lenient defaults and filtering below accept harness annotations
+# which the output schema rejects, for use without --validate.
 @frozen
 class Annotation:
     keyword: str = ""
@@ -276,6 +278,10 @@ class AnnotationsTestResult:
 
 
 class TestResult:
+    """
+    Constants and deserialization for the results harnesses report.
+    """
+
     VALID: ClassVar[FlagTestResult]
     INVALID: ClassVar[FlagTestResult]
 

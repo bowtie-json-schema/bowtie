@@ -197,6 +197,24 @@ _OPTION_GROUPS = {
                 ("Execution Options", ["jobs"]),
             ],
         ),
+        (
+            "annotation-suite",
+            [
+                ("Required", ["implementation"]),
+                (
+                    "Test Run Options",
+                    [
+                        "dialect",
+                        "fail-fast",
+                        "filter",
+                        "max-error",
+                        "max-fail",
+                    ],
+                ),
+                ("Test Modification Options", ["set-schema"]),
+                ("Execution Options", ["jobs"]),
+            ],
+        ),
         ("info", [("Basic Options", ["implementation", "format"])]),
         (
             "smoke",
@@ -235,7 +253,7 @@ _OPTION_GROUPS = {
                 ("Schema Behavior Options", ["dialect", "set-schema"]),
                 (
                     "Test Run Options",
-                    ["fail-fast", "filter", "max-error", "max-fail"],
+                    ["fail-fast", "filter", "max-error", "max-fail", "output"],
                 ),
                 ("Execution Options", ["jobs"]),
             ],
@@ -585,9 +603,10 @@ class _Report(click.File):
     show_default=True,
     type=click.Choice(["failures", "validation"]),
     help=(
-        "Configure whether to display validation results "
-        "(whether instances are valid or not) or test failure results "
-        "(whether the validation results match expected validation results)"
+        "Configure whether to display test results "
+        "(instance validity, alongside any asserted-on annotations) "
+        "or test failure results "
+        "(whether the results match what test cases expected)"
     ),
 )
 @click.argument("report", default="-", type=_Report())
@@ -780,6 +799,7 @@ def _results_table(
         caption=f"{report.total_tests} {test} ran",
     )
 
+    # TODO: sort the columns by results?
     implementations = report.implementations
     implementation_counts = Counter(
         each.id for each in implementations.values()
@@ -1238,6 +1258,13 @@ def dialect_option(
 ):
     if default is not None:
         kwargs.update(default=default, show_default=default.pretty_name)
+    kwargs.setdefault(
+        "help",
+        (
+            "A URI or shortname identifying the dialect of each test. "
+            f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}."
+        ),
+    )
 
     return click.option(
         "--dialect",
@@ -1245,10 +1272,6 @@ def dialect_option(
         "dialect",
         type=_Dialect(),
         metavar="URI_OR_NAME",
-        help=(
-            "A URI or shortname identifying the dialect of each test. "
-            f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}."
-        ),
         **kwargs,
     )
 
@@ -2657,14 +2680,20 @@ def suite(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
-@dialect_option(is_eager=True)
+@dialect_option(
+    is_eager=True,
+    help=(
+        "A URI or shortname identifying the dialect to evaluate under. "
+        f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}."
+    ),
+)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
 @click.argument(
     "input",
     type=_suite.ClickParam(is_annotations=True),
-    metavar="DIALECT",
+    metavar="[DIALECT]",
     default=str(_suite.ANNOTATIONS_DIR_URL),
 )
 def annotation_suite(
@@ -2684,7 +2713,8 @@ def annotation_suite(
     Supports a number of possible inputs:
 
         * dialect short names (e.g. ``2020``), to run the annotation suite
-          directly from GitHub under the given dialect
+          directly from GitHub under the given dialect, overriding
+          ``--dialect``
 
         * URLs to annotation test cases hosted on GitHub
 
@@ -2846,14 +2876,17 @@ async def _collect_dialects(
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any],
     output: Path,
-) -> int:
+) -> tuple[int, bool]:
     """
     Write one report per supported dialect for a started implementation.
 
     Returns the number of dialect reports written into `output` (whose parent
-    directory is created lazily, only once there is something to write).
+    directory is created lazily, only once there is something to write),
+    alongside whether any dialect's report was withheld because every one of
+    its tests errored -- which indicates a broken implementation or harness,
+    not results worth publishing.
     """
-    wrote = 0
+    wrote, all_errored = 0, False
     supported = sorted(implementation.info.dialects & available, reverse=True)
     for dialect in supported:
         cases = list(_suite.cases_for(root, dialect))
@@ -2877,12 +2910,35 @@ async def _collect_dialects(
         if report is None:
             continue
 
+        ((_, _, unsuccessful),) = report.worst_to_best()
+        if len(unsuccessful.errored) == report.total_tests:
+            error = DiagnosticError(
+                code="all-errored",
+                message=(
+                    f"Every {dialect.pretty_name} test errored, "
+                    "so its report was not written."
+                ),
+                causes=[
+                    (
+                        "The implementation, its harness, or the "
+                        "connection to it seems completely broken."
+                    ),
+                ],
+                hint_stmt=(
+                    "Check `bowtie smoke` against the implementation, and "
+                    "that its harness speaks Bowtie's current protocol."
+                ),
+            )
+            STDERR.print(error)
+            all_errored = True
+            continue
+
         output.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240
         output.joinpath(f"{dialect.short_name}.json").write_text(
             "\n".join(report.serialized()),
         )
         wrote += 1
-    return wrote
+    return wrote, all_errored
 
 
 async def _collect(
@@ -2913,7 +2969,7 @@ async def _collect(
             STDERR.print(error)
             return EX.CONFIG
 
-        wrote = await _collect_dialects(
+        wrote, all_errored = await _collect_dialects(
             implementation=implementation,
             available=available,
             root=root,
@@ -2921,6 +2977,9 @@ async def _collect(
             run_metadata=run_metadata,
             output=output,
         )
+
+    if all_errored:
+        return EX.DATAERR
 
     if not wrote:
         error = DiagnosticError(
@@ -2965,6 +3024,7 @@ async def _collect_versions(
 
     collected: list[str] = []
     seen: set[str] = set()
+    saw_all_errored = False
     for connectable in connectables:
         async with _start(
             connectables=[connectable],
@@ -2995,7 +3055,7 @@ async def _collect_versions(
                 continue
             seen.add(version)
 
-            wrote = await _collect_dialects(
+            wrote, all_errored = await _collect_dialects(
                 implementation=implementation,
                 available=available,
                 root=root,
@@ -3003,6 +3063,7 @@ async def _collect_versions(
                 run_metadata=run_metadata,
                 output=output.joinpath(f"v{version}"),
             )
+            saw_all_errored |= all_errored
         if wrote:
             collected.append(version)
 
@@ -3013,7 +3074,7 @@ async def _collect_versions(
     STDERR.print(
         f"Collected [green]{len(collected)}[/] {versions} into {output}.",
     )
-    return 0
+    return EX.DATAERR if saw_all_errored else 0
 
 
 @site.command("combine")

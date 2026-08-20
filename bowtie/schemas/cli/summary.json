@@ -114,10 +114,11 @@
                         "required": ["status"],
                         "properties": {
                           "status": {
+                            "description": "Whether the produced results matched the test's expectations.",
                             "enum": ["pass", "fail", "skipped", "error"]
                           },
                           "expected": {
-                            "description": "What the test expected, grouped by instance location and keyword for annotation assertions."
+                            "description": "What the test expected -- for annotation assertions, the expected annotations grouped by instance location and keyword, and otherwise the expected validity."
                           },
                           "actual": {
                             "description": "The annotations the implementation produced, grouped by instance location and keyword."
