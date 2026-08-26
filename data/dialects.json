@@ -4,6 +4,7 @@
     "uri": "https://json-schema.org/v1",
     "shortName": "v1",
     "prettyName": "v1",
+    "prerelease": true,
     "aliases": ["draft-next"]
   },
   {

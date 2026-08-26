@@ -79,6 +79,20 @@ REFERENCING_FALLBACK: Mapping[URL, Specification[Schema]] = {
 }
 
 
+def _dated_unless_prerelease(dialect: Dialect, _: Any, prerelease: bool):
+    """
+    Say when you were published, or say you have not been.
+
+    The dialect schema states the same rule as a ``oneOf``.
+    """
+    if prerelease == (dialect.first_publication_date is None):
+        return
+    raise ValueError(
+        "A dialect has a first publication date unless it is a prerelease, "
+        f"but {dialect.pretty_name} says otherwise.",
+    )
+
+
 @frozen
 @total_ordering
 class Dialect:
@@ -89,10 +103,17 @@ class Dialect:
     pretty_name: str
     uri: URL = field(repr=False)
     short_name: str = field(repr=False)
-    #: `None` for a dialect which has not been published yet. Explicit
-    #: rather than defaulted, as forgetting a date should not quietly mean
-    #: a dialect is unpublished.
+    #: `None` for a prerelease dialect, which has no date to give.
     first_publication_date: date | None = field(repr=False)
+    #: Is this dialect still being written? Bowtie knows about one so that
+    #: its tests can be run against harnesses which opt into it, but does
+    #: not treat it as the latest dialect, benchmark it, or report on it.
+    prerelease: bool = field(
+        default=False,
+        repr=False,
+        validator=_dated_unless_prerelease,
+    )
+
     aliases: Set[str] = field(
         default=cast("frozenset[str]", frozenset()),
         repr=False,
@@ -132,19 +153,12 @@ class Dialect:
         """
         Order dialects oldest to newest, with unpublished ones newest of all.
 
-        The short name breaks ties, so that two unpublished dialects still
+        The short name breaks ties, so that two prerelease dialects still
         have a total order and sort the same way every run.
         """
         if self.first_publication_date is None:
             return date.max, self.short_name
         return self.first_publication_date, self.short_name
-
-    @property
-    def is_published(self):
-        """
-        Has this dialect been published as a document yet?
-        """
-        return self.first_publication_date is not None
 
     @classmethod
     @cache
@@ -181,13 +195,12 @@ class Dialect:
     @cache
     def published(cls) -> Iterable[Dialect]:
         """
-        Every dialect Bowtie knows which has actually been published.
+        Every dialect Bowtie knows which is not still being written.
 
-        The rest are dialects still being written, which Bowtie knows about
-        only so that their test suite can be run against harnesses opting
-        in to them.
+        Bowtie knows about a prerelease dialect only so that its test suite
+        can be run against harnesses opting into it.
         """
-        return HashTrieSet(each for each in cls.known() if each.is_published)
+        return HashTrieSet(each for each in cls.known() if not each.prerelease)
 
     @classmethod
     @cache
@@ -196,9 +209,9 @@ class Dialect:
         The latest published dialect known to Bowtie.
 
         Bowtie knows about dialects which are still being written, so that
-        their test suite can be run, but an unpublished dialect is not what
-        anyone means by "latest", and defaulting to one would send schemas
-        no harness has agreed to support.
+        their test suite can be run, but a prerelease is not what anyone
+        means by "latest", and defaulting to one would send schemas no
+        harness has agreed to support.
         """
         return max(cls.published())
 
@@ -209,6 +222,7 @@ class Dialect:
         shortName: str,
         uri: str,
         firstPublicationDate: str | None = None,
+        prerelease: bool = False,
         aliases: Iterable[str] = (),
         hasBooleanSchemas: bool = True,
         **kwargs: Any,
@@ -227,6 +241,7 @@ class Dialect:
                 if firstPublicationDate is None
                 else date.fromisoformat(firstPublicationDate)
             ),
+            prerelease=prerelease,
             aliases=frozenset(aliases),
             has_boolean_schemas=hasBooleanSchemas,
             **kwargs,

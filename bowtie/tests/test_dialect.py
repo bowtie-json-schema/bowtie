@@ -76,19 +76,19 @@ def test_ordering():
     assert not draft7 < draft7  # noqa: PLR0124
 
 
-def test_latest_ignores_unpublished_dialects():
+def test_latest_ignores_prereleases():
     """
     A dialect still being written is known, but it is not the latest one.
 
     Defaulting to one would send schemas to harnesses which have not said
     they support the dialect.
     """
-    unpublished = [each for each in Dialect.known() if not each.is_published]
-    assert unpublished, "this test is only meaningful with one of these"
-    assert Dialect.latest() not in unpublished
+    prereleases = [each for each in Dialect.known() if each.prerelease]
+    assert prereleases, "this test is only meaningful with one of these"
+    assert Dialect.latest() not in prereleases
 
 
-def test_unpublished_dialects_sort_newest():
+def test_prereleases_sort_newest():
     v1 = Dialect.by_short_name()["v1"]
 
     assert max(Dialect.known()) == v1
@@ -96,11 +96,11 @@ def test_unpublished_dialects_sort_newest():
     assert Dialect.latest() < v1
 
 
-def test_unpublished_dialect_has_no_publication_date():
+def test_a_prerelease_has_no_publication_date():
     v1 = Dialect.by_short_name()["v1"]
 
+    assert v1.prerelease
     assert v1.first_publication_date is None
-    assert not v1.is_published
 
 
 def test_v1():
@@ -144,7 +144,7 @@ def test_dialects_json_matches_its_own_schema():
         validator.validate({k: v for k, v in each.items() if k != "$schema"})
 
 
-def test_two_unpublished_dialects_still_have_a_total_order():
+def test_two_prereleases_still_have_a_total_order():
     """
     Two dialects being written at once must not compare as incomparable.
 
@@ -156,12 +156,14 @@ def test_two_unpublished_dialects_still_have_a_total_order():
         short_name="one",
         uri="urn:example:one",
         first_publication_date=None,
+        prerelease=True,
     )
     two = Dialect(
         pretty_name="Two",
         short_name="two",
         uri="urn:example:two",
         first_publication_date=None,
+        prerelease=True,
     )
 
     assert one < two
@@ -170,10 +172,31 @@ def test_two_unpublished_dialects_still_have_a_total_order():
     assert sorted([one, two]) == [one, two]
 
 
-def test_a_dialect_must_say_whether_it_is_published():
+def test_a_dialect_must_say_when_it_was_published():
     with pytest.raises(TypeError):
         Dialect(  # type: ignore[reportCallIssue]
             pretty_name="Undated",
             short_name="undated",
             uri="urn:example:undated",
+        )
+
+
+def test_only_a_prerelease_may_have_no_publication_date():
+    with pytest.raises(ValueError, match="unless it is a prerelease"):
+        Dialect(
+            pretty_name="Undated",
+            short_name="undated",
+            uri="urn:example:undated",
+            first_publication_date=None,
+        )
+
+
+def test_a_prerelease_may_not_have_a_publication_date():
+    with pytest.raises(ValueError, match="unless it is a prerelease"):
+        Dialect(
+            pretty_name="Dated",
+            short_name="dated",
+            uri="urn:example:dated",
+            first_publication_date=date.today(),
+            prerelease=True,
         )
