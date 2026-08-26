@@ -1768,6 +1768,13 @@ async def filter_dialects(
     async for _, implementation in start():
         matching &= implementation.info.dialects
 
+    if latest:
+        # Latest means the latest published dialect, as it does everywhere
+        # else in Bowtie. A caller who asked only about dialects still being
+        # written gets an answer about those instead of nothing.
+        published = matching & frozenset(Dialect.published())
+        matching = published or matching
+
     if not matching:
         click.echo("No dialects match.", file=sys.stderr)
         return EX.DATAERR

@@ -5,7 +5,7 @@
   "$id": "tag:bowtie.report,2024:models:dialect",
 
   "type": "object",
-  "required": ["firstPublicationDate", "prettyName", "shortName", "uri"],
+  "required": ["prettyName", "shortName", "uri"],
   "properties": {
     "uri": {
       "description": "The URI representing this dialect, also known as its dialect identifier",
@@ -32,7 +32,7 @@
       "pattern": "[a-z]+[a-z0-9-]*"
     },
     "firstPublicationDate": {
-      "description": "The date when the dialect was first published publicly as a document",
+      "description": "The date when the dialect was first published publicly as a document. Absent for a dialect which has not been published yet, which is also how Bowtie knows not to treat it as the latest dialect.",
       "readOnly": true,
 
       "type": "string",

@@ -10,7 +10,11 @@ from uuid import uuid4
 import json
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
-from referencing.jsonschema import EMPTY_REGISTRY, specification_with
+from referencing.jsonschema import (
+    DRAFT202012,
+    EMPTY_REGISTRY,
+    specification_with,
+)
 from rpds import HashTrieMap, HashTrieSet
 from url import URL
 import httpx
@@ -65,6 +69,16 @@ if TYPE_CHECKING:
     from bowtie._report import Reporter
 
 
+#: Dialects whose identifiers `referencing` does not know, mapped to the
+#: specification whose resource structure they share, meaning the rules for
+#: finding ``$id``\ s, anchors and subschemas. A dialect only belongs here
+#: while it is too new for referencing to have shipped support, and the entry
+#: should be deleted once it has.
+REFERENCING_FALLBACK: Mapping[URL, Specification[Schema]] = {
+    URL.parse("https://json-schema.org/v1"): DRAFT202012,
+}
+
+
 @frozen
 @total_ordering
 class Dialect:
@@ -75,7 +89,10 @@ class Dialect:
     pretty_name: str
     uri: URL = field(repr=False)
     short_name: str = field(repr=False)
-    first_publication_date: date = field(repr=False)
+    #: `None` for a dialect which has not been published yet. Explicit
+    #: rather than defaulted, as forgetting a date should not quietly mean
+    #: a dialect is unpublished.
+    first_publication_date: date | None = field(repr=False)
     aliases: Set[str] = field(
         default=cast("frozenset[str]", frozenset()),
         repr=False,
@@ -108,7 +125,26 @@ class Dialect:
     def __lt__(self, other: Any):
         if other.__class__ is not Dialect:
             return NotImplemented
-        return self.first_publication_date < other.first_publication_date
+        return self._age < other._age
+
+    @property
+    def _age(self):
+        """
+        Order dialects oldest to newest, with unpublished ones newest of all.
+
+        The short name breaks ties, so that two unpublished dialects still
+        have a total order and sort the same way every run.
+        """
+        if self.first_publication_date is None:
+            return date.max, self.short_name
+        return self.first_publication_date, self.short_name
+
+    @property
+    def is_published(self):
+        """
+        Has this dialect been published as a document yet?
+        """
+        return self.first_publication_date is not None
 
     @classmethod
     @cache
@@ -143,19 +179,36 @@ class Dialect:
 
     @classmethod
     @cache
+    def published(cls) -> Iterable[Dialect]:
+        """
+        Every dialect Bowtie knows which has actually been published.
+
+        The rest are dialects still being written, which Bowtie knows about
+        only so that their test suite can be run against harnesses opting
+        in to them.
+        """
+        return HashTrieSet(each for each in cls.known() if each.is_published)
+
+    @classmethod
+    @cache
     def latest(cls):
         """
-        The latest dialect known to Bowtie.
+        The latest published dialect known to Bowtie.
+
+        Bowtie knows about dialects which are still being written, so that
+        their test suite can be run, but an unpublished dialect is not what
+        anyone means by "latest", and defaulting to one would send schemas
+        no harness has agreed to support.
         """
-        return max(cls.known())
+        return max(cls.published())
 
     @classmethod
     def from_dict(
         cls,
-        firstPublicationDate: str,
         prettyName: str,
         shortName: str,
         uri: str,
+        firstPublicationDate: str | None = None,
         aliases: Iterable[str] = (),
         hasBooleanSchemas: bool = True,
         **kwargs: Any,
@@ -169,7 +222,11 @@ class Dialect:
             uri=URL.parse(uri),
             pretty_name=prettyName,
             short_name=shortName,
-            first_publication_date=date.fromisoformat(firstPublicationDate),
+            first_publication_date=(
+                None
+                if firstPublicationDate is None
+                else date.fromisoformat(firstPublicationDate)
+            ),
             aliases=frozenset(aliases),
             has_boolean_schemas=hasBooleanSchemas,
             **kwargs,
@@ -196,6 +253,9 @@ class Dialect:
         return str(self.uri)
 
     def specification(self, **kwargs: Any) -> Specification[Schema]:
+        fallback = REFERENCING_FALLBACK.get(self.uri)
+        if fallback is not None:
+            kwargs.setdefault("default", fallback)
         return specification_with(str(self.uri), **kwargs)
 
     @property

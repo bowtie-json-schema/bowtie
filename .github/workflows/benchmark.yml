@@ -28,7 +28,10 @@ jobs:
       - name: Collect supported dialects
         id: dialects-matrix
         run: |
-          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+          # Published dialects only. An unpublished one has no benchmarks and
+          # no harnesses declaring it, so its merge step would find no
+          # artifacts to combine.
+          printf 'dialects=%s\n' "$(jq -c '[.[] | select(has("firstPublicationDate")) | .shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
 
   benchmark_files:
     name: Collect Benchmark Files

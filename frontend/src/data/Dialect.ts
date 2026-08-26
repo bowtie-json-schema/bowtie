@@ -115,10 +115,17 @@ class DialectError extends Error {
 
 for (const each of data) {
   // TODO: Replace Dialect.all so we aren't relying on side effects.
+
+  // A dialect with no publication date has not been published yet. Bowtie
+  // knows about it so that its tests can be run, but there is no report to
+  // link to, so it stays off the site until there is one.
+  const publicationDate = each.firstPublicationDate;
+  if (publicationDate === undefined) continue;
+
   new Dialect(
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(publicationDate),
   );
 }
