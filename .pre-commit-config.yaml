@@ -5,6 +5,8 @@ repos:
       - id: check-added-large-files
       - id: check-ast
       - id: check-json
+        # devcontainer.json is JSONC, which this hook cannot parse.
+        exclude: ^\.devcontainer/devcontainer\.json$
       - id: check-toml
       - id: check-vcs-permalinks
       - id: check-yaml

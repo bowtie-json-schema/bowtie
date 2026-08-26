@@ -1,14 +1,25 @@
 {
   "name": "Bowtie",
-  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  // Pin the Debian release explicitly.
+  // The unsuffixed tags follow whatever release is newest, which has silently broken this container before.
+  "image": "mcr.microsoft.com/devcontainers/python:3.14-trixie",
   "remoteUser": "vscode",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:": {},
-    "ghcr.io/devcontainers/features/node:": {},
-    "ghcr.io/devcontainers/features/sshd:1": {
-      "version": "latest"
-    }
+    // Docker CE, not moby, as Debian trixie has no moby packages.
+    "ghcr.io/devcontainers/features/docker-in-docker:4.1.0": {
+      "moby": false
+    },
+    "ghcr.io/devcontainers/features/node:2.1.0": {},
+    "ghcr.io/devcontainers/features/sshd:1.1.0": {}
   },
-  "onCreateCommand": "pip install -r requirements.txt -e .",
-  "postCreateCommand": "sudo cp /workspaces/bowtie/docs/motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt"
+  // Put the project's environment on $PATH so bowtie itself (along with pytest, nox, ...) is directly runnable,
+  // as the first run notice below assumes.
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+  },
+  "onCreateCommand": {
+    "bowtie": "pipx install uv && uv sync --group=test",
+    "ui": "pnpm --dir frontend install"
+  },
+  "postCreateCommand": "sudo cp ${containerWorkspaceFolder}/docs/motd.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt"
 }

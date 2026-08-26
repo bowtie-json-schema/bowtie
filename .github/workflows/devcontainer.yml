@@ -1,0 +1,46 @@
+name: Dev Container
+
+on:
+  pull_request:
+    paths:
+      - .devcontainer/**
+      - .github/workflows/devcontainer.yml
+      - frontend/package.json
+      - frontend/pnpm-lock.yaml
+      - hatch_build.py
+      - pyproject.toml
+      - uv.lock
+  schedule:
+    # Daily at 6:12.
+    # What breaks this container generally happens elsewhere -- a floating base image tag following a new Debian release, or a file the container installs from disappearing from the repository -- so check it even when nothing here changes.
+    - cron: "12 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devcontainer-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  devcontainer:
+    name: Build the Dev Container
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Bowtie's version comes from its tags, and installing it needs one
+          persist-credentials: false
+
+      - name: Build it, then check it can run Bowtie and containers
+        uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
+        with:
+          push: never
+          # Authenticates the GitHub API calls Bowtie's build makes, which are anonymous (and therefore easily rate limited) otherwise.
+          env: |
+            BUILD_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          runCmd: |
+            bowtie --version
+            docker version
