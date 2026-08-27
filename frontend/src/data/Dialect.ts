@@ -115,10 +115,19 @@ class DialectError extends Error {
 
 for (const each of data) {
   // TODO: Replace Dialect.all so we aren't relying on side effects.
+
+  // Bowtie knows about a prerelease dialect so that its tests can be run,
+  // but there is no report to link to, so it stays off the site until it is
+  // published. Everything else has a publication date, which the dialect
+  // schema requires and this then narrows.
+  if (each.prerelease) continue;
+  const publicationDate = each.firstPublicationDate;
+  if (publicationDate === undefined) continue;
+
   new Dialect(
     each.shortName,
     each.prettyName,
     each.uri,
-    new Date(each.firstPublicationDate),
+    new Date(publicationDate),
   );
 }

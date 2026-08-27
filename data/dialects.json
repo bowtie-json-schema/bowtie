@@ -1,6 +1,14 @@
 [
   {
     "$schema": "tag:bowtie.report,2024:models:dialect",
+    "uri": "https://json-schema.org/v1",
+    "shortName": "v1",
+    "prettyName": "v1",
+    "prerelease": true,
+    "aliases": ["draft-next"]
+  },
+  {
+    "$schema": "tag:bowtie.report,2024:models:dialect",
     "uri": "https://json-schema.org/draft/2020-12/schema",
     "shortName": "draft2020-12",
     "prettyName": "Draft 2020-12",

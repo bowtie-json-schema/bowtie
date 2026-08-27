@@ -1532,6 +1532,79 @@ class TestSmoke:
         assert (await command_validator("smoke")).validated(jsonout) == {
             "success": False,
             "dialects": {
+                "v1": [
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/v1",
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [
+                                37,
+                            ],
+                            {
+                                "foo": 37,
+                            },
+                        ],
+                        "expected": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                        "results": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                    },
+                    {
+                        "schema": {
+                            "$schema": "https://json-schema.org/v1",
+                            "not": {
+                                "$schema": "https://json-schema.org/v1",
+                            },
+                        },
+                        "instances": [
+                            None,
+                            True,
+                            37,
+                            37.37,
+                            "37",
+                            [37],
+                            {"foo": 37},
+                        ],
+                        "expected": [
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                            {"valid": False},
+                        ],
+                        "results": [
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                            {"valid": True},
+                        ],
+                    },
+                ],
                 "draft2020-12": [
                     {
                         "schema": {
@@ -1973,6 +2046,7 @@ class TestSmoke:
                 "draft3": [],
                 "draft4": [],
                 "draft6": [],
+                "v1": [],
                 "draft7": [
                     {
                         "expected": [
@@ -2116,6 +2190,7 @@ class TestSmoke:
 
             ## Dialects
 
+            * v1
             * Draft 2020-12
             * Draft 2019-09
             * Draft 7 **(failed)**
@@ -2282,6 +2357,40 @@ class TestSmoke:
                             ],
                             "schema": {
                                 "$schema": "https://json-schema.org/draft/2019-09/schema",
+                            },
+                        },
+                    ],
+                    "v1": [
+                        {
+                            "expected": [
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                                {"valid": True},
+                            ],
+                            "instances": [
+                                None,
+                                True,
+                                37,
+                                37.37,
+                                "37",
+                                [37],
+                                {"foo": 37},
+                            ],
+                            "results": [
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                                {"valid": False},
+                            ],
+                            "schema": {
+                                "$schema": "https://json-schema.org/v1",
                             },
                         },
                     ],
@@ -2512,7 +2621,8 @@ async def test_info_pretty():
         ╭────────────────┬─────────────────────────────────────────────────────────────╮
         │ implementation │ fake_language_and_os v1.0.0                                 │
         │ language       │ python 1.2.3                                                │
-        │ dialects       │ Draft 2020-12                                               │
+        │ dialects       │ v1                                                          │
+        │                │ Draft 2020-12                                               │
         │                │ Draft 2019-09                                               │
         │                │ Draft 7                                                     │
         │                │ Draft 6                                                     │
@@ -2551,6 +2661,7 @@ async def test_info_markdown():
         **os_version**: "{platform.release()}"
         **source**: "https://github.com/bowtie-json-schema/bowtie"
         **dialects**: [
+          "https://json-schema.org/v1",
           "https://json-schema.org/draft/2020-12/schema",
           "https://json-schema.org/draft/2019-09/schema",
           "http://json-schema.org/draft-07/schema#",
@@ -2644,6 +2755,8 @@ async def test_info_valid_markdown():
                   <text>
                   <softbreak>
                   <text>
+                  <softbreak>
+                  <text>
             """,
         ).strip()
     )
@@ -2673,6 +2786,7 @@ async def test_info_json():
         "os": platform.system(),
         "version": "v1.0.0",
         "dialects": [
+            "https://json-schema.org/v1",
             "https://json-schema.org/draft/2020-12/schema",
             "https://json-schema.org/draft/2019-09/schema",
             "http://json-schema.org/draft-07/schema#",
@@ -2710,6 +2824,7 @@ async def test_info_json_multiple_implementations():
             "os": platform.system(),
             "version": "v1.0.0",
             "dialects": [
+                "https://json-schema.org/v1",
                 "https://json-schema.org/draft/2020-12/schema",
                 "https://json-schema.org/draft/2019-09/schema",
                 "http://json-schema.org/draft-07/schema#",

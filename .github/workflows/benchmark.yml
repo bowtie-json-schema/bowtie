@@ -28,7 +28,9 @@ jobs:
       - name: Collect supported dialects
         id: dialects-matrix
         run: |
-          printf 'dialects=%s\n' "$(jq -c '[.[].shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
+          # A prerelease dialect has no benchmarks and no harnesses
+          # declaring it, so its merge step would find no artifacts.
+          printf 'dialects=%s\n' "$(jq -c '[.[] | select(.prerelease != true) | .shortName]' data/dialects.json)" >> $GITHUB_OUTPUT
 
   benchmark_files:
     name: Collect Benchmark Files

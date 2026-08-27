@@ -5,7 +5,20 @@
   "$id": "tag:bowtie.report,2024:models:dialect",
 
   "type": "object",
-  "required": ["firstPublicationDate", "prettyName", "shortName", "uri"],
+  "required": ["prettyName", "shortName", "uri"],
+
+  "oneOf": [
+    {
+      "description": "A dialect which has been published, and says when it was",
+      "required": ["firstPublicationDate"]
+    },
+    {
+      "description": "A dialect still being written, which has no publication date to give",
+      "required": ["prerelease"],
+      "properties": { "prerelease": { "const": true } }
+    }
+  ],
+
   "properties": {
     "uri": {
       "description": "The URI representing this dialect, also known as its dialect identifier",
@@ -37,6 +50,13 @@
 
       "type": "string",
       "format": "date"
+    },
+    "prerelease": {
+      "description": "Is this dialect still being written? Bowtie knows about a prerelease dialect so its tests can be run against harnesses which opt into it, but does not treat it as the latest dialect, benchmark it, or show it on the report.",
+      "readOnly": true,
+
+      "type": "boolean",
+      "default": false
     },
     "hasBooleanSchemas": {
       "description": "Does the dialect have a notion of boolean schemas?",
