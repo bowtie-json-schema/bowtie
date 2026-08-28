@@ -164,7 +164,7 @@ jobs:
       # if called as a separate workflow
       - name: Download latest Benchmark Report
         if: inputs.report_benchmark_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
         with:
           workflow: benchmark.yml
           branch: main
