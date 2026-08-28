@@ -168,7 +168,7 @@ jobs:
           path: fresh
 
       - name: Download the last published versioned reports
-        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
         with:
           workflow: versioned-report.yml
           branch: main
