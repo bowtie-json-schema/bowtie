@@ -1,14 +1,18 @@
-# type: ignore[reportMissingParameterType]
 """
 Hypothesis strategies and support for Bowtie.
 
 Note that this module depends on you having installed Hypothesis.
 """
 
+from collections.abc import Callable, Iterable, Mapping
+from datetime import date
 from string import printable
+from typing import Any
 
 from hypothesis.provisional import urls
 from hypothesis.strategies import (
+    DrawFn,
+    SearchStrategy,
     booleans,
     builds,
     composite,
@@ -32,6 +36,7 @@ from hypothesis.strategies import (
 from url import URL
 
 from bowtie import _commands
+from bowtie._connectables import ConnectableId
 from bowtie._core import (
     Dialect,
     Example,
@@ -43,12 +48,15 @@ from bowtie._direct_connectable import Direct
 from bowtie._report import Report, RunMetadata
 
 
-def pattern_from(uri):
+def pattern_from(uri: str) -> SearchStrategy[str]:
     """
     Return a strategy which matches the pattern in the given schema.
     """
     validators = Direct.from_id("python-jsonschema").registry()
-    return from_regex(validators.schema(uri)["pattern"])
+    schema = validators.schema(uri)
+    # Every URI we ask about here names an object schema with a pattern.
+    pattern: str = schema["pattern"]  # ty: ignore[not-subscriptable]
+    return from_regex(pattern)
 
 
 # FIXME: probably via hypothesis-jsonschema
@@ -79,12 +87,12 @@ languages = pattern_from(
 
 
 def dialects(
-    prety_names=text(max_size=15),
-    short_names=text(max_size=10),
-    uris=urls().map(URL.parse),
-    publication_dates=dates(),
-    aliases=frozensets(text(), max_size=2),
-):
+    prety_names: SearchStrategy[str] = text(max_size=15),
+    short_names: SearchStrategy[str] = text(max_size=10),
+    uris: SearchStrategy[URL] = urls().map(URL.parse),
+    publication_dates: SearchStrategy[date] = dates(),
+    aliases: SearchStrategy[frozenset[str]] = frozensets(text(), max_size=2),
+) -> SearchStrategy[Dialect]:
     """
     Generate a dialect.
     """
@@ -104,11 +112,15 @@ known_dialects = sampled_from(sorted(Dialect.known()))
 
 @composite
 def implementation_infos(
-    draw,
-    names=implementation_names,
-    dialects=frozensets(known_dialects, min_size=1, max_size=4),
-    languages=languages,
-):
+    draw: DrawFn,
+    names: SearchStrategy[str] = implementation_names,
+    dialects: SearchStrategy[frozenset[Dialect]] = frozensets(
+        known_dialects,
+        min_size=1,
+        max_size=4,
+    ),
+    languages: SearchStrategy[str] = languages,
+) -> ImplementationInfo:
     """
     Generate an implementation (info).
     """
@@ -125,10 +137,10 @@ def implementation_infos(
 
 
 def implementations(
-    infos=implementation_infos(),
-    min_size=1,
-    max_size=5,
-):
+    infos: SearchStrategy[ImplementationInfo] = implementation_infos(),
+    min_size: int = 1,
+    max_size: int = 5,
+) -> SearchStrategy[dict[ConnectableId, ImplementationInfo]]:
     """
     Generate (unique) collections of implementations.
     """
@@ -141,10 +153,11 @@ def implementations(
 
 
 def examples(
-    description=text(),
-    instance=integers(),  # FIXME: probably via hypothesis-jsonschema
-    comment=text() | none(),
-):
+    description: SearchStrategy[str] = text(),
+    # FIXME: probably via hypothesis-jsonschema
+    instance: SearchStrategy[Any] = integers(),
+    comment: SearchStrategy[str | None] = text() | none(),
+) -> SearchStrategy[Example]:
     r"""
     Generate `Example`\ s.
     """
@@ -157,11 +170,12 @@ def examples(
 
 
 def tests(
-    description=text(),
-    instance=integers(),  # FIXME: probably via hypothesis-jsonschema
-    valid=booleans(),
-    comment=text() | none(),
-):
+    description: SearchStrategy[str] = text(),
+    # FIXME: probably via hypothesis-jsonschema
+    instance: SearchStrategy[Any] = integers(),
+    valid: SearchStrategy[bool] = booleans(),
+    comment: SearchStrategy[str | None] = text() | none(),
+) -> SearchStrategy[Test]:
     r"""
     Generate `Test`\ s.
     """
@@ -175,10 +189,14 @@ def tests(
 
 
 def test_cases(
-    description=text(),
-    schemas=schemas,
-    tests=lists(examples() | tests(), min_size=1, max_size=8),
-):
+    description: SearchStrategy[str] = text(),
+    schemas: SearchStrategy[Any] = schemas,
+    tests: SearchStrategy[list[Example | Test]] = lists(
+        examples() | tests(),
+        min_size=1,
+        max_size=8,
+    ),
+) -> SearchStrategy[TestCase]:
     r"""
     Generate `TestCase`\ s.
     """
@@ -257,7 +275,10 @@ expectations = (
 )
 
 
-def case_results(min_tests=1, max_tests=10):
+def case_results(
+    min_tests: int = 1,
+    max_tests: int = 10,
+) -> SearchStrategy[_commands.CaseResult]:
     """
     A successfully executed (though perhaps still failing) test case result.
     """
@@ -267,7 +288,10 @@ def case_results(min_tests=1, max_tests=10):
     )
 
 
-def errored_cases(context=error_contexts, caught=booleans()):
+def errored_cases(
+    context: SearchStrategy[_commands.Message] = error_contexts,
+    caught: SearchStrategy[bool] = booleans(),
+) -> SearchStrategy[_commands.CaseErrored]:
     """
     A test case which errored (caught or otherwise).
     """
@@ -275,16 +299,20 @@ def errored_cases(context=error_contexts, caught=booleans()):
 
 
 def skipped_cases(
-    message=text(min_size=1, max_size=50) | none(),
-    issue_url=urls() | none(),
-):
+    message: SearchStrategy[str | None] = text(min_size=1, max_size=50)
+    | none(),
+    issue_url: SearchStrategy[str | None] = urls() | none(),
+) -> SearchStrategy[_commands.CaseSkipped]:
     """
     A test case which was skipped by an implementation.
     """
     return builds(_commands.CaseSkipped, message=message, issue_url=issue_url)
 
 
-def any_case_results(min_tests=1, max_tests=10):
+def any_case_results(
+    min_tests: int = 1,
+    max_tests: int = 10,
+) -> SearchStrategy[_commands.AnyCaseResult]:
     """
     Any kind of case result.
     """
@@ -293,11 +321,11 @@ def any_case_results(min_tests=1, max_tests=10):
 
 
 def seq_results(
-    seqs=seqs,
-    implementations=implementation_names,
-    min_tests=1,
-    max_tests=10,
-):
+    seqs: SearchStrategy[_commands.Seq] = seqs,
+    implementations: SearchStrategy[ConnectableId] = implementation_names,
+    min_tests: int = 1,
+    max_tests: int = 10,
+) -> SearchStrategy[_commands.SeqResult]:
     """
     A result with its seq and implementation.
     """
@@ -319,14 +347,20 @@ _test_cases = test_cases
 
 @composite
 def cases_and_results(
-    draw,
-    implementations=implementations(),
-    responding=None,
-    seqs=seqs,
-    test_cases=test_cases(),
-    min_cases=1,
-    max_cases=8,
-):
+    draw: DrawFn,
+    implementations: SearchStrategy[
+        Mapping[ConnectableId, ImplementationInfo]
+    ] = implementations(),
+    responding: Callable[
+        [_commands.SeqCase],
+        SearchStrategy[Iterable[ConnectableId]],
+    ]
+    | None = None,
+    seqs: SearchStrategy[_commands.Seq] = seqs,
+    test_cases: SearchStrategy[TestCase] = test_cases(),
+    min_cases: int = 1,
+    max_cases: int = 8,
+) -> tuple[list[_commands.SeqCase], list[_commands.SeqResult]]:
     """
     A set of test cases along with their results for generated implementations.
     """
@@ -334,7 +368,9 @@ def cases_and_results(
 
     if responding is None:
 
-        def responding(seq_case):
+        def responding(
+            seq_case: _commands.SeqCase,
+        ) -> SearchStrategy[Iterable[ConnectableId]]:
             return just(impls)
 
     strategy = lists(
@@ -365,7 +401,12 @@ _cases_and_results = cases_and_results
 
 
 @composite
-def run_metadata(draw, dialects=known_dialects, implementations=None):
+def run_metadata(
+    draw: DrawFn,
+    dialects: SearchStrategy[Dialect] = known_dialects,
+    implementations: SearchStrategy[Mapping[ConnectableId, ImplementationInfo]]
+    | None = None,
+) -> RunMetadata:
     """
     Generate just a report's metadata.
     """
@@ -382,11 +423,14 @@ def run_metadata(draw, dialects=known_dialects, implementations=None):
 
 @composite
 def report_data(
-    draw,
-    run_metadata=run_metadata(),
-    cases_and_results=None,
-    fail_fast=booleans(),
-):
+    draw: DrawFn,
+    run_metadata: SearchStrategy[RunMetadata] = run_metadata(),
+    cases_and_results: SearchStrategy[
+        tuple[list[_commands.SeqCase], list[_commands.SeqResult]]
+    ]
+    | None = None,
+    fail_fast: SearchStrategy[bool] = booleans(),
+) -> list[_commands.Message]:
     """
     Generate Bowtie report data (suitable for `Report.from_input`).
     """
@@ -414,7 +458,7 @@ def report_data(
     ]
 
 
-def reports(**kwargs):
+def reports(**kwargs: Any) -> SearchStrategy[Report]:
     """
     Generate full Bowtie reports.
     """

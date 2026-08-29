@@ -53,16 +53,16 @@ class Validator[E: Exception]:
     ) -> Validator[E]:
         return evolve(self, registry=resources @ self._registry)
 
-    def is_valid(self, instance: Any):
+    def is_valid(self, instance: Any) -> bool:
         return self.validate(instance) is None
 
-    def validated(self, instance: Any):
+    def validated(self, instance: Any) -> Any:
         exception = self.validate(instance)
         if exception is not None:
             raise exception
         return instance
 
-    def invalidated(self, instance: Any):
+    def invalidated(self, instance: Any) -> Any:
         if self.is_valid(instance):
             raise UnexpectedlyValid(instance)
         return instance
@@ -79,13 +79,13 @@ class ValidatorRegistry[E: Exception]:
     ) -> ValidatorRegistry[E]:
         return evolve(self, registry=resources @ self._registry)
 
-    def schema(self, uri: URL) -> Schema:
+    def schema(self, uri: URL | str) -> Schema:
         """
         Return the schema identified by the given URI.
         """
         return self._registry.resolver().lookup(str(uri)).contents
 
-    def for_uri(self, uri: URL) -> Validator[E]:
+    def for_uri(self, uri: URL | str) -> Validator[E]:
         """
         Return a `Validator` using the schema at the given URI.
         """

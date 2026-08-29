@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, override
 import importlib.metadata
 import json
 import sys
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
     from typing import Any, Literal, Self, TextIO
 
-    from bowtie._commands import AnyTestResult
+    from bowtie._commands import AnyTestResult, Message
     from bowtie._connectables import ConnectableId
     from bowtie._core import Example, ImplementationInfo, Test
 
@@ -71,7 +71,7 @@ class InconsistentCases(InvalidReport):
 
 
 def writer(file: TextIO = sys.stdout) -> Callable[..., Any]:
-    return lambda **result: file.write(f"{json.dumps(result)}\n")  # type: ignore[reportUnknownArgumentType]
+    return lambda **result: file.write(f"{json.dumps(result)}\n")
 
 
 @frozen
@@ -86,7 +86,7 @@ class Reporter:
         implementation: str,
         dialect: Dialect,
         schema: Any,
-    ):
+    ) -> None:
         self._log.warn(
             (
                 f"The schema {schema!r} does not indicate its dialect via "
@@ -99,14 +99,18 @@ class Reporter:
             dialect=dialect.pretty_name,
         )
 
-    def ready(self, run_metadata: RunMetadata):
+    def ready(self, run_metadata: RunMetadata) -> None:
         self._log.debug("Will speak", dialect=run_metadata.dialect)
         self._write(**run_metadata.serializable())
 
-    def finished(self, did_fail_fast: bool):
+    def finished(self, did_fail_fast: bool) -> None:
         self._write(did_fail_fast=did_fail_fast)
 
-    def case_started(self, seq_case: SeqCase, dialect: Dialect):
+    def case_started(
+        self,
+        seq_case: SeqCase,
+        dialect: Dialect,
+    ) -> Callable[[SeqResult], None]:
         self._write(**seq_case.serializable())
         log = self._log.bind(
             case=seq_case.case.description,
@@ -119,7 +123,7 @@ class Reporter:
                 expected=dialect,
             )
 
-        def got_result(result: SeqResult):
+        def got_result(result: SeqResult) -> None:
             bound = log.bind(logger_name=result.implementation)
             serialized = result.log_and_be_serialized(log=bound)
             self._write(**serialized)
@@ -141,7 +145,7 @@ class RunMetadata:
         eq=False,
         repr=False,
     )
-    metadata: Mapping[str, Any] = field(factory=dict, repr=False)  # type: ignore[reportUnknownVariableType]
+    metadata: Mapping[str, Any] = field(factory=dict, repr=False)
     started: datetime = field(
         factory=lambda: datetime.now(UTC),
         eq=False,
@@ -169,7 +173,7 @@ class RunMetadata:
             **kwargs,
         )
 
-    def serializable(self):
+    def serializable(self) -> Message:
         as_dict = asdict(
             self,
             filter=exclude("dialect"),
@@ -211,7 +215,8 @@ class Report:  # noqa: PLW1641
     metadata: RunMetadata
     did_fail_fast: bool
 
-    def __eq__(self, other: object):
+    @override
+    def __eq__(self, other: object) -> bool:
         if type(other) is not Report:
             return NotImplemented
 
@@ -251,10 +256,10 @@ class Report:  # noqa: PLW1641
             raise EmptyReport()
         metadata = RunMetadata.from_dict(**validator.validated(header))
 
-        results: HashTrieMap[  # type: ignore[reportUnknownVariableType] # pyright cannot infer the type returned by HashTrieMap.fromkeys
+        results: HashTrieMap[
             ConnectableId,
             HashTrieMap[Seq, SeqResult],
-        ] = HashTrieMap.fromkeys(  # type: ignore[reportUnknownMemberType]
+        ] = HashTrieMap.fromkeys(
             metadata.implementations,
             HashTrieMap(),
         )
@@ -295,7 +300,7 @@ class Report:  # noqa: PLW1641
         cls,
         implementations: Mapping[ConnectableId, ImplementationInfo] = {},
         **kwargs: Any,
-    ):
+    ) -> Self:
         """
         'The' empty report.
         """
@@ -445,14 +450,14 @@ class Report:  # noqa: PLW1641
         return self.metadata.implementations
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return not self._cases
 
     @property
-    def total_tests(self):
+    def total_tests(self) -> int:
         return sum(len(case.tests) for case in self._cases.values())
 
-    def compliance_by_implementation(self):
+    def compliance_by_implementation(self) -> dict[ConnectableId, float]:
         """
         Return the fraction of passing tests for each reported implementation.
         """
@@ -468,7 +473,9 @@ class Report:  # noqa: PLW1641
         results = self._results[implementation].values()
         return sum((each.unsuccessful() for each in results), Unsuccessful())
 
-    def worst_to_best(self):
+    def worst_to_best(
+        self,
+    ) -> list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]]:
         """
         All implementations ordered by number of unsuccessful tests.
 
@@ -481,7 +488,7 @@ class Report:  # noqa: PLW1641
         unsuccessful.sort(key=lambda each: (each[2].total, each[1].name))
         return unsuccessful
 
-    def latest_to_oldest(self):
+    def latest_to_oldest(self) -> list[tuple[str, Unsuccessful]]:
         """
         Versioned implementations sorted by their latest to oldest versions.
         """

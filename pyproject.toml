@@ -109,7 +109,7 @@ test = [
     "python-dateutil>=2.9.0.post0",
 ]
 typing = [
-    "pyright>=1.1.407",
+    "ty>=0.0.72",
 ]
 
 [tool.coverage.html]
@@ -144,18 +144,6 @@ markers = [
     "containers: (Integration) tests dependent on podman/dockerd",
 ]
 
-[tool.pyright]
-reportUnnecessaryTypeIgnoreComment = true
-strict = ["**/*.py"]
-exclude = [
-    "**/tests/__init__.py",
-    "**/tests/conftest.py",
-    "**/tests/miniatures.py",
-    "**/tests/test_*.py",
-    "**/bowtie/benchmarks/*",
-    "**/tests/benchmarks/*",
-]
-
 [tool.ruff]
 line-length = 79
 
@@ -167,7 +155,7 @@ ignore = [
   "A003",
   "A005",
   "ARG",  # This is all wrong whenever an interface is involved
-  "ANN",  # Just let the type checker do this
+  "ANN401",  # Any is sometimes genuinely what we mean
   "B006",  # Mutable arguments require care but are OK if you don't abuse them
   "B008",  # It's totally OK to call functions for default arguments.
   "B904",  # raise SomeException(...) is fine.
@@ -228,3 +216,32 @@ from-first = true
 "bowtie/tests/*" = ["ANN", "D", "DTZ011", "PLC0415", "RUF012", "S", "INP"]
 "bowtie/benchmarks/*" = ["ANN", "D", "DTZ011", "RUF012", "S", "INP", "E501"]
 "implementations/*" = ["ANN", "BLE001", "D", "PERF", "S101"]
+
+[tool.ty.src]
+exclude = [
+    "**/tests/__init__.py",
+    "**/tests/conftest.py",
+    "**/tests/miniatures.py",
+    "**/tests/test_*.py",
+    "**/bowtie/benchmarks/*",
+    "**/tests/benchmarks/*",
+]
+
+[tool.ty.terminal]
+error-on-warning = true
+
+[tool.ty.rules]
+# Rules which ty doesn't enable by default, but which we'd like to be strict
+# about, roughly mirroring what pyright's strict mode used to check for us.
+blanket-ignore-comment = "error"
+division-by-zero = "error"
+missing-override-decorator = "error"
+missing-type-argument = "error"
+possibly-missing-attribute = "error"
+possibly-missing-import = "error"
+possibly-unresolved-reference = "error"
+unsound-return-statement = "error"
+unsound-yield = "error"
+# The equivalent of pyright's reportUnnecessaryTypeIgnoreComment.
+unused-ignore-comment = "error"
+unused-type-ignore-comment = "error"

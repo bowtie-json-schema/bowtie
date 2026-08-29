@@ -23,7 +23,7 @@ Bowtie's protocol.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from attrs import frozen
 from diagnostic import DiagnosticError, DiagnosticWarning
@@ -52,7 +52,7 @@ class NoSuchImplementation(Exception):
 
     id: ConnectableId
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         return DiagnosticError(
             code="no-such-implementation",
             message=f"{self.id!r} is not a known Bowtie implementation.",
@@ -83,7 +83,7 @@ class CannotConnect(Exception):
     id: ConnectableId
     hint: str | None = None
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         cause = self.__cause__ or self.__context__
         causes = [str(cause)] if cause is not None else []
 
@@ -158,6 +158,7 @@ class VersionMismatch(Exception):
     got: int
     expected: int = _PROTOCOL_VERSION
 
+    @override
     def __str__(self) -> str:
         return (
             f"Expected to speak version {self.expected} of the Bowtie "
@@ -200,7 +201,7 @@ class UnsupportedDialect(Exception):
     implementation: Implementation
     dialect: Dialect
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticWarning:
         supports = ", ".join(
             each.pretty_name
             for each in sorted(self.implementation.info.dialects, reverse=True)
@@ -229,7 +230,7 @@ class DialectError(Exception):
     dialect: Dialect
     stderr: bytes
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         return DiagnosticError(
             code="dialect-error",
             message=(

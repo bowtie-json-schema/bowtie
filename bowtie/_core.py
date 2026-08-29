@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncGenerator,
         AsyncIterator,
+        Awaitable,
         Callable,
         Iterable,
         Mapping,
@@ -65,8 +66,9 @@ if TYPE_CHECKING:
         Seq,
     )
     from bowtie._connectables import ConnectableId
-    from bowtie._registry import ValidatorRegistry
+    from bowtie._registry import Validator, ValidatorRegistry
     from bowtie._report import Reporter
+    from bowtie._smoke import Result as SmokeResult
 
 
 #: Dialects whose identifiers `referencing` does not know, mapped to the
@@ -79,7 +81,11 @@ REFERENCING_FALLBACK: Mapping[URL, Specification[Schema]] = {
 }
 
 
-def _dated_unless_prerelease(dialect: Dialect, _: Any, prerelease: bool):
+def _dated_unless_prerelease(
+    dialect: Dialect,
+    _: Any,
+    prerelease: bool,
+) -> None:
     """
     Say when you were published, or say you have not been.
 
@@ -143,13 +149,13 @@ class Dialect:
         alias="bottom_schema",
     )
 
-    def __lt__(self, other: Any):
+    def __lt__(self, other: Any) -> bool:
         if other.__class__ is not Dialect:
             return NotImplemented
         return self._age < other._age
 
     @property
-    def _age(self):
+    def _age(self) -> tuple[date | None, str]:
         """
         Order dialects oldest to newest, with unpublished ones newest of all.
 
@@ -204,7 +210,7 @@ class Dialect:
 
     @classmethod
     @cache
-    def latest(cls):
+    def latest(cls) -> Dialect:
         """
         The latest published dialect known to Bowtie.
 
@@ -248,7 +254,7 @@ class Dialect:
         )
 
     @classmethod
-    def from_str(cls, uri: str):
+    def from_str(cls, uri: str) -> Dialect:
         url = URL.parse(uri)
         by_uri = cls.by_uri()
 
@@ -259,12 +265,12 @@ class Dialect:
 
         return by_uri[url]
 
-    async def latest_report(self):
+    async def latest_report(self) -> httpx.Response:
         url = HOMEPAGE / f"{self.short_name}.json"
         async with httpx.AsyncClient(timeout=10) as client:
             return await client.get(str(url))
 
-    def serializable(self):
+    def serializable(self) -> str:
         return str(self.uri)
 
     def specification(self, **kwargs: Any) -> Specification[Schema]:
@@ -274,18 +280,18 @@ class Dialect:
         return specification_with(str(self.uri), **kwargs)
 
     @property
-    def top_schema(self):
+    def top_schema(self) -> Schema:
         if self._top_schema is None:
             raise ValueError(f"{self} has no top schema.")
         return self._top_schema
 
     @property
-    def bottom_schema(self):
+    def bottom_schema(self) -> Schema:
         if self._bottom_schema is None:
             raise ValueError(f"{self} has no bottom schema.")
         return self._bottom_schema
 
-    def top(self):
+    def top(self) -> Validator[Any]:
         """
         Create a validator in this dialect which allows all instances.
         """
@@ -294,7 +300,7 @@ class Dialect:
         validators = Direct.from_id("python-jsonschema").registry()
         return validators.for_schema(self.top_schema)
 
-    def bottom(self):
+    def bottom(self) -> Validator[Any]:
         """
         Create a validator in this dialect which does not allow any instances.
         """
@@ -307,7 +313,7 @@ class Dialect:
         self,
         examples: Iterable[Example],
         description: str = "top allows everything",
-    ):
+    ) -> TestCase:
         return TestCase(
             description=description,
             schema=self.top_schema,
@@ -318,7 +324,7 @@ class Dialect:
         self,
         examples: Iterable[Example],
         description: str = "bottom allows nothing",
-    ):
+    ) -> TestCase:
         return TestCase(
             description=description,
             schema=self.bottom_schema,
@@ -338,10 +344,10 @@ class Link:
     url: URL
 
     @classmethod
-    def from_dict(cls, description: str, url: str):
+    def from_dict(cls, description: str, url: str) -> Self:
         return cls(description=description, url=URL.parse(url))
 
-    def serializable(self):
+    def serializable(self) -> dict[str, str]:
         return dict(description=self.description, url=str(self.url))
 
 
@@ -372,7 +378,7 @@ class ImplementationInfo:
         dialects: list[str],
         links: Iterable[dict[str, Any]] = (),
         **kwargs: Any,
-    ):
+    ) -> Self:
         return cls(
             homepage=URL.parse(homepage),
             issues=URL.parse(issues),
@@ -383,7 +389,7 @@ class ImplementationInfo:
         )
 
     @property
-    def id(self):
+    def id(self) -> str:
         """
         A unique identifier we use to refer to the implementation.
 
@@ -392,7 +398,7 @@ class ImplementationInfo:
         """
         return f"{self.language}-{self.name}"
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return {
             **{
                 k: (
@@ -448,7 +454,7 @@ class HarnessClient:
     #: A sequence of commands to replay if we end up restarting the connection.
     _if_replaying: Sequence[Command[Any]] = ()
 
-    async def _get_back_up_to_date(self):
+    async def _get_back_up_to_date(self) -> None:
         for each in self._if_replaying:
             await self.request(each)  # TODO: response assert?
 
@@ -494,21 +500,21 @@ class DialectRunner:
         implementation: ConnectableId,
         harness: HarnessClient,
         reporter: Reporter,
-    ):
+    ) -> Self:
         new_harness: HarnessClient
-        response: StartedDialect
+        response: StartedDialect | None
         new_harness, response = await harness.transition(
-            DialectCommand(dialect=str(dialect.uri)),  # type: ignore[reportArgumentType]
+            DialectCommand(dialect=str(dialect.uri)),  # ty: ignore[unknown-argument]
         )
 
         if response == StartedDialect.OK:
 
-            def schema_without_dialect(_: Any):  # type: ignore[reportRedeclaration]
+            def schema_without_dialect(_: Any) -> None:
                 pass
 
         else:
 
-            def schema_without_dialect(schema: Any):
+            def schema_without_dialect(schema: Any) -> None:
                 reporter.schema_without_dialect(
                     schema=schema,
                     implementation=implementation,
@@ -524,7 +530,7 @@ class DialectRunner:
 
     async def validate(
         self,
-        run: Run,
+        run: Run,  # ty: ignore[invalid-type-form]
         expected: Sequence[Expectation],
     ) -> SeqResult:
         try:
@@ -535,10 +541,10 @@ class DialectRunner:
                 result = CaseErrored.uncaught()
             else:
                 seq, length, result = response
-                if seq != run.seq:  # type: ignore[reportUnknownMemberType]
+                if seq != run.seq:
                     result = CaseErrored.uncaught(
                         message="mismatched seq",
-                        expected=run.seq,  # type: ignore[reportUnknownMemberType]
+                        expected=run.seq,
                         got=seq,
                         response=result,
                     )
@@ -554,7 +560,7 @@ class DialectRunner:
         except InvalidResponse as error:
             result = CaseErrored.uncaught(response=error.contents)
         return SeqResult(
-            seq=run.seq,  # type: ignore[reportUnknownMemberType]
+            seq=run.seq,
             implementation=self.implementation,
             expected=expected,
             result=result,
@@ -674,7 +680,7 @@ class Implementation:
                 stderr=error.stderr,
             ) from error
 
-    def smoke(self):
+    def smoke(self) -> Awaitable[SmokeResult]:
         """
         Smoke test this implementation.
         """
@@ -708,7 +714,7 @@ class Example:
         return Test(**asdict(self), valid=valid)
 
     def syntax(self) -> RenderableType:
-        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+        from pygments.lexers.data import (  # noqa: PLC0415
             JsonLexer,
         )
         from rich.syntax import Syntax  # noqa: PLC0415
@@ -761,7 +767,7 @@ class Test:
         return ExpectedValidity(valid=self.valid)
 
     def syntax(self) -> RenderableType:
-        from pygments.lexers.data import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+        from pygments.lexers.data import (  # noqa: PLC0415
             JsonLexer,
         )
         from rich.syntax import Syntax  # noqa: PLC0415
@@ -806,7 +812,7 @@ class TestCase:
         tests: Iterable[dict[str, Any]],
         registry: Mapping[str, Schema] = {},
         **kwargs: Any,
-    ):
+    ) -> Self:
         populated = EMPTY_REGISTRY.with_contents(
             registry.items(),
             default_specification=dialect.specification(),
@@ -817,7 +823,7 @@ class TestCase:
             **kwargs,
         )
 
-    def with_explicit_dialect(self, dialect: Dialect):
+    def with_explicit_dialect(self, dialect: Dialect) -> Self:
         """
         Return a version of this test case with an explicit dialect ID.
         """
@@ -883,7 +889,7 @@ class TestCase:
 
 
 @cache
-def registry():
+def registry() -> SchemaRegistry:
     resources = referencing_loaders.from_traversable(files("bowtie.schemas"))
     return EMPTY_REGISTRY.with_resources(resources).crawl()
 
@@ -891,7 +897,7 @@ def registry():
 def convert_table_to_markdown(
     columns: list[str],
     rows: list[list[str]],
-):
+) -> str:
     widths = [max(len(row[i]) for row in rows) for i in range(len(columns))]
     rows = [[elt.center(w) for elt, w in zip(line, widths)] for line in rows]
 
@@ -916,7 +922,7 @@ def convert_table_to_markdown(
     return f"\n{header}\n{separator}\n{body}"
 
 
-def sortable_version_key(version: str):
+def sortable_version_key(version: str) -> list[int | str]:
     """
     Generate a sortable key for version strings like "1.2.3".
     """

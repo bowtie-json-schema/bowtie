@@ -34,7 +34,7 @@ def _client() -> Any:
     limit well above the anonymous one, which matters when a single run touches
     many repositories.
     """
-    from github3 import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+    from github3 import (  # noqa: PLC0415
         GitHub,
     )
 
@@ -87,7 +87,10 @@ def latest_commit_before(
         )
     )
     commit = next(iter(commits), None)
-    return None if commit is None else commit.sha
+    if commit is None:
+        return None
+    sha: str = commit.sha
+    return sha
 
 
 def download_tree(
@@ -114,7 +117,7 @@ def download_tree(
 
 def _commit_metadata(repository: Any, ref: str) -> dict[str, Any]:
     """Run metadata recording the exact commit a suite ``ref`` resolves to."""
-    from github3.exceptions import (  # type: ignore[reportMissingTypeStubs]  # noqa: PLC0415
+    from github3.exceptions import (  # noqa: PLC0415
         NotFoundError,
     )
 

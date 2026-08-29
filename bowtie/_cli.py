@@ -10,7 +10,7 @@ from pathlib import Path
 from statistics import mean, median, quantiles
 from textwrap import dedent
 from time import perf_counter_ns
-from typing import IO, TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import IO, TYPE_CHECKING, Any, Literal, Protocol, cast, override
 import asyncio
 import json
 import logging
@@ -90,7 +90,8 @@ if TYPE_CHECKING:
 
 class _EX:
     def __getattr__(self, attr: str) -> int:
-        return getattr(os, f"EX_{attr}", 1)  # Windows fallbacks...
+        code: int = getattr(os, f"EX_{attr}", 1)  # Windows fallbacks...
+        return code
 
 
 EX = _EX()
@@ -126,9 +127,7 @@ def _progress(*columns: Any) -> Progress:
     )
 
 
-# rich-click's CommandGroupDict seems to be missing some covariance,
-# as using a regular dict here makes pyright complain.
-_COMMAND_GROUPS = {
+_COMMAND_GROUPS: dict[str, list[CommandGroupDict]] = {
     "bowtie": [
         CommandGroupDict(
             name="Basic Commands",
@@ -324,7 +323,7 @@ _OPTION_GROUPS = {
         ],
     ),
 )
-def main(log_level: str):
+def main(log_level: str) -> None:
     """
     A meta-validator for the JSON Schema specifications.
 
@@ -337,7 +336,7 @@ def main(log_level: str):
     _redirect_structlog(log_level=getattr(logging, log_level.upper()))
 
 
-def subcommand[**P](fn: Callable[P, int | None]):
+def subcommand[**P](fn: Callable[P, int | None]) -> click.Command:
     """
     Define a Bowtie subcommand which returns its exit code.
     """
@@ -369,13 +368,13 @@ class ImplementationSubcommand(Protocol):
     ) -> Awaitable[int | None]: ...
 
 
-SILENT = _report.Reporter(write=lambda **_: None)  # type: ignore[reportUnknownArgumentType])
+SILENT = _report.Reporter(write=lambda **_: None)
 
 
 def implementation_subcommand(
     reporter: _report.Reporter = SILENT,
     default_implementations: Set[str] = Implementation.known(),
-):
+) -> Callable[[ImplementationSubcommand], click.Command]:
     """
     Define a Bowtie subcommand which starts up some implementations.
 
@@ -383,7 +382,7 @@ def implementation_subcommand(
     implementations.
     """
 
-    def wrapper(fn: ImplementationSubcommand):
+    def wrapper(fn: ImplementationSubcommand) -> click.Command:
         async def run(
             connectables: Iterable[Connectable],
             registry: ValidatorRegistry[Any] = Direct.from_id(
@@ -395,7 +394,7 @@ def implementation_subcommand(
 
             async def start(
                 connectables: Iterable[Connectable] = connectables,
-            ):
+            ) -> AsyncIterator[tuple[ConnectableId, Implementation]]:
                 nonlocal exit_code
 
                 successful = 0
@@ -425,9 +424,9 @@ def implementation_subcommand(
             #        and introducing another type is annoying when most of the
             #        complexity has to do with _start still existing --
             #        we need to finish removing it.
-            start.connectables = connectables  # type: ignore[reportFunctionMemberAccess]
+            start.connectables = connectables  # ty: ignore[unresolved-attribute]
 
-            fn_exit_code = await fn(start=start, **kw)  # type: ignore[reportArgumentType]
+            fn_exit_code = await fn(start=start, **kw)  # ty: ignore[invalid-argument-type]
             return exit_code | (fn_exit_code or 0)
 
         @subcommand
@@ -519,7 +518,8 @@ class _Report(click.File):
     name = "report"
     mode = "r"
 
-    def convert(  # type: ignore[reportIncompatibleMethodOverride]
+    @override
+    def convert(  # ty: ignore[invalid-method-override]
         self,
         value: str | PathLike[str] | IO[Any] | _report.Report,
         param: click.Parameter | None,
@@ -610,7 +610,7 @@ class _Report(click.File):
     ),
 )
 @click.argument("report", default="-", type=_Report())
-def summary(report: _report.Report, format: _F, show: str):
+def summary(report: _report.Report, format: _F, show: str) -> int:
     """
     Generate an (in-terminal) summary of a Bowtie run.
     """
@@ -627,11 +627,11 @@ def summary(report: _report.Report, format: _F, show: str):
         to_table = _failure_table
         to_markdown_table = _failure_table_in_markdown
 
-        def to_serializable(  # type: ignore[reportRedeclaration]
+        def to_serializable(
             value: Iterable[
                 tuple[ConnectableId, ImplementationInfo, Unsuccessful],
             ],
-        ):
+        ) -> list[Any]:
             return [(id, u.counts()) for id, _, u in value]
 
     else:
@@ -647,7 +647,7 @@ def summary(report: _report.Report, format: _F, show: str):
                     Iterable[tuple[Test, dict[str, AnyTestResult]]],
                 ]
             ],
-        ):
+        ) -> list[Any]:
             serialized: list[Any] = []
             for case, test_results in value:
                 test_results_list = list(test_results)
@@ -696,12 +696,12 @@ def summary(report: _report.Report, format: _F, show: str):
 
     match format:
         case "json":
-            click.echo(json.dumps(to_serializable(results), indent=2))  # type: ignore[reportGeneralTypeIssues]
+            click.echo(json.dumps(to_serializable(results), indent=2))  # ty: ignore[invalid-argument-type]
         case "pretty":
-            table = to_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            table = to_table(report, results)  # ty: ignore[invalid-argument-type]
             STDOUT.print(table)
         case "markdown":
-            content = to_markdown_table(report, results)  # type: ignore[reportGeneralTypeIssues]
+            content = to_markdown_table(report, results)  # ty: ignore[invalid-argument-type]
             # Not via rich, whose console width would wrap (breaking) tables.
             click.echo(content)
 
@@ -711,7 +711,7 @@ def summary(report: _report.Report, format: _F, show: str):
 def _failure_table(
     report: _report.Report,
     results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
-):
+) -> Table:
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         "Implementation",
@@ -746,7 +746,7 @@ def _failure_table(
 def _failure_table_in_markdown(
     report: _report.Report,
     results: list[tuple[ConnectableId, ImplementationInfo, Unsuccessful]],
-):
+) -> str:
     test = "tests" if report.total_tests != 1 else "test"
     rows: list[list[str]] = []
     columns = [
@@ -790,7 +790,7 @@ def _results_table(
     results: Iterable[
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
-):
+) -> Table:
     test = "tests" if report.total_tests != 1 else "test"
     table = Table(
         Column(header="Schema", vertical="middle"),
@@ -854,7 +854,7 @@ def _results_table_in_markdown(
     results: Iterable[
         tuple[TestCase, Iterable[tuple[Test, Mapping[str, AnyTestResult]]]],
     ],
-):
+) -> str:
     rows_data: list[list[str]] = []
     final_content = ""
 
@@ -996,7 +996,7 @@ def statistics(
     report: _report.Report,
     n: int,
     format: _F,
-):
+) -> None:
     """
     Show summary statistics for a Bowtie generated report.
 
@@ -1060,6 +1060,7 @@ class _Dialect(click.ParamType):
 
     name = "dialect"
 
+    @override
     def convert(
         self,
         value: str | Dialect,
@@ -1084,6 +1085,7 @@ class _Dialect(click.ParamType):
 
         self.fail(f"{value!r} is not a known dialect URI or short name.")
 
+    @override
     def shell_complete(
         self,
         ctx: click.Context,
@@ -1124,6 +1126,7 @@ class _Filter(click.ParamType):
 
     name = "filter"
 
+    @override
     def convert(
         self,
         value: str,
@@ -1135,20 +1138,22 @@ class _Filter(click.ParamType):
         )
 
 
-def _set_dialect_via_schema(ctx: click.Context, _, value: _Dialect):
+def _set_dialect_via_schema(
+    ctx: click.Context,
+    _: click.Parameter,
+    value: Dialect | None,
+) -> Dialect:
     """
     Set the dialect according to a possibly present :kw:`$schema` keyword.
     """
     if value:
         return value
     schema = ctx.params.get("schema")
-    dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
-        schema.get("$schema")  # type: ignore[reportUnknownMemberType]
-        if isinstance(schema, dict)
-        else None
+    dialect_from_schema: str | None = (
+        schema.get("$schema") if isinstance(schema, dict) else None
     )
     return (
-        Dialect.from_str(dialect_from_schema)  # type: ignore[reportUnknownArgumentType]
+        Dialect.from_str(dialect_from_schema)
         if dialect_from_schema
         else Dialect.latest()
     )
@@ -1239,7 +1244,7 @@ JOBS = click.option(
 
 _inflect_engine = InflectEngine()
 
-POSSIBLE_DIALECT_SHORTNAMES = _inflect_engine.join(sorted(Dialect.by_alias()))  # type: ignore[reportArgumentType]
+POSSIBLE_DIALECT_SHORTNAMES = _inflect_engine.join(sorted(Dialect.by_alias()))
 
 
 def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
@@ -1247,7 +1252,7 @@ def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
         "all known dialects"
         if list(dialects) == list(Dialect.known())
         else _inflect_engine.join(
-            [dialect.pretty_name for dialect in dialects],  # type: ignore[reportArgumentType]
+            [dialect.pretty_name for dialect in dialects],
         )
     )
 
@@ -1255,7 +1260,7 @@ def pretty_names_str_for(dialects: Iterable[Dialect]) -> str:
 def dialect_option(
     default: Dialect | None = Dialect.latest(),
     **kwargs: Any,
-):
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     if default is not None:
         kwargs.update(default=default, show_default=default.pretty_name)
     kwargs.setdefault(
@@ -1331,6 +1336,7 @@ def fail_fast(fn: FC) -> FC:
 class JSON(click.File):
     name = "JSON"
 
+    @override
     def convert(
         self,
         value: str | PathLike[str] | IO[Any],
@@ -1369,7 +1375,7 @@ def run(
     dialect: Dialect,
     jobs: int,
     **kwargs: Any,
-):
+) -> int:
     """
     Run test cases written directly in Bowtie's testing format.
 
@@ -1420,7 +1426,7 @@ def validate(
     description: str,
     jobs: int,
     **kwargs: Any,
-):
+) -> int:
     """
     Validate instances under a schema across any supported implementation.
     """
@@ -1563,7 +1569,7 @@ def perf(
         _benchmarks.Benchmarker.from_default_benchmarks
     ),
     **kwargs: Any,
-):
+) -> int:
     """
     Perform performance measurements across supported implementations.
     """
@@ -1614,7 +1620,7 @@ def filter_benchmarks(
     dialect: Dialect,
     benchmark_type: str | None,
     benchmark_names: Iterable[str],
-):
+) -> None:
     """
     Output benchmarks matching the specified criteria.
     """
@@ -1638,7 +1644,7 @@ KNOWN_LANGUAGES = {
 }
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # ty: ignore[invalid-argument-type]
 @format_option(
     default="plain",
     show_default=True,
@@ -1676,10 +1682,10 @@ KNOWN_LANGUAGES = {
     "--direct",
     "filter_connectable",
     is_flag=True,
-    callback=lambda _, __, value: (  # type: ignore[reportUnknownLambdaType]
-        (lambda connectable: connectable.kind == "direct")  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, value: (
+        (lambda connectable: connectable.kind == "direct")
         if value
-        else (lambda connectable: True)  # type: ignore[reportUnknownLambdaType]
+        else (lambda connectable: True)
     ),
     help=(
         "Only include implementations with direct connectable functionality "
@@ -1692,7 +1698,7 @@ async def filter_implementations(
     languages: Set[str],
     filter_connectable: Callable[[Connectable], bool],
     format: Literal["plain", "json"],
-):
+) -> None:
     """
     Output implementations which match the given criteria.
 
@@ -1718,7 +1724,7 @@ async def filter_implementations(
                 click.echo(name)
 
 
-@implementation_subcommand(default_implementations=frozenset())  # type: ignore[reportArgumentType]
+@implementation_subcommand(default_implementations=frozenset())  # ty: ignore[invalid-argument-type]
 @click.option(
     "--dialect",
     "-d",
@@ -1752,7 +1758,7 @@ async def filter_dialects(
     dialects: Iterable[Dialect],
     latest: bool,
     booleans: bool | None,
-):
+) -> int | None:
     """
     Output dialect URIs matching a given criteria.
 
@@ -1787,19 +1793,19 @@ async def filter_dialects(
 
 @subcommand
 @dialect_option()
-def latest_report(dialect: Dialect):
+def latest_report(dialect: Dialect) -> None:
     """
     Output the latest published report from Bowtie's website.
     """
 
-    async def write(response: Awaitable[Response]):
+    async def write(response: Awaitable[Response]) -> None:
         async for chunk in (await response).aiter_bytes():
             click.echo(chunk)
 
     asyncio.run(write(dialect.latest_report()))
 
 
-def _info_links_table_for(metadata: dict[str, Any]):
+def _info_links_table_for(metadata: dict[str, Any]) -> Table:
     table = Table(
         Column(style="spring_green4"),
         box=None,
@@ -1820,7 +1826,7 @@ def _info_links_table_for(metadata: dict[str, Any]):
     return table
 
 
-def _info_table_for(metadata: dict[str, Any]):
+def _info_table_for(metadata: dict[str, Any]) -> Table:
     table = Table(
         Column(style="cyan bold"),
         box=box.ROUNDED,
@@ -1855,7 +1861,7 @@ def _info_table_for(metadata: dict[str, Any]):
     return table
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # ty: ignore[invalid-argument-type]
 @format_option()
 @click.option(
     "--versions/--no-versions",
@@ -1866,7 +1872,7 @@ async def info(
     start: Starter,
     format: _F,
     show_versions: bool,
-):
+) -> None:
     """
     Show information about a supported implementation.
     """
@@ -1937,7 +1943,7 @@ async def download_versions_of(id: ConnectableId) -> frozenset[str]:
                     total=None,
                     advance=None,
                 )
-                return frozenset()
+                return frozenset[str]()
             else:
                 content = response.content
                 content_length = len(content)
@@ -1951,7 +1957,8 @@ async def download_versions_of(id: ConnectableId) -> frozenset[str]:
                     total=content_length,
                     advance=content_length,
                 )
-                return frozenset(json.loads(content))
+                versions: list[str] = json.loads(content)
+                return frozenset(versions)
 
 
 async def download_and_parse_reports_for(
@@ -1980,7 +1987,7 @@ async def download_and_parse_reports_for(
             async def download_and_parse_versioned_report_for(
                 version: str,
                 dialect: Dialect,
-            ):
+            ) -> tuple[str, Dialect, _report.Report]:
                 try:
                     url = (
                         HOMEPAGE
@@ -2045,7 +2052,9 @@ async def download_and_parse_reports_for(
             total=total_files,
         )
 
-        async def download_and_parse_latest_report_for(dialect: Dialect):
+        async def download_and_parse_latest_report_for(
+            dialect: Dialect,
+        ) -> tuple[str, Dialect, _report.Report]:
             try:
                 response = await dialect.latest_report()
                 response.raise_for_status()
@@ -2105,7 +2114,7 @@ def _trend_table_for(
         sub_table: Table,
         version: str,
         unsuccessful: Unsuccessful,
-    ):
+    ) -> None:
         sub_table.add_row(
             version,
             str(len(unsuccessful.skipped)),
@@ -2155,7 +2164,7 @@ def _trend_table_in_markdown_for(
     def create_inner_table_row(
         version: str,
         unsuccessful: Unsuccessful,
-    ):
+    ) -> list[str]:
         return [
             version,
             str(len(unsuccessful.skipped)),
@@ -2206,7 +2215,8 @@ class _VersionedReportsTar(click.File):
     name = "versioned_reports_tar"
     mode = "rb"
 
-    def convert(  # type: ignore[reportIncompatibleMethodOverride]
+    @override
+    def convert(  # ty: ignore[invalid-method-override]
         self,
         value: str | PathLike[str] | IO[Any],
         param: click.Parameter | None,
@@ -2245,7 +2255,8 @@ class _VersionedReportsTar(click.File):
                     ctx.exit(EX.DATAERR)
                 else:
                     if versions_content:
-                        versions = frozenset(json.load(versions_content))
+                        listed: list[str] = json.load(versions_content)
+                        versions = frozenset(listed)
 
                 versions_dirs = [
                     member.name
@@ -2282,7 +2293,7 @@ class _VersionedReportsTar(click.File):
                 )
 
                 actual_parsed_files = 0
-                versioned_reports: Iterable[
+                versioned_reports: list[
                     tuple[str, Dialect, _report.Report]
                 ] = []
 
@@ -2389,7 +2400,7 @@ def trend(
         | None
     ),
     format: _F,
-):
+) -> None:
     """
     Show trend data of an implementation across its multiple versions.
     """
@@ -2400,7 +2411,10 @@ def trend(
         async def download_versions_and_parse_reports_for(
             id: ConnectableId,
             dialects: Iterable[Dialect],
-        ):
+        ) -> tuple[
+            frozenset[str],
+            Iterable[tuple[str, Dialect, _report.Report]],
+        ]:
             versions = await download_versions_of(id)
             downloaded_versioned_reports = (
                 await download_and_parse_reports_for(
@@ -2496,7 +2510,7 @@ def trend(
             )
 
 
-@implementation_subcommand()  # type: ignore[reportArgumentType]
+@implementation_subcommand()  # ty: ignore[invalid-argument-type]
 @click.option(
     "-q",
     "--quiet",
@@ -2504,7 +2518,7 @@ def trend(
     # I have no idea why Click makes this so hard, but no combination of:
     #     type, default, is_flag, flag_value, nargs, ...
     # makes this work without doing it manually with callback.
-    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,  # type: ignore[reportUnknownLambdaType]
+    callback=lambda _, __, v: click.echo if not v else lambda *_, **__: None,
     is_flag=True,
     help="Don't print any output, just exit with nonzero status on failure.",
 )
@@ -2622,7 +2636,7 @@ def _run_suite(
     jobs: int,
     output: OutputFormat = "flag",
     **kwargs: Any,
-):
+) -> int:
     _cases, dialect, metadata = input
     cases = list(filter(_cases))
     if not cases:
@@ -2653,7 +2667,7 @@ def suite(
     filter: CaseTransform,
     jobs: int,
     **kwargs: Any,
-):
+) -> int:
     """
     Run the official JSON Schema test suite against any implementation.
 
@@ -2709,7 +2723,7 @@ def annotation_suite(
     dialect: Dialect,
     jobs: int,
     **kwargs: Any,
-):
+) -> int:
     """
     Run the official JSON Schema annotation test suite.
 
@@ -2825,7 +2839,7 @@ def collect(
         context.exit(EX.CONFIG)
 
     if suite_source is not None and Path(suite_source).exists():
-        root: _suite._P = Path(suite_source)  # type: ignore[reportPrivateUsage]
+        root: _suite._P = Path(suite_source)
         run_metadata: dict[str, Any] = {}
     else:
         try:
@@ -2879,7 +2893,7 @@ def collect(
 async def _collect_dialects(
     implementation: Implementation,
     available: set[Dialect],
-    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    root: _suite._P,
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     run_metadata: dict[str, Any],
     output: Path,
@@ -2950,7 +2964,7 @@ async def _collect_dialects(
 
 async def _collect(
     connectable: Connectable,
-    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    root: _suite._P,
     run_metadata: dict[str, Any],
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     registry: ValidatorRegistry[Any],
@@ -3003,14 +3017,14 @@ async def _collect(
         STDERR.print(error)
         return EX.DATAERR
 
-    reports = _inflect_engine.plural("report", wrote)  # type: ignore[reportArgumentType]
+    reports = _inflect_engine.plural("report", wrote)
     STDERR.print(f"Collected [green]{wrote}[/] {reports} into {output}.")
     return 0
 
 
 async def _collect_versions(
     connectables: Iterable[Connectable],
-    root: _suite._P,  # type: ignore[reportPrivateUsage]
+    root: _suite._P,
     run_metadata: dict[str, Any],
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     registry: ValidatorRegistry[Any],
@@ -3077,7 +3091,7 @@ async def _collect_versions(
     output.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240
     output.joinpath("matrix-versions.json").write_text(json.dumps(collected))
 
-    versions = _inflect_engine.plural("version", len(collected))  # type: ignore[reportArgumentType]
+    versions = _inflect_engine.plural("version", len(collected))
     STDERR.print(
         f"Collected [green]{len(collected)}[/] {versions} into {output}.",
     )
@@ -3216,7 +3230,7 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
 
     _write_api(output=output, infos=infos)
 
-    dialects = _inflect_engine.plural("dialect", len(by_dialect))  # type: ignore[reportArgumentType]
+    dialects = _inflect_engine.plural("dialect", len(by_dialect))
     STDERR.print(
         f"Combined [green]{len(infos)}[/] implementations across "
         f"[green]{len(by_dialect)}[/] {dialects} into {output}.",
@@ -3300,7 +3314,7 @@ async def _run_cases(
         st_time = perf_counter_ns()
         result = await seq_case.run(runner=runner)
         time_taken += perf_counter_ns() - st_time
-        got_result(result=result)
+        got_result(result)
         lines.append(seq_case.serializable())
         lines.append(result.serializable())
         unsuccessful += result.unsuccessful()
@@ -3400,7 +3414,9 @@ async def _run_parallel(
     materialized = list(cases)
     semaphore = asyncio.Semaphore(jobs)
 
-    async def run_with_limit(connectable: Connectable):
+    async def run_with_limit(
+        connectable: Connectable,
+    ) -> tuple[int, _report.Report | None]:
         async with semaphore:
             return await _run_one(
                 connectable=connectable,
@@ -3452,11 +3468,11 @@ async def _run_parallel(
 async def _start(
     connectables: Iterable[Connectable],
     **kwargs: Any,
-):
+) -> AsyncIterator[Iterable[Awaitable[tuple[ConnectableId, Implementation]]]]:
     async def _connected(
         connectable: Connectable,
         **kwargs: Any,
-    ):
+    ) -> tuple[ConnectableId, Implementation]:
         implementation = await stack.enter_async_context(
             connectable.connect(**kwargs),
         )
@@ -3495,7 +3511,7 @@ def _stderr_processor(file: TextIO) -> structlog.typing.Processor:
     return stderr_processor
 
 
-def _redirect_structlog(log_level: int, file: TextIO = sys.stderr):
+def _redirect_structlog(log_level: int, file: TextIO = sys.stderr) -> None:
     """
     Reconfigure structlog's defaults to go to the given location.
     """

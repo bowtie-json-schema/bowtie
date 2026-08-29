@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from fnmatch import fnmatch
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 import json
 import os
 import zipfile
@@ -45,11 +45,12 @@ class ClickParam(click.ParamType):
     A command line parameter which loads tests from the official test suite.
     """
 
-    def __init__(self, is_annotations: bool = False):
+    def __init__(self, is_annotations: bool = False) -> None:
         self._is_annotations = is_annotations
         kind = "annotation test cases" if is_annotations else "test cases"
         self.name = f"json-schema-org/JSON-Schema-Test-Suite {kind}"
 
+    @override
     def convert(
         self,
         value: Any,
@@ -88,12 +89,12 @@ class ClickParam(click.ParamType):
 
         try:
             with suppress(TypeError):
-                value = URL.parse(value)
+                value = URL.parse(value)  # ty: ignore[invalid-argument-type]
         except RelativeURLWithoutBase:
-            return local(Path(value))
+            return local(Path(value))  # ty: ignore[invalid-argument-type]
 
-        value = cast("URL", value)
-        org, repo_name, *rest = value.path_segments
+        value = cast("URL", value)  # ty: ignore[redundant-cast]
+        org, repo_name, *rest = value.path_segments  # ty: ignore[not-iterable]
         path, ref = path_and_ref_from_gh_path(rest)
 
         downloaded = _github.download_tree(org, repo_name, ref)
@@ -130,7 +131,7 @@ class ClickParam(click.ParamType):
         path: Any,
         ctx: click.Context | None,
         known_dialect: Dialect | None = None,
-    ):
+    ) -> tuple[Dialect, Iterable[TestCase]]:
         if path.name.endswith(".json"):
             paths, version_path = [path], path.parent
         else:
@@ -140,7 +141,7 @@ class ClickParam(click.ParamType):
         if dialect is None:
             dialect = Dialect.by_short_name().get(version_path.name)
         if dialect is None and self._is_annotations and ctx is not None:
-            dialect = ctx.params.get("dialect")
+            dialect = cast("Dialect | None", ctx.params.get("dialect"))
         if dialect is None:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
@@ -333,8 +334,8 @@ def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
 
 def _relative_to(path: _P, other: Path) -> Path:
     if hasattr(path, "relative_to"):
-        return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+        return path.relative_to(other)  # ty: ignore[invalid-return-type,invalid-argument-type]
+    return Path(path.at).relative_to(other.at)  # ty: ignore[unresolved-attribute]
 
 
 #: The default git ref of the official suite to collect test cases from.
@@ -346,7 +347,7 @@ class SuiteNotAvailable(Exception):
     The official test suite could not be retrieved from GitHub.
     """
 
-    def __init__(self, ref: str):
+    def __init__(self, ref: str) -> None:
         super().__init__(ref)
         self.ref = ref
 

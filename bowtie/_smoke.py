@@ -21,9 +21,11 @@ from bowtie._commands import ExpectedValidity
 from bowtie._core import Example, Test, TestCase
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
+    from typing import Self
 
     from rich.console import Console, ConsoleOptions, RenderResult
+    from rich.table import Table
 
     from bowtie._commands import SeqResult
     from bowtie._core import ConnectableId, Dialect, Implementation
@@ -39,7 +41,7 @@ EXAMPLES = [
 ]
 
 
-async def test(implementation: Implementation):
+async def test(implementation: Implementation) -> Result:
     """
     Smoke test an implementation for absolute basic correctness.
 
@@ -158,8 +160,9 @@ class Result:
                         if result.errored:
                             message = "[b red]errored"
                         else:
-                            word = "valid" if result.valid else "invalid"  # type: ignore[reportUnknownMemberType]
-                            message = f"[red]incorrectly[/] {word}"
+                            message = (
+                                f"[red]incorrectly[/] {result.description}"
+                            )
 
                         instances.add_row(test.syntax(), message)
 
@@ -244,11 +247,13 @@ class Result:
         yield table
         yield epilog
 
-    def for_each_dialect(self):
+    def for_each_dialect(
+        self,
+    ) -> list[tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]]:
         return sorted(self._dialects, reverse=True)
 
     @cached_property
-    def success(self):
+    def success(self) -> bool:
         # We treat referencing failures as soft failures, since so many
         # implementations have issues :( Perhaps this will change.
         return not self._dialects.failures
@@ -295,17 +300,21 @@ class DialectResults:
     )
     latest_successful: Dialect | None = None
 
-    def __iter__(self):
+    def __iter__(
+        self,
+    ) -> Iterator[tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]]:
         return iter(self._dialects.items())
 
     @cached_property
-    def failures(self):
+    def failures(
+        self,
+    ) -> list[tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]]:
         return sorted(
             ((k, v) for k, v in self._dialects.items() if v),
             reverse=True,
         )
 
-    def __rich__(self):
+    def __rich__(self) -> Table:
         from rich.table import Column, Table  # noqa: PLC0415
 
         table = Table.grid(Column("Name", justify="right"))
@@ -319,7 +328,7 @@ class DialectResults:
         self,
         dialect: Dialect,
         results: Sequence[tuple[TestCase, SeqResult]],
-    ):
+    ) -> Self:
         latest = self.latest_successful
         if not results and (latest is None or dialect > latest):
             latest = dialect

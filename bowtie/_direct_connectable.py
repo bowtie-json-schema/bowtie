@@ -30,6 +30,7 @@ from bowtie.exceptions import CannotConnect
 if TYPE_CHECKING:
     from collections.abc import Callable
     from contextlib import AbstractAsyncContextManager
+    from typing import Self
 
     from jsonschema import ValidationError
     from jsonschema.protocols import Validator
@@ -37,10 +38,14 @@ if TYPE_CHECKING:
 
     from bowtie._commands import Message
     from bowtie._connectables import ConnectableId
+    from bowtie._registry import Validate
 
 
-def not_yet_connected(schema: Schema, registry: SchemaRegistry):
-    def _not_yet_connected(instance: Any):
+def not_yet_connected(
+    schema: Schema,
+    registry: SchemaRegistry,
+) -> Validate[Any]:
+    def _not_yet_connected(instance: Any) -> Never:
         raise RuntimeError("Not yet connected!")
 
     return _not_yet_connected
@@ -138,7 +143,7 @@ class DirectImplementation[E: Exception]:
         compiler_for: Callable[[Dialect], SchemaCompiler[E]],
         implicit_dialect_response: StartedDialect = StartedDialect.OK,
         **kwargs: Any,
-    ):
+    ) -> None:
         object.__setattr__(self, "_compiler_for", compiler_for)
         object.__setattr__(
             self,
@@ -146,7 +151,7 @@ class DirectImplementation[E: Exception]:
             implicit_dialect_response,
         )
 
-        name = kwargs.pop("name", compiler_for.__name__)
+        name = kwargs.pop("name", compiler_for.__name__)  # ty: ignore[unresolved-attribute]
         if "version" not in kwargs:
             kwargs["version"] = metadata.version(name)
 
@@ -160,7 +165,7 @@ class DirectImplementation[E: Exception]:
         info = ImplementationInfo(name, **kwargs)
         object.__setattr__(self, "_info", info)
 
-    def __call__(self):
+    def __call__(self) -> Unconnection[E]:
         return Unconnection(
             compiler_for=self._compiler_for,
             info=self._info,
@@ -172,8 +177,13 @@ class DirectImplementation[E: Exception]:
         cls,
         language: str = "python",
         **kwargs: Any,
-    ):
-        def decorator(fn: Callable[[Dialect], SchemaCompiler[E]]):
+    ) -> Callable[
+        [Callable[[Dialect], SchemaCompiler[E]]],
+        Callable[[], DirectImplementation[E]],
+    ]:
+        def decorator(
+            fn: Callable[[Dialect], SchemaCompiler[E]],
+        ) -> Callable[[], DirectImplementation[E]]:
             return lambda: cls(compiler_for=fn, language=language, **kwargs)
 
         return decorator
@@ -234,8 +244,8 @@ def jsonschema(dialect: Dialect) -> SchemaCompiler[ValidationError]:
     return compile
 
 
-# pyright (at least 1.1.372) seems unable to see through this type if we try to
-# define it via DirectImplementation.from_callable. But I guess that's fine...
+# Type checkers seem unable to see through this type if we try to define it via
+# DirectImplementation.from_callable. But I guess that's fine...
 def null(dialect: Dialect) -> SchemaCompiler[Never]:
     return lambda _, __: lambda _: None
 
@@ -253,7 +263,7 @@ NULL = DirectImplementation(
 
 
 IMPLEMENTATIONS: dict[str, Callable[..., Callable[[], Unconnection[Any]]]] = {
-    "python-jsonschema": jsonschema,  # type: ignore[reportAssignmentType]  # pyright seems confused.
+    "python-jsonschema": jsonschema,
 }
 
 
@@ -315,14 +325,14 @@ class Direct[E: Exception]:
         return cls(wraps=wrapper(**params))
 
     @classmethod
-    def null(cls):
+    def null(cls) -> Self:
         """
         The null direct connectable considers all instances always valid.
 
         It can be useful e.g. for simply testing whether something is valid
         JSON, or for disabling validation where it otherwise would happen.
         """
-        return cls(wraps=NULL)  # type: ignore[reportArgumentType]
+        return cls(wraps=NULL)
 
     def connect(
         self,

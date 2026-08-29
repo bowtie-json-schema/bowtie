@@ -52,7 +52,7 @@ class Unsuccessful:
     errored: list[ErroredTest] = field(factory=list["ErroredTest"])
     skipped: list[SkippedTest] = field(factory=list["SkippedTest"])
 
-    def __add__(self, other: Unsuccessful):
+    def __add__(self, other: Unsuccessful) -> Unsuccessful:
         return Unsuccessful(
             failed=self.failed + other.failed,
             errored=self.errored + other.errored,
@@ -62,11 +62,11 @@ class Unsuccessful:
     def __bool__(self) -> bool:  # sigh, typing nonsense
         return bool(self.failed or self.errored or self.skipped)
 
-    def counts(self):
+    def counts(self) -> dict[str, int]:
         return {k: len(v) for k, v in asdict(self).items()}
 
     @property
-    def total(self):
+    def total(self) -> int:
         """
         Any test which was not a successful result, including skips.
         """
@@ -89,23 +89,23 @@ class SeqCase:
             runner.schema_without_dialect(self.case.schema)
 
         run = Run(
-            seq=self.seq,  # type: ignore[reportCallIssue]
-            case=self.case.without_expected_results(),  # type: ignore[reportCallIssue]
-            output=self.output,  # type: ignore[reportCallIssue]
+            seq=self.seq,  # ty: ignore[unknown-argument]
+            case=self.case.without_expected_results(),  # ty: ignore[unknown-argument]
+            output=self.output,  # ty: ignore[unknown-argument]
         )
         return runner.validate(run, expected=self.case.expected_results())
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return dict(seq=self.seq, case=self.case.serializable())
 
-    def matches_dialect(self, dialect: _Dialect):
+    def matches_dialect(self, dialect: _Dialect) -> bool:
         # FIXME: This of course belongs in a JSON Schema library for traversing
         #        these metaschemas.
         resource = dialect.specification().create_resource(self.case.schema)
         metaschema_uri = dialect.uri
         while resource is not None:
             try:
-                metaschema_uri = URL.parse(resource.contents["$schema"])  # type: ignore[reportIndexIssue]
+                metaschema_uri = URL.parse(resource.contents["$schema"])  # ty: ignore[not-subscriptable]
             except (TypeError, LookupError):
                 return True
 
@@ -131,7 +131,7 @@ class Command[R](Protocol):
     ) -> R: ...
 
 
-def validated(validator: Validator[Any], instance: Any):
+def validated(validator: Validator[Any], instance: Any) -> Any:
     exception = validator.validate(instance)
     if exception is not None:
         raise exceptions.ProtocolError() from exception  # FIXME
@@ -169,9 +169,9 @@ def command[R](
             validator = registry.for_schema(response_schema)
             return Response(**validated(validator, response))
 
-        cls.to_request = to_request
-        cls.from_response = from_response
-        return frozen(cls)
+        cls.to_request = to_request  # ty: ignore[unresolved-attribute]
+        cls.from_response = from_response  # ty: ignore[unresolved-attribute]
+        return frozen(cls)  # ty: ignore[invalid-return-type]
 
     return _command
 
@@ -181,7 +181,7 @@ class Start:
     version: int
 
 
-START_V1 = Start(version=1)  # type: ignore[reportCallIssue]
+START_V1 = Start(version=1)  # ty: ignore[unknown-argument]
 
 
 @frozen
@@ -235,7 +235,7 @@ class FlagTestResult:
     valid: bool
 
     @property
-    def description(self):
+    def description(self) -> str:
         return "valid" if self.valid else "invalid"
 
     @property
@@ -257,7 +257,7 @@ class AnnotationsTestResult:
     )
 
     @property
-    def description(self):
+    def description(self) -> str:
         return "valid" if self.valid else "invalid"
 
     def serializable(self) -> Message:
@@ -323,7 +323,7 @@ class SkippedTest:
         return {}
 
     @classmethod
-    def in_skipped_case(cls):
+    def in_skipped_case(cls) -> Self:
         """
         A skipped test which mentions it is part of an entirely skipped case.
         """
@@ -352,7 +352,7 @@ class ErroredTest:
         return {}
 
     @classmethod
-    def in_errored_case(cls):
+    def in_errored_case(cls) -> Self:
         """
         A errored test which mentions it is part of an entirely errored case.
         """
@@ -400,7 +400,7 @@ class ExpectedValidity:
     valid: bool
 
     @property
-    def description(self):
+    def description(self) -> str:
         return "valid" if self.valid else "invalid"
 
     def matches(self, result: FlagTestResult | AnnotationsTestResult) -> bool:
@@ -531,7 +531,7 @@ class SeqResult:
         implementation: str,
         expected: list[Any],
         **data: dict[str, Any],
-    ):
+    ) -> Self:
         expectations = [expectation_from_serialized(e) for e in expected]
         _, _, result = _case_result(seq=seq, **data)
         return cls(
@@ -551,7 +551,7 @@ class SeqResult:
         self.result.log(log)
         return self.serializable()
 
-    def serializable(self):
+    def serializable(self) -> Message:
         serializable = asdict(
             self,
             filter=filters.exclude("result", "expected"),
@@ -572,7 +572,7 @@ class CaseResult:
     results: Sequence[AnyTestResult]
 
     @classmethod
-    def from_results(cls, results: list[dict[str, Any]]):
+    def from_results(cls, results: list[dict[str, Any]]) -> Self:
         return cls(results=[TestResult.from_dict(t) for t in results])
 
     def serializable(self) -> Message:
@@ -597,10 +597,10 @@ class CaseResult:
                 failed.append(got)
         return Unsuccessful(skipped=skipped, failed=failed, errored=errored)
 
-    def log(self, log: BoundLogger):
+    def log(self, log: BoundLogger) -> None:
         for result in self.results:
             if result.errored:
-                log.error("", **result.context)  # type: ignore[reportGeneralTypeIssues, reportUnknownMemberType]
+                log.error("", **result.context)
 
 
 @frozen
@@ -617,10 +617,10 @@ class CaseErrored:
     errored: bool = field(default=True, init=False)
 
     @classmethod
-    def uncaught(cls, message: str = "uncaught error", **context: Any):
+    def uncaught(cls, message: str = "uncaught error", **context: Any) -> Self:
         return cls(caught=False, message=message, context=context)
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(self)
 
     def result_for(self, i: int) -> ErroredTest:
@@ -633,7 +633,7 @@ class CaseErrored:
         errored = [ErroredTest.in_errored_case() for _ in expected]
         return Unsuccessful(errored=errored)
 
-    def log(self, log: BoundLogger):
+    def log(self, log: BoundLogger) -> None:
         log.error(self.message, **self.context)
 
 
@@ -649,7 +649,7 @@ class CaseSkipped:
     issue_url: str | None = None
     skipped: bool = field(init=False, default=True)
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(
             self,
             filter=lambda k, v: (
@@ -667,7 +667,7 @@ class CaseSkipped:
         skipped = [SkippedTest.in_skipped_case() for _ in expected]
         return Unsuccessful(skipped=skipped)
 
-    def log(self, log: BoundLogger):
+    def log(self, log: BoundLogger) -> None:
         log.info(self.message or "skipped case")
 
 
@@ -682,7 +682,7 @@ class Empty:
     def result_for(self, i: int) -> ErroredTest:
         return ErroredTest.in_errored_case()
 
-    def log(self, log: BoundLogger):
+    def log(self, log: BoundLogger) -> None:
         log.error("No response")
 
     def unsuccessful(

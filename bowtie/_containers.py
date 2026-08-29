@@ -197,7 +197,7 @@ class ConnectableImage:
             # the lifetime of the connection.
             current = await stack.enter_async_context(AsyncExitStack())
 
-            async def new_session():
+            async def new_session() -> Session:
                 await current.aclose()
 
                 try:
@@ -277,7 +277,7 @@ class ConnectableContainer:
             # making another one.
             current = await stack.enter_async_context(AsyncExitStack())
 
-            async def new_session():
+            async def new_session() -> Session:
                 await current.aclose()
                 return await current.enter_async_context(
                     engine.attach(self._id),

@@ -5,7 +5,7 @@ Connectables implement a mini-language for connecting to supported harnesses.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, override
 
 from attrs import field, frozen
 from click.shell_completion import CompletionItem
@@ -20,6 +20,7 @@ from bowtie.exceptions import CannotConnect
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
     from contextlib import AbstractAsyncContextManager
+    from typing import Self
 
     from bowtie._core import Connection
 
@@ -31,7 +32,8 @@ class UnknownConnector(Exception):
 
 
 class Connector(Protocol):
-    kind: str
+    @property
+    def kind(self) -> str: ...
 
     def connect(self) -> AbstractAsyncContextManager[Connection]: ...
 
@@ -115,7 +117,7 @@ class Connectable:
     _connector: Connector = field(alias="connector")
 
     @classmethod
-    def from_str(cls, fqid: ConnectableId):
+    def from_str(cls, fqid: ConnectableId) -> Self:
         kind, sep, id = fqid.partition(":")
         if not sep:
             kind, id = "happy", kind
@@ -136,7 +138,7 @@ class Connectable:
         return cls(id=fqid, connector=connector)
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         return self._connector.kind
 
     @asynccontextmanager
@@ -182,6 +184,7 @@ class ClickParam(click.ParamType):
 
     name = "implementation"
 
+    @override
     def convert(
         self,
         value: str,
@@ -195,6 +198,7 @@ class ClickParam(click.ParamType):
                 raise
             raise click.BadParameter(err.hint)
 
+    @override
     def shell_complete(
         self,
         ctx: click.Context,

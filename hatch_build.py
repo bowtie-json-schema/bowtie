@@ -18,7 +18,7 @@ class BowtieDataIncluder(BuildHookInterface):
     Include Bowtie implementation data when building a distribution.
     """
 
-    def known_implementations(self):
+    def known_implementations(self) -> Path:
         """
         Our temporary file location.
         """
@@ -103,7 +103,7 @@ class BowtieDataIncluder(BuildHookInterface):
         return sorted(local_set | harnesses_set)
 
     @staticmethod
-    def _collect_harnesses(gh_token) -> list[str]:
+    def _collect_harnesses(gh_token: str | None) -> list[str]:
         gh = login(token=gh_token) if gh_token else GitHub()
         org = gh.organization("bowtie-json-schema")
 
@@ -111,7 +111,7 @@ class BowtieDataIncluder(BuildHookInterface):
         # so read them from there rather than a separate `.topics()` call per
         # repository -- the org has dozens of repositories, and one API call
         # each rapidly exhausts the GitHub rate limit during builds.
-        def is_harness(repo) -> bool:
+        def is_harness(repo: Any) -> bool:
             return "bowtie-harness" in (repo.as_dict().get("topics") or [])
 
         return [repo.name for repo in org.repositories() if is_harness(repo)]

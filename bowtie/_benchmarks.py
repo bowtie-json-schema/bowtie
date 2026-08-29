@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 from statistics import geometric_mean
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 import asyncio
 import importlib
 import importlib.metadata
@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.table import Column, Table
 from url import URL
-import pyperf  # type: ignore[reportMissingTypeStubs]
+import pyperf
 
 from bowtie import _report
 from bowtie._core import (
@@ -36,8 +36,8 @@ from bowtie._core import (
 from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
-    from typing import Any
+    from collections.abc import Callable, Iterable, Mapping, Sequence
+    from typing import Any, Self
 
     from bowtie._commands import (
         Message,
@@ -123,7 +123,7 @@ def combine_benchmark_reports_to_serialized(
 def _load_benchmark_group_from_file(
     file: Path,
     module: str | None = None,
-):
+) -> BenchmarkGroup | None:
     benchmark_group = None
     if file.suffix == ".py" and file.name != "__init__.py":
         benchmark_module_name = "." + file.stem
@@ -153,7 +153,7 @@ def _load_benchmark_group_from_file(
 class BenchmarkLoadError(Exception):
     message: str
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         return DiagnosticError(
             code="benchmark-load-error",
             message=self.message,
@@ -177,7 +177,7 @@ class PyperfError(BenchmarkError):
 
     error_stack: str
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         return DiagnosticError(
             code="pyperf-benchmark-error",
             message="Pyperf command failed while running the Benchmark.",
@@ -199,7 +199,7 @@ class BowtieRunError(BenchmarkError):
     error_stack: str
     connectable_id: ConnectableId | None
 
-    def __rich__(self):
+    def __rich__(self) -> DiagnosticError:
         return DiagnosticError(
             code="bowtie-benchmark-error",
             message="Bowtie Run command failed while running the Benchmark.",
@@ -227,7 +227,7 @@ class Benchmark:
         tests: Iterable[dict[str, Any]],
         name: str,
         **kwargs: Any,
-    ):
+    ) -> Self:
         return cls(
             tests=[Example.from_dict(**test) for test in tests],
             name=name,
@@ -240,14 +240,17 @@ class Benchmark:
             filter=lambda _, v: v is not None,
         )
 
-    def benchmark_with_diff_tests(self, tests: Sequence[Example | Test]):
+    def benchmark_with_diff_tests(
+        self,
+        tests: Sequence[Example | Test],
+    ) -> Benchmark:
         benchmark = self.serializable()
         benchmark["tests"] = tests
         return Benchmark(**benchmark)
 
-    def maybe_set_dialect_from_schema(self):
-        dialect_from_schema: str | None = (  # type: ignore[reportUnknownVariableType]
-            self.schema.get("$schema")  # type: ignore[reportUnknownMemberType]
+    def maybe_set_dialect_from_schema(self) -> Benchmark:
+        dialect_from_schema: str | None = (
+            self.schema.get("$schema")
             if isinstance(self.schema, dict)
             else None
         )
@@ -256,7 +259,7 @@ class Benchmark:
 
         benchmark = self.serializable()
         benchmark["dialect"] = Dialect.from_str(
-            dialect_from_schema,  # type: ignore[reportUnknownArgumentType]
+            dialect_from_schema,
         )
         return Benchmark.from_dict(**benchmark)
 
@@ -362,7 +365,7 @@ class BenchmarkGroupResult:
     benchmark_results: list[BenchmarkResult]
     varying_parameter: str | None = None
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(self)
 
     @classmethod
@@ -386,7 +389,7 @@ class BenchmarkResult:
     description: str
     test_results: Sequence[TestResult]
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(self)
 
     @classmethod
@@ -408,7 +411,7 @@ class TestResult:
     description: str
     connectable_results: Sequence[ConnectableResult]
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(self)
 
     @classmethod
@@ -433,7 +436,7 @@ class ConnectableResult:
     values: list[float]
     errored: bool = False
 
-    def serializable(self):
+    def serializable(self) -> Message:
         return asdict(self, filter=lambda _, v: v is not None)
 
     @classmethod
@@ -469,7 +472,7 @@ class BenchmarkMetadata:
         repr=False,
     )
 
-    def serializable(self):
+    def serializable(self) -> Message:
         as_dict = asdict(
             self,
             filter=exclude("dialect"),
@@ -512,7 +515,7 @@ class BenchmarkReport:
         factory=dict[Benchmark_Group_Name, BenchmarkGroupResult],
     )
 
-    def serializable(self):
+    def serializable(self) -> Message:
         as_dict: dict[str, Any] = dict(metadata=self.metadata.serializable())
         as_dict["results"] = [
             benchmark_group_result.serializable()
@@ -548,6 +551,33 @@ class BenchmarkReport:
         )
 
 
+class _GotConnectableResult(Protocol):
+    """
+    Report a single connectable's timings, returning whether to retry.
+    """
+
+    def __call__(
+        self,
+        connectable: ConnectableId,
+        test_result: str,
+        retry_count: int,
+        measured_time_values: list[float],
+        errored: bool = False,
+    ) -> bool: ...
+
+
+#: Begins a test, returning its result reporter and a finishing callback.
+type _TestStarted = Callable[
+    [str],
+    tuple[_GotConnectableResult, Callable[[], None]],
+]
+#: Begins a benchmark, returning its test starter and a finishing callback.
+type _BenchmarkStarted = Callable[
+    [str, str],
+    tuple[_TestStarted, Callable[[], None]],
+]
+
+
 @frozen
 class BenchmarkReporter:
     _progress_bar: Progress = field(alias="progress_bar")
@@ -560,19 +590,19 @@ class BenchmarkReporter:
     )
     _mean_threshold: float = field(alias="mean_threshold", default=0.10)
 
-    def update_system_metadata(self, system_metadata: dict[str, Any]):
+    def update_system_metadata(self, system_metadata: dict[str, Any]) -> None:
         system_metadata.pop("command")
         system_metadata.pop("name")
         self._report.metadata.system_metadata.update(system_metadata)
 
-    def started(self):
+    def started(self) -> None:
         pass
 
     def report_incompatible_connectables(
         self,
         incompatible_connectables: Sequence[Connectable],
         dialect: Dialect,
-    ):
+    ) -> None:
         for connectable in incompatible_connectables:
             if not self._quiet:
                 STDOUT.log(
@@ -581,7 +611,9 @@ class BenchmarkReporter:
                 )
 
     @staticmethod
-    def _total_tests_in_benchmark_group(benchmark_group: BenchmarkGroup):
+    def _total_tests_in_benchmark_group(
+        benchmark_group: BenchmarkGroup,
+    ) -> int:
         num = 0
         for benchmark in benchmark_group.benchmarks:
             num += len(benchmark.tests)
@@ -590,7 +622,7 @@ class BenchmarkReporter:
     def running_benchmark_group(
         self,
         benchmark_group: BenchmarkGroup,
-    ):
+    ) -> tuple[_BenchmarkStarted, Callable[[], None]]:
         progress_bar_task = None
         if not self._quiet:
             progress_bar_task = self._progress_bar.add_task(
@@ -601,10 +633,15 @@ class BenchmarkReporter:
         benchmark_results: list[BenchmarkResult] = []
         self._benchmark_group_uri[benchmark_group.name] = benchmark_group.uri
 
-        def benchmark_started(benchmark_name: str, benchmark_description: str):
+        def benchmark_started(
+            benchmark_name: str,
+            benchmark_description: str,
+        ) -> tuple[_TestStarted, Callable[[], None]]:
             test_results: list[TestResult] = []
 
-            def test_started(test_description: str):
+            def test_started(
+                test_description: str,
+            ) -> tuple[_GotConnectableResult, Callable[[], None]]:
                 connectable_results: dict[
                     ConnectableId,
                     ConnectableResult,
@@ -616,7 +653,7 @@ class BenchmarkReporter:
                     retry_count: int,
                     measured_time_values: list[float],
                     errored: bool = False,
-                ):
+                ) -> bool:
                     retry_needed = False
 
                     if errored:
@@ -636,7 +673,7 @@ class BenchmarkReporter:
                         connectable_results[connectable] = connectable_result
 
                     else:
-                        benchmark_result = pyperf.Benchmark.loads(test_result)  # type: ignore[reportUnknownVariableType]
+                        benchmark_result = pyperf.Benchmark.loads(test_result)
 
                         # Ignoring Warmup Values
                         result_values = measured_time_values[
@@ -651,7 +688,7 @@ class BenchmarkReporter:
                             )
 
                         benchmark_duration: float = float(
-                            benchmark_result.get_total_duration(),  # type: ignore[reportUnknownMemberType]
+                            benchmark_result.get_total_duration(),
                         )
                         connectable_result = ConnectableResult(
                             connectable_id=connectable,
@@ -676,7 +713,7 @@ class BenchmarkReporter:
 
                         if not len(self._report.metadata.system_metadata):
                             self.update_system_metadata(
-                                benchmark_result.get_metadata(),  # type: ignore[reportUnknownMemberType]
+                                benchmark_result.get_metadata(),
                             )
                         connectable_results[connectable] = connectable_result
 
@@ -706,7 +743,7 @@ class BenchmarkReporter:
 
                     return retry_needed
 
-                def test_finished():
+                def test_finished() -> None:
                     test_result = TestResult(
                         description=test_description,
                         connectable_results=list(connectable_results.values()),
@@ -715,7 +752,7 @@ class BenchmarkReporter:
 
                 return got_connectable_result, test_finished
 
-            def benchmark_finished():
+            def benchmark_finished() -> None:
                 benchmark_result = BenchmarkResult(
                     name=benchmark_name,
                     description=benchmark_description,
@@ -725,7 +762,7 @@ class BenchmarkReporter:
 
             return test_started, benchmark_finished
 
-        def benchmark_group_finished():
+        def benchmark_group_finished() -> None:
             benchmark_group_result = BenchmarkGroupResult(
                 name=benchmark_group.name,
                 benchmark_type=benchmark_group.benchmark_type,
@@ -739,17 +776,17 @@ class BenchmarkReporter:
 
         return benchmark_started, benchmark_group_finished
 
-    def finished(self):
+    def finished(self) -> None:
         if self._format in ("pretty", "markdown"):
             self._print_results_table()
         else:
             STDOUT.print_json(data=self._report.serializable())
 
-    def no_compatible_connectables(self):
+    def no_compatible_connectables(self) -> None:
         if not self._quiet:
             STDOUT.log("Skipping Benchmark, No Connectables to run !")
 
-    def _print_results_table(self):
+    def _print_results_table(self) -> None:
         def _format_value(value: float) -> str:
             if value * 1000 < 1:
                 return f"{round(value * 1000 * 1000)}us"
@@ -759,7 +796,7 @@ class BenchmarkReporter:
 
         def _get_sorted_table_from_test_results(
             test_results: Sequence[TestResult],
-        ):
+        ) -> tuple[list[list[str]], list[str]]:
             results_for_connectable: dict[
                 ConnectableId,
                 list[tuple[float, float, bool]],
@@ -889,7 +926,7 @@ class BenchmarkReporter:
 
         def _table_for_benchmark_result(
             benchmark_result: BenchmarkResult,
-        ):
+        ) -> tuple[Table, str]:
             markdown_content = (
                 f"\n\nBenchmark: Tests with {benchmark_result.name}\n"
             )
@@ -911,7 +948,7 @@ class BenchmarkReporter:
 
         def _table_for_common_tests(
             benchmark_results: list[BenchmarkResult],
-        ):
+        ) -> tuple[Table, str]:
             markdown_content = (
                 f"\nBenchmark: Tests with varying "
                 f"{benchmark_group_result.varying_parameter}\n"
@@ -1066,7 +1103,7 @@ class Benchmarker:
     )
 
     @classmethod
-    def from_default_benchmarks(cls, **kwargs: Any):
+    def from_default_benchmarks(cls, **kwargs: Any) -> Self:
         bowtie_dir = Path(__file__).parent
         benchmark_dir = bowtie_dir / "benchmarks"
 
@@ -1085,7 +1122,7 @@ class Benchmarker:
         cls,
         cases: Iterable[TestCase],
         **kwargs: Any,
-    ):
+    ) -> Self:
         benchmark_groups = [
             BenchmarkGroup(
                 name=case.description,
@@ -1110,7 +1147,7 @@ class Benchmarker:
         )
 
     @classmethod
-    def for_keywords(cls, dialect: Dialect, **kwargs: Any):
+    def for_keywords(cls, dialect: Dialect, **kwargs: Any) -> Self:
         bowtie_parent_dir = Path(__file__).parent.parent
         keywords_benchmark_dir = (
             bowtie_parent_dir / "bowtie/benchmarks/keywords"
@@ -1152,7 +1189,7 @@ class Benchmarker:
         cls,
         benchmark_files: Iterable[str],
         **kwargs: Any,
-    ):
+    ) -> Self:
         benchmark_groups: list[BenchmarkGroup] = []
         for benchmark_filename in benchmark_files:
             benchmark_file = Path(benchmark_filename).absolute()
@@ -1183,7 +1220,7 @@ class Benchmarker:
         cls,
         benchmark: dict[str, Any],
         **kwargs: Any,
-    ):
+    ) -> Self:
         benchmark["benchmark_type"] = "from_input"
         benchmark_validated(benchmark)
         benchmark_group = BenchmarkGroup.from_dict(
@@ -1200,7 +1237,7 @@ class Benchmarker:
         loops: int,
         warmups: int,
         **kwargs: Any,
-    ):
+    ) -> Self:
         return cls(
             benchmark_groups=benchmark_groups,
             runs=runs,
@@ -1215,14 +1252,14 @@ class Benchmarker:
         dialect: Dialect,
         quiet: bool,
         format: str,
-    ):
+    ) -> None:
         acknowledged: Mapping[ConnectableId, ImplementationInfo] = {}
         compatible_connectables: list[Connectable] = []
         incompatible_connectables: list[Connectable] = []
 
         for connectable in connectables:
             silent_reporter = _report.Reporter(
-                write=lambda **_: None,  # type: ignore[reportUnknownArgumentType]
+                write=lambda **_: None,
             )
             async with connectable.connect(
                 reporter=silent_reporter,
@@ -1432,7 +1469,7 @@ class Benchmarker:
     async def _run_subprocess(
         *cmd: str,
         env: dict[str, Any] = {},
-    ):
+    ) -> tuple[bytes, bytes]:
         env = {**os.environ, **env}
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -1449,7 +1486,7 @@ class Benchmarker:
         time_output_file: str,
         connectable_id: ConnectableId,
         name: str,
-    ):
+    ) -> bytes:
         # On Windows, pyperf's --pipe flag fails because
         # msvcrt.open_osfhandle() cannot handle an asyncio subprocess
         # pipe.  Write results to a temp file instead.

@@ -201,7 +201,7 @@ def style(session):
 @session()
 def typing(session):
     """
-    Check Bowtie's codebase using pyright.
+    Check Bowtie's codebase using ty.
     """
     session.run_install(
         "uv",
@@ -211,7 +211,7 @@ def typing(session):
         f"--python={session.virtualenv.location}",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
-    session.run("pyright", *session.posargs, BOWTIE)
+    session.run("ty", "check", *session.posargs, BOWTIE)
 
 
 @session(tags=["docs"])
