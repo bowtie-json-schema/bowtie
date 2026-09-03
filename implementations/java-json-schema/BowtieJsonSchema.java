@@ -208,39 +208,51 @@ public class BowtieJsonSchema {
   }
 }
 
-record StartRequest(int version) {}
+record StartRequest(int version) {
+}
 
-record StartResponse(int version, Implementation implementation) {}
+record StartResponse(int version, Implementation implementation) {
+}
 
-record DialectRequest(String dialect) {}
+record DialectRequest(String dialect) {
+}
 
-record DialectResponse(boolean ok) {}
+record DialectResponse(boolean ok) {
+}
 
-record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {}
+record RunRequest(JsonNode seq, @JsonProperty("case") TestCase testCase) {
+}
 
-record RunResponse(JsonNode seq, List<TestResult> results) {}
+record RunResponse(JsonNode seq, List<TestResult> results) {
+}
 
 record RunSkippedResponse(JsonNode seq, boolean skipped, String message,
-                          String issue_url) {}
+                          String issue_url) {
+}
 
 record RunErroredResponse(JsonNode seq, boolean errored, ErrorContext context) {
 }
 
-record ErrorContext(String message, String traceback) {}
+record ErrorContext(String message, String traceback) {
+}
 
 record
     Implementation(String language, String name, String version,
                    List<String> dialects, String homepage, String documentation,
                    String issues, String source, String os, String os_version,
-                   String language_version, List<Link> links) {}
+                   String language_version, List<Link> links) {
+}
 
-record Link(String url, String description) {}
+record Link(String url, String description) {
+}
 
 record TestCase(String description, String comment, JsonNode schema,
-                JsonNode registry, List<Test> tests) {}
+                JsonNode registry, List<Test> tests) {
+}
 
 record
     Test(String description, String comment, JsonNode instance, boolean valid) {
 }
 
-record TestResult(boolean valid) {}
+record TestResult(boolean valid) {
+}
