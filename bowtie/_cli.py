@@ -2644,6 +2644,13 @@ def _run_suite(
 @IMPLEMENTATION
 @FILTER
 @fail_fast
+@dialect_option(
+    is_eager=True,
+    help=(
+        "A URI or shortname identifying the dialect to evaluate under. "
+        f"Possible shortnames include: {POSSIBLE_DIALECT_SHORTNAMES}"
+    ),
+)
 @SET_SCHEMA
 @VALIDATE
 @JOBS
@@ -2651,6 +2658,7 @@ def _run_suite(
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
+    dialect: Dialect,
     jobs: int,
     **kwargs: Any,
 ):
