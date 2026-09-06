@@ -274,9 +274,10 @@ def test_validation_cases_from_unified_format(tmp_path):
     assert len(cases) == 1
     assert cases[0].description == "integer type"
     assert cases[0].schema == {"type": "integer"}
-    assert [
-        result.valid for result in cases[0].expected_results()
-    ] == [True, False]
+    assert [result.valid for result in cases[0].expected_results()] == [
+        True,
+        False,
+    ]
     assert [test.instance for test in cases[0].tests] == [1, "1"]
 
 
@@ -373,6 +374,6 @@ def test_cases_for_unified_layout(tmp_path):
     draft7_cases = list(_suite.cases_for(tmp_path, draft7))
     assert [case.description for case in draft6_cases] == ["integer type"]
     assert [case.description for case in draft7_cases] == [
-            "integer type",
-            "only for draft7+",
-        ]
+        "integer type",
+        "only for draft7+",
+    ]
