@@ -509,30 +509,32 @@ class TestRun:
 
 @pytest.mark.asyncio
 async def test_suite(tmp_path):
-    definitions = tmp_path / "tests/draft7/definitions.json"
-    definitions.parent.mkdir(parents=True)
+    definitions = tmp_path / "definitions.json"
     definitions.write_text(
         _json.dumps(  # trimmed down definitions.json from the suite
-            [
-                {
-                    "description": "the case",
-                    "schema": {
-                        "$ref": "http://json-schema.org/draft-07/schema#",
+            {
+                "description": "definitions",
+                "tests": [
+                    {
+                        "description": "the case",
+                        "schema": {
+                            "$ref": "http://json-schema.org/draft-07/schema#",
+                        },
+                        "tests": [
+                            {
+                                "description": "one",
+                                "data": {"definitions": {}},
+                                "valid": True,
+                            },
+                            {
+                                "description": "two",
+                                "data": {"definitions": 12},
+                                "valid": False,
+                            },
+                        ],
                     },
-                    "tests": [
-                        {
-                            "description": "one",
-                            "data": {"definitions": {}},
-                            "valid": True,
-                        },
-                        {
-                            "description": "two",
-                            "data": {"definitions": 12},
-                            "valid": False,
-                        },
-                    ],
-                },
-            ],
+                ],
+            },
         ),
     )
 
@@ -540,6 +542,8 @@ async def test_suite(tmp_path):
         "suite",
         "-i",
         miniatures.always_invalid,
+        "--dialect",
+        "7",
         definitions,
     )
     report = Report.from_serialized(stdout.splitlines())
@@ -585,24 +589,53 @@ async def test_suite(tmp_path):
 @pytest.mark.asyncio
 async def test_site_collect(tmp_path):
     suite = tmp_path / "suite"
-    cases = _json.dumps(
-        [
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
+        _json.dumps(
             {
-                "description": "integer",
-                "schema": {"type": "integer"},
+                "description": "type validation",
                 "tests": [
-                    {"description": "an integer", "data": 1, "valid": True},
-                    {"description": "a string", "data": "foo", "valid": False},
+                    {
+                        "description": "integer (draft7)",
+                        "compatibility": "=7",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                            {
+                                "description": "a string",
+                                "data": "foo",
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "description": "integer (draft2020-12)",
+                        "compatibility": "=2020",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                            {
+                                "description": "a string",
+                                "data": "foo",
+                                "valid": False,
+                            },
+                        ],
+                    },
                 ],
             },
-        ],
+        ),
     )
     # The implementation supports only draft7, so even though the suite
     # provides two dialects, only draft7 should be collected.
-    for each in ("draft7", "draft2020-12"):
-        dialect_dir = suite / "tests" / each
-        dialect_dir.mkdir(parents=True)
-        dialect_dir.joinpath("type.json").write_text(cases)
 
     out = tmp_path / "reports"
     await bowtie(
@@ -633,23 +666,26 @@ async def test_site_collect_withholds_all_errored_reports(tmp_path):
     or harness, and publishing it would silently wipe out good results.
     """
     suite = tmp_path / "suite"
-    dialect_dir = suite / "tests" / "draft7"
-    dialect_dir.mkdir(parents=True)
-    dialect_dir.joinpath("type.json").write_text(
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
         _json.dumps(
-            [
-                {
-                    "description": "integer",
-                    "schema": {"type": "integer"},
-                    "tests": [
-                        {
-                            "description": "an integer",
-                            "data": 1,
-                            "valid": True,
-                        },
-                    ],
-                },
-            ],
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "integer",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
         ),
     )
 
@@ -672,19 +708,26 @@ async def test_site_collect_withholds_all_errored_reports(tmp_path):
 @pytest.mark.asyncio
 async def test_site_collect_refuses_existing_output(tmp_path):
     suite = tmp_path / "suite"
-    dialect_dir = suite / "tests" / "draft7"
-    dialect_dir.mkdir(parents=True)
-    dialect_dir.joinpath("type.json").write_text(
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
         _json.dumps(
-            [
-                {
-                    "description": "integer",
-                    "schema": {"type": "integer"},
-                    "tests": [
-                        {"description": "ok", "data": 1, "valid": True},
-                    ],
-                },
-            ],
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "integer",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "ok",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
         ),
     )
     out = tmp_path / "reports"
@@ -706,21 +749,41 @@ async def test_site_collect_refuses_existing_output(tmp_path):
 @pytest.mark.asyncio
 async def test_site_collect_one_report_per_supported_dialect(tmp_path):
     suite = tmp_path / "suite"
-    cases = _json.dumps(
-        [
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
+        _json.dumps(
             {
-                "description": "integer",
-                "schema": {"type": "integer"},
+                "description": "type validation",
                 "tests": [
-                    {"description": "an integer", "data": 1, "valid": True},
+                    {
+                        "description": "integer (draft7)",
+                        "compatibility": "=7",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                    {
+                        "description": "integer (draft2020-12)",
+                        "compatibility": "=2020",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
                 ],
             },
-        ],
+        ),
     )
-    for each in ("draft7", "draft2020-12"):
-        dialect_dir = suite / "tests" / each
-        dialect_dir.mkdir(parents=True)
-        dialect_dir.joinpath("type.json").write_text(cases)
 
     out = tmp_path / "reports"
     # always_invalid supports every dialect, so the report set is exactly the
@@ -761,23 +824,27 @@ async def test_site_collect_requires_a_single_implementation(tmp_path):
 @pytest.mark.asyncio
 async def test_site_combine(tmp_path):
     suite = tmp_path / "suite"
-    dialect_dir = suite / "tests" / "draft7"
-    dialect_dir.mkdir(parents=True)
-    dialect_dir.joinpath("type.json").write_text(
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
         _json.dumps(
-            [
-                {
-                    "description": "integer",
-                    "schema": {"type": "integer"},
-                    "tests": [
-                        {
-                            "description": "an integer",
-                            "data": 1,
-                            "valid": True,
-                        },
-                    ],
-                },
-            ],
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "integer",
+                        "compatibility": "=7",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
         ),
     )
 
@@ -876,22 +943,51 @@ async def test_site_collect_versioned(tmp_path):
     version each implementation reports, plus a matrix-versions.json index.
     """
     suite = tmp_path / "suite"
-    cases = _json.dumps(
-        [
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
+        _json.dumps(
             {
-                "description": "integer",
-                "schema": {"type": "integer"},
+                "description": "type validation",
                 "tests": [
-                    {"description": "an integer", "data": 1, "valid": True},
-                    {"description": "a string", "data": "foo", "valid": False},
+                    {
+                        "description": "integer (draft7)",
+                        "compatibility": "=7",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                            {
+                                "description": "a string",
+                                "data": "foo",
+                                "valid": False,
+                            },
+                        ],
+                    },
+                    {
+                        "description": "integer (draft2020-12)",
+                        "compatibility": "=2020",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "an integer",
+                                "data": 1,
+                                "valid": True,
+                            },
+                            {
+                                "description": "a string",
+                                "data": "foo",
+                                "valid": False,
+                            },
+                        ],
+                    },
                 ],
             },
-        ],
+        ),
     )
-    for each in ("draft7", "draft2020-12"):
-        dialect_dir = suite / "tests" / each
-        dialect_dir.mkdir(parents=True)
-        dialect_dir.joinpath("type.json").write_text(cases)
 
     out = tmp_path / "buggy"
     await bowtie(
@@ -934,17 +1030,26 @@ async def test_site_collect_versioned_skips_unavailable(tmp_path):
     matrix-versions.json index) intact rather than aborting the whole trend.
     """
     suite = tmp_path / "suite"
-    dialect_dir = suite / "tests" / "draft7"
-    dialect_dir.mkdir(parents=True)
-    dialect_dir.joinpath("type.json").write_text(
+    tests_dir = suite / "validation" / "tests"
+    tests_dir.mkdir(parents=True)
+    tests_dir.joinpath("type.json").write_text(
         _json.dumps(
-            [
-                {
-                    "description": "integer",
-                    "schema": {"type": "integer"},
-                    "tests": [{"description": "ok", "data": 1, "valid": True}],
-                },
-            ],
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "integer",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "ok",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
         ),
     )
 

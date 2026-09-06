@@ -166,3 +166,4 @@ cython_debug/
 # Swift
 .build/
 .swiftpm/
+implementations/java-json-schema/
