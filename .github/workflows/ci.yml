@@ -238,7 +238,7 @@ jobs:
       contents: read
       pages: write # to deploy to GitHub Pages via report.yml
       id-token: write # to verify the deployment originates from this repo
-    uses: ./.github/workflows/report.yml
+    uses: $/.github/workflows/report.yml
     with:
       bowtie-version: ${{ needs.packaging.outputs.version }}
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
