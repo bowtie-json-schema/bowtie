@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
 
       - name: List all Bowtie Supported Implementations having a "matrix-versions.json" file
         id: implementations-matrix
@@ -92,7 +92,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
 
         # just so that we don't get rate limited (429)
       - name: Checkout JSON Schema Test Suite

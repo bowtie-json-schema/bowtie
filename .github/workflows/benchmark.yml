@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
 
       - name: Collect Benchmark Files
         id: benchmarks
@@ -83,7 +83,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
 
       - name: Generate Benchmark Report
         env:
@@ -186,7 +186,7 @@ jobs:
   regenerate-reports:
     name: Regenerate Reports
     needs: upload_benchmark_artifact
-    uses: ./.github/workflows/report.yml
+    uses: $/.github/workflows/report.yml
     permissions:
       contents: read
       pages: write # to deploy to GitHub Pages

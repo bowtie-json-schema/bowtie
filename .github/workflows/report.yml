@@ -42,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
         with:
           version: ${{ inputs.bowtie-version }}
 
@@ -90,7 +90,7 @@ jobs:
 
       - name: Install Bowtie
         if: steps.download.outputs.fallback == 'true'
-        uses: ./
+        uses: $/
         with:
           version: ${{ inputs.bowtie-version }}
 
@@ -126,7 +126,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Bowtie
-        uses: ./
+        uses: $/
         with:
           version: ${{ inputs.bowtie-version }}
 
@@ -197,6 +197,6 @@ jobs:
       pages: write # to deploy to GitHub Pages
       id-token: write # to verify the deployment originates from this workflow
     needs: site
-    uses: ./.github/workflows/ui.yml
+    uses: $/.github/workflows/ui.yml
     with:
       report_artifact_in_scope: true
