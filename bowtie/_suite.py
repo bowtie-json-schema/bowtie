@@ -75,7 +75,8 @@ class ClickParam(click.ParamType):
                 and ctx is not None
                 and ctx.get_parameter_source(
                     "dialect",
-                ) == ParameterSource.COMMANDLINE
+                )
+                == ParameterSource.COMMANDLINE
             ):
                 local_dialect = ctx.params.get("dialect")
 
@@ -397,7 +398,8 @@ def dialects_in(root: _P) -> set[Dialect]:
     Which dialects the suite rooted at the given path provides cases for.
     """
     return {
-        dialect for dialect in Dialect.known()
+        dialect
+        for dialect in Dialect.known()
         if dialect.short_name.removeprefix("draft").partition("-")[0].isdigit()
     }
 
