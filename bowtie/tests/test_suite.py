@@ -20,6 +20,9 @@ from bowtie._suite import (
 DRAFT7 = Dialect.by_alias()["7"]
 DRAFT2019 = Dialect.by_alias()["2019"]
 DRAFT2020 = Dialect.by_alias()["2020"]
+DRAFT4 = Dialect.by_alias()["4"]
+DRAFT6 = Dialect.by_alias()["6"]
+DRAFT3 = Dialect.by_alias()["3"]
 
 
 @pytest.mark.parametrize(
@@ -49,6 +52,16 @@ DRAFT2020 = Dialect.by_alias()["2020"]
         (DRAFT2020, "<=9999", True),
         # Unknown version tokens are never satisfied.
         (DRAFT2020, "bananas", False),
+        # Disjunction-over-ranges behaviour
+        (DRAFT4, "<=4,7", True),
+        (DRAFT6, "<=4,7", False),
+        (DRAFT7, "<=4,7", True),
+        (DRAFT2019, "<=4,7", True),
+        # Three-segment constraint
+        (DRAFT3, "<=3,7,<=2020", True),
+        (DRAFT4, "<=3,7,<=2020", False),
+        (DRAFT7, "<=3,7,<=2020", True),
+        (DRAFT2020, "<=3,7,<=2020", True),
     ],
 )
 def test_is_compatible(dialect, compatibility, compatible):
