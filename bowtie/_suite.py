@@ -179,23 +179,32 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     version = int(dialect.short_name.removeprefix("draft").partition("-")[0])
 
     # Constraints naming an unknown version are never satisfied, not ignored.
+    is_valid = True
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
         if constraint.startswith("<="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version <= bound
+            operator, token = "<=", constraint[2:]
         elif constraint.startswith(">="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version >= bound
+            operator, token = ">=", constraint[2:]
         elif constraint.startswith("="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[1:])
-            satisfied = bound is not None and version == bound
+            operator, token = "=", constraint[1:]
         else:
-            bound = _COMPATIBILITY_VERSIONS.get(constraint)
-            satisfied = bound is not None and version >= bound
-        if not satisfied:
+            operator, token = ">=", constraint
+
+        bound = _COMPATIBILITY_VERSIONS.get(token)
+        if bound is None:
             return False
-    return True
+
+        if operator == "<=":
+            is_valid = version <= bound
+        elif operator == "=":
+            is_valid = version == bound
+        else:
+            is_valid = version >= bound
+
+        if version <= bound:
+            break
+    return is_valid
 
 
 def validation_cases_from(
