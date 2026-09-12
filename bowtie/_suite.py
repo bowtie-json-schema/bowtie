@@ -194,7 +194,18 @@ def cases_from(
     dialect: Dialect,
 ) -> Iterable[TestCase]:
     for path in paths:
-        if path.stem in {"refRemote", "dynamicRef", "vocabulary"}:
+        # ref.json and anchor.json reference http://localhost:1234 too, in
+        # every dialect which has them, so they need the registry as much as
+        # the files which were named here. The rest are left with an empty one
+        # on purpose: a case which does not ask for a remote should not be
+        # handed 20-odd extra schemas it never mentions.
+        if path.stem in {
+            "refRemote",
+            "dynamicRef",
+            "vocabulary",
+            "ref",
+            "anchor",
+        }:
             registry = remotes_in(remotes, dialect=dialect)
         else:
             registry = {}
