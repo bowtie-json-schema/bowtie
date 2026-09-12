@@ -199,7 +199,13 @@ def cases_from(
         # the files which were named here. The rest are left with an empty one
         # on purpose: a case which does not ask for a remote should not be
         # handed 20-odd extra schemas it never mentions.
-        if path.stem in {"refRemote", "dynamicRef", "vocabulary", "ref", "anchor"}:
+        if path.stem in {
+            "refRemote",
+            "dynamicRef",
+            "vocabulary",
+            "ref",
+            "anchor",
+        }:
             registry = remotes_in(remotes, dialect=dialect)
         else:
             registry = {}
