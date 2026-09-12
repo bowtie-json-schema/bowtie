@@ -7,13 +7,13 @@ from __future__ import annotations
 from contextlib import suppress
 from datetime import UTC, datetime
 from fnmatch import fnmatch
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
 import os
 import zipfile
 
+from click.core import ParameterSource
 from diagnostic import DiagnosticError
 from url import URL, RelativeURLWithoutBase
 import click
@@ -28,16 +28,13 @@ if TYPE_CHECKING:
 
 
 TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
-TESTS_DIR_URL = TEST_SUITE_URL / "tree/main/tests"
+TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation"
 
 URL_FOR_DIALECT = {
     dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
 }
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
-
-# Magic constants assumed/used by the official test suite for $ref tests
-SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
 
 
 class ClickParam(click.ParamType):
@@ -71,10 +68,22 @@ class ClickParam(click.ParamType):
         def local(
             path: Path,
         ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
+            local_dialect = known_dialect
+
+            if (
+                not self._is_annotations
+                and ctx is not None
+                and ctx.get_parameter_source(
+                    "dialect",
+                )
+                == ParameterSource.COMMANDLINE
+            ):
+                local_dialect = ctx.params.get("dialect")
+
             dialect, cases = self._cases_and_dialect(
                 path=path,
                 ctx=ctx,
-                known_dialect=known_dialect,
+                known_dialect=local_dialect,
             )
             return cases, dialect, {}
 
@@ -147,67 +156,12 @@ class ClickParam(click.ParamType):
         if self._is_annotations:
             cases = annotation_cases_from(paths=paths, dialect=dialect)
         else:
-            remotes = version_path.parent.parent / "remotes"
-            cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
+            cases = validation_cases_from(paths=paths, dialect=dialect)
 
         return dialect, cases
 
 
 _P = Path | zipfile.Path
-
-
-def _remotes_in(path: Path, dialect: Dialect) -> Iterable[tuple[URL, Any]]:
-    # This messy logic is because the test suite is terrible at indicating
-    # what remotes are needed for what drafts, and mixes in schemas which
-    # have no $schema and which are invalid under earlier versions, in with
-    # other schemas which are needed for tests.
-    #
-    # FIXME: #40: for draft-next support
-
-    for each in _rglob(path, "*.json"):
-        schema = json.loads(each.read_bytes())
-
-        relative = str(_relative_to(each, path)).replace("\\", "/")
-
-        if (
-            ("$schema" in schema and schema["$schema"] != str(dialect.uri))
-            or (  # draft<NotThisDialect>/*.json
-                relative.startswith("draft")
-                and not relative.startswith(dialect.short_name)
-            )
-            or (  # invalid boolean schema
-                not dialect.has_boolean_schemas and relative == "tree.json"
-            )
-        ):
-            continue
-        yield SUITE_REMOTE_BASE_URI / relative, schema
-
-
-@cache
-def remotes_in(path: Path, dialect: Dialect) -> dict[str, Any]:
-    return {str(k): v for k, v in _remotes_in(path=path, dialect=dialect)}
-
-
-def cases_from(
-    paths: Iterable[_P],
-    remotes: Path,
-    dialect: Dialect,
-) -> Iterable[TestCase]:
-    for path in paths:
-        if path.stem in {"refRemote", "dynamicRef", "vocabulary"}:
-            registry = remotes_in(remotes, dialect=dialect)
-        else:
-            registry = {}
-
-        for case in json.loads(path.read_bytes()):
-            for test in case["tests"]:
-                test["instance"] = test.pop("data")
-            case.pop("specification", None)  # we do nothing with this now
-            yield TestCase.from_dict(
-                dialect=dialect,
-                registry=registry,
-                **case,
-            )
 
 
 # The version tokens the suite's compatibility grammar allows.
@@ -225,23 +179,68 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     version = int(dialect.short_name.removeprefix("draft").partition("-")[0])
 
     # Constraints naming an unknown version are never satisfied, not ignored.
+    is_valid = True
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
         if constraint.startswith("<="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version <= bound
+            operator, token = "<=", constraint[2:]
         elif constraint.startswith(">="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version >= bound
+            operator, token = ">=", constraint[2:]
         elif constraint.startswith("="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[1:])
-            satisfied = bound is not None and version == bound
+            operator, token = "=", constraint[1:]
         else:
-            bound = _COMPATIBILITY_VERSIONS.get(constraint)
-            satisfied = bound is not None and version >= bound
-        if not satisfied:
+            operator, token = ">=", constraint
+
+        bound = _COMPATIBILITY_VERSIONS.get(token)
+        if bound is None:
             return False
-    return True
+
+        if operator == "<=":
+            is_valid = version <= bound
+        elif operator == "=":
+            is_valid = version == bound
+        else:
+            is_valid = version >= bound
+
+        if version <= bound:
+            break
+    return is_valid
+
+
+def validation_cases_from(
+    paths: Iterable[_P],
+    dialect: Dialect,
+) -> Iterable[TestCase]:
+    for path in paths:
+        data = json.loads(path.read_text())
+
+        if "tests" not in data:
+            continue
+
+        for case in data["tests"]:
+            compatibility = case.get("compatibility")
+            if not _is_compatible(dialect, compatibility):
+                continue
+
+            tests = [
+                {
+                    **{
+                        key: value
+                        for key, value in test.items()
+                        if key != "data"
+                    },
+                    "instance": test["data"],
+                }
+                for test in case["tests"]
+            ]
+
+            yield TestCase.from_dict(
+                dialect=dialect,
+                description=case["description"],
+                schema=case["schema"],
+                registry=case.get("externalSchemas", {}),
+                tests=tests,
+            )
 
 
 def annotation_cases_from(
@@ -323,22 +322,8 @@ def _glob(path: _P, path_pattern: str) -> Iterable[_P]:
     )
 
 
-def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
-    for each in path.iterdir():
-        if fnmatch(each.name, path_pattern):
-            yield each
-        elif each.is_dir():
-            yield from _rglob(each, path_pattern)
-
-
-def _relative_to(path: _P, other: Path) -> Path:
-    if hasattr(path, "relative_to"):
-        return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-
-
 #: The default git ref of the official suite to collect test cases from.
-DEFAULT_REF = "main"
+DEFAULT_REF = "unify"
 
 
 class SuiteNotAvailable(Exception):
@@ -389,10 +374,11 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
     against (and can therefore be combined at) the same commit. Pass an
     explicit ref (a branch, tag or commit) to override.
 
-    Returns the suite's root directory (which contains ``tests/`` and
-    ``remotes/``) alongside run metadata recording the exact commit.
-    Every dialect collected from this one root is therefore guaranteed to
-    share a single consistent commit, even if the suite moves meanwhile.
+    Returns the suite's root directory (which contains ``validation/tests/``
+    directory of unified-format test case files, covering all dialects)
+    alongside run metadata recording the exact commit. Every dialect collected
+    from this one root is therefore guaranteed to share a single consistent
+    commit, even if the suite moves meanwhile.
     """
     owner, name, *_ = cast("list[str]", TEST_SUITE_URL.path_segments)
 
@@ -420,11 +406,10 @@ def dialects_in(root: _P) -> set[Dialect]:
     """
     Which dialects the suite rooted at the given path provides cases for.
     """
-    by_short = Dialect.by_short_name()
     return {
-        by_short[child.name]
-        for child in (root / "tests").iterdir()
-        if child.is_dir() and child.name in by_short
+        dialect
+        for dialect in Dialect.known()
+        if dialect.short_name.removeprefix("draft").partition("-")[0].isdigit()
     }
 
 
@@ -432,9 +417,8 @@ def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:
     """
     The test cases for a single dialect within the suite at the given root.
     """
-    version_path = root / "tests" / dialect.short_name
-    return cases_from(
-        paths=list(_glob(version_path, "*.json")),
-        remotes=cast("Path", root / "remotes"),
+    tests_path = root / "validation" / "tests"
+    return validation_cases_from(
+        paths=list(_glob(tests_path, "*.json")),
         dialect=dialect,
     )
