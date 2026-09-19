@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@jetio/validator": "^3.0.1"
+  }
+}
