@@ -25,7 +25,10 @@ from bowtie._commands import (
 )
 from bowtie._core import Dialect, ImplementationInfo, registry
 from bowtie._registry import Invalid, SchemaCompiler, ValidatorRegistry
-from bowtie.exceptions import CannotConnect
+from bowtie.exceptions import (
+    _PROTOCOL_VERSION,  # type: ignore[reportPrivateUsage]
+    CannotConnect,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -69,7 +72,7 @@ class Unconnection[E: Exception]:
         Call us, we always respond (so we never return ``None``).
         """
         match message:  # FIXME: Should request take Commands?
-            case {"cmd": "start", "version": 1}:
+            case {"cmd": "start", "version": _v} if _v == _PROTOCOL_VERSION:
                 started = Started(
                     implementation=self._info.serializable(),  # FIXME
                     version=1,

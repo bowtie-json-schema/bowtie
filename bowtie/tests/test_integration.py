@@ -300,7 +300,7 @@ fail_on_dialect = shellplementation(
     name="fail_on_dialect",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf 'BOOM!\n' >&2
     """,  # noqa: E501
@@ -309,7 +309,7 @@ fail_on_run = shellplementation(
     name="fail_on_run",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "fail-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -320,7 +320,7 @@ nonjson_on_run = shellplementation(
     name="nonjson_on_run",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "nonjson-on-run", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -331,7 +331,7 @@ wrong_seq = shellplementation(
     name="wrong_seq",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "wrong-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -342,7 +342,7 @@ wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 0}\n'
+    printf '{"implementation": {"name": "wrong-version", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
     read >&2
     """,  # noqa: E501
 )
@@ -350,7 +350,7 @@ hit_the_network_once = shellplementation(
     name="hit_the_network_once",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "hit-the-network", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -363,7 +363,7 @@ missing_homepage = shellplementation(
     name="missing_homepage",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 1}\n'
+    printf '{"implementation": {"name": "missing-homepage", "language": "sh", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"]}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     """,  # noqa: E501
@@ -372,7 +372,7 @@ with_versions = shellplementation(
     name="with_versions",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 1}\n'
+    printf '{"implementation": {"name": "with-versions", "language": "sh", "homepage": "urn:example", "issues": "urn:example", "source": "urn:example", "dialects": ["https://json-schema.org/draft/2020-12/schema"], "language_version": "123", "os": "Lunix", "os_version": "37"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
@@ -383,7 +383,7 @@ wrong_number_of_tests = shellplementation(
     name="wrong_number_of_tests",
     contents=r"""
     read -r request
-    printf '{"implementation": {"name": "wrong-number-of-tests", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    printf '{"implementation": {"name": "wrong-number-of-tests", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 2}\n'
     read -r request
     printf '{"ok": true}\n'
     read -r request
