@@ -13,6 +13,8 @@ const hyperjump_version = packageJson.version;
 var registerSchemaAndValidate;
 var unregisterSchema;
 var getRetrievalURI;
+var AnnotationsPlugin;
+var BASIC;
 
 await (async () => {
   if (semver.satisfies(hyperjump_version, ">=1.7.0")) {
@@ -23,6 +25,9 @@ await (async () => {
       import("@hyperjump/json-schema/draft-04"),
     ]);
     const JsonSchema = await import("@hyperjump/json-schema/draft-2020-12");
+    ({ AnnotationsPlugin, BASIC } = await import(
+      "@hyperjump/json-schema/experimental"
+    ));
 
     registerSchemaAndValidate = async (testCase, dialect, retrievalURI) => {
       for (const id in testCase.registry) {
@@ -146,6 +151,59 @@ const dialectSkippedTests = {
   "http://json-schema.org/draft-04/schema#": legacySkippedTests,
 };
 
+const pointerSegment = (token) => token.replace(/~/g, "~0").replace(/\//g, "~1");
+
+function resourcePointersFor(schema, retrievalURI) {
+  const pointers = new Map([[retrievalURI, ""]]);
+
+  const walk = (node, pointer, base) => {
+    if (node === null || typeof node !== "object") {
+      return;
+    }
+
+    let currentBase = base;
+    if (typeof node.$id === "string") {
+      currentBase = new URL(node.$id, base).href;
+      pointers.set(currentBase, pointer);
+    }
+
+    for (const key of Object.keys(node)) {
+      walk(node[key], `${pointer}/${pointerSegment(key)}`, currentBase);
+    }
+  };
+
+  walk(schema, "", retrievalURI);
+  return pointers;
+}
+
+const keywordName = (keywordURI) => {
+  const hash = keywordURI.indexOf("#");
+  return hash === -1
+    ? keywordURI.slice(keywordURI.lastIndexOf("/") + 1)
+    : keywordURI.slice(hash + 1);
+};
+
+const instancePointer = (instanceURI) =>
+  instanceURI.startsWith("#") ? instanceURI.slice(1) : instanceURI;
+
+function bowtieAnnotations(collected, resourcePointers) {
+  return collected.map((each) => {
+    const uri = each.absoluteKeywordLocation;
+    const hash = uri.indexOf("#");
+    const base = hash === -1 ? uri : uri.slice(0, hash);
+    const fragment = hash === -1 ? "" : uri.slice(hash + 1);
+    const prefix = resourcePointers.get(base);
+
+    return {
+      keyword: keywordName(each.keyword),
+      instanceLocation: instancePointer(each.instanceLocation),
+      keywordLocation:
+        prefix === undefined ? `#${fragment}` : `#${prefix}${fragment}`,
+      annotation: each.annotation,
+    };
+  });
+}
+
 const cmds = {
   start: async (args) => {
     console.assert(args.version === 1, { args });
@@ -184,6 +242,8 @@ const cmds = {
     console.assert(started, "Not started!");
 
     const testCase = args.case;
+    const wantsAnnotations =
+      args.output === "annotations" && AnnotationsPlugin !== undefined;
 
     let results;
     if (testCase.description in dialectSkippedTests[dialect]) {
@@ -203,10 +263,28 @@ const cmds = {
           retrievalURI,
         );
 
+        const resourcePointers = wantsAnnotations
+          ? resourcePointersFor(testCase.schema, retrievalURI)
+          : undefined;
+
         results = testCase.tests.map((test) => {
           try {
-            const result = _validate(test.instance);
-            return { valid: result.valid };
+            if (wantsAnnotations) {
+              const plugin = new AnnotationsPlugin();
+              const result = _validate(test.instance, {
+                outputFormat: BASIC,
+                plugins: [plugin],
+              });
+
+              return {
+                valid: result.valid,
+                annotations: result.valid
+                  ? bowtieAnnotations(plugin.annotations, resourcePointers)
+                  : [],
+              };
+            }
+
+            return { valid: _validate(test.instance).valid };
           } catch (error) {
             return {
               errored: true,
