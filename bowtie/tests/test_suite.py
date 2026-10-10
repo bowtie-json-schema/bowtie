@@ -24,6 +24,7 @@ DRAFT2020 = Dialect.by_alias()["2020"]
 DRAFT4 = Dialect.by_alias()["4"]
 DRAFT6 = Dialect.by_alias()["6"]
 DRAFT3 = Dialect.by_alias()["3"]
+V1 = Dialect.by_short_name()["v1"]
 
 TYPE_CASES = {
     "description": "type validation",
@@ -80,6 +81,11 @@ TYPE_CASES = {
         (DRAFT4, "<=3,7,<=2020", False),
         (DRAFT7, "<=3,7,<=2020", True),
         (DRAFT2020, "<=3,7,<=2020", True),
+        # The prerelease is tested against features not yet released.
+        (V1, "9999", True),
+        (V1, "2020", True),
+        (V1, "<=2020", False),
+        (V1, "=2020", False),
     ],
 )
 def test_is_compatible(dialect, compatibility, compatible):

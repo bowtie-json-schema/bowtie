@@ -136,12 +136,23 @@ _COMPATIBILITY_VERSIONS = {
     str(each): each for each in (1, 2, 3, 4, 6, 7, 2019, 2020, 9999)
 }
 
+#: Dialects whose short name is not a compatibility version.
+#: A prerelease is tested against features not yet in any release.
+_COMPATIBILITY_VERSION_FOR = {"v1": 9999}
+
+
+def _compatibility_version(dialect: Dialect) -> int:
+    version = _COMPATIBILITY_VERSION_FOR.get(dialect.short_name)
+    if version is not None:
+        return version
+    return int(dialect.short_name.removeprefix("draft").partition("-")[0])
+
 
 def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     if compatibility is None:
         return True
 
-    version = int(dialect.short_name.removeprefix("draft").partition("-")[0])
+    version = _compatibility_version(dialect)
 
     # Constraints naming an unknown version are never satisfied, not ignored.
     is_valid = True
