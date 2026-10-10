@@ -383,12 +383,17 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
 def dialects_in(root: _P) -> set[Dialect]:
     """
     Which dialects the suite rooted at the given path provides cases for.
+
+    Unified-format cases cover every dialect, so a suite with any provides
+    all of them. One without (e.g. from before the unified format) has none.
     """
-    return {
-        dialect
-        for dialect in Dialect.known()
-        if dialect.short_name.removeprefix("draft").partition("-")[0].isdigit()
-    }
+    tests_path = root / "validation" / "tests"
+    if (
+        not tests_path.is_dir()
+        or next(_glob(tests_path, "*.json"), None) is None
+    ):
+        return set()
+    return set(Dialect.known())
 
 
 def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:

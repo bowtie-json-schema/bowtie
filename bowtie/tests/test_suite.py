@@ -154,6 +154,19 @@ def test_convert_url_uses_dialect_option(monkeypatch):
     assert len(list(cases)) == 1
 
 
+def test_dialects_in_unified_layout(tmp_path):
+    validation = tmp_path / "validation" / "tests"
+    validation.mkdir(parents=True)
+    validation.joinpath("type.json").write_text(json.dumps(TYPE_CASES))
+
+    assert _suite.dialects_in(tmp_path) == set(Dialect.known())
+
+
+def test_dialects_in_pre_unified_layout(tmp_path):
+    tmp_path.joinpath("tests", "draft7").mkdir(parents=True)
+    assert _suite.dialects_in(tmp_path) == set()
+
+
 def test_annotation_cases_from(tmp_path):
     path = tmp_path / "meta-data.json"
     path.write_text(
