@@ -1453,7 +1453,7 @@ def _set_benchmarker_callable(
 
 @subcommand
 @IMPLEMENTATION
-@dialect_option()
+@dialect_option(is_eager=True)
 @format_option()
 @click.option(
     "--runs",
@@ -2654,7 +2654,12 @@ def _run_suite(
 @SET_SCHEMA
 @VALIDATE
 @JOBS
-@click.argument("input", type=_suite.ClickParam(), metavar="DIALECT")
+@click.argument(
+    "input",
+    type=_suite.ClickParam(),
+    metavar="[DIALECT]",
+    default=str(_suite.TESTS_DIR_URL),
+)
 def suite(
     input: tuple[Iterable[TestCase], Dialect, dict[str, Any]],
     filter: CaseTransform,
