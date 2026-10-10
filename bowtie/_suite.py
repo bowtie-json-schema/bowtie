@@ -141,6 +141,18 @@ _COMPATIBILITY_VERSIONS = {
 _COMPATIBILITY_VERSION_FOR = {"v1": 9999}
 
 
+#: Dialects whose schemas (including remote ones) the suite gave an explicit
+#: ``$schema`` before its unified format. Harnesses which cannot be told the
+#: dialect to use may rely on it.
+_EXPLICIT_DIALECTS = {"draft2019-09", "draft2020-12"}
+
+
+def _with_explicit_dialect(schema: Any, dialect: Dialect) -> Any:
+    if isinstance(schema, bool):
+        return schema
+    return {"$schema": str(dialect.uri), **schema}
+
+
 #: Dialects whose ``format`` asserts by default, rather than annotating.
 _FORMAT_ASSERTING = {"v1"}
 
@@ -232,12 +244,21 @@ def validation_cases_from(
                 for test in case["tests"]
             ]
 
+            schema = case["schema"]
+            registry = case.get("externalSchemas", {})
+            if dialect.short_name in _EXPLICIT_DIALECTS:
+                schema = _with_explicit_dialect(schema, dialect)
+                registry = {
+                    uri: _with_explicit_dialect(each, dialect)
+                    for uri, each in registry.items()
+                }
+
             yield TestCase.from_dict(
                 dialect=dialect,
                 description=case["description"],
                 comment=case.get("comment"),
-                schema=case["schema"],
-                registry=case.get("externalSchemas", {}),
+                schema=schema,
+                registry=registry,
                 tests=tests,
             )
 
