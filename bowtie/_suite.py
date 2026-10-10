@@ -13,7 +13,6 @@ import json
 import os
 import zipfile
 
-from click.core import ParameterSource
 from diagnostic import DiagnosticError
 from url import URL, RelativeURLWithoutBase
 import click
@@ -52,34 +51,23 @@ class ClickParam(click.ParamType):
         if not isinstance(value, str):
             return value
 
-        # Convert dialect URIs or shortnames to test suite URIs
-        known_dialect = Dialect.by_alias().get(value)
-        if known_dialect is not None:
+        # Cases cover every dialect, so where they live says nothing about
+        # which to run them under. A dialect given as the input runs the
+        # suite from GitHub under it, otherwise --dialect says which.
+        dialect = Dialect.by_alias().get(value)
+        if dialect is not None:
             value = (
                 ANNOTATIONS_DIR_URL if self._is_annotations else TESTS_DIR_URL
             )
+        elif ctx is not None:
+            dialect = ctx.params.get("dialect")
+        if dialect is None:
+            self.fail("No dialect was given to run the test suite under.")
 
         def local(
             path: Path,
         ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
-            local_dialect = known_dialect
-
-            if (
-                not self._is_annotations
-                and ctx is not None
-                and ctx.get_parameter_source(
-                    "dialect",
-                )
-                == ParameterSource.COMMANDLINE
-            ):
-                local_dialect = ctx.params.get("dialect")
-
-            dialect, cases = self._cases_and_dialect(
-                path=path,
-                ctx=ctx,
-                known_dialect=local_dialect,
-            )
-            return cases, dialect, {}
+            return self._cases_from(path=path, dialect=dialect), dialect, {}
 
         # On Windows, drive-letter paths like D:\... are misinterpreted by
         # URL.parse() as having a URL scheme (the drive letter).  Use
@@ -120,39 +108,22 @@ class ClickParam(click.ParamType):
         data, run_metadata = downloaded
         with zipfile.ZipFile(data) as zf:
             (contents,) = zipfile.Path(zf).iterdir()
-            dialect, cases = self._cases_and_dialect(
-                path=contents / path,
-                ctx=ctx,
-                known_dialect=known_dialect,
+            cases = list(
+                self._cases_from(path=contents / path, dialect=dialect),
             )
-            cases = list(cases)
         return cases, dialect, run_metadata
 
-    def _cases_and_dialect(
-        self,
-        path: Any,
-        ctx: click.Context | None,
-        known_dialect: Dialect | None = None,
-    ):
+    def _cases_from(self, path: Any, dialect: Dialect) -> Iterable[TestCase]:
         if path.name.endswith(".json"):
-            paths, version_path = [path], path.parent
+            paths = [path]
         else:
-            paths, version_path = _glob(path, "*.json"), path
-
-        dialect = known_dialect
-        if dialect is None:
-            dialect = Dialect.by_short_name().get(version_path.name)
-        if dialect is None and self._is_annotations and ctx is not None:
-            dialect = ctx.params.get("dialect")
-        if dialect is None:
+            paths = list(_glob(path, "*.json"))
+        if not paths:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
         if self._is_annotations:
-            cases = annotation_cases_from(paths=paths, dialect=dialect)
-        else:
-            cases = validation_cases_from(paths=paths, dialect=dialect)
-
-        return dialect, cases
+            return annotation_cases_from(paths=paths, dialect=dialect)
+        return validation_cases_from(paths=paths, dialect=dialect)
 
 
 _P = Path | zipfile.Path

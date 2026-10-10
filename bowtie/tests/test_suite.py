@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import json
 import zipfile
 
-from click.core import ParameterSource
 import pytest
 
 from bowtie import _github, _suite
@@ -92,10 +91,7 @@ def test_convert_local_path_unified_format(tmp_path):
     validation.mkdir(parents=True)
     validation.joinpath("type.json").write_text(json.dumps(TYPE_CASES))
 
-    ctx = SimpleNamespace(
-        params={"dialect": DRAFT7},
-        get_parameter_source=lambda name: ParameterSource.COMMANDLINE,
-    )
+    ctx = SimpleNamespace(params={"dialect": DRAFT7})
     cases, dialect, metadata = ClickParam().convert(str(validation), None, ctx)
 
     assert dialect == DRAFT7
@@ -136,6 +132,20 @@ def test_convert_shortname_fetches_unified_layout(monkeypatch):
     assert dialect == DRAFT7
     assert len(list(cases)) == 1
     assert metadata == {"commit": "abc123"}
+
+
+def test_convert_url_uses_dialect_option(monkeypatch):
+    _fake_download(monkeypatch)
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT6})
+    cases, dialect, _ = ClickParam().convert(
+        str(_suite.TESTS_DIR_URL),
+        None,
+        ctx,
+    )
+
+    assert dialect == DRAFT6
+    assert len(list(cases)) == 1
 
 
 def test_annotation_cases_from(tmp_path):
