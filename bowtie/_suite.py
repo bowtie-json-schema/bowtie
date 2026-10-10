@@ -141,6 +141,23 @@ _COMPATIBILITY_VERSIONS = {
 _COMPATIBILITY_VERSION_FOR = {"v1": 9999}
 
 
+#: Dialects whose ``format`` asserts by default, rather than annotating.
+_FORMAT_ASSERTING = {"v1"}
+
+
+def _expected_tags(dialect: Dialect) -> frozenset[str]:
+    """
+    The tagged behaviors Bowtie expects implementations to have by default.
+
+    The suite runs a case only if the implementation provides the behavior
+    associated with each of its tags. Cases tagged with any other behavior
+    (e.g. a ``format`` behavior that isn't the dialect's default) are skipped.
+    """
+    if dialect.short_name in _FORMAT_ASSERTING:
+        return frozenset({"format-assertion"})
+    return frozenset({"format-annotation"})
+
+
 def _compatibility_version(dialect: Dialect) -> int:
     version = _COMPATIBILITY_VERSION_FOR.get(dialect.short_name)
     if version is not None:
@@ -187,6 +204,7 @@ def validation_cases_from(
     paths: Iterable[_P],
     dialect: Dialect,
 ) -> Iterable[TestCase]:
+    expected_tags = _expected_tags(dialect)
     for path in paths:
         data = json.loads(path.read_text())
 
@@ -196,6 +214,8 @@ def validation_cases_from(
         for case in data["tests"]:
             compatibility = case.get("compatibility")
             if not _is_compatible(dialect, compatibility):
+                continue
+            if not expected_tags.issuperset(case.get("tags", [])):
                 continue
 
             tests = [

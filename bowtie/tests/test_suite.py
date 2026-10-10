@@ -454,3 +454,57 @@ def test_cases_for_unified_layout(tmp_path):
         "integer type",
         "only for draft7+",
     ]
+
+
+def _format_cases():
+    return {
+        "description": "email format",
+        "tests": [
+            {
+                "description": "untagged",
+                "schema": {"format": "email"},
+                "tests": [
+                    {"description": "a number", "data": 12, "valid": True},
+                ],
+            },
+            {
+                "description": "annotation",
+                "tags": ["format-annotation"],
+                "schema": {"format": "email"},
+                "tests": [
+                    {"description": "bad", "data": "2962", "valid": True},
+                ],
+            },
+            {
+                "description": "assertion",
+                "tags": ["format-assertion"],
+                "schema": {"format": "email"},
+                "tests": [
+                    {"description": "bad", "data": "2962", "valid": False},
+                ],
+            },
+            {
+                "description": "unknown behavior",
+                "tags": ["format-annotation", "eierlegendeWollmilchsau"],
+                "schema": {},
+                "tests": [{"description": "any", "data": 1, "valid": True}],
+            },
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("dialect", "expected"),
+    [
+        (DRAFT7, ["untagged", "annotation"]),
+        (DRAFT2020, ["untagged", "annotation"]),
+        (V1, ["untagged", "assertion"]),
+    ],
+)
+def test_validation_cases_from_respects_tags(tmp_path, dialect, expected):
+    path = tmp_path / "format-email.json"
+    path.write_text(json.dumps(_format_cases()))
+
+    cases = validation_cases_from([path], dialect)
+
+    assert [case.description for case in cases] == expected
