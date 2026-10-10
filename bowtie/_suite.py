@@ -235,6 +235,7 @@ def validation_cases_from(
             yield TestCase.from_dict(
                 dialect=dialect,
                 description=case["description"],
+                comment=case.get("comment"),
                 schema=case["schema"],
                 registry=case.get("externalSchemas", {}),
                 tests=tests,

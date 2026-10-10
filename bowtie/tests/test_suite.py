@@ -358,6 +358,37 @@ def test_validation_cases_from_unified_format(tmp_path):
     assert [test.instance for test in cases[0].tests] == [1, "1"]
 
 
+def test_validation_cases_from_keeps_comments(tmp_path):
+    path = tmp_path / "type.json"
+    path.write_text(
+        json.dumps(
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "integer type",
+                        "comment": "a case comment",
+                        "schema": {"type": "integer"},
+                        "tests": [
+                            {
+                                "description": "integer is valid",
+                                "comment": "a test comment",
+                                "data": 1,
+                                "valid": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ),
+    )
+
+    (case,) = validation_cases_from([path], DRAFT7)
+    (test,) = case.tests
+
+    assert (case.comment, test.comment) == ("a case comment", "a test comment")
+
+
 def test_validation_cases_from_respects_compatibility(tmp_path):
     path = tmp_path / "type.json"
     path.write_text(
