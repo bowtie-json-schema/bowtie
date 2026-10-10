@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import json
 import zipfile
 
+import click
 import pytest
 
 from bowtie import _github, _suite
@@ -105,16 +106,13 @@ def test_convert_local_path_unified_format(tmp_path):
     assert metadata == {}
 
 
-def _fake_download(monkeypatch):
+def _fake_download(monkeypatch, path="validation/tests/type.json"):
     """
-    Serve a unified-layout suite in place of GitHub, recording requests.
+    Serve a suite in place of GitHub, recording requests.
     """
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, "w") as zf:
-        zf.writestr(
-            "suite-abc123/validation/tests/type.json",
-            json.dumps(TYPE_CASES),
-        )
+        zf.writestr(f"suite-abc123/{path}", json.dumps(TYPE_CASES))
     requested: list[tuple[str, str, str]] = []
 
     def download_tree(org, repo, ref):
@@ -152,6 +150,94 @@ def test_convert_url_uses_dialect_option(monkeypatch):
 
     assert dialect == DRAFT6
     assert len(list(cases)) == 1
+
+
+@pytest.mark.parametrize(
+    ("parts", "expected"),
+    [
+        (
+            ("suite", "tests", "draft7"),
+            (["suite", "validation", "tests"], DRAFT7),
+        ),
+        (
+            ("suite", "tests", "draft2020-12", "type.json"),
+            (["suite", "validation", "tests", "type.json"], DRAFT2020),
+        ),
+        (
+            ("tests", "draft6", "optional", "bignum.json"),
+            (["validation", "tests", "optional", "bignum.json"], DRAFT6),
+        ),
+        (("suite", "validation", "tests"), None),
+        (("suite", "validation", "tests", "type.json"), None),
+        (("suite", "tests", "notadialect"), None),
+        (("suite", "tests"), None),
+    ],
+)
+def test_from_old_layout(parts, expected):
+    assert _suite._from_old_layout(parts) == expected
+
+
+def test_convert_old_local_path(tmp_path, capsys):
+    validation = tmp_path / "validation" / "tests"
+    validation.mkdir(parents=True)
+    validation.joinpath("type.json").write_text(json.dumps(TYPE_CASES))
+    old = tmp_path / "tests" / "draft7" / "type.json"
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT2020})
+    cases, dialect, _ = ClickParam().convert(str(old), None, ctx)
+
+    assert dialect == DRAFT7
+    assert len(list(cases)) == 1
+    assert "deprecated" in capsys.readouterr().err
+
+
+def test_convert_old_local_checkout(tmp_path):
+    old = tmp_path / "tests" / "draft7"
+    old.mkdir(parents=True)
+    old.joinpath("type.json").write_text("[]")
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT2020})
+    with pytest.raises(click.BadParameter, match="predates"):
+        ClickParam().convert(str(old), None, ctx)
+
+
+def test_convert_old_url(monkeypatch, capsys):
+    requested = _fake_download(monkeypatch)
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT2020})
+    cases, dialect, _ = ClickParam().convert(
+        str(_suite.TEST_SUITE_URL / "blob/main/tests/draft7/type.json"),
+        None,
+        ctx,
+    )
+
+    assert requested == [("json-schema-org", "JSON-Schema-Test-Suite", "main")]
+    assert dialect == DRAFT7
+    assert len(list(cases)) == 1
+    stderr = capsys.readouterr().err
+    assert "deprecated" in stderr
+    assert "blob/main/validation/tests/type.json" in stderr.replace("\n", "")
+
+
+def test_convert_old_url_old_ref(monkeypatch):
+    _fake_download(monkeypatch, path="tests/draft7/type.json")
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT2020})
+    with pytest.raises(click.BadParameter, match="predates"):
+        ClickParam().convert(
+            str(_suite.TEST_SUITE_URL / "tree/main/tests/draft7"),
+            None,
+            ctx,
+        )
+
+
+def test_predates_unified_format(tmp_path):
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.joinpath("tests", "draft7").mkdir(parents=True)
+    new.joinpath("validation", "tests").mkdir(parents=True)
+
+    assert _suite.predates_unified_format(old)
+    assert not _suite.predates_unified_format(new)
 
 
 def test_dialects_in_unified_layout(tmp_path):

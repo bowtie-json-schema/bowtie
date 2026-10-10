@@ -2852,6 +2852,24 @@ def collect(
             STDERR.print(error.diagnostic())
             context.exit(EX.CONFIG)
 
+    if _suite.predates_unified_format(root):
+        error = DiagnosticError(
+            code="unsupported-suite",
+            message="The test suite predates its unified format.",
+            causes=[
+                (
+                    "It has per-dialect tests/ directories rather than "
+                    "validation/tests, which is no longer supported."
+                ),
+            ],
+            hint_stmt=(
+                "Pass a checkout or ref of the suite from after the "
+                "unified format was adopted."
+            ),
+        )
+        STDERR.print(error)
+        context.exit(EX.CONFIG)
+
     if versioned:
         expanded: list[Connectable] = []
         for connectable in connectables:

@@ -660,6 +660,25 @@ async def test_site_collect(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_site_collect_suite_predating_unified_format(tmp_path):
+    suite = tmp_path / "suite"
+    suite.joinpath("tests", "draft7").mkdir(parents=True)
+
+    _, stderr = await bowtie(
+        "site",
+        "collect",
+        "-i",
+        miniatures.always_invalid,
+        "--suite",
+        suite,
+        "--output",
+        tmp_path / "reports",
+        exit_code=EX.CONFIG,
+    )
+    assert "predates its unified format" in stderr, stderr
+
+
+@pytest.mark.asyncio
 async def test_site_collect_withholds_all_errored_reports(tmp_path):
     """
     A report in which every test errored indicates a broken implementation
