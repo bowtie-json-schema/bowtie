@@ -71,7 +71,9 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
 
 .. code:: sh
 
-    $ bowtie suite -i lua-jsonschema https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/type.json | bowtie summary --show failures
+    $ bowtie suite -i lua-jsonschema --dialect 7 https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/unify/validation/tests/type.json | bowtie summary --show failures
+
+The suite's test files cover every dialect, so ``--dialect`` chooses which one to run them under.
 
 
 Running Test Suite Tests From Local Checkouts
@@ -81,7 +83,7 @@ Providing a local path to the test suite can be used as well, which is useful if
 
 .. code:: sh
 
-    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') ~/path/to/json-schema-org/suite/tests/draft2020-12/ | bowtie summary --show failures
+    $ bowtie suite $(bowtie filter-implementations | sed 's/^/-i /') --dialect 2020-12 ~/path/to/json-schema-org/suite/validation/tests/ | bowtie summary --show failures
 
 
 Running the Official Annotation Suite
