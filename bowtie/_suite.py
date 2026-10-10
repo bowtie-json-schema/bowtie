@@ -69,6 +69,7 @@ class ClickParam(click.ParamType):
 
         def local(
             path: Path,
+            dialect: Dialect,
         ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
             rewritten = None
             if not self._is_annotations:
@@ -91,13 +92,13 @@ class ClickParam(click.ParamType):
         if isinstance(value, str) and (
             os.path.splitdrive(value)[0] or Path(value).exists()
         ):
-            return local(Path(value))
+            return local(Path(value), dialect)
 
         try:
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            return local(Path(value))
+            return local(Path(value), dialect)
 
         value = cast("URL", value)
         org, repo_name, *rest = value.path_segments
@@ -509,10 +510,7 @@ def dialects_in(root: _P) -> set[Dialect]:
     all of them. One without (e.g. from before the unified format) has none.
     """
     tests_path = root / "validation" / "tests"
-    if (
-        not tests_path.is_dir()
-        or next(_glob(tests_path, "*.json"), None) is None
-    ):
+    if not tests_path.is_dir() or not any(_glob(tests_path, "*.json")):
         return set()
     return set(Dialect.known())
 
