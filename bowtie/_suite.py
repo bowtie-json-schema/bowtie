@@ -13,16 +13,17 @@ import json
 import os
 import zipfile
 
-from diagnostic import DiagnosticError
+from diagnostic import DiagnosticError, DiagnosticWarning
 from url import URL, RelativeURLWithoutBase
 import click
 import rich
+import rich.console
 
 from bowtie import GITHUB, _github
 from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
     from typing import Any
 
 
@@ -30,6 +31,8 @@ TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
 TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation/tests"
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
+
+_STDERR = rich.console.Console(stderr=True)
 
 
 class ClickParam(click.ParamType):
@@ -67,7 +70,20 @@ class ClickParam(click.ParamType):
         def local(
             path: Path,
         ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
-            return self._cases_from(path=path, dialect=dialect), dialect, {}
+            rewritten = None
+            if not self._is_annotations:
+                rewritten = _from_old_layout(path.parts)
+            if rewritten is None:
+                cases = self._cases_from(path=path, dialect=dialect)
+                return cases, dialect, {}
+
+            parts, old_dialect = rewritten
+            new = Path(*parts)
+            if not new.exists():
+                self.fail(_OLD_LAYOUT_UNSUPPORTED.format(path=path))
+            _warn_old_layout(old=path, new=new, dialect=old_dialect)
+            cases = self._cases_from(path=new, dialect=old_dialect)
+            return cases, old_dialect, {}
 
         # On Windows, drive-letter paths like D:\... are misinterpreted by
         # URL.parse() as having a URL scheme (the drive letter).  Use
@@ -86,6 +102,19 @@ class ClickParam(click.ParamType):
         value = cast("URL", value)
         org, repo_name, *rest = value.path_segments
         path, ref = path_and_ref_from_gh_path(rest)
+
+        rewritten = None
+        if not self._is_annotations:
+            rewritten = _from_old_layout(path.split("/"))
+        if rewritten is not None:
+            parts, dialect = rewritten
+            new_path = "/".join(parts)
+            _warn_old_layout(
+                old=value,
+                new=GITHUB / org / repo_name / rest[0] / ref / new_path,
+                dialect=dialect,
+            )
+            path = new_path
 
         downloaded = _github.download_tree(org, repo_name, ref)
         if downloaded is None:
@@ -108,6 +137,8 @@ class ClickParam(click.ParamType):
         data, run_metadata = downloaded
         with zipfile.ZipFile(data) as zf:
             (contents,) = zipfile.Path(zf).iterdir()
+            if rewritten is not None and not (contents / path).exists():
+                self.fail(_OLD_LAYOUT_UNSUPPORTED.format(path=value))
             cases = list(
                 self._cases_from(path=contents / path, dialect=dialect),
             )
@@ -127,6 +158,52 @@ class ClickParam(click.ParamType):
 
 
 _P = Path | zipfile.Path
+
+
+_OLD_LAYOUT_UNSUPPORTED = (
+    "{path} is from a version of the test suite which predates its unified "
+    "format, which is no longer supported."
+)
+
+
+def _from_old_layout(
+    parts: Sequence[str],
+) -> tuple[list[str], Dialect] | None:
+    """
+    Rewrite a path in the suite's layout from before its unified format.
+
+    There, each dialect's cases lived in a ``tests/<dialect>`` directory of
+    their own. Now, cases for every dialect live in ``validation/tests``.
+    """
+    by_short_name = Dialect.by_short_name()
+    for i in reversed(range(len(parts) - 1)):
+        if parts[i] == "tests" and parts[i + 1] in by_short_name:
+            rewritten = [*parts[:i], "validation", "tests", *parts[i + 2 :]]
+            return rewritten, by_short_name[parts[i + 1]]
+    return None
+
+
+def _warn_old_layout(old: object, new: object, dialect: Dialect) -> None:
+    _STDERR.print(
+        DiagnosticWarning(
+            code="deprecated-suite-path",
+            message=(
+                "Test suite paths from before its unified format are "
+                "deprecated."
+            ),
+            causes=[
+                (
+                    f"{old} uses the old tests/{dialect.short_name} "
+                    "directory, but cases for every dialect now live in "
+                    "validation/tests."
+                ),
+            ],
+            hint_stmt=(
+                f"Pass {new} with --dialect {dialect.short_name} instead, "
+                "which is what is being run."
+            ),
+        ),
+    )
 
 
 # The version tokens the suite's compatibility grammar allows.
@@ -438,6 +515,13 @@ def dialects_in(root: _P) -> set[Dialect]:
     ):
         return set()
     return set(Dialect.known())
+
+
+def predates_unified_format(root: _P) -> bool:
+    """
+    Is the suite rooted at the given path from before its unified format?
+    """
+    return (root / "tests").is_dir() and not (root / "validation").is_dir()
 
 
 def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:
