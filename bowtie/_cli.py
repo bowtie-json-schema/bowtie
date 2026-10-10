@@ -2670,27 +2670,32 @@ def suite(
     """
     Run the official JSON Schema test suite against any implementation.
 
-    Supports a number of possible inputs:
+    The suite's unified format covers every dialect in the same files, so
+    ``--dialect`` chooses which dialect to run them under, and only the cases
+    compatible with that dialect are run.
+
+    With no input, the tests are run directly from GitHub. Otherwise,
+    supports a number of possible inputs:
 
         * file paths found on the local file system containing tests, e.g.:
 
-            - ``{PATH}/tests/draft7`` to run the draft 7 version's tests out of a local checkout of the test suite
+            - ``{PATH}/validation/tests`` to run all tests out of a local checkout of the test suite
 
-            - ``{PATH}/tests/draft7/foo.json`` to run just one file from a checkout
+            - ``{PATH}/validation/tests/foo.json`` to run just one file from a checkout
 
         * URLs to the test suite repository hosted on GitHub, e.g.:
 
-            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/``
-              to run a version directly from any branch which exists in GitHub
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/unify/validation/tests``
+              to run all tests directly from any branch which exists in GitHub
 
-            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/tests/draft7/foo.json``
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/unify/validation/tests/foo.json``
               to run a single file directly from a branch which exists in GitHub
 
-        * short name versions of the previous URLs (similar to those providable
-          to `bowtie validate --dialect`, e.g.:
+        * dialect short names (similar to those providable to
+          `bowtie validate --dialect`), e.g.:
 
-            - ``7``, to run the draft 7 tests directly from GitHub (as in the
-              URL example above)
+            - ``7``, to run the tests directly from GitHub under draft 7,
+              in place of ``--dialect``
 
     """  # noqa: E501
     return _run_suite(input, filter, jobs, **kwargs)
