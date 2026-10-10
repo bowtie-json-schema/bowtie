@@ -389,6 +389,62 @@ def test_validation_cases_from_keeps_comments(tmp_path):
     assert (case.comment, test.comment) == ("a case comment", "a test comment")
 
 
+@pytest.mark.parametrize(
+    ("dialect", "explicit"),
+    [
+        (DRAFT2019, True),
+        (DRAFT2020, True),
+        (DRAFT7, False),
+        (V1, False),
+    ],
+)
+def test_validation_cases_from_explicit_dialect(tmp_path, dialect, explicit):
+    path = tmp_path / "type.json"
+    path.write_text(
+        json.dumps(
+            {
+                "description": "type validation",
+                "tests": [
+                    {
+                        "description": "an object schema",
+                        "schema": {"type": "integer"},
+                        "externalSchemas": {
+                            "http://example.com/plain": {"type": "string"},
+                            "http://example.com/explicit": {
+                                "$schema": str(DRAFT7.uri),
+                            },
+                        },
+                        "tests": [
+                            {"description": "1", "data": 1, "valid": True},
+                        ],
+                    },
+                    {
+                        "description": "a boolean schema",
+                        "schema": True,
+                        "tests": [
+                            {"description": "1", "data": 1, "valid": True},
+                        ],
+                    },
+                ],
+            },
+        ),
+    )
+
+    object_case, boolean_case = validation_cases_from([path], dialect)
+
+    expected = {"type": "integer"}
+    plain = {"type": "string"}
+    if explicit:
+        expected = {"$schema": str(dialect.uri), **expected}
+        plain = {"$schema": str(dialect.uri), **plain}
+    assert (object_case.schema, boolean_case.schema) == (expected, True)
+    registry = object_case.registry
+    assert registry["http://example.com/plain"].contents == plain
+    assert registry["http://example.com/explicit"].contents == {
+        "$schema": str(DRAFT7.uri),
+    }
+
+
 def test_validation_cases_from_respects_compatibility(tmp_path):
     path = tmp_path / "type.json"
     path.write_text(
