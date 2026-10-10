@@ -171,7 +171,9 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
 
     version = _compatibility_version(dialect)
 
-    # Constraints naming an unknown version are never satisfied, not ignored.
+    # Constraints are ordered smallest to largest, as the suite requires,
+    # and are checked only until one reaches the version under test.
+    # An unknown version token reached that way makes the case incompatible.
     is_valid = True
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
@@ -366,11 +368,11 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
     """
     Download the whole official test suite once.
 
-    With no ``ref``, the suite is pinned to the newest commit on its main
-    branch at or before the start of the current hour -- a deterministic
-    choice, so that independent runs within the same hour all collect
-    against (and can therefore be combined at) the same commit. Pass an
-    explicit ref (a branch, tag or commit) to override.
+    With no ``ref``, the suite is pinned to the newest commit on its
+    `DEFAULT_REF` branch at or before the start of the current hour -- a
+    deterministic choice, so that independent runs within the same hour all
+    collect against (and can therefore be combined at) the same commit. Pass
+    an explicit ref (a branch, tag or commit) to override.
 
     Returns the suite's root directory (which contains ``validation/tests/``
     directory of unified-format test case files, covering all dialects)
