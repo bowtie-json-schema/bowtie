@@ -2,13 +2,15 @@
 Tests for loading test cases from the official test suite.
 """
 
+from io import BytesIO
 from types import SimpleNamespace
 import json
+import zipfile
 
 from click.core import ParameterSource
 import pytest
 
-from bowtie import _suite
+from bowtie import _github, _suite
 from bowtie._core import Dialect
 from bowtie._suite import (
     ClickParam,
@@ -23,6 +25,23 @@ DRAFT2020 = Dialect.by_alias()["2020"]
 DRAFT4 = Dialect.by_alias()["4"]
 DRAFT6 = Dialect.by_alias()["6"]
 DRAFT3 = Dialect.by_alias()["3"]
+
+TYPE_CASES = {
+    "description": "type validation",
+    "tests": [
+        {
+            "description": "string type",
+            "schema": {"type": "string"},
+            "tests": [
+                {
+                    "description": "a string",
+                    "data": "foo",
+                    "valid": True,
+                },
+            ],
+        },
+    ],
+}
 
 
 @pytest.mark.parametrize(
@@ -71,26 +90,7 @@ def test_is_compatible(dialect, compatibility, compatible):
 def test_convert_local_path_unified_format(tmp_path):
     validation = tmp_path / "validation" / "tests"
     validation.mkdir(parents=True)
-    validation.joinpath("type.json").write_text(
-        json.dumps(
-            {
-                "description": "type validation",
-                "tests": [
-                    {
-                        "description": "string type",
-                        "schema": {"type": "string"},
-                        "tests": [
-                            {
-                                "description": "a string",
-                                "data": "foo",
-                                "valid": True,
-                            },
-                        ],
-                    },
-                ],
-            },
-        ),
-    )
+    validation.joinpath("type.json").write_text(json.dumps(TYPE_CASES))
 
     ctx = SimpleNamespace(
         params={"dialect": DRAFT7},
@@ -101,6 +101,41 @@ def test_convert_local_path_unified_format(tmp_path):
     assert dialect == DRAFT7
     assert len(list(cases)) == 1
     assert metadata == {}
+
+
+def _fake_download(monkeypatch):
+    """
+    Serve a unified-layout suite in place of GitHub, recording requests.
+    """
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr(
+            "suite-abc123/validation/tests/type.json",
+            json.dumps(TYPE_CASES),
+        )
+    requested: list[tuple[str, str, str]] = []
+
+    def download_tree(org, repo, ref):
+        requested.append((org, repo, ref))
+        buffer.seek(0)
+        return buffer, {"commit": "abc123"}
+
+    monkeypatch.setattr(_github, "download_tree", download_tree)
+    return requested
+
+
+def test_convert_shortname_fetches_unified_layout(monkeypatch):
+    requested = _fake_download(monkeypatch)
+
+    ctx = SimpleNamespace(params={"dialect": DRAFT2020})
+    cases, dialect, metadata = ClickParam().convert("7", None, ctx)
+
+    assert requested == [
+        ("json-schema-org", "JSON-Schema-Test-Suite", "unify"),
+    ]
+    assert dialect == DRAFT7
+    assert len(list(cases)) == 1
+    assert metadata == {"commit": "abc123"}
 
 
 def test_annotation_cases_from(tmp_path):

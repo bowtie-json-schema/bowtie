@@ -28,11 +28,7 @@ if TYPE_CHECKING:
 
 
 TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
-TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation"
-
-URL_FOR_DIALECT = {
-    dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
-}
+TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation/tests"
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
@@ -57,13 +53,11 @@ class ClickParam(click.ParamType):
             return value
 
         # Convert dialect URIs or shortnames to test suite URIs
-        input_dialect = Dialect.by_alias().get(value)
-        known_dialect = input_dialect if self._is_annotations else None
-        if self._is_annotations and input_dialect is not None:
-            value = ANNOTATIONS_DIR_URL
-        else:
-            value = input_dialect or value
-            value = URL_FOR_DIALECT.get(value, value)
+        known_dialect = Dialect.by_alias().get(value)
+        if known_dialect is not None:
+            value = (
+                ANNOTATIONS_DIR_URL if self._is_annotations else TESTS_DIR_URL
+            )
 
         def local(
             path: Path,
@@ -303,11 +297,13 @@ def path_and_ref_from_gh_path(path: list[str]) -> tuple[str, str]:
     for i in reversed(range(1, len(path))):
         if path[i] != "tests":
             continue
+        # A validation/tests directory is the unified validation suite.
         # An annotations/tests directory is the annotation suite,
         # unless what follows is a validation suite version directory.
         after = [each for each in path[i + 1 :] if each]
-        if path[i - 1] == "annotations" and (
-            not after or after[0].endswith(".json")
+        if path[i - 1] == "validation" or (
+            path[i - 1] == "annotations"
+            and (not after or after[0].endswith(".json"))
         ):
             i -= 1
         # remove tree/ or blob/ from the front of the ref
