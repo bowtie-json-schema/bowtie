@@ -669,7 +669,9 @@ def _format_cases():
 @pytest.mark.parametrize(
     ("dialect", "expected"),
     [
-        (DRAFT7, ["untagged", "annotation"]),
+        (DRAFT3, ["untagged"]),
+        (DRAFT7, ["untagged"]),
+        (DRAFT2019, ["untagged", "annotation"]),
         (DRAFT2020, ["untagged", "annotation"]),
         (V1, ["untagged", "assertion"]),
     ],
@@ -681,3 +683,56 @@ def test_validation_cases_from_respects_tags(tmp_path, dialect, expected):
     cases = validation_cases_from([path], dialect)
 
     assert [case.description for case in cases] == expected
+
+
+def test_validation_cases_from_tags_are_not_format_specific(
+    tmp_path,
+    monkeypatch,
+):
+    tests = [{"description": "any", "data": 1, "valid": True}]
+    path = tmp_path / "behaviors.json"
+    path.write_text(
+        json.dumps(
+            {
+                "description": "behaviors",
+                "tests": [
+                    {
+                        "description": "untagged",
+                        "schema": {},
+                        "tests": tests,
+                    },
+                    {
+                        "description": "expected",
+                        "tags": ["some-behavior"],
+                        "schema": {},
+                        "tests": tests,
+                    },
+                    {
+                        "description": "both expected",
+                        "tags": ["some-behavior", "other-behavior"],
+                        "schema": {},
+                        "tests": tests,
+                    },
+                    {
+                        "description": "partly expected",
+                        "tags": ["some-behavior", "unexpected-behavior"],
+                        "schema": {},
+                        "tests": tests,
+                    },
+                ],
+            },
+        ),
+    )
+    monkeypatch.setitem(
+        _suite._EXPECTED_TAGS,
+        "draft7",
+        frozenset({"some-behavior", "other-behavior"}),
+    )
+
+    cases = validation_cases_from([path], DRAFT7)
+
+    assert [case.description for case in cases] == [
+        "untagged",
+        "expected",
+        "both expected",
+    ]
