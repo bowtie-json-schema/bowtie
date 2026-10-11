@@ -231,8 +231,15 @@ def _with_explicit_dialect(schema: Any, dialect: Dialect) -> Any:
     return {"$schema": str(dialect.uri), **schema}
 
 
-#: Dialects whose ``format`` asserts by default, rather than annotating.
-_FORMAT_ASSERTING = {"v1"}
+#: The tagged behaviors Bowtie expects implementations to have by default,
+#: by dialect. Dialects not listed expect no tagged behavior, so they run
+#: only untagged cases. (Before 2019-09, for instance, ``format``'s behavior
+#: is up to implementations, so neither ``format`` behavior is expected.)
+_EXPECTED_TAGS = {
+    "draft2019-09": frozenset({"format-annotation"}),
+    "draft2020-12": frozenset({"format-annotation"}),
+    "v1": frozenset({"format-assertion"}),
+}
 
 
 def _expected_tags(dialect: Dialect) -> frozenset[str]:
@@ -240,12 +247,10 @@ def _expected_tags(dialect: Dialect) -> frozenset[str]:
     The tagged behaviors Bowtie expects implementations to have by default.
 
     The suite runs a case only if the implementation provides the behavior
-    associated with each of its tags. Cases tagged with any other behavior
-    (e.g. a ``format`` behavior that isn't the dialect's default) are skipped.
+    associated with each of its tags. Cases with any tag not expected for the
+    dialect (including tags Bowtie doesn't know) are skipped.
     """
-    if dialect.short_name in _FORMAT_ASSERTING:
-        return frozenset({"format-assertion"})
-    return frozenset({"format-annotation"})
+    return _EXPECTED_TAGS.get(dialect.short_name, frozenset())
 
 
 def _compatibility_version(dialect: Dialect) -> int:
