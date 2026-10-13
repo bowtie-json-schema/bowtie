@@ -13,6 +13,8 @@ const hyperjump_version = packageJson.version;
 var registerSchemaAndValidate;
 var unregisterSchema;
 var getRetrievalURI;
+var AnnotationsPlugin;
+var getKeywordName;
 
 await (async () => {
   if (semver.satisfies(hyperjump_version, ">=1.7.0")) {
@@ -40,6 +42,11 @@ await (async () => {
     unregisterSchema = JsonSchema.unregisterSchema;
     getRetrievalURI = (_, __, args) =>
       `https://example.com/bowtie-sent-schema-${args.seq.toString()}`;
+
+    if (semver.satisfies(hyperjump_version, ">=1.15.0")) {
+      ({ AnnotationsPlugin, getKeywordName } =
+        await import("@hyperjump/json-schema/experimental"));
+    }
   } else {
     if (semver.satisfies(hyperjump_version, ">=1.0.0")) {
       await Promise.all([
@@ -100,6 +107,22 @@ const stdio = readline.createInterface({
 function send(data) {
   console.log(JSON.stringify(data));
 }
+
+const fragmentOf = (uri) => decodeURI(uri.slice(uri.indexOf("#") + 1));
+
+// Unknown keywords aren't part of any dialect, so getKeywordName can't name
+// them, but their ids carry their names.
+const unknownKeywordPrefix = "https://json-schema.org/keyword/unknown#";
+const keywordName = (keywordId) => {
+  if (keywordId.startsWith(unknownKeywordPrefix)) {
+    return keywordId.slice(unknownKeywordPrefix.length);
+  }
+  // Hyperjump identifies dialects without an empty fragment.
+  return getKeywordName(dialect.replace(/#$/, ""), keywordId);
+};
+
+const annotationsUnsupportedMessage =
+  "Collecting annotations requires @hyperjump/json-schema 1.15.0 or later.";
 
 var started = false;
 var dialect = null;
@@ -186,7 +209,11 @@ const cmds = {
     const testCase = args.case;
 
     let results;
-    if (testCase.description in dialectSkippedTests[dialect]) {
+    if (args.output === "annotations" && !AnnotationsPlugin) {
+      results = testCase.tests.map((_) => {
+        return { skipped: true, message: annotationsUnsupportedMessage };
+      });
+    } else if (testCase.description in dialectSkippedTests[dialect]) {
       results = testCase.tests.map((_) => {
         return {
           skipped: true,
@@ -205,6 +232,18 @@ const cmds = {
 
         results = testCase.tests.map((test) => {
           try {
+            if (args.output === "annotations") {
+              const plugin = new AnnotationsPlugin();
+              const { valid } = _validate(test.instance, { plugins: [plugin] });
+              const annotations = plugin.annotations.map((annotation) => ({
+                keyword: keywordName(annotation.keyword),
+                instanceLocation: fragmentOf(annotation.instanceLocation),
+                absoluteKeywordLocation: annotation.absoluteKeywordLocation,
+                annotation: annotation.annotation,
+              }));
+              return { valid, annotations };
+            }
+
             const result = _validate(test.instance);
             return { valid: result.valid };
           } catch (error) {
