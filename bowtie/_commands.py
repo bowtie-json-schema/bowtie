@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, dataclass_transform
 import re
 import urllib.parse
 
-from attrs import asdict, field, fields, filters, frozen
+from attrs import asdict, evolve, field, fields, filters, frozen
 from url import URL
 
 from bowtie import HOMEPAGE, exceptions
@@ -215,7 +215,10 @@ def _by_decoded_location(expected: Mapping[str, Any]) -> dict[str, Any]:
 class Annotation:
     keyword: str = ""
     instanceLocation: str = ""
-    keywordLocation: str = ""
+    #: The keyword's location relative to the root schema.
+    keywordLocation: str | None = None
+    #: The keyword's location within the schema resource containing it.
+    absoluteKeywordLocation: str | None = None
     annotation: Any = None
 
     @classmethod
@@ -223,8 +226,39 @@ class Annotation:
         names = {each.name for each in fields(cls)}
         return cls(**{k: v for k, v in kwargs.items() if k in names})
 
+    @property
+    def location(self) -> str:
+        return urllib.parse.unquote(
+            self.keywordLocation or self.absoluteKeywordLocation or "",
+        )
+
+    def relative_to(self, resources: Mapping[str, str | None]) -> Self:
+        """
+        Locate this annotation relative to the root schema, if it isn't.
+
+        Takes the location within the root schema of each schema resource
+        embedded in it, or None for those outside of it. Any other resource
+        is the root schema resource, under whatever URI a harness assigned it.
+        """
+        if (
+            self.keywordLocation is not None
+            or not self.absoluteKeywordLocation
+        ):
+            return self
+        uri, _, fragment = self.absoluteKeywordLocation.partition("#")
+        root = resources.get(uri, "")
+        if root is None:
+            return self
+        return evolve(self, keywordLocation=f"#{root}{fragment}")
+
     def serializable(self) -> dict[str, Any]:
-        return asdict(self)
+        return asdict(
+            self,
+            filter=lambda k, v: (
+                k.name not in {"keywordLocation", "absoluteKeywordLocation"}
+                or v is not None
+            ),
+        )
 
 
 @frozen
@@ -272,8 +306,7 @@ class AnnotationsTestResult:
         for annotation in self.annotations:
             by_keyword = grouped.setdefault(annotation.instanceLocation, {})
             in_keyword = by_keyword.setdefault(annotation.keyword, {})
-            location = urllib.parse.unquote(annotation.keywordLocation)
-            in_keyword[location] = annotation.annotation
+            in_keyword[annotation.location] = annotation.annotation
         return grouped
 
 
@@ -580,6 +613,23 @@ class CaseResult:
 
     def result_for(self, i: int) -> AnyTestResult:
         return self.results[i]
+
+    def relative_to(self, resources: Mapping[str, str | None]) -> Self:
+        """
+        Locate any annotations relative to the root schema.
+        """
+        results = [
+            evolve(
+                result,
+                annotations=[
+                    each.relative_to(resources) for each in result.annotations
+                ],
+            )
+            if isinstance(result, AnnotationsTestResult)
+            else result
+            for result in self.results
+        ]
+        return evolve(self, results=results)
 
     def unsuccessful(
         self,
