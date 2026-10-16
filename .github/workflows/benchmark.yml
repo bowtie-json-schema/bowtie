@@ -94,7 +94,7 @@ jobs:
           bowtie perf $(bowtie filter-implementations | sed 's/^/-i /') -b "${MATRIX_BENCHMARK}" -D "${MATRIX_DIALECT}" -q > "benchmark-file-${MATRIX_ID}.json"
 
       - name: Upload Benchmark file as artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: benchmark-file-${{ matrix.dialect }}-${{ matrix.id }}
           path: benchmark-file-${{ matrix.id }}.json
@@ -151,7 +151,7 @@ jobs:
           EOF
 
       - name: Upload final Benchmark Report for dialect
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: benchmark-report-${{ matrix.dialect }}
           path: ${{ matrix.dialect }}.json
@@ -178,7 +178,7 @@ jobs:
           merge-multiple: true
 
       - name: Upload benchmarks
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: benchmarks
           path: benchmarks
