@@ -117,7 +117,7 @@ jobs:
           persist-credentials: false
 
       - name: Download Benchmark Reports for a dialect
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: benchmark-file-${{ matrix.dialect }}-*
           path: benchmarks-${{ matrix.dialect }}/
@@ -171,7 +171,7 @@ jobs:
         run: mkdir benchmarks
 
       - name: Include New Benchmark Reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: benchmark-report-*
           path: benchmarks/
