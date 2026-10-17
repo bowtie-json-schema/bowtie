@@ -100,13 +100,16 @@
 
   const allLangs = $derived([...new Set((data?.impls ?? []).map((i) => i.lang || "Other"))].sort());
 
-  const selected = $derived(
+  // What the language and compliance filters leave; the implementation chips choose among these.
+  const candidates = $derived(
     (data?.impls ?? [])
       .filter((i) => langs.length === 0 || langs.includes(i.lang || "Other"))
-      .filter((i) => chosen.length === 0 || chosen.includes(i.id))
-      .filter((i) => !onlyCompliant || isFullyCompliant(complianceFor(i.id)))
-      .map((i) => i.id),
+      .filter((i) => !onlyCompliant || isFullyCompliant(complianceFor(i.id))),
   );
+  // A pick the other filters have hidden stops counting, so picking none of the candidates means all of them.
+  const picked = $derived(chosen.filter((id) => candidates.some((i) => i.id === id)));
+  const shown = $derived(candidates.filter((i) => picked.length === 0 || picked.includes(i.id)));
+  const selected = $derived(shown.map((i) => i.id));
 
   // A baseline that the filters remove falls back to the fastest on each schema.
   const effectiveBaseline = $derived<Baseline>(
@@ -145,8 +148,11 @@
 
   let pickA = $state("");
   let pickB = $state("");
-  const a = $derived(pickA || ranking[0]?.impl || "");
-  const b = $derived(pickB || ranking.find((s) => s.impl !== a)?.impl || "");
+  // Only what the filters show; a pick they hide falls back to the leaders.
+  const a = $derived(selected.includes(pickA) ? pickA : ranking[0]?.impl || "");
+  const b = $derived(
+    selected.includes(pickB) && pickB !== a ? pickB : ranking.find((s) => s.impl !== a)?.impl || "",
+  );
   const h2h = $derived(table && data && a && b ? headToHead(table, data.schemas, a, b) : null);
 
   /* ---------- run info ---------- */
@@ -227,9 +233,9 @@
           </div>
           <div>
             <label class="label" for="baseline">Compare with</label>
-            <select id="baseline" class="select" bind:value={baseline}>
+            <select id="baseline" class="select" value={effectiveBaseline} onchange={(e) => (baseline = (e.target as HTMLSelectElement).value)}>
               <option value="fastest">The {bestWord(metric)} on each schema</option>
-              {#each data.impls as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
             </select>
           </div>
           <div>
@@ -260,8 +266,8 @@
           <div>
             <span class="label">Implementations · {selected.length} of {data.impls.length} shown</span>
             <div class="chips">
-              {#each data.impls as i (i.id)}
-                <button class="chip impl-chip" aria-pressed={chosen.includes(i.id)} onclick={() => (chosen = toggle(chosen, i.id))}>
+              {#each candidates as i (i.id)}
+                <button class="chip impl-chip" aria-pressed={picked.includes(i.id)} onclick={() => (chosen = toggle(picked, i.id))}>
                   {i.name}
                   <ComplianceChip compliance={complianceFor(i.id)} dialectName={dialect.prettyName} />
                 </button>
@@ -352,11 +358,11 @@
           <span>Head to head</span>
           <span class="controls">
             <select class="select" aria-label="First implementation" value={a} onchange={(e) => (pickA = (e.target as HTMLSelectElement).value)}>
-              {#each data.impls as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
             </select>
             <span class="vs">vs</span>
             <select class="select" aria-label="Second implementation" value={b} onchange={(e) => (pickB = (e.target as HTMLSelectElement).value)}>
-              {#each data.impls as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
             </select>
           </span>
         </header>

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { test, expect } from "@playwright/test";
 
 import { serveRealWorldResults } from "./fixtures/realWorld";
@@ -115,4 +118,39 @@ test("on a desktop the page is exactly the window's width", async ({ page }) => 
   await page.waitForSelector(rows);
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1360);
+});
+
+test.describe("a language filter", () => {
+  const fixture = JSON.parse(
+    readFileSync(fileURLToPath(new URL("./fixtures/jsonschema-benchmark.json", import.meta.url)), "utf8"),
+  ) as { impls: { id: string; lang: string }[] };
+  const inLanguage = (lang: string) => fixture.impls.filter((i) => i.lang === lang).length;
+
+  test("narrows the implementation list and every menu", async ({ page }) => {
+    await page.goto("/#/benchmarks");
+    await page.waitForSelector(rows);
+
+    await page.locator(".filters .chip", { hasText: /^Rust$/ }).click();
+
+    const rust = inLanguage("Rust");
+    await expect(page.locator(".filters .impl-chip")).toHaveCount(rust);
+    await expect(page.locator(rows)).toHaveCount(rust);
+    // the fastest on each schema, then each Rust implementation
+    await expect(page.locator("#baseline option")).toHaveCount(rust + 1);
+    await expect(page.getByLabel("First implementation").locator("option")).toHaveCount(rust);
+  });
+
+  test("a pick it hides stops counting", async ({ page }) => {
+    await page.goto("/#/benchmarks");
+    await page.waitForSelector(rows);
+
+    await page.locator(".filters .chip", { hasText: /^Rust$/ }).click();
+    await page.locator(".filters .impl-chip", { hasText: "boon" }).click();
+    await expect(page.locator(rows)).toHaveCount(1);
+
+    // swap Rust for Python: boon is hidden, so every Python implementation shows
+    await page.locator(".filters .chip", { hasText: /^Rust$/ }).click();
+    await page.locator(".filters .chip", { hasText: /^Python$/ }).click();
+    await expect(page.locator(rows)).toHaveCount(inLanguage("Python"));
+  });
 });
