@@ -91,6 +91,14 @@ export default class Dialect {
     return dialect;
   }
 
+  /**
+   * Whether Bowtie knows the dialect only as a prerelease, which the site
+   * leaves out until it is published (see the loop at the end of this file).
+   */
+  static isPrerelease(uri: string): boolean {
+    return data.some((each) => each.uri === uri && each.prerelease === true);
+  }
+
   static forURI(uri: string): Dialect {
     const dialect = Array.from(Dialect.all.values()).find(
       (dialect) => dialect.uri === uri,
