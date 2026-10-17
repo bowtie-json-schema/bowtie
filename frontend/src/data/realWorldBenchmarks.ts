@@ -89,12 +89,12 @@ export function parseRealWorldData(text: string): RealWorldData {
  * (see vite.config.ts).
  */
 export function realWorldDataURI(): URI {
-  const base =
-    import.meta.env.MODE === "development"
-      ? new URI(window.location.href).fragment("").search("").directory(import.meta.env.BASE_URL)
-      : siteURI;
+  if (import.meta.env.MODE === "development") {
+    // Resolved against the page, so that any base works: "/", "/bowtie/" or a relative "./".
+    return new URI(`${import.meta.env.BASE_URL}jsonschema-benchmark/data.json`).absoluteTo(window.location.href);
+  }
   // segment(string) appends; segment(array) would replace the site's base path.
-  return base.clone().filename("").segment("jsonschema-benchmark").segment("data.json");
+  return siteURI.clone().filename("").segment("jsonschema-benchmark").segment("data.json");
 }
 
 export async function fetchRealWorldData(uri: URI = realWorldDataURI()): Promise<RealWorldData> {
