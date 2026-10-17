@@ -187,226 +187,234 @@
 {:else if !data || !table}
   <Spinner />
 {:else}
-  <div class="doc">
-    <div class="doc-inner">
-      <div class="page-head">
-        <h1 class="page">Real-world benchmarks</h1>
+  <div class="shell bench-shell">
+    <aside class="rail filters" aria-label="Filters">
+      <div class="rail-group">
         <DialectPicker current={dialect.shortName} base="/benchmarks" />
       </div>
-      <p class="h-lead">
-        How fast JSON Schema implementations validate real-world schemas and instances, from Sourcemeta’s
-        <a href={BENCHMARK_REPOSITORY}>jsonschema-benchmark</a>, alongside how each one fares in Bowtie on
-        {dialect.prettyName}. Choose a measure and the implementations to compare; every chart follows.
-      </p>
 
-      <div class="card">
-        <header>Run info</header>
-        <div class="body">
-          <table class="kv">
-            <tbody>
-              <tr><th>Source</th><td><a href={BENCHMARK_REPOSITORY}>sourcemeta-research/jsonschema-benchmark</a></td></tr>
-              {#if data.meta.date}
-                <tr><th>Ran</th><td>{ranAgo}{#if data.meta.runUrl} · <a href={data.meta.runUrl}>workflow run</a>{/if}</td></tr>
-              {/if}
-              {#if data.meta.commit}
-                <tr><th>Commit</th><td class="mono"><a href={`https://github.com/${data.meta.repo}/commit/${data.meta.commit}`}>{data.meta.commit.slice(0, 10)}</a></td></tr>
-              {/if}
-              {#if data.meta.runner}<tr><th>Machines</th><td>{data.meta.runner}</td></tr>{/if}
-              <tr><th>Schemas</th><td>{schemasByDialect}</td></tr>
-              <tr><th>Implementations</th><td>{data.impls.length}, of which Bowtie tests {linkedCount}</td></tr>
-              <tr><th>Runs</th><td>{data.meta.runs} of each, in a fresh container; the median is shown</td></tr>
-            </tbody>
-          </table>
+      <div class="rail-group">
+        <span class="label">Measure</span>
+        <div class="chips">
+          {#each Object.entries(METRICS) as [key, m] (key)}
+            <button class="chip" aria-pressed={metric === key} onclick={() => (metric = key as MetricKey)}>{m.label}</button>
+          {/each}
         </div>
       </div>
 
-      <div class="card">
-        <header>Filtering</header>
-        <div class="body filters">
-          <div>
-            <span class="label">Measure</span>
-            <div class="chips">
-              {#each Object.entries(METRICS) as [key, m] (key)}
-                <button class="chip" aria-pressed={metric === key} onclick={() => (metric = key as MetricKey)}>{m.label}</button>
-              {/each}
-            </div>
-          </div>
-          <div>
-            <label class="label" for="baseline">Compare with</label>
-            <select id="baseline" class="select" value={effectiveBaseline} onchange={(e) => (baseline = (e.target as HTMLSelectElement).value)}>
-              <option value="fastest">The {bestWord(metric)} on each schema</option>
-              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
-            </select>
-          </div>
-          <div>
-            <span class="label">Bowtie compliance</span>
-            <div class="chips">
-              <button class="chip" aria-pressed={onlyCompliant} onclick={() => (onlyCompliant = !onlyCompliant)}>
-                Only 100% on {dialect.prettyName}
+      <div class="rail-group">
+        <label class="label" for="baseline">Compare with</label>
+        <select id="baseline" class="select" value={effectiveBaseline} onchange={(e) => (baseline = (e.target as HTMLSelectElement).value)}>
+          <option value="fastest">The {bestWord(metric)} on each schema</option>
+          {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+        </select>
+      </div>
+
+      <div class="rail-group">
+        <span class="label">Bowtie compliance</span>
+        <div class="chips">
+          <button class="chip" aria-pressed={onlyCompliant} onclick={() => (onlyCompliant = !onlyCompliant)}>
+            Only 100% on {dialect.prettyName}
+          </button>
+        </div>
+        <p class="hint">
+          {#if !complianceLoaded}
+            Loading Bowtie’s results for {dialect.prettyName}…
+          {:else}
+            {data.impls.filter((i) => isFullyCompliant(complianceFor(i.id))).length} of {data.impls.length} pass
+            every Bowtie test of {dialect.prettyName}. Implementations Bowtie does not test are left out by this
+            filter; change the dialect above.
+          {/if}
+        </p>
+      </div>
+
+      <div class="rail-group">
+        <span class="label">Language</span>
+        <div class="chips">
+          {#each allLangs as lang (lang)}
+            <button class="chip" aria-pressed={langs.includes(lang)} onclick={() => (langs = toggle(langs, lang))}>{lang}</button>
+          {/each}
+        </div>
+      </div>
+
+      <div class="rail-group">
+        <div class="group-head">
+          <span class="label">Implementations</span>
+          <span class="impl-count">{selected.length} / {data.impls.length}</span>
+        </div>
+        <ul class="impl-list">
+          {#each candidates as i (i.id)}
+            <li>
+              <button class="impl-chip" aria-pressed={picked.includes(i.id)} onclick={() => (chosen = toggle(picked, i.id))}>
+                <span class="nm">{i.name}</span>
+                <ComplianceChip compliance={complianceFor(i.id)} dialectName={dialect.prettyName} />
               </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div class="center-inner">
+        <h1 class="page">Real-world benchmarks</h1>
+        <p class="h-lead">
+          How fast JSON Schema implementations validate real-world schemas and instances, from Sourcemeta’s
+          <a href={BENCHMARK_REPOSITORY}>jsonschema-benchmark</a>, alongside how each one fares in Bowtie on
+          {dialect.prettyName}. Choose a measure and the implementations to compare; every chart follows.
+        </p>
+          <div class="card">
+            <header>Run info</header>
+            <div class="body">
+              <table class="kv">
+                <tbody>
+                  <tr><th>Source</th><td><a href={BENCHMARK_REPOSITORY}>sourcemeta-research/jsonschema-benchmark</a></td></tr>
+                  {#if data.meta.date}
+                    <tr><th>Ran</th><td>{ranAgo}{#if data.meta.runUrl} · <a href={data.meta.runUrl}>workflow run</a>{/if}</td></tr>
+                  {/if}
+                  {#if data.meta.commit}
+                    <tr><th>Commit</th><td class="mono"><a href={`https://github.com/${data.meta.repo}/commit/${data.meta.commit}`}>{data.meta.commit.slice(0, 10)}</a></td></tr>
+                  {/if}
+                  {#if data.meta.runner}<tr><th>Machines</th><td>{data.meta.runner}</td></tr>{/if}
+                  <tr><th>Schemas</th><td>{schemasByDialect}</td></tr>
+                  <tr><th>Implementations</th><td>{data.impls.length}, of which Bowtie tests {linkedCount}</td></tr>
+                  <tr><th>Runs</th><td>{data.meta.runs} of each, in a fresh container; the median is shown</td></tr>
+                </tbody>
+              </table>
             </div>
-            <p class="hint">
-              {#if !complianceLoaded}
-                Loading Bowtie’s results for {dialect.prettyName}…
+          </div>
+
+          <div class="card">
+            <header>Overall · {METRICS[metric].long}, geometric mean across schemas</header>
+            <div class="body">
+              {#if ranking.length === 0}
+                <div class="empty-note">No implementation matches the filters.</div>
               {:else}
-                {data.impls.filter((i) => isFullyCompliant(complianceFor(i.id))).length} of {data.impls.length} pass
-                every Bowtie test of {dialect.prettyName}. Implementations Bowtie does not test are left out by this
-                filter; change the dialect above.
+                <RatioBars
+                  summaries={ranking}
+                  baseline={effectiveBaseline}
+                  {metric}
+                  totalSchemas={data.schemas.length}
+                  labelFor={(id) => ({ name: nameOf(id), lang: implById.get(id)?.lang ?? "", version: implById.get(id)?.version.split(" ")[0] ?? "", href: hrefOf(id) })}
+                  {complianceFor}
+                  dialectName={dialect.prettyName}
+                />
               {/if}
-            </p>
-          </div>
-          <div>
-            <span class="label">Language</span>
-            <div class="chips">
-              {#each allLangs as lang (lang)}
-                <button class="chip" aria-pressed={langs.includes(lang)} onclick={() => (langs = toggle(langs, lang))}>{lang}</button>
-              {/each}
             </div>
           </div>
-          <div>
-            <span class="label">Implementations · {selected.length} of {data.impls.length} shown</span>
-            <div class="chips">
-              {#each candidates as i (i.id)}
-                <button class="chip impl-chip" aria-pressed={picked.includes(i.id)} onclick={() => (chosen = toggle(picked, i.id))}>
-                  {i.name}
-                  <ComplianceChip compliance={complianceFor(i.id)} dialectName={dialect.prettyName} />
-                </button>
-              {/each}
+
+          <div class="card">
+            <header class="split">
+              <span>By schema</span>
+              <span class="controls">
+                <label class="inline"><span class="label">Order</span>
+                  <select class="select" bind:value={order}>
+                    <option value="name">Name</option><option value="docs">Instances</option>
+                    <option value="size">Schema size</option><option value="spread">Spread</option>
+                  </select>
+                </label>
+                <button class="chip" aria-pressed={showMedian} onclick={() => (showMedian = !showMedian)}>Medians</button>
+              </span>
+            </header>
+            <div class="body">
+              <p class="hint">
+                {showMedian ? "The median of each implementation on each schema" : effectiveBaseline === "fastest"
+                  ? `Each implementation as a multiple of the ${bestWord(metric)} of the selection on each schema`
+                  : `Each implementation as a multiple of ${nameOf(effectiveBaseline)}: below 1 is ${betterWord(metric)}, above ${worseWord(metric)}`}.
+                Darker is further from level; ✕ failed to validate, · not run. Choose a schema for its detail.
+              </p>
+              <RatioMatrix
+                {table}
+                schemas={orderedSchemas}
+                columns={ranking.map((s) => s.impl)}
+                baseline={effectiveBaseline}
+                {selected}
+                {metric}
+                {showMedian}
+                {nameOf}
+                current={currentSchema}
+                onSchema={showSchema}
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="card">
-        <header>Overall · {METRICS[metric].long}, geometric mean across schemas</header>
-        <div class="body">
-          {#if ranking.length === 0}
-            <div class="empty-note">No implementation matches the filters.</div>
-          {:else}
-            <RatioBars
-              summaries={ranking}
-              baseline={effectiveBaseline}
-              {metric}
-              totalSchemas={data.schemas.length}
-              labelFor={(id) => ({ name: nameOf(id), lang: implById.get(id)?.lang ?? "", version: implById.get(id)?.version.split(" ")[0] ?? "", href: hrefOf(id) })}
-              {complianceFor}
-              dialectName={dialect.prettyName}
-            />
-          {/if}
-        </div>
-      </div>
+          <div class="card" id="schema-detail">
+            <header class="split">
+              <label class="inline"><span>Schema</span>
+                <select class="select" value={currentSchema} onchange={(e) => (schemaName = (e.target as HTMLSelectElement).value)}>
+                  {#each data.schemas as s (s.name)}<option value={s.name}>{s.name}</option>{/each}
+                </select>
+              </label>
+              <span class="controls">
+                <button class="chip" aria-pressed={logScale} onclick={() => (logScale = !logScale)}>Log scale</button>
+              </span>
+            </header>
+            <div class="body">
+              {#if schemaInfo}
+                <p class="hint mono">
+                  {#if schemaInfo.docs}{schemaInfo.docs} instances · {/if}{#if schemaInfo.avgDoc}{Math.round(schemaInfo.avgDoc)} bytes each on average · {/if}{#if schemaInfo.sizeKb}{schemaInfo.sizeKb} KB schema · {/if}<a href={`${BENCHMARK_REPOSITORY}/tree/main/schemas/${encodeURIComponent(schemaInfo.name)}`}>schema and instances</a>
+                </p>
+              {/if}
+              <SchemaBars {table} schema={currentSchema} {selected} baseline={effectiveBaseline} {metric} log={logScale} {nameOf} {hrefOf} />
+              <p class="hint">Bars show the median of {data.meta.runs} runs; the whisker spans the {METRICS[metric].kb ? "lowest and highest" : "fastest and slowest"} run.</p>
+            </div>
+          </div>
 
-      <div class="card">
-        <header class="split">
-          <span>By schema</span>
-          <span class="controls">
-            <label class="inline"><span class="label">Order</span>
-              <select class="select" bind:value={order}>
-                <option value="name">Name</option><option value="docs">Instances</option>
-                <option value="size">Schema size</option><option value="spread">Spread</option>
-              </select>
-            </label>
-            <button class="chip" aria-pressed={showMedian} onclick={() => (showMedian = !showMedian)}>Medians</button>
-          </span>
-        </header>
-        <div class="body">
-          <p class="hint">
-            {showMedian ? "The median of each implementation on each schema" : effectiveBaseline === "fastest"
-              ? `Each implementation as a multiple of the ${bestWord(metric)} of the selection on each schema`
-              : `Each implementation as a multiple of ${nameOf(effectiveBaseline)}: below 1 is ${betterWord(metric)}, above ${worseWord(metric)}`}.
-            Darker is further from level; ✕ failed to validate, · not run. Choose a schema for its detail.
-          </p>
-          <RatioMatrix
-            {table}
-            schemas={orderedSchemas}
-            columns={ranking.map((s) => s.impl)}
-            baseline={effectiveBaseline}
-            {selected}
-            {metric}
-            {showMedian}
-            {nameOf}
-            current={currentSchema}
-            onSchema={showSchema}
-          />
-        </div>
-      </div>
+          <div class="card">
+            <header class="split">
+              <span>Head to head</span>
+              <span class="controls">
+                <select class="select" aria-label="First implementation" value={a} onchange={(e) => (pickA = (e.target as HTMLSelectElement).value)}>
+                  {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+                </select>
+                <span class="vs">vs</span>
+                <select class="select" aria-label="Second implementation" value={b} onchange={(e) => (pickB = (e.target as HTMLSelectElement).value)}>
+                  {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
+                </select>
+              </span>
+            </header>
+            <div class="body">
+              {#if h2h && h2h.points.length}
+                <p class="hint">
+                  On {METRICS[metric].long}, <b>{nameOf(a)}</b> is {betterWord(metric)} on {h2h.aWins} of the
+                  {h2h.points.length} schemas both complete, and <b>{nameOf(b)}</b> on {h2h.points.length - h2h.aWins}.
+                  Geometric mean: {nameOf(a)} is {h2h.geomean < 1 ? `${significant(1 / h2h.geomean)}× ${betterWord(metric)}` : `${significant(h2h.geomean)}× ${worseWord(metric)}`}.
+                  {#if h2h.aFailed || h2h.bFailed}Left out: schemas that one of them fails ({h2h.aFailed} and {h2h.bFailed}).{/if}
+                </p>
+                <HeadToHeadChart result={h2h} a={nameOf(a)} b={nameOf(b)} {metric} />
+              {:else}
+                <div class="empty-note">These two implementations have no schema in common to compare.</div>
+              {/if}
+            </div>
+          </div>
 
-      <div class="card" id="schema-detail">
-        <header class="split">
-          <label class="inline"><span>Schema</span>
-            <select class="select" value={currentSchema} onchange={(e) => (schemaName = (e.target as HTMLSelectElement).value)}>
-              {#each data.schemas as s (s.name)}<option value={s.name}>{s.name}</option>{/each}
-            </select>
-          </label>
-          <span class="controls">
-            <button class="chip" aria-pressed={logScale} onclick={() => (logScale = !logScale)}>Log scale</button>
-          </span>
-        </header>
-        <div class="body">
-          {#if schemaInfo}
-            <p class="hint mono">
-              {#if schemaInfo.docs}{schemaInfo.docs} instances · {/if}{#if schemaInfo.avgDoc}{Math.round(schemaInfo.avgDoc)} bytes each on average · {/if}{#if schemaInfo.sizeKb}{schemaInfo.sizeKb} KB schema · {/if}<a href={`${BENCHMARK_REPOSITORY}/tree/main/schemas/${encodeURIComponent(schemaInfo.name)}`}>schema and instances</a>
-            </p>
-          {/if}
-          <SchemaBars {table} schema={currentSchema} {selected} baseline={effectiveBaseline} {metric} log={logScale} {nameOf} {hrefOf} />
-          <p class="hint">Bars show the median of {data.meta.runs} runs; the whisker spans the {METRICS[metric].kb ? "lowest and highest" : "fastest and slowest"} run.</p>
-        </div>
+          <div class="card">
+            <header>How to read this</header>
+            <div class="body about">
+              <p>
+                Every figure is a total over all the instances of a schema. <b>Cold</b> is the first validation pass after
+                the schema is compiled, without compilation or process start-up; <b>warm</b> is a later pass at steady
+                state; <b>parse</b> is parsing every instance from memory; <b>compile</b> is preparing the schema.
+                <b>Parse + warm</b> is what a service validating each request pays at steady state, and
+                <b>compile + parse + cold</b> is the whole path from an uncompiled schema. <b>Peak memory</b> is the
+                container’s maximum resident set size.
+              </p>
+              <p>
+                If any run fails to validate an instance, the schema counts as failed for that implementation and is left
+                out of its comparisons. The overall figure is the geometric mean of the per-schema ratios, so one large
+                schema cannot dominate it, and an implementation is not penalised for the schemas it fails; check its
+                coverage before reading its rank.
+              </p>
+              <p>
+                The measurements, the schemas and the implementations’ harnesses are all in
+                <a href={BENCHMARK_REPOSITORY}>sourcemeta-research/jsonschema-benchmark</a>, whose README describes the
+                method. An implementation links to its Bowtie results through a <code>bowtie</code> file in its directory
+                there.
+              </p>
+            </div>
+          </div>
       </div>
-
-      <div class="card">
-        <header class="split">
-          <span>Head to head</span>
-          <span class="controls">
-            <select class="select" aria-label="First implementation" value={a} onchange={(e) => (pickA = (e.target as HTMLSelectElement).value)}>
-              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
-            </select>
-            <span class="vs">vs</span>
-            <select class="select" aria-label="Second implementation" value={b} onchange={(e) => (pickB = (e.target as HTMLSelectElement).value)}>
-              {#each shown as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
-            </select>
-          </span>
-        </header>
-        <div class="body">
-          {#if h2h && h2h.points.length}
-            <p class="hint">
-              On {METRICS[metric].long}, <b>{nameOf(a)}</b> is {betterWord(metric)} on {h2h.aWins} of the
-              {h2h.points.length} schemas both complete, and <b>{nameOf(b)}</b> on {h2h.points.length - h2h.aWins}.
-              Geometric mean: {nameOf(a)} is {h2h.geomean < 1 ? `${significant(1 / h2h.geomean)}× ${betterWord(metric)}` : `${significant(h2h.geomean)}× ${worseWord(metric)}`}.
-              {#if h2h.aFailed || h2h.bFailed}Left out: schemas that one of them fails ({h2h.aFailed} and {h2h.bFailed}).{/if}
-            </p>
-            <HeadToHeadChart result={h2h} a={nameOf(a)} b={nameOf(b)} {metric} />
-          {:else}
-            <div class="empty-note">These two implementations have no schema in common to compare.</div>
-          {/if}
-        </div>
-      </div>
-
-      <div class="card">
-        <header>How to read this</header>
-        <div class="body about">
-          <p>
-            Every figure is a total over all the instances of a schema. <b>Cold</b> is the first validation pass after
-            the schema is compiled, without compilation or process start-up; <b>warm</b> is a later pass at steady
-            state; <b>parse</b> is parsing every instance from memory; <b>compile</b> is preparing the schema.
-            <b>Parse + warm</b> is what a service validating each request pays at steady state, and
-            <b>compile + parse + cold</b> is the whole path from an uncompiled schema. <b>Peak memory</b> is the
-            container’s maximum resident set size.
-          </p>
-          <p>
-            If any run fails to validate an instance, the schema counts as failed for that implementation and is left
-            out of its comparisons. The overall figure is the geometric mean of the per-schema ratios, so one large
-            schema cannot dominate it, and an implementation is not penalised for the schemas it fails; check its
-            coverage before reading its rank.
-          </p>
-          <p>
-            The measurements, the schemas and the implementations’ harnesses are all in
-            <a href={BENCHMARK_REPOSITORY}>sourcemeta-research/jsonschema-benchmark</a>, whose README describes the
-            method. An implementation links to its Bowtie results through a <code>bowtie</code> file in its directory
-            there.
-          </p>
-        </div>
-      </div>
-    </div>
+    </main>
   </div>
 {/if}
 
@@ -415,16 +423,25 @@
 <svelte:window onscroll={() => chartTip.hide()} />
 
 <style>
-  .doc-inner {
+  /* Bowtie's page shell without its detail column: the filters in the rail,
+     which scrolls apart from the results, so they stay in view. */
+  .bench-shell {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .center-inner {
     max-width: 1080px;
   }
-  .filters {
-    display: grid;
-    gap: 16px;
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
   }
-  .filters .label {
-    display: block;
-    margin-bottom: 8px;
+  .rail .hint {
+    margin: 0;
+    font-size: var(--fs-xs);
+  }
+  .rail .select {
+    width: 100%;
   }
   .hint {
     margin: 8px 0 0;
@@ -445,10 +462,33 @@
     padding: 5px 9px;
     max-width: 100%;
   }
+  /* One row per implementation, like the rail's list on Bowtie's other pages;
+     picking rows narrows the charts to them. */
   .impl-chip {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    font-size: var(--fs-sm);
+    text-align: left;
+    cursor: pointer;
+  }
+  .impl-chip:hover {
+    background: var(--surface-2);
+  }
+  .impl-chip[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+    color: var(--accent);
+  }
+  .impl-chip .nm {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .card > header.split {
     display: flex;

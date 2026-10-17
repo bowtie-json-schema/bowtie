@@ -100,7 +100,7 @@ test.describe("on a phone", () => {
         card: box.closest(".card")!.getBoundingClientRect().width,
         box: box.getBoundingClientRect().width,
         scrolls: box.scrollWidth > box.clientWidth,
-        content: document.querySelector(".doc")!.scrollWidth,
+        content: document.querySelector(".center")!.scrollWidth,
       };
     });
     expect(sizes.box).toBeLessThan(sizes.card);
@@ -110,6 +110,18 @@ test.describe("on a phone", () => {
     // about 1,470px wide.
     expect(sizes.content).toBeLessThan(600);
   });
+});
+
+test("on a desktop the filters stay in view while the results scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1360, height: 900 });
+  await page.goto("/#/benchmarks");
+  await page.waitForSelector(rows);
+
+  // The results scroll in their own column; the rail with the filters does not move.
+  await page.locator(".center").evaluate((center) => center.scrollTo(0, center.scrollHeight));
+  await expect(page.locator(".card > header", { hasText: "How to read this" })).toBeInViewport();
+  await expect(page.getByLabel("Choose dialect")).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Peak memory" })).toBeInViewport();
 });
 
 test("on a desktop the page is exactly the window's width", async ({ page }) => {

@@ -137,7 +137,7 @@
 <style>
   .rbars {
     display: grid;
-    grid-template-columns: minmax(130px, 220px) auto minmax(120px, 1fr) minmax(90px, 160px) 44px;
+    grid-template-columns: minmax(130px, 220px) auto minmax(120px, 1fr) minmax(90px, 160px) 60px;
     column-gap: 12px;
     font-size: var(--fs-sm);
   }
