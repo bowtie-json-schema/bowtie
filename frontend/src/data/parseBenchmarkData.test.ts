@@ -63,14 +63,17 @@ describe("parseBenchmarkReportData", () => {
       const benchmark_string: string = JSON.stringify(valid_sample_benchmark);
       let output: string;
 
-      const id = "direct:null";
+      // Bowtie reaches it through the direct connector, but a report names
+      // the implementation without its connector (bowtie/_connectables.py).
+      const connectable = "direct:null";
+      const id = "null";
       const tempdir = await mkdtemp(join(tmpdir(), "bowtie-ui-tests-"));
 
       try {
         const benchmark = join(tempdir, "benchmark.json");
         await writeFile(benchmark, benchmark_string);
 
-        output = bowtie(["perf", "-i", id, benchmark]);
+        output = bowtie(["perf", "-i", connectable, benchmark]);
       } finally {
         await rm(tempdir, { recursive: true });
       }
