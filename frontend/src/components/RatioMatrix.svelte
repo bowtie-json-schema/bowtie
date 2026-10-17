@@ -113,6 +113,11 @@
 
 <style>
   .matrix-scroll {
+    /* A scroll box still lends the page its content's width when the page is
+       sized; this keeps the wide matrix from widening the page on a phone. */
+    contain: inline-size;
+    /* and keeps the screen-reader labels, which are positioned, inside it */
+    position: relative;
     overflow-x: auto;
     border: 1px solid var(--border);
     border-radius: 8px;

@@ -83,3 +83,36 @@ test("choosing a schema in the matrix shows its detail", async ({ page }) => {
   await expect(page.locator("#schema-detail select")).toHaveValue("geojson");
   await expect(page.locator(".sbars [data-impl]").first()).toBeVisible();
 });
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the wide matrix scrolls inside its card instead of widening the page", async ({ page }) => {
+    await page.goto("/#/benchmarks");
+    await page.waitForSelector(rows);
+
+    const sizes = await page.evaluate(() => {
+      const box = document.querySelector(".matrix-scroll")!;
+      return {
+        card: box.closest(".card")!.getBoundingClientRect().width,
+        box: box.getBoundingClientRect().width,
+        scrolls: box.scrollWidth > box.clientWidth,
+        content: document.querySelector(".doc")!.scrollWidth,
+      };
+    });
+    expect(sizes.box).toBeLessThan(sizes.card);
+    expect(sizes.scrolls).toBe(true);
+    // Bowtie's menu bar itself is a little wider than a phone (about 435 to
+    // 470px), as on its other pages; the matrix alone would make the page
+    // about 1,470px wide.
+    expect(sizes.content).toBeLessThan(600);
+  });
+});
+
+test("on a desktop the page is exactly the window's width", async ({ page }) => {
+  await page.setViewportSize({ width: 1360, height: 900 });
+  await page.goto("/#/benchmarks");
+  await page.waitForSelector(rows);
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1360);
+});
