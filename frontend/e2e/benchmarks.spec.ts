@@ -53,6 +53,17 @@ test("keeps only the implementations at 100% on the chosen dialect", async ({ pa
   }
 });
 
+test("peak memory is compared by the lowest memory, not the fastest", async ({ page }) => {
+  await page.goto("/#/benchmarks");
+  await page.waitForSelector(rows);
+
+  await page.getByRole("button", { name: "Peak memory" }).click();
+
+  await expect(page.locator(".rbars .c-val").first()).toHaveText("× the lowest memory");
+  await expect(page.locator("#baseline option[value=fastest]")).toHaveText("The lowest memory on each schema");
+  await expect(page.locator(".rbars")).not.toContainText("fastest");
+});
+
 test("the dialect picker chooses which compliance counts", async ({ page }) => {
   await page.goto("/#/benchmarks/draft7");
   await page.waitForSelector(rows);

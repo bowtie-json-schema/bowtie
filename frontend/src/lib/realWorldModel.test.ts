@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { RealWorldData, SchemaResult } from "../data/realWorldBenchmarks";
 import {
   MetricTable,
+  bestWord,
   formatRatio,
   formatValue,
   geomean,
@@ -141,6 +142,13 @@ describe("formatting", () => {
     expect(formatRatio(3, "memory", "b")).toBe("3.00× larger");
     expect(formatRatio(1.07, "warm", "fastest")).toBe("1.07× the fastest");
     expect(formatRatio(1, "warm", "fastest")).toBe("fastest");
+  });
+
+  test("memory is compared by how little it uses", () => {
+    expect(formatRatio(1.5, "memory", "fastest")).toBe("1.50× the lowest memory");
+    expect(formatRatio(1, "memory", "fastest")).toBe("lowest memory");
+    expect(bestWord("memory")).toBe("lowest memory");
+    expect(bestWord("warmParse")).toBe("fastest");
   });
 });
 

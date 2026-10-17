@@ -15,6 +15,7 @@
     type MetricKey,
     METRICS,
     MetricTable,
+    bestWord,
     betterWord,
     headToHead,
     rank,
@@ -227,7 +228,7 @@
           <div>
             <label class="label" for="baseline">Compare with</label>
             <select id="baseline" class="select" bind:value={baseline}>
-              <option value="fastest">The fastest on each schema</option>
+              <option value="fastest">The {bestWord(metric)} on each schema</option>
               {#each data.impls as i (i.id)}<option value={i.id}>{i.name}</option>{/each}
             </select>
           </div>
@@ -305,7 +306,7 @@
         <div class="body">
           <p class="hint">
             {showMedian ? "The median of each implementation on each schema" : effectiveBaseline === "fastest"
-              ? "Each implementation as a multiple of the fastest selected implementation on each schema"
+              ? `Each implementation as a multiple of the ${bestWord(metric)} of the selection on each schema`
               : `Each implementation as a multiple of ${nameOf(effectiveBaseline)}: below 1 is ${betterWord(metric)}, above ${worseWord(metric)}`}.
             Darker is further from level; ✕ failed to validate, · not run. Choose a schema for its detail.
           </p>
@@ -342,7 +343,7 @@
             </p>
           {/if}
           <SchemaBars {table} schema={currentSchema} {selected} baseline={effectiveBaseline} {metric} log={logScale} {nameOf} {hrefOf} />
-          <p class="hint">Bars show the median of {data.meta.runs} runs; the whisker spans the fastest and slowest run.</p>
+          <p class="hint">Bars show the median of {data.meta.runs} runs; the whisker spans the {METRICS[metric].kb ? "lowest and highest" : "fastest and slowest"} run.</p>
         </div>
       </div>
 

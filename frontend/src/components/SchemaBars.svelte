@@ -6,6 +6,7 @@
     type MetricKey,
     type MetricTable,
     METRICS,
+    bestWord,
     formatRatio,
     formatValue,
     ratio,
@@ -83,7 +84,7 @@
               ["Median", formatValue(cell.median, kb)],
               ["Runs", cell.runs.map((v) => formatValue(v, kb)).join(", ")],
               [
-                baseline === "fastest" ? "Against the fastest" : `Against ${nameOf(baseline)}`,
+                baseline === "fastest" ? `Against the ${bestWord(metric)}` : `Against ${nameOf(baseline)}`,
                 formatRatio(ratio(table, id, schema, baseline, selected), metric, baseline),
               ],
             ]

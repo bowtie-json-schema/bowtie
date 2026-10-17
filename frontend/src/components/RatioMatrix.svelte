@@ -6,6 +6,7 @@
     type MetricKey,
     type MetricTable,
     METRICS,
+    bestWord,
     formatRatio,
     formatValue,
     ratio,
@@ -65,7 +66,7 @@
               ["Median", formatValue(cell.median, kb)],
               ["Range", `${formatValue(cell.min, kb)} – ${formatValue(cell.max, kb)}`],
               [
-                baseline === "fastest" ? "Against the fastest" : `Against ${nameOf(baseline)}`,
+                baseline === "fastest" ? `Against the ${bestWord(metric)}` : `Against ${nameOf(baseline)}`,
                 formatRatio(ratio(table, impl, schema, baseline, selected), metric, baseline),
               ],
             ]
@@ -78,7 +79,7 @@
   <table class="rmatrix" onpointermove={onMove} onpointerleave={() => chartTip.hide()}>
     <caption class="sr-only">
       {METRICS[metric].long} on each schema, {showMedian ? "as the median" : "as a multiple"}{baseline === "fastest"
-        ? " of the fastest selected implementation"
+        ? ` of the ${bestWord(metric)} of the selection`
         : ` of ${nameOf(baseline)}`}
     </caption>
     <thead>

@@ -215,12 +215,14 @@ export function formatValue(value: number, kb = false): string {
 }
 
 export const betterWord = (metric: MetricKey) => (METRICS[metric].kb ? "smaller" : "faster");
+/** What the best implementation on a schema is, in words: memory is compared by how little it uses. */
+export const bestWord = (metric: MetricKey) => (METRICS[metric].kb ? "lowest memory" : "fastest");
 export const worseWord = (metric: MetricKey) => (METRICS[metric].kb ? "larger" : "slower");
 
-/** "2.31× slower" against an implementation, or "2.31× the fastest" against the fastest on each schema. */
+/** "2.31× slower" against an implementation, or "2.31× the fastest" (or "the lowest memory") against the best on each schema. */
 export function formatRatio(r: number, metric: MetricKey, baseline: Baseline): string {
   if (!Number.isFinite(r)) return "–";
-  if (baseline === "fastest") return Math.abs(r - 1) < 0.005 ? "fastest" : `${significant(r)}× the fastest`;
+  if (baseline === "fastest") return Math.abs(r - 1) < 0.005 ? bestWord(metric) : `${significant(r)}× the ${bestWord(metric)}`;
   if (Math.abs(r - 1) < 0.005) return "level";
   return r < 1 ? `${significant(1 / r)}× ${betterWord(metric)}` : `${significant(r)}× ${worseWord(metric)}`;
 }

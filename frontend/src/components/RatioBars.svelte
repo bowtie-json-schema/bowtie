@@ -6,6 +6,7 @@
     type MetricKey,
     type Summary,
     METRICS,
+    bestWord,
     betterWord,
     formatRatio,
     ratioTickLabel,
@@ -66,7 +67,7 @@
   function valueText(s: Summary) {
     if (s.impl === baseline) return "baseline";
     if (versus) return formatRatio(s.geomean, metric, baseline);
-    return `${significant(s.geomean)}×${s.fastestOn ? `, fastest on ${s.fastestOn}` : ""}`;
+    return `${significant(s.geomean)}×${s.fastestOn ? `, ${bestWord(metric)} on ${s.fastestOn}` : ""}`;
   }
 
   function onMove(event: PointerEvent) {
@@ -84,7 +85,7 @@
       rows: [
         ["Geometric mean", formatRatio(s.geomean, metric, baseline)],
         ["Schemas compared", `${s.compared} of ${totalSchemas}`],
-        ["Fastest on", `${s.fastestOn} schema${s.fastestOn === 1 ? "" : "s"}`],
+        [`${bestWord(metric)[0].toUpperCase()}${bestWord(metric).slice(1)} on`, `${s.fastestOn} schema${s.fastestOn === 1 ? "" : "s"}`],
         ["Failed", String(s.failed)],
         ...(s.missing ? ([["Not run", String(s.missing)]] as [string, string][]) : []),
       ],
@@ -92,7 +93,7 @@
   }
 </script>
 
-<div class="rbars" role="table" onpointermove={onMove} onpointerleave={() => chartTip.hide()} aria-label={`Geometric mean ${METRICS[metric].long}, relative to ${versus ? labelFor(baseline).name : "the fastest on each schema"}`}>
+<div class="rbars" role="table" onpointermove={onMove} onpointerleave={() => chartTip.hide()} aria-label={`Geometric mean ${METRICS[metric].long}, relative to ${versus ? labelFor(baseline).name : `the ${bestWord(metric)} on each schema`}`}>
   <div class="row head" role="row">
     <span role="columnheader" class="c-name">Implementation</span>
     <span role="columnheader" class="c-chip">{dialectName}</span>
@@ -101,7 +102,7 @@
         <span class="tick" style="left:{pos(t)}%;transform:translateX({pos(t) > 92 ? '-100%' : pos(t) < 8 ? '0' : '-50%'})">{ratioTickLabel(t)}</span>
       {/each}
     </span>
-    <span role="columnheader" class="c-val">{versus ? `against ${labelFor(baseline).name}` : "× the fastest"}</span>
+    <span role="columnheader" class="c-val">{versus ? `against ${labelFor(baseline).name}` : `× the ${bestWord(metric)}`}</span>
     <span role="columnheader" class="c-cov">schemas</span>
   </div>
   {#each summaries as s (s.impl)}
@@ -128,7 +129,7 @@
   {#if versus}
     Bars to the left are {betterWord(metric)} than {labelFor(baseline).name}, to the right {worseWord(metric)}.
   {:else}
-    1× would mean the fastest selected implementation on every schema.
+    1× would mean the {bestWord(metric)} of the selection on every schema.
   {/if}
   Coverage in <span class="has-failures">this colour</span> means some schemas failed to validate, and they are left out of the mean.
 </p>
