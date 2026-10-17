@@ -3,7 +3,6 @@ import URI from "urijs";
 import siteURI from "./Site";
 import data from "../../../data/dialects.json";
 import { fromSerialized, ReportData } from "./parseReportData";
-import { fromJSON } from "./parseBenchmarkData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -48,17 +47,6 @@ export default class Dialect {
     const url = baseURI.clone().filename(this.shortName).suffix("json").href();
     const response = await fetch(url);
     return fromSerialized(await response.text());
-  }
-
-  async fetchBenchmarkReport(baseURI: URI = siteURI) {
-    const url = baseURI
-      .clone()
-      .directory("benchmarks")
-      .filename(this.shortName)
-      .suffix("json")
-      .href();
-    const response = await fetch(url);
-    return fromJSON(await response.text());
   }
 
   static async fetchAllReports() {
