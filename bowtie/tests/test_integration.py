@@ -863,6 +863,74 @@ async def test_site_combine(tmp_path):
     )
 
 
+@pytest.mark.asyncio
+async def test_site_combine_leaves_out_mismatched_reports(tmp_path):
+    """
+    A report whose cases differ from the others' (say, one left behind by a
+    harness whose report failed to refresh) is left out, not fatal.
+    """
+
+    def suite_with(name, schema):
+        suite = tmp_path / name
+        dialect_dir = suite / "tests" / "draft7"
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(
+            _json.dumps(
+                [
+                    {
+                        "description": "a case",
+                        "schema": schema,
+                        "tests": [
+                            {"description": "one", "data": 1, "valid": True},
+                        ],
+                    },
+                ],
+            ),
+        )
+        return suite
+
+    current = suite_with("current", {"type": "integer"})
+    older = suite_with("older", {"type": "number"})
+
+    a, b, c = tmp_path / "a", tmp_path / "b", tmp_path / "c"
+    for connectable, suite, output in [
+        ("direct:null", current, a),
+        ("direct:python-jsonschema", current, b),
+        (miniatures.always_invalid, older, c),
+    ]:
+        await bowtie(
+            "site",
+            "collect",
+            "-i",
+            connectable,
+            "--suite",
+            suite,
+            "--output",
+            output,
+        )
+
+    site = tmp_path / "site"
+    _, stderr = await bowtie(
+        "site",
+        "combine",
+        str(a),
+        str(b),
+        str(c),
+        "--output",
+        site,
+    )
+    assert "Leaving out" in stderr, stderr
+
+    report = Report.from_serialized(
+        site.joinpath("draft7.json").read_text().splitlines(),
+    )
+    impls = _json.loads(site.joinpath("implementations.json").read_text())
+    assert set(report.implementations) == set(impls) == {
+        "null",
+        "python-jsonschema",
+    }
+
+
 def _has_bugs_connectable(version):
     return (
         f"direct:{_miniatures.__name__}:has_bugs_by_versions,version={version}"

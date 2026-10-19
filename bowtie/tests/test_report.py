@@ -867,3 +867,43 @@ class TestCombine:
             ),
         )
         assert Report.from_serialized(combined.serialized()) == combined
+
+
+class TestSplitOnCases:
+    """Tests for Report.split_on_cases()."""
+
+    def test_all_agree(self):
+        valid = CaseResult(results=[TestResult.VALID])
+        foo = Report.from_input(_report_data("foo", FOO, [(CASE1, valid)]))
+        bar = Report.from_input(_report_data("bar", BAR, [(CASE1, valid)]))
+        kept, rest = Report.split_on_cases([foo, bar])
+        assert (kept, rest) == ([foo, bar], [])
+
+    def test_the_odd_one_out_is_left_out(self):
+        baz_info = ImplementationInfo(
+            name="baz",
+            language="quux",
+            homepage=HOMEPAGE,
+            issues=REPO / "issues",
+            source=REPO,
+            dialects=frozenset([DIALECT_2020]),
+        )
+        valid = CaseResult(results=[TestResult.VALID])
+        foo = Report.from_input(_report_data("foo", FOO, [(CASE1, valid)]))
+        stale = Report.from_input(_report_data("bar", BAR, [(CASE2, valid)]))
+        baz = Report.from_input(
+            _report_data("baz", baz_info, [(CASE1, valid)]),
+        )
+        kept, rest = Report.split_on_cases([foo, stale, baz])
+        assert (kept, rest) == ([foo, baz], [stale])
+        assert set(Report.combine(*kept).implementations) == {"foo", "baz"}
+
+    def test_a_tie_goes_to_the_newer_report(self):
+        valid = CaseResult(results=[TestResult.VALID])
+        older = _report_data("foo", FOO, [(CASE1, valid)])
+        older[0]["started"] = "2026-01-01T00:00:00+00:00"
+        newer = _report_data("bar", BAR, [(CASE2, valid)])
+        newer[0]["started"] = "2026-02-01T00:00:00+00:00"
+        foo, bar = Report.from_input(older), Report.from_input(newer)
+        assert Report.split_on_cases([foo, bar]) == ([bar], [foo])
+        assert Report.split_on_cases([bar, foo]) == ([bar], [foo])
