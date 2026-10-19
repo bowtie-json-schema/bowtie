@@ -925,10 +925,14 @@ async def test_site_combine_leaves_out_mismatched_reports(tmp_path):
         site.joinpath("draft7.json").read_text().splitlines(),
     )
     impls = _json.loads(site.joinpath("implementations.json").read_text())
-    assert set(report.implementations) == set(impls) == {
-        "null",
-        "python-jsonschema",
-    }
+    assert (
+        set(report.implementations)
+        == set(impls)
+        == {
+            "null",
+            "python-jsonschema",
+        }
+    )
 
 
 def _has_bugs_connectable(version):
