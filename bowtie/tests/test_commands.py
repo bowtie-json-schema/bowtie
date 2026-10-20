@@ -296,3 +296,35 @@ def test_resource_locations():
         "https://example.com/bar": "/properties/a~1b/items",
         "https://example.com/other": None,
     }
+
+
+def test_absolute_location_in_array_embedded_resource():
+    resources = {"https://example.com/sub1": "/allOf/0"}
+    annotation = absolutely("https://example.com/sub1#/title")
+    relative = annotation.relative_to(resources)
+    assert relative.keywordLocation == "#/allOf/0/title"
+
+
+def test_relative_location_is_kept_alongside_absolute_location():
+    annotation = Annotation(
+        keyword="title",
+        instanceLocation="",
+        keywordLocation="#/$ref/title",
+        absoluteKeywordLocation="https://example.com/foo#/title",
+        annotation="A string",
+    )
+    assert annotation.relative_to(RESOURCES) == annotation
+
+
+def test_resource_locations_in_arrays():
+    case = {
+        "schema": {
+            "$id": "https://example.com/root",
+            "allOf": [{"$id": "sub1"}, {"title": "not a resource"}],
+            "prefixItems": [{"type": "string"}, {"$id": "sub2"}],
+        },
+    }
+    assert _resource_locations(case, DRAFT202012) == {
+        "https://example.com/sub1": "/allOf/0",
+        "https://example.com/sub2": "/prefixItems/1",
+    }
