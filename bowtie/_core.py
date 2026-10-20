@@ -56,7 +56,6 @@ if TYPE_CHECKING:
     from typing import Self
 
     from referencing import Specification
-    from referencing._core import Resolver
     from referencing.jsonschema import Schema, SchemaRegistry
     from rich.console import RenderableType
 
@@ -493,7 +492,7 @@ def _resource_locations(
     def walk(
         contents: Any,
         base: str,
-        resolver: Resolver[Any],
+        resolver: Any,
         segments: list[str],
         pointer: str,
     ):
