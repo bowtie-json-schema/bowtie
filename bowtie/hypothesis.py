@@ -215,11 +215,21 @@ successful_tests = sampled_from(
         _commands.TestResult.INVALID,
     ],
 )
+annotation_locations = (
+    fixed_dictionaries({"keywordLocation": text(max_size=20)})
+    | fixed_dictionaries({"absoluteKeywordLocation": text(max_size=20)})
+    | fixed_dictionaries(
+        {
+            "keywordLocation": text(max_size=20),
+            "absoluteKeywordLocation": text(max_size=20),
+        },
+    )
+)
 annotations = builds(
-    _commands.Annotation,
+    lambda locations, **kwargs: _commands.Annotation(**locations, **kwargs),
+    annotation_locations,
     keyword=text(min_size=1, max_size=20),
     instanceLocation=text(max_size=10),
-    keywordLocation=text(max_size=20),
     annotation=text(max_size=10) | integers() | booleans() | none(),
 )
 annotated_tests = builds(

@@ -4959,6 +4959,88 @@ async def test_annotation_suite_end_to_end(envsonschema, tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.containers
+@pytest.mark.json
+async def test_annotation_suite_absolute_locations(envsonschema, tmp_path):
+    """
+    Annotations located within the schema resource containing them are
+    matched against assertions located relative to the root schema.
+    """
+
+    def annotate(location: str):
+        return (
+            "annotate:keyword=title,instanceLocation=,"
+            f"absoluteKeywordLocation={location},annotation=Foo"
+        )
+
+    assertions = [
+        {
+            "location": "",
+            "keyword": "title",
+            "expected": {"#/$defs/foo": "Foo"},
+        },
+    ]
+    definitions = tmp_path / "annotations/tests/definitions.json"
+    definitions.parent.mkdir(parents=True)
+    definitions.write_text(
+        _json.dumps(
+            {
+                "suite": [
+                    {
+                        "description": "the case",
+                        "schema": {
+                            "$id": "https://example.com/root",
+                            "$ref": "foo",
+                            "$defs": {
+                                "foo": {"$id": "foo", "title": "Foo"},
+                            },
+                        },
+                        "tests": [
+                            {
+                                "description": "valid:1 "
+                                + annotate("https://example.com/foo#/title"),
+                                "instance": 37,
+                                "assertions": assertions,
+                            },
+                            {
+                                "description": "valid:1 "
+                                + annotate("https://example.com/root#/title"),
+                                "instance": 37,
+                                "assertions": assertions,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ),
+    )
+
+    stdout, _stderr = await bowtie(
+        "annotation-suite",
+        "-i",
+        envsonschema,
+        "--dialect",
+        "2020",
+        definitions,
+    )
+
+    jsonout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "failures",
+        stdin=stdout,
+        json=True,
+        exit_code=EX.DATAERR,
+    )
+    assert stderr == ""
+    assert jsonout == [
+        [tag("envsonschema"), dict(failed=1, skipped=0, errored=0)],
+    ]
+
+
+@pytest.mark.asyncio
 async def test_annotation_suite_no_test_cases(tmp_path):
     """
     Don't emit an empty (all-passing) report if we found nothing to run.
