@@ -1,0 +1,8 @@
+{
+  "name": "bowtie-jedison",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "jedison": "^1.29.1"
+  }
+}
