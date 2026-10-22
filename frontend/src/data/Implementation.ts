@@ -63,7 +63,11 @@ export default class Implementation
     this.language = rawData.language;
     this.name = rawData.name;
     this.version = rawData.version;
-    this.dialects = rawData.dialects.map((uri) => Dialect.forURI(uri));
+    // A harness may also opt into a prerelease dialect, which the site leaves
+    // out until it is published.
+    this.dialects = rawData.dialects
+      .filter((uri) => !Dialect.isPrerelease(uri))
+      .map((uri) => Dialect.forURI(uri));
     this.homepage = rawData.homepage;
     this.documentation = rawData.documentation;
     this.issues = rawData.issues;
