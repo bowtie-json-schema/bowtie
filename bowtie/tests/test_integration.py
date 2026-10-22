@@ -958,19 +958,27 @@ async def test_site_combine_leaves_out_mismatched_reports(tmp_path):
 
     def suite_with(name, schema):
         suite = tmp_path / name
-        dialect_dir = suite / "tests" / "draft7"
-        dialect_dir.mkdir(parents=True)
-        dialect_dir.joinpath("type.json").write_text(
+        tests_dir = suite / "validation" / "tests"
+        tests_dir.mkdir(parents=True)
+        tests_dir.joinpath("type.json").write_text(
             _json.dumps(
-                [
-                    {
-                        "description": "a case",
-                        "schema": schema,
-                        "tests": [
-                            {"description": "one", "data": 1, "valid": True},
-                        ],
-                    },
-                ],
+                {
+                    "description": "type validation",
+                    "tests": [
+                        {
+                            "description": "a case",
+                            "compatibility": "=7",
+                            "schema": schema,
+                            "tests": [
+                                {
+                                    "description": "one",
+                                    "data": 1,
+                                    "valid": True,
+                                },
+                            ],
+                        },
+                    ],
+                },
             ),
         )
         return suite
