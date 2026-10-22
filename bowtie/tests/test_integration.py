@@ -338,6 +338,17 @@ wrong_seq = shellplementation(
     printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
+missing_seq = shellplementation(
+    name="missing_seq",
+    contents=r"""
+    read -r request
+    printf '{"implementation": {"name": "missing-seq", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read -r request
+    printf '{"ok": true}\n'
+    read -r request
+    printf '{"results": [{"valid": true}]}\n'
+    """,  # noqa: E501
+)
 wrong_version = shellplementation(
     name="wrong_version",
     contents=r"""
@@ -1459,6 +1470,30 @@ async def test_wrong_seq(wrong_seq):
         },
     ], stderr
     assert "mismatched seq " in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_missing_seq(missing_seq):
+    """
+    A response to a test case which has no seq is an error.
+    """
+    async with run(
+        "-i",
+        missing_seq,
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+        exit_code=0,  # FIXME: It'd be nice if this was nonzero.
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {tag("missing_seq"): ErroredTest.in_errored_case()},
+    ], stderr
 
 
 @pytest.mark.asyncio
