@@ -7,6 +7,7 @@ from __future__ import annotations
 from contextlib import suppress
 from datetime import UTC, datetime
 from fnmatch import fnmatch
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 import json
@@ -207,12 +208,11 @@ def _warn_old_layout(old: object, new: object, dialect: Dialect) -> None:
     )
 
 
-# The version tokens the suite's compatibility grammar allows.
+# The version tokens the suite is known to use.
 # Some are drafts Bowtie does not support.
 # 9999 is a placeholder marking tests needing a draft which does not exist.
-_COMPATIBILITY_VERSIONS = {
-    str(each): each for each in (1, 2, 3, 4, 6, 7, 2019, 2020, 9999)
-}
+# Other versions are still compared numerically, but warned about.
+_KNOWN_COMPATIBILITY_VERSIONS = frozenset({1, 2, 3, 4, 6, 7, 2019, 2020, 9999})
 
 #: Dialects whose short name is not a compatibility version.
 #: A prerelease is tested against features not yet in any release.
@@ -260,6 +260,27 @@ def _compatibility_version(dialect: Dialect) -> int:
     return int(dialect.short_name.removeprefix("draft").partition("-")[0])
 
 
+@cache
+def _warn_unknown_compatibility_version(version: int) -> None:
+    _STDERR.print(
+        DiagnosticWarning(
+            code="unknown-compatibility-version",
+            message=(
+                f"The test suite has a compatibility version ({version}) "
+                "Bowtie does not know about."
+            ),
+            causes=[
+                (
+                    "It may be a new release, or a typo in the suite. "
+                    "Cases using it are still run wherever the version "
+                    "compares as compatible."
+                ),
+            ],
+            hint_stmt=None,
+        ),
+    )
+
+
 def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     if compatibility is None:
         return True
@@ -268,7 +289,8 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
 
     # Constraints are ordered smallest to largest, as the suite requires,
     # and are checked only until one reaches the version under test.
-    # An unknown version token reached that way makes the case incompatible.
+    # A non-numeric version token reached that way makes the case
+    # incompatible.
     is_valid = True
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
@@ -281,9 +303,12 @@ def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
         else:
             operator, token = ">=", constraint
 
-        bound = _COMPATIBILITY_VERSIONS.get(token)
-        if bound is None:
+        try:
+            bound = int(token)
+        except ValueError:
             return False
+        if bound not in _KNOWN_COMPATIBILITY_VERSIONS:
+            _warn_unknown_compatibility_version(bound)
 
         if operator == "<=":
             is_valid = version <= bound
