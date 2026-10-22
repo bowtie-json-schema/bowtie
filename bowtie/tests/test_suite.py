@@ -70,8 +70,12 @@ TYPE_CASES = {
         (DRAFT2020, "9999", False),
         (DRAFT2020, "=9999", False),
         (DRAFT2020, "<=9999", True),
-        # Unknown version tokens are never satisfied.
+        # Non-numeric version tokens are never satisfied.
         (DRAFT2020, "bananas", False),
+        # Versions Bowtie doesn't know about still compare numerically.
+        (DRAFT7, "6,<=2026", True),
+        (DRAFT2020, "6,<=2026", True),
+        (DRAFT2020, "2026", False),
         # Disjunction-over-ranges behaviour
         (DRAFT4, "<=4,7", True),
         (DRAFT6, "<=4,7", False),
@@ -91,6 +95,21 @@ TYPE_CASES = {
 )
 def test_is_compatible(dialect, compatibility, compatible):
     assert _is_compatible(dialect, compatibility) is compatible
+
+
+def test_is_compatible_warns_about_unknown_versions(capsys):
+    _suite._warn_unknown_compatibility_version.cache_clear()
+    assert _is_compatible(DRAFT2020, "6,<=2027")
+    assert _is_compatible(DRAFT2019, "6,<=2027")
+    stderr = capsys.readouterr().err
+    assert "2027" in stderr
+    assert stderr.count("unknown-compatibility-version") == 1
+
+
+def test_is_compatible_does_not_warn_about_known_versions(capsys):
+    _suite._warn_unknown_compatibility_version.cache_clear()
+    assert _is_compatible(DRAFT2020, "6,<=9999")
+    assert capsys.readouterr().err == ""
 
 
 def test_convert_local_path_unified_format(tmp_path):
