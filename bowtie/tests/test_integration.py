@@ -338,6 +338,35 @@ wrong_seq = shellplementation(
     printf '{"seq": 373737373737, "results": [{"valid": true}]}\n'
     """,  # noqa: E501
 )
+slow_dialect = shellplementation(
+    name="slow_dialect",
+    contents=r"""
+    read -r request
+    printf '{"implementation": {"name": "slow-dialect", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read -r request
+    sleep 4
+    printf '{"ok": true}\n'
+    while read -r request; do
+        printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    done
+    """,  # noqa: E501
+)
+warn_then_slow = shellplementation(
+    name="warn_then_slow",
+    contents=r"""
+    read -r request
+    printf '{"implementation": {"name": "warn-then-slow", "language": "sh", "dialects": ["http://json-schema.org/draft-07/schema#"], "homepage": "urn:example", "source": "urn:example", "issues": "urn:example"}, "version": 1}\n'
+    read -r request
+    printf '{"ok": true}\n'
+    read -r request
+    printf 'just a warning\n' >&2
+    sleep 4
+    printf '{"seq": %s, "results": [{"valid": false}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    while read -r request; do
+        printf '{"seq": %s, "results": [{"valid": true}]}\n' "$(sed 's/.*"seq":\s*\([^,]*\).*/\1/' <(echo $request))"
+    done
+    """,  # noqa: E501
+)
 missing_seq = shellplementation(
     name="missing_seq",
     contents=r"""
@@ -1493,6 +1522,90 @@ async def test_missing_seq(missing_seq):
 
     assert results == [
         {tag("missing_seq"): ErroredTest.in_errored_case()},
+    ], stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_late_response_is_not_used_for_the_next_case(envsonschema):
+    """
+    A response which arrives after we stopped waiting for it is discarded.
+
+    It shouldn't be mistaken for the response to the next test case.
+    """
+    async with run(
+        "-i",
+        f"image:{envsonschema}:read_timeout_sec=1",
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "sleep:4", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "valid:1", "instance": {}}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "valid:0", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert [list(each.values()) for each in results] == [
+        [ErroredTest.in_errored_case()],
+        [TestResult.VALID],
+        [TestResult.INVALID],
+    ], stderr
+    assert "mismatched seq" not in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_late_response_after_stderr_is_not_used(warn_then_slow):
+    """
+    A harness which wrote to stderr and then answered late is treated as
+    having crashed, but its late answer is still not used for the next case.
+    """
+    async with run(
+        "-i",
+        f"image:{warn_then_slow}:read_timeout_sec=3",
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "b", "instance": {}}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "c", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert [list(each.values()) for each in results] == [
+        [ErroredTest.in_errored_case()],
+        [TestResult.VALID],
+        [TestResult.VALID],
+    ], stderr
+    assert "mismatched seq" not in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+async def test_late_dialect_response_is_not_used_for_a_case(slow_dialect):
+    """
+    A dialect response which arrives late isn't read as a test case's result.
+    """
+    async with run(
+        "-i",
+        f"image:{slow_dialect}:read_timeout_sec=1",
+        "--dialect",
+        "http://json-schema.org/draft-07/schema#",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "a", "instance": {}}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "b", "instance": {}}] }
+            """,  # noqa: E501
+        )
+
+    assert [list(each.values()) for each in results] == [
+        [TestResult.VALID],
+        [TestResult.VALID],
     ], stderr
 
 
