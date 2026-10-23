@@ -14,30 +14,26 @@ import json
 import os
 import zipfile
 
-from diagnostic import DiagnosticError
+from diagnostic import DiagnosticError, DiagnosticWarning
 from url import URL, RelativeURLWithoutBase
 import click
 import rich
+import rich.console
 
 from bowtie import GITHUB, _github
 from bowtie._core import Dialect, TestCase
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
     from typing import Any
 
 
 TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
-TESTS_DIR_URL = TEST_SUITE_URL / "tree/main/tests"
-
-URL_FOR_DIALECT = {
-    dialect: TESTS_DIR_URL / dialect.short_name for dialect in Dialect.known()
-}
+TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation/tests"
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
-# Magic constants assumed/used by the official test suite for $ref tests
-SUITE_REMOTE_BASE_URI = URL.parse("http://localhost:1234")
+_STDERR = rich.console.Console(stderr=True)
 
 
 class ClickParam(click.ParamType):
@@ -59,24 +55,37 @@ class ClickParam(click.ParamType):
         if not isinstance(value, str):
             return value
 
-        # Convert dialect URIs or shortnames to test suite URIs
-        input_dialect = Dialect.by_alias().get(value)
-        known_dialect = input_dialect if self._is_annotations else None
-        if self._is_annotations and input_dialect is not None:
-            value = ANNOTATIONS_DIR_URL
-        else:
-            value = input_dialect or value
-            value = URL_FOR_DIALECT.get(value, value)
+        # Cases cover every dialect, so where they live says nothing about
+        # which to run them under. A dialect given as the input runs the
+        # suite from GitHub under it, otherwise --dialect says which.
+        dialect = Dialect.by_alias().get(value)
+        if dialect is not None:
+            value = (
+                ANNOTATIONS_DIR_URL if self._is_annotations else TESTS_DIR_URL
+            )
+        elif ctx is not None:
+            dialect = ctx.params.get("dialect")
+        if dialect is None:
+            self.fail("No dialect was given to run the test suite under.")
 
         def local(
             path: Path,
+            dialect: Dialect,
         ) -> tuple[Iterable[TestCase], Dialect, dict[str, Any]]:
-            dialect, cases = self._cases_and_dialect(
-                path=path,
-                ctx=ctx,
-                known_dialect=known_dialect,
-            )
-            return cases, dialect, {}
+            rewritten = None
+            if not self._is_annotations:
+                rewritten = _from_old_layout(path.parts)
+            if rewritten is None:
+                cases = self._cases_from(path=path, dialect=dialect)
+                return cases, dialect, {}
+
+            parts, old_dialect = rewritten
+            new = Path(*parts)
+            if not new.exists():
+                self.fail(_OLD_LAYOUT_UNSUPPORTED.format(path=path))
+            _warn_old_layout(old=path, new=new, dialect=old_dialect)
+            cases = self._cases_from(path=new, dialect=old_dialect)
+            return cases, old_dialect, {}
 
         # On Windows, drive-letter paths like D:\... are misinterpreted by
         # URL.parse() as having a URL scheme (the drive letter).  Use
@@ -84,17 +93,30 @@ class ClickParam(click.ParamType):
         if isinstance(value, str) and (
             os.path.splitdrive(value)[0] or Path(value).exists()
         ):
-            return local(Path(value))
+            return local(Path(value), dialect)
 
         try:
             with suppress(TypeError):
                 value = URL.parse(value)
         except RelativeURLWithoutBase:
-            return local(Path(value))
+            return local(Path(value), dialect)
 
         value = cast("URL", value)
         org, repo_name, *rest = value.path_segments
         path, ref = path_and_ref_from_gh_path(rest)
+
+        rewritten = None
+        if not self._is_annotations:
+            rewritten = _from_old_layout(path.split("/"))
+        if rewritten is not None:
+            parts, dialect = rewritten
+            new_path = "/".join(parts)
+            _warn_old_layout(
+                old=value,
+                new=GITHUB / org / repo_name / rest[0] / ref / new_path,
+                dialect=dialect,
+            )
+            path = new_path
 
         downloaded = _github.download_tree(org, repo_name, ref)
         if downloaded is None:
@@ -117,142 +139,236 @@ class ClickParam(click.ParamType):
         data, run_metadata = downloaded
         with zipfile.ZipFile(data) as zf:
             (contents,) = zipfile.Path(zf).iterdir()
-            dialect, cases = self._cases_and_dialect(
-                path=contents / path,
-                ctx=ctx,
-                known_dialect=known_dialect,
+            if rewritten is not None and not (contents / path).exists():
+                self.fail(_OLD_LAYOUT_UNSUPPORTED.format(path=value))
+            cases = list(
+                self._cases_from(path=contents / path, dialect=dialect),
             )
-            cases = list(cases)
         return cases, dialect, run_metadata
 
-    def _cases_and_dialect(
-        self,
-        path: Any,
-        ctx: click.Context | None,
-        known_dialect: Dialect | None = None,
-    ):
+    def _cases_from(self, path: Any, dialect: Dialect) -> Iterable[TestCase]:
         if path.name.endswith(".json"):
-            paths, version_path = [path], path.parent
+            paths = [path]
         else:
-            paths, version_path = _glob(path, "*.json"), path
-
-        dialect = known_dialect
-        if dialect is None:
-            dialect = Dialect.by_short_name().get(version_path.name)
-        if dialect is None and self._is_annotations and ctx is not None:
-            dialect = ctx.params.get("dialect")
-        if dialect is None:
+            paths = list(_glob(path, "*.json"))
+        if not paths:
             self.fail(f"{path} does not contain JSON Schema Test Suite cases.")
 
         if self._is_annotations:
-            cases = annotation_cases_from(paths=paths, dialect=dialect)
-        else:
-            remotes = version_path.parent.parent / "remotes"
-            cases = cases_from(paths=paths, remotes=remotes, dialect=dialect)
-
-        return dialect, cases
+            return annotation_cases_from(paths=paths, dialect=dialect)
+        return validation_cases_from(paths=paths, dialect=dialect)
 
 
 _P = Path | zipfile.Path
 
 
-def _remotes_in(path: Path, dialect: Dialect) -> Iterable[tuple[URL, Any]]:
-    # This messy logic is because the test suite is terrible at indicating
-    # what remotes are needed for what drafts, and mixes in schemas which
-    # have no $schema and which are invalid under earlier versions, in with
-    # other schemas which are needed for tests.
-    #
-    # FIXME: #40: for draft-next support
+_OLD_LAYOUT_UNSUPPORTED = (
+    "{path} is from a version of the test suite which predates its unified "
+    "format, which is no longer supported."
+)
 
-    for each in _rglob(path, "*.json"):
-        schema = json.loads(each.read_bytes())
 
-        relative = str(_relative_to(each, path)).replace("\\", "/")
+def _from_old_layout(
+    parts: Sequence[str],
+) -> tuple[list[str], Dialect] | None:
+    """
+    Rewrite a path in the suite's layout from before its unified format.
 
-        if (
-            ("$schema" in schema and schema["$schema"] != str(dialect.uri))
-            or (  # draft<NotThisDialect>/*.json
-                relative.startswith("draft")
-                and not relative.startswith(dialect.short_name)
-            )
-            or (  # invalid boolean schema
-                not dialect.has_boolean_schemas and relative == "tree.json"
-            )
-        ):
-            continue
-        yield SUITE_REMOTE_BASE_URI / relative, schema
+    There, each dialect's cases lived in a ``tests/<dialect>`` directory of
+    their own. Now, cases for every dialect live in ``validation/tests``.
+    """
+    by_short_name = Dialect.by_short_name()
+    for i in reversed(range(len(parts) - 1)):
+        if parts[i] == "tests" and parts[i + 1] in by_short_name:
+            rewritten = [*parts[:i], "validation", "tests", *parts[i + 2 :]]
+            return rewritten, by_short_name[parts[i + 1]]
+    return None
+
+
+def _warn_old_layout(old: object, new: object, dialect: Dialect) -> None:
+    _STDERR.print(
+        DiagnosticWarning(
+            code="deprecated-suite-path",
+            message=(
+                "Test suite paths from before its unified format are "
+                "deprecated."
+            ),
+            causes=[
+                (
+                    f"{old} uses the old tests/{dialect.short_name} "
+                    "directory, but cases for every dialect now live in "
+                    "validation/tests."
+                ),
+            ],
+            hint_stmt=(
+                f"Pass {new} with --dialect {dialect.short_name} instead, "
+                "which is what is being run."
+            ),
+        ),
+    )
+
+
+# The version tokens the suite is known to use.
+# Some are drafts Bowtie does not support.
+# 9999 is a placeholder marking tests needing a draft which does not exist.
+# Other versions are still compared numerically, but warned about.
+_KNOWN_COMPATIBILITY_VERSIONS = frozenset({1, 2, 3, 4, 6, 7, 2019, 2020, 9999})
+
+#: Dialects whose short name is not a compatibility version.
+#: A prerelease is tested against features not yet in any release.
+_COMPATIBILITY_VERSION_FOR = {"v1": 9999}
+
+
+#: Dialects whose schemas (including remote ones) the suite gave an explicit
+#: ``$schema`` before its unified format. Harnesses which cannot be told the
+#: dialect to use may rely on it.
+_EXPLICIT_DIALECTS = {"draft2019-09", "draft2020-12"}
+
+
+def _with_explicit_dialect(schema: Any, dialect: Dialect) -> Any:
+    if isinstance(schema, bool):
+        return schema
+    return {"$schema": str(dialect.uri), **schema}
+
+
+#: The tagged behaviors Bowtie expects implementations to have by default,
+#: by dialect. Dialects not listed expect no tagged behavior, so they run
+#: only untagged cases. (Before 2019-09, for instance, ``format``'s behavior
+#: is up to implementations, so neither ``format`` behavior is expected.)
+_EXPECTED_TAGS = {
+    "draft2019-09": frozenset({"format-annotation"}),
+    "draft2020-12": frozenset({"format-annotation"}),
+    "v1": frozenset({"format-assertion"}),
+}
+
+
+def _expected_tags(dialect: Dialect) -> frozenset[str]:
+    """
+    The tagged behaviors Bowtie expects implementations to have by default.
+
+    The suite runs a case only if the implementation provides the behavior
+    associated with each of its tags. Cases with any tag not expected for the
+    dialect (including tags Bowtie doesn't know) are skipped.
+    """
+    return _EXPECTED_TAGS.get(dialect.short_name, frozenset())
+
+
+def _compatibility_version(dialect: Dialect) -> int:
+    version = _COMPATIBILITY_VERSION_FOR.get(dialect.short_name)
+    if version is not None:
+        return version
+    return int(dialect.short_name.removeprefix("draft").partition("-")[0])
 
 
 @cache
-def remotes_in(path: Path, dialect: Dialect) -> dict[str, Any]:
-    return {str(k): v for k, v in _remotes_in(path=path, dialect=dialect)}
-
-
-def cases_from(
-    paths: Iterable[_P],
-    remotes: Path,
-    dialect: Dialect,
-) -> Iterable[TestCase]:
-    for path in paths:
-        # ref.json and anchor.json reference http://localhost:1234 too, in
-        # every dialect which has them, so they need the registry as much as
-        # the files which were named here. The rest are left with an empty one
-        # on purpose: a case which does not ask for a remote should not be
-        # handed 20-odd extra schemas it never mentions.
-        if path.stem in {
-            "refRemote",
-            "dynamicRef",
-            "vocabulary",
-            "ref",
-            "anchor",
-        }:
-            registry = remotes_in(remotes, dialect=dialect)
-        else:
-            registry = {}
-
-        for case in json.loads(path.read_bytes()):
-            for test in case["tests"]:
-                test["instance"] = test.pop("data")
-            case.pop("specification", None)  # we do nothing with this now
-            yield TestCase.from_dict(
-                dialect=dialect,
-                registry=registry,
-                **case,
-            )
-
-
-# The version tokens the suite's compatibility grammar allows.
-# Some are drafts Bowtie does not support.
-# 9999 is a placeholder marking tests needing a draft which does not exist.
-_COMPATIBILITY_VERSIONS = {
-    str(each): each for each in (1, 2, 3, 4, 6, 7, 2019, 2020, 9999)
-}
+def _warn_unknown_compatibility_version(version: int) -> None:
+    _STDERR.print(
+        DiagnosticWarning(
+            code="unknown-compatibility-version",
+            message=(
+                f"The test suite has a compatibility version ({version}) "
+                "Bowtie does not know about."
+            ),
+            causes=[
+                (
+                    "It may be a new release, or a typo in the suite. "
+                    "Cases using it are still run wherever the version "
+                    "compares as compatible."
+                ),
+            ],
+            hint_stmt=None,
+        ),
+    )
 
 
 def _is_compatible(dialect: Dialect, compatibility: str | None) -> bool:
     if compatibility is None:
         return True
 
-    version = int(dialect.short_name.removeprefix("draft").partition("-")[0])
+    version = _compatibility_version(dialect)
 
-    # Constraints naming an unknown version are never satisfied, not ignored.
+    # Constraints are ordered smallest to largest, as the suite requires,
+    # and are checked only until one reaches the version under test.
+    # A non-numeric version token reached that way makes the case
+    # incompatible.
+    is_valid = True
     for constraint in compatibility.split(","):
         constraint = constraint.strip()
         if constraint.startswith("<="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version <= bound
+            operator, token = "<=", constraint[2:]
         elif constraint.startswith(">="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[2:])
-            satisfied = bound is not None and version >= bound
+            operator, token = ">=", constraint[2:]
         elif constraint.startswith("="):
-            bound = _COMPATIBILITY_VERSIONS.get(constraint[1:])
-            satisfied = bound is not None and version == bound
+            operator, token = "=", constraint[1:]
         else:
-            bound = _COMPATIBILITY_VERSIONS.get(constraint)
-            satisfied = bound is not None and version >= bound
-        if not satisfied:
+            operator, token = ">=", constraint
+
+        try:
+            bound = int(token)
+        except ValueError:
             return False
-    return True
+        if bound not in _KNOWN_COMPATIBILITY_VERSIONS:
+            _warn_unknown_compatibility_version(bound)
+
+        if operator == "<=":
+            is_valid = version <= bound
+        elif operator == "=":
+            is_valid = version == bound
+        else:
+            is_valid = version >= bound
+
+        if version <= bound:
+            break
+    return is_valid
+
+
+def validation_cases_from(
+    paths: Iterable[_P],
+    dialect: Dialect,
+) -> Iterable[TestCase]:
+    expected_tags = _expected_tags(dialect)
+    for path in paths:
+        data = json.loads(path.read_text())
+
+        if "tests" not in data:
+            continue
+
+        for case in data["tests"]:
+            compatibility = case.get("compatibility")
+            if not _is_compatible(dialect, compatibility):
+                continue
+            if not expected_tags.issuperset(case.get("tags", [])):
+                continue
+
+            tests = [
+                {
+                    **{
+                        key: value
+                        for key, value in test.items()
+                        if key != "data"
+                    },
+                    "instance": test["data"],
+                }
+                for test in case["tests"]
+            ]
+
+            schema = case["schema"]
+            registry = case.get("externalSchemas", {})
+            if dialect.short_name in _EXPLICIT_DIALECTS:
+                schema = _with_explicit_dialect(schema, dialect)
+                registry = {
+                    uri: _with_explicit_dialect(each, dialect)
+                    for uri, each in registry.items()
+                }
+
+            yield TestCase.from_dict(
+                dialect=dialect,
+                description=case["description"],
+                comment=case.get("comment"),
+                schema=schema,
+                registry=registry,
+                tests=tests,
+            )
 
 
 def annotation_cases_from(
@@ -315,11 +431,13 @@ def path_and_ref_from_gh_path(path: list[str]) -> tuple[str, str]:
     for i in reversed(range(1, len(path))):
         if path[i] != "tests":
             continue
+        # A validation/tests directory is the unified validation suite.
         # An annotations/tests directory is the annotation suite,
         # unless what follows is a validation suite version directory.
         after = [each for each in path[i + 1 :] if each]
-        if path[i - 1] == "annotations" and (
-            not after or after[0].endswith(".json")
+        if path[i - 1] == "validation" or (
+            path[i - 1] == "annotations"
+            and (not after or after[0].endswith(".json"))
         ):
             i -= 1
         # remove tree/ or blob/ from the front of the ref
@@ -334,22 +452,8 @@ def _glob(path: _P, path_pattern: str) -> Iterable[_P]:
     )
 
 
-def _rglob(path: _P, path_pattern: str) -> Iterable[_P]:
-    for each in path.iterdir():
-        if fnmatch(each.name, path_pattern):
-            yield each
-        elif each.is_dir():
-            yield from _rglob(each, path_pattern)
-
-
-def _relative_to(path: _P, other: Path) -> Path:
-    if hasattr(path, "relative_to"):
-        return path.relative_to(other)  # type: ignore[reportGeneralTypeIssues]
-    return Path(path.at).relative_to(other.at)  # type: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-
-
 #: The default git ref of the official suite to collect test cases from.
-DEFAULT_REF = "main"
+DEFAULT_REF = "unify"
 
 
 class SuiteNotAvailable(Exception):
@@ -394,16 +498,17 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
     """
     Download the whole official test suite once.
 
-    With no ``ref``, the suite is pinned to the newest commit on its main
-    branch at or before the start of the current hour -- a deterministic
-    choice, so that independent runs within the same hour all collect
-    against (and can therefore be combined at) the same commit. Pass an
-    explicit ref (a branch, tag or commit) to override.
+    With no ``ref``, the suite is pinned to the newest commit on its
+    `DEFAULT_REF` branch at or before the start of the current hour -- a
+    deterministic choice, so that independent runs within the same hour all
+    collect against (and can therefore be combined at) the same commit. Pass
+    an explicit ref (a branch, tag or commit) to override.
 
-    Returns the suite's root directory (which contains ``tests/`` and
-    ``remotes/``) alongside run metadata recording the exact commit.
-    Every dialect collected from this one root is therefore guaranteed to
-    share a single consistent commit, even if the suite moves meanwhile.
+    Returns the suite's root directory (which contains ``validation/tests/``
+    directory of unified-format test case files, covering all dialects)
+    alongside run metadata recording the exact commit. Every dialect collected
+    from this one root is therefore guaranteed to share a single consistent
+    commit, even if the suite moves meanwhile.
     """
     owner, name, *_ = cast("list[str]", TEST_SUITE_URL.path_segments)
 
@@ -430,22 +535,29 @@ def download(ref: str | None = None) -> tuple[_P, dict[str, Any]]:
 def dialects_in(root: _P) -> set[Dialect]:
     """
     Which dialects the suite rooted at the given path provides cases for.
+
+    Unified-format cases cover every dialect, so a suite with any provides
+    all of them. One without (e.g. from before the unified format) has none.
     """
-    by_short = Dialect.by_short_name()
-    return {
-        by_short[child.name]
-        for child in (root / "tests").iterdir()
-        if child.is_dir() and child.name in by_short
-    }
+    tests_path = root / "validation" / "tests"
+    if not tests_path.is_dir() or not any(_glob(tests_path, "*.json")):
+        return set()
+    return set(Dialect.known())
+
+
+def predates_unified_format(root: _P) -> bool:
+    """
+    Is the suite rooted at the given path from before its unified format?
+    """
+    return (root / "tests").is_dir() and not (root / "validation").is_dir()
 
 
 def cases_for(root: _P, dialect: Dialect) -> Iterable[TestCase]:
     """
     The test cases for a single dialect within the suite at the given root.
     """
-    version_path = root / "tests" / dialect.short_name
-    return cases_from(
-        paths=list(_glob(version_path, "*.json")),
-        remotes=cast("Path", root / "remotes"),
+    tests_path = root / "validation" / "tests"
+    return validation_cases_from(
+        paths=list(_glob(tests_path, "*.json")),
         dialect=dialect,
     )
