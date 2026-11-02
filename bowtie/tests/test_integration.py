@@ -863,6 +863,78 @@ async def test_site_combine(tmp_path):
     )
 
 
+@pytest.mark.asyncio
+async def test_site_combine_leaves_out_mismatched_reports(tmp_path):
+    """
+    A report whose cases differ from the others' (say, one left behind by a
+    harness whose report failed to refresh) is left out, not fatal.
+    """
+
+    def suite_with(name, schema):
+        suite = tmp_path / name
+        dialect_dir = suite / "tests" / "draft7"
+        dialect_dir.mkdir(parents=True)
+        dialect_dir.joinpath("type.json").write_text(
+            _json.dumps(
+                [
+                    {
+                        "description": "a case",
+                        "schema": schema,
+                        "tests": [
+                            {"description": "one", "data": 1, "valid": True},
+                        ],
+                    },
+                ],
+            ),
+        )
+        return suite
+
+    current = suite_with("current", {"type": "integer"})
+    older = suite_with("older", {"type": "number"})
+
+    a, b, c = tmp_path / "a", tmp_path / "b", tmp_path / "c"
+    for connectable, suite, output in [
+        ("direct:null", current, a),
+        ("direct:python-jsonschema", current, b),
+        (miniatures.always_invalid, older, c),
+    ]:
+        await bowtie(
+            "site",
+            "collect",
+            "-i",
+            connectable,
+            "--suite",
+            suite,
+            "--output",
+            output,
+        )
+
+    site = tmp_path / "site"
+    _, stderr = await bowtie(
+        "site",
+        "combine",
+        str(a),
+        str(b),
+        str(c),
+        "--output",
+        site,
+    )
+    assert "Leaving out" in stderr, stderr
+
+    report = Report.from_serialized(
+        site.joinpath("draft7.json").read_text().splitlines(),
+    )
+    impls = _json.loads(site.joinpath("implementations.json").read_text())
+    assert (
+        set(report.implementations)
+        == set(impls)
+        == {
+            "null",
+            "python-jsonschema",
+        }
+    )
+
+
 def _has_bugs_connectable(version):
     return (
         f"direct:{_miniatures.__name__}:has_bugs_by_versions,version={version}"
@@ -4853,6 +4925,88 @@ async def test_annotation_suite_end_to_end(envsonschema, tmp_path):
                                         "expected": {"#": "Foo"},
                                     },
                                 ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ),
+    )
+
+    stdout, _stderr = await bowtie(
+        "annotation-suite",
+        "-i",
+        envsonschema,
+        "--dialect",
+        "2020",
+        definitions,
+    )
+
+    jsonout, stderr = await bowtie(
+        "summary",
+        "--format",
+        "json",
+        "--show",
+        "failures",
+        stdin=stdout,
+        json=True,
+        exit_code=EX.DATAERR,
+    )
+    assert stderr == ""
+    assert jsonout == [
+        [tag("envsonschema"), dict(failed=1, skipped=0, errored=0)],
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.containers
+@pytest.mark.json
+async def test_annotation_suite_absolute_locations(envsonschema, tmp_path):
+    """
+    Annotations located within the schema resource containing them are
+    matched against assertions located relative to the root schema.
+    """
+
+    def annotate(location: str):
+        return (
+            "annotate:keyword=title,instanceLocation=,"
+            f"absoluteKeywordLocation={location},annotation=Foo"
+        )
+
+    assertions = [
+        {
+            "location": "",
+            "keyword": "title",
+            "expected": {"#/$defs/foo": "Foo"},
+        },
+    ]
+    definitions = tmp_path / "annotations/tests/definitions.json"
+    definitions.parent.mkdir(parents=True)
+    definitions.write_text(
+        _json.dumps(
+            {
+                "suite": [
+                    {
+                        "description": "the case",
+                        "schema": {
+                            "$id": "https://example.com/root",
+                            "$ref": "foo",
+                            "$defs": {
+                                "foo": {"$id": "foo", "title": "Foo"},
+                            },
+                        },
+                        "tests": [
+                            {
+                                "description": "valid:1 "
+                                + annotate("https://example.com/foo#/title"),
+                                "instance": 37,
+                                "assertions": assertions,
+                            },
+                            {
+                                "description": "valid:1 "
+                                + annotate("https://example.com/root#/title"),
+                                "instance": 37,
+                                "assertions": assertions,
                             },
                         ],
                     },

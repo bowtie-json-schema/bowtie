@@ -17,7 +17,7 @@ from bowtie._core import Dialect, TestCase, sortable_version_key
 from bowtie._direct_connectable import Direct
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Any, Literal, Self, TextIO
 
     from bowtie._commands import AnyTestResult
@@ -424,6 +424,35 @@ class Report:  # noqa: PLW1641
             ),
             did_fail_fast=did_fail_fast,
         )
+
+    @classmethod
+    def split_on_cases(
+        cls,
+        reports: Sequence[Report],
+    ) -> tuple[list[Report], list[Report]]:
+        """
+        Split reports into those that can be combined, and the rest.
+
+        The reports that can be combined are those sharing the set of test
+        cases that the most reports contain. A tie goes to the set whose
+        newest report started latest, as it ran against the newer suite.
+        A report left out was typically produced by an older Bowtie or
+        against an older suite, for instance by a harness whose own report
+        has failed to refresh since a release.
+        """
+        groups: dict[frozenset[str], list[Report]] = {}
+        for report in reports:
+            uniqs = frozenset(case.uniq() for case in report._cases.values())
+            groups.setdefault(uniqs, []).append(report)
+        kept = max(
+            groups.values(),
+            key=lambda group: (
+                len(group),
+                max(report.metadata.started for report in group),
+            ),
+        )
+        rest = [r for r in reports if not any(r is each for each in kept)]
+        return kept, rest
 
     def serialized(self) -> Iterable[str]:
         """

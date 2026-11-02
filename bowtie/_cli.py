@@ -3145,13 +3145,11 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
             paths.append(each)
 
     by_dialect: dict[Dialect, list[_report.Report]] = {}
-    infos: dict[str, ImplementationInfo] = {}
     for path in paths:
         report = _report.Report.from_serialized(path.read_text().splitlines())
         if report.is_empty:
             continue
         by_dialect.setdefault(report.metadata.dialect, []).append(report)
-        infos.update(report.metadata.implementations)
 
     if not by_dialect:
         error = DiagnosticError(
@@ -3163,7 +3161,21 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
         STDERR.print(error)
         return EX.DATAERR
 
+    infos: dict[str, ImplementationInfo] = {}
     for dialect, reports in by_dialect.items():
+        # One stale report (say, from a harness whose own report has failed to
+        # refresh since a release) shouldn't stop every other implementation's
+        # results from being published, so it's left out, with a warning.
+        reports, mismatched = _report.Report.split_on_cases(reports)
+        for report in mismatched:
+            for id in report.metadata.implementations:
+                STDERR.print(
+                    f"[yellow]Leaving out[/] {id} from the "
+                    f"{dialect.short_name} results (its report does not "
+                    "contain the same test cases as the others).",
+                )
+        for report in reports:
+            infos.update(report.metadata.implementations)
         try:
             combined = _report.Report.combine(*reports)
         except (
@@ -3174,10 +3186,7 @@ def _combine(collected: tuple[Path, ...], output: Path) -> int:
                 code="cannot-combine",
                 message=f"Cannot combine the {dialect.short_name} reports.",
                 causes=[str(err)],
-                hint_stmt=(
-                    "Ensure each implementation is collected once, and that "
-                    "all reports for a dialect ran against the same suite."
-                ),
+                hint_stmt="Ensure each implementation is collected once.",
             )
             STDERR.print(error)
             return EX.DATAERR
