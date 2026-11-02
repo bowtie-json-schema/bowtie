@@ -1,4 +1,4 @@
-import { platform, release } from "node:os";
+import { release, type } from "node:os";
 import { join } from "node:path";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -44,8 +44,13 @@ function run(command: string, args: string[] = [], input?: string, status = 0) {
   return result.stdout.toString();
 }
 
+// Bowtie reaches a miniature through the direct connector, but a report
+// names the implementation without its connector (bowtie/_connectables.py).
+const connectable = (implementation: Implementation) =>
+  `direct:${implementation.id}`;
+
 function miniature(name: string): Implementation {
-  const id = `direct:bowtie.tests.miniatures:${name}`;
+  const id = `bowtie.tests.miniatures:${name}`;
 
   // Should match what's used in our backend integration tests, obviously.
   return (
@@ -57,10 +62,11 @@ function miniature(name: string): Implementation {
       homepage: "https://bowtie.report/",
       issues: "https://github.com/bowtie-json-schema/bowtie/issues",
       source: "https://github.com/bowtie-json-schema/bowtie",
-      os: platform(),
+      // the harness reports Python's platform.system(), as os.type() gives
+      os: type(),
       os_version: release(),
       language: "python",
-      language_version: run("python", ["--version"]).split(" ")[1],
+      language_version: run("python", ["--version"]).split(" ")[1].trim(),
       links: [],
     })
   );
@@ -149,7 +155,7 @@ describe("parseReportData", () => {
       lines = run("bowtie", [
         "validate",
         "-i",
-        testImplementation.id,
+        connectable(testImplementation),
         schema,
         instance,
       ]);
@@ -207,7 +213,7 @@ describe("parseReportData", () => {
 
     const lines = run(
       "bowtie",
-      ["run", "-i", testImplementation.id, "-D", "7"],
+      ["run", "-i", connectable(testImplementation), "-D", "7"],
       cases.join("\n") + "\n",
     );
 
@@ -295,7 +301,7 @@ describe("parseReportData", () => {
     for (const dialect of Dialect.known()) {
       const lines = run(
         "bowtie",
-        ["run", "-i", testImplementation.id, "-D", dialect.shortName],
+        ["run", "-i", connectable(testImplementation), "-D", dialect.shortName],
         cases.join("\n") + "\n",
       );
       const report = fromSerialized(lines);

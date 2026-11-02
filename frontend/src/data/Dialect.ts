@@ -3,7 +3,6 @@ import URI from "urijs";
 import siteURI from "./Site";
 import data from "../../../data/dialects.json";
 import { fromSerialized, ReportData } from "./parseReportData";
-import { fromJSON } from "./parseBenchmarkData";
 
 /**
  * An individual dialect of JSON Schema.
@@ -50,17 +49,6 @@ export default class Dialect {
     return fromSerialized(await response.text());
   }
 
-  async fetchBenchmarkReport(baseURI: URI = siteURI) {
-    const url = baseURI
-      .clone()
-      .directory("benchmarks")
-      .filename(this.shortName)
-      .suffix("json")
-      .href();
-    const response = await fetch(url);
-    return fromJSON(await response.text());
-  }
-
   static async fetchAllReports() {
     const allReports = new Map<Dialect, ReportData>();
     await Promise.all(
@@ -89,6 +77,14 @@ export default class Dialect {
       throw new DialectError(`A ${shortName} dialect does not exist.`);
     }
     return dialect;
+  }
+
+  /**
+   * Whether Bowtie knows the dialect only as a prerelease, which the site
+   * leaves out until it is published (see the loop at the end of this file).
+   */
+  static isPrerelease(uri: string): boolean {
+    return data.some((each) => each.uri === uri && each.prerelease === true);
   }
 
   static forURI(uri: string): Dialect {
