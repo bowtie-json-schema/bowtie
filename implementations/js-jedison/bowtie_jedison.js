@@ -102,6 +102,16 @@ const cmds = {
     const testCase = args.case;
     const registry = testCase.registry || {};
 
+    if (args.output === "annotations") {
+      return {
+        seq: args.seq,
+        results: testCase.tests.map(() => ({
+          skipped: true,
+          message: "jedison cannot collect annotations",
+        })),
+      };
+    }
+
     if (!isSupported(testCase.schema, registry)) {
       return {
         seq: args.seq,
@@ -136,11 +146,7 @@ const cmds = {
     const results = testCase.tests.map((test) => {
       let jedison;
       try {
-        // The suite tests format both as an annotation and as an assertion
-        const assertFormat = !test.description.includes(
-          "only an annotation by default",
-        );
-        jedison = new Jedison.Create({ schema, refParser, assertFormat });
+        jedison = new Jedison.Create({ schema, refParser });
         jedison.setValue(structuredClone(test.instance));
         return { valid: jedison.getErrors().length === 0 };
       } catch (error) {
