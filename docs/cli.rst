@@ -152,6 +152,14 @@ Examples:
     * ``image:example``: an image named ``example``, retrieved from Bowtie's repository
     * ``example``: with no explicit ``image``, referring to the same image as previous
     * ``image:foo/bar:latest``: an image with fully specified OCI container repository which will be pulled if not already present
+    * ``image:example:read_timeout_sec=30``: the ``example`` image, waiting up to 30 seconds for each response
+
+Arguments:
+
+    * ``read_timeout_sec``: how many seconds to wait for each response from the harness before trying again, 3 times in all.
+      The default is 2.
+      Set it to ``0`` to wait forever.
+      Slow-starting harnesses may need a longer timeout, particularly when many containers start at once.
 
 
 ``container``
@@ -172,6 +180,10 @@ It need not be fully qualified (i.e. include the repository), and will default t
 Examples:
 
     * ``container:deadbeef``: an OCI container with ID ``deadbeef`` which is assumed to be running (and will be attached to)
+
+Arguments:
+
+    * ``read_timeout_sec``: as for ``image``
 
 
 ``direct``

@@ -44,6 +44,8 @@ if TYPE_CHECKING:
 
 IMAGE_REPOSITORY = "ghcr.io/bowtie-json-schema"
 
+_NO_SEQ = object()
+
 _NO_ENGINE = (
     "Bowtie couldn't find a container engine. "
     "Install docker, podman or Apple's container, then check that a "
@@ -93,10 +95,14 @@ class Connection:
 
     _connected_to: Session | None = None
 
+    #: Requests we stopped waiting for, whose responses may still arrive.
+    _abandoned: list[Message] = field(factory=list["Message"], repr=False)
+
     @property
     async def _session(self) -> Session:
         if self._connected_to is None:
             self._connected_to = await self._new_session()
+            self._abandoned.clear()
         return self._connected_to
 
     async def request(self, message: Message) -> Message | None:
@@ -109,7 +115,8 @@ class Connection:
             self._connected_to = None
             raise Restarted() from None
 
-        for _ in range(self._retry):
+        retries = self._retry
+        while retries:
             try:
                 with anyio.fail_after(self._read_timeout_sec):
                     response = await session.receive()
@@ -118,7 +125,11 @@ class Connection:
                 # and then gone quiet is telling us why it won't answer.
                 stderr = session.stderr()
                 if stderr:
+                    # It may still answer, though, so don't take a late
+                    # answer for the response to whatever we send next.
+                    self._abandoned.append(message)
                     raise GotStderr(stderr)
+                retries -= 1
                 continue
             except SessionClosed as err:
                 if err.stderr:
@@ -126,9 +137,28 @@ class Connection:
                 return
 
             try:
-                return json.loads(response)
+                response = json.loads(response)
             except json.JSONDecodeError as err:
                 raise InvalidResponse(contents=response) from err
+
+            if not self._answers_abandoned(response):
+                return response
+
+        self._abandoned.append(message)
+
+    def _answers_abandoned(self, response: Message) -> bool:
+        """
+        Discard a late response to a request we already gave up on.
+
+        Responses to ``run`` carry the request's ``seq``, and responses to
+        other commands carry no ``seq`` at all.
+        """
+        seq = response.get("seq", _NO_SEQ)
+        for each in self._abandoned:
+            if each.get("seq", _NO_SEQ) == seq:
+                self._abandoned.remove(each)
+                return True
+        return False
 
 
 def _float_or_none(value: str | float | None) -> float | None:
