@@ -2685,10 +2685,10 @@ def suite(
 
         * URLs to the test suite repository hosted on GitHub, e.g.:
 
-            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/unify/validation/tests``
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/validation/tests``
               to run all tests directly from any branch which exists in GitHub
 
-            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/unify/validation/tests/foo.json``
+            - ``https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/validation/tests/foo.json``
               to run a single file directly from a branch which exists in GitHub
 
         * dialect short names (similar to those providable to

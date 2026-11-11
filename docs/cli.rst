@@ -71,7 +71,7 @@ To run the draft 7 ``type``-keyword tests on the Lua ``jsonschema`` implementati
 
 .. code:: sh
 
-    $ bowtie suite -i lua-jsonschema --dialect 7 https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/unify/validation/tests/type.json | bowtie summary --show failures
+    $ bowtie suite -i lua-jsonschema --dialect 7 https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/main/validation/tests/type.json | bowtie summary --show failures
 
 The suite's test files cover every dialect, so ``--dialect`` chooses which one to run them under.
 

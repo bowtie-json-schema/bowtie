@@ -150,7 +150,7 @@ def test_convert_shortname_fetches_unified_layout(monkeypatch):
     cases, dialect, metadata = ClickParam().convert("7", None, ctx)
 
     assert requested == [
-        ("json-schema-org", "JSON-Schema-Test-Suite", "unify"),
+        ("json-schema-org", "JSON-Schema-Test-Suite", "main"),
     ]
     assert dialect == DRAFT7
     assert len(list(cases)) == 1

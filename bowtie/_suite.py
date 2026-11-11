@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 TEST_SUITE_URL = GITHUB / "json-schema-org/JSON-Schema-Test-Suite"
-TESTS_DIR_URL = TEST_SUITE_URL / "tree/unify/validation/tests"
+TESTS_DIR_URL = TEST_SUITE_URL / "tree/main/validation/tests"
 
 ANNOTATIONS_DIR_URL = TEST_SUITE_URL / "tree/main/annotations/tests"
 
@@ -453,7 +453,7 @@ def _glob(path: _P, path_pattern: str) -> Iterable[_P]:
 
 
 #: The default git ref of the official suite to collect test cases from.
-DEFAULT_REF = "unify"
+DEFAULT_REF = "main"
 
 
 class SuiteNotAvailable(Exception):
