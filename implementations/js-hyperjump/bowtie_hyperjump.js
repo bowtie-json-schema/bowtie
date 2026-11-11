@@ -131,7 +131,10 @@ var dialect = null;
 const keywordsNotInSchemaMessage =
   "Ignoring schema meta-data keywords in places that are not schemas (such as a $id in a const) is not supported. Because this implementation is dialect agnostic, there's no way to know whether a location is a schema or not. Especially because there's no reason for a schema to use keywords in places that aren't schemas, I'm not concerned about making it work.";
 const keywordsNotInSchemaSkippedTests = [
-  "naive replacement of $ref with its destination is not correct",
+  // Fixed in 1.18.0.
+  ...(semver.satisfies(hyperjump_version, "<1.18.0")
+    ? ["naive replacement of $ref with its destination is not correct"]
+    : []),
   "$ref prevents a sibling id from changing the base uri",
   "$ref prevents a sibling $id from changing the base uri",
 ].reduce((acc, description) => {
@@ -143,6 +146,7 @@ const boundaryCrossingMessage =
   "JSON pointers that cross schema resource boundaries are not suppported. There might be a way to solve this, but because this functionality has been removed from the spec and there is no good reason to do this in any version of the spec, it will probably never be fixed.";
 const boundaryCrossingSkippedTests = {
   "base URI change - change folder in subschema": boundaryCrossingMessage,
+  "base URI change - change folder in subschema (id)": boundaryCrossingMessage,
 };
 
 const fileSchemeMessage =
