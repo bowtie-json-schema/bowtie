@@ -46,9 +46,20 @@
       .catch((e: unknown) => (error = e instanceof Error ? e.message : String(e)));
   });
 
-  // Without a dialect in the address, the one most of the benchmark's schemas declare.
+  // A dialect in the address that Bowtie does not know (a typo, or a prerelease the site leaves out).
+  const requested = $derived.by(() => {
+    if (!draftName) return null;
+    try {
+      return Dialect.withName(draftName);
+    } catch {
+      return null;
+    }
+  });
+  const unknownDialect = $derived(draftName && !requested ? draftName : null);
+
+  // Without a known dialect in the address, the one most of the benchmark's schemas declare.
   const dialect = $derived.by(() => {
-    if (draftName) return Dialect.withName(draftName);
+    if (requested) return requested;
     const counts: Record<string, number> = {};
     for (const s of data?.schemas ?? []) if (s.dialect) counts[s.dialect] = (counts[s.dialect] ?? 0) + 1;
     const common = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
@@ -67,7 +78,9 @@
     if (!data) return;
     const token = ++complianceToken;
     const current = dialect;
+    // Drop the previous dialect's results, so that nothing shows them under this dialect's name while loading.
     complianceLoaded = false;
+    compliance = new Map();
     const ids = data.impls.flatMap((i) => (i.bowtie ? [i.bowtie] : []));
     void fetchCompliance(ids, current).then((loaded) => {
       if (token !== complianceToken) return;
@@ -191,6 +204,9 @@
     <aside class="rail filters" aria-label="Filters">
       <div class="rail-group">
         <DialectPicker current={dialect.shortName} base="/benchmarks" />
+        {#if unknownDialect}
+          <p class="hint" role="status">Bowtie has no dialect called “{unknownDialect}”, so this shows {dialect.prettyName}.</p>
+        {/if}
       </div>
 
       <div class="rail-group">

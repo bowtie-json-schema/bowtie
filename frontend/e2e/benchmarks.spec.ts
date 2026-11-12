@@ -77,6 +77,34 @@ test("the dialect picker chooses which compliance counts", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Only 100% on Draft 2020-12" })).toBeVisible();
 });
 
+test("a dialect Bowtie does not know falls back to the common one, with a note", async ({ page }) => {
+  for (const name of ["draft99", "v1"]) {
+    await page.goto(`/#/benchmarks/${name}`);
+    await page.waitForSelector(rows);
+
+    await expect(page.getByRole("status")).toHaveText(
+      `Bowtie has no dialect called “${name}”, so this shows Draft 7.`,
+    );
+    await expect(page.locator(rows)).toHaveCount(30);
+  }
+});
+
+test("changing the dialect drops the old dialect's compliance while the new one loads", async ({ page }) => {
+  await page.goto("/#/benchmarks/draft7");
+  await page.waitForSelector(rows);
+  await expect(page.getByText(/pass\s+every Bowtie test of Draft 7/)).toBeVisible({ timeout: 30000 });
+  await page.getByRole("button", { name: "Only 100% on Draft 7" }).click();
+  await expect(page.locator(rows)).not.toHaveCount(30);
+
+  // hold back every 2020-12 badge, so the page stays loading
+  await page.route("**/compliance/draft2020-12.json", () => undefined);
+  await page.getByLabel("Choose dialect").selectOption("draft2020-12");
+
+  await expect(page.getByText("Loading Bowtie’s results for Draft 2020-12…")).toBeVisible();
+  await expect(page.locator(rows)).toHaveCount(0);
+  await expect(page.locator(".impl-list .cchip", { hasText: /%$/ })).toHaveCount(0);
+});
+
 test("choosing a schema in the matrix shows its detail", async ({ page }) => {
   await page.goto("/#/benchmarks");
   await page.waitForSelector(rows);

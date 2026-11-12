@@ -60,14 +60,16 @@ export function measure(data: RealWorldData, impl: string, schema: string, metri
   if (result === undefined) return { state: "missing" };
   if (result === null) return { state: "failed" };
   const parts = METRICS[metric].parts;
+  if (result[parts[0]].length === 0) return { state: "missing" };
+  // A zero is how a run reports that it could not measure, and the benchmark treats it as a failure. One zero
+  // fails the cell: a summed metric would otherwise hide a zero part, and a zero minimum breaks the log scale.
+  if (parts.some((part) => result[part].some((v) => !(v > 0)))) return { state: "failed" };
   const runs = result[parts[0]]
     .map((_, i) => parts.reduce((sum, part) => sum + result[part][i], 0))
     .sort((x, y) => x - y);
-  if (runs.length === 0) return { state: "missing" };
   const mid = runs.length >> 1;
   const median = runs.length % 2 ? runs[mid] : (runs[mid - 1] + runs[mid]) / 2;
-  // A zero is how a run reports that it could not measure; the benchmark treats it as a failure.
-  return median > 0 ? { state: "ok", median, min: runs[0], max: runs[runs.length - 1], runs } : { state: "failed" };
+  return { state: "ok", median, min: runs[0], max: runs[runs.length - 1], runs };
 }
 
 export function geomean(values: number[]): number {
@@ -245,6 +247,8 @@ export const ratioTickLabel = (t: number) => (t >= 1 ? `${significant(t)}×` : `
 /** Powers of ten that cover [lo, hi], with 2 and 5 between them when the range is short. */
 export function valueTicksLog(lo: number, hi: number): number[] {
   const ticks: number[] = [];
+  // A log axis has no ticks at or below zero; without this the loop below would start at -Infinity and never end.
+  if (!(lo > 0 && Number.isFinite(lo) && Number.isFinite(hi) && hi >= lo)) return ticks;
   const steps = Math.log10(hi / lo) < 2.5 ? [1, 2, 5] : [1];
   for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
     for (const m of steps) {

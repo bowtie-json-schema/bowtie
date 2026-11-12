@@ -15,6 +15,7 @@ import {
   spread,
   summarise,
   thin,
+  valueTicksLog,
 } from "./realWorldModel";
 
 /** Runs with the given warm figures; the other measures are 10 each, so parse + warm is warm + 10. */
@@ -65,6 +66,20 @@ describe("MetricTable", () => {
     const table = new MetricTable(data, "warm");
     expect(table.get("c", "two")).toStrictEqual({ state: "failed" });
     expect(table.get("c", "three")).toStrictEqual({ state: "missing" });
+  });
+
+  test("fails a cell when any run is zero, even if the median is not", () => {
+    const zero: RealWorldData = { ...data, results: { a: { one: runs(0, 500, 600) } } };
+    expect(new MetricTable(zero, "warm").get("a", "one")).toStrictEqual({ state: "failed" });
+  });
+
+  test("fails a combined metric when one of its parts is zero", () => {
+    const zeroParse: RealWorldData = {
+      ...data,
+      results: { a: { one: { ...runs(100, 200, 300), parse: [10, 0, 10] } } },
+    };
+    expect(new MetricTable(zeroParse, "warmParse").get("a", "one")).toStrictEqual({ state: "failed" });
+    expect(new MetricTable(zeroParse, "warm").get("a", "one").state).toBe("ok");
   });
 
   test("takes the mean of the middle two of an even number of runs", () => {
@@ -156,6 +171,17 @@ describe("scales", () => {
   test("ratio ticks are powers of two, at most eight", () => {
     expect(ratioTicks(1, 8)).toStrictEqual([1, 2, 4, 8]);
     expect(ratioTicks(1, 2 ** 20).length).toBeLessThanOrEqual(11);
+  });
+
+  test("value ticks on a log axis", () => {
+    expect(valueTicksLog(1, 1000)).toStrictEqual([1, 10, 100, 1000]);
+    expect(valueTicksLog(10, 100)).toStrictEqual([10, 20, 50, 100]);
+  });
+
+  test("no log ticks for a range that starts at or below zero", () => {
+    expect(valueTicksLog(0, 1e6)).toStrictEqual([]);
+    expect(valueTicksLog(-1, 1e6)).toStrictEqual([]);
+    expect(valueTicksLog(NaN, 1e6)).toStrictEqual([]);
   });
 
   test("thin keeps ticks a gap apart", () => {
