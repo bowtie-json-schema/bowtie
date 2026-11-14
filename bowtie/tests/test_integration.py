@@ -1640,6 +1640,57 @@ async def test_fail_fast():
 
 
 @pytest.mark.asyncio
+async def test_fail_fast_multiple_implementations():
+    async with run(
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "-x",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "null": TestResult.VALID,
+            report_id.always_invalid: TestResult.INVALID,
+        },
+    ], stderr
+    assert stderr != ""
+
+
+@pytest.mark.asyncio
+async def test_max_fail_multiple_implementations():
+    async with run(
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "--max-fail",
+        "1",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "null": TestResult.VALID,
+            report_id.always_invalid: TestResult.INVALID,
+        },
+    ], stderr
+    assert stderr != ""
+
+
+@pytest.mark.asyncio
 async def test_fail_fast_many_tests_at_once():
     async with run("-i", "direct:null", "-x") as send:
         results, stderr = await send(
