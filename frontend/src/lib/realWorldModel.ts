@@ -259,12 +259,13 @@ export function valueTicksLog(lo: number, hi: number): number[] {
   return ticks;
 }
 
+/** Even steps from zero through the first at or above hi, so that the last tick ends an axis covering every value. */
 export function valueTicksLinear(hi: number): number[] {
   const raw = hi / 5;
   const p = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw) ?? raw;
-  const ticks: number[] = [];
-  for (let v = 0; v <= hi * 1.0001; v += step) ticks.push(v);
+  const ticks = [0];
+  while (ticks[ticks.length - 1] < hi * 0.9999) ticks.push(ticks.length * step);
   return ticks;
 }
 

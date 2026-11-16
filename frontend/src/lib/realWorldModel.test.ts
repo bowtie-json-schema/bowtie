@@ -15,6 +15,7 @@ import {
   spread,
   summarise,
   thin,
+  valueTicksLinear,
   valueTicksLog,
 } from "./realWorldModel";
 
@@ -176,6 +177,17 @@ describe("scales", () => {
   test("value ticks on a log axis", () => {
     expect(valueTicksLog(1, 1000)).toStrictEqual([1, 10, 100, 1000]);
     expect(valueTicksLog(10, 100)).toStrictEqual([10, 20, 50, 100]);
+  });
+
+  test("linear ticks run from zero through the largest value", () => {
+    expect(valueTicksLinear(10)).toStrictEqual([0, 2, 4, 6, 8, 10]);
+    expect(valueTicksLinear(7)).toStrictEqual([0, 2, 4, 6, 8]);
+    expect(valueTicksLinear(1.23e6)).toStrictEqual([0, 2.5e5, 5e5, 7.5e5, 1e6, 1.25e6]);
+    for (const hi of [0.3, 1, 7, 99, 101, 145e6, 346e6, 1.23e6]) {
+      const ticks = valueTicksLinear(hi);
+      expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(hi * 0.9999);
+      expect(ticks.length).toBeLessThanOrEqual(6);
+    }
   });
 
   test("no log ticks for a range that starts at or below zero", () => {
