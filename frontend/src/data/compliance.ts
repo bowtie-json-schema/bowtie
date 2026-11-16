@@ -13,6 +13,8 @@ export type Compliance =
   | { state: "unsupported" }
   /** the benchmark does not link the implementation to Bowtie */
   | { state: "untested" }
+  /** the benchmark links it to an ID that Bowtie does not know: a typo, or an implementation renamed or retired */
+  | { state: "unrecognized" }
   /** the badge could not be loaded or read */
   | { state: "unknown" };
 
@@ -32,6 +34,18 @@ export function complianceBadgeURI(bowtieId: string, dialect: Dialect, badges: U
   return badges.clone().segment(bowtieId).segment("compliance").segment(`${dialect.shortName}.json`);
 }
 
+/** Bowtie publishes this for every implementation it knows, whichever dialects it tests. */
+export function supportedVersionsURI(bowtieId: string, badges: URI = BADGES): URI {
+  return badges.clone().segment(bowtieId).segment("supported_versions.json");
+}
+
+/** Why an implementation has no badge for a dialect: Bowtie does not test it on that dialect, or does not know it. */
+async function withoutBadge(bowtieId: string, badges: URI): Promise<Compliance> {
+  const response = await fetch(supportedVersionsURI(bowtieId, badges).href());
+  if (response.ok) return { state: "unsupported" };
+  return response.status === 404 ? { state: "unrecognized" } : { state: "unknown" };
+}
+
 /** The compliance of each Bowtie implementation on the dialect, keyed by Bowtie ID. */
 export async function fetchCompliance(
   bowtieIds: Iterable<string>,
@@ -43,7 +57,7 @@ export async function fetchCompliance(
     ids.map(async (id): Promise<[string, Compliance]> => {
       try {
         const response = await fetch(complianceBadgeURI(id, dialect, badges).href());
-        if (response.status === 404) return [id, { state: "unsupported" }];
+        if (response.status === 404) return [id, await withoutBadge(id, badges)];
         if (!response.ok) return [id, { state: "unknown" }];
         return [id, parseComplianceBadge(await response.json())];
       } catch {

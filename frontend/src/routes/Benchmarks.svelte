@@ -93,7 +93,8 @@
   const nameOf = (id: string) => implById.get(id)?.name ?? id;
   const hrefOf = (id: string) => {
     const bowtie = implById.get(id)?.bowtie;
-    return bowtie ? `#/implementations/${bowtie}` : undefined;
+    // An ID Bowtie does not know has no page to link to.
+    return bowtie && complianceFor(id).state !== "unrecognized" ? `#/implementations/${bowtie}` : undefined;
   };
   const complianceFor = (id: string): Compliance => {
     const bowtie = implById.get(id)?.bowtie;

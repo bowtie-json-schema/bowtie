@@ -13,6 +13,8 @@
         return { text: `no ${dialectName}`, tone: "none", title: `Bowtie tests it, but not on ${dialectName}` };
       case "untested":
         return { text: "not in Bowtie", tone: "none", title: "Bowtie does not test this implementation" };
+      case "unrecognized":
+        return { text: "unknown to Bowtie", tone: "none", title: "The benchmark links it to a Bowtie implementation that Bowtie does not know" };
       default:
         return { text: "?", tone: "none", title: "Its Bowtie results could not be loaded" };
     }

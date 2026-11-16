@@ -6,6 +6,9 @@ import { test, expect } from "@playwright/test";
 import { serveRealWorldResults } from "./fixtures/realWorld";
 
 const rows = ".rbars [data-impl]";
+const fixture = JSON.parse(
+  readFileSync(fileURLToPath(new URL("./fixtures/jsonschema-benchmark.json", import.meta.url)), "utf8"),
+) as { impls: { id: string; lang: string; bowtie: string | null }[] };
 
 test.beforeEach(async ({ page }) => {
   await serveRealWorldResults(page);
@@ -115,6 +118,28 @@ test("choosing a schema in the matrix shows its detail", async ({ page }) => {
   await expect(page.locator(".sbars [data-impl]").first()).toBeVisible();
 });
 
+test("an implementation Bowtie tests, but not on the dialect, says so and links to Bowtie", async ({ page }) => {
+  // Bowtie tests boon, but not on Draft 3.
+  await page.goto("/#/benchmarks/draft3");
+  await page.waitForSelector(rows);
+
+  await expect(page.locator(`${rows}[data-impl="boon"] .cchip`)).toHaveText("no Draft 3");
+  await expect(page.locator(`${rows}[data-impl="boon"] a`)).toHaveAttribute("href", "#/implementations/rust-boon");
+});
+
+test("an implementation linked to an ID Bowtie does not know says so, and does not link to Bowtie", async ({ page }) => {
+  const data = structuredClone(fixture);
+  data.impls.find((i) => i.id === "boon")!.bowtie = "rust-no-such-implementation";
+  await page.route("**/jsonschema-benchmark/data.json", (route) =>
+    route.fulfill({ body: JSON.stringify(data), contentType: "application/json" }),
+  );
+  await page.goto("/#/benchmarks/draft3");
+  await page.waitForSelector(rows);
+
+  await expect(page.locator(`${rows}[data-impl="boon"] .cchip`)).toHaveText("unknown to Bowtie");
+  await expect(page.locator(`${rows}[data-impl="boon"] a`)).toHaveCount(0);
+});
+
 test("a tip showing when a chart's link is followed does not come back with the page", async ({ page }) => {
   await page.setViewportSize({ width: 1360, height: 900 });
   await page.goto("/#/benchmarks");
@@ -179,9 +204,6 @@ test("on a desktop the page is exactly the window's width", async ({ page }) => 
 });
 
 test.describe("a language filter", () => {
-  const fixture = JSON.parse(
-    readFileSync(fileURLToPath(new URL("./fixtures/jsonschema-benchmark.json", import.meta.url)), "utf8"),
-  ) as { impls: { id: string; lang: string }[] };
   const inLanguage = (lang: string) => fixture.impls.filter((i) => i.lang === lang).length;
 
   test("narrows the implementation list and every menu", async ({ page }) => {

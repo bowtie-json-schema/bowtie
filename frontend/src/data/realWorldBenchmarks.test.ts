@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import Dialect from "./Dialect";
-import { complianceBadgeURI, isFullyCompliant, parseComplianceBadge } from "./compliance";
+import { complianceBadgeURI, isFullyCompliant, parseComplianceBadge, supportedVersionsURI } from "./compliance";
 import { RealWorldDataError, parseRealWorldData, realWorldDataURI } from "./realWorldBenchmarks";
 
 const minimal = {
@@ -55,6 +55,7 @@ describe("compliance badges", () => {
     expect(complianceBadgeURI("rust-boon", Dialect.withName("draft7")).href()).toMatch(
       /\/badges\/rust-boon\/compliance\/draft7\.json$/,
     );
+    expect(supportedVersionsURI("rust-boon").href()).toMatch(/\/badges\/rust-boon\/supported_versions\.json$/);
   });
 });
 
