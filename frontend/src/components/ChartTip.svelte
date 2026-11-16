@@ -1,5 +1,11 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
+
   import { chartTip } from "../lib/chartTip.svelte";
+
+  // The charts hide the tip when the pointer leaves them, but leaving the page unmounts them first; without this, the
+  // tip would come back, where it was, the next time the page shows.
+  onDestroy(() => chartTip.hide());
 
   let width = $state(0);
   let height = $state(0);

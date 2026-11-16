@@ -115,6 +115,24 @@ test("choosing a schema in the matrix shows its detail", async ({ page }) => {
   await expect(page.locator(".sbars [data-impl]").first()).toBeVisible();
 });
 
+test("a tip showing when a chart's link is followed does not come back with the page", async ({ page }) => {
+  await page.setViewportSize({ width: 1360, height: 900 });
+  await page.goto("/#/benchmarks");
+  await page.waitForSelector(rows);
+
+  const link = page.locator('.sbars [data-impl="boon"] a');
+  await link.hover();
+  await expect(page.locator(".chart-tip")).toBeVisible();
+  await link.click();
+  await page.waitForURL(/#\/implementations\//);
+
+  // Back again with the pointer away from every chart, so that nothing hovers anything.
+  await page.mouse.move(100, 600);
+  await page.goBack();
+  await page.waitForSelector(rows);
+  await expect(page.locator(".chart-tip")).toHaveCount(0);
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
