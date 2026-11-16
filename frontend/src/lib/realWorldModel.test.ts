@@ -48,13 +48,13 @@ const data: RealWorldData = {
 const all = ["a", "b", "c"];
 
 describe("MetricTable", () => {
-  test("takes the median of the runs, with their range", () => {
+  test("takes the median of the runs, with their range, and keeps the runs in the order they ran", () => {
     expect(new MetricTable(data, "warm").get("a", "one")).toStrictEqual({
       state: "ok",
       median: 200,
       min: 100,
       max: 300,
-      runs: [100, 200, 300],
+      runs: [100, 300, 200],
     });
   });
 

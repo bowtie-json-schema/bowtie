@@ -64,12 +64,11 @@ export function measure(data: RealWorldData, impl: string, schema: string, metri
   // A zero is how a run reports that it could not measure, and the benchmark treats it as a failure. One zero
   // fails the cell: a summed metric would otherwise hide a zero part, and a zero minimum breaks the log scale.
   if (parts.some((part) => result[part].some((v) => !(v > 0)))) return { state: "failed" };
-  const runs = result[parts[0]]
-    .map((_, i) => parts.reduce((sum, part) => sum + result[part][i], 0))
-    .sort((x, y) => x - y);
-  const mid = runs.length >> 1;
-  const median = runs.length % 2 ? runs[mid] : (runs[mid - 1] + runs[mid]) / 2;
-  return { state: "ok", median, min: runs[0], max: runs[runs.length - 1], runs };
+  const runs = result[parts[0]].map((_, i) => parts.reduce((sum, part) => sum + result[part][i], 0));
+  const sorted = [...runs].sort((x, y) => x - y);
+  const mid = sorted.length >> 1;
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return { state: "ok", median, min: sorted[0], max: sorted[sorted.length - 1], runs };
 }
 
 export function geomean(values: number[]): number {
