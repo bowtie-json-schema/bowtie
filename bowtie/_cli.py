@@ -3308,6 +3308,66 @@ def _write_api(output: Path, infos: dict[str, ImplementationInfo]) -> None:
     api_dir.joinpath("implementations").write_text(json.dumps(api, indent=2))
 
 
+class _StopLimit:
+    """
+    Coordinate `--fail-fast`, `--max-fail`, and `--max-error` across runners.
+
+    Tracks per-case failure and error counts across all concurrent
+    implementations so that once the cumulative count reaches the configured
+    limit at some case ``seq``, all runners stop at or before ``seq`` and
+    reports can be truncated to a common prefix before combining.
+    """
+
+    def __init__(
+        self,
+        max_fail: int | None = None,
+        max_error: int | None = None,
+    ) -> None:
+        self._max_fail = max_fail
+        self._max_error = max_error
+        self._failed_by_seq: dict[int, int] = {}
+        self._errored_by_seq: dict[int, int] = {}
+        self.stop_after: int | None = None
+
+    def record(self, seq: int, unsuccessful: Unsuccessful) -> None:
+        """
+        Record unsuccessful results for ``seq`` and tighten ``stop_after``.
+        """
+        if self._max_fail is not None and unsuccessful.failed:
+            self._failed_by_seq[seq] = self._failed_by_seq.get(seq, 0) + len(
+                unsuccessful.failed,
+            )
+            self._update_stop_after(self._failed_by_seq, self._max_fail)
+
+        if self._max_error is not None and unsuccessful.errored:
+            self._errored_by_seq[seq] = self._errored_by_seq.get(seq, 0) + len(
+                unsuccessful.errored,
+            )
+            self._update_stop_after(self._errored_by_seq, self._max_error)
+
+    def _update_stop_after(self, counts: dict[int, int], limit: int) -> None:
+        total = 0
+        for seq in sorted(counts):
+            if self.stop_after is not None and seq >= self.stop_after:
+                break
+            total += counts[seq]
+            if total >= limit:
+                self.stop_after = seq
+                break
+
+    def exceeded(self, seq: int) -> bool:
+        """
+        Return whether ``seq`` is strictly past the stop point.
+        """
+        return self.stop_after is not None and seq > self.stop_after
+
+    def should_stop(self, seq: int) -> bool:
+        """
+        Return whether execution should stop after completing ``seq``.
+        """
+        return self.stop_after is not None and seq >= self.stop_after
+
+
 async def _run_cases(
     runner: DialectRunner,
     dialect: Dialect,
@@ -3318,6 +3378,7 @@ async def _run_cases(
     reporter: _report.Reporter = SILENT,
     max_fail: int | None = None,
     max_error: int | None = None,
+    stop_limit: _StopLimit | None = None,
     time_output_file: Path | None = None,
     output: OutputFormat = "flag",
 ) -> _report.Report | None:
@@ -3328,6 +3389,9 @@ async def _run_cases(
     set, the implementation's cumulative per-case wall time is appended to it
     (used by `bowtie perf`).
     """
+    if stop_limit is None and (max_fail is not None or max_error is not None):
+        stop_limit = _StopLimit(max_fail=max_fail, max_error=max_error)
+
     metadata = _report.RunMetadata(
         implementations=implementations,
         dialect=dialect,
@@ -3336,10 +3400,12 @@ async def _run_cases(
     lines: list[dict[str, Any]] = [metadata.serializable()]
     count = 0
     should_stop = False
-    unsuccessful = Unsuccessful()
     time_taken = 0
 
     for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+        if stop_limit is not None and stop_limit.exceeded(count):
+            should_stop = True
+            break
         seq_case = SeqCase(seq=count, case=case, output=output)
         got_result = reporter.case_started(seq_case, dialect)
         st_time = perf_counter_ns()
@@ -3348,12 +3414,11 @@ async def _run_cases(
         got_result(result=result)
         lines.append(seq_case.serializable())
         lines.append(result.serializable())
-        unsuccessful += result.unsuccessful()
-        if (max_fail and len(unsuccessful.failed) >= max_fail) or (
-            max_error and len(unsuccessful.errored) >= max_error
-        ):
-            should_stop = True
-            break
+        if stop_limit is not None:
+            stop_limit.record(count, result.unsuccessful())
+            if stop_limit.should_stop(count):
+                should_stop = True
+                break
 
     lines.append({"did_fail_fast": should_stop})
 
@@ -3373,6 +3438,7 @@ async def _run_one(
     maybe_set_schema: Callable[[Dialect], CaseTransform],
     max_fail: int | None = None,
     max_error: int | None = None,
+    stop_limit: _StopLimit | None = None,
     run_metadata: dict[str, Any] = {},
     output: OutputFormat = "flag",
     **kwargs: Any,
@@ -3421,6 +3487,7 @@ async def _run_one(
             reporter=reporter,
             max_fail=max_fail,
             max_error=max_error,
+            stop_limit=stop_limit,
             time_output_file=time_output_file,
             output=output,
         )
@@ -3436,12 +3503,26 @@ async def _run_parallel(
     dialect: Dialect,
     jobs: int,
     fail_fast: bool = False,
+    max_fail: int | None = None,
+    max_error: int | None = None,
     output: OutputFormat = "flag",
     **kwargs: Any,
 ) -> int:
     """
     Run each implementation individually, gated by a semaphore, then combine.
     """
+    if fail_fast:
+        if max_fail is None:
+            max_fail = 1
+        if max_error is None:
+            max_error = 1
+
+    stop_limit = (
+        _StopLimit(max_fail=max_fail, max_error=max_error)
+        if max_fail is not None or max_error is not None
+        else None
+    )
+
     materialized = list(cases)
     semaphore = asyncio.Semaphore(jobs)
 
@@ -3451,6 +3532,7 @@ async def _run_parallel(
                 connectable=connectable,
                 cases=materialized,
                 dialect=dialect,
+                stop_limit=stop_limit,
                 output=output,
                 **kwargs,
             )
@@ -3483,12 +3565,23 @@ async def _run_parallel(
             exit_code |= EX.CONFIG
         return exit_code
 
+    if stop_limit is not None and stop_limit.stop_after is not None:
+        reports = [
+            report.truncated(stop_limit.stop_after, did_fail_fast=True)
+            for report in reports
+        ]
+
     combined = _report.Report.combine(*reports)
     for line in combined.serialized():
         click.echo(line)
 
-    if len(materialized) > 1:
-        STDERR.print(f"Ran [green]{len(materialized)}[/] test cases.")
+    if combined.did_fail_fast:
+        STDERR.print(
+            "[bold yellow]Stopping -- the maximum number of "
+            "unsuccessful tests was reached![/]",
+        )
+    if combined.total_cases > 1:
+        STDERR.print(f"Ran [green]{combined.total_cases}[/] test cases.")
 
     return exit_code
 
