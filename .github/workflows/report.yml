@@ -9,9 +9,6 @@ on:
         type: string
         required: false
         default: ""
-      report_benchmark_artifact_in_scope:
-        required: false
-        type: boolean
   workflow_dispatch:
   schedule:
     # Every 6 hours, at 50 past the hour -- after the harnesses publish their
@@ -154,36 +151,19 @@ jobs:
             bowtie summary --show failures "${report}" --format markdown >> "$GITHUB_STEP_SUMMARY"
           done
 
-      - name: Include Benchmark Report from local artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        if: inputs.report_benchmark_artifact_in_scope == true
-        with:
-          name: benchmarks
-          path: site/benchmarks
-
-      # if called as a separate workflow
-      - name: Download latest Benchmark Report
-        if: inputs.report_benchmark_artifact_in_scope == false
-        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
-        with:
-          workflow: benchmark.yml
-          branch: main
-          name: benchmarks
-          path: site/benchmarks
-        id: download_benchmark
-        continue-on-error: true
-
-      - name: Fallback for missing benchmarks
-        if: steps.download_benchmark.outcome == 'failure'
+      # The real-world benchmark results the benchmarks page shows, from the
+      # latest run of sourcemeta-research/jsonschema-benchmark on its runner
+      # pool. Its bucket allows no other origins, so the site serves a copy.
+      # Without them only that page is affected, so the site still deploys.
+      - name: Include the real-world benchmark results
         run: |
-          mkdir -p ./site/benchmarks
-          cd site/benchmarks
-          curl -O https://bowtie.report/benchmarks/draft3.json
-          curl -O https://bowtie.report/benchmarks/draft4.json
-          curl -O https://bowtie.report/benchmarks/draft6.json
-          curl -O https://bowtie.report/benchmarks/draft7.json
-          curl -O https://bowtie.report/benchmarks/draft2019-09.json
-          curl -O https://bowtie.report/benchmarks/draft2020-12.json
+          mkdir -p site/jsonschema-benchmark
+          if ! curl --fail --silent --show-error --retry 3 \
+              --output site/jsonschema-benchmark/data.json \
+              https://sourcemeta-research-jsonschema-benchmark.s3.eu-central-003.backblazeb2.com/latest/data.json; then
+            rm -f site/jsonschema-benchmark/data.json
+            echo "::warning::The real-world benchmark results could not be downloaded; the benchmarks page will say so."
+          fi
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
