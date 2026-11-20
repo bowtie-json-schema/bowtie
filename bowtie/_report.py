@@ -454,6 +454,45 @@ class Report:  # noqa: PLW1641
         rest = [r for r in reports if not any(r is each for each in kept)]
         return kept, rest
 
+    def truncated(
+        self,
+        count: int,
+        *,
+        did_fail_fast: bool | None = None,
+    ) -> Report:
+        """
+        Return a report containing only the first ``count`` test cases.
+        """
+        fail_fast = (
+            self.did_fail_fast if did_fail_fast is None else did_fail_fast
+        )
+        if count >= len(self._cases) and fail_fast == self.did_fail_fast:
+            return self
+        kept_seqs = sorted(self._cases)[:count]
+        cases: HashTrieMap[Seq, TestCase] = HashTrieMap(
+            (seq, self._cases[seq]) for seq in kept_seqs
+        )
+        results: HashTrieMap[
+            ConnectableId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap(
+            (
+                impl_id,
+                HashTrieMap(
+                    (seq, impl_results[seq])
+                    for seq in kept_seqs
+                    if seq in impl_results
+                ),
+            )
+            for impl_id, impl_results in self._results.items()
+        )
+        return Report(
+            cases=cases,
+            results=results,
+            metadata=self.metadata,
+            did_fail_fast=fail_fast,
+        )
+
     def serialized(self) -> Iterable[str]:
         """
         Serialize this report for consumption by `Report.from_serialized`.
@@ -476,6 +515,10 @@ class Report:  # noqa: PLW1641
     @property
     def is_empty(self):
         return not self._cases
+
+    @property
+    def total_cases(self):
+        return len(self._cases)
 
     @property
     def total_tests(self):
