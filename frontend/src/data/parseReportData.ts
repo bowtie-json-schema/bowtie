@@ -6,13 +6,40 @@ import Implementation, { RawImplementationData } from "./Implementation";
 
 dayjs.extend(relativeTime);
 
+const { rawJSON } = JSON as unknown as {
+  rawJSON?: (text: string) => unknown;
+};
+
+/**
+ * Keep a number's literal text when it would not round-trip through a
+ * JavaScript number (e.g. `0.0` or `1e2`), so instances and schemas show as
+ * written. Browsers without `JSON.rawJSON` fall back to plain numbers.
+ */
+const preserveNumberLiterals = (
+  _key: string,
+  value: unknown,
+  context?: { source?: string },
+) =>
+  rawJSON &&
+  typeof value === "number" &&
+  context?.source !== undefined &&
+  context.source !== String(value)
+    ? rawJSON(context.source)
+    : value;
+
 /**
  * Parse a report from some JSONL data.
  */
 export const fromSerialized = (jsonl: string): ReportData => {
   const lines = jsonl.trim().split(/\r?\n/);
   return parseReportData(
-    lines.map((line) => JSON.parse(line) as Record<string, unknown>),
+    lines.map(
+      (line) =>
+        JSON.parse(
+          line,
+          preserveNumberLiterals as Parameters<typeof JSON.parse>[1],
+        ) as Record<string, unknown>,
+    ),
   );
 };
 
