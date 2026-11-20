@@ -357,19 +357,12 @@ class Report:  # noqa: PLW1641
         """
         dialect = first.metadata.dialect
 
-        # The first report's seqs are canonical.
         implementations: dict[ConnectableId, ImplementationInfo] = dict(
             first.metadata.implementations,
         )
-        case_to_seq: dict[str, Seq] = {
-            case.uniq(): seq for seq, case in first._cases.items()
-        }
-        results: HashTrieMap[
-            ConnectableId,
-            HashTrieMap[Seq, SeqResult],
-        ] = first._results
-        did_fail_fast = first.did_fail_fast
         started = first.metadata.started
+        all_reports = (first, *rest)
+        did_fail_fast = any(report.did_fail_fast for report in all_reports)
 
         for report in rest:
             if report.metadata.dialect != dialect:
@@ -382,40 +375,90 @@ class Report:  # noqa: PLW1641
                     raise DuplicateImplementation(id)
                 implementations[id] = info
 
-            did_fail_fast = did_fail_fast or report.did_fail_fast
             started = min(started, report.metadata.started)
 
-            # Map this report's seqs to the canonical ones.
-            report_uniqs = {case.uniq() for case in report._cases.values()}
-            if report_uniqs != case_to_seq.keys():
+        first_uniqs = {case.uniq() for case in first._cases.values()}
+        all_identical = all(
+            {case.uniq() for case in r._cases.values()} == first_uniqs
+            for r in rest
+        )
+
+        if not all_identical:
+            if not did_fail_fast:
                 raise InconsistentCases(
                     "Reports do not contain the same test cases.",
                 )
+            min_uniqs = min(
+                (
+                    {case.uniq() for case in r._cases.values()}
+                    for r in all_reports
+                ),
+                key=len,
+            )
+            if not min_uniqs or not all(
+                min_uniqs.issubset({case.uniq() for case in r._cases.values()})
+                for r in all_reports
+            ):
+                raise InconsistentCases(
+                    "Reports do not contain the same test cases.",
+                )
+            canonical_cases = HashTrieMap(
+                {
+                    seq: case
+                    for seq, case in first._cases.items()
+                    if case.uniq() in min_uniqs
+                },
+            )
+        else:
+            canonical_cases = first._cases
+
+        case_to_seq: dict[str, Seq] = {
+            case.uniq(): seq for seq, case in canonical_cases.items()
+        }
+        results: HashTrieMap[
+            ConnectableId,
+            HashTrieMap[Seq, SeqResult],
+        ] = HashTrieMap(
+            {
+                impl_id: HashTrieMap(
+                    {
+                        seq: res
+                        for seq, res in impl_results.items()
+                        if seq in canonical_cases
+                    },
+                )
+                for impl_id, impl_results in first._results.items()
+            },
+        )
+
+        for report in rest:
             seq_map: dict[Seq, Seq] = {
                 seq: case_to_seq[case.uniq()]
                 for seq, case in report._cases.items()
+                if case.uniq() in case_to_seq
             }
 
             for impl_id, impl_results in report._results.items():
                 remapped: HashTrieMap[Seq, SeqResult] = HashTrieMap()
                 for seq, result in impl_results.items():
-                    canonical_seq = seq_map[seq]
-                    if canonical_seq == result.seq:
-                        remapped = remapped.insert(canonical_seq, result)
-                    else:
-                        remapped = remapped.insert(
-                            canonical_seq,
-                            SeqResult(
-                                seq=canonical_seq,
-                                implementation=result.implementation,
-                                expected=result.expected,
-                                result=result.result,
-                            ),
-                        )
+                    if seq in seq_map:
+                        canonical_seq = seq_map[seq]
+                        if canonical_seq == result.seq:
+                            remapped = remapped.insert(canonical_seq, result)
+                        else:
+                            remapped = remapped.insert(
+                                canonical_seq,
+                                SeqResult(
+                                    seq=canonical_seq,
+                                    implementation=result.implementation,
+                                    expected=result.expected,
+                                    result=result.result,
+                                ),
+                            )
                 results = results.insert(impl_id, remapped)
 
         return cls(
-            cases=first._cases,
+            cases=canonical_cases,
             results=results,
             metadata=RunMetadata(
                 implementations=implementations,
