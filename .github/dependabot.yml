@@ -45,6 +45,13 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: "npm"
+    directory: "/implementations/js-jedison"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
   # ignore: python-jsonschema - installs the latest (unpinned) version
 
   - package-ecosystem: "gradle"
@@ -62,6 +69,13 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/implementations/js-hyperjump"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "docker"
+    directory: "/implementations/js-jedison"
     schedule:
       interval: "daily"
     cooldown:
