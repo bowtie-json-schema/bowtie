@@ -3381,6 +3381,50 @@ async def test_filter_dialects_no_results():
 
 
 @pytest.mark.asyncio
+async def test_filter_dialects_format_short_name():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "--format",
+        "{.short_name}",
+    )
+    expected = "\n".join(
+        [
+            dialect.short_name
+            for dialect in sorted(Dialect.known(), reverse=True)
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{expected}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_format_two_fields():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "--format",
+        "{.short_name}: {.pretty_name}",
+    )
+    expected = "\n".join(
+        [
+            f"{dialect.short_name}: {dialect.pretty_name}"
+            for dialect in sorted(Dialect.known(), reverse=True)
+        ],
+    )
+    assert (stdout.strip(), stderr) == (f"{expected}", "")
+
+
+@pytest.mark.asyncio
+async def test_filter_dialects_format_unknown_attribute():
+    stdout, stderr = await bowtie(
+        "filter-dialects",
+        "--format",
+        "{.nonexistent}",
+        exit_code=2,
+    )
+    assert stdout == ""
+    assert "nonexistent" in stderr
+
+
+@pytest.mark.asyncio
 async def test_validate(tmp_path):
     tmp_path.joinpath("schema.json").write_text("{}")
     tmp_path.joinpath("a.json").write_text("12")

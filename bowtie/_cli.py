@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 import os
+import string
 import sys
 import tarfile
 
@@ -1114,6 +1115,55 @@ class _Dialect(click.ParamType):
         ]
 
 
+class _DialectFormatter(string.Formatter):
+    """
+    Format a dialect, where every unnamed field (``{.attr}``) is the dialect.
+    """
+
+    def get_value(
+        self,
+        key: int | str,
+        args: Sequence[Any],
+        kwargs: Mapping[str, Any],
+    ) -> Any:
+        if key == "" or isinstance(key, int):
+            return args[0]
+        return super().get_value(key, args, kwargs)
+
+
+_DIALECT_FORMATTER = _DialectFormatter()
+
+
+class _DialectFormat(click.ParamType):
+    """
+    A format string for JSON Schema dialects.
+    """
+
+    name = "format"
+
+    def convert(
+        self,
+        value: str,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> str:
+        if ctx is not None and ctx.resilient_parsing:
+            return value
+
+        try:
+            latest = Dialect.latest()
+            _DIALECT_FORMATTER.format(value, latest, dialect=latest)
+        except (
+            AttributeError,
+            KeyError,
+            IndexError,
+            ValueError,
+            TypeError,
+        ) as err:
+            self.fail(str(err), param, ctx)
+        return value
+
+
 CaseTransform = Callable[[Iterable[TestCase]], Iterable[TestCase]]
 
 
@@ -1747,11 +1797,21 @@ async def filter_implementations(
         "support boolean schemas. Otherwise show either kind."
     ),
 )
+@click.option(
+    "--format",
+    "-f",
+    "format",
+    type=_DialectFormat(),
+    default="{.uri}",
+    show_default=True,
+    help="A format string to use for formatting each dialect.",
+)
 async def filter_dialects(
     start: Starter,
     dialects: Iterable[Dialect],
     latest: bool,
     booleans: bool | None,
+    format: str,
 ):
     """
     Output dialect URIs matching a given criteria.
@@ -1780,7 +1840,13 @@ async def filter_dialects(
         return EX.DATAERR
 
     for dialect in sorted(matching, reverse=True):
-        click.echo(dialect.uri)
+        try:
+            line = _DIALECT_FORMATTER.format(format, dialect, dialect=dialect)
+            click.echo(line)
+        except AttributeError as err:
+            raise click.BadParameter(str(err), param_hint="--format")
+        except (KeyError, IndexError, ValueError, TypeError) as err:
+            raise click.BadParameter(str(err), param_hint="--format")
         if latest:
             break
 
