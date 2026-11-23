@@ -2453,6 +2453,60 @@ class TestSmoke:
         assert tokens, tokens
 
     @pytest.mark.asyncio
+    async def test_markdown_entirely_failing(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "markdown",
+            "-i",
+            miniatures.always_wrong,
+            exit_code=EX.DATAERR,
+        )
+        assert dedent(stdout) == dedent(
+            """\
+            # always_wrong (python)
+
+            Smoke test **failed!**
+
+            Not a single test passed, in any dialect. The harness is likely misreading test cases or misreporting results.
+            """,  # noqa: E501
+        ), stderr
+
+    @pytest.mark.asyncio
+    @pytest.mark.containers
+    async def test_markdown_entirely_erroring(self, fail_on_run):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "markdown",
+            "-i",
+            fail_on_run,
+            exit_code=EX.DATAERR,
+        )
+        assert dedent(stdout) == dedent(
+            """\
+            # fail-on-run (sh)
+
+            Smoke test **failed!**
+
+            Every test errored, in every dialect. The harness is likely crashing, or isn't set up correctly on this host.
+            """,  # noqa: E501
+        ), stderr
+
+    @pytest.mark.asyncio
+    async def test_pretty_entirely_failing(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.always_wrong,
+            exit_code=EX.DATAERR,
+        )
+        assert "completely broken!" in stdout, stderr
+        assert "Failures" not in stdout, stdout
+
+    @pytest.mark.asyncio
     async def test_pretty_multiple(self):
         stdout, _stderr = await bowtie(
             "smoke",

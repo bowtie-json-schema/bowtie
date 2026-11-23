@@ -17,7 +17,7 @@ from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY
 from rpds import HashTrieMap
 
-from bowtie._commands import ExpectedValidity
+from bowtie._commands import ExpectedValidity, Unsuccessful
 from bowtie._core import Example, Test, TestCase
 
 if TYPE_CHECKING:
@@ -59,13 +59,14 @@ async def test(implementation: Implementation):
     support *basic* referencing support, where we define this to mean that a
     schema containing a reference to a single absolute URI is followed.
     """
-    dialects = DialectResults()
+    dialects, ran = DialectResults(), 0
 
     for dialect in implementation.info.dialects:
         cases = [
             dialect.top_test_case(EXAMPLES),
             dialect.bottom_test_case(EXAMPLES),
         ]
+        ran += sum(len(case.tests) for case in cases)
         failures = await implementation.failing(dialect=dialect, cases=cases)
         dialects = dialects.with_result(dialect, failures)
 
@@ -93,7 +94,12 @@ async def test(implementation: Implementation):
             (failure,) = got
             ref = last, *failure
 
-    return Result(id=implementation.report_id, dialects=dialects, ref=ref)
+    return Result(
+        id=implementation.report_id,
+        dialects=dialects,
+        ref=ref,
+        ran=ran,
+    )
 
 
 @frozen
@@ -108,6 +114,7 @@ class Result:
         repr=False,
         alias="ref",
     )
+    _ran: int = field(default=0, repr=False, alias="ran")
 
     def __rich_console__(
         self,
@@ -126,7 +133,10 @@ class Result:
         failures = self._dialects.failures
 
         prefix = f"{self.id} [dim]seems to"
-        if failures:
+        if self.entirely_broken:
+            title = f"{prefix} be [/][b red]completely broken!"
+            epilog.add_row(Text(self.entirely_broken))
+        elif failures:
             title = f"{prefix} be [/][b red]broken!"
 
             for dialect, cases_and_results in failures:
@@ -252,6 +262,34 @@ class Result:
         # We treat referencing failures as soft failures, since so many
         # implementations have issues :( Perhaps this will change.
         return not self._dialects.failures
+
+    @cached_property
+    def entirely_broken(self) -> str | None:
+        """
+        Explain what happened if not a single test passed in any dialect.
+
+        This is far more likely to be a broken harness (or host) than a
+        bug in the implementation itself.
+        """
+        unsuccessful = sum(
+            (
+                each.unsuccessful()
+                for _, failures in self._dialects.failures
+                for _, each in failures
+            ),
+            Unsuccessful(),
+        )
+        if not self._ran or unsuccessful.total != self._ran:
+            return None
+        if len(unsuccessful.errored) == self._ran:
+            return (
+                "Every test errored, in every dialect. The harness is "
+                "likely crashing, or isn't set up correctly on this host."
+            )
+        return (
+            "Not a single test passed, in any dialect. The harness is "
+            "likely misreading test cases or misreporting results."
+        )
 
     def serializable(self) -> dict[str, Any]:
         if self.success:
