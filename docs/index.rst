@@ -8,7 +8,7 @@ Bowtie is a *meta*-validator of the `JSON Schema specification <https://json-sch
 
 It has a few parts:
 
-    * a command line tool which can be used to access any of the |implementation-count| :github:`JSON Schema implementations <orgs/bowtie-json-schema/packages>` integrated with it. Use it to validate any schema and instance against any implementation.
+    * a command line tool which can be used to access any of the |implementation-count| `JSON Schema implementations <https://github.com/orgs/bowtie-json-schema/packages>`_ integrated with it. Use it to validate any schema and instance against any implementation.
     * a report, accessible at |site|, showing how well each implementation complies with the specification and which tests they fail (if any)
     * a protocol which new implementations can integrate with in order to have their implementation be supported by Bowtie
 
