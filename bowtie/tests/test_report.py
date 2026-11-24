@@ -907,3 +907,41 @@ class TestSplitOnCases:
         foo, bar = Report.from_input(older), Report.from_input(newer)
         assert Report.split_on_cases([foo, bar]) == ([bar], [foo])
         assert Report.split_on_cases([bar, foo]) == ([bar], [foo])
+
+
+class TestTruncated:
+    """Tests for Report.truncated()."""
+
+    def test_truncates_cases_and_results(self):
+        valid = CaseResult(results=[TestResult.VALID])
+        report = Report.from_input(
+            _report_data("foo", FOO, [(CASE1, valid), (CASE2, valid)]),
+        )
+        truncated = report.truncated(1, did_fail_fast=True)
+        assert truncated.total_cases == 1
+        assert truncated.total_tests == len(CASE1.tests)
+        assert truncated.did_fail_fast
+        assert Report.from_serialized(truncated.serialized()) == truncated
+
+    def test_truncated_allows_combining_mismatched_fail_fast_reports(self):
+        valid = CaseResult(results=[TestResult.VALID])
+        invalid = CaseResult(results=[TestResult.INVALID])
+        foo = Report.from_input(
+            _report_data("foo", FOO, [(CASE1, valid), (CASE2, valid)]),
+        )
+        bar = Report.from_input(
+            _report_data("bar", BAR, [(CASE1, invalid)], did_fail_fast=True),
+        )
+        combined = Report.combine(
+            foo.truncated(1, did_fail_fast=True),
+            bar.truncated(1, did_fail_fast=True),
+        )
+        assert combined.total_cases == 1
+        assert combined.did_fail_fast
+        assert set(combined.implementations) == {"foo", "bar"}
+
+    def test_noop_returns_same_report(self):
+        valid = CaseResult(results=[TestResult.VALID])
+        report = Report.from_input(_report_data("foo", FOO, [(CASE1, valid)]))
+        assert report.truncated(1) is report
+        assert report.truncated(5) is report

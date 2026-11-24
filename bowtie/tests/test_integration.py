@@ -1706,6 +1706,94 @@ async def test_max_fail_with_fail_fast():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("jobs", ["1", "2"])
+async def test_fail_fast_multiple_implementations(jobs):
+    async with run(
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "-x",
+        "-j",
+        jobs,
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "null": TestResult.VALID,
+            report_id.always_invalid: TestResult.INVALID,
+        },
+    ], stderr
+    assert "stopping" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("jobs", ["1", "2"])
+async def test_max_fail_across_implementations(jobs):
+    async with run(
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.always_invalid,
+        "--max-fail",
+        "2",
+        "-j",
+        jobs,
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": false}] }
+            {"description": "3", "schema": {}, "tests": [{"description": "3", "instance": {}, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "null": TestResult.VALID,
+            report_id.always_invalid: TestResult.INVALID,
+        },
+        {
+            "null": TestResult.VALID,
+            report_id.always_invalid: TestResult.INVALID,
+        },
+    ], stderr
+    assert "stopping" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
+async def test_max_error_multiple_implementations():
+    async with run(
+        "-i",
+        "direct:null",
+        "-i",
+        miniatures.crashes_on_validate,
+        "--max-error",
+        "1",
+    ) as send:
+        results, stderr = await send(
+            """
+            {"description": "1", "schema": {}, "tests": [{"description": "1", "instance": {}, "valid": true}] }
+            {"description": "2", "schema": {}, "tests": [{"description": "2", "instance": 7, "valid": true}] }
+            """,  # noqa: E501
+        )
+
+    assert results == [
+        {
+            "null": TestResult.VALID,
+            report_id.crashes_on_validate: ErroredTest.in_errored_case(),
+        },
+    ], stderr
+    assert "stopping" in stderr.lower(), stderr
+
+
+@pytest.mark.asyncio
 async def test_filter():
     async with run("-i", "direct:null", "-k", "baz") as send:
         results, stderr = await send(
