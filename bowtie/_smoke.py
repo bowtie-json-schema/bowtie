@@ -245,7 +245,10 @@ class Result:
         if self.unsupported_implicit_dialects:
             dialect_names = ", ".join(
                 each.pretty_name
-                for each in sorted(self.unsupported_implicit_dialects, reverse=True)
+                for each in sorted(
+                    self.unsupported_implicit_dialects,
+                    reverse=True,
+                )
             )
             epilog.add_row(
                 Panel(
@@ -292,7 +295,10 @@ class Result:
         return {
             "unsupportedImplicitDialects": [
                 dialect.short_name
-                for dialect in sorted(self.unsupported_implicit_dialects, reverse=True)
+                for dialect in sorted(
+                    self.unsupported_implicit_dialects,
+                    reverse=True,
+                )
             ],
         }
 
