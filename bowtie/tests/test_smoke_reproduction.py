@@ -43,8 +43,12 @@ def test_ref_reproduction_serializes_the_original_case():
     command = result.ref_reproduction_command()
     assert command is not None
 
-    printer, runner = command.split(" | ", maxsplit=1)
-    assert json.loads(shlex.split(printer)[-1]) == case.serializable()
+    # Unfold the explicit POSIX line continuations before parsing.
+    unfolded = command.replace("\\\n", "")
+    printer, runner = unfolded.split("|", maxsplit=1)
+    assert json.loads("".join(shlex.split(printer)[2:])) == (
+        case.serializable()
+    )
     assert shlex.split(runner) == [
         "bowtie",
         "run",
