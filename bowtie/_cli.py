@@ -2569,7 +2569,8 @@ async def smoke(
                     echo(
                         "\n**Warning:** The harness does not support implicit "
                         f"dialect selection for: {dialect_names}. "
-                        "Check whether the implementation supports configuring "
+                        "Check whether the implementation supports "
+                        "configuring "
                         "the dialect for schemas without $schema.\n",
                     )
 
