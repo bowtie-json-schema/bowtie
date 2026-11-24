@@ -93,8 +93,9 @@ async def test_ref_reproduction_survives_rich_terminal_rendering(width):
     # Strip Rich panel borders and padding as a user would when copying.
     lines = []
     copying = False
+    panel_borders = 2
     for line in output.decode("utf-8").splitlines():
-        if line.count("│") < len(("left", "right")):
+        if line.count("│") < panel_borders:
             continue
         displayed = line.split("│", maxsplit=2)[1].strip()
         if displayed.startswith("printf '%s'"):
