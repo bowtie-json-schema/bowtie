@@ -542,6 +542,7 @@ class DialectRunner:
         repr=False,
         alias="schema_without_dialect",
     )
+    supports_implicit_dialect: bool = field(repr=False)
 
     @classmethod
     async def for_dialect(
@@ -576,6 +577,7 @@ class DialectRunner:
             implementation=implementation,
             harness=new_harness,
             schema_without_dialect=schema_without_dialect,
+            supports_implicit_dialect=response == StartedDialect.OK,
         )
 
     async def validate(
@@ -701,11 +703,13 @@ class Implementation:
         self,
         dialect: Dialect,
         cases: Iterable[TestCase],
+        runner: DialectRunner | None = None,
     ) -> AsyncIterator[tuple[TestCase, SeqResult]]:
         """
         Run a collection of test cases under the given dialect.
         """
-        runner = await self.start_speaking(dialect)
+        if runner is None:
+            runner = await self.start_speaking(dialect)
 
         for case in cases:
             seq_case = SeqCase(seq=uuid4().hex, case=case)
@@ -715,11 +719,12 @@ class Implementation:
         self,
         dialect: Dialect,
         cases: Iterable[TestCase],
+        runner: DialectRunner | None = None,
     ) -> Sequence[tuple[TestCase, SeqResult]]:
         """
         Run the given cases and yield ones which the implementation fails.
         """
-        results = self.validate(dialect=dialect, cases=cases)
+        results = self.validate(dialect=dialect, cases=cases, runner=runner)
         return [each async for each in results if each[1].unsuccessful()]
 
     async def start_speaking(self, dialect: Dialect) -> DialectRunner:
