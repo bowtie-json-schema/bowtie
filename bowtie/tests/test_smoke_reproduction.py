@@ -4,6 +4,7 @@ Regression tests for reproducing smoke-test reference failures.
 
 import asyncio
 import json
+import os
 import shlex
 import sys
 
@@ -56,6 +57,70 @@ def test_ref_reproduction_serializes_the_original_case():
         "direct:bowtie.tests.miniatures:no_registry_support",
         "--dialect",
         "draft7",
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("width", [100, 120])
+async def test_ref_reproduction_survives_rich_terminal_rendering(width):
+    """
+    A command copied from the pretty smoke panel must retain valid shell syntax.
+
+    Exercise the actual CLI renderer, not just ref_reproduction_command().
+    """
+    environment = dict(
+        os.environ,
+        TERMINAL_WIDTH=str(width),
+        COLUMNS=str(width),
+        PYTHONUTF8="1",
+    )
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "bowtie",
+        "smoke",
+        "--format",
+        "pretty",
+        "-i",
+        "direct:bowtie.tests.miniatures:no_registry_support",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=environment,
+    )
+    output, error = await process.communicate()
+    assert process.returncode == 0, error.decode()
+
+    # Strip Rich panel borders and padding as a user would when copying.
+    lines = []
+    copying = False
+    for line in output.decode("utf-8").splitlines():
+        if line.count("│") < 2:
+            continue
+        displayed = line.split("│", maxsplit=2)[1].strip()
+        if displayed.startswith("printf '%s'"):
+            copying = True
+        if copying:
+            lines.append(displayed)
+            if displayed.startswith("--dialect "):
+                break
+
+    assert lines and lines[-1].startswith("--dialect "), output.decode()
+    # Backslash-newline continuation must survive the rendered terminal.
+    command = "\n".join(lines).replace("\\\n", "")
+    printer, runner = command.split("|", maxsplit=1)
+    case = json.loads("".join(shlex.split(printer)[2:]))
+    assert case["schema"]["$ref"] == (
+        "http://bowtie.report/cli/smoke/ref-to-string"
+    )
+    assert case["registry"][case["schema"]["$ref"]] == {"type": "string"}
+    assert [test["valid"] for test in case["tests"]] == [True, False]
+    assert shlex.split(runner) == [
+        "bowtie",
+        "run",
+        "-i",
+        "direct:bowtie.tests.miniatures:no_registry_support",
+        "--dialect",
+        "v1",
     ]
 
 
