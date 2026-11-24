@@ -2367,7 +2367,7 @@ class TestSmoke:
         }, stderr
 
     @pytest.mark.asyncio
-    async def test_missing_implicit_dialect_support_warns_in_pretty_output(self):
+    async def test_missing_implicit_dialect_support_pretty(self):
         stdout, stderr = await bowtie(
             "smoke",
             "--format",
