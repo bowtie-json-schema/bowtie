@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from bowtie import _smoke
-from bowtie._core import Dialect, TestCase
+from bowtie._core import Dialect, TestCase as BowtieTestCase
 
 
 def reference_failure_result():
@@ -19,7 +19,7 @@ def reference_failure_result():
     """
     dialect = Dialect.by_short_name()["draft7"]
     uri = "http://bowtie.report/cli/smoke/ref-to-string"
-    case = TestCase.from_dict(
+    case = BowtieTestCase.from_dict(
         dialect=dialect,
         description="Reference failing on O'Reilly's case",
         schema={"$schema": str(dialect.uri), "$ref": uri},
