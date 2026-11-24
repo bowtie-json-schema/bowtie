@@ -247,8 +247,8 @@ class Result:
             reproduction = self.ref_reproduction_command()
             if reproduction is not None:
                 lead.append(
-                    "\\n\\nTo reproduce the failed reference test "
-                    "(POSIX shell):\\n",
+                    "\n\nTo reproduce the failed reference test "
+                    "(POSIX shell):\n",
                 )
                 lead.append(reproduction, style="cyan")
 
