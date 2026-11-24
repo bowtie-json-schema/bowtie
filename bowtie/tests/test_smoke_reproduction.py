@@ -65,7 +65,7 @@ async def test_ref_reproduction_command_runs_the_failed_case():
     result, case = reference_failure_result()
     command = result.ref_reproduction_command()
     assert command is not None
-    # Use the active interpreter rather than relying on the console script's PATH.
+    # Use the active interpreter instead of relying on PATH.
     command = command.replace(
         "bowtie run",
         f"{shlex.quote(sys.executable)} -m bowtie run",
