@@ -171,7 +171,7 @@ _OPTION_GROUPS = {
         ],
         OptionGroupDict(
             name="Connection & Communication Options",
-            options=["--read-timeout", "--validate-implementations"],
+            options=["--validate-implementations"],
         ),
         OptionGroupDict(name="Help", options=["--help"]),
     ]
