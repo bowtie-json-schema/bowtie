@@ -2353,7 +2353,7 @@ class TestSmoke:
             miniatures.no_registry_support,
         )
         assert "To reproduce the failed reference test" in stdout, stderr
-        assert "bowtie run -i" in stdout
+        assert "| bowtie run" in stdout
         assert "no_registry_support" in stdout
 
     @pytest.mark.asyncio
