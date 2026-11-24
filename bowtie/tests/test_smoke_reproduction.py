@@ -64,7 +64,7 @@ def test_ref_reproduction_serializes_the_original_case():
 @pytest.mark.parametrize("width", [100, 120])
 async def test_ref_reproduction_survives_rich_terminal_rendering(width):
     """
-    A command copied from the pretty smoke panel must retain valid shell syntax.
+    A command copied from the pretty smoke panel must retain valid syntax.
 
     Exercise the actual CLI renderer, not just ref_reproduction_command().
     """
@@ -94,7 +94,7 @@ async def test_ref_reproduction_survives_rich_terminal_rendering(width):
     lines = []
     copying = False
     for line in output.decode("utf-8").splitlines():
-        if line.count("│") < 2:
+        if line.count("│") < len(("left", "right")):
             continue
         displayed = line.split("│", maxsplit=2)[1].strip()
         if displayed.startswith("printf '%s'"):
@@ -104,7 +104,8 @@ async def test_ref_reproduction_survives_rich_terminal_rendering(width):
             if displayed.startswith("--dialect "):
                 break
 
-    assert lines and lines[-1].startswith("--dialect "), output.decode()
+    assert lines, output.decode()
+    assert lines[-1].startswith("--dialect "), output.decode()
     # Backslash-newline continuation must survive the rendered terminal.
     command = "\n".join(lines).replace("\\\n", "")
     printer, runner = command.split("|", maxsplit=1)
