@@ -128,10 +128,17 @@ class Result:
 
         dialect, case, _ = self._ref
         serialized = json.dumps(case.serializable(), separators=(",", ":"))
+        # Fixed-width fragments keep the command copyable in narrow terminals.
+        fragments = [
+            shlex.quote(serialized[index : index + 24])
+            for index in range(0, len(serialized), 24)
+        ]
         return (
-            f"printf '%s\\n' {shlex.quote(serialized)} | "
-            f"bowtie run -i {shlex.quote(self.connectable_id)} "
-            f"--dialect {shlex.quote(dialect.short_name)}"
+            "printf '%s' \\\n  "
+            + " \\\n  ".join(fragments)
+            + " \\\n  | bowtie run \\\n"
+            + f"      -i {shlex.quote(self.connectable_id)} \\\n"
+            + f"      --dialect {shlex.quote(dialect.short_name)}"
         )
 
     def __rich_console__(
