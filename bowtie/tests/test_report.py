@@ -720,6 +720,101 @@ class TestCombine:
         combined = Report.combine(foo_report, bar_report)
         assert combined.did_fail_fast
 
+    def test_combine_fail_fast_mismatched_cases_first_shorter(self):
+        foo_report = Report.from_input(
+            _report_data(
+                "foo",
+                FOO,
+                [(CASE1, CaseResult(results=[TestResult.VALID]))],
+                did_fail_fast=True,
+            ),
+        )
+        bar_report = Report.from_input(
+            _report_data(
+                "bar",
+                BAR,
+                [
+                    (CASE1, CaseResult(results=[TestResult.VALID])),
+                    (CASE2, CaseResult(results=[TestResult.VALID])),
+                ],
+                did_fail_fast=False,
+            ),
+        )
+        combined = Report.combine(foo_report, bar_report)
+        assert combined.did_fail_fast
+        assert list(combined._cases.values()) == [CASE1]
+        assert set(combined.implementations) == {"foo", "bar"}
+        assert combined.total_tests == len(CASE1.tests)
+
+    def test_combine_fail_fast_mismatched_cases_first_longer(self):
+        foo_report = Report.from_input(
+            _report_data(
+                "foo",
+                FOO,
+                [
+                    (CASE1, CaseResult(results=[TestResult.VALID])),
+                    (CASE2, CaseResult(results=[TestResult.VALID])),
+                ],
+                did_fail_fast=False,
+            ),
+        )
+        bar_report = Report.from_input(
+            _report_data(
+                "bar",
+                BAR,
+                [(CASE1, CaseResult(results=[TestResult.VALID]))],
+                did_fail_fast=True,
+            ),
+        )
+        combined = Report.combine(foo_report, bar_report)
+        assert combined.did_fail_fast
+        assert list(combined._cases.values()) == [CASE1]
+        assert set(combined.implementations) == {"foo", "bar"}
+        assert combined.total_tests == len(CASE1.tests)
+
+    def test_combine_fail_fast_disjoint_cases_errors(self):
+        foo_report = Report.from_input(
+            _report_data(
+                "foo",
+                FOO,
+                [(CASE1, CaseResult(results=[TestResult.VALID]))],
+                did_fail_fast=True,
+            ),
+        )
+        bar_report = Report.from_input(
+            _report_data(
+                "bar",
+                BAR,
+                [(CASE2, CaseResult(results=[TestResult.VALID]))],
+                did_fail_fast=True,
+            ),
+        )
+        with pytest.raises(InconsistentCases):
+            Report.combine(foo_report, bar_report)
+
+    def test_combine_no_fail_fast_mismatched_cases_errors(self):
+        foo_report = Report.from_input(
+            _report_data(
+                "foo",
+                FOO,
+                [(CASE1, CaseResult(results=[TestResult.VALID]))],
+                did_fail_fast=False,
+            ),
+        )
+        bar_report = Report.from_input(
+            _report_data(
+                "bar",
+                BAR,
+                [
+                    (CASE1, CaseResult(results=[TestResult.VALID])),
+                    (CASE2, CaseResult(results=[TestResult.VALID])),
+                ],
+                did_fail_fast=False,
+            ),
+        )
+        with pytest.raises(InconsistentCases):
+            Report.combine(foo_report, bar_report)
+
     def test_combine_errors_on_mismatched_dialects(self):
         bar_2019 = ImplementationInfo(
             name="bar",

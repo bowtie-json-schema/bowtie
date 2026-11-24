@@ -3308,6 +3308,18 @@ def _write_api(output: Path, infos: dict[str, ImplementationInfo]) -> None:
     api_dir.joinpath("implementations").write_text(json.dumps(api, indent=2))
 
 
+class _StopCoordinator:
+    def __init__(self):
+        self.stop_after_seq: int | None = None
+
+    def request_stop(self, seq: int):
+        if self.stop_after_seq is None or seq < self.stop_after_seq:
+            self.stop_after_seq = seq
+
+    def should_stop(self, count: int) -> bool:
+        return self.stop_after_seq is not None and count > self.stop_after_seq
+
+
 async def _run_cases(
     runner: DialectRunner,
     dialect: Dialect,
@@ -3320,6 +3332,7 @@ async def _run_cases(
     max_error: int | None = None,
     time_output_file: Path | None = None,
     output: OutputFormat = "flag",
+    stop_coordinator: _StopCoordinator | None = None,
 ) -> _report.Report | None:
     """
     Run cases against an already-speaking runner, returning a Report.
@@ -3340,6 +3353,11 @@ async def _run_cases(
     time_taken = 0
 
     for count, case in enumerate(maybe_set_schema(dialect)(cases), 1):
+        if stop_coordinator is not None and stop_coordinator.should_stop(
+            count,
+        ):
+            should_stop = True
+            break
         seq_case = SeqCase(seq=count, case=case, output=output)
         got_result = reporter.case_started(seq_case, dialect)
         st_time = perf_counter_ns()
@@ -3353,6 +3371,8 @@ async def _run_cases(
             max_error and len(unsuccessful.errored) >= max_error
         ):
             should_stop = True
+            if stop_coordinator is not None:
+                stop_coordinator.request_stop(count)
             break
 
     lines.append({"did_fail_fast": should_stop})
@@ -3375,6 +3395,7 @@ async def _run_one(
     max_error: int | None = None,
     run_metadata: dict[str, Any] = {},
     output: OutputFormat = "flag",
+    stop_coordinator: _StopCoordinator | None = None,
     **kwargs: Any,
 ) -> tuple[int, _report.Report | None]:
     """
@@ -3423,6 +3444,7 @@ async def _run_one(
             max_error=max_error,
             time_output_file=time_output_file,
             output=output,
+            stop_coordinator=stop_coordinator,
         )
 
     if report is None:
@@ -3445,6 +3467,12 @@ async def _run_parallel(
     materialized = list(cases)
     semaphore = asyncio.Semaphore(jobs)
 
+    stop_coordinator = (
+        _StopCoordinator()
+        if (fail_fast or kwargs.get("max_fail") or kwargs.get("max_error"))
+        else None
+    )
+
     async def run_with_limit(connectable: Connectable):
         async with semaphore:
             return await _run_one(
@@ -3452,6 +3480,7 @@ async def _run_parallel(
                 cases=materialized,
                 dialect=dialect,
                 output=output,
+                stop_coordinator=stop_coordinator,
                 **kwargs,
             )
 
