@@ -60,7 +60,7 @@ async def test(implementation: Implementation):
     schema containing a reference to a single absolute URI is followed.
     """
     dialects = DialectResults()
-    unsupported_implicit_dialects = []
+    unsupported_implicit_dialects: list[Dialect] = []
 
     for dialect in implementation.info.dialects:
         runner = await implementation.start_speaking(dialect)
