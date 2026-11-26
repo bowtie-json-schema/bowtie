@@ -48,6 +48,18 @@ from bowtie._suite import hour_start, path_and_ref_from_gh_path
             ("annotations/tests/format.json", "main"),
         ),
         (
+            "tree/unify/validation/tests",
+            ("validation/tests", "unify"),
+        ),
+        (
+            "blob/unify/validation/tests/type.json",
+            ("validation/tests/type.json", "unify"),
+        ),
+        (
+            "tree/feature/tests/validation/tests/",
+            ("validation/tests", "feature/tests"),
+        ),
+        (
             "tree/feature/tests/tests/draft2020-12/",
             ("tests/draft2020-12", "feature/tests"),
         ),

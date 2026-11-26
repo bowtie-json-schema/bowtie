@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 from uuid import uuid4
 import json
+import urllib.parse
 
 from attrs import Factory, asdict, evolve, field, frozen, mutable
+from referencing import Registry
 from referencing.jsonschema import (
     DRAFT202012,
     EMPTY_REGISTRY,
@@ -24,6 +26,7 @@ from bowtie import HOMEPAGE
 from bowtie._commands import (
     START_V1,
     CaseErrored,
+    CaseResult,
     Dialect as DialectCommand,
     ExpectedAnnotations,
     ExpectedValidity,
@@ -472,6 +475,59 @@ class HarnessClient:
             return cmd.from_response(response, registry=self._registry)
 
 
+def _resource_locations(
+    case: Mapping[str, Any],
+    specification: Specification[Any],
+) -> dict[str, str | None]:
+    """
+    The location within a test case's schema of each of its schema resources.
+
+    Those in its registry are outside of it, so have no location.
+    """
+    registry: Mapping[str, Any] = case.get("registry", {})
+    found: dict[str, str | None] = {
+        urllib.parse.urldefrag(uri).url: None for uri in registry
+    }
+
+    def walk(
+        contents: Any,
+        base: str,
+        resolver: Any,
+        segments: list[str],
+        pointer: str,
+    ):
+        if isinstance(contents, dict):
+            children = cast("dict[str, Any]", contents).items()
+        elif isinstance(contents, list):
+            children = enumerate(cast("list[Any]", contents))
+        else:
+            return
+        for key, value in children:
+            escaped = str(key).replace("~", "~0").replace("/", "~1")
+            location, within = f"{pointer}/{escaped}", [*segments, str(key)]
+            subresource = specification.create_resource(value)
+            entered = specification.maybe_in_subresource(
+                segments=within,
+                resolver=resolver,
+                subresource=subresource,
+            )
+            if entered is resolver:
+                walk(value, base, resolver, within, location)
+            else:
+                id = urllib.parse.urljoin(base, subresource.id())
+                uri = urllib.parse.urldefrag(id).url
+                found[uri] = urllib.parse.quote(
+                    location,
+                    safe="/~$!&'()*+,;=:@",
+                )
+                walk(value, uri, entered, [], location)
+
+    schema = case["schema"]
+    root = specification.create_resource(schema).id() or ""
+    walk(schema, root, Registry[Any]().resolver(), [], "")
+    return found
+
+
 @frozen
 class DialectRunner:
     """
@@ -549,6 +605,17 @@ class DialectRunner:
                         got=length,
                         response=result,
                     )
+                elif run.output == "annotations" and isinstance(  # type: ignore[reportUnknownMemberType]
+                    result,
+                    CaseResult,
+                ):
+                    # Absolute locations are made relative to the root schema
+                    # while we know the schema.
+                    resources = _resource_locations(
+                        run.case,  # type: ignore[reportUnknownMemberType]
+                        self.dialect.specification(),
+                    )
+                    result = result.relative_to(resources)
         except GotStderr as error:
             result = CaseErrored.uncaught(stderr=error.stderr.decode("utf-8"))
         except InvalidResponse as error:

@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+import { serveRealWorldResults } from "./fixtures/realWorld";
+
 /**
  * Accessibility gate. Each key view is scanned with axe (WCAG 2.0/2.1 A + AA)
  * in both colour schemes; any violation fails the build. Pages render from the
@@ -31,7 +33,7 @@ const scenarios: Scenario[] = [
     ready: "table.compliance tbody tr",
   },
   { name: "implementations index", path: "/#/implementations", ready: ".impl-card" },
-  { name: "benchmarks", path: "/#/benchmarks", ready: ".bchart .brow" },
+  { name: "benchmarks", path: "/#/benchmarks", ready: ".rbars [data-impl]" },
   { name: "upload", path: "/#/local-report", ready: ".dropzone" },
   { name: "not found", path: "/#/does-not-exist", ready: "h1" },
 ];
@@ -49,6 +51,7 @@ for (const scheme of ["light", "dark"] as const) {
     test.use({ colorScheme: scheme });
     for (const s of scenarios) {
       test(s.name, async ({ page }) => {
+        await serveRealWorldResults(page);
         await page.goto(s.path);
         await page.waitForSelector(s.ready, { timeout: 45000 });
         if (s.open) await s.open(page);

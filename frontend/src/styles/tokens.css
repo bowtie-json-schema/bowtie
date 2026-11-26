@@ -35,6 +35,11 @@
   --j-str: #157540;
   --j-num: #9a560c;
   --j-bool: #6b43c9;
+  /* real-world benchmarks: marks, and matrix fills on which --text stays AA */
+  --bench-faster: #2563c9;
+  --bench-slower: #c2410c;
+  --bench-faster-fill: #8fb6f0;
+  --bench-slower-fill: #f0a57e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,6 +51,7 @@
     --sel-bg: rgba(255, 61, 132, 0.06);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
     --j-key: #ff85b5; --j-str: #6fd39b; --j-num: #f7a63b; --j-bool: #c79bff;
+    --bench-faster: #6aa5f5; --bench-slower: #f2884b; --bench-faster-fill: #1f4a8a; --bench-slower-fill: #8a3a12;
   }
 }
 
@@ -57,6 +63,7 @@
   --sel-bg: rgba(198, 13, 92, 0.06);
   --shadow: 0 1px 2px rgba(20, 12, 24, 0.06), 0 8px 24px rgba(20, 12, 24, 0.05);
   --j-key: #a11560; --j-str: #157540; --j-num: #9a560c; --j-bool: #6b43c9;
+    --bench-faster: #2563c9; --bench-slower: #c2410c; --bench-faster-fill: #8fb6f0; --bench-slower-fill: #f0a57e;
 }
 
 :root[data-theme="dark"] {
@@ -67,4 +74,5 @@
   --sel-bg: rgba(255, 61, 132, 0.06);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   --j-key: #ff85b5; --j-str: #6fd39b; --j-num: #f7a63b; --j-bool: #c79bff;
+    --bench-faster: #6aa5f5; --bench-slower: #f2884b; --bench-faster-fill: #1f4a8a; --bench-slower-fill: #8a3a12;
 }

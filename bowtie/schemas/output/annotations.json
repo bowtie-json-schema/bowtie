@@ -26,14 +26,22 @@
             "type": "string"
           },
           "keywordLocation": {
-            "description": "The location within the schema of the keyword that produced this annotation, as a URI fragment JSON Pointer (e.g. '#/properties/foo/title').",
+            "description": "The location of the keyword that produced this annotation relative to the root schema, as a URI fragment JSON Pointer (e.g. '#/properties/foo/title').",
+            "type": "string"
+          },
+          "absoluteKeywordLocation": {
+            "description": "The location of the keyword that produced this annotation within the schema resource containing it, as an absolute URI with a JSON Pointer fragment (e.g. 'https://example.com/foo#/properties/foo/title'). Implementations may use any URI for a root schema which does not declare its own.",
             "type": "string"
           },
           "annotation": {
             "description": "The annotation value produced by the keyword."
           }
         },
-        "required": ["keyword", "instanceLocation", "keywordLocation", "annotation"],
+        "required": ["keyword", "instanceLocation", "annotation"],
+        "anyOf": [
+          { "required": ["keywordLocation"] },
+          { "required": ["absoluteKeywordLocation"] }
+        ],
         "additionalProperties": false
       }
     }
