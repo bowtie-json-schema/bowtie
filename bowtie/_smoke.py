@@ -12,6 +12,7 @@ from functools import cached_property
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 import json
+import shlex
 
 from attrs import evolve, field, frozen
 from referencing.jsonschema import EMPTY_REGISTRY
@@ -39,7 +40,10 @@ EXAMPLES = [
 ]
 
 
-async def test(implementation: Implementation):
+async def test(
+    implementation: Implementation,
+    connectable_id: ConnectableId | None = None,
+):
     """
     Smoke test an implementation for absolute basic correctness.
 
@@ -93,7 +97,12 @@ async def test(implementation: Implementation):
             (failure,) = got
             ref = last, *failure
 
-    return Result(id=implementation.report_id, dialects=dialects, ref=ref)
+    return Result(
+        id=implementation.report_id,
+        dialects=dialects,
+        ref=ref,
+        connectable_id=connectable_id,
+    )
 
 
 @frozen
@@ -108,6 +117,29 @@ class Result:
         repr=False,
         alias="ref",
     )
+    connectable_id: ConnectableId | None = field(default=None, repr=False)
+
+    def ref_reproduction_command(self) -> str | None:
+        """
+        Return a POSIX shell command replaying the failed reference test.
+        """
+        if self._ref is None or self.connectable_id is None:
+            return None
+
+        dialect, case, _ = self._ref
+        serialized = json.dumps(case.serializable(), separators=(",", ":"))
+        # Fixed-width fragments keep the command copyable in narrow terminals.
+        fragments = [
+            shlex.quote(serialized[index : index + 24])
+            for index in range(0, len(serialized), 24)
+        ]
+        return (
+            "printf '%s' \\\n  "
+            + " \\\n  ".join(fragments)
+            + " \\\n  | bowtie run \\\n"
+            + f"      -i {shlex.quote(self.connectable_id)} \\\n"
+            + f"      --dialect {shlex.quote(dialect.short_name)}"
+        )
 
     def __rich_console__(
         self,
@@ -218,6 +250,14 @@ class Result:
                 JSON(json.dumps(registry)),
                 instances,
             )
+
+            reproduction = self.ref_reproduction_command()
+            if reproduction is not None:
+                lead.append(
+                    "\n\nTo reproduce the failed reference test "
+                    "(POSIX shell):\n",
+                )
+                lead.append(reproduction, style="cyan")
 
             panel = Panel(
                 Group(lead, reason),

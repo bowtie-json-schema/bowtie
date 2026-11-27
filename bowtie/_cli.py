@@ -2527,9 +2527,9 @@ async def smoke(
         (
             implementation.report_id,
             implementation.info,
-            await implementation.smoke(),
+            await implementation.smoke(connectable_id=connectable_id),
         )
-        async for _, implementation in start()
+        async for connectable_id, implementation in start()
     ]
 
     filtered = (

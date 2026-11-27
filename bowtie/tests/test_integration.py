@@ -2344,6 +2344,19 @@ class TestSmoke:
         }, stderr
 
     @pytest.mark.asyncio
+    async def test_reference_failure_shows_reproduction_command(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.no_registry_support,
+        )
+        assert "To reproduce the failed reference test" in stdout, stderr
+        assert "| bowtie run" in stdout
+        assert "no_registry_support" in stdout
+
+    @pytest.mark.asyncio
     @pytest.mark.json
     async def test_pass(self):
         jsonout, stderr = await bowtie(

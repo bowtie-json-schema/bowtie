@@ -741,13 +741,13 @@ class Implementation:
                 stderr=error.stderr,
             ) from error
 
-    def smoke(self):
+    def smoke(self, connectable_id: ConnectableId | None = None):
         """
         Smoke test this implementation.
         """
         from bowtie import _smoke  # noqa: PLC0415
 
-        return _smoke.test(self)
+        return _smoke.test(self, connectable_id=connectable_id)
 
 
 @frozen
