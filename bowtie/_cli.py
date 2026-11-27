@@ -2558,6 +2558,10 @@ async def smoke(
                 else:
                     echo("Smoke test **failed!**")
 
+                if result.entirely_broken:
+                    echo(f"\n{result.entirely_broken}")
+                    continue
+
                 epilog: Sequence[
                     tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]
                 ] = []
