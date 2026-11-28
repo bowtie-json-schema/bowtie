@@ -151,6 +151,15 @@ def no_registry_support(dialect: Dialect):
 
 
 @fake(implicit_dialect_response=StartedDialect(ok=False))
+def passes_smoke_without_implicit_dialect_support(dialect: Dialect):
+    """
+    Validates explicitly dialected smoke cases, but refuses implicit dialect
+    selection as reported by the harness dialect command.
+    """
+    return naively_correct
+
+
+@fake(implicit_dialect_response=StartedDialect(ok=False))
 def no_implicit_dialect_support(dialect: Dialect):
     """
     An implementation which does not support implicit dialects in schemas.

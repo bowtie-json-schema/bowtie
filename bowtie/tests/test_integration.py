@@ -2345,6 +2345,53 @@ class TestSmoke:
 
     @pytest.mark.asyncio
     @pytest.mark.json
+    async def test_missing_implicit_dialect_support_is_only_a_warning(self):
+        jsonout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "json",
+            "-i",
+            miniatures.passes_smoke_without_implicit_dialect_support,
+            json=True,
+        )
+        assert (await command_validator("smoke")).validated(jsonout) == {
+            "success": True,
+            "unsupportedImplicitDialects": [
+                dialect.short_name
+                for dialect in sorted(Dialect.known(), reverse=True)
+            ],
+            "dialects": [
+                dialect.short_name
+                for dialect in sorted(Dialect.known(), reverse=True)
+            ],
+        }, stderr
+
+    @pytest.mark.asyncio
+    async def test_missing_implicit_dialect_support_pretty(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "pretty",
+            "-i",
+            miniatures.passes_smoke_without_implicit_dialect_support,
+        )
+        assert "Implicit dialect support unavailable" in stdout, stderr
+        assert "does not support selecting an implicit dialect" in stdout
+
+    @pytest.mark.asyncio
+    async def test_missing_implicit_dialect_support_warns_in_markdown(self):
+        stdout, stderr = await bowtie(
+            "smoke",
+            "--format",
+            "markdown",
+            "-i",
+            miniatures.passes_smoke_without_implicit_dialect_support,
+        )
+        assert "Smoke test *succeeded!*" in stdout, stderr
+        assert "**Warning:** The harness does not support implicit" in stdout
+
+    @pytest.mark.asyncio
+    @pytest.mark.json
     async def test_pass(self):
         jsonout, stderr = await bowtie(
             "smoke",

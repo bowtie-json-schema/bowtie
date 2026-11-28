@@ -34,6 +34,17 @@
 
       "unevaluatedProperties": false,
       "required": ["success", "dialects"],
+      "properties": {
+        "unsupportedImplicitDialects": {
+          "description": "Dialect shortnames for which the harness declined out-of-band dialect selection. A warning only; it does not make the smoke test fail.",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "$ref": "tag:bowtie.report,2024:models:dialect:shortName"
+          }
+        }
+      },
       "oneOf": [
         {
           "title": "Successful Smoke Test",

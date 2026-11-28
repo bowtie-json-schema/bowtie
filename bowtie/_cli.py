@@ -2558,6 +2558,22 @@ async def smoke(
                 else:
                     echo("Smoke test **failed!**")
 
+                if result.unsupported_implicit_dialects:
+                    dialect_names = ", ".join(
+                        each.pretty_name
+                        for each in sorted(
+                            result.unsupported_implicit_dialects,
+                            reverse=True,
+                        )
+                    )
+                    echo(
+                        "\n**Warning:** The harness does not support implicit "
+                        f"dialect selection for: {dialect_names}. "
+                        "Check whether the implementation supports "
+                        "configuring "
+                        "the dialect for schemas without $schema.\n",
+                    )
+
                 epilog: Sequence[
                     tuple[Dialect, Sequence[tuple[TestCase, SeqResult]]]
                 ] = []

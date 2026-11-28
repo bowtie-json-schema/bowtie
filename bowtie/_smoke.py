@@ -60,13 +60,21 @@ async def test(implementation: Implementation):
     schema containing a reference to a single absolute URI is followed.
     """
     dialects = DialectResults()
+    unsupported_implicit_dialects: list[Dialect] = []
 
     for dialect in implementation.info.dialects:
+        runner = await implementation.start_speaking(dialect)
+        if not runner.supports_implicit_dialect:
+            unsupported_implicit_dialects.append(dialect)
         cases = [
             dialect.top_test_case(EXAMPLES),
             dialect.bottom_test_case(EXAMPLES),
         ]
-        failures = await implementation.failing(dialect=dialect, cases=cases)
+        failures = await implementation.failing(
+            dialect=dialect,
+            cases=cases,
+            runner=runner,
+        )
         dialects = dialects.with_result(dialect, failures)
 
     # no point checking $ref unless we have a working dialect
@@ -93,7 +101,12 @@ async def test(implementation: Implementation):
             (failure,) = got
             ref = last, *failure
 
-    return Result(id=implementation.report_id, dialects=dialects, ref=ref)
+    return Result(
+        id=implementation.report_id,
+        dialects=dialects,
+        ref=ref,
+        unsupported_implicit_dialects=frozenset(unsupported_implicit_dialects),
+    )
 
 
 @frozen
@@ -108,6 +121,7 @@ class Result:
         repr=False,
         alias="ref",
     )
+    unsupported_implicit_dialects: frozenset[Dialect] = frozenset()
 
     def __rich_console__(
         self,
@@ -228,6 +242,28 @@ class Result:
         else:
             title = f"{prefix} [/][b green]work!"
 
+        if self.unsupported_implicit_dialects:
+            dialect_names = ", ".join(
+                each.pretty_name
+                for each in sorted(
+                    self.unsupported_implicit_dialects,
+                    reverse=True,
+                )
+            )
+            epilog.add_row(
+                Panel(
+                    (
+                        "The harness does not support selecting an implicit "
+                        "dialect for: "
+                        f"{dialect_names}. Check whether the implementation "
+                        "supports configuring the dialect for schemas "
+                        "without $schema."
+                    ),
+                    title="[b yellow]Implicit dialect support unavailable",
+                    border_style="yellow",
+                ),
+            )
+
         yield ""
         table = Table(
             Column("Label", no_wrap=True, justify="center"),
@@ -253,6 +289,19 @@ class Result:
         # implementations have issues :( Perhaps this will change.
         return not self._dialects.failures
 
+    def _implicit_dialects_json(self) -> dict[str, Any]:
+        if not self.unsupported_implicit_dialects:
+            return {}
+        return {
+            "unsupportedImplicitDialects": [
+                dialect.short_name
+                for dialect in sorted(
+                    self.unsupported_implicit_dialects,
+                    reverse=True,
+                )
+            ],
+        }
+
     def serializable(self) -> dict[str, Any]:
         if self.success:
             return dict(
@@ -261,9 +310,11 @@ class Result:
                     each.short_name for each, _ in self.for_each_dialect()
                 ],
                 **{"registry": False} if self._ref else {},
+                **self._implicit_dialects_json(),
             )
         return dict(
             success=False,
+            **self._implicit_dialects_json(),
             dialects={  # FIXME: some standard representation of discrepancy
                 dialect.short_name: [
                     dict(
