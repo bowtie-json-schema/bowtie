@@ -1,6 +1,6 @@
 <script lang="ts">
   import { report } from "../stores/report.svelte";
-  import { parseReportData } from "../data/parseReportData";
+  import { fromSerialized } from "../data/parseReportData";
   import ReportShell from "../components/ReportShell.svelte";
 
   let loaded = $state(false);
@@ -12,12 +12,7 @@
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const text = String(e.target?.result ?? "");
-        const lines = text
-          .trim()
-          .split(/\r?\n/)
-          .map((l) => JSON.parse(l) as Record<string, unknown>);
-        report.load(parseReportData(lines));
+        report.load(fromSerialized(String(e.target?.result ?? "")));
         document.title = "Bowtie – local report";
         loaded = true;
       } catch {

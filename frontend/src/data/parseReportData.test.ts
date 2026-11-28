@@ -343,3 +343,31 @@ describe("parseReportData", () => {
     );
   }, 15000);
 });
+
+describe("fromSerialized", () => {
+  test("keeps number literals that a JavaScript number would change", () => {
+    const lines = [
+      JSON.stringify({
+        dialect: "http://json-schema.org/draft-04/schema#",
+        bowtie_version: "0",
+        metadata: {},
+        implementations: {},
+        started: 0,
+      }),
+      '{"seq": 1, "case": {"description": "enum", "schema": {"enum": [0.0, 1]}, ' +
+        '"tests": [{"description": "zero", "instance": 0.0, "valid": true}, ' +
+        '{"description": "big", "instance": 12345678901234567890, "valid": false}, ' +
+        '{"description": "plain", "instance": [1, 1.5, -2], "valid": false}]}}',
+    ].join("\n");
+
+    const { schema, tests } = fromSerialized(lines).cases.get(1)!;
+
+    expect(JSON.stringify(schema)).toStrictEqual('{"enum":[0.0,1]}');
+    expect(tests.map((t) => JSON.stringify(t.instance))).toStrictEqual([
+      "0.0",
+      "12345678901234567890",
+      "[1,1.5,-2]",
+    ]);
+    expect(tests[2].instance).toStrictEqual([1, 1.5, -2]);
+  });
+});
